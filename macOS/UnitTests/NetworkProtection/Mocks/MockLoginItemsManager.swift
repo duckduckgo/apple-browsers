@@ -29,18 +29,21 @@ struct MockLoginItemsManager: LoginItemsManaging {
     private let disableLoginItemsCallback: LoginItemsCallback
     private let restartLoginItemsCallback: LoginItemsCallback
     private let isAnyEnabledCallback: (Set<LoginItems.LoginItem>) -> Bool
+    private let isAnyInstalledCallback: (Set<LoginItems.LoginItem>) -> Bool
 
     init(enableLoginItemsCallback: @escaping LoginItemsCallback = { _ in },
          throwingEnableLoginItemsCallback: @escaping ThrowsLoginItemsCallback = { _ in },
          disableLoginItemsCallback: @escaping LoginItemsCallback = { _ in },
          restartLoginItemsCallback: @escaping LoginItemsCallback = { _ in },
-         isAnyEnabledCallback: @escaping (Set<LoginItems.LoginItem>) -> Bool) {
+         isAnyEnabledCallback: @escaping (Set<LoginItems.LoginItem>) -> Bool,
+         isAnyInstalledCallback: @escaping (Set<LoginItems.LoginItem>) -> Bool) {
 
         self.enableLoginItemsCallback = enableLoginItemsCallback
         self.throwingEnableLoginItemsCallback = throwingEnableLoginItemsCallback
         self.disableLoginItemsCallback = disableLoginItemsCallback
         self.restartLoginItemsCallback = restartLoginItemsCallback
         self.isAnyEnabledCallback = isAnyEnabledCallback
+        self.isAnyInstalledCallback = isAnyInstalledCallback
     }
 
     func enableLoginItems(_ items: Set<LoginItems.LoginItem>) {
@@ -61,5 +64,9 @@ struct MockLoginItemsManager: LoginItemsManaging {
 
     func isAnyEnabled(_ items: Set<LoginItems.LoginItem>) -> Bool {
         isAnyEnabledCallback(items)
+    }
+
+    func isAnyInstalled(_ items: Set<LoginItems.LoginItem>) -> Bool {
+        isAnyInstalledCallback(items)
     }
 }

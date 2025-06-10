@@ -25,8 +25,10 @@ public class OnboardingFireButtonDialogViewModel: ObservableObject {
     private var onGotItPressed: () -> Void
     private var onFireButtonPressed: () -> Void
     private let onboardingPixelReporter: OnboardingDialogsReporting
+    private let fireCoordinator: FireCoordinator
 
     init(onboardingPixelReporter: OnboardingDialogsReporting = OnboardingPixelReporter(),
+         fireCoordinator: FireCoordinator,
          onDismiss: @escaping () -> Void,
          onGotItPressed: @escaping () -> Void,
          onFireButtonPressed: @escaping () -> Void) {
@@ -34,6 +36,7 @@ public class OnboardingFireButtonDialogViewModel: ObservableObject {
         self.onGotItPressed = onGotItPressed
         self.onFireButtonPressed = onFireButtonPressed
         self.onboardingPixelReporter = onboardingPixelReporter
+        self.fireCoordinator = fireCoordinator
     }
 
     func highFive() {
@@ -45,7 +48,7 @@ public class OnboardingFireButtonDialogViewModel: ObservableObject {
     func tryFireButton() {
         onFireButtonPressed()
         onboardingPixelReporter.measureFireButtonTryIt()
-        FireCoordinator.fireButtonAction()
+        fireCoordinator.fireButtonAction()
         onDismiss()
     }
 }

@@ -96,11 +96,17 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210052464460517?focus=true
     case privacyProFreeTrial
 
+	/// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
+    case paidAIChat
+
     /// https://app.asana.com/1/137249556945/task/1210330600670666
     case removeWWWInCanonicalizationInThreatProtection
 
     /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210410403692636?focus=true
     case aiChatSidebar
+
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210493210455717?focus=true
+    case shortHistoryMenu
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -142,11 +148,13 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .maliciousSiteProtection,
                 .delayedWebviewPresentation,
                 .syncSetupBarcodeIsUrlBased,
+                .paidAIChat,
                 .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
 				.privacyProFreeTrial,
                 .removeWWWInCanonicalizationInThreatProtection,
-				.aiChatSidebar:
+				.aiChatSidebar,
+                .shortHistoryMenu:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -227,10 +235,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         case .privacyProFreeTrial:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
+	    case .paidAIChat
+			return .disabled
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
             return .internalOnly()
+        case .shortHistoryMenu:
+            return .disabled
         }
     }
 }

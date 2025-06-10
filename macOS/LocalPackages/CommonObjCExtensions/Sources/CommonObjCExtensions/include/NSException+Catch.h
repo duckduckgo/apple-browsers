@@ -1,5 +1,5 @@
 //
-//  DownloadsWebViewMock.m
+//  NSException+Catch.h
 //
 //  Copyright © 2021 DuckDuckGo. All rights reserved.
 //
@@ -16,18 +16,9 @@
 //  limitations under the License.
 //
 
-#import "DownloadsWebViewMock.h"
+#import <Foundation/Foundation.h>
 
-@implementation DownloadsWebViewMock
-
-- (void)startDownloadUsingRequest:(NSURLRequest *)request completionHandler:(void (^)(WKDownload * _Nonnull))completionHandler {
-    id download = self.startDownloadBlock(request);
-    completionHandler(download);
-}
-
-- (void)resumeDownloadFromResumeData:(NSData *)resumeData completionHandler:(void (^)(WKDownload * _Nonnull))completionHandler {
-    id download = self.resumeDownloadBlock(resumeData);
-    completionHandler(download);
-}
+@interface NSException (Catch)
++ (NSException * _Nullable)tryBlock:(void (__attribute__((noescape)) ^ _Nonnull)(void))block;
 
 @end

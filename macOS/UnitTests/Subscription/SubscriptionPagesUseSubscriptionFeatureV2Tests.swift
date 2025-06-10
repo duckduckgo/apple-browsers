@@ -161,4 +161,40 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptionsV2)
         XCTAssertEqual(subscriptionOptionsResult, Constants.subscriptionOptions)
     }
+
+    func testGetFeatureConfig_WhenPaidAIChatEnabled_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = true
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        guard let featureValue = result as? GetFeatureValue else {
+            XCTFail("Expected GetFeatureValue type")
+            return
+        }
+
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+        XCTAssertTrue(featureValue.useDuckAiPro)
+    }
+
+    func testGetFeatureConfig_WhenPaidAIChatDisabled_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = false
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        guard let featureValue = result as? GetFeatureValue else {
+            XCTFail("Expected GetFeatureValue type")
+            return
+        }
+
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+        XCTAssertFalse(featureValue.useDuckAiPro)
+    }
 }

@@ -1967,7 +1967,6 @@
 		56BC8F012D312B320046059D /* ConfigurationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BC8F002D312B320046059D /* ConfigurationManagerTests.swift */; };
 		56BC8F022D312B320046059D /* ConfigurationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BC8F002D312B320046059D /* ConfigurationManagerTests.swift */; };
 		56CD513F2DF1A25D00B6A44A /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CD513E2DF1A25D00B6A44A /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift */; };
-		56CD51402DF1A25D00B6A44A /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CD513E2DF1A25D00B6A44A /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift */; };
 		56CD51572DF1FA3100B6A44A /* MockFreemiumDBPPixelExperimentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CD51562DF1FA3100B6A44A /* MockFreemiumDBPPixelExperimentManager.swift */; };
 		56CD51582DF1FA3100B6A44A /* MockFreemiumDBPPixelExperimentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CD51562DF1FA3100B6A44A /* MockFreemiumDBPPixelExperimentManager.swift */; };
 		56CE77612C7DFCF800AC1ED2 /* OnboardingSuggestedSearchesProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CE77602C7DFCF800AC1ED2 /* OnboardingSuggestedSearchesProviderTests.swift */; };
@@ -8810,6 +8809,7 @@
 				7B4CE8DB26F02108009134B1 /* UITests */,
 				AA585D93248FD31400E9A3E2 /* UnitTests */,
 				7BDA36E72B7E037200AD5388 /* VPNProxyExtension */,
+				C1E82D162DF843C1001DEA58 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -10621,6 +10621,14 @@
 				31DC2F202BD6DE65001354EF /* DataBrokerPrerequisitesStatusVerifierTests.swift */,
 			);
 			path = Tests;
+			sourceTree = "<group>";
+		};
+		C1E82D162DF843C1001DEA58 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				56CD513E2DF1A25D00B6A44A /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift */,
+			);
+			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 		C1E961E62B879E2A001760E1 /* Mocks */ = {
@@ -15329,7 +15337,6 @@
 				CD3301292C887B1C009AA127 /* URLTokenValidatorTests.swift in Sources */,
 				AAC9C01C24CB594C00AD1325 /* TabViewModelTests.swift in Sources */,
 				84DC715B2C1C1E9000033B8C /* UserDefaultsWrapperTests.swift in Sources */,
-				56CD51402DF1A25D00B6A44A /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */,
 				561D29CA2BDA752F007B91D0 /* MockAppearancePreferencesPersistor.swift in Sources */,
 				3199AF832C80736C003AEBDC /* DuckPlayerOnboardingLocationValidatorTests.swift in Sources */,
 				56A0540D2C1C375D007D8FAB /* MockWindow.swift in Sources */,

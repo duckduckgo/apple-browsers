@@ -43,10 +43,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockSubscriptionEndpointService = SubscriptionEndpointServiceMockV2()
         mockStorePurchaseManager = StorePurchaseManagerMockV2()
         mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMockV2()
-
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.SubscriptionManagerV2Tests")!
         subscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
             pixelHandler: MockPixelHandler()
@@ -133,9 +134,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
     func testURLGeneration_ForSubscriptionTypes() {
         let environment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
         subscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: environment,
             pixelHandler: MockPixelHandler()
@@ -190,10 +193,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
     func testForProductionURL() throws {
         // Given
         let productionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
-
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
         let productionSubscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: productionEnvironment,
             pixelHandler: MockPixelHandler()
@@ -209,10 +213,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
     func testForStagingURL() throws {
         // Given
         let stagingEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
-
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
         let stagingSubscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: stagingEnvironment,
             pixelHandler: MockPixelHandler()

@@ -64,9 +64,6 @@ extension OperatingSystemVersion: @retroactive Comparable {
 }
 
 final class SupportedOSChecker {
-    static let ddgUnsupportedVersion = OperatingSystemVersion(majorVersion: 10,
-                                                            minorVersion: 15,
-                                                            patchVersion: 0)
     static let ddgMinBigSurVersion = OperatingSystemVersion(majorVersion: 11,
                                                             minorVersion: 4,
                                                             patchVersion: 0)
@@ -78,24 +75,26 @@ final class SupportedOSChecker {
             return currentOSVersionOverride
         }
 
-        guard !featureFlagger.isFeatureOn(.osSupportForceUnsupportedMessage) else {
-            return Self.ddgUnsupportedVersion
-        }
-
-        guard !featureFlagger.isFeatureOn(.osSupportForceWillSoonDropSupportMessage) else {
-            return Self.ddgMinBigSurVersion
-        }
-
         return ProcessInfo.processInfo.operatingSystemVersion
     }
     private var currentOSVersionOverride: OperatingSystemVersion?
+    private var minSupportedOSVersionOverride: OperatingSystemVersion?
+    private var upcomingMinSupportedOSVersionOverride: OperatingSystemVersion?
     private let featureFlagger: FeatureFlagger
 
     var minSupportedOSVersion: OperatingSystemVersion {
-        Self.ddgMinBigSurVersion
+        if let minSupportedOSVersionOverride {
+            return minSupportedOSVersionOverride
+        }
+
+        return Self.ddgMinBigSurVersion
     }
 
     var upcomingMinSupportedOSVersion: OperatingSystemVersion? {
+        if let upcomingMinSupportedOSVersionOverride {
+            return upcomingMinSupportedOSVersionOverride
+        }
+
         guard featureFlagger.isFeatureOn(.willSoonDropBigSurSupport) else {
             return nil
         }
@@ -104,14 +103,14 @@ final class SupportedOSChecker {
     }
 
     init(featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         currentOSVersionOverride: OperatingSystemVersion? = nil) {
+         currentOSVersionOverride: OperatingSystemVersion? = nil,
+         minSupportedOSVersionOverride: OperatingSystemVersion? = nil,
+         upcomingMinSupportedOSVersionOverride: OperatingSystemVersion? = nil) {
 
         self.currentOSVersionOverride = currentOSVersionOverride
+        self.minSupportedOSVersionOverride = minSupportedOSVersionOverride
+        self.upcomingMinSupportedOSVersionOverride = upcomingMinSupportedOSVersionOverride
         self.featureFlagger = featureFlagger
-    }
-
-    var currentOSVersionString: String {
-        "\(ProcessInfo.processInfo.operatingSystemVersion)"
     }
 
     private func osVersionAsString(_ version: OperatingSystemVersion) -> String {
@@ -122,6 +121,17 @@ final class SupportedOSChecker {
 extension SupportedOSChecker: SupportedOSChecking {
 
     var supportWarning: OSSupportWarning? {
+
+        // It's best to check feature flags first on their own, since they act as a master
+        // override for any other check
+        guard !featureFlagger.isFeatureOn(.osSupportForceUnsupportedMessage) else {
+            return .unsupported(osVersionAsString(minSupportedOSVersion))
+        }
+
+        guard !featureFlagger.isFeatureOn(.osSupportForceWillSoonDropSupportMessage) else {
+            return .willDropSupportSoon(osVersionAsString(minSupportedOSVersion))
+        }
+
         guard currentOSVersion > minSupportedOSVersion else {
             return .unsupported(osVersionAsString(minSupportedOSVersion))
         }

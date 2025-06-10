@@ -57301,7 +57301,7 @@
       }
     },
     "preferences.about.will-soon-be-unsupported-device-info2" : {
-      "comment" : "This string informs the user to update their macOS version to continue receiving DuckDuckGo browser updates, as their current version will soon be unsupported",
+      "comment" : "This string informs the user to update their macOS version to continue receiving DuckDuckGo browser updates, as their current version of macOS will soon be unsupported",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {

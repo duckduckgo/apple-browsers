@@ -390,11 +390,11 @@ extension Preferences {
             return wide ? 130 : 200
         }
 
-        var osVersion: String {
+        private var osVersion: String {
             return "\(ProcessInfo.processInfo.operatingSystemVersion)"
         }
 
-        var versionString: String {
+        private var versionString: String {
             switch warning {
             case .unsupported(let versionString),
                     .willDropSupportSoon(let versionString):
@@ -402,7 +402,7 @@ extension Preferences {
             }
         }
 
-        var versionText: String {
+        private var versionText: String {
             switch warning {
             case .unsupported:
                 return UserText.aboutUnsupportedDeviceInfo1
@@ -411,12 +411,48 @@ extension Preferences {
             }
         }
 
-        var combinedText: String {
+        private var combinedText: String {
             switch warning {
             case .unsupported(let minVersion):
                 return UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
             case .willDropSupportSoon(let upcomingMinVersion):
                 return UserText.aboutWillSoonBeUnsupportedDeviceInfo2(version: upcomingMinVersion)
+            }
+        }
+
+        private var aboutUnsupportedDeviceInfo2Part1: String {
+            switch warning {
+            case .unsupported(let minVersion):
+                UserText.aboutUnsupportedDeviceInfo2Part1
+            case .willDropSupportSoon(let minVersion):
+                UserText.aboutWillSoonBeUnsupportedDeviceInfo2Part1
+            }
+        }
+
+        private var aboutUnsupportedDeviceInfo2Part2: String {
+            switch warning {
+            case .unsupported(let minVersion):
+                UserText.aboutUnsupportedDeviceInfo2Part2(version: minVersion)
+            case .willDropSupportSoon(let minVersion):
+                UserText.aboutWillSoonBeUnsupportedDeviceInfo2Part2(version: minVersion)
+            }
+        }
+
+        private var aboutUnsupportedDeviceInfo2Part3: String {
+            switch warning {
+            case .unsupported:
+                UserText.aboutUnsupportedDeviceInfo2Part3
+            case .willDropSupportSoon:
+                UserText.aboutWillSoonBeUnsupportedDeviceInfo2Part3
+            }
+        }
+
+        private var aboutUnsupportedDeviceInfo2Part4: String {
+            switch warning {
+            case .unsupported:
+                UserText.aboutUnsupportedDeviceInfo2Part4
+            case .willDropSupportSoon:
+                UserText.aboutWillSoonBeUnsupportedDeviceInfo2Part4
             }
         }
 
@@ -430,11 +466,11 @@ extension Preferences {
             let narrowContentView = Text(combinedText)
 
             let wideContentView: some View = VStack(alignment: .leading, spacing: 0) {
-                //if #available(macOS 12.0, *) {
-                //    Text(aboutUnsupportedDeviceInfo2Attributed)
-                //} else {
+                if #available(macOS 12.0, *) {
+                    Text(aboutUnsupportedDeviceInfo2Attributed)
+                } else {
                     aboutUnsupportedDeviceInfo2DeprecatedView()
-                //}
+                }
             }
 
             return HStack(alignment: .top) {
@@ -466,11 +502,11 @@ extension Preferences {
         @ViewBuilder
         private func aboutUnsupportedDeviceInfo2DeprecatedView() -> some View {
             HStack(alignment: .center, spacing: 0) {
-                Text(verbatim: UserText.aboutUnsupportedDeviceInfo2Part1 + " ")
+                Text(verbatim: aboutUnsupportedDeviceInfo2Part1 + " ")
                 Button(action: {
                     NSWorkspace.shared.open(Self.softwareUpdateURL)
                 }) {
-                    Text(verbatim: UserText.aboutUnsupportedDeviceInfo2Part2(version: versionString) + " ")
+                    Text(verbatim: aboutUnsupportedDeviceInfo2Part2 + " ")
                         .foregroundColor(Color.blue)
                         .underline()
                 }
@@ -482,9 +518,9 @@ extension Preferences {
                         NSCursor.arrow.set()
                     }
                 }
-                Text(verbatim: UserText.aboutUnsupportedDeviceInfo2Part3)
+                Text(verbatim: aboutUnsupportedDeviceInfo2Part3)
             }
-            Text(verbatim: UserText.aboutUnsupportedDeviceInfo2Part4)
+            Text(verbatim: aboutUnsupportedDeviceInfo2Part4)
         }
     }
 }

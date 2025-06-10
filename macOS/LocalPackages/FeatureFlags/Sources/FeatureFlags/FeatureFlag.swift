@@ -100,7 +100,10 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatSidebar
 
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
-    case osSupportPretendImOnBigSur
+    case osSupportForceUnsupportedMessage
+
+    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    case osSupportForceWillSoonDropSupportMessage
 
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case willSoonDropBigSurSupport
@@ -149,7 +152,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .canScanUrlBasedSyncSetupBarcodes,
                 .removeWWWInCanonicalizationInThreatProtection,
                 .aiChatSidebar,
-                .osSupportPretendImOnBigSur,
+                .osSupportForceUnsupportedMessage,
+                .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport:
             return true
         case .debugMenu,
@@ -233,7 +237,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
             return .internalOnly()
-        case .osSupportPretendImOnBigSur:
+        case .osSupportForceUnsupportedMessage:
+            return .disabled
+        case .osSupportForceWillSoonDropSupportMessage:
             return .disabled
         case .willSoonDropBigSurSupport:
             return .internalOnly()

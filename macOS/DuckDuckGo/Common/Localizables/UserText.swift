@@ -846,8 +846,8 @@ struct UserText {
     static func aboutWillSoonBeUnsupportedDeviceInfo2Part2(version: String) -> String {
         return String(format: "update to macOS %@", version)
     }
-    static let aboutWillSoonBeUnsupportedDeviceInfo2Part3 = "or later to continue receiving DuckDuckGo browser updates"
-    static let aboutWillSoonBeUnsupportedDeviceInfo2Part4 = ". You can keep using your current version of the browser, but it will soon stop receiving updates."
+    static let aboutWillSoonBeUnsupportedDeviceInfo2Part3 = "or later to continue receiving DuckDuckGo"
+    static let aboutWillSoonBeUnsupportedDeviceInfo2Part4 = "browser updates. You can keep using your current version of the browser, but it will soon stop receiving updates."
     static let aboutWillSoonBeUnsupportedDeviceInfoAlertHeader = NSLocalizedString("preferences.about.will-soon-be-unsupported-device-info-alert-header", value: "Your version of macOS will soon be unsupported.", comment: "This string represents the header for an alert informing the user that their version of macOS will soon be unsupported")
 
     static func moreAt(url: String) -> String {

@@ -64,6 +64,9 @@ extension OperatingSystemVersion: @retroactive Comparable {
 }
 
 final class SupportedOSChecker {
+    static let ddgUnsupportedVersion = OperatingSystemVersion(majorVersion: 10,
+                                                            minorVersion: 15,
+                                                            patchVersion: 0)
     static let ddgMinBigSurVersion = OperatingSystemVersion(majorVersion: 11,
                                                             minorVersion: 4,
                                                             patchVersion: 0)
@@ -75,7 +78,11 @@ final class SupportedOSChecker {
             return currentOSVersionOverride
         }
 
-        guard !featureFlagger.isFeatureOn(.osSupportPretendImOnBigSur) else {
+        guard !featureFlagger.isFeatureOn(.osSupportForceUnsupportedMessage) else {
+            return Self.ddgUnsupportedVersion
+        }
+
+        guard !featureFlagger.isFeatureOn(.osSupportForceWillSoonDropSupportMessage) else {
             return Self.ddgMinBigSurVersion
         }
 

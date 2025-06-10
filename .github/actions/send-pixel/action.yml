@@ -1,6 +1,10 @@
 name: 'Send Pixel'
 description: 'Send a pixel tracking request'
 inputs:
+  base-url:
+    description: 'Base URL of the pixel to send'
+    required: false
+    default: 'https://improving.duckduckgo.com/t/'
   pixel-name:
     description: 'Name of the pixel to send'
     required: true
@@ -14,7 +18,7 @@ runs:
     - name: Send pixel request
       shell: bash
       run: |
-        PIXEL_URL="${{ vars.PIXEL_BASE_URL }}${{ inputs.pixel-name }}"
+        PIXEL_URL="${{ inputs.base-url }}${{ inputs.pixel-name }}"
 
         # Construct workflow URL automatically (same format as env.WORKFLOW_URL)
         WORKFLOW_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}"

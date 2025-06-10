@@ -162,7 +162,7 @@ class SwitchBarTextEntryView: UIView {
         textView.showsVerticalScrollIndicator = contentExceedsMaxHeight
 
         if contentExceedsMaxHeight {
-            let bottom = NSMakeRange(textView.text.count, 0)
+            let bottom = NSRange(location: textView.text.count, length: 0)
             textView.scrollRangeToVisible(bottom)
         }
     }
@@ -170,7 +170,7 @@ class SwitchBarTextEntryView: UIView {
     private func setupSubscriptions() {
         handler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] newMode in
+            .sink { [weak self] _ in
                 self?.updateForCurrentMode()
             }
             .store(in: &cancellables)

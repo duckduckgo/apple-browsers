@@ -122,6 +122,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tld = TLD()
     let privacyFeatures: AnyPrivacyFeatures
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
+    let fireCoordinator: FireCoordinator
+    let permissionManager: PermissionManager
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -136,6 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats: privacyStats,
         freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
         tld: tld,
+        fireCoordinator: fireCoordinator,
         keyValueStore: keyValueStore
     )
 
@@ -469,13 +472,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if AppVersion.runType.requiresEnvironment {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
             faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db))
         } else {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
             faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil))
         }
 #else
         fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
         faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db))
 #endif
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
@@ -488,6 +494,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager, appearancePreferences: appearancePreferences)
+
+        fireCoordinator = FireCoordinator(tld: tld)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -503,6 +511,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     bookmarkManager: bookmarkManager,
                     historyCoordinator: historyCoordinator,
                     fireproofDomains: fireproofDomains,
+                    fireCoordinator: fireCoordinator,
                     tld: tld
                 ),
                 database: database.db
@@ -524,6 +533,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 bookmarkManager: bookmarkManager,
                 historyCoordinator: historyCoordinator,
                 fireproofDomains: fireproofDomains,
+                fireCoordinator: fireCoordinator,
                 tld: tld
             ),
             database: database.db
@@ -1168,7 +1178,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setUpAutoClearHandler() {
         let autoClearHandler = AutoClearHandler(preferences: dataClearingPreferences,
-                                                fireViewModel: FireCoordinator.fireViewModel,
+                                                fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {

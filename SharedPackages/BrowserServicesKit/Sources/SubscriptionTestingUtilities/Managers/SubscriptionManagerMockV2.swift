@@ -26,6 +26,8 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
     public var email: String?
 
+    public var isEligibleForFreeTrialResult: Bool = false
+
     public init() {}
 
     public static var environment: Subscription.SubscriptionEnvironment?
@@ -234,5 +236,9 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
     public func isSubscriptionPresent() -> Bool {
         resultSubscription != nil
+    }
+
+    public func isUserEligibleForFreeTrial() -> Bool {
+        isEligibleForFreeTrialResult
     }
 }

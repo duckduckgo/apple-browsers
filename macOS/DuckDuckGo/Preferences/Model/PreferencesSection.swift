@@ -50,7 +50,7 @@ struct PreferencesSection: Hashable, Identifiable {
                 panes.append(.aiChat)
             }
 
-            return [.general] + panes.sorted { $0.displayName < $1.displayName }
+            return [.general] + panes.sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
         }()
 
 #if APPSTORE

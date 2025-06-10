@@ -38,7 +38,7 @@ extension Preferences {
                     }
                 }
 
-                PreferencePaneSection {
+                PreferencePaneSection(UserText.duckAIShortcuts) {
                     ToggleMenuItem(UserText.aiChatShowInAddressBarToggle,
                                    isOn: $model.showShortcutInAddressBar)
                     .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")

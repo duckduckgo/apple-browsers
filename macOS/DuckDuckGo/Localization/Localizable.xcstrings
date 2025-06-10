@@ -1543,7 +1543,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "DuckDuckGo AI features are private, useful, and optional. Your chats are not used to train AI."
+            "value" : "DuckDuckGo AI features are private and optional. Your data is not used to train AI."
           }
         }
       }
@@ -58712,6 +58712,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Загрузки"
+          }
+        }
+      }
+    },
+    "preferences.duck-ai-shortcuts" : {
+      "comment" : "Title of a subsection in preferences containing shortcut preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Shortcuts"
           }
         }
       }

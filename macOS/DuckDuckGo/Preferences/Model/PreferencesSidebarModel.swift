@@ -59,6 +59,9 @@ final class PreferencesSidebarModel: ObservableObject {
     private let identityTheftRestorationSubject = PassthroughSubject<StatusIndicator, Never>()
     public let identityTheftRestorationUpdates: AnyPublisher<StatusIndicator, Never>
 
+    private let paidAIChatSubject = PassthroughSubject<StatusIndicator, Never>()
+    public let paidAIChatUpdates: AnyPublisher<StatusIndicator, Never>
+
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
     private var isInitialSelectedPanePixelFired = false
@@ -93,6 +96,7 @@ final class PreferencesSidebarModel: ObservableObject {
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
         self.identityTheftRestorationUpdates = identityTheftRestorationSubject.eraseToAnyPublisher()
+        self.paidAIChatUpdates = paidAIChatSubject.eraseToAnyPublisher()
 
         resetTabSelectionIfNeeded()
 
@@ -288,6 +292,10 @@ final class PreferencesSidebarModel: ObservableObject {
 
                 if self.currentSubscriptionState.personalInformationRemovalStatus != updatedState.personalInformationRemovalStatus {
                     personalInformationRemovalSubject.send(updatedState.personalInformationRemovalStatus)
+                }
+
+                if self.currentSubscriptionState.paidDuckAIRestorationStatus != updatedState.paidDuckAIRestorationStatus {
+                    paidAIChatSubject.send(updatedState.paidDuckAIRestorationStatus)
                 }
 
                 if self.currentSubscriptionState.identityTheftRestorationStatus != updatedState.identityTheftRestorationStatus {

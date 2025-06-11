@@ -56,11 +56,9 @@ final class RootViewV2Tests: XCTestCase {
         let rootView = Preferences.RootViewV2(
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
-            subscriptionUIHandler: subscriptionUIHandler
-        ) { content in
-            self.showTabCalled = true
-            self.showTabContent = content
-        }
+            subscriptionUIHandler: subscriptionUIHandler,
+            showTab: {_ in },
+            )
 
         // Then
         let model = rootView.paidAIChatModel!
@@ -99,6 +97,7 @@ final class RootViewV2Tests: XCTestCase {
 
     func testPaidAIChatViewModel_OpenURL() throws {
         let expectation = expectation(description: "Wait for showTab to be called")
+        subscriptionManager.resultURL = URL.duckDuckGo
 
         // Given
         let rootView = Preferences.RootViewV2(
@@ -119,6 +118,7 @@ final class RootViewV2Tests: XCTestCase {
         // Then
         wait(for: [expectation], timeout: 1.0)
         XCTAssertTrue(showTabCalled, "Should call showTab")
+        XCTAssertEqual(subscriptionManager.subscriptionURL, .faq)
         if case .subscription = showTabContent {
             // Success
         } else {

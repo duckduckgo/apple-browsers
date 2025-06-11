@@ -62,7 +62,9 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
     }
 
     public var resultURL: URL!
+    public var subscriptionURL: SubscriptionURL?
     public func url(for type: Subscription.SubscriptionURL) -> URL {
+        subscriptionURL = type
         return resultURL
     }
 

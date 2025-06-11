@@ -28,12 +28,12 @@ class SwitchBarTextEntryView: UIView {
         static let fontSize: CGFloat = 16
 
         // Text container insets
-        static let textTopInset: CGFloat = 16
+        static let textTopInset: CGFloat = 12
         static let textBottomInset: CGFloat = 8
         static let textHorizontalInset: CGFloat = 12
 
         // Placeholder positioning
-        static let placeholderTopOffset: CGFloat = 16
+        static let placeholderTopOffset: CGFloat = 12
         static let placeholderHorizontalOffset: CGFloat = 16
 
         // Clear button

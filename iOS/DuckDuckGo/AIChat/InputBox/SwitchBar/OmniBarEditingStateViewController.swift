@@ -42,8 +42,6 @@ final class OmniBarEditingStateViewController: UIViewController {
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     private var topSwitchBarConstraint: NSLayoutConstraint?
 
-    private var textEntryHeightConstraint: NSLayoutConstraint?
-
     internal init(switchBarHandler: any SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
         super.init(nibName: nil, bundle: nil)

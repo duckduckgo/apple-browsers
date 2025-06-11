@@ -42,7 +42,6 @@ class SwitchBarViewController: UIViewController {
     private var collapsedStateConstraint: NSLayoutConstraint?
     private var expandedStateConstraint: NSLayoutConstraint?
     private var segmentedControlTopConstraint: NSLayoutConstraint?
-    private var textEntryHeightConstraint: NSLayoutConstraint?
 
     private var isExpanded = false
 

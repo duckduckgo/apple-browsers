@@ -63,7 +63,6 @@ public final class DataBrokerProtectionManager {
         do {
             vault = try vaultFactory.makeVault(reporter: reporter)
         } catch let error {
-            assertionFailure("Failed to make secure storage vault")
             pixelHandler.fire(.mainAppSetUpFailedSecureVaultInitFailed(error: error))
             return nil
         }

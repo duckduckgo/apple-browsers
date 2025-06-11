@@ -610,12 +610,15 @@ extension AutofillUserScript {
         } else if request.mainType == .creditCards {
             Logger.autofill.debug("Incoming getAutofillData request")
             
+            let messageType = request.mainType.rawValue
+            registerHandler(for: messageType, handler: replyHandler)
+
             vaultDelegate?.autofillUserScriptDidRequestCreditCard(self, trigger: request.trigger) { [weak self] creditCard, action in
                 let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
 
                 if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
                     Logger.autofill.debug("Outgoing getAutofillData response \(jsonString)")
-                    replyHandler(jsonString)
+                    self?.completeHandler(for: messageType, withResponse: jsonString)
                 }
             }
         }

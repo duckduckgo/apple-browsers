@@ -19,7 +19,6 @@
 import Common
 import Foundation
 import ObjectiveC
-import TestsObjCExtensions
 import WebKit
 
 @testable import DuckDuckGo_Privacy_Browser

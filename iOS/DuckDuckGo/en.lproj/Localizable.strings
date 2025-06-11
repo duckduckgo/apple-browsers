@@ -2741,6 +2741,9 @@ Take back control of your personal information with the browser designed for dat
 /* Subscription activation pending description */
 "settings.subscription.activation.pending.description" = "This is taking longer than usual, please check back later.";
 
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai Pro";
+
 /* Data Broker protection cell subtitle for privacy pro */
 "settings.subscription.DBP.subtitle" = "Remove your info from sites that sell it";
 

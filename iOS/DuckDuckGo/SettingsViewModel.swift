@@ -904,7 +904,7 @@ extension SettingsViewModel {
 
             // Check entitlements and update state
             var currentEntitlements: [Entitlement.ProductName] = []
-            let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal]
+            let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
             for entitlement in entitlementsToCheck {
                 if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isEnabled(feature: entitlement),

@@ -147,6 +147,15 @@ struct SettingsSubscriptionView: View {
             )
         }
 
+        if subscriptionFeatures.contains(.paidAIChat) {
+            SettingsCellView(
+                label: UserText.settingsSubscriptionAiChatTitle,
+                image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
+                statusIndicator: StatusIndicatorView(status: .off),
+                isGreyedOut: true
+            )
+        }
+
         if subscriptionFeatures.contains(.identityTheftRestoration) || subscriptionFeatures.contains(.identityTheftRestorationGlobal) {
             SettingsCellView(
                 label: UserText.settingsPProITRTitle,
@@ -263,6 +272,20 @@ struct SettingsSubscriptionView: View {
                 )
             }
             .disabled(!hasDBPEntitlement)
+        }
+
+        if subscriptionFeatures.contains(.paidAIChat) {
+            let hasAIChatEntitlement = userEntitlements.contains(.paidAIChat)
+
+            NavigationLink(destination: LazyView(SubscriptionPIRView()), isActive: $isShowingDBP) {
+                SettingsCellView(
+                    label: UserText.settingsSubscriptionAiChatTitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
+                    statusIndicator: StatusIndicatorView(status: hasAIChatEntitlement ? .on : .off),
+                    isGreyedOut: !hasAIChatEntitlement
+                )
+            }
+            .disabled(!hasAIChatEntitlement)
         }
 
         if subscriptionFeatures.contains(.identityTheftRestoration) || subscriptionFeatures.contains(.identityTheftRestorationGlobal) {

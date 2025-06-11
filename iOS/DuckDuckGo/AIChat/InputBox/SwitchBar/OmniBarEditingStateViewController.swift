@@ -37,17 +37,19 @@ final class OmniBarEditingStateViewController: UIViewController {
     private lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
 
+    var expectedStartFrame: CGRect?
+
     private var textEntryHeightConstraint: NSLayoutConstraint?
 
     internal init(switchBarHandler: any SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
         super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -62,14 +64,42 @@ final class OmniBarEditingStateViewController: UIViewController {
     }
 
     private func animateAppearance() {
+
+        // Prepare initial state
+        var heightConstraint: NSLayoutConstraint?
+        if let expectedStartFrame {
+            switchBarVC.view.topAnchor.constraint(equalTo: view.topAnchor, constant: expectedStartFrame.minY).isActive = true
+            heightConstraint = switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height)
+            heightConstraint?.isActive = true
+        }
+        self.switchBarVC.setExpanded(false)
+        self.switchBarVC.view.alpha = 0.0
         self.view.layoutIfNeeded()
 
-        UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseInOut]) {
+        // Create animators
+        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: 0.15, curve: .easeIn) {
             self.view.backgroundColor = UIColor(designSystemColor: .background)
+        }
+
+        let fadeInAnimator = UIViewPropertyAnimator(duration: 0.25, curve: .easeIn) {
+            self.switchBarVC.view.alpha = 1.0
+        }
+
+        let expandAnimator = UIViewPropertyAnimator(duration: 0.3, dampingRatio: 0.7) {
             self.switchBarVC.setExpanded(true)
+            heightConstraint?.isActive = false
             self.switchBarVC.view.layoutIfNeeded()
+        }
+
+        // Schedule animations
+        backgroundFadeAnimator.addCompletion { _ in
+            expandAnimator.startAnimation()
             self.switchBarVC.focusTextField()
         }
+
+        // Start animations
+        backgroundFadeAnimator.startAnimation()
+        fadeInAnimator.startAnimation()
     }
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
@@ -78,9 +108,13 @@ final class OmniBarEditingStateViewController: UIViewController {
     }
 
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
+
         self.switchBarVC.view.layoutIfNeeded()
         UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseInOut], animations: {
             self.switchBarVC.setExpanded(false)
+            if let expectedStartFrame = self.expectedStartFrame {
+                self.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height).isActive = true
+            }
             self.switchBarVC.view.layoutIfNeeded()
             self.view.backgroundColor = .clear
         }, completion: { _ in
@@ -98,7 +132,7 @@ final class OmniBarEditingStateViewController: UIViewController {
         view.addSubview(switchBarVC.view)
         switchBarVC.view.translatesAutoresizingMaskIntoConstraints = false
 
-        textEntryHeightConstraint = switchBarVC.view.heightAnchor.constraint(equalToConstant: 44)
+//        textEntryHeightConstraint = switchBarVC.view.heightAnchor.constraint(equalToConstant: 44)
 
         switchBarVC.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
         switchBarVC.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor).isActive = true

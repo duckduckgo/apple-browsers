@@ -31,7 +31,8 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     // Constraint references for dynamic sizing
     private var actionViewHeightConstraint: NSLayoutConstraint?
-    private var textEntryHeightConstraint: NSLayoutConstraint?
+    private var actionViewBottomConstraint: NSLayoutConstraint?
+//    private var textEntryHeightConstraint: NSLayoutConstraint?
 
     private var cancellables = Set<AnyCancellable>()
     private var isExpanded = false
@@ -161,7 +162,7 @@ class SwitchBarTextEntryViewController: UIViewController {
         guard let actionView = actionViewController?.view else { return }
 
         actionViewHeightConstraint = actionView.heightAnchor.constraint(equalToConstant: 60)
-//        textEntryHeightConstraint = textEntryView.heightAnchor.constraint(equalToConstant: 44)
+        actionViewBottomConstraint = actionView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
 
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -176,8 +177,8 @@ class SwitchBarTextEntryViewController: UIViewController {
             actionView.topAnchor.constraint(equalTo: textEntryView.bottomAnchor, constant: 8),
             actionView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             actionView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            actionView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
-            actionViewHeightConstraint!
+            actionViewBottomConstraint!,
+//            actionViewHeightConstraint!
         ])
 
         updateConstraintsForCurrentMode()
@@ -187,9 +188,10 @@ class SwitchBarTextEntryViewController: UIViewController {
         // Commented out to have a proper transition
 //        updateActionViewVisibility()
 
-        self.actionViewHeightConstraint?.constant = showsActionView ? 0 : 60
-        self.actionViewController?.view.alpha = showsActionView ? 0 : 1
-        self.textEntryHeightConstraint?.isActive = !isExpanded
+//        self.actionViewHeightConstraint?.constant = showsActionView ? 0 : 60
+        self.actionViewBottomConstraint?.isActive = showsActionView
+        self.actionViewController?.view.alpha = showsActionView ? 1 : 0
+//        self.textEntryHeightConstraint?.isActive = !isExpanded
     }
 
     private func setupSubscriptions() {

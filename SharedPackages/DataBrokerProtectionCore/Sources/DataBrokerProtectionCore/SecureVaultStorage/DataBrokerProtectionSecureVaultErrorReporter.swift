@@ -48,4 +48,13 @@ public final class DataBrokerProtectionSecureVaultErrorReporter: SecureVaultRepo
             pixelHandler.fire(.secureVaultError(error: error))
         }
     }
+
+    public func secureVaultKeyStoreEvent(_ event: SecureStorageKeyStoreEvent) {
+        switch event {
+        case .databaseRecreation:
+            pixelHandler.fire(.secureVaultDatabaseRecreated)
+        default:
+            break
+        }
+    }
 }

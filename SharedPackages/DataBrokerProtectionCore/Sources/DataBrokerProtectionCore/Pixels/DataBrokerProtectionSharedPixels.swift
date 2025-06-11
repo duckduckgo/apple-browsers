@@ -104,6 +104,7 @@ public enum DataBrokerProtectionSharedPixels {
     case secureVaultKeyStoreReadError(error: Error, field: String, serviceName: String)
     case secureVaultKeyStoreUpdateError(error: Error)
     case secureVaultError(error: Error)
+    case secureVaultDatabaseRecreated
     case failedToOpenDatabase(error: Error)
     case parentChildMatches(parent: String, child: String, value: Int)
 
@@ -237,6 +238,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .secureVaultKeyStoreReadError: return "dbp_secure_vault_keystore_read_error"
         case .secureVaultKeyStoreUpdateError: return "dbp_secure_vault_keystore_update_error"
         case .secureVaultError: return "dbp_secure_vault_error"
+        case .secureVaultDatabaseRecreated: return "dbp_secure_vault_database_recreated"
         case .failedToOpenDatabase: return "dbp_failed-to-open-database_error"
 
             // KPIs - engagement
@@ -419,6 +421,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .secureVaultInitError,
                 .secureVaultKeyStoreUpdateError,
                 .secureVaultError,
+                .secureVaultDatabaseRecreated,
                 .failedToOpenDatabase:
             return [:]
         case .secureVaultKeyStoreReadError(_, let field, _):
@@ -508,6 +511,8 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .emptyAccessTokenDaily:
                 self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
+            case .secureVaultDatabaseRecreated:
+                self.pixelKit.fire(event, frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .httpError(let error, _, _, _),
                     .actionFailedError(let error, _, _, _, _),
                     .otherError(let error, _, _):

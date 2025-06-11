@@ -52,6 +52,7 @@ public enum SecureStorageKeyStoreEvent {
     case l1KeyMigration
     case l2KeyMigration
     case l2KeyPasswordMigration
+    case databaseRecreation
 }
 
 public protocol SecureStorageKeyStoreProvider {

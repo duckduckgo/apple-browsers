@@ -27,6 +27,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onPromptSubmitted(_ query: String)
 }
 
+/// Later: Inject auto suggestions here.
 final class OmniBarEditingStateViewController: UIViewController {
     var textAreaView: UIView {
         switchBarVC.textEntryViewController.textEntryView
@@ -62,10 +63,12 @@ final class OmniBarEditingStateViewController: UIViewController {
             self.view.backgroundColor = UIColor(designSystemColor: .background)
             self.switchBarVC.setExpanded(true)
             self.switchBarVC.view.layoutIfNeeded()
+            self.switchBarVC.focusTextField()
         }
     }
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
+        switchBarVC.unfocusTextField()
         dismissAnimated()
     }
 

@@ -65,6 +65,14 @@ class SwitchBarTextEntryViewController: UIViewController {
         updateConstraintsForCurrentMode()
     }
 
+    func focusTextField() {
+        textEntryView.becomeFirstResponder()
+    }
+
+    func unfocusTextField() {
+        textEntryView.resignFirstResponder()
+    }
+
     private func setupViews() {
         setupContainerViewAppearance()
         view.addSubview(containerView)

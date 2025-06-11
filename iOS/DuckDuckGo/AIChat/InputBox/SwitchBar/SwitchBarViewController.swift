@@ -99,6 +99,14 @@ class SwitchBarViewController: UIViewController {
         // })
     }
 
+    func focusTextField() {
+        textEntryViewController.focusTextField()
+    }
+
+    func unfocusTextField() {
+        textEntryViewController.unfocusTextField()
+    }
+
     private func setupViews() {
         view.backgroundColor = UIColor.systemBackground
 

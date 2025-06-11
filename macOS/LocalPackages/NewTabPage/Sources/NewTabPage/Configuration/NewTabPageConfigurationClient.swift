@@ -99,6 +99,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
             .init(id: .nextSteps),
+            .init(id: .search),
             .init(id: .favorites),
             .init(id: .protections)
         ]

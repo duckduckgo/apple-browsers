@@ -33,6 +33,8 @@ on:
         required: true
       ASANA_ACCESS_TOKEN:
         required: true
+      GH_RO_PAT:
+        required: true
       MATCH_PASSWORD:
         required: true
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
@@ -454,6 +456,7 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.tests.outputs.commit_author }}
+          github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:
     name: Close Asana Task
@@ -472,3 +475,4 @@ jobs:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_POST_MERGE_SECTION_ID }}
+          github-token: ${{ secrets.GH_RO_PAT }}

@@ -75,6 +75,9 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     private let bookmarkManager: BookmarkManager
     private let bookmarkDragDropManager: BookmarkDragDropManager
+    private let contentBlocking: ContentBlockingProtocol
+    private let fireproofDomains: FireproofDomains
+    private let permissionManager: PermissionManagerProtocol
     private let networkProtectionPopoverManager: NetPPopoverManager
     private let isBurner: Bool
 
@@ -83,12 +86,18 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     init(
         bookmarkManager: BookmarkManager,
         bookmarkDragDropManager: BookmarkDragDropManager,
+        contentBlocking: ContentBlockingProtocol,
+        fireproofDomains: FireproofDomains,
+        permissionManager: PermissionManagerProtocol,
         networkProtectionPopoverManager: NetPPopoverManager,
         autofillPopoverPresenter: AutofillPopoverPresenter,
         isBurner: Bool
     ) {
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
+        self.contentBlocking = contentBlocking
+        self.fireproofDomains = fireproofDomains
+        self.permissionManager = permissionManager
         self.networkProtectionPopoverManager = networkProtectionPopoverManager
         self.autofillPopoverPresenter = autofillPopoverPresenter
         self.isBurner = isBurner
@@ -324,7 +333,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     func openPrivacyDashboard(for tabViewModel: TabViewModel, from button: MouseOverButton, entryPoint: PrivacyDashboardEntryPoint) {
         guard closeTransientPopovers() else { return }
 
-        let popover = PrivacyDashboardPopover(entryPoint: entryPoint)
+        let popover = PrivacyDashboardPopover(entryPoint: entryPoint, contentBlocking: contentBlocking, permissionManager: permissionManager)
         popover.delegate = self
         self.privacyDashboardPopover = popover
         self.subscribePrivacyDashboardPendingUpdates(for: popover)
@@ -443,7 +452,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     }
 
     private func showSaveCredentialsPopover(usingView view: NSView, withDelegate delegate: NSPopoverDelegate) {
-        let popover = SaveCredentialsPopover()
+        let popover = SaveCredentialsPopover(fireproofDomains: fireproofDomains)
         popover.delegate = delegate
         saveCredentialsPopover = popover
         show(popover, positionedBelow: view)

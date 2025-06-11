@@ -3443,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blokiraj više od 150.000 domena označenih zbog sadržavanja zlonamjernog softvera, krađe identiteta i internetskih prevara pomoću popisa za blokiranje na razini DNS-a. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blokiranje i filtriranje sadržaja";
+"vpn.settings.dns.server.content.blocking.header" = "Blokiranje zlonamjernog sadržaja";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Blokiraj rizične domene";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Blokiranje prevara";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

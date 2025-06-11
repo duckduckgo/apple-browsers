@@ -86,9 +86,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
-    /// Umbrella flag for experimental browser theming and appearance
+    /// Flag for visual updates changes
     /// https://app.asana.com/0/1206226850447395/1209291055975934
-    case experimentalBrowserTheming
+    case visualUpdates
 
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
@@ -117,6 +117,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1198964220583541/task/1210272333893232?focus=true
     case autofillPasswordVariantCategorization
+
+    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
+    case paidAIChat
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
     case canInterceptSyncSetupUrls
@@ -154,7 +157,7 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .textZoom,
-             .experimentalBrowserTheming,
+             .visualUpdates,
              .networkProtectionRiskyDomainsProtection,
              .privacyProAuthV2,
              .scamSiteProtection,
@@ -168,6 +171,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillPasswordVariantCategorization,
              .syncSetupBarcodeIsUrlBased,
              .canScanUrlBasedSyncSetupBarcodes,
+             .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice:
             return true
@@ -260,8 +264,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
-        case .experimentalBrowserTheming:
-            return .remoteReleasable(.subfeature(ExperimentalBrowserThemingSubfeature.onByDefault))
+        case .visualUpdates:
+            return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .onboardingSetAsDefaultBrowser:
@@ -284,6 +288,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .autofillPasswordVariantCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
+        case .paidAIChat:
+            return .disabled
         case .canInterceptSyncSetupUrls:
             return .remoteReleasable(.subfeature(SyncSubfeature.canInterceptSyncSetupUrls))
         case .exchangeKeysToSyncWithAnotherDevice:

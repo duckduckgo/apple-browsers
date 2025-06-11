@@ -134,7 +134,7 @@ final class DuckPlayerPreferences: ObservableObject {
     }
 
     init(persistor: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
          internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider) {
         self.persistor = persistor
         duckPlayerMode = .init(persistor.duckPlayerModeBool)

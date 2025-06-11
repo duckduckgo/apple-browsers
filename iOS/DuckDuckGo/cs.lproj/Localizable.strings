@@ -3443,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blokuj víc než 150 000 domén, u kterých bylo nahlášené hostování malwaru, phishingové útoky a online podvody, pomocí seznamu blokování na úrovni DNS. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blokování a filtrování obsahu";
+"vpn.settings.dns.server.content.blocking.header" = "Blokování škodlivého obsahu";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Blokování rizikových domén";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Blokování podvodů";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

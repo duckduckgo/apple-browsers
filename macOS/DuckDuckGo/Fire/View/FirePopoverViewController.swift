@@ -21,6 +21,7 @@ import Combine
 import Common
 import History
 import os.log
+import PixelKit
 
 protocol FirePopoverViewControllerDelegate: AnyObject {
 
@@ -79,8 +80,9 @@ final class FirePopoverViewController: NSViewController {
           fireViewModel: FireViewModel,
           tabCollectionViewModel: TabCollectionViewModel,
           historyCoordinating: HistoryCoordinating = NSApp.delegateTyped.historyCoordinator,
-          fireproofDomains: FireproofDomains = FireproofDomains.shared,
-          faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager) {
+          fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
+          faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager,
+          tld: TLD = NSApp.delegateTyped.tld) {
         self.fireViewModel = fireViewModel
         self.historyCoordinating = historyCoordinating
         self.firePopoverViewModel = FirePopoverViewModel(fireViewModel: fireViewModel,
@@ -88,7 +90,7 @@ final class FirePopoverViewController: NSViewController {
                                                          historyCoordinating: historyCoordinating,
                                                          fireproofDomains: fireproofDomains,
                                                          faviconManagement: faviconManagement,
-                                                         tld: ContentBlocking.shared.tld,
+                                                         tld: tld,
                                                          onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager)
 
         super.init(coder: coder)
@@ -147,6 +149,9 @@ final class FirePopoverViewController: NSViewController {
     }
 
     @IBAction func openDetailsButtonAction(_ sender: Any) {
+        // Fire pixel when fire popover details are viewed
+        PixelKit.fire(GeneralPixel.fireButtonDetailsViewed, frequency: .dailyAndCount)
+
         toggleDetails()
     }
 

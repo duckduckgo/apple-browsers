@@ -68,7 +68,7 @@ public enum PrivacyFeature: String {
     case htmlHistoryPage
     case tabManager
     case webViewStateRestoration
-    case experimentalBrowserTheming
+    case experimentalTheming
     case setAsDefaultAndAddToDock
     case contentScopeExperiments
     case extendedOnboarding
@@ -230,6 +230,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProAuthV2
     case privacyProOnboardingPromotion
     case privacyProFreeTrial
+    case paidAIChat
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {
@@ -294,8 +295,8 @@ public enum OnboardingSubfeature: String, PrivacySubfeature {
     case setAsDefaultBrowserExperiment
 }
 
-public enum ExperimentalBrowserThemingSubfeature: String, PrivacySubfeature {
-    public var parent: PrivacyFeature { .experimentalBrowserTheming }
+public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .experimentalTheming }
 
-    case onByDefault // Rollout
+    case visualUpdates // Rollout
 }

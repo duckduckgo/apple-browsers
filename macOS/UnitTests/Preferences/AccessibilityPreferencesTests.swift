@@ -192,12 +192,3 @@ class MockAccessibilityPreferencesPersistor: AccessibilityPreferencesPersistor {
     var zoomPerWebsite: [String: CGFloat] = [:]
     var defaultPageZoom: CGFloat = DefaultZoomValue.percent100.rawValue
 }
-
-class MockFireproofDomains: FireproofDomains {
-    init(domains: [String]) {
-        super.init(store: FireproofDomainsStoreMock())
-        for domain in domains {
-            super.add(domain: domain)
-        }
-    }
-}

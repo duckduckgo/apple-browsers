@@ -124,6 +124,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
                  case .identityTheftRestoration, .identityTheftRestorationGlobal:
                      UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
                      self.state.selectedFeature = .itr
+                 case .paidAIChat:
+                     // Follow up: Implement paidAIChat selection
+                     break
                  case .unknown:
                      break
                  }

@@ -140,7 +140,7 @@ struct LargeOmniBarState {
         let showBackButton = true
         let showForwardButton = true
         let showBookmarksButton = true
-        let showAccessoryButton = true
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -175,7 +175,7 @@ struct LargeOmniBarState {
         let showBackButton = true
         let showForwardButton = true
         let showBookmarksButton = true
-        let showAccessoryButton = true
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -210,7 +210,7 @@ struct LargeOmniBarState {
         let showBackButton = true
         let showForwardButton = true
         let showBookmarksButton = true
-        let showAccessoryButton = true
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = true
         let showSearchLoupe = false

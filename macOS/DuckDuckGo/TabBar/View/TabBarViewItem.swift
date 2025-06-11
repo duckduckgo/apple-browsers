@@ -200,7 +200,6 @@ final class TabBarItemCellView: NSView {
 
     fileprivate let mouseOverView = {
         let mouseOverView = MouseOverView()
-        mouseOverView.mouseOverColor = .tabMouseOver
         return mouseOverView
     }()
 
@@ -275,6 +274,7 @@ final class TabBarItemCellView: NSView {
             .layerMinXMaxYCorner,
             .layerMaxXMaxYCorner
         ]
+        mouseOverView.mouseOverColor = visualStyle.tabStyleProvider.hoverTabColor
 
         if visualStyle.tabStyleProvider.shouldShowSShapedTab {
             addSubview(leftRampView)
@@ -480,6 +480,8 @@ final class TabBarViewItem: NSCollectionViewItem {
             updateSubviews()
         }
     }
+
+    weak var fireproofDomains: FireproofDomains?
 
     private var currentURL: URL?
     private var cancellables = Set<AnyCancellable>()
@@ -959,11 +961,15 @@ extension TabBarViewItem: NSMenuDelegate {
     }
 
     private func addFireproofMenuItem(to menu: NSMenu) {
+        guard let fireproofDomains else {
+            assertionFailure("TabBarViewItem.fireproofDomains is not set")
+            return
+        }
         var menuItem = NSMenuItem(title: UserText.fireproofSite, action: #selector(fireproofSiteAction(_:)), keyEquivalent: "")
         menuItem.isEnabled = false
 
         if let url = currentURL, url.canFireproof {
-            if FireproofDomains.shared.isFireproof(fireproofDomain: url.host ?? "") {
+            if fireproofDomains.isFireproof(fireproofDomain: url.host ?? "") {
                 menuItem = NSMenuItem(title: UserText.removeFireproofing, action: #selector(removeFireproofingAction(_:)), keyEquivalent: "")
             }
             menuItem.isEnabled = true

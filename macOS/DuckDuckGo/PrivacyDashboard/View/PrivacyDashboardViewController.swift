@@ -42,8 +42,9 @@ final class PrivacyDashboardViewController: NSViewController {
     private var webView: WKWebView!
     private let privacyDashboardController: PrivacyDashboardController
     private var privacyDashboardDidTriggerDismiss: Bool = false
+    private let contentBlocking: ContentBlockingProtocol
 
-    public let rulesUpdateObserver = ContentBlockingRulesUpdateObserver()
+    public let rulesUpdateObserver: ContentBlockingRulesUpdateObserver
 
     private let brokenSiteReporter: BrokenSiteReporter
 
@@ -55,7 +56,7 @@ final class PrivacyDashboardViewController: NSViewController {
         }, keyValueStoring: UserDefaults.standard)
     }()
 
-    private let permissionHandler = PrivacyDashboardPermissionHandler()
+    private let permissionHandler: PrivacyDashboardPermissionHandler
     private var preferredMaxHeight: CGFloat = Constants.initialContentHeight
     func setPreferredMaxHeight(_ height: CGFloat) {
         guard height > Constants.initialContentHeight else { return }
@@ -80,14 +81,20 @@ final class PrivacyDashboardViewController: NSViewController {
 
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
-        let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
+         contentBlocking: ContentBlockingProtocol,
+         permissionManager: PermissionManagerProtocol) {
+        let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: contentBlocking.privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
+        self.permissionHandler = PrivacyDashboardPermissionHandler(permissionManager: permissionManager)
         self.privacyDashboardController = PrivacyDashboardController(privacyInfo: privacyInfo,
                                                                      entryPoint: entryPoint,
                                                                      toggleReportingManager: toggleReportingManager,
                                                                      eventMapping: privacyDashboardEvents)
+        self.contentBlocking = contentBlocking
+        // swiftlint:disable:next force_cast
+        self.rulesUpdateObserver = ContentBlockingRulesUpdateObserver(userContentUpdating: (contentBlocking as! AppContentBlocking).userContentUpdating)
+
         brokenSiteReporter = {
             BrokenSiteReporter(pixelHandler: { parameters in
                 PixelKit.fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
@@ -182,20 +189,20 @@ final class PrivacyDashboardViewController: NSViewController {
             return
         }
 
-        let configuration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
+        let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         if state.isProtected && configuration.isUserUnprotected(domain: domain) {
             configuration.userEnabledProtection(forDomain: domain)
             PixelKit.fire(NonStandardEvent(GeneralPixel.dashboardProtectionAllowlistRemove(triggerOrigin: state.eventOrigin.screen.rawValue)))
         } else {
             configuration.userDisabledProtection(forDomain: domain)
             PixelKit.fire(NonStandardEvent(GeneralPixel.dashboardProtectionAllowlistAdd(triggerOrigin: state.eventOrigin.screen.rawValue)))
-            let tdsEtag = ContentBlocking.shared.trackerDataManager.fetchedData?.etag ?? ""
+            let tdsEtag = contentBlocking.trackerDataManager.fetchedData?.etag ?? ""
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
                 PixelKit.fire(GeneralPixel.debugBreakageExperiment, frequency: .uniqueByName, withAdditionalParameters: parameters)
             }
         }
 
-        let completionToken = ContentBlocking.shared.contentBlockingManager.scheduleCompilation()
+        let completionToken = contentBlocking.contentBlockingManager.scheduleCompilation()
         rulesUpdateObserver.startCompilation(for: domain, token: completionToken)
     }
 }
@@ -341,7 +348,7 @@ extension PrivacyDashboardViewController {
         let urlParametersRemoved = currentTab.linkProtection?.urlParametersRemoved ?? false
 
         // current domain's protection status
-        let configuration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
+        let configuration = contentBlocking.privacyConfigurationManager.privacyConfig
         let protectionsState = configuration.isFeature(.contentBlocking, enabledForDomain: currentTab.content.urlForWebView?.host)
 
         let webVitals = await calculateWebVitals(performanceMetrics: currentTab.brokenSiteInfo?.performanceMetrics, privacyConfig: configuration)
@@ -363,7 +370,7 @@ extension PrivacyDashboardViewController {
                                                osVersion: "\(ProcessInfo.processInfo.operatingSystemVersion)",
                                                manufacturer: "Apple",
                                                upgradedHttps: currentTab.privacyInfo?.connectionUpgradedTo != nil,
-                                               tdsETag: ContentBlocking.shared.contentBlockingManager.currentRules.first?.etag,
+                                               tdsETag: contentBlocking.contentBlockingManager.currentRules.first?.etag,
                                                configVersion: configuration.version,
                                                blockedTrackerDomains: blockedTrackerDomains,
                                                installedSurrogates: installedSurrogates,

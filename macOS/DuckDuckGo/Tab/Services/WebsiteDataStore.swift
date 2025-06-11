@@ -38,18 +38,12 @@ protocol WebsiteDataStore {
 
 internal class WebCacheManager {
 
-    static var shared = WebCacheManager()
-
     private let fireproofDomains: FireproofDomains
     private let websiteDataStore: WebsiteDataStore
-    private let tld: TLD
 
-    init(fireproofDomains: FireproofDomains = FireproofDomains.shared,
-         websiteDataStore: WebsiteDataStore = WKWebsiteDataStore.default(),
-         tld: TLD = ContentBlocking.shared.tld) {
+    init(fireproofDomains: FireproofDomains, websiteDataStore: WebsiteDataStore = WKWebsiteDataStore.default()) {
         self.fireproofDomains = fireproofDomains
         self.websiteDataStore = websiteDataStore
-        self.tld = tld
     }
 
     func clear(baseDomains: Set<String>? = nil) async {

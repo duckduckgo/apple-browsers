@@ -22,6 +22,8 @@ import Common
 
 public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridge {
 
+    public var isEligibleForFreeTrialResult: Bool = false
+
     public init() {}
 
     public var enabledFeatures: [Subscription.Entitlement.ProductName] = []
@@ -94,5 +96,9 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
         case .failure:
             return false
         }
+    }
+
+    public func isUserEligibleForFreeTrial() -> Bool {
+        isEligibleForFreeTrialResult
     }
 }

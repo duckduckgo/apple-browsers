@@ -47,7 +47,7 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
         privacyConfigurationManager.privacyConfig.settings(for: .aiChat)
     }
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager) {
+    init(privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager) {
         self.privacyConfigurationManager = privacyConfigurationManager
     }
 

@@ -33,9 +33,6 @@ protocol FaviconManagement: AnyObject {
     var faviconsLoadedPublisher: Published<Bool>.Publisher { get }
 
     @MainActor
-    func loadFavicons() async throws
-
-    @MainActor
     func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> Favicon?
 
     @MainActor
@@ -101,6 +98,7 @@ final class FaviconManager: FaviconManagement {
     init(
         cacheType: CacheType,
         bookmarkManager: BookmarkManager,
+        fireproofDomains: FireproofDomains,
         imageCache: ((FaviconStoring) -> FaviconImageCaching)? = nil,
         referenceCache: ((FaviconStoring) -> FaviconReferenceCaching)? = nil
     ) {
@@ -115,7 +113,7 @@ final class FaviconManager: FaviconManagement {
         self.referenceCache = referenceCache?(store) ?? FaviconReferenceCache(faviconStoring: store)
 
         Task {
-            try? await loadFavicons()
+            try? await loadFavicons(fireproofDomains)
         }
     }
 
@@ -127,11 +125,11 @@ final class FaviconManager: FaviconManagement {
     @Published private var faviconsLoaded = false
     var faviconsLoadedPublisher: Published<Bool>.Publisher { $faviconsLoaded }
 
-    func loadFavicons() async throws {
+    private func loadFavicons(_ fireproofDomains: FireproofDomains) async throws {
         try await imageCache.load()
-        await imageCache.cleanOld(except: FireproofDomains.shared, bookmarkManager: bookmarkManager)
+        await imageCache.cleanOld(except: fireproofDomains, bookmarkManager: bookmarkManager)
         try await referenceCache.load()
-        await referenceCache.cleanOld(except: FireproofDomains.shared, bookmarkManager: bookmarkManager)
+        await referenceCache.cleanOld(except: fireproofDomains, bookmarkManager: bookmarkManager)
         faviconsLoaded = true
     }
 

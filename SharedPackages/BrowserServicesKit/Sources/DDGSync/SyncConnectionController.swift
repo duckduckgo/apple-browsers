@@ -134,23 +134,27 @@ public actor SyncConnectionController: SyncConnectionControlling {
     @discardableResult
     public func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {
         let syncCodeSource = SyncCodeSource.deepLink
+        return await startPairingMode(pairingInfo, codeSource: syncCodeSource)
+    }
+
+    private func startPairingMode(_ pairingInfo: PairingInfo, codeSource: SyncCodeSource) async -> Bool {
         let syncCode: SyncCode
         do {
             syncCode = try SyncCode.decodeBase64String(pairingInfo.base64Code)
         } catch {
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown, syncCodeSource))
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown, codeSource))
             return false
         }
 
         if let exchangeKey = syncCode.exchangeKey {
-            await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: syncCodeSource)
-            return await handleExchangeKey(exchangeKey, codeSource: syncCodeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource)
+            return await handleExchangeKey(exchangeKey, codeSource: codeSource)
         } else if let connectKey = syncCode.connect {
-            await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: syncCodeSource)
-            return await handleConnectKey(connectKey, codeSource: syncCodeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: codeSource)
+            return await handleConnectKey(connectKey, codeSource: codeSource)
         } else {
-            await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: syncCodeSource)
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown, syncCodeSource))
+            await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource)
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown, codeSource))
             return false
         }
     }
@@ -168,7 +172,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
         let syncCode: SyncCode
         do {
             if canScanURLBarcodes, let url = URL(string: code), let pairingInfo = PairingInfo(url: url) {
-                return await startPairingMode(pairingInfo)
+                return await startPairingMode(pairingInfo, codeSource: codeSource)
             } else {
                 syncCode = try SyncCode.decodeBase64String(code)
             }

@@ -427,9 +427,9 @@ extension Preferences {
 
         private var aboutUnsupportedDeviceInfo2Part1: String {
             switch warning {
-            case .unsupported(let minVersion):
+            case .unsupported:
                 UserText.aboutUnsupportedDeviceInfo2Part1
-            case .willDropSupportSoon(let minVersion):
+            case .willDropSupportSoon:
                 UserText.aboutWillSoonBeUnsupportedDeviceInfo2Part1
             }
         }

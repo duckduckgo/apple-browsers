@@ -69,12 +69,13 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockStorePurchaseManager = StorePurchaseManagerMockV2()
         let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
-
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
         subscriptionManagerV2 = DefaultSubscriptionManagerV2(storePurchaseManager: mockStorePurchaseManager,
-                                                           oAuthClient: authClient,
-                                                           subscriptionEndpointService: subscriptionEndpointService,
-                                                           subscriptionEnvironment: subscriptionEnvironment,
-                                                           pixelHandler: MockPixelHandler())
+                                                             oAuthClient: authClient,
+                                                             userDefaults: userDefaults,
+                                                             subscriptionEndpointService: subscriptionEndpointService,
+                                                             subscriptionEnvironment: subscriptionEnvironment,
+                                                             pixelHandler: MockPixelHandler())
         subscriptionSuccessPixelHandler = PrivacyProSubscriptionAttributionPixelHandler()
         let mockStripePurchaseFlowV2 = StripePurchaseFlowMockV2(subscriptionOptionsResult: .failure(.noProductsFound), prepareSubscriptionPurchaseResult: .failure(.noProductsFound))
         mockUIHandler = SubscriptionUIHandlerMock { _ in }

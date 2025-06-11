@@ -68,7 +68,9 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_ios_sync_test_build_duration
+        pixel-name: m_ci_apple_ios_sync_tests_build_duration
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
     - name: Store Binary
       uses: actions/upload-artifact@v4

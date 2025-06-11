@@ -47,9 +47,8 @@ extension Preferences {
                     TextMenuTitle(UserText.aboutDuckDuckGo)
 
                     if let warning = model.osSupportWarning {
-                        UnsupportedDeviceInfoBox(wide: true, warning: warning)
+                        UnsupportedDeviceInfoBox(warning: warning)
                             .padding(.top, 10)
-                            //.padding(.leading, -20)
                     }
 
                     AboutContentSection(model: model)
@@ -384,16 +383,7 @@ extension Preferences {
 
         static let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.preferences.softwareupdate")!
 
-        var wide: Bool
         var warning: OSSupportWarning
-
-        var width: CGFloat {
-            return wide ? 510 : 320
-        }
-
-        var height: CGFloat {
-            return wide ? 130 : 200
-        }
 
         private var osVersion: String {
             return "\(ProcessInfo.processInfo.operatingSystemVersion)"

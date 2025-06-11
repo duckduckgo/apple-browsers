@@ -285,9 +285,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
         // Given
         mockStorePurchaseManager.isEligibleForFreeTrialResult = true
         let stripeEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
         let sut = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: stripeEnvironment,
             pixelHandler: MockPixelHandler()
@@ -304,9 +306,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
         // Given
         mockStorePurchaseManager.isEligibleForFreeTrialResult = true
         let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
         let sut = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: appStoreEnvironment,
             pixelHandler: MockPixelHandler()
@@ -323,9 +327,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
         // Given
         mockStorePurchaseManager.isEligibleForFreeTrialResult = false
         let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
         let sut = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: appStoreEnvironment,
             pixelHandler: MockPixelHandler()

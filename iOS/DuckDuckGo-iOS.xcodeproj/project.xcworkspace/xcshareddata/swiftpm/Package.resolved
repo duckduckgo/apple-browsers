@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "branch" : "dbajpeyi/fix/ios-prompt-cc-once-and-icons",
-        "revision" : "0d6b1d7c16c10a55d71298831db51b0f045acbcb"
+        "branch" : "dbajpeyi/feat/ios-credit-card",
+        "revision" : "7520feef7be96116a59be749b58a5b7b05e16e59"
       }
     },
     {

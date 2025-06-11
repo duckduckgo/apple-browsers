@@ -585,7 +585,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     privacyConfigurationManager: privacyConfigurationManager
                 ),
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
-                featureFlagger: self.featureFlagger
+                featureFlagger: self.featureFlagger,
+                visualStyle: self.visualStyle
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
                 windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))

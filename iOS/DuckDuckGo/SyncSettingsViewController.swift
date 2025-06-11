@@ -435,6 +435,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
 extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
+        sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
         guard shouldShowSyncEnabled else { return }
         self.rootView.model.$devices
             .removeDuplicates()
@@ -444,7 +445,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 guard let self else { return }
                 self.dismissVCAndShowRecoveryPDF()
             }.store(in: &cancellables)
-        sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
     }
     
     func controllerDidCreateSyncAccount() {

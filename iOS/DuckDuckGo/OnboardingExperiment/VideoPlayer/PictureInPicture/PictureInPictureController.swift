@@ -70,11 +70,19 @@ extension PictureInPictureController {
         self.controller = controller
     }
 
+    func canStartPictureInPicture() -> Bool {
+        Logger.videoPlayer.debug("Can Start PictureInPicture: \(self.controller?.isPictureInPicturePossible ?? false)")
+        return controller?.isPictureInPicturePossible ?? false
+    }
+
     func startPictureInPicture() {
+        guard canStartPictureInPicture() else { return }
+        Logger.videoPlayer.debug("Start Picture In Picture")
         controller?.startPictureInPicture()
     }
 
     func stopPictureInPicture() {
+        Logger.videoPlayer.debug("Stop Picture In Picture")
         controller?.stopPictureInPicture()
     }
 }
@@ -83,9 +91,18 @@ extension PictureInPictureController {
 
 extension PictureInPictureController: AVPictureInPictureControllerDelegate {
 
+    func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+        Logger.videoPlayer.debug("Will Start Picture in Picture")
+        Logger.videoPlayer.debug("Will Start Picture in Picture - Is Active: \(self.controller?.isPictureInPictureActive ?? false)")
+    }
+
     func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Logger.videoPlayer.debug("Picture in Picture Started")
         isPictureInPictureActive = true
+    }
+
+    func pictureInPictureControllerWillStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+        Logger.videoPlayer.debug("Will Stop Picture in Picture")
     }
 
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {

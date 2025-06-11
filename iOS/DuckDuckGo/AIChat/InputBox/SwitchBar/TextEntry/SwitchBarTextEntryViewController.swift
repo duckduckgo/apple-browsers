@@ -33,7 +33,6 @@ class SwitchBarTextEntryViewController: UIViewController {
     private var actionViewHeightConstraint: NSLayoutConstraint?
     private var actionViewBottomConstraint: NSLayoutConstraint?
     private var textEntryBottomConstraint: NSLayoutConstraint?
-//    private var textEntryHeightConstraint: NSLayoutConstraint?
 
     private var cancellables = Set<AnyCancellable>()
     private var isExpanded = false
@@ -160,7 +159,6 @@ class SwitchBarTextEntryViewController: UIViewController {
     private func setupConstraints() {
         guard let actionView = actionViewController?.view else { return }
 
-//        actionViewHeightConstraint = actionView.heightAnchor.constraint(equalToConstant: 60)
         actionViewBottomConstraint = actionView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         textEntryBottomConstraint = textEntryView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
 
@@ -173,27 +171,22 @@ class SwitchBarTextEntryViewController: UIViewController {
             textEntryView.topAnchor.constraint(equalTo: containerView.topAnchor),
             textEntryView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             textEntryView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            textEntryBottomConstraint!,
+            textEntryBottomConstraint,
 
             actionView.topAnchor.constraint(equalTo: textEntryView.bottomAnchor, constant: 8),
             actionView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             actionView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            actionViewBottomConstraint!,
-//            actionViewHeightConstraint!
-        ])
+            actionViewBottomConstraint,
+        ].compactMap({ $0 }))
 
         updateConstraintsForCurrentMode()
     }
 
     func updateConstraintsForCurrentMode() {
-        // Commented out to have a proper transition
-//        updateActionViewVisibility()
 
-//        self.actionViewHeightConstraint?.constant = showsActionView ? 0 : 60
         self.actionViewBottomConstraint?.isActive = showsActionView
         self.actionViewController?.view.alpha = showsActionView ? 1 : 0
         self.textEntryBottomConstraint?.isActive = !showsActionView
-//        self.textEntryHeightConstraint?.isActive = !isExpanded
     }
 
     private func setupSubscriptions() {
@@ -205,10 +198,6 @@ class SwitchBarTextEntryViewController: UIViewController {
             }
             .store(in: &cancellables)
     }
-
-//    private func updateActionViewVisibility() {
-//        actionViewController?.view.isHidden = handler.currentToggleState == .aiChat ? false : true
-//    }
 
     // MARK: - Action Handlers
     private func handleImageUpload() {

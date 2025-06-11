@@ -18,15 +18,11 @@
 
 import Foundation
 import XCTest
-import RemoteMessaging
 import BrowserServicesKit
 import Persistence
 import Bookmarks
-import NetworkProtection
 import Subscription
-import Freemium
 import FeatureFlags
-import Common
 @testable import RemoteMessaging
 @testable import DuckDuckGo_Privacy_Browser
 

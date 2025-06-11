@@ -31,7 +31,6 @@ runs:
       run: |
         START_TIME=$(date +%s)
         echo "timestamp=${START_TIME}" >> $GITHUB_OUTPUT
-        echo "::notice::Started measuring duration"
 
     - name: Stop measuring and report duration
       id: stop

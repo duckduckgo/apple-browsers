@@ -19,10 +19,11 @@
 import Combine
 import Common
 import History
+import InlineSnapshotTesting
 import NetworkingTestingUtils
 import os.log
-import InlineSnapshotTesting
 import Suggestions
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

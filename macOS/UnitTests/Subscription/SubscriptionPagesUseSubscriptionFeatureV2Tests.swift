@@ -16,13 +16,15 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import DuckDuckGo_Privacy_Browser
-@testable import Subscription
 import Common
 import Networking
-import SubscriptionTestingUtilities
 import NetworkingTestingUtils
+import SubscriptionTestingUtilities
+import WebKit
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
+@testable import Subscription
 
 final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 

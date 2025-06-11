@@ -69,12 +69,14 @@ final class InternalFeedbackFormTabExtension {
     private let internalUserDecider: InternalUserDecider
     private weak var webView: WKWebView?
     private var cancellables = Set<AnyCancellable>()
+    private let scriptSource: String
 
     init(
         webViewPublisher: some Publisher<WKWebView, Never>,
         internalUserDecider: InternalUserDecider
     ) {
         self.internalUserDecider = internalUserDecider
+        self.scriptSource = InternalFeedbackFormUserScript().source
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
@@ -94,8 +96,7 @@ extension InternalFeedbackFormTabExtension: NavigationResponder {
 #else
         let distributionType = "DMG"
 #endif
-        let script = InternalFeedbackFormUserScript().source
-        webView.evaluateJavaScript(script)
+        webView.evaluateJavaScript(scriptSource)
     }
 
     /// The URL needs to be matched against the form URL, but there may be additional

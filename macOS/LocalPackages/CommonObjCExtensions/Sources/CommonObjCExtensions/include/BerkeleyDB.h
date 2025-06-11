@@ -1,7 +1,7 @@
 //
-//  NSApplicationExtension.swift
+//  BerkeleyDB.h
 //
-//  Copyright © 2020 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,16 +16,4 @@
 //  limitations under the License.
 //
 
-import AppKit
-import Combine
-
-extension NSApplication {
-
-    var mainMenuTyped: MainMenu {
-        return mainMenu as! MainMenu // swiftlint:disable:this force_cast
-    }
-
-    var delegateTyped: AppDelegate {
-        return delegate as! AppDelegate // swiftlint:disable:this force_cast
-    }
-}
+#import <db.h>

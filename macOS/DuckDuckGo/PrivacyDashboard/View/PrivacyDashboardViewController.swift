@@ -90,9 +90,8 @@ final class PrivacyDashboardViewController: NSViewController {
                                                                      eventMapping: privacyDashboardEvents)
         brokenSiteReporter = {
             BrokenSiteReporter(pixelHandler: { parameters in
-                var updatedParameters = parameters
                 PixelKit.fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
-                              withAdditionalParameters: updatedParameters,
+                              withAdditionalParameters: parameters,
                               allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
             }, keyValueStoring: UserDefaults.standard)
         }()
@@ -257,7 +256,9 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
 
     func privacyDashboardControllerDidRequestShowGeneralFeedback(_ privacyDashboardController: PrivacyDashboardController) {
         dismiss()
+#if FEEDBACK
         NSApp.delegateTyped.openFeedback(nil)
+#endif
     }
 
     func privacyDashboardController(_ privacyDashboardController: PrivacyDashboardController,

@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
 import Combine
 import Common
-import PixelKit
+import Foundation
 import os.log
+import PixelKit
 
 protocol SavePaymentMethodDelegate: AnyObject {
 

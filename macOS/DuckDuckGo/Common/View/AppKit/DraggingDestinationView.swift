@@ -16,16 +16,18 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 /// Receives dragging events when registered with `.registerForDraggedTypes` and passes them to its next responder (superview or view controller)
 internal class DraggingDestinationView: NSView {
     // MARK: - NSDraggingDestination
 
     override func draggingEntered(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-        return (nextResponder as? NSDraggingDestination)?.draggingEntered?(draggingInfo) ?? .none
+        return (nextResponder as? NSDraggingDestination)?.draggingEntered?(draggingInfo) ?? []
     }
 
     override func draggingUpdated(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-        return (nextResponder as? NSDraggingDestination)?.draggingUpdated?(draggingInfo) ?? .none
+        return (nextResponder as? NSDraggingDestination)?.draggingUpdated?(draggingInfo) ?? []
     }
 
     override func performDragOperation(_ draggingInfo: NSDraggingInfo) -> Bool {

@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
+import AppKit
 import BrowserServicesKit
 import Combine
 import Foundation
-import SecureStorage
 import PixelKit
+import SecureStorage
 
 final class AutofillTabExtension: TabExtension {
 

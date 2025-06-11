@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Cocoa
+import AppKit
 import Combine
+import WebKit
 
 struct OtherTabBarViewItemsState {
 

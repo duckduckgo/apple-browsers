@@ -725,6 +725,7 @@ final class FeedbackSubMenu: NSMenu {
                                  moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         removeAllItems()
 
+#if FEEDBACK
         let browserFeedbackItem = NSMenuItem(title: UserText.browserFeedback,
                                              action: #selector(AppDelegate.openFeedback(_:)),
                                              keyEquivalent: "")
@@ -751,6 +752,7 @@ final class FeedbackSubMenu: NSMenu {
             addItem(.separator())
             addItem(withTitle: "Copy Version", action: #selector(AppDelegate.copyVersion(_:)), keyEquivalent: "")
         }
+#endif
     }
 }
 

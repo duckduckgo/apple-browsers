@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
 import Common
 import DataBrokerProtection_macOS
-import Subscription
-import os.log
+import Foundation
 import Freemium
+import os.log
+import Subscription
 
 protocol DataBrokerProtectionFeatureGatekeeper {
     func disableAndDeleteForAllUsers()

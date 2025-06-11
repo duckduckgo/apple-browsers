@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 extension XMLNode {
 
     func childIfExists(at index: Int) -> XMLNode? {

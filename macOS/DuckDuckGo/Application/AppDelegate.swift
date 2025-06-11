@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Bookmarks
 import BrowserServicesKit
 import Cocoa
@@ -24,31 +25,31 @@ import Common
 import Configuration
 import CoreData
 import Crashes
-import DDGSync
-import FeatureFlags
-import History
-import HistoryView
-import MetricKit
-import Networking
-import NewTabPage
-import Persistence
-import PixelKit
-import PixelExperimentKit
-import ServiceManagement
-import SyncDataProviders
-import UserNotifications
-import Lottie
-import NetworkProtection
-import PrivacyStats
-import Subscription
-import NetworkProtectionIPC
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
-import RemoteMessaging
-import os.log
+import DDGSync
+import FeatureFlags
 import Freemium
+import History
+import HistoryView
+import Lottie
+import MetricKit
+import Networking
+import NetworkProtection
+import NetworkProtectionIPC
+import NewTabPage
+import os.log
+import Persistence
+import PixelExperimentKit
+import PixelKit
+import PrivacyStats
+import RemoteMessaging
+import ServiceManagement
+import Subscription
+import SyncDataProviders
+import UserNotifications
 import VPNAppState
-import AIChat
+import WebKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 

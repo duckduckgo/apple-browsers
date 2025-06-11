@@ -31,7 +31,6 @@ enum FeedbackPresenter {
             return
         }
 
-
         feedbackWindow.feedbackViewController.preselectedFormOption = preselectedFormOption
         feedbackWindow.feedbackViewController.currentTab =
             parentWindowController.mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab

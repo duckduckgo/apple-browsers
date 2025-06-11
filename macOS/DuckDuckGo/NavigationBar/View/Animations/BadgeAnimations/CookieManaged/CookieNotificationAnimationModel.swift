@@ -33,11 +33,11 @@ final class CookieNotificationAnimationModel: ObservableObject {
     let addressBarIconsProvider: AddressBarCookiesIconsProviding
 
     init(duration: CGFloat = AnimationDefaultConsts.totalDuration,
-         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.duration = duration
         self.halfDuration = duration / 2.0
         self.secondPhaseDelay = self.halfDuration
-        self.addressBarIconsProvider = visualStyleManager.style.iconsProvider.addressBarCookiesIconsProvider
+        self.addressBarIconsProvider = visualStyle.iconsProvider.addressBarCookiesIconsProvider
     }
 }
 

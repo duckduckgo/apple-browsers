@@ -112,7 +112,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
-         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -134,7 +134,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.featureFlagger = featureFlagger
-        self.moreOptionsMenuIconsProvider = visualStyleManager.style.iconsProvider.moreOptionsMenuIconsProvider
+        self.moreOptionsMenuIconsProvider = visualStyle.iconsProvider.moreOptionsMenuIconsProvider
 
         super.init(title: "")
 

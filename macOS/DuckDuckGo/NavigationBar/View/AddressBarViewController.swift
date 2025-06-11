@@ -140,7 +140,7 @@ final class AddressBarViewController: NSViewController {
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
+          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
           aiChatSidebarPresenter: AIChatSidebarPresenting) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -155,12 +155,12 @@ final class AddressBarViewController: NSViewController {
                 burnerMode: burnerMode,
                 isUrlIgnored: { _ in false }
             ),
-            visualStyle: visualStyleManager.style
+            visualStyle: visualStyle
         )
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatSettings = aiChatSettings
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
 
         super.init(coder: coder)

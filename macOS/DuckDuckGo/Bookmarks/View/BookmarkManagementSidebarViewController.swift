@@ -73,11 +73,11 @@ final class BookmarkManagementSidebarViewController: NSViewController {
 
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
-         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.selectedSortMode = bookmarkManager.sortMode
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
         treeControllerDataSource = .init(bookmarkManager: bookmarkManager)
         super.init(nibName: nil, bundle: nil)
     }

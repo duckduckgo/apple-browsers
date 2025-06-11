@@ -152,7 +152,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
-    let visualStyleManager: VisualStyleManagerProviding
+    let visualStyle: VisualStyleProviding
 
     let isAuthV2Enabled: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -464,7 +464,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.windowControllersManager = windowControllersManager
 
-        visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
+        let visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
+        visualStyle = visualStyleManager.style
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -488,7 +489,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pixelFiring: PixelKit.shared
         )
         startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
-        newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager, appearancePreferences: appearancePreferences)
+        newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {

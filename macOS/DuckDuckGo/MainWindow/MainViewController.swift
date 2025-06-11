@@ -88,7 +88,7 @@ final class MainViewController: NSViewController {
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
-         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -100,7 +100,7 @@ final class MainViewController: NSViewController {
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
 
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,

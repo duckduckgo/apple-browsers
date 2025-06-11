@@ -168,7 +168,7 @@ final class NavigationBarViewController: NSViewController {
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                       visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
+                       visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
                        aiChatSidebarPresenter: AIChatSidebarPresenting
     ) -> NavigationBarViewController {
         NSStoryboard(name: "NavigationBar", bundle: nil).instantiateInitialController { coder in
@@ -186,7 +186,7 @@ final class NavigationBarViewController: NSViewController {
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
-                visualStyle: visualStyleManager.style,
+                visualStyle: visualStyle,
                 aiChatSidebarPresenter: aiChatSidebarPresenter
             )
         }!

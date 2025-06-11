@@ -213,7 +213,7 @@ final class AddressBarButtonsViewController: NSViewController {
           aiChatTabOpener: AIChatTabOpening,
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
           aiChatSidebarPresenter: AIChatSidebarPresenting,
-          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
+          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
           featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -223,7 +223,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.aiChatTabOpener = aiChatTabOpener
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         super.init(coder: coder)

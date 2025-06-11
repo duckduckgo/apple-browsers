@@ -119,7 +119,7 @@ final class TabBarItemCellView: NSView {
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
     }
 
-    private var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
+    private var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
 
     fileprivate let faviconImageView = {
         let faviconImageView = NSImageView()
@@ -485,7 +485,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var currentURL: URL?
     private var cancellables = Set<AnyCancellable>()
 
-    private let tabVisualProvider: TabStyleProviding = NSApp.delegateTyped.visualStyleManager.style.tabStyleProvider
+    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
 
     weak var delegate: TabBarViewItemDelegate?
     var tabViewModel: TabBarViewModel? {
@@ -496,8 +496,6 @@ final class TabBarViewItem: NSCollectionViewItem {
         }
         return tabViewModel
     }
-
-    private var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
 
     private(set) var isMouseOver = false
 
@@ -756,7 +754,7 @@ final class TabBarViewItem: NSCollectionViewItem {
                 cell.mouseOverView.mouseOverColor = nil
                 cell.mouseOverView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
             } else {
-                if tabVisualProvider.isRoundedBackgroundPresentOnHover {
+                if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
                     cell.mouseOverView.mouseOverColor = nil
                     cell.mouseOverView.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
                     cell.roundedBackgroundColorView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
@@ -813,9 +811,9 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func updateSeparatorView() {
-        let shouldHideForHover = tabVisualProvider.isRoundedBackgroundPresentOnHover && isMouseOver
+        let shouldHideForHover = visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover && isMouseOver
         let rightItemIsHovered: Bool = {
-            guard tabVisualProvider.isRoundedBackgroundPresentOnHover,
+            guard visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover,
                   let indexPath = collectionView?.indexPath(for: self),
                   let rightItem = collectionView?.item(at: IndexPath(item: indexPath.item + 1, section: indexPath.section)) as? TabBarViewItem
             else { return false }
@@ -1053,7 +1051,7 @@ extension TabBarViewItem: MouseClickViewDelegate {
         } : nil
 
         // Notify the tab to the left to update its separator when this tab is hovered/unhovered
-        if tabVisualProvider.isRoundedBackgroundPresentOnHover {
+        if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
             if let indexPath = collectionView?.indexPath(for: self),
                indexPath.item > 0,
                let leftItem = collectionView?.item(at: IndexPath(item: indexPath.item - 1, section: indexPath.section)) as? TabBarViewItem {
@@ -1238,9 +1236,9 @@ extension TabBarViewItem {
         var collectionViews = [NSCollectionView]()
 
         init(sections: [[TabBarViewModelMock]],
-             visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
             self.sections = sections
-            self.tabVisualProvider = visualStyleManager.style.tabStyleProvider
+            self.tabVisualProvider = visualStyle.tabStyleProvider
             super.init(nibName: nil, bundle: nil)
         }
 

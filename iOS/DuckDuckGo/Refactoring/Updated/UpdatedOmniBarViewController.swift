@@ -34,11 +34,19 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if experimentalManager.isExperimentalTransitionEnabled {
-            let editingStateVC = OmniBarEditingStateViewController()
+
+            let switchBarHandler = SwitchBarHandler()
+
+            if let text = self.omniBarView.text {
+                switchBarHandler.updateCurrentText(text)
+            }
+
+            let editingStateVC = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
             editingStateVC.delegate = self
             editingStateVC.modalPresentationStyle = .overFullScreen
             present(editingStateVC, animated: false)
             self.editingStateViewController = editingStateVC
+
             return false
         }
         return super.textFieldShouldBeginEditing(textField)
@@ -132,7 +140,6 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
 extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
     func onQueryUpdated(_ query: String) {
-        omniDelegate?.onOmniQueryUpdated(query)
     }
 
     func onQuerySubmitted(_ query: String) {

@@ -33,12 +33,21 @@ final class OmniBarEditingStateViewController: UIViewController {
         switchBarVC.textEntryViewController.textEntryView
     }
     private var cancellables = Set<AnyCancellable>()
-    private let switchBarHandler: SwitchBarHandling = SwitchBarHandler()
+    private let switchBarHandler: SwitchBarHandling
     private lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
 
     private var textEntryHeightConstraint: NSLayoutConstraint?
 
+    internal init(switchBarHandler: any SwitchBarHandling) {
+        self.switchBarHandler = switchBarHandler
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 

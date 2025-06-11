@@ -403,7 +403,7 @@ final class DownloadsViewController: NSViewController {
         else { return }
 
         self.dismiss()
-        WindowControllersManager.shared.show(url: url, source: .historyEntry, newTab: true)
+        Application.appDelegate.windowControllersManager.show(url: url, source: .historyEntry, newTab: true)
     }
 
     @objc func doubleClickAction(_ sender: Any) {
@@ -549,7 +549,7 @@ enum DownloadsErrorViewType {
         switch self {
         case .openHelpURL:
             let updateHelpURL = URL(string: "https://support.apple.com/guide/mac-help/get-macos-updates-and-apps-mh35618/mac")!
-            WindowControllersManager.shared.show(url: updateHelpURL, source: .ui, newTab: true)
+            Application.appDelegate.windowControllersManager.show(url: updateHelpURL, source: .ui, newTab: true)
         case .openSystemSettings:
             let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.Software-Update-Settings.extension")!
             NSWorkspace.shared.open(softwareUpdateURL)

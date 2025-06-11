@@ -182,7 +182,7 @@ final class DuckPlayer {
 
     init(
         preferences: DuckPlayerPreferences = .shared,
-        privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+        privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
         onboardingDecider: DuckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider()
     ) {
         self.preferences = preferences
@@ -269,7 +269,7 @@ final class DuckPlayer {
 
     public func handleYoutubeError(params: Any, message: UserScriptMessage) -> Encodable? {
         let (volumePixel, dailyPixel) = getPixelsForYouTubeErrorParams(params)
-        PixelKit.fire(NonStandardEvent(dailyPixel), frequency: .daily)
+        PixelKit.fire(NonStandardEvent(dailyPixel), frequency: .legacyDaily)
         PixelKit.fire(NonStandardEvent(volumePixel))
         return nil
     }

@@ -34,8 +34,16 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     override func setUp() async throws {
         let configStore = ConfigurationStore()
 
-        let appearancePreferences = AppearancePreferences(keyValueStore: try MockKeyValueFileStore())
-        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor())
+        let appearancePreferences = AppearancePreferences(
+            keyValueStore: try MockKeyValueFileStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
+        let dataClearingPreferences = DataClearingPreferences(
+            persistor: MockFireButtonPreferencesPersistor(),
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock()
+        )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences,
@@ -50,9 +58,15 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                               errorReporting: nil),
                                        configStorage: MockConfigurationStore(),
                                        webTrackingProtectionPreferences: preferences,
+                                       experimentManager: MockContentScopeExperimentManager(),
                                        tld: TLD(),
+                                       onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                        appearancePreferences: appearancePreferences,
-                                       startupPreferences: startupPreferences)
+                                       startupPreferences: startupPreferences,
+                                       bookmarkManager: MockBookmarkManager(),
+                                       historyCoordinator: CapturingHistoryDataSource(),
+                                       fireproofDomains: MockFireproofDomains(domains: []),
+                                       fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld))
     }
 
     override static func setUp() {

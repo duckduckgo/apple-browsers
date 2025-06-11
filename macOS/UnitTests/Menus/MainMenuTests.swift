@@ -36,7 +36,10 @@ class MainMenuTests: XCTestCase {
         isInInitialState = true
         lastSessionMenuItem = NSMenuItem()
         lastTabMenuItem = NSMenuItem()
-        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor())
+        appearancePreferences = AppearancePreferences(
+            persistor: MockAppearancePreferencesPersistor(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
     }
 
     func testWhenIsInInitialState_AndCanRestoreState_ThenLastSessionMenuItemHasShortcut() {
@@ -101,11 +104,13 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
             aiChatMenuConfig: DummyAIChatConfig(),
             internalUserDecider: DefaultInternalUserDecider(),
-            appearancePreferences: appearancePreferences
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         sut.update()
@@ -124,7 +129,7 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
-            faviconManager: FaviconManagerMock(),
+            faviconManagement: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
             aiChatMenuConfig: DummyAIChatConfig()
         )
@@ -145,7 +150,7 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
-            faviconManager: FaviconManagerMock(),
+            faviconManagement: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
             aiChatMenuConfig: DummyAIChatConfig()
         )
@@ -169,11 +174,13 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
             aiChatMenuConfig: DummyAIChatConfig(),
             internalUserDecider: DefaultInternalUserDecider(),
-            appearancePreferences: appearancePreferences
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         sut.update()
@@ -192,11 +199,13 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
             aiChatMenuConfig: DummyAIChatConfig(),
             internalUserDecider: DefaultInternalUserDecider(),
-            appearancePreferences: appearancePreferences
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         sut.update()
@@ -215,10 +224,12 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             aiChatMenuConfig: DummyAIChatConfig(),
             internalUserDecider: DefaultInternalUserDecider(),
-            appearancePreferences: appearancePreferences
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
         let bookmarksMenu = try XCTUnwrap(sut.item(withTitle: UserText.bookmarks))
 
@@ -239,10 +250,12 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             aiChatMenuConfig: aiChatConfig,
             internalUserDecider: DefaultInternalUserDecider(),
-            appearancePreferences: appearancePreferences
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -265,10 +278,12 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             aiChatMenuConfig: aiChatConfig,
             internalUserDecider: DefaultInternalUserDecider(),
-            appearancePreferences: appearancePreferences
+            appearancePreferences: appearancePreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))

@@ -33,6 +33,14 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
     var email: String? { get }
     var currentEnvironment: SubscriptionEnvironment { get }
     func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL
+
+    /// Checks if the user is eligible for a free trial.
+    ///
+    /// - Important: This method is part of a temporary bridge for the AuthV1 to AuthV2 migration.
+    ///   Once the migration to AuthV2 is complete, callers should ideally access the `storePurchaseManager()`
+    ///   on an instance of `DefaultSubscriptionManagerV2` (or the final AuthV2 manager) and then call
+    ///   `storePurchaseManager().isUserEligibleForFreeTrial()` directly.
+    func isUserEligibleForFreeTrial() -> Bool
 }
 
 extension SubscriptionAuthV1toV2Bridge {
@@ -54,6 +62,8 @@ extension Entitlement.ProductName {
             return .identityTheftRestoration
         case .identityTheftRestorationGlobal:
             return .identityTheftRestorationGlobal
+        case .paidAIChat:
+            return .paidAIChat
         case .unknown:
             return .unknown
         }
@@ -72,6 +82,8 @@ extension SubscriptionEntitlement {
             return .identityTheftRestoration
         case .identityTheftRestorationGlobal:
             return .identityTheftRestorationGlobal
+        case .paidAIChat:
+            return .paidAIChat
         case .unknown:
             return .unknown
         }
@@ -115,6 +127,17 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
     public func isSubscriptionPresent() -> Bool {
         accountManager.isUserAuthenticated
     }
+
+    /// Checks if the user is eligible for a free trial.
+    ///
+    /// - Important: This method is part of a temporary bridge for the AuthV1 to AuthV2 migration.
+    ///   Once the migration to AuthV2 is complete, callers should ideally access the `storePurchaseManager()`
+    ///   on an instance of `DefaultSubscriptionManagerV2` (or the final AuthV2 manager) and then call
+    ///   `storePurchaseManager().isUserEligibleForFreeTrial()` directly.
+    public func isUserEligibleForFreeTrial() -> Bool {
+        guard currentEnvironment.purchasePlatform != .stripe, #available(macOS 12.0, *) else { return false }
+        return storePurchaseManager().isUserEligibleForFreeTrial()
+    }
 }
 
 extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
@@ -131,4 +154,15 @@ extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
     }
 
     public var email: String? { userEmail }
+
+    /// Checks if the user is eligible for a free trial.
+    ///
+    /// - Important: This method is part of a temporary bridge for the AuthV1 to AuthV2 migration.
+    ///   Once the migration to AuthV2 is complete, callers should ideally access the `storePurchaseManager()`
+    ///   on an instance of `DefaultSubscriptionManagerV2` (or the final AuthV2 manager) and then call
+    ///   `storePurchaseManager().isUserEligibleForFreeTrial()` directly.
+    public func isUserEligibleForFreeTrial() -> Bool {
+        guard currentEnvironment.purchasePlatform != .stripe, #available(macOS 12.0, *) else { return false }
+        return storePurchaseManager().isUserEligibleForFreeTrial()
+    }
 }

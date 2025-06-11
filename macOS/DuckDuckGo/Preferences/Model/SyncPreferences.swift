@@ -314,13 +314,13 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
 
     @MainActor
     func manageBookmarks() {
-        guard let mainVC = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController else { return }
+        guard let mainVC = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController else { return }
         mainVC.showManageBookmarks(self)
     }
 
     @MainActor
     func manageLogins() {
-        guard let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController else { return }
+        guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
         let navigationViewController = parentWindowController.mainViewController.navigationBarViewController
         navigationViewController.showPasswordManagerPopover(selectedCategory: .allItems, source: .sync)
     }
@@ -417,7 +417,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         let syncWindowController = syncViewController.wrappedInWindowController()
 
         guard let syncWindow = syncWindowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
         else {
             assertionFailure("Sync: Failed to present SyncManagementDialogViewController")
             return

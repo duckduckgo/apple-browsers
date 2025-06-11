@@ -28,9 +28,6 @@ public final class PixelKit {
         /// The default frequency for pixels. This fires pixels with the event names as-is.
         case standard
 
-        /// [Legacy] Used in Pixel.fire(...) as .unique but without the `_u` requirement in the name
-        case legacyInitial
-
         /// Sent only once ever (based on pixel name only.) The timestamp for this pixel is stored.
         /// Note: This is the only pixel that MUST end with `_u`, Name for pixels of this type must end with if it doesn't an assertion is fired.
         case uniqueByName
@@ -38,16 +35,8 @@ public final class PixelKit {
         /// Sent only once ever (based on pixel name AND parameters). The timestamp for this pixel is stored.
         case uniqueByNameAndParameters
 
-        /// [Legacy] Used in Pixel.fire(...) as .daily but without the `_d` automatically added to the name
-        case legacyDaily
-
-        /// Sent once per day. The last timestamp for this pixel is stored and compared to the current date. Pixels of this type will have `_d` appended to their name.
+        /// Sent once per day. The last timestamp for this pixel is stored and compared to the current date. Pixels of this type will have `_daily` appended to their name.
         case daily
-
-        /// [Legacy] Sent once per day with a `_d` suffix, in addition to every time it is called with a `_c` suffix.
-        /// This means a pixel will get sent twice the first time it is called per-day, and subsequent calls that day will only send the `_c` variant.
-        /// This is useful in situations where pixels receive spikes in volume, as the daily pixel can be used to determine how many users are actually affected.
-        case legacyDailyAndCount
 
         /// Sent once per day with a `_daily` suffix, in addition to every time it is called with a `_count` suffix.
         /// This means a pixel will get sent twice the first time it is called per-day, and subsequent calls that day will only send the `_count` variant.
@@ -59,26 +48,42 @@ public final class PixelKit {
         /// This is useful in situations where pixels receive spikes in volume, as the daily pixel can be used to determine how many users are actually affected.
         case dailyAndStandard
 
+        /// [Legacy] Used in Pixel.fire(...) as .unique but without the `_u` requirement in the name
+        case legacyInitial
+
+        /// [Legacy] Used in Pixel.fire(...) as .daily but without the `_d` automatically added to the name
+        case legacyDailyNoSuffix
+
+        /// [Legacy] Sent once per day. The last timestamp for this pixel is stored and compared to the current date. Pixels of this type will have `_d` appended to their name.
+        case legacyDaily
+
+        /// [Legacy] Sent once per day with a `_d` suffix, in addition to every time it is called with a `_c` suffix.
+        /// This means a pixel will get sent twice the first time it is called per-day, and subsequent calls that day will only send the `_c` variant.
+        /// This is useful in situations where pixels receive spikes in volume, as the daily pixel can be used to determine how many users are actually affected.
+        case legacyDailyAndCount
+
         fileprivate var description: String {
             switch self {
             case .standard:
                 "Standard"
-            case .legacyInitial:
-                "Legacy Initial"
             case .uniqueByName:
                 "Unique"
-            case .legacyDaily:
-                "Legacy Daily"
             case .daily:
                 "Daily"
-            case .legacyDailyAndCount:
-                "Legacy Daily and Count"
             case .dailyAndCount:
                 "Daily and Count"
             case .dailyAndStandard:
                 "Daily and Standard"
             case .uniqueByNameAndParameters:
                 "Unique By Name And Parameters"
+            case .legacyInitial:
+                "Legacy Initial"
+            case .legacyDaily:
+                "Legacy Daily"
+            case .legacyDailyAndCount:
+                "Legacy Daily and Count"
+            case .legacyDailyNoSuffix:
+                "Legacy Daily No Suffix"
             }
         }
     }
@@ -222,22 +227,24 @@ public final class PixelKit {
         switch frequency {
         case .standard:
             handleStandardFrequency(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
-        case .legacyInitial:
-            handleLegacyInitial(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .uniqueByName:
             handleUnique(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .uniqueByNameAndParameters:
             handleUniqueByNameAndParameters(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
-        case .legacyDaily:
-            handleLegacyDaily(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .daily:
             handleDaily(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
-        case .legacyDailyAndCount:
-            handleLegacyDailyAndCount(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .dailyAndCount:
             handleDailyAndCount(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .dailyAndStandard:
             handleDailyAndStandard(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+        case .legacyInitial:
+            handleLegacyInitial(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+        case .legacyDaily:
+            handleLegacyDaily(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+        case .legacyDailyAndCount:
+            handleLegacyDailyAndCount(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+        case .legacyDailyNoSuffix:
+            handleLegacyDailyNoSuffix(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         }
     }
 
@@ -299,33 +306,48 @@ public final class PixelKit {
         }
     }
 
-    private func handleLegacyDaily(_ pixelName: String,
-                                   _ headers: [String: String],
-                                   _ newParams: [String: String],
-                                   _ allowedQueryReservedCharacters: CharacterSet?,
-                                   _ onComplete: @escaping CompletionBlock) {
-        reportErrorIf(pixel: pixelName, endsWith: "_u")
-        reportErrorIf(pixel: pixelName, endsWith: "_d")
-        if !pixelHasBeenFiredToday(pixelName) {
-            fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .legacyDaily, onComplete)
-            updatePixelLastFireDate(pixelName: pixelName)
-        } else {
-            printDebugInfo(pixelName: pixelName, frequency: .legacyDaily, parameters: newParams, skipped: true)
-        }
-    }
-
     private func handleDaily(_ pixelName: String,
                              _ headers: [String: String],
                              _ newParams: [String: String],
                              _ allowedQueryReservedCharacters: CharacterSet?,
                              _ onComplete: @escaping CompletionBlock) {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
-        reportErrorIf(pixel: pixelName, endsWith: "_d") // Because is added automatically
+        reportErrorIf(pixel: pixelName, endsWith: "_daily") // Because is added automatically
         if !pixelHasBeenFiredToday(pixelName) {
-            fireRequestWrapper(pixelName + "_d", headers, newParams, allowedQueryReservedCharacters, true, .daily, onComplete)
+            fireRequestWrapper(pixelName + "_daily", headers, newParams, allowedQueryReservedCharacters, true, .daily, onComplete)
             updatePixelLastFireDate(pixelName: pixelName)
         } else {
-            printDebugInfo(pixelName: pixelName + "_d", frequency: .daily, parameters: newParams, skipped: true)
+            printDebugInfo(pixelName: pixelName + "_daily", frequency: .daily, parameters: newParams, skipped: true)
+        }
+    }
+
+    private func handleLegacyDailyNoSuffix(_ pixelName: String,
+                                           _ headers: [String: String],
+                                           _ newParams: [String: String],
+                                           _ allowedQueryReservedCharacters: CharacterSet?,
+                                           _ onComplete: @escaping CompletionBlock) {
+        reportErrorIf(pixel: pixelName, endsWith: "_u")
+        reportErrorIf(pixel: pixelName, endsWith: "_d")
+        if !pixelHasBeenFiredToday(pixelName) {
+            fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyNoSuffix, onComplete)
+            updatePixelLastFireDate(pixelName: pixelName)
+        } else {
+            printDebugInfo(pixelName: pixelName, frequency: .legacyDailyNoSuffix, parameters: newParams, skipped: true)
+        }
+    }
+
+    private func handleLegacyDaily(_ pixelName: String,
+                                   _ headers: [String: String],
+                                   _ newParams: [String: String],
+                                   _ allowedQueryReservedCharacters: CharacterSet?,
+                                   _ onComplete: @escaping CompletionBlock) {
+        reportErrorIf(pixel: pixelName, endsWith: "_u")
+        reportErrorIf(pixel: pixelName, endsWith: "_d") // Because is added automatically
+        if !pixelHasBeenFiredToday(pixelName) {
+            fireRequestWrapper(pixelName + "_d", headers, newParams, allowedQueryReservedCharacters, true, .legacyDaily, onComplete)
+            updatePixelLastFireDate(pixelName: pixelName)
+        } else {
+            printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDaily, parameters: newParams, skipped: true)
         }
     }
 

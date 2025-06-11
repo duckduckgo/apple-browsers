@@ -85,6 +85,7 @@ typealias TabExtensionsBuilderArguments = (
     tabIdentifier: UInt64,
     isTabPinned: () -> Bool,
     isTabBurner: Bool,
+    isTabLoadedInSidebar: Bool,
     contentPublisher: AnyPublisher<Tab.TabContent, Never>,
     setContent: (Tab.TabContent) -> Void,
     closeTab: () -> Void,
@@ -168,6 +169,7 @@ extension TabExtensionsBuilder {
 
         add {
             AutofillTabExtension(autofillUserScriptPublisher: userScripts.map(\.?.autofillScript),
+                                 privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
                                  isBurner: args.isTabBurner)
         }
         add {
@@ -192,15 +194,20 @@ extension TabExtensionsBuilder {
         add {
             SearchNonexistentDomainNavigationResponder(tld: dependencies.privacyFeatures.contentBlocking.tld, contentPublisher: args.contentPublisher, setContent: args.setContent)
         }
+
+        let isCapturingHistory = !args.isTabBurner && !args.isTabLoadedInSidebar
         add {
-            HistoryTabExtension(isBurner: args.isTabBurner,
+            HistoryTabExtension(isCapturingHistory: isCapturingHistory,
                                 historyCoordinating: dependencies.historyCoordinating,
                                 trackersPublisher: contentBlocking.trackersPublisher,
                                 urlPublisher: args.contentPublisher.map { content in content.isUrl ? content.urlForWebView : nil },
                                 titlePublisher: args.titlePublisher)
         }
         add {
-            PrivacyStatsTabExtension(trackersPublisher: contentBlocking.trackersPublisher)
+            PrivacyStatsTabExtension(
+                trackersPublisher: contentBlocking.trackersPublisher,
+                trackerDataProvider: PrivacyStatsTrackerDataProvider(contentBlocking: dependencies.privacyFeatures.contentBlocking)
+            )
         }
         add {
             ExternalAppSchemeHandler(workspace: dependencies.workspace, permissionModel: args.permissionModel, contentPublisher: args.contentPublisher)
@@ -219,9 +226,8 @@ extension TabExtensionsBuilder {
         }
 
         add {
-            AIChatOnboardingTabExtension(webViewPublisher: args.webViewFuture,
-                                         notificationCenter: .default,
-                                         remoteSettings: AIChatRemoteSettings())
+            AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
+                               isLoadedInSidebar: args.isTabLoadedInSidebar)
         }
 
         add {

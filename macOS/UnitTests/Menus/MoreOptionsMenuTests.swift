@@ -96,11 +96,12 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     private func setupMoreOptionsMenu() {
         moreOptionsMenu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
+                                          bookmarkManager: MockBookmarkManager(),
+                                          historyCoordinator: HistoryCoordinatingMock(),
                                           fireproofDomains: fireproofDomains,
                                           passwordManagerCoordinator: passwordManagerCoordinator,
                                           vpnFeatureGatekeeper: networkProtectionVisibilityMock,
-                                          subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true,
-                                                                                                               usesUnifiedFeedbackForm: false),
+                                          subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false),
                                           sharingMenu: NSMenu(),
                                           internalUserDecider: internalUserDecider,
                                           subscriptionManager: subscriptionManager,
@@ -110,6 +111,7 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           dockCustomizer: dockCustomizer,
                                           defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
                                           notificationCenter: mockNotificationCenter,
+                                          featureFlagger: MockFeatureFlagger(),
                                           freemiumDBPExperimentPixelHandler: mockPixelHandler)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
@@ -177,20 +179,21 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(moreOptionsMenu.items[8].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[9].title, UserText.bookmarks)
         XCTAssertEqual(moreOptionsMenu.items[10].title, UserText.downloads)
-        XCTAssertEqual(moreOptionsMenu.items[11].title, UserText.passwordManagementTitle)
-        XCTAssertTrue(moreOptionsMenu.items[12].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[13].title, UserText.emailOptionsMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[14].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[15].title, UserText.subscriptionOptionsMenuItem)
-        XCTAssertFalse(moreOptionsMenu.items[15].hasSubmenu)
-        XCTAssertTrue(moreOptionsMenu.items[16].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[17].title, UserText.fireproofSite)
-        XCTAssertEqual(moreOptionsMenu.items[18].title, UserText.findInPageMenuItem)
-        XCTAssertEqual(moreOptionsMenu.items[19].title, UserText.shareMenuItem)
-        XCTAssertEqual(moreOptionsMenu.items[20].title, UserText.printMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[21].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[22].title, UserText.mainMenuHelp)
-        XCTAssertEqual(moreOptionsMenu.items[23].title, UserText.settings)
+        XCTAssertEqual(moreOptionsMenu.items[11].title, UserText.mainMenuHistory)
+        XCTAssertEqual(moreOptionsMenu.items[12].title, UserText.passwordManagementTitle)
+        XCTAssertTrue(moreOptionsMenu.items[13].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[14].title, UserText.emailOptionsMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[15].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.subscriptionOptionsMenuItem)
+        XCTAssertFalse(moreOptionsMenu.items[16].hasSubmenu)
+        XCTAssertTrue(moreOptionsMenu.items[17].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[18].title, UserText.fireproofSite)
+        XCTAssertEqual(moreOptionsMenu.items[19].title, UserText.findInPageMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[20].title, UserText.shareMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[21].title, UserText.printMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[22].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[23].title, UserText.mainMenuHelp)
+        XCTAssertEqual(moreOptionsMenu.items[24].title, UserText.settings)
     }
 
     @MainActor
@@ -215,21 +218,22 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(moreOptionsMenu.items[8].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[9].title, UserText.bookmarks)
         XCTAssertEqual(moreOptionsMenu.items[10].title, UserText.downloads)
-        XCTAssertEqual(moreOptionsMenu.items[11].title, UserText.passwordManagementTitle)
-        XCTAssertTrue(moreOptionsMenu.items[12].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[13].title, UserText.emailOptionsMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[14].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[15].title, UserText.subscriptionOptionsMenuItem)
-        XCTAssertFalse(moreOptionsMenu.items[15].hasSubmenu)
-        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.freemiumDBPOptionsMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[17].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[18].title, UserText.fireproofSite)
-        XCTAssertEqual(moreOptionsMenu.items[19].title, UserText.findInPageMenuItem)
-        XCTAssertEqual(moreOptionsMenu.items[20].title, UserText.shareMenuItem)
-        XCTAssertEqual(moreOptionsMenu.items[21].title, UserText.printMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[22].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[23].title, UserText.mainMenuHelp)
-        XCTAssertEqual(moreOptionsMenu.items[24].title, UserText.settings)
+        XCTAssertEqual(moreOptionsMenu.items[11].title, UserText.mainMenuHistory)
+        XCTAssertEqual(moreOptionsMenu.items[12].title, UserText.passwordManagementTitle)
+        XCTAssertTrue(moreOptionsMenu.items[13].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[14].title, UserText.emailOptionsMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[15].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.subscriptionOptionsMenuItem)
+        XCTAssertFalse(moreOptionsMenu.items[16].hasSubmenu)
+        XCTAssertEqual(moreOptionsMenu.items[17].title, UserText.freemiumDBPOptionsMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[18].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[19].title, UserText.fireproofSite)
+        XCTAssertEqual(moreOptionsMenu.items[20].title, UserText.findInPageMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[21].title, UserText.shareMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[22].title, UserText.printMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[23].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[24].title, UserText.mainMenuHelp)
+        XCTAssertEqual(moreOptionsMenu.items[25].title, UserText.settings)
     }
 
     @MainActor

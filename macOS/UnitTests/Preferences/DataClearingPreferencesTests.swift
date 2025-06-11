@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import PixelKit
+import PixelKitTestingUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -27,8 +29,22 @@ class MockFireButtonPreferencesPersistor: FireButtonPreferencesPersistor {
 
 }
 
+fileprivate extension DataClearingPreferences {
+    @MainActor
+    convenience init(persistor: FireButtonPreferencesPersistor, pixelFiring: PixelFiring? = nil) {
+        self.init(
+            persistor: persistor,
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock(),
+            pixelFiring: pixelFiring
+        )
+    }
+}
+
 class DataClearingPreferencesTests: XCTestCase {
 
+    @MainActor
     func testWhenInitializedThenItLoadsPersistedLoginDetectionSetting() {
         let mockPersistor = MockFireButtonPreferencesPersistor()
         mockPersistor.loginDetectionEnabled = true
@@ -37,11 +53,31 @@ class DataClearingPreferencesTests: XCTestCase {
         XCTAssertTrue(dataClearingPreferences.isLoginDetectionEnabled)
     }
 
+    @MainActor
     func testWhenIsLoginDetectionEnabledUpdatedThenPersistorUpdates() {
         let mockPersistor = MockFireButtonPreferencesPersistor()
         let dataClearingPreferences = DataClearingPreferences(persistor: mockPersistor)
         dataClearingPreferences.isLoginDetectionEnabled = true
 
         XCTAssertTrue(mockPersistor.loginDetectionEnabled)
+    }
+
+    // MARK: - Pixel firing tests
+
+    @MainActor
+    func testWhenDataClearingSettingIsUpdatedThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let mockPersistor = MockFireButtonPreferencesPersistor()
+        let dataClearingPreferences = DataClearingPreferences(persistor: mockPersistor, pixelFiring: pixelFiringMock)
+
+        dataClearingPreferences.isAutoClearEnabled = true
+        dataClearingPreferences.isAutoClearEnabled = false
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.dataClearingSettingToggled, frequency: .uniqueByName),
+            .init(pixel: SettingsPixel.dataClearingSettingToggled, frequency: .uniqueByName)
+        ]
+
+        pixelFiringMock.verifyExpectations()
     }
 }

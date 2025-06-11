@@ -274,6 +274,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete this chat? This cannot be undone." = "Bu sohbeti silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.";
 
+/* No comment provided by engineer. */
+"Ask anything..." = "Herhangi bir şey sorun...";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Oturum Aç";
 
@@ -932,6 +935,9 @@
 "close.all.tabs" = "Tüm Sekmeleri Kapat";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Grup: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Onayla";
 
 /* Button to continue the onboarding process */
@@ -1487,6 +1493,9 @@
 "empty.search" = "Eşleşme bulunamadı";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Kayıtlı: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1539,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Yalnızca Mobil Favoriler";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Özellik: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklam ve pop-up engelleme";
@@ -2288,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Çerez açılır pencerelerini engelle";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "İzleme reklamlarını engelleyin";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Hedefli reklamları engelleyin";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Tarama verilerini tek bir düğmeyle silin";
@@ -2450,7 +2462,7 @@
 "preferences.scam-blocker.toggle-caption" = "Bu özelliği devre dışı bırakmak kişisel bilgilerinizi riske atabilir.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Dolandırıcılık, kimlik avı veya kötü amaçlı yazılım için işaretlenen siteler olduğunda uyarı göster. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Dolandırıcılık, kimlik avı veya kötü amaçlı yazılım için işaretlenen siteler olduğunda uyarı göster. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Mümkün olduğunda bağlantıları otomatik olarak HTTPS'ye yükseltir. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2904,6 +2916,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Depolanan Ana Bilgisayar Adı: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Alt özellik: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Cihaza Ekle";
@@ -3428,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "DNS düzeyinde bir engelleme listesiyle kötü amaçlı yazılım, kimlik avı saldırıları ve çevrimiçi dolandırıcılık barındırdığı için işaretlenmiş 150.000'den fazla alan adını engelleyin. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "İçerik Engelleme ve Filtreleme";
+"vpn.settings.dns.server.content.blocking.header" = "Kötü Amaçlı İçerik Engelleme";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Riskli alan adlarını engelleyin";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Dolandırıcılık Engelleyici";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

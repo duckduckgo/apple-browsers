@@ -50,6 +50,7 @@ final class DefaultBrowserAndDockPromptLegacyStore: DefaultBrowserAndDockPromptL
 protocol DefaultBrowserAndDockPromptStorageReading {
     var popoverShownDate: TimeInterval? { get }
     var bannerShownDate: TimeInterval? { get }
+    var bannerShownOccurrences: Int { get }
     var isBannerPermanentlyDismissed: Bool { get }
 }
 
@@ -78,15 +79,16 @@ final class DefaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromp
     enum StorageKey: String {
         case popoverShownDate = "com.duckduckgo.defaultBrowseAndDockPrompt.popoverShownDate"
         case bannerShownDate = "com.duckduckgo.defaultBrowseAndDockPrompt.bannerShownDate"
+        case bannerShownOccurrences = "com.duckduckgo.defaultBrowseAndDockPrompt.bannerShownOccurrences"
         case bannerPermanentlyDismissed = "com.duckduckgo.defaultBrowseAndDockPrompt.bannerPermanentlyDismissed"
     }
 
     private let keyValueStoring: ThrowingKeyValueStoring
-    private let eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent>
+    private let eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent>
 
     init(
         keyValueStoring: ThrowingKeyValueStoring,
-        eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> = DefaultBrowserAndDockPromptEventMapper.eventHandler
+        eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> = DefaultBrowserAndDockPromptDebugEventMapper.eventHandler
     ) {
         self.keyValueStoring = keyValueStoring
         self.eventMapper = eventMapper
@@ -107,6 +109,9 @@ final class DefaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromp
         }
         set {
             write(value: newValue, forKey: .bannerShownDate)
+            // If value is not nil store the occurrence of the banner
+            let numberOfBannersShown = newValue != nil ? bannerShownOccurrences + 1 : 0
+            write(value: numberOfBannersShown, forKey: .bannerShownOccurrences)
         }
     }
 
@@ -119,6 +124,15 @@ final class DefaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromp
         }
     }
 
+    var bannerShownOccurrences: Int {
+        get {
+            getValue(forKey: .bannerShownOccurrences) ?? 0
+        }
+        set {
+            write(value: newValue, forKey: .bannerShownOccurrences)
+        }
+    }
+
     private func getValue<T>(forKey key: StorageKey) -> T? {
         do {
             return try keyValueStoring.object(forKey: key.rawValue) as? T
@@ -128,7 +142,7 @@ final class DefaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromp
         }
     }
 
-    private func write<T>(value: T, forKey key: StorageKey) {
+    private func write<T>(value: T?, forKey key: StorageKey) {
         do {
             try keyValueStoring.set(value, forKey: key.rawValue)
         } catch {
@@ -139,7 +153,7 @@ final class DefaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromp
 
 // MARK: - Helpers
 
-private extension DefaultBrowserAndDockPromptEvent.Storage.Value {
+private extension DefaultBrowserAndDockPromptDebugEvent.Storage.Value {
 
     init(key: DefaultBrowserAndDockPromptKeyValueStore.StorageKey, error: Error) {
         switch key {
@@ -147,6 +161,8 @@ private extension DefaultBrowserAndDockPromptEvent.Storage.Value {
             self = .popoverShownDate(error)
         case .bannerShownDate:
             self = .bannerShownDate(error)
+        case .bannerShownOccurrences:
+            self = .bannerShownOccurrences(error)
         case .bannerPermanentlyDismissed:
             self = .permanentlyDismissPrompt(error)
         }

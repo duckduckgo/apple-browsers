@@ -332,11 +332,21 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         tab.navigateFromOnboarding(to: url)
         wait(for: [expectation], timeout: 3.0)
 
-        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            fireCoordinator: fireCoordinator
+        )
         window.isVisible = false
-        let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
+        let mainWindowController = MainWindowController(
+            window: window,
+            mainViewController: mainViewController,
+            popUp: false,
+            fireViewModel: fireCoordinator.fireViewModel
+        )
         mainWindowController.window = window
-        WindowControllersManager.shared.lastKeyMainWindowController = mainWindowController
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
 
         // WHEN
         window.isVisible = true

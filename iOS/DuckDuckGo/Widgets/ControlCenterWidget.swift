@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import SwiftUICore
+import SwiftUI
 
 /// Our Control Center Widgets
 ///

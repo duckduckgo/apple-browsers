@@ -50,6 +50,10 @@ enum AIChatPixel: PixelKitEventV2 {
     case aiChatSettingsApplicationMenuShortcutTurnedOn
 
     /// Event Trigger: Duck.ai settings panel is displayed
+    ///
+    /// - Note:
+    /// This pixel is used in place of `SettingsPixel.settingsPaneOpened(.aiChat)`.
+    /// Before removing it, verify that it's not needed for measuring settings interaction.
     case aiChatSettingsDisplayed
 
     /// Event Trigger: User clicks in the Omnibar duck.ai button

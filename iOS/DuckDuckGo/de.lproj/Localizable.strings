@@ -274,6 +274,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete this chat? This cannot be undone." = "Möchtest du diesen Chat wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.";
 
+/* No comment provided by engineer. */
+"Ask anything..." = "Frag, was du möchtest ...";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Anmelden";
 
@@ -932,6 +935,9 @@
 "close.all.tabs" = "Alle Tabs schließen";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorte: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Bestätigen";
 
 /* Button to continue the onboarding process */
@@ -1487,6 +1493,9 @@
 "empty.search" = "Keine Treffer gefunden";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Eingeschrieben: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1539,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Nur mobile Favoriten";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funktion: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blockieren von Werbungen und Pop-ups";
@@ -2288,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Cookie-Pop-ups blockieren";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Tracking-Anzeigen blockieren";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Gezielte Werbung blockieren";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Browsing-Daten mit einem Klick löschen";
@@ -2450,7 +2462,7 @@
 "preferences.scam-blocker.toggle-caption" = "Das Deaktivieren dieser Funktion kann deine persönlichen Daten gefährden.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Warnt vor Websites, die als betrügerische, Phishing- oder Malware-Websites gekennzeichnet sind. [Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Warnt vor Websites, die als betrügerische, Phishing- oder Malware-Websites gekennzeichnet sind. [Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Links nach Möglichkeit automatisch auf HTTPS aktualisieren. [Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2904,6 +2916,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Gespeicherter Hostname: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Unterfunktion: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Zum Gerät hinzufügen";
@@ -3428,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blockiere mit einer Blockliste auf DNS-Ebene über 150.000 Domains, die für das Hosten von Malware, Phishing-Angriffen und Online-Betrug gekennzeichnet sind.\n [Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blockieren und Filtern von Inhalten";
+"vpn.settings.dns.server.content.blocking.header" = "Blockierung bösartiger Inhalte";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Riskante Domains blockieren";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Betrugsblocker";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

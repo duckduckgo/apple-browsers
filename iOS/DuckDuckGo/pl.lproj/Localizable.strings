@@ -274,6 +274,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete this chat? This cannot be undone." = "Czy na pewno chcesz usunąć ten czat? Tej czynności nie można cofnąć.";
 
+/* No comment provided by engineer. */
+"Ask anything..." = "Zapytaj o cokolwiek...";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Zaloguj się";
 
@@ -932,6 +935,9 @@
 "close.all.tabs" = "Zamknij wszystkie karty";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Potwierdź";
 
 /* Button to continue the onboarding process */
@@ -1399,9 +1405,6 @@
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Otwórz ustawienia";
 
-/* Button text to watch video on YouTube */
-"duckplayer.watch.on.youtube" = "Obejrzyj na YouTube";
-
 /* Toast message informing user they can disable Duck Player in settings */
 "duckplayer.toast.turn.off.anytime" = "Duck Player możesz wyłączyć w każdej chwili";
 
@@ -1490,6 +1493,9 @@
 "empty.search" = "Brak pasujących wyników";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Rejestracja: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1542,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Tylko ulubione z urządzeń mobilnych";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funkcja: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokowanie reklam i wyskakujących okienek";
@@ -2291,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blokuj wyskakujące okienka z informacją o plikach cookie";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokowanie śledzących reklam";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokowanie ukierunkowanych reklam";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Usuwanie danych przeglądania za pomocą jednego przycisku";
@@ -2453,7 +2462,7 @@
 "preferences.scam-blocker.toggle-caption" = "Wyłączenie tej funkcji może narazić Twoje dane osobowe na ryzyko.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Ostrzegaj przed witrynami oznaczonymi z powodu oszustw, wyłudzania informacji lub złośliwego oprogramowania. [Dowiedz się więcej](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Ostrzegaj przed witrynami oznaczonymi z powodu oszustw, wyłudzania informacji lub złośliwego oprogramowania. [Dowiedz się więcej](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Automatycznie aktualizuje łącza do protokołu HTTPS, jeśli to możliwe. [Dowiedz się więcej](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2907,6 +2916,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Zapisana nazwa hosta: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Podfunkcja: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Dodaj do urządzenia";
@@ -3431,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Zablokuj ponad 150 000 domen oznaczonych jako hosting złośliwego oprogramowania, ataków wyłudzających informacje i oszustw internetowych za pomocą listy zablokowanych na poziomie DNS. [Więcej informacji](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blokowanie i filtrowanie treści";
+"vpn.settings.dns.server.content.blocking.header" = "Blokowanie złośliwych treści";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Blokuj ryzykowne domeny";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Blokowanie oszustw";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

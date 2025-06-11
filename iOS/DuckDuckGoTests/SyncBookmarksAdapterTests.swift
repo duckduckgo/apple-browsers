@@ -91,10 +91,6 @@ final class SyncBookmarksAdapterTests: XCTestCase {
 
 }
 
-class MockFavoriteDisplayModeStorage: FavoritesDisplayModeStoring {
-    var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.mobile)
-}
-
 class MockMetadataStore: SyncMetadataStore {
     func isFeatureRegistered(named name: String) -> Bool {
         return false

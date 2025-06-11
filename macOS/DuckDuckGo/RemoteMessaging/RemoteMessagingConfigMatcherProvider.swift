@@ -30,6 +30,31 @@ extension DefaultWaitlistActivationDateStore: VPNActivationDateProviding {}
 
 final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherProviding {
 
+    convenience init(
+        database: CoreDataDatabase,
+        bookmarksDatabase: CoreDataDatabase,
+        appearancePreferences: AppearancePreferences,
+        startupPreferencesPersistor: @escaping @autoclosure () -> StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
+        duckPlayerPreferencesPersistor: @escaping @autoclosure () -> DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
+        pinnedTabsManagerProvider: PinnedTabsManagerProviding,
+        internalUserDecider: InternalUserDecider,
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        featureFlagger: FeatureFlagger
+    ) {
+        self.init(
+            bookmarksDatabase: bookmarksDatabase,
+            appearancePreferences: appearancePreferences,
+            startupPreferencesPersistor: startupPreferencesPersistor(),
+            duckPlayerPreferencesPersistor: duckPlayerPreferencesPersistor(),
+            pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+            internalUserDecider: internalUserDecider,
+            statisticsStore: LocalStatisticsStore(pixelDataStore: LocalPixelDataStore(database: database)),
+            variantManager: DefaultVariantManager(database: database),
+            subscriptionManager: subscriptionManager,
+            featureFlagger: featureFlagger
+        )
+    }
+
     init(
         bookmarksDatabase: CoreDataDatabase,
         appearancePreferences: AppearancePreferences,
@@ -37,8 +62,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         duckPlayerPreferencesPersistor: @escaping @autoclosure () -> DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
-        statisticsStore: StatisticsStore = LocalStatisticsStore(),
-        variantManager: VariantManager = DefaultVariantManager(),
+        statisticsStore: @escaping @autoclosure () -> StatisticsStore,
+        variantManager: @escaping @autoclosure () -> VariantManager,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         featureFlagger: FeatureFlagger
     ) {
@@ -60,8 +85,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let duckPlayerPreferencesPersistor: () -> DuckPlayerPreferencesPersistor
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
     let internalUserDecider: InternalUserDecider
-    let statisticsStore: StatisticsStore
-    let variantManager: VariantManager
+    let statisticsStore: () -> StatisticsStore
+    let variantManager: () -> VariantManager
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let featureFlagger: FeatureFlagger
 
@@ -88,6 +113,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var isPrivacyProSubscriptionExpired = false
         var privacyProPurchasePlatform: String?
         let surveyActionMapper: RemoteMessagingSurveyActionMapping
+
+        let statisticsStore = self.statisticsStore()
 
         do {
             let subscription = try await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad)
@@ -146,11 +173,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
-                                                     variantManager: variantManager,
+                                                     variantManager: variantManager(),
                                                      isInternalUser: internalUserDecider.isInternalUser,
                                                      isInstalledMacAppStore: isInstalledMacAppStore),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
-                                                       variantManager: variantManager,
+                                                       variantManager: variantManager(),
                                                        bookmarksCount: bookmarksCount,
                                                        favoritesCount: favoritesCount,
                                                        appTheme: appearancePreferences.currentThemeName.rawValue,

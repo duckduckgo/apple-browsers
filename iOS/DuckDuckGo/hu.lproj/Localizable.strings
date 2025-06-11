@@ -274,6 +274,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete this chat? This cannot be undone." = "Biztosan törlöd a csevegést? Ezt nem lehet visszavonni.";
 
+/* No comment provided by engineer. */
+"Ask anything..." = "Kérdezz bármit...";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Bejelentkezés";
 
@@ -932,6 +935,9 @@
 "close.all.tabs" = "Összes lap bezárása";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorsz: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Megerősítés";
 
 /* Button to continue the onboarding process */
@@ -1487,6 +1493,9 @@
 "empty.search" = "Nincs találat";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Beiratkozott: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1539,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Csak mobilon lévő kedvencek";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funkció: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Hirdetések és felugró ablakok letiltása";
@@ -2288,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Felugró sütiablakok blokkolása";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Nyomon követő hirdetések blokkolása";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Célzott hirdetések blokkolása";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Böngészési adatok törlése gombnyomásra";
@@ -2450,7 +2462,7 @@
 "preferences.scam-blocker.toggle-caption" = "Ennek a funkciónak a letiltása veszélyt jelenthet a személyes adataidra.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Figyelmeztetés azokra az oldalakra, amelyeket csalás, adathalászat vagy rosszindulatú programok miatt jelöltek meg. [További információ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Figyelmeztetés azokra az oldalakra, amelyeket csalás, adathalászat vagy rosszindulatú programok miatt jelöltek meg. [További információk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Linkek automatikus frissítése HTTPS-re, amikor csak lehetséges. [További információ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2465,7 +2477,7 @@
 "preferences.threat-protection" = "Fenyegetések elleni védelem";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "A DuckDuckGo továbbfejlesztett védelmi megoldásai megállítják a gyakori fenyegetéseket, miközben megőrzik a kapcsolat biztonságát.\n[További információ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+"preferences.threat-protection.caption" = "A DuckDuckGo továbbfejlesztett védelmi megoldásai kivédik a gyakori fenyegetéseket, miközben megőrzik a kapcsolat biztonságát.\n[További információk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Egyes könyvjelzők vagy jelszavak helytelen formátumúak vagy túl hosszúak, és nem lettek szinkronizálva.";
@@ -2904,6 +2916,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tárolt állomásnév: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Alfunkció: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Hozzáadás az eszközhöz";
@@ -3428,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Több mint 150 000 olyan domaint blokkolhatsz DNS-szintű tiltólistával, amelyeket rosszindulatú programok terjesztésével, adathalász támadásokkal és online csalásokkal hoztak kapcsolatba. [További információk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Tartalom blokkolása és szűrése";
+"vpn.settings.dns.server.content.blocking.header" = "Rosszindulatú tartalom blokkolása";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Kockázatos domainek blokkolása";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Csalásblokkoló";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

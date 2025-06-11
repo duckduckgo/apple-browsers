@@ -178,9 +178,12 @@ public extension DesignSystemImages {
             public static var keyLogin: DesignSystemImage { .init(resource: .keyLogin16) }
             public static var linkRecolorable: DesignSystemImage { .init(resource: .linkRecolorable16) }
             public static var lock: DesignSystemImage { .init(resource: .lock16) }
+            public static var location: DesignSystemImage { .init(resource: .location16) }
+            public static var locationBlocked: DesignSystemImage { .init(resource: .locationBlocked16) }
             public static var locationSolid: DesignSystemImage { .init(resource: .locationSolid16) }
             public static var menuLines: DesignSystemImage { .init(resource: .menuLines16) }
             public static var menuLinesDot: DesignSystemImage { .init(resource: .menuLinesDot16) }
+            public static var microphone: DesignSystemImage { .init(resource: .microphone16) }
             public static var microphoneBlocked: DesignSystemImage { .init(resource: .microphoneBlocked16) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn16) }
             public static var options: DesignSystemImage { .init(resource: .options16) }
@@ -189,6 +192,7 @@ public extension DesignSystemImages {
             public static var platformApple: DesignSystemImage { .init(resource: .platformApple16) }
             public static var platformMacOS: DesignSystemImage { .init(resource: .platformMacOS16) }
             public static var pointUpSolid: DesignSystemImage { .init(resource: .pointUpSolid16) }
+            public static var popupBlocked: DesignSystemImage { .init(resource: .popupBlocked16) }
             public static var print: DesignSystemImage { .init(resource: .print16) }
             public static var privacyPro: DesignSystemImage { .init(resource: .privacyPro16) }
             public static var profile: DesignSystemImage { .init(resource: .profile16) }

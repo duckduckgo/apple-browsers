@@ -30,8 +30,16 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     override func setUp() async throws{
         try await super.setUp()
 
-        let appearancePreferences = AppearancePreferences(keyValueStore: try MockKeyValueFileStore())
-        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor())
+        let appearancePreferences = AppearancePreferences(
+            keyValueStore: try MockKeyValueFileStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
+        let dataClearingPreferences = DataClearingPreferences(
+            persistor: MockFireButtonPreferencesPersistor(),
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock()
+        )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences,
@@ -48,9 +56,14 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                                                       embeddedDataProvider: AppTrackerDataSetProvider(),
                                                                                       errorReporting: nil),
                                                experimentManager: MockContentScopeExperimentManager(),
-                                               tld: TLD(),
+                                               tld: Application.appDelegate.tld,
+                                               onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                                appearancePreferences: appearancePreferences,
-                                               startupPreferences: startupPreferences
+                                               startupPreferences: startupPreferences,
+                                               bookmarkManager: MockBookmarkManager(),
+                                               historyCoordinator: CapturingHistoryDataSource(),
+                                               fireproofDomains: MockFireproofDomains(domains: []),
+                                               fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld)
                                               ),
             config: MockPrivacyConfiguration()
         )

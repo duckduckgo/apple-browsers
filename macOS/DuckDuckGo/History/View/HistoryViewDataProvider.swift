@@ -71,7 +71,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
     init(
         historyDataSource: HistoryDataSource,
-        historyBurner: HistoryBurning = FireHistoryBurner(),
+        historyBurner: HistoryBurning,
         dateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter(),
         featureFlagger: FeatureFlagger? = nil,
         pixelHandler: HistoryViewDataProviderPixelFiring = HistoryViewDataProviderPixelHandler()

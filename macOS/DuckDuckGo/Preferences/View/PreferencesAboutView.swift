@@ -96,23 +96,23 @@ extension Preferences {
                     model.openNewTab(with: .privacyPolicy)
                 }
 
-                #if FEEDBACK
+#if FEEDBACK
                 Button(UserText.sendFeedback) {
                     model.openFeedbackForm()
                 }
                 .padding(.top, 4)
-                #endif
+#endif
             }
-            #if SPARKLE
+#if SPARKLE
             .onAppear {
                 model.subscribeToUpdateInfoIfNeeded()
             }
-            #endif
+#endif
         }
 
         private var rightColumnContent: some View {
             Group {
-                #if APPSTORE
+#if APPSTORE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGoForMacAppStore)
                         .font(.companyName)
@@ -140,7 +140,7 @@ extension Preferences {
                             model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                         })
                     }))
-                #else
+#else
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGo)
                         .font(.companyName)
@@ -172,7 +172,7 @@ extension Preferences {
                 .padding(.bottom, 4)
 
                 updateButton
-                #endif
+#endif
             }
         }
 
@@ -423,7 +423,7 @@ extension Preferences {
             case .willDropSupportSoon(let upcomingMinVersion):
                 return UserText.aboutWillSoonBeUnsupportedDeviceInfo2(version: upcomingMinVersion)
             }
-                }
+        }
 
         var body: some View {
             let image = Image(.alertColor16)
@@ -471,12 +471,12 @@ extension Preferences {
         private var legacyCombinedTextAttributed: NSAttributedString {
             let fullText = combinedText
             let attributedString = NSMutableAttributedString(string: fullText)
-            
+
             // Create paragraph style for consistent formatting
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.lineSpacing = 0
             paragraphStyle.paragraphSpacing = 0
-            
+
             // Apply default text styling to match SwiftUI Text
             let defaultAttributes: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
@@ -484,7 +484,7 @@ extension Preferences {
                 .paragraphStyle: paragraphStyle
             ]
             attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
-            
+
             // Find the version string to make it clickable
             let versionText = "macOS \(versionString)"
             if let range = fullText.range(of: versionText) {
@@ -493,14 +493,14 @@ extension Preferences {
                 attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
                 attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
             }
-            
-                        return attributedString
+
+            return attributedString
         }
     }
 
     struct AttributedTextView: NSViewRepresentable {
         let attributedString: NSAttributedString
-        
+
         func makeNSView(context: Context) -> NSTextView {
             let textView = NSTextView()
             textView.isEditable = false
@@ -517,12 +517,12 @@ extension Preferences {
             textView.isRichText = true
             textView.usesFontPanel = false
             textView.usesRuler = false
-            
+
             textView.delegate = context.coordinator
-            
+
             return textView
         }
-        
+
         func updateNSView(_ textView: NSTextView, context: Context) {
             textView.textStorage?.setAttributedString(attributedString)
             textView.invalidateIntrinsicContentSize()

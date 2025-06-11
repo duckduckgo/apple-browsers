@@ -120,7 +120,7 @@ final class OmniBarEditingStateViewController: UIViewController {
 
     private func animateDismissal(_ completion: (() -> Void)? = nil) {
 
-        self.switchBarVC.view.layoutIfNeeded()
+        self.view.layoutIfNeeded()
 
         // Create animators
         let collapseAnimator = UIViewPropertyAnimator(duration: 0.3, dampingRatio: 0.7) {
@@ -129,7 +129,7 @@ final class OmniBarEditingStateViewController: UIViewController {
                 self.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height).isActive = true
             }
 
-            self.switchBarVC.view.layoutIfNeeded()
+            self.view.layoutIfNeeded()
         }
 
         let backgroundFadeAnimator = UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
@@ -140,19 +140,14 @@ final class OmniBarEditingStateViewController: UIViewController {
             self.switchBarVC.view.alpha = 0.0
         }
 
-        backgroundFadeAnimator.addCompletion { _ in
+        fadeOutAnimator.addCompletion { _ in
             completion?()
         }
 
-        // Schedule animations
-//        collapseAnimator.addCompletion { _ in
-//
-//        }
-
         // Start animations
         collapseAnimator.startAnimation()
-        fadeOutAnimator.startAnimation()
-        backgroundFadeAnimator.startAnimation(afterDelay: 0.25)
+        backgroundFadeAnimator.startAnimation()
+        fadeOutAnimator.startAnimation(afterDelay: 0.15)
     }
 
     private func installSwitchBarVC() {

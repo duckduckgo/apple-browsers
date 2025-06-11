@@ -144,7 +144,7 @@ class SwitchBarViewController: UIViewController {
 
     private func setupConstraints() {
 
-        collapsedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 0)
+        collapsedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
         expandedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: Constants.textEntryViewTopPadding)
 
         // probably not required
@@ -152,7 +152,7 @@ class SwitchBarViewController: UIViewController {
 //        textEntryHeightConstraint = textEntryViewController.view.heightAnchor.constraint(equalToConstant: 44).withPriority(.defaultHigh)
 
         NSLayoutConstraint.activate([
-            segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 0),
+            segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             segmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             segmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentedControlHeight),
 

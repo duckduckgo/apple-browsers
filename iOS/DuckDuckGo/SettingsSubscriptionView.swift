@@ -147,7 +147,7 @@ struct SettingsSubscriptionView: View {
             )
         }
 
-        if subscriptionFeatures.contains(.paidAIChat) {
+        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
             SettingsCellView(
                 label: UserText.settingsSubscriptionAiChatTitle,
                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
@@ -274,7 +274,7 @@ struct SettingsSubscriptionView: View {
             .disabled(!hasDBPEntitlement)
         }
 
-        if subscriptionFeatures.contains(.paidAIChat) {
+        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {{
             let hasAIChatEntitlement = userEntitlements.contains(.paidAIChat)
 
             NavigationLink(destination: LazyView(SubscriptionPIRView()), isActive: $isShowingDBP) {

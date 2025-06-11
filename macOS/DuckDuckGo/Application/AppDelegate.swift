@@ -464,8 +464,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.windowControllersManager = windowControllersManager
 
-        let visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
-        visualStyle = visualStyleManager.style
+        let visualStyleDecider = DefaultVisualStyleDecider(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
+        visualStyle = visualStyleDecider.style
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {

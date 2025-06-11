@@ -37,7 +37,7 @@ protocol VisualStyleProviding {
     var iconsProvider: IconsProviding { get }
 }
 
-protocol VisualStyleManagerProviding {
+protocol VisualStyleDecider {
     var style: any VisualStyleProviding { get }
 }
 
@@ -105,7 +105,7 @@ struct VisualStyle: VisualStyleProviding {
     }
 }
 
-final class VisualStyleManager: VisualStyleManagerProviding {
+final class DefaultVisualStyleDecider: VisualStyleDecider {
     private let featureFlagger: FeatureFlagger
     private let internalUserDecider: InternalUserDecider
 

@@ -33,10 +33,9 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if experimentalManager.isExperimentalTransitionEnabled {
-            let switchBarVC = SwitchBarPlaygroundViewController()
-            switchBarVC.modalPresentationStyle = .overFullScreen
-            switchBarVC.modalTransitionStyle = .crossDissolve
-            present(switchBarVC, animated: true)
+            let editingStateVC = OmniBarEditingStateViewController()
+            editingStateVC.modalPresentationStyle = .overFullScreen
+            present(editingStateVC, animated: false)
             return false
         }
         return super.textFieldShouldBeginEditing(textField)

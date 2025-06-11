@@ -20,6 +20,7 @@
 import UIKit
 import SwiftUI
 import Combine
+import DesignResourcesKitIcons
 
 class SwitchBarViewController: UIViewController {
 
@@ -31,10 +32,18 @@ class SwitchBarViewController: UIViewController {
     }
 
     private let segmentedControl = UISegmentedControl(items: ["Search", "Duck.ai"])
-    private let textEntryViewController: SwitchBarTextEntryViewController
+    let textEntryViewController: SwitchBarTextEntryViewController
+    let backButton = BrowserChromeButton(.secondary)
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
+
+    private var collapsedStateConstraint: NSLayoutConstraint?
+    private var expandedStateConstraint: NSLayoutConstraint?
+    private var segmentedControlTopConstraint: NSLayoutConstraint?
+    private var textEntryHeightConstraint: NSLayoutConstraint?
+
+    private var isExpanded = false
 
     // MARK: - Initialization
     init(switchBarHandler: SwitchBarHandling) {
@@ -54,6 +63,17 @@ class SwitchBarViewController: UIViewController {
         setupConstraints()
         setupSubscriptions()
         view.backgroundColor = .clear
+
+        setExpanded(isExpanded)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseInOut]) {
+            self.setExpanded(false)
+            self.view.layoutIfNeeded()
+        }
     }
 
     private func setupSubscriptions() {
@@ -87,25 +107,49 @@ class SwitchBarViewController: UIViewController {
         segmentedControl.setContentHuggingPriority(.required, for: .horizontal)
 
         view.addSubview(segmentedControl)
+        view.addSubview(backButton)
 
         addChild(textEntryViewController)
         view.addSubview(textEntryViewController.view)
         textEntryViewController.didMove(toParent: self)
 
+        backButton.translatesAutoresizingMaskIntoConstraints = false
         segmentedControl.translatesAutoresizingMaskIntoConstraints = false
         textEntryViewController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        backButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
+    }
+
+    func setExpanded(_ isExpanded: Bool) {
+        self.isExpanded = isExpanded
+        collapsedStateConstraint?.isActive = !isExpanded
+        expandedStateConstraint?.isActive = isExpanded
+        segmentedControlTopConstraint?.constant = isExpanded ? Constants.segmentedControlTopPadding : -20
+        textEntryHeightConstraint?.isActive = !isExpanded
+
+        segmentedControl.alpha = isExpanded ? 1 : 0
+
+        textEntryViewController.setExpanded(isExpanded)
     }
 
     private func setupConstraints() {
+
+        collapsedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: -20)
+        expandedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: Constants.textEntryViewTopPadding)
+        segmentedControlTopConstraint = segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.segmentedControlTopPadding)
+        textEntryHeightConstraint = textEntryViewController.view.heightAnchor.constraint(equalToConstant: 44)
+
         NSLayoutConstraint.activate([
-            segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.segmentedControlTopPadding),
+            segmentedControlTopConstraint!,
             segmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             segmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentedControlHeight),
 
-            textEntryViewController.view.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: Constants.textEntryViewTopPadding),
             textEntryViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.textEntryViewSidePadding),
             textEntryViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.textEntryViewSidePadding),
-            textEntryViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            textEntryViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            backButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.textEntryViewSidePadding),
+            backButton.centerYAnchor.constraint(equalTo: segmentedControl.centerYAnchor)
         ])
     }
 

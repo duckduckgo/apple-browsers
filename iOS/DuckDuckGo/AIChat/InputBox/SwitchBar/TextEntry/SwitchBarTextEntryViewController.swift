@@ -24,15 +24,20 @@ import Combine
 class SwitchBarTextEntryViewController: UIViewController {
 
     // MARK: - Properties
+    let textEntryView: SwitchBarTextEntryView
     private let handler: SwitchBarHandling
-    private let textEntryView: SwitchBarTextEntryView
     private var actionViewController: UIHostingController<SwitchBarActionView>?
     private let containerView = UIView()
 
     // Constraint references for dynamic sizing
     private var actionViewHeightConstraint: NSLayoutConstraint?
+    private var textEntryHeightConstraint: NSLayoutConstraint?
 
     private var cancellables = Set<AnyCancellable>()
+    private var isExpanded = false
+    private var showsActionView: Bool {
+        handler.currentToggleState == .search && isExpanded
+    }
 
     // MARK: - Initialization
     init(handler: SwitchBarHandling) {
@@ -51,7 +56,13 @@ class SwitchBarTextEntryViewController: UIViewController {
         setupViews()
         setupConstraints()
         setupSubscriptions()
-        updateActionViewVisibility()
+        updateConstraintsForCurrentMode()
+        self.view.layoutIfNeeded()
+    }
+
+    func setExpanded(_ expanded: Bool) {
+        isExpanded = expanded
+        updateConstraintsForCurrentMode()
     }
 
     private func setupViews() {
@@ -59,7 +70,7 @@ class SwitchBarTextEntryViewController: UIViewController {
         view.addSubview(containerView)
 
         containerView.addSubview(textEntryView)
-        containerView.backgroundColor = .systemBackground
+        containerView.backgroundColor = UIColor(designSystemColor: .surface)
         setupActionView()
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
@@ -68,13 +79,16 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     private func setupContainerViewAppearance() {
 
-        containerView.layer.cornerRadius = 12
+        containerView.layer.cornerRadius = 16
         containerView.layer.masksToBounds = false
 
         containerView.layer.shadowColor = UIColor.label.cgColor
         containerView.layer.shadowOffset = CGSize(width: 0, height: 2)
         containerView.layer.shadowRadius = 8
         containerView.layer.shadowOpacity = 0.1
+
+        containerView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor // TODO: observe trait collection changes
+        containerView.layer.borderWidth = 2
 
         updateShadowPath()
     }
@@ -139,6 +153,7 @@ class SwitchBarTextEntryViewController: UIViewController {
         guard let actionView = actionViewController?.view else { return }
 
         actionViewHeightConstraint = actionView.heightAnchor.constraint(equalToConstant: 60)
+//        textEntryHeightConstraint = textEntryView.heightAnchor.constraint(equalToConstant: 44)
 
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -161,13 +176,12 @@ class SwitchBarTextEntryViewController: UIViewController {
     }
 
     func updateConstraintsForCurrentMode() {
-        updateActionViewVisibility()
+        // Commented out to have a proper transition
+//        updateActionViewVisibility()
 
-        let isSearchMode = handler.currentToggleState == .search
-        let targetHeight: CGFloat = isSearchMode ? 0 : 60
-
-        self.actionViewHeightConstraint?.constant = targetHeight
-        self.actionViewController?.view.alpha = isSearchMode ? 0 : 1
+        self.actionViewHeightConstraint?.constant = showsActionView ? 0 : 60
+        self.actionViewController?.view.alpha = showsActionView ? 0 : 1
+        self.textEntryHeightConstraint?.isActive = !isExpanded
     }
 
     private func setupSubscriptions() {

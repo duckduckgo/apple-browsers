@@ -88,6 +88,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                 freemiumDBPExperimentPixelHandler: MockFreemiumDBPExperimentPixelHandler()
             ),
             tld: Application.appDelegate.tld,
+            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),
             keyValueStore: keyValueStore,
             notificationCenter: notificationCenter,
             fireDailyPixel: { self.firePixelCalls.append($0) }

@@ -24,11 +24,12 @@ extension HistoryViewActionsManager {
     convenience init(
         historyCoordinator: HistoryDataSource,
         bookmarksHandler: HistoryViewBookmarksHandling,
-        fireproofStatusProvider: DomainFireproofStatusProviding
+        fireproofStatusProvider: DomainFireproofStatusProviding,
+        fire: @escaping () async -> Fire
     ) {
         let dataProvider = HistoryViewDataProvider(
             historyDataSource: historyCoordinator,
-            historyBurner: FireHistoryBurner(fireproofDomains: fireproofStatusProvider)
+            historyBurner: FireHistoryBurner(fireproofDomains: fireproofStatusProvider, fire: fire)
         )
         self.init(scriptClients: [
             DataClient(

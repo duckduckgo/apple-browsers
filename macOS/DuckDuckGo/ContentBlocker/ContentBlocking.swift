@@ -74,6 +74,7 @@ final class AppContentBlocking {
         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
         historyCoordinator: HistoryDataSource,
         fireproofDomains: DomainFireproofStatusProviding,
+        fireCoordinator: FireCoordinator,
         tld: TLD
     ) {
         let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
@@ -93,6 +94,7 @@ final class AppContentBlocking {
             bookmarkManager: bookmarkManager,
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
+            fireCoordinator: fireCoordinator,
             tld: tld
         )
     }
@@ -109,6 +111,7 @@ final class AppContentBlocking {
         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
         historyCoordinator: HistoryDataSource,
         fireproofDomains: DomainFireproofStatusProviding,
+        fireCoordinator: FireCoordinator,
         tld: TLD
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -140,7 +143,8 @@ final class AppContentBlocking {
                                                   startupPreferences: startupPreferences,
                                                   bookmarkManager: bookmarkManager,
                                                   historyCoordinator: historyCoordinator,
-                                                  fireproofDomains: fireproofDomains)
+                                                  fireproofDomains: fireproofDomains,
+                                                  fireCoordinator: fireCoordinator)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,

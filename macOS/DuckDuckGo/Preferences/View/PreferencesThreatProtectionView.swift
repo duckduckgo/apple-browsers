@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import SwiftUICore
+import SwiftUI
 import PreferencesUI_macOS
 import SwiftUIExtensions
 import PixelKit

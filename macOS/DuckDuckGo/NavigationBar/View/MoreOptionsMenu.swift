@@ -529,18 +529,34 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return platform == .appStore && subscriptionManager.canPurchase == false
         }
 
-        let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
-            .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
-
         if !subscriptionManager.isUserAuthenticated {
-            privacyProItem.target = self
-            privacyProItem.action = #selector(openSubscriptionPurchasePage(_:))
+
+            var privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
+                .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
+
+            // Check if user is eligible for Free Trial
+            if featureFlagger.isFeatureOn(.privacyProFreeTrial) && subscriptionManager.isUserEligibleForFreeTrial() {
+                privacyProItem = NSMenuItem.createMenuItemWithBadge(
+                    title: UserText.subscriptionOptionsMenuItem,
+                    badgeText: UserText.subscriptionOptionsMenuItemFreeTrialBadge,
+                    action: #selector(openSubscriptionPurchasePage(_:)),
+                    target: self,
+                    image: moreOptionsMenuIconsProvider.privacyProIcon,
+                    menu: self
+                )
+            } else {
+                privacyProItem.target = self
+                privacyProItem.action = #selector(openSubscriptionPurchasePage(_:))
+            }
 
             // Do not add for App Store when purchase not available in the region
             if !shouldHideDueToNoProduct() {
                 addItem(privacyProItem)
             }
         } else {
+            let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
+                .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
+
             privacyProItem.submenu = SubscriptionSubMenu(targeting: self,
                                                          subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(),
                                                          subscriptionManager: subscriptionManager,

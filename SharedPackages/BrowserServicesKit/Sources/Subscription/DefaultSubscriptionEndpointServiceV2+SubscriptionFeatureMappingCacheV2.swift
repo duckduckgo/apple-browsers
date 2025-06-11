@@ -28,7 +28,7 @@ extension DefaultSubscriptionEndpointServiceV2: SubscriptionFeatureMappingCacheV
             return response.features
         } catch {
             Logger.subscription.error("Failed to get subscription features: \(error)")
-            return [.networkProtection, .dataBrokerProtection, .identityTheftRestoration]
+            return [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
         }
     }
 }

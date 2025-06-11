@@ -200,7 +200,8 @@ extension AppDelegate {
         let privacyDashboardViewController = PrivacyDashboardViewController(
             privacyInfo: nil,
             entryPoint: .report,
-            contentBlocking: privacyFeatures.contentBlocking
+            contentBlocking: privacyFeatures.contentBlocking,
+            permissionManager: permissionManager
         )
         privacyDashboardViewController.sizeDelegate = self
 
@@ -344,7 +345,7 @@ extension AppDelegate {
 
     @objc func fireButtonAction(_ sender: NSButton) {
         DispatchQueue.main.async {
-            FireCoordinator.fireButtonAction()
+            self.fireCoordinator.fireButtonAction()
             let pixelReporter = OnboardingPixelReporter()
             pixelReporter.measureFireButtonPressed()
         }
@@ -827,7 +828,7 @@ extension MainViewController {
             Task {
                 let historyViewDataProvider = HistoryViewDataProvider(
                     historyDataSource: historyCoordinator,
-                    historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains)
+                    historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in self.fireCoordinator.fireViewModel.fire })
                 )
                 await historyViewDataProvider.refreshData()
                 let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
@@ -835,7 +836,7 @@ extension MainViewController {
                 let presenter = DefaultHistoryViewDialogPresenter()
                 switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all, in: nil) {
                 case .burn:
-                    FireCoordinator.fireViewModel.fire.burnAll()
+                    self.fireCoordinator.fireViewModel.fire.burnAll()
                 case .delete:
                     historyCoordinator.burnAll {}
                 default:
@@ -852,7 +853,7 @@ extension MainViewController {
                 guard case .alertFirstButtonReturn = response else {
                     return
                 }
-                FireCoordinator.fireViewModel.fire.burnAll()
+                self.fireCoordinator.fireViewModel.fire.burnAll()
             })
         }
     }
@@ -873,7 +874,7 @@ extension MainViewController {
                 let presenter = DefaultHistoryViewDialogPresenter()
                 switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode, in: nil) {
                 case .burn:
-                    FireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: isToday)
+                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: isToday)
                 case .delete:
                     historyCoordinator.burnVisits(visits) {}
                 default:
@@ -892,7 +893,7 @@ extension MainViewController {
                 guard case .alertFirstButtonReturn = response else {
                     return
                 }
-                FireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: isToday)
+                self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: isToday)
             })
         }
     }

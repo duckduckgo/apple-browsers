@@ -33,10 +33,10 @@ final class FireHistoryBurner: HistoryBurning {
      */
     init(
         fireproofDomains: DomainFireproofStatusProviding,
-        fire: (() async -> Fire)? = nil
+        fire: @escaping () async -> Fire
     ) {
         self.fireproofDomains = fireproofDomains
-        self.fire = fire ?? { @MainActor in FireCoordinator.fireViewModel.fire }
+        self.fire = fire
     }
 
     func burn(_ visits: [Visit], animated: Bool) async {

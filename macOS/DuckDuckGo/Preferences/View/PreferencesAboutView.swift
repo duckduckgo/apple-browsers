@@ -65,6 +65,12 @@ extension Preferences {
                 }
 #endif
             }
+            .onChange(of: model.featureFlagOverrideToggle) { _ in
+                // Intentional no-op
+                // This will cause SwiftUI to re-evaluate the view body and
+                // redraw when one of the relevant feature flag ovverides
+                // is toggled.
+            }
         }
     }
 
@@ -380,7 +386,6 @@ extension Preferences {
 
         var wide: Bool
         var warning: OSSupportWarning
-        //var supportedOSChecker: SupportedOSChecking
 
         var width: CGFloat {
             return wide ? 510 : 320

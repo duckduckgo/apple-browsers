@@ -95,7 +95,6 @@ jobs:
           pixel-name: m_ci_apple_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}
 
       - name: Report job duration
-        # Only report duration if the job is not cancelled and either the job succeeded or the tests run failed
         if: success() || (always() && steps.run-unit-tests.outcome == 'failure')
         id: measure-duration
         uses: ./.github/actions/measure-duration
@@ -103,8 +102,6 @@ jobs:
           mode: stop
           start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
           pixel-name: m_ci_apple_bsk_unit_tests_macos_duration
-          pixel-params: |
-            os: ${{ runner.os }}
 
       - name: Stop log stream
         if: always()
@@ -242,7 +239,6 @@ jobs:
             | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
 
       - name: Report job duration
-        # Only report duration if the job is not cancelled and either the job succeeded or the tests run failed
         if: success() || (always() && steps.run-unit-tests-ios.outcome == 'failure')
         id: measure-duration
         uses: ./.github/actions/measure-duration
@@ -250,8 +246,6 @@ jobs:
           mode: stop
           start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
           pixel-name: m_ci_apple_bsk_unit_tests_ios_duration
-          pixel-params: |
-            os: ${{ runner.os }}
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'

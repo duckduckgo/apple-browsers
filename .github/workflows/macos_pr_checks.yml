@@ -296,6 +296,8 @@ jobs:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
         pixel-name: m_ci_apple_macos_${{ matrix.flavor }}_unit_tests_duration
+        pixel-params: |
+          runner: ${{ matrix.runs-on }}
 
     - name: Send Unit Tests Status Pixel
       if: always() && github.ref_name == 'main'
@@ -369,6 +371,8 @@ jobs:
 
     runs-on: macos-15-xlarge
     timeout-minutes: 30
+    env:
+      RUNS_ON: macos-15-xlarge # keep this in sync with runs-on above
 
     steps:
     - name: Register SSH key for certificates repository access
@@ -443,6 +447,8 @@ jobs:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
         pixel-name: m_ci_apple_macos_release_build_duration
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
     - name: Upload failed test log
       uses: actions/upload-artifact@v4

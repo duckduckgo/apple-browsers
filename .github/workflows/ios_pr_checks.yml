@@ -77,6 +77,7 @@ jobs:
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
 
     env:
+      RUNS_ON: macos-15 # keep this in sync with runs-on above
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
     outputs:
@@ -182,6 +183,8 @@ jobs:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
         pixel-name: m_ci_apple_ios_unit_tests_duration
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
     - name: Send Status Pixel
       if: always() && github.ref_name == 'main'

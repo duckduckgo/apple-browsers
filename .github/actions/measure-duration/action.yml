@@ -50,5 +50,4 @@ runs:
         pixel-name: ${{ inputs.pixel-name }}
         query-params: |
           seconds: ${{ steps.stop.outputs.duration }}
-          runner: ${{ runner.name }}
           ${{ inputs.pixel-params }}

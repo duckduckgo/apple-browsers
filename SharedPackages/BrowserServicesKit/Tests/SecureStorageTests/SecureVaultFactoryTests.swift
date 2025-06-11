@@ -24,7 +24,9 @@ import SecureStorageTestsUtils
 
 let MockSecureVaultFactory = SecureVaultFactory<ConcreteMockSecureVault>(
     makeCryptoProvider: {
-        return MockCryptoProvider()
+        let provider = MockCryptoProvider()
+        provider._derivedKey = "derived".data(using: .utf8)
+        return provider
     }, makeKeyStoreProvider: { _ in
         let provider = MockKeystoreProvider()
         provider._l1Key = "key".data(using: .utf8)

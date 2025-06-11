@@ -807,6 +807,7 @@ final class FeedbackSubMenu: NSMenu {
 #endif
     }
 
+#if FEEDBACK
     @MainActor
     @objc private func sendFeedback(_ sender: Any?) {
         PixelKit.fire(MoreOptionsMenuPixel.feedbackActionClicked, frequency: .daily)
@@ -818,6 +819,7 @@ final class FeedbackSubMenu: NSMenu {
         PixelKit.fire(MoreOptionsMenuPixel.feedbackActionClicked, frequency: .daily)
         Application.appDelegate.openPProFeedback(sender)
     }
+#endif
 }
 
 final class ZoomSubMenu: NSMenu {

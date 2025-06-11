@@ -98,7 +98,7 @@ final class SuggestionContainerTests: XCTestCase {
 
         XCTAssertNil(suggestionContainer.suggestionDataCache)
         let e = expectation(description: "Suggestions updated")
-        suggestionContainer.suggestionLoading(suggestionLoadingMock, suggestionDataFromUrl: URL.testsServer, withParameters: [:]) { data, error in
+        suggestionContainer.suggestionLoading(suggestionLoadingMock, suggestionDataFromUrl: URL.duckDuckGo, withParameters: [:]) { data, error in
             XCTAssertNotNil(suggestionContainer.suggestionDataCache)
             e.fulfill()
 

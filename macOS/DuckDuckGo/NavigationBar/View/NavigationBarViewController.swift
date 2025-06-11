@@ -916,8 +916,9 @@ final class NavigationBarViewController: NSViewController {
     private func subscribeToTabContent() {
         urlCancellable = tabCollectionViewModel.selectedTabViewModel?.tab.$content
             .receive(on: DispatchQueue.main)
-            .sink(receiveValue: { [weak self] _ in
+            .sink(receiveValue: { [weak self] tabContent in
                 self?.updatePasswordManagementButton()
+                self?.addressBarContainer.layer?.opacity = tabContent == .newtab ? 0 : 1
             })
     }
 

@@ -24,16 +24,24 @@ struct VideoPlayerView: View {
 
     @ObservedObject private var model: VideoPlayerViewModel
 
+    private let shouldShowPictureInPictureWhenBackgrounded: Bool
     private var isPlaying: Binding<Bool>
+    private let onPlayerLayerReady: ((AVPlayerLayer) -> Void)?
 
-    init(model: VideoPlayerViewModel, isPlaying: Binding<Bool> = .constant(true)) {
+    init(
+        model: VideoPlayerViewModel,
+        shouldShowPictureInPictureWhenBackgrounded: Bool = false,
+        isPlaying: Binding<Bool> = .constant(true),
+        onPlayerLayerReady: ((AVPlayerLayer) -> Void)? = nil
+    ) {
         self.model = model
+        self.shouldShowPictureInPictureWhenBackgrounded = shouldShowPictureInPictureWhenBackgrounded
         self.isPlaying = isPlaying
+        self.onPlayerLayerReady = onPlayerLayerReady
     }
 
     var body: some View {
-        PlayerView(player: model.player)
-            .foregroundColor(Color.red)
+        PlayerView(player: model.player, onPlayerLayerReady: onPlayerLayerReady)
             .onChange(of: isPlaying.wrappedValue) { newValue in
                 if newValue {
                     model.play()
@@ -42,6 +50,8 @@ struct VideoPlayerView: View {
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification), perform: { _ in
+                // If PiP is enabled don't pause the playback when the app goes to the background as it should be a seamless transition.
+                guard !shouldShowPictureInPictureWhenBackgrounded else { return }
                 isPlaying.wrappedValue = false
             })
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
@@ -51,29 +61,30 @@ struct VideoPlayerView: View {
 
 }
 
-// MARK: - Private
-
 // AVKit provides a SwiftUI view called VideoPlayer view to render AVPlayer.
-// The issue is that is not possible to change the background/foreground color of the view so the default color is black.
+// The issue is that is not possible to change the background/foreground colour of the view so the default colour is black.
 // Using UIKit -> AVPlayerLayer solves the problem.
-private struct PlayerView: UIViewRepresentable {
-
+struct PlayerView: UIViewRepresentable {
     private let player: AVPlayer
+    private let onPlayerLayerReady: ((AVPlayerLayer) -> Void)?
 
-    init(player: AVPlayer) {
+    init(player: AVPlayer, onPlayerLayerReady: ((AVPlayerLayer) -> Void)? = nil) {
         self.player = player
+        self.onPlayerLayerReady = onPlayerLayerReady
+    }
+
+    func makeUIView(context: Context) -> UIView {
+        let view = PlayerUIView(player: player)
+        onPlayerLayerReady?(view.playerLayer)
+        return view
     }
 
     func updateUIView(_ uiView: UIView, context: UIViewRepresentableContext<PlayerView>) {
     }
-
-    func makeUIView(context: Context) -> UIView {
-        return PlayerUIView(player: player)
-    }
 }
 
 private final class PlayerUIView: UIView {
-    private let playerLayer = AVPlayerLayer()
+    let playerLayer = AVPlayerLayer()
 
     init(player: AVPlayer) {
         playerLayer.player = player
@@ -105,6 +116,7 @@ struct VideoPlayerView_Previews: PreviewProvider {
         var body: some View {
             VideoPlayerView(
                 model: model,
+                shouldShowPictureInPictureWhenBackgrounded: false,
                 isPlaying: $isPlaying
             )
             .onAppear(perform: {

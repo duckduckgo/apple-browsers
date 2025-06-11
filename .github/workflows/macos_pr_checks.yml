@@ -128,7 +128,7 @@ jobs:
 
     runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 30
-    
+
     env:
       WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
@@ -154,6 +154,12 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.branch || github.ref_name }}
+
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
@@ -281,16 +287,27 @@ jobs:
             | sort -u -k 1,2 \
             | xargs -L 1 ./scripts/report-failed-unit-test.sh
         done
-        
+
+    - name: Report job duration
+      if: success() || (always() && steps.run-integration-tests.outcome == 'failure')
+      id: measure-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_macos_${{ matrix.flavor }}_unit_tests_duration
+
     - name: Send Unit Tests Status Pixel
       if: always() && github.ref_name == 'main'
-      run: |
-        curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_mac_main_${{ matrix.flavor }}_unit_tests_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
-        
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: m_ci_apple_mac_main_${{ matrix.flavor }}_unit_tests_${{ steps.run-unit-tests.outcome }}
+
     - name: Send Integration Tests Status Pixel
       if: always() && github.ref_name == 'main'
-      run: |
-        curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: m_ci_apple_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}
 
     - name: Upload failed unit tests log
       uses: actions/upload-artifact@v4
@@ -364,6 +381,12 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
+
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
       with:
@@ -401,6 +424,7 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Build the app
+      id: build-app
       run: |
         export OS_ACTIVITY_MODE=debug
         set -o pipefail && xcodebuild \
@@ -410,6 +434,15 @@ jobs:
           -skipPackagePluginValidation -skipMacroValidation \
           | tee release-xcodebuild.log \
           | xcbeautify
+
+    - name: Report job duration
+      if: success() || (always() && steps.build-app.outcome == 'failure')
+      id: measure-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_macos_release_build_duration
 
     - name: Upload failed test log
       uses: actions/upload-artifact@v4

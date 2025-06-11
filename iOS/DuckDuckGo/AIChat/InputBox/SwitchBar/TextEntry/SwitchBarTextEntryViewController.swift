@@ -208,8 +208,6 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     // MARK: - Action Handlers
     private func handleImageUpload() {
-        // TODO: Implement image upload functionality
-        print("Image upload tapped")
     }
 
     private func handleSend() {

@@ -181,7 +181,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration-tests.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_ios_unit_tests_duration
+        pixel-name: m_ci_apple_duration_ios_unit_tests
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
@@ -189,7 +189,7 @@ jobs:
       if: always() && github.ref_name == 'main'
       uses: ./.github/actions/send-pixel
       with:
-        pixel-name: m_ci_apple_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}
+        pixel-name: m_ci_apple_status_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}
 
     - name: Fetch latest commit author
       if: always() && github.ref_name == 'main'
@@ -287,7 +287,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration-release-build.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_ios_release_build_duration
+        pixel-name: m_ci_apple_duration_ios_release_build
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 

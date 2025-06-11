@@ -116,7 +116,7 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
             placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
 
-            clearButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            clearButton.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
             clearButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.clearButtonTrailingOffset),
             clearButton.widthAnchor.constraint(equalToConstant: Constants.clearButtonSize),
             clearButton.heightAnchor.constraint(equalToConstant: Constants.clearButtonSize)

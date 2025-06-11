@@ -76,6 +76,8 @@ final class WebView: WKWebView {
 
     func removeAccessoryContentView() {
         Logger.autofill.debug("Removing accessory content view")
+        guard accessory.currentContent != nil else { return }
+        
         accessory.setContentView(nil)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.reloadContentViewInputViews()

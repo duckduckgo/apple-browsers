@@ -2306,9 +2306,11 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     @objc private func keyboardWillHide(_ notification: Notification) {
-        // TODO - improve logic here
         if !fillCreditCardsPromptIsPresenting && isTabCurrentlyPresented() {
             autofillUserScript?.clearAllHandlers()
+            if let webView = webView as? WebView {
+                webView.suppressSystemInputView = false
+            }
         }
     }
 
@@ -3125,6 +3127,9 @@ extension TabViewController: SecureVaultManagerDelegate {
             Logger.autofill.debug("secureVaultManagerDidFocus: not creditCard")
             completionHandler(nil)
             cleanupInputAccessoryView()
+            if let webView = webView as? WebView {
+                webView.suppressSystemInputView = false
+            }
             return
         }
 
@@ -3147,8 +3152,10 @@ extension TabViewController: SecureVaultManagerDelegate {
         }
         
         if shouldShowCreditCardPrompt {
-            presentAutofillPromptViewController(creditCards: creditCards) { creditCard in
+            fillCreditCardsPromptIsPresenting = true
+            presentAutofillPromptViewController(creditCards: creditCards) { [weak self] creditCard in
                 completionHandler(creditCard)
+                self?.fillCreditCardsPromptIsPresenting = false
             }
             shouldShowCreditCardPrompt = false
             autofillCreditCardAccessoryView?.updateCreditCards(creditCards)

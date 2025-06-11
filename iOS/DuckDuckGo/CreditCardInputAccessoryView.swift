@@ -76,8 +76,8 @@ class CreditCardInputAccessoryView: UIView {
     private lazy var doneButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle(UserText.navigationTitleDone, for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitleColor(UIColor(designSystemColor: .accent), for: .normal)
         button.addTarget(self, action: #selector(doneButtonTapped), for: .touchUpInside)
         return button
     }()
@@ -175,7 +175,7 @@ class CreditCardInputAccessoryView: UIView {
             manageButton.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             doneButton.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             doneButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            manageButton.trailingAnchor.constraint(equalTo: doneButton.leadingAnchor, constant: -8),
+            manageButton.trailingAnchor.constraint(equalTo: doneButton.leadingAnchor, constant: -2),
 
             scrollView.topAnchor.constraint(equalTo: containerView.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
@@ -190,8 +190,7 @@ class CreditCardInputAccessoryView: UIView {
 
         // Setup card stack after scroll view has been laid out
         NSLayoutConstraint.activate([
-            cardStackView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 4),
-            cardStackView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            cardStackView.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
             cardStackView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 8),
             cardStackView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: -8),
             cardStackView.heightAnchor.constraint(equalToConstant: 44)
@@ -346,6 +345,10 @@ class CreditCardInputAccessoryView: UIView {
                 expirationLabel.leadingAnchor.constraint(equalTo: verticalLine.trailingAnchor, constant: 6),
                 expirationLabel.centerYAnchor.constraint(equalTo: detailsContainer.centerYAnchor),
                 expirationLabel.trailingAnchor.constraint(lessThanOrEqualTo: detailsContainer.trailingAnchor),
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                digitsLabel.trailingAnchor.constraint(lessThanOrEqualTo: detailsContainer.trailingAnchor)
             ])
         }
 

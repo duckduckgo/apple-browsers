@@ -183,6 +183,8 @@ jobs:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
         pixel-name: m_ci_apple_ios_unit_tests_duration
+        pixel-params: |
+          os: ${{ runner.os }}
 
     - name: Send Status Pixel
       if: always() && github.ref_name == 'main'

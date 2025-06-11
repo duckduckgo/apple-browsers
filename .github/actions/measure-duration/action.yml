@@ -10,6 +10,10 @@ inputs:
   pixel-name:
     description: 'Pixel name to send duration data (required for stop mode)'
     required: false
+  pixel-params:
+    description: 'Additional query parameters as YAML key-value pairs'
+    required: false
+    default: '{}'
 outputs:
   start-timestamp:
     description: 'Start timestamp (returned in start mode)'
@@ -46,3 +50,4 @@ runs:
         pixel-name: ${{ inputs.pixel-name }}
         query-params: |
           seconds: ${{ steps.stop.outputs.duration }}
+          ${{ inputs.pixel-params }}

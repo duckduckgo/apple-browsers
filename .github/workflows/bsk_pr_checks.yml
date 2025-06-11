@@ -25,7 +25,7 @@ jobs:
 
       runs-on: macos-15
       timeout-minutes: 30
-      
+
       env:
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
@@ -103,6 +103,8 @@ jobs:
           mode: stop
           start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
           pixel-name: m_ci_apple_bsk_unit_tests_macos_duration
+          pixel-params: |
+            os: ${{ runner.os }}
 
       - name: Stop log stream
         if: always()
@@ -173,7 +175,7 @@ jobs:
 
       runs-on: macos-15
       timeout-minutes: 30
-      
+
       env:
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
@@ -248,6 +250,8 @@ jobs:
           mode: stop
           start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
           pixel-name: m_ci_apple_bsk_unit_tests_ios_duration
+          pixel-params: |
+            os: ${{ runner.os }}
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'

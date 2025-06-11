@@ -44,7 +44,6 @@ jobs:
         uses: ./.github/actions/measure-duration
         with:
           mode: start
-          job-name: Unit Tests
 
       - name: Set cache key hash
         run: |
@@ -103,15 +102,7 @@ jobs:
         with:
           mode: stop
           start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-          job-name: Unit Tests
-
-      - name: Send Duration Pixel
-        if: steps.measure-duration.conclusion == 'success'
-        uses: ./.github/actions/send-pixel
-        with:
-          pixel-name: m_ci_apple_bsk_unit_tests_ios_duration
-          query-params: |
-            seconds: ${{ steps.measure-duration.outputs.duration }}
+          pixel-name: m_ci_apple_bsk_unit_tests_macos_duration
 
       - name: Stop log stream
         if: always()
@@ -198,7 +189,6 @@ jobs:
         uses: ./.github/actions/measure-duration
         with:
           mode: start
-          job-name: Unit Tests
 
       - name: Set cache key hash
         run: |
@@ -263,15 +253,7 @@ jobs:
         with:
           mode: stop
           start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-          job-name: Unit Tests
-
-      - name: Send Duration Pixel
-        if: steps.measure-duration.conclusion == 'success'
-        uses: ./.github/actions/send-pixel
-        with:
           pixel-name: m_ci_apple_bsk_unit_tests_ios_duration
-          query-params: |
-            seconds: ${{ steps.measure-duration.outputs.duration }}
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4

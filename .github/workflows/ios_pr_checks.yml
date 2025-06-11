@@ -182,14 +182,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-
-    - name: Send Duration Pixel
-      if: steps.measure-duration.conclusion == 'success'
-      uses: ./.github/actions/send-pixel
-      with:
         pixel-name: m_ci_apple_ios_unit_tests_duration
-        query-params: |
-          seconds: ${{ steps.measure-duration.outputs.duration }}
 
     - name: Send Status Pixel
       if: always() && github.ref_name == 'main'

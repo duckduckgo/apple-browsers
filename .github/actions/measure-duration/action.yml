@@ -7,6 +7,9 @@ inputs:
   start-timestamp:
     description: 'Start timestamp (required for stop mode)'
     required: false
+  pixel-name:
+    description: 'Pixel name to send duration data (required for stop mode)'
+    required: false
 outputs:
   start-timestamp:
     description: 'Start timestamp (returned in start mode)'
@@ -34,4 +37,12 @@ runs:
         END_TIME=$(date +%s)
         DURATION=$((END_TIME - ${{ inputs.start-timestamp }}))
         echo "duration=${DURATION}" >> $GITHUB_OUTPUT
-        echo "::notice::Duration measured: ${DURATION} seconds" 
+        echo "::notice::Duration measured: ${DURATION} seconds"
+
+    - name: Send duration pixel
+      if: inputs.mode == 'stop' && inputs.pixel-name != ''
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: ${{ inputs.pixel-name }}
+        query-params: |
+          seconds: ${{ steps.stop.outputs.duration }}

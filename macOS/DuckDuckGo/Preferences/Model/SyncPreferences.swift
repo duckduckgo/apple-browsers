@@ -881,7 +881,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
     }
 
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
-        // no-op
+        sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource)
     }
 
     func controllerDidCreateSyncAccount() {

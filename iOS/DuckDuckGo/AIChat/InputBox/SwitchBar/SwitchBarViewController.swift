@@ -28,7 +28,8 @@ class SwitchBarViewController: UIViewController {
         static let segmentedControlHeight: CGFloat = 36
         static let segmentedControlTopPadding: CGFloat = 20
         static let textEntryViewTopPadding: CGFloat = 16
-        static let textEntryViewSidePadding: CGFloat = 20
+        static let textEntryViewSidePadding: CGFloat = 16
+        static let backButtonHorizontalPadding: CGFloat = 16
     }
 
     private let segmentedControl = UISegmentedControl(items: ["Search", "Duck.ai"])
@@ -130,10 +131,9 @@ class SwitchBarViewController: UIViewController {
 
     func setExpanded(_ isExpanded: Bool) {
         self.isExpanded = isExpanded
+
         collapsedStateConstraint?.isActive = !isExpanded
         expandedStateConstraint?.isActive = isExpanded
-        segmentedControlTopConstraint?.constant = isExpanded ? Constants.segmentedControlTopPadding : -20
-        textEntryHeightConstraint?.isActive = !isExpanded
 
         segmentedControl.alpha = isExpanded ? 1 : 0
 
@@ -142,21 +142,19 @@ class SwitchBarViewController: UIViewController {
 
     private func setupConstraints() {
 
-        collapsedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: -20)
+        collapsedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
         expandedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: Constants.textEntryViewTopPadding)
-        segmentedControlTopConstraint = segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Constants.segmentedControlTopPadding)
-        textEntryHeightConstraint = textEntryViewController.view.heightAnchor.constraint(equalToConstant: 44)
 
         NSLayoutConstraint.activate([
-            segmentedControlTopConstraint!,
+            segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             segmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             segmentedControl.heightAnchor.constraint(equalToConstant: Constants.segmentedControlHeight),
 
-            textEntryViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.textEntryViewSidePadding),
-            textEntryViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.textEntryViewSidePadding),
-            textEntryViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            textEntryViewController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.textEntryViewSidePadding),
+            textEntryViewController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Constants.textEntryViewSidePadding),
+            textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 
-            backButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.textEntryViewSidePadding),
+            backButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.backButtonHorizontalPadding),
             backButton.centerYAnchor.constraint(equalTo: segmentedControl.centerYAnchor)
         ])
     }

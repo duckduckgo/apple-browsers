@@ -47,6 +47,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
             let editingStateVC = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
             editingStateVC.delegate = self
+            editingStateVC.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
             editingStateVC.modalPresentationStyle = .overFullScreen
             present(editingStateVC, animated: false)
             self.editingStateViewController = editingStateVC

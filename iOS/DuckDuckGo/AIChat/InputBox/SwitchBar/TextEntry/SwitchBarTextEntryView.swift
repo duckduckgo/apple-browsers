@@ -100,7 +100,7 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         clearButton.translatesAutoresizingMaskIntoConstraints = false
 
-        heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight)
+        heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight).withPriority(.init(999))
         heightConstraint?.isActive = true
 
         // Create both trailing constraints for textView

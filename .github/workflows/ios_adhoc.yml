@@ -79,7 +79,6 @@ jobs:
 
       - name: Report job duration
         if: success() || (always() && steps.archive-and-upload.outcome == 'failure')
-        id: measure-duration
         uses: ./.github/actions/measure-duration
         with:
           mode: stop

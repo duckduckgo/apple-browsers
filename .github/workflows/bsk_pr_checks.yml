@@ -41,7 +41,7 @@ jobs:
           submodules: recursive
 
       - name: Start measuring duration
-        id: start-duration
+        id: start-duration-macos
         uses: ./.github/actions/measure-duration
         with:
           mode: start
@@ -97,11 +97,10 @@ jobs:
 
       - name: Report job duration
         if: success() || (always() && steps.run-unit-tests.outcome == 'failure')
-        id: measure-duration
         uses: ./.github/actions/measure-duration
         with:
           mode: stop
-          start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+          start-timestamp: ${{ steps.start-duration-macos.outputs.start-timestamp }}
           pixel-name: m_ci_apple_bsk_unit_tests_macos_duration
           pixel-params: |
             runner: ${{ env.RUNS_ON }}
@@ -188,7 +187,7 @@ jobs:
           submodules: recursive
 
       - name: Start measuring duration
-        id: start-duration
+        id: start-duration-ios
         uses: ./.github/actions/measure-duration
         with:
           mode: start
@@ -244,11 +243,10 @@ jobs:
 
       - name: Report job duration
         if: success() || (always() && steps.run-unit-tests-ios.outcome == 'failure')
-        id: measure-duration
         uses: ./.github/actions/measure-duration
         with:
           mode: stop
-          start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+          start-timestamp: ${{ steps.start-duration-ios.outputs.start-timestamp }}
           pixel-name: m_ci_apple_bsk_unit_tests_ios_duration
           pixel-params: |
             runner: ${{ env.RUNS_ON }}

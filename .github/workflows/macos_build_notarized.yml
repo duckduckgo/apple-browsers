@@ -167,7 +167,6 @@ jobs:
         fi
 
     - name: Report job duration
-      id: measure-duration
       uses: ./.github/actions/measure-duration
       with:
         mode: stop
@@ -343,7 +342,6 @@ jobs:
         echo "dmg=${dmg}" >> $GITHUB_OUTPUT
 
     - name: Report job duration
-      id: measure-duration
       uses: ./.github/actions/measure-duration
       with:
         mode: stop

@@ -136,7 +136,6 @@ jobs:
           PRIVACYPRO_STAGING_TOKEN: ${{ secrets.PRIVACYPRO_STAGING_TOKEN }}
 
     - name: Report job duration
-      id: measure-duration
       if: success() || (always() && steps.run-tests.outcome == 'failure')
       uses: ./.github/actions/measure-duration
       with:

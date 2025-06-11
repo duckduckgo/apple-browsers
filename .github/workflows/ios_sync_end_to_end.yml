@@ -63,7 +63,6 @@ jobs:
         | tee xcodebuild.log
 
     - name: Report job duration
-      id: measure-duration
       uses: ./.github/actions/measure-duration
       with:
         mode: stop
@@ -151,7 +150,6 @@ jobs:
         git checkout ../.maestro/config.yaml
 
     - name: Report job duration
-      id: measure-duration
       if: success() || (always() && steps.upload.outcome == 'failure')
       uses: ./.github/actions/measure-duration
       with:

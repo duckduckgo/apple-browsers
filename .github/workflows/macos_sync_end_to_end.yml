@@ -171,7 +171,6 @@ jobs:
         | tee ui-tests.log
 
     - name: Report job duration
-      id: measure-duration
       if: success() || (always() && steps.run-ui-tests.outcome == 'failure')
       uses: ./.github/actions/measure-duration
       with:

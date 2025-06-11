@@ -272,7 +272,6 @@ jobs:
         skip_annotations: true
 
     - name: Report workflow duration
-      id: measure-duration
       uses: ./.github/actions/measure-duration
       with:
         mode: stop

@@ -234,7 +234,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSidebar:
             return .internalOnly()
         case .shortHistoryMenu:
-            return .disabled
+            return .remoteReleasable(.feature(.shortHistoryMenu))
         }
     }
 }

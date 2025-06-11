@@ -55,10 +55,10 @@ public struct PreferencesPaidAIChatView: View {
     private var helpSection: some View {
         PreferencePaneSection {
             TextMenuItemHeader(UserText.preferencesSubscriptionFooterTitle, bottomPadding: 0)
-            
+
             TextMenuItemCaption(UserText.preferencesSubscriptionHelpFooterCaption)
                 .padding(.bottom, 8)
-            
+
             VStack(alignment: .leading, spacing: 14) {
                 TextButton(UserText.viewFaqsButton, weight: .semibold) { model.openFAQ() }
             }

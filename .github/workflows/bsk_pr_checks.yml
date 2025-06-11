@@ -238,12 +238,6 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             | tee -a ios-build-log.txt \
             | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
-            
-      - name: Send Unit Tests Status Pixel
-        if: always() && github.ref_name == 'main'
-        uses: ./.github/actions/send-pixel
-        with:
-          pixel-name: m_ci_apple_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
 
       - name: Report job duration
         # Only report duration if the job is not cancelled and either the job succeeded or the tests run failed
@@ -254,6 +248,12 @@ jobs:
           mode: stop
           start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
           pixel-name: m_ci_apple_bsk_unit_tests_ios_duration
+
+      - name: Send Unit Tests Status Pixel
+        if: always() && github.ref_name == 'main'
+        uses: ./.github/actions/send-pixel
+        with:
+          pixel-name: m_ci_apple_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4

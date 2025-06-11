@@ -423,43 +423,7 @@ extension Preferences {
             case .willDropSupportSoon(let upcomingMinVersion):
                 return UserText.aboutWillSoonBeUnsupportedDeviceInfo2(version: upcomingMinVersion)
             }
-        }
-
-        private var aboutUnsupportedDeviceInfo2Part1: String {
-            switch warning {
-            case .unsupported:
-                UserText.aboutUnsupportedDeviceInfo2Part1
-            case .willDropSupportSoon:
-                UserText.aboutWillSoonBeUnsupportedDeviceInfo2Part1
-            }
-        }
-
-        private var aboutUnsupportedDeviceInfo2Part2: String {
-            switch warning {
-            case .unsupported(let minVersion):
-                UserText.aboutUnsupportedDeviceInfo2Part2(version: minVersion)
-            case .willDropSupportSoon(let minVersion):
-                UserText.aboutWillSoonBeUnsupportedDeviceInfo2Part2(version: minVersion)
-            }
-        }
-
-        private var aboutUnsupportedDeviceInfo2Part3: String {
-            switch warning {
-            case .unsupported:
-                UserText.aboutUnsupportedDeviceInfo2Part3
-            case .willDropSupportSoon:
-                UserText.aboutWillSoonBeUnsupportedDeviceInfo2Part3
-            }
-        }
-
-        private var aboutUnsupportedDeviceInfo2Part4: String {
-            switch warning {
-            case .unsupported:
-                UserText.aboutUnsupportedDeviceInfo2Part4
-            case .willDropSupportSoon:
-                UserText.aboutWillSoonBeUnsupportedDeviceInfo2Part4
-            }
-        }
+                }
 
         var body: some View {
             let image = Image(.alertColor16)
@@ -474,7 +438,7 @@ extension Preferences {
                 if #available(macOS 12.0, *) {
                     Text(aboutUnsupportedDeviceInfo2Attributed)
                 } else {
-                    aboutUnsupportedDeviceInfo2DeprecatedView()
+                    AttributedTextView(attributedString: aboutUnsupportedDeviceInfo2AttributedLegacy)
                 }
             }
 
@@ -504,28 +468,78 @@ extension Preferences {
             return instructions
         }
 
-        @ViewBuilder
-        private func aboutUnsupportedDeviceInfo2DeprecatedView() -> some View {
-            HStack(alignment: .center, spacing: 0) {
-                Text(verbatim: aboutUnsupportedDeviceInfo2Part1 + " ")
-                Button(action: {
-                    NSWorkspace.shared.open(Self.softwareUpdateURL)
-                }) {
-                    Text(verbatim: aboutUnsupportedDeviceInfo2Part2 + " ")
-                        .foregroundColor(Color.blue)
-                        .underline()
-                }
-                .buttonStyle(PlainButtonStyle())
-                .onHover { hovering in
-                    if hovering {
-                        NSCursor.pointingHand.set()
-                    } else {
-                        NSCursor.arrow.set()
-                    }
-                }
-                Text(verbatim: aboutUnsupportedDeviceInfo2Part3)
+        private var aboutUnsupportedDeviceInfo2AttributedLegacy: NSAttributedString {
+            let fullText = combinedText
+            let attributedString = NSMutableAttributedString(string: fullText)
+            
+            // Create paragraph style for consistent formatting
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.lineSpacing = 0
+            paragraphStyle.paragraphSpacing = 0
+            
+            // Apply default text styling to match SwiftUI Text
+            let defaultAttributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+                .foregroundColor: NSColor.labelColor,
+                .paragraphStyle: paragraphStyle
+            ]
+            attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
+            
+            // Find the version string to make it clickable
+            let versionText = "macOS \(versionString)"
+            if let range = fullText.range(of: versionText) {
+                let nsRange = NSRange(range, in: fullText)
+                attributedString.addAttribute(.link, value: Self.softwareUpdateURL, range: nsRange)
+                attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
+                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
             }
-            Text(verbatim: aboutUnsupportedDeviceInfo2Part4)
+            
+                        return attributedString
+        }
+    }
+
+    struct AttributedTextView: NSViewRepresentable {
+        let attributedString: NSAttributedString
+        
+        func makeNSView(context: Context) -> NSTextView {
+            let textView = NSTextView()
+            textView.isEditable = false
+            textView.isSelectable = true
+            textView.drawsBackground = false
+            textView.textContainer?.lineFragmentPadding = 0
+            textView.textContainerInset = .zero
+            textView.isAutomaticLinkDetectionEnabled = false
+            textView.textContainer?.widthTracksTextView = true
+            textView.textContainer?.containerSize = CGSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
+            textView.isVerticallyResizable = true
+            textView.isHorizontallyResizable = false
+            textView.autoresizingMask = [.width]
+            textView.isRichText = true
+            textView.usesFontPanel = false
+            textView.usesRuler = false
+            
+            textView.delegate = context.coordinator
+            
+            return textView
+        }
+        
+        func updateNSView(_ textView: NSTextView, context: Context) {
+            textView.textStorage?.setAttributedString(attributedString)
+            textView.invalidateIntrinsicContentSize()
+        }
+
+        func makeCoordinator() -> Coordinator {
+            Coordinator()
+        }
+
+        class Coordinator: NSObject, NSTextViewDelegate {
+            func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
+                if let url = link as? URL {
+                    NSWorkspace.shared.open(url)
+                    return true
+                }
+                return false
+            }
         }
     }
 }

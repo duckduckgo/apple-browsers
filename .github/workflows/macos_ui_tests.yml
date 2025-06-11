@@ -54,9 +54,16 @@ jobs:
       runner: ${{ steps.define-runners.outputs.runner }}
       include: ${{ steps.define-runners.outputs.include }}
       test: ${{ steps.list-tests.outputs.test }}
+      start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Start measuring duration
+        id: start-duration
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: start
 
       - name: Define runners
         id: define-runners
@@ -233,7 +240,7 @@ jobs:
   test-report:
     name: Report test results
     if: always()
-    needs: [ui-tests]
+    needs: [setup-tests, ui-tests]
     runs-on: ubuntu-latest
 
     steps:
@@ -256,6 +263,14 @@ jobs:
         verbose_summary: false
         include_time_in_summary: true
         skip_annotations: true
+
+    - name: Report workflow duration
+      id: measure-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ needs.setup-tests.outputs.start-timestamp }}
+        pixel-name: ${{ (inputs.all_os_versions == true || inputs.all_os_versions == null) && 'm_ci_apple_macos_ui_tests_all_duration' || 'm_ci_apple_macos_ui_tests_latest_duration' }}
 
   notify-failure:
     name: Notify on failure

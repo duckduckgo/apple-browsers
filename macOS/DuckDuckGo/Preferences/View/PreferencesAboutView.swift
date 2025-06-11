@@ -436,9 +436,9 @@ extension Preferences {
 
             let wideContentView: some View = VStack(alignment: .leading, spacing: 0) {
                 if #available(macOS 12.0, *) {
-                    Text(aboutUnsupportedDeviceInfo2Attributed)
+                    Text(combinedTextAttributedAttributed)
                 } else {
-                    AttributedTextView(attributedString: aboutUnsupportedDeviceInfo2AttributedLegacy)
+                    AttributedTextView(attributedString: legacyCombinedTextAttributed)
                 }
             }
 
@@ -460,7 +460,7 @@ extension Preferences {
         }
 
         @available(macOS 12, *)
-        private var aboutUnsupportedDeviceInfo2Attributed: AttributedString {
+        private var combinedTextAttributedAttributed: AttributedString {
             var instructions = AttributedString(combinedText)
             if let range = instructions.range(of: "macOS \(versionString)") {
                 instructions[range].link = Self.softwareUpdateURL
@@ -468,7 +468,7 @@ extension Preferences {
             return instructions
         }
 
-        private var aboutUnsupportedDeviceInfo2AttributedLegacy: NSAttributedString {
+        private var legacyCombinedTextAttributed: NSAttributedString {
             let fullText = combinedText
             let attributedString = NSMutableAttributedString(string: fullText)
             

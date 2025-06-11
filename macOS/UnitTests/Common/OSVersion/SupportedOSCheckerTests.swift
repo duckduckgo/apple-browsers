@@ -55,10 +55,10 @@ final class SupportedOSCheckerTests: XCTestCase {
             currentOSVersionOverride: Self.catalinaVersion,
             minSupportedOSVersionOverride: Self.bigSurVersion,
             upcomingMinSupportedOSVersionOverride: Self.montereyVersion)
-        
+
         // When
         let warning = checker.supportWarning
-        
+
         // Then
         guard case .unsupported(let version) = warning else {
             XCTFail("Expected unsupported warning")
@@ -78,7 +78,7 @@ final class SupportedOSCheckerTests: XCTestCase {
 
         // When
         let warning = checker.supportWarning
-        
+
         // Then
         XCTAssertNil(warning)
     }
@@ -93,10 +93,10 @@ final class SupportedOSCheckerTests: XCTestCase {
             currentOSVersionOverride: Self.bigSurVersion,
             minSupportedOSVersionOverride: Self.bigSurVersion,
             upcomingMinSupportedOSVersionOverride: nil)
-        
+
         // When
         let warning = checker.supportWarning
-        
+
         // Then
         XCTAssertNil(warning)
     }
@@ -109,10 +109,10 @@ final class SupportedOSCheckerTests: XCTestCase {
             currentOSVersionOverride: Self.bigSurVersion,
             minSupportedOSVersionOverride: Self.bigSurVersion,
             upcomingMinSupportedOSVersionOverride: Self.montereyVersion)
-        
+
         // When
         let warning = checker.supportWarning
-        
+
         // Then
         guard case .willDropSupportSoon(let version) = warning else {
             XCTFail("Expected will drop support soon warning")
@@ -129,10 +129,10 @@ final class SupportedOSCheckerTests: XCTestCase {
             currentOSVersionOverride: Self.venturaVersion,
             minSupportedOSVersionOverride: Self.bigSurVersion,
             upcomingMinSupportedOSVersionOverride: Self.montereyVersion)
-        
+
         // When
         let warning = checker.supportWarning
-        
+
         // Then
         XCTAssertNil(warning)
     }
@@ -145,10 +145,10 @@ final class SupportedOSCheckerTests: XCTestCase {
             currentOSVersionOverride: Self.montereyVersion,
             minSupportedOSVersionOverride: Self.bigSurVersion,
             upcomingMinSupportedOSVersionOverride: Self.montereyVersion)
-        
+
         // When
         let warning = checker.supportWarning
-        
+
         // Then
         XCTAssertNil(warning)
     }
@@ -196,7 +196,7 @@ final class SupportedOSCheckerTests: XCTestCase {
         }
         XCTAssertEqual(version, "12.3")
     }
-
+    
     func testWhenWillSoonDropBigSurSupportFeatureFlagIsOnThenShowsUpcomingWarning() {
         // Given
         let mockFeatureFlagger = FeatureFlaggerMock()

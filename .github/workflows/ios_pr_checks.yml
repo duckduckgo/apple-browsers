@@ -102,7 +102,6 @@ jobs:
       uses: ./.github/actions/measure-duration
       with:
         mode: start
-        job-name: Unit Tests
 
     - name: Set cache key hash
       run: |
@@ -183,7 +182,6 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        job-name: Unit Tests
 
     - name: Send Duration Pixel
       if: steps.measure-duration.conclusion == 'success'

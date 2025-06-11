@@ -7,10 +7,6 @@ inputs:
   start-timestamp:
     description: 'Start timestamp (required for stop mode)'
     required: false
-  job-name:
-    description: 'Name of the job being measured (for the output message)'
-    required: false
-    default: 'Job'
 outputs:
   start-timestamp:
     description: 'Start timestamp (returned in start mode)'
@@ -28,7 +24,7 @@ runs:
       run: |
         START_TIME=$(date +%s)
         echo "timestamp=${START_TIME}" >> $GITHUB_OUTPUT
-        echo "::notice::Started measuring duration for ${{ inputs.job-name }}"
+        echo "::notice::Started measuring duration"
 
     - name: Stop measuring and report duration
       id: stop
@@ -38,4 +34,4 @@ runs:
         END_TIME=$(date +%s)
         DURATION=$((END_TIME - ${{ inputs.start-timestamp }}))
         echo "duration=${DURATION}" >> $GITHUB_OUTPUT
-        echo "::notice::${{ inputs.job-name }} completed in ${DURATION} seconds" 
+        echo "::notice::Duration measured: ${DURATION} seconds" 

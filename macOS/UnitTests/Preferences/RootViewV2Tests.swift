@@ -40,6 +40,7 @@ final class RootViewV2Tests: XCTestCase {
         subscriptionUIHandler = SubscriptionUIHandlerMock( didPerformActionCallback: { _ in })
         showTabCalled = false
         showTabContent = nil
+        subscriptionManager.resultStorePurchaseManager = StorePurchaseManagerMockV2()
     }
 
     override func tearDownWithError() throws {
@@ -49,7 +50,7 @@ final class RootViewV2Tests: XCTestCase {
         showTabCalled = false
         showTabContent = nil
     }
-    
+
     func testMakePaidAIChatViewModel() throws {
         // Given
         let rootView = Preferences.RootViewV2(
@@ -65,8 +66,10 @@ final class RootViewV2Tests: XCTestCase {
         let model = rootView.paidAIChatModel!
         XCTAssertNotNil(model, "PaidAIChatModel should be created")
     }
-    
+
     func testPaidAIChatViewModel_OpenAIChat() throws {
+        let expectation = expectation(description: "Wait for showTab to be called")
+
         // Given
         let rootView = Preferences.RootViewV2(
             model: sidebarModel,
@@ -75,14 +78,16 @@ final class RootViewV2Tests: XCTestCase {
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
+            expectation.fulfill()
         }
-        
+
         let model = rootView.paidAIChatModel!
-        
+
         // When
         model.openPaidAIChat()
-        
+
         // Then
+        wait(for: [expectation], timeout: 1.0)
         XCTAssertTrue(showTabCalled, "Should call showTab")
         if case .url(let url, _, let source) = showTabContent {
             XCTAssertEqual(url.absoluteString, AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)
@@ -91,8 +96,10 @@ final class RootViewV2Tests: XCTestCase {
             XCTFail("Expected URL tab content")
         }
     }
-    
+
     func testPaidAIChatViewModel_OpenURL() throws {
+        let expectation = expectation(description: "Wait for showTab to be called")
+
         // Given
         let rootView = Preferences.RootViewV2(
             model: sidebarModel,
@@ -101,14 +108,16 @@ final class RootViewV2Tests: XCTestCase {
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
+            expectation.fulfill()
         }
-        
+
         let model = rootView.paidAIChatModel!
-        
+
         // When
         model.openFAQ()
 
         // Then
+        wait(for: [expectation], timeout: 1.0)
         XCTAssertTrue(showTabCalled, "Should call showTab")
         if case .subscription = showTabContent {
             // Success

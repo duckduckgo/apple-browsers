@@ -26,7 +26,7 @@ public struct PreferencesPaidAIChatView: View {
     public init(model: PreferencesPaidAIChatModel) {
         self.model = model
     }
-    
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 4) {
@@ -34,7 +34,7 @@ public struct PreferencesPaidAIChatView: View {
 
                 StatusIndicatorView(status: model.status, isLarge: true)
             }
-            
+
             openFeatureSection
             helpSection
         }
@@ -42,7 +42,7 @@ public struct PreferencesPaidAIChatView: View {
             model.didAppear()
         })
     }
-    
+
     @ViewBuilder
     private var openFeatureSection: some View {
         PreferencePaneSection {
@@ -50,7 +50,7 @@ public struct PreferencesPaidAIChatView: View {
                 .padding(.top, 4)
         }
     }
-    
+
     @ViewBuilder
     private var helpSection: some View {
         PreferencePaneSection {

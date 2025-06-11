@@ -188,10 +188,9 @@ enum Preferences {
                 })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
-                                                        featureFlagger: Application.appDelegate.featureFlagger,
+                                                        featureFlagger: NSApp.delegateTyped.featureFlagger,
                                                         userEventHandler: userEventHandler,
-                                                        sheetActionHandler: sheetActionHandler,
-                                                        featureFlagger: NSApp.delegateTyped.featureFlagger)
+                                                        sheetActionHandler: sheetActionHandler)
         }
 
         private func makePersonalInformationRemovalViewModel() -> PreferencesPersonalInformationRemovalModel {
@@ -422,10 +421,9 @@ enum Preferences {
                 })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
-                                                        featureFlagger: Application.appDelegate.featureFlagger,
+                                                        featureFlagger: NSApp.delegateTyped.featureFlagger,
                                                         userEventHandler: userEventHandler,
-                                                        sheetActionHandler: sheetActionHandler,
-                                                        featureFlagger: NSApp.delegateTyped.featureFlagger)
+                                                        sheetActionHandler: sheetActionHandler)
         }
 
         private func makePersonalInformationRemovalViewModel() -> PreferencesPersonalInformationRemovalModel {
@@ -523,7 +521,7 @@ enum Preferences {
                 let url = subscriptionManager.url(for: subscriptionURL)
                     .appendingParameter(name: AttributionParameter.origin,
                                         value: SubscriptionFunnelOrigin.appSettings.rawValue)
-                Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
+                showTab(.subscription(url))
             }
         }
     }

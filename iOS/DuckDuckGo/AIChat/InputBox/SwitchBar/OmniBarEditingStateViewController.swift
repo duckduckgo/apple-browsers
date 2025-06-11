@@ -108,23 +108,51 @@ final class OmniBarEditingStateViewController: UIViewController {
     }
 
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
-
-        self.switchBarVC.view.layoutIfNeeded()
-        UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseInOut], animations: {
-            self.switchBarVC.setExpanded(false)
-            if let expectedStartFrame = self.expectedStartFrame {
-                self.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height).isActive = true
-            }
-            self.switchBarVC.view.layoutIfNeeded()
-            self.view.backgroundColor = .clear
-        }, completion: { _ in
+        animateDismissal {
             DispatchQueue.main.async {
                 if self.presentingViewController != nil {
                     self.dismiss(animated: false)
                 }
                 completion?()
             }
-        })
+        }
+    }
+
+    private func animateDismissal(_ completion: (() -> Void)? = nil) {
+
+        self.switchBarVC.view.layoutIfNeeded()
+
+        // Create animators
+        let collapseAnimator = UIViewPropertyAnimator(duration: 0.3, dampingRatio: 0.7) {
+            self.switchBarVC.setExpanded(false)
+            if let expectedStartFrame = self.expectedStartFrame {
+                self.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height).isActive = true
+            }
+
+            self.switchBarVC.view.layoutIfNeeded()
+        }
+
+        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
+            self.view.backgroundColor = .clear
+        }
+
+        let fadeOutAnimator = UIViewPropertyAnimator(duration: 0.15, curve: .easeIn) {
+            self.switchBarVC.view.alpha = 0.0
+        }
+
+        backgroundFadeAnimator.addCompletion { _ in
+            completion?()
+        }
+
+        // Schedule animations
+//        collapseAnimator.addCompletion { _ in
+//
+//        }
+
+        // Start animations
+        collapseAnimator.startAnimation()
+        fadeOutAnimator.startAnimation()
+        backgroundFadeAnimator.startAnimation(afterDelay: 0.25)
     }
 
     private func installSwitchBarVC() {

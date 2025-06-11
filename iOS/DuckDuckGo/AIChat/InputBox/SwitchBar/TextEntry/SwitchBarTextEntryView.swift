@@ -37,7 +37,7 @@ class SwitchBarTextEntryView: UIView {
         static let placeholderHorizontalOffset: CGFloat = 16
 
         // Clear button
-        static let clearButtonSize: CGFloat = 20
+        static let clearButtonSize: CGFloat = 24
         static let clearButtonTrailingOffset: CGFloat = -12
         static let clearButtonSpacing: CGFloat = -8
 
@@ -156,7 +156,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateClearButtonVisibility() {
-        let shouldShowClearButton = currentMode == .search && !textView.text.isEmpty
+        let shouldShowClearButton = !textView.text.isEmpty
 
         UIView.animate(withDuration: Constants.animationDuration) {
             self.clearButton.isHidden = !shouldShowClearButton

@@ -260,6 +260,13 @@ extension TabExtensionsBuilder {
                 NetworkProtectionControllerTabExtension(tunnelController: tunnelController)
             }
         }
+
+        add {
+            InternalFeedbackFormTabExtension(
+                webViewPublisher: args.webViewFuture,
+                internalUserDecider: dependencies.featureFlagger.internalUserDecider
+            )
+        }
     }
 
 }

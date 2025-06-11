@@ -345,7 +345,6 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     }
 
     private func handlePairingConfirmation() {
-        pairingInfo = nil
         askForAuthThenStartPairing()
         Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted, includedParameters: [.appVersion])
     }

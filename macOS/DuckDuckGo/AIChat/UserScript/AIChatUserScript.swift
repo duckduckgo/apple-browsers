@@ -21,7 +21,7 @@ import UserScript
 import AIChat
 
 final class AIChatUserScript: NSObject, Subfeature {
-    private let handler: AIChatUserScriptHandling
+    public let handler: AIChatUserScriptHandling
     public let featureName: String = "aiChat"
     weak var broker: UserScriptMessageBroker?
     private(set) var messageOriginPolicy: MessageOriginPolicy
@@ -53,6 +53,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.closeAIChat
         case .getAIChatNativePrompt:
             return handler.getAIChatNativePrompt
+        case .openAIChat:
+            return handler.openAIChat
+        case .getAIChatNativeHandoffData:
+            return handler.getAIChatNativeHandoffData
         default:
             return nil
         }

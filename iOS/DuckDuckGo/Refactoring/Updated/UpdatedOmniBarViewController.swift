@@ -148,7 +148,7 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 
     func onPromptSubmitted(_ query: String) {
-        editingStateViewController?.dismissAnimated() {
+        editingStateViewController?.dismissAnimated {
             self.omniDelegate?.onOmniPromptSubmitted(query)
         }
     }

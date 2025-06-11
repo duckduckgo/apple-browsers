@@ -36,9 +36,13 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         if experimentalManager.isExperimentalTransitionEnabled {
 
             let switchBarHandler = SwitchBarHandler()
-
             if let text = self.omniBarView.text {
-                switchBarHandler.updateCurrentText(text)
+                if let url = textField.text.flatMap({ URL(trimmedAddressBarString: $0.trimmingWhitespace()) }) {
+                    let urlText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: true)
+                    switchBarHandler.updateCurrentText(urlText.string)
+                } else {
+                    switchBarHandler.updateCurrentText(text)
+                }
             }
 
             let editingStateVC = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)

@@ -49,7 +49,7 @@ extension Preferences {
                     if let warning = model.osSupportWarning {
                         UnsupportedDeviceInfoBox(wide: true, warning: warning)
                             .padding(.top, 10)
-                            .padding(.leading, -20)
+                            //.padding(.leading, -20)
                     }
 
                     AboutContentSection(model: model)
@@ -432,31 +432,31 @@ extension Preferences {
                 .padding(.trailing, 4)
 
             let versionText = Text(versionText)
-            let narrowContentView = Text(combinedText)
 
-            let wideContentView: some View = VStack(alignment: .leading, spacing: 0) {
+            let contentView: some View = HStack(alignment: .center, spacing: 0) {
                 if #available(macOS 12.0, *) {
                     Text(combinedTextAttributedAttributed)
                 } else {
-                    AttributedTextView(attributedString: legacyCombinedTextAttributed)
+                    NSAttributedTextView(attributedString: legacyCombinedTextAttributed)
                 }
+
+                // Added to prevent bouncy animation when resizing the parent view
+                // caused by the text width being a bit jumpy.
+                Spacer()
             }
 
             return HStack(alignment: .top) {
                 image
                 VStack(alignment: .leading, spacing: 12) {
                     versionText
-                    if wide {
-                        wideContentView
-                    } else {
-                        narrowContentView
-                    }
+                    contentView
                 }
             }
             .padding()
             .background(Color.unsupportedOSWarning)
             .cornerRadius(8)
-            .frame(width: width, height: height)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(minWidth: 320, maxWidth: 510)
         }
 
         @available(macOS 12, *)
@@ -495,51 +495,6 @@ extension Preferences {
             }
 
             return attributedString
-        }
-    }
-
-    struct AttributedTextView: NSViewRepresentable {
-        let attributedString: NSAttributedString
-
-        func makeNSView(context: Context) -> NSTextView {
-            let textView = NSTextView()
-            textView.isEditable = false
-            textView.isSelectable = true
-            textView.drawsBackground = false
-            textView.textContainer?.lineFragmentPadding = 0
-            textView.textContainerInset = .zero
-            textView.isAutomaticLinkDetectionEnabled = false
-            textView.textContainer?.widthTracksTextView = true
-            textView.textContainer?.containerSize = CGSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
-            textView.isVerticallyResizable = true
-            textView.isHorizontallyResizable = false
-            textView.autoresizingMask = [.width]
-            textView.isRichText = true
-            textView.usesFontPanel = false
-            textView.usesRuler = false
-
-            textView.delegate = context.coordinator
-
-            return textView
-        }
-
-        func updateNSView(_ textView: NSTextView, context: Context) {
-            textView.textStorage?.setAttributedString(attributedString)
-            textView.invalidateIntrinsicContentSize()
-        }
-
-        func makeCoordinator() -> Coordinator {
-            Coordinator()
-        }
-
-        class Coordinator: NSObject, NSTextViewDelegate {
-            func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
-                if let url = link as? URL {
-                    NSWorkspace.shared.open(url)
-                    return true
-                }
-                return false
-            }
         }
     }
 }

@@ -21,6 +21,29 @@ import UIKit
 import Combine
 
 class SwitchBarTextEntryView: UIView {
+
+    private enum Constants {
+        static let maxHeight: CGFloat = 120
+        static let minHeight: CGFloat = 44
+        static let fontSize: CGFloat = 16
+
+        // Text container insets
+        static let textTopInset: CGFloat = 16
+        static let textBottomInset: CGFloat = 8
+        static let textHorizontalInset: CGFloat = 12
+
+        // Placeholder positioning
+        static let placeholderTopOffset: CGFloat = 16
+        static let placeholderHorizontalOffset: CGFloat = 16
+
+        // Clear button
+        static let clearButtonSize: CGFloat = 20
+        static let clearButtonTrailingOffset: CGFloat = -12
+        static let clearButtonSpacing: CGFloat = -8
+
+        // Animation
+        static let animationDuration: TimeInterval = 0.2
+    }
     private let handler: SwitchBarHandling
 
     private let textView = UITextView()
@@ -32,8 +55,6 @@ class SwitchBarTextEntryView: UIView {
     }
     private var cancellables = Set<AnyCancellable>()
 
-    private let maxHeight: CGFloat = 120
-    private let minHeight: CGFloat = 44
     private var heightConstraint: NSLayoutConstraint?
     private var textViewTrailingConstraint: NSLayoutConstraint?
     private var textViewTrailingConstraintWithButton: NSLayoutConstraint?
@@ -52,16 +73,16 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func setupView() {
-        textView.font = UIFont.systemFont(ofSize: 16)
+        textView.font = UIFont.systemFont(ofSize: Constants.fontSize)
         textView.backgroundColor = UIColor.clear
         textView.autocorrectionType = .no
         textView.autocapitalizationType = .none
         textView.delegate = self
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
-        textView.textContainerInset = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
+        textView.textContainerInset = UIEdgeInsets(top: Constants.textTopInset, left: Constants.textHorizontalInset, bottom: Constants.textBottomInset, right: Constants.textHorizontalInset)
 
-        placeholderLabel.font = UIFont.systemFont(ofSize: 16)
+        placeholderLabel.font = UIFont.systemFont(ofSize: Constants.fontSize)
         placeholderLabel.textColor = UIColor.placeholderText
         placeholderLabel.numberOfLines = 0
 
@@ -79,26 +100,26 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         clearButton.translatesAutoresizingMaskIntoConstraints = false
 
-        heightConstraint = heightAnchor.constraint(equalToConstant: minHeight)
+        heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight)
         heightConstraint?.isActive = true
 
         // Create both trailing constraints for textView
         textViewTrailingConstraint = textView.trailingAnchor.constraint(equalTo: trailingAnchor)
-        textViewTrailingConstraintWithButton = textView.trailingAnchor.constraint(equalTo: clearButton.leadingAnchor, constant: -8)
+        textViewTrailingConstraintWithButton = textView.trailingAnchor.constraint(equalTo: clearButton.leadingAnchor, constant: Constants.clearButtonSpacing)
 
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: topAnchor),
             textView.leadingAnchor.constraint(equalTo: leadingAnchor),
             textView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: 8),
-            placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: 16),
-            placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -16),
+            placeholderLabel.topAnchor.constraint(equalTo: textView.topAnchor, constant: Constants.placeholderTopOffset),
+            placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
+            placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
 
             clearButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            clearButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            clearButton.widthAnchor.constraint(equalToConstant: 20),
-            clearButton.heightAnchor.constraint(equalToConstant: 20)
+            clearButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.clearButtonTrailingOffset),
+            clearButton.widthAnchor.constraint(equalToConstant: Constants.clearButtonSize),
+            clearButton.heightAnchor.constraint(equalToConstant: Constants.clearButtonSize)
         ])
 
         // Initially activate the constraint without button
@@ -137,7 +158,7 @@ class SwitchBarTextEntryView: UIView {
     private func updateClearButtonVisibility() {
         let shouldShowClearButton = currentMode == .search && !textView.text.isEmpty
 
-        UIView.animate(withDuration: 0.2) {
+        UIView.animate(withDuration: Constants.animationDuration) {
             self.clearButton.isHidden = !shouldShowClearButton
         }
 
@@ -153,11 +174,11 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateTextViewHeight() {
         let size = textView.sizeThatFits(CGSize(width: textView.frame.width, height: CGFloat.greatestFiniteMagnitude))
-        let newHeight = max(minHeight, min(maxHeight, size.height))
+        let newHeight = max(Constants.minHeight, min(Constants.maxHeight, size.height))
 
         heightConstraint?.constant = newHeight
 
-        let contentExceedsMaxHeight = size.height > maxHeight
+        let contentExceedsMaxHeight = size.height > Constants.maxHeight
         textView.isScrollEnabled = contentExceedsMaxHeight
         textView.showsVerticalScrollIndicator = contentExceedsMaxHeight
 

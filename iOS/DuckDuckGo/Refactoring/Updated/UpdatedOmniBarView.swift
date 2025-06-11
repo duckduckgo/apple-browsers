@@ -681,6 +681,3 @@ extension UpdatedOmniBarView {
         layer.mask = maskLayer
     }
 }
-
-extension UpdatedOmniBarView: OmniBarTransitionProxy {
-}

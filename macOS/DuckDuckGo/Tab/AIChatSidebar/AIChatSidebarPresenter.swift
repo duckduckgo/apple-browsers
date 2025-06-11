@@ -138,8 +138,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         } else {
             // If sidebar is open then pass the payload to a new AIChat tab
             Task { @MainActor in
-                // TODO:
-                NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
+                NSApp.delegateTyped.aiChatTabOpener.openNewAIChatTab(withPayload: payload)
             }
         }
     }

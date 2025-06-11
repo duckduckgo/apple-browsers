@@ -102,7 +102,7 @@ jobs:
         if: always() && github.ref_name == 'main'
         uses: ./.github/actions/send-pixel
         with:
-          pixel-name: m_ci_apple_dbp_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}
+          pixel-name: m_ci_apple_status_dbp_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}
 
       - name: Update Asana with failed unit tests
         if: always() # always run even if the previous step fails
@@ -228,7 +228,7 @@ jobs:
         if: always() && github.ref_name == 'main'
         uses: ./.github/actions/send-pixel
         with:
-          pixel-name: m_ci_apple_dbp_main_unit_tests_ios_${{ steps.run-unit-tests.outcome }}
+          pixel-name: m_ci_apple_status_dbp_main_unit_tests_ios_${{ steps.run-unit-tests.outcome }}
 
       - name: Update Asana with failed unit tests
         if: always() # always run even if the previous step fails

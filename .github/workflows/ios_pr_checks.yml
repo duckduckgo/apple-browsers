@@ -189,7 +189,7 @@ jobs:
       if: always() && github.ref_name == 'main'
       uses: ./.github/actions/send-pixel
       with:
-        pixel-name: m_ci_apple_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}
+        pixel-name: m_ci_apple_status_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}
 
     - name: Fetch latest commit author
       if: always() && github.ref_name == 'main'

@@ -302,13 +302,13 @@ jobs:
       if: always() && github.ref_name == 'main'
       uses: ./.github/actions/send-pixel
       with:
-        pixel-name: m_ci_apple_mac_main_${{ matrix.flavor }}_unit_tests_${{ steps.run-unit-tests.outcome }}
+        pixel-name: m_ci_apple_status_mac_main_${{ matrix.flavor }}_unit_tests_${{ steps.run-unit-tests.outcome }}
 
     - name: Send Integration Tests Status Pixel
       if: always() && github.ref_name == 'main'
       uses: ./.github/actions/send-pixel
       with:
-        pixel-name: m_ci_apple_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}
+        pixel-name: m_ci_apple_status_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}
 
     - name: Upload failed unit tests log
       uses: actions/upload-artifact@v4

@@ -93,7 +93,7 @@ jobs:
         if: always() && github.ref_name == 'main'
         uses: ./.github/actions/send-pixel
         with:
-          pixel-name: m_ci_apple_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}
+          pixel-name: m_ci_apple_status_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}
 
       - name: Report job duration
         if: success() || (always() && steps.run-unit-tests.outcome == 'failure')
@@ -255,7 +255,7 @@ jobs:
         if: always() && github.ref_name == 'main'
         uses: ./.github/actions/send-pixel
         with:
-          pixel-name: m_ci_apple_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
+          pixel-name: m_ci_apple_status_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4

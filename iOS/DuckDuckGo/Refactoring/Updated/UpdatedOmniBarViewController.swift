@@ -24,6 +24,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     private lazy var omniBarView = UpdatedOmniBarView.create()
     private let experimentalManager = ExperimentalAIChatManager()
+    private weak var editingStateViewController: OmniBarEditingStateViewController?
 
     override func loadView() {
         view = omniBarView
@@ -34,8 +35,10 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if experimentalManager.isExperimentalTransitionEnabled {
             let editingStateVC = OmniBarEditingStateViewController()
+            editingStateVC.delegate = self
             editingStateVC.modalPresentationStyle = .overFullScreen
             present(editingStateVC, animated: false)
+            self.editingStateViewController = editingStateVC
             return false
         }
         return super.textFieldShouldBeginEditing(textField)
@@ -61,7 +64,6 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
                 oldView.isHidden = true
             }
         }
-
         dismissButtonAnimator?.startAnimation()
     }
 
@@ -125,5 +127,22 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     override func preventShadowsOnBottom() {
         omniBarView.updateMaskLayer(maskTop: false)
+    }
+}
+
+extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
+    func onQueryUpdated(_ query: String) {
+        omniDelegate?.onOmniQueryUpdated(query)
+    }
+
+    func onQuerySubmitted(_ query: String) {
+        editingStateViewController?.dismissAnimated()
+        omniDelegate?.onOmniQuerySubmitted(query)
+    }
+
+    func onPromptSubmitted(_ query: String) {
+        editingStateViewController?.dismissAnimated() {
+            self.omniDelegate?.onOmniPromptSubmitted(query)
+        }
     }
 }

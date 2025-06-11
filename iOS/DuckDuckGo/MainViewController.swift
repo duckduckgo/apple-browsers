@@ -2077,6 +2077,10 @@ extension MainViewController: BrowserChromeDelegate {
 
 extension MainViewController: OmniBarDelegate {
 
+    func onOmniPromptSubmitted(_ query: String) {
+        openAIChat(query, autoSend: true)
+    }
+
     func onSharePressed() {
         shareCurrentURLFromAddressBar()
     }

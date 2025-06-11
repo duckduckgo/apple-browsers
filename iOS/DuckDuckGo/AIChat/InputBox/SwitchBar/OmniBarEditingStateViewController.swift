@@ -19,13 +19,22 @@
 
 import UIKit
 import DesignResourcesKit
+import Combine
+
+protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
+    func onQueryUpdated(_ query: String)
+    func onQuerySubmitted(_ query: String)
+    func onPromptSubmitted(_ query: String)
+}
 
 final class OmniBarEditingStateViewController: UIViewController {
     var textAreaView: UIView {
         switchBarVC.textEntryViewController.textEntryView
     }
-
-    private lazy var switchBarVC = SwitchBarViewController(switchBarHandler: SwitchBarHandler())
+    private var cancellables = Set<AnyCancellable>()
+    private let switchBarHandler: SwitchBarHandling = SwitchBarHandler()
+    private lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
+    weak var delegate: OmniBarEditingStateViewControllerDelegate?
 
     private var textEntryHeightConstraint: NSLayoutConstraint?
 
@@ -56,14 +65,23 @@ final class OmniBarEditingStateViewController: UIViewController {
         }
     }
 
-    @objc private func dismissAnimated() {
+    @objc private func dismissButtonTapped(_ sender: UIButton) {
+        dismissAnimated()
+    }
+
+    @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
         self.switchBarVC.view.layoutIfNeeded()
         UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseInOut], animations: {
             self.switchBarVC.setExpanded(false)
             self.switchBarVC.view.layoutIfNeeded()
             self.view.backgroundColor = .clear
         }, completion: { _ in
-            self.dismiss(animated: false)
+            DispatchQueue.main.async {
+                if self.presentingViewController != nil {
+                    self.dismiss(animated: false)
+                }
+                completion?()
+            }
         })
     }
 
@@ -80,6 +98,44 @@ final class OmniBarEditingStateViewController: UIViewController {
 
         switchBarVC.didMove(toParent: self)
 
-        switchBarVC.backButton.addTarget(self, action: #selector(dismissAnimated), for: .touchUpInside)
+        switchBarVC.backButton.addTarget(self, action: #selector(dismissButtonTapped), for: .touchUpInside)
+        setupSubscriptions()
+
+    }
+
+    private func setupSubscriptions() {
+        switchBarHandler.currentTextPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] currentText in
+                self?.delegate?.onQueryUpdated(currentText)
+            }
+            .store(in: &cancellables)
+
+        switchBarHandler.toggleStatePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { newState in
+                switch newState {
+                case .search:
+                    print("search mode")
+                case .aiChat:
+                    print("AI chat mode")
+                }
+            }
+            .store(in: &cancellables)
+
+        switchBarHandler.textSubmissionPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] submission in
+                switch submission.mode {
+                case .search:
+                    self?.delegate?.onQuerySubmitted(submission.text)
+                case .aiChat:
+                    self?.delegate?.onPromptSubmitted(submission.text)
+                }
+
+                self?.switchBarHandler.clearText()
+            }
+            .store(in: &cancellables)
+
     }
 }

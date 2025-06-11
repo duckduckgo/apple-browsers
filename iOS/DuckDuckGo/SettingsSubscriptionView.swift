@@ -79,9 +79,9 @@ struct SettingsSubscriptionView: View {
             let subtitleText = {
                 switch currentStorefrontRegion {
                 case .usa:
-                    UserText.settingsPProUSDescription
+                    settingsViewModel.isPaidAIChatEnabled ? UserText.settingsSubscriptionUSDescription : UserText.settingsPProUSDescription
                 case .restOfWorld:
-                    UserText.settingsPProROWDescription
+                    settingsViewModel.isPaidAIChatEnabled ? UserText.settingsSubscriptionROWDescription : UserText.settingsPProROWDescription
                 }
             }()
 

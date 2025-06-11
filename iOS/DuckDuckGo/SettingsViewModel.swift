@@ -102,6 +102,10 @@ final class SettingsViewModel: ObservableObject {
         case networkProtection
     }
 
+    var isPaidAIChatEnabled: Bool {
+        featureFlagger.isFeatureOn(.paidAIChat)
+    }
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 

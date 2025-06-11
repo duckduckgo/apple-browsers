@@ -70,7 +70,8 @@ public enum FeatureFlag: String, CaseIterable {
     case failsafeExamplePlatformSpecificSubfeature
 
     /// https://app.asana.com/0/72649045549333/1209793701087222/f
-    case visualRefresh
+    case visualUpdates
+    case visualUpdatesInternalOnly
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
     case tabCrashDebugging
@@ -112,7 +113,7 @@ public enum FeatureFlag: String, CaseIterable {
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .removeWWWInCanonicalizationInThreatProtection:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .removeWWWInCanonicalizationInThreatProtection, .visualUpdatesInternalOnly:
             true
         default:
             false
@@ -142,7 +143,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .scamSiteProtection,
                 .failsafeExampleCrossPlatformFeature,
                 .failsafeExamplePlatformSpecificSubfeature,
-                .visualRefresh,
+                .visualUpdates,
+                .visualUpdatesInternalOnly,
                 .tabCrashDebugging,
                 .tabCrashRecovery,
                 .maliciousSiteProtection,
@@ -217,7 +219,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
-        case .visualRefresh:
+        case .visualUpdates:
+            return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
+        case .visualUpdatesInternalOnly:
             return .internalOnly()
         case .tabCrashDebugging:
             return .disabled

@@ -1787,8 +1787,6 @@ extension TabViewController: WKNavigationDelegate {
             saveLoginPromptLastDismissed = nil
             saveLoginPromptIsPresenting = false
         }
-
-        cleanupInputAccessoryView()
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
@@ -2265,6 +2263,9 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func registerForKeyboardNotifications() {
+        guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
+            return
+        }
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(keyboardWillHide),
                                                name: UIResponder.keyboardWillHideNotification,
@@ -2272,6 +2273,10 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func unregisterFromKeyboardNotifications() {
+        guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
+            return
+        }
+
         NotificationCenter.default.removeObserver(
             self,
             name: UIResponder.keyboardWillHideNotification,
@@ -2304,7 +2309,6 @@ extension TabViewController: WKNavigationDelegate {
         // TODO - improve logic here
         if !fillCreditCardsPromptIsPresenting && isTabCurrentlyPresented() {
             autofillUserScript?.clearAllHandlers()
-            cleanupInputAccessoryView()
         }
     }
 
@@ -3081,12 +3085,19 @@ extension TabViewController: SecureVaultManagerDelegate {
     }
 
     func secureVaultManagerShouldPromptUserToAutofillCreditCard(_: SecureVaultManager, withCreditCards creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
-        
         Logger.autofill.debug("secureVaultManagerShouldPromptUserToAutofillCreditCard")
-        
+        guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
+            completionHandler(nil)
+            return
+        }
+
         if !AutofillSettingStatus.isCreditCardAutofillEnabledInSettings || !featureFlagger.isFeatureOn(.autofillCreditCards) {
             completionHandler(nil)
             return
+        }
+        
+        if let webView = webView as? WebView {
+            webView.suppressSystemInputView = true
         }
 
         // if user is interacting with the searchBar, don't show the autofill prompt since it will overlay the keyboard
@@ -3095,28 +3106,8 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        guard creditCards.count > 0 else {
-            completionHandler(nil)
-            cleanupInputAccessoryView()
-            return
-        }
-
-        if domainFillCreditCardPromptLastShownOn != url?.host {
-            AppDependencyProvider.shared.autofillLoginSession.endSession()
-            self.domainFillCreditCardPromptLastShownOn = self.url?.host
-            resetCreditCardPrompt()
-        }
-
-        if shouldShowCreditCardPrompt {
-            presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
-                completionHandler(creditCard)
-            }
-            shouldShowCreditCardPrompt = false
-        } else {
-            // handling for scenario of credit card forms split into multiple iframes which each trigger getAutofillData
-            addCreditCardInputAccessoryView(creditCards: creditCards) { card in
-                completionHandler(card)
-            }
+        promptToFill(withCreditCards: creditCards) { card in
+            completionHandler(card)
         }
     }
 
@@ -3124,7 +3115,12 @@ extension TabViewController: SecureVaultManagerDelegate {
                                     forType type: AutofillUserScript.GetAutofillDataMainType,
                                     withCreditCards creditCards: [SecureVaultModels.CreditCard],
                                     completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
-        Logger.autofill.debug("secureVaultManagerDidCancelGetAutofillDataRequest")
+        Logger.autofill.debug("secureVaultManagerDidFocus")
+        guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
+            completionHandler(nil)
+            return
+        }
+        
         guard type == .creditCards else {
             Logger.autofill.debug("secureVaultManagerDidFocus: not creditCard")
             completionHandler(nil)
@@ -3132,8 +3128,34 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        addCreditCardInputAccessoryView(creditCards: creditCards) { card in
+        promptToFill(withCreditCards: creditCards) { card in
             completionHandler(card)
+        }
+    }
+    
+    private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        if domainFillCreditCardPromptLastShownOn != url?.host {
+            AppDependencyProvider.shared.autofillLoginSession.endSession()
+            self.domainFillCreditCardPromptLastShownOn = self.url?.host
+            resetCreditCardPrompt()
+        }
+        
+        guard creditCards.count > 0 else {
+            completionHandler(nil)
+            cleanupInputAccessoryView()
+            return
+        }
+        
+        if shouldShowCreditCardPrompt {
+            presentAutofillPromptViewController(creditCards: creditCards) { creditCard in
+                completionHandler(creditCard)
+            }
+            shouldShowCreditCardPrompt = false
+            autofillCreditCardAccessoryView?.updateCreditCards(creditCards)
+        } else {
+            addCreditCardInputAccessoryView(creditCards: creditCards) { card in
+                completionHandler(card)
+            }
         }
     }
     
@@ -3155,6 +3177,11 @@ extension TabViewController: SecureVaultManagerDelegate {
     }
     
     private func cleanupInputAccessoryView() {
+        guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
+            return
+        }
+        Logger.autofill.debug("cleanupInputAccessoryView")
+        
         guard let webView = webView as? WebView, webView.inputAccessoryView != nil else {
             return
         }
@@ -3167,7 +3194,6 @@ extension TabViewController: SecureVaultManagerDelegate {
     }
 
     private func presentAutofillPromptViewController(creditCards: [SecureVaultModels.CreditCard],
-                                             trigger: AutofillUserScript.GetTriggerType,
                                              completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // Ensure keyboard doesn't block prompt
         webView.resignFirstResponder()
@@ -3225,6 +3251,9 @@ extension TabViewController: SecureVaultManagerDelegate {
                                              useLargeDetent: Bool,
                                              onAccountSelected: @escaping (SecureVaultModels.WebsiteAccount?) -> Void,
                                              completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {
+
+        // Ensure keyboard doesn't block prompt
+        webView.resignFirstResponder()
 
         var responseSent: Bool = false
 

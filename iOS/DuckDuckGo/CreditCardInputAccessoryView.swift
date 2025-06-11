@@ -22,6 +22,7 @@ import UIKit
 import SwiftUI
 import BrowserServicesKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class CreditCardInputAccessoryView: UIView {
 
@@ -36,6 +37,8 @@ class CreditCardInputAccessoryView: UIView {
         let scrollView = UIScrollView()
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        // Performance optimization
+        scrollView.layer.shouldRasterize = false
         return scrollView
     }()
 
@@ -52,16 +55,20 @@ class CreditCardInputAccessoryView: UIView {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.isUserInteractionEnabled = false
+        view.backgroundColor = UIColor.clear
+        // Optimize layer performance
+        view.layer.shouldRasterize = true
+        view.layer.rasterizationScale = UIScreen.main.scale
         return view
     }()
 
     private var gradientLayer: CAGradientLayer?
 
     private lazy var manageButton: UIButton = {
-        let button = UIButton(type: .custom)
-        button.setImage(UIImage(named: "CreditCard-24"), for: .normal)
+        let button = ThemeManager.shared.properties.isExperimentalThemingEnabled ? BrowserChromeButton() : UIButton(type: .system)
+        button.setImage(DesignSystemImages.Glyphs.Size24.expand, for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.tintColor = UIColor(designSystemColor: .textPrimary)
+        button.tintColor = UIColor(designSystemColor: .buttonsSecondaryFillText)
         button.addTarget(self, action: #selector(manageButtonTapped), for: .touchUpInside)
         return button
     }()
@@ -96,11 +103,7 @@ class CreditCardInputAccessoryView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        if let gradientLayer = gradientLayer {
-            gradientLayer.frame = gradientView.bounds
-        }
-
-        setupGradientIfNeeded()
+        setupGradient()
     }
     
     // MARK: - Dark Mode Support
@@ -109,8 +112,12 @@ class CreditCardInputAccessoryView: UIView {
         super.traitCollectionDidChange(previousTraitCollection)
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            gradientLayer = nil
-            setupGradientIfNeeded()
+            // Reset gradient for color appearance changes
+            DispatchQueue.main.async { [weak self] in
+                self?.gradientLayer?.removeFromSuperlayer()
+                self?.gradientLayer = nil
+                self?.setupGradient()
+            }
         }
     }
 
@@ -123,14 +130,20 @@ class CreditCardInputAccessoryView: UIView {
 
         self.creditCards = creditCards
         
-        // Clear existing card views
-        cardStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        // Clear existing card views efficiently
+        cardStackView.arrangedSubviews.forEach { view in
+            cardStackView.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
         
         // Add new card views
         for card in creditCards {
             let cardView = createCardView(for: card)
             cardStackView.addArrangedSubview(cardView)
         }
+
+        // Update gradient visibility after adding cards
+        setNeedsLayout()
     }
 
     // MARK: - Private Methods
@@ -155,14 +168,14 @@ class CreditCardInputAccessoryView: UIView {
             containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            manageButton.widthAnchor.constraint(equalToConstant: 40),
+            manageButton.widthAnchor.constraint(equalToConstant: 44),
             manageButton.heightAnchor.constraint(equalToConstant: 44),
             doneButton.heightAnchor.constraint(equalToConstant: 44),
 
             manageButton.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             doneButton.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             doneButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            manageButton.trailingAnchor.constraint(equalTo: doneButton.leadingAnchor, constant: -12),
+            manageButton.trailingAnchor.constraint(equalTo: doneButton.leadingAnchor, constant: -8),
 
             scrollView.topAnchor.constraint(equalTo: containerView.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
@@ -171,7 +184,7 @@ class CreditCardInputAccessoryView: UIView {
 
             gradientView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
             gradientView.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
-            gradientView.widthAnchor.constraint(equalToConstant: 19),
+            gradientView.widthAnchor.constraint(equalToConstant: 22),
             gradientView.heightAnchor.constraint(equalToConstant: 48)
         ])
 
@@ -187,33 +200,41 @@ class CreditCardInputAccessoryView: UIView {
         layoutIfNeeded()
     }
 
-    private func setupGradientIfNeeded() {
-        // Check if gradient is actually needed
-        guard shouldShowGradient() else {
-            gradientView.layer.sublayers?.forEach { $0.removeFromSuperlayer() }
-            gradientLayer = nil
-            gradientView.isHidden = true
-            return
-        }
+    var gradientColorLight: UIColor = {
+        let lightTraitCollection = UITraitCollection(userInterfaceStyle: .light)
+        return UIColor(designSystemColor: .background).resolvedColor(with: lightTraitCollection)
+    }()
+    var gradientColorDark: UIColor = {
+        let darkTraitCollection = UITraitCollection(userInterfaceStyle: .dark)
+        return UIColor(designSystemColor: .background).resolvedColor(with: darkTraitCollection)
+    }()
 
-        if gradientView.isHidden {
-            gradientView.isHidden = false
-        }
-
+    private func setupGradient() {
         if gradientLayer == nil || gradientLayer?.frame != gradientView.bounds {
-            gradientView.layer.sublayers?.forEach { $0.removeFromSuperlayer() }
+            gradientLayer?.removeFromSuperlayer()
 
             let newGradient = CAGradientLayer()
-            let backgroundColor = UIColor(designSystemColor: .background)
+            let backgroundColor: UIColor
+            if ThemeManager.shared.currentInterfaceStyle == .dark {
+                backgroundColor = gradientColorDark
+            } else {
+                backgroundColor = gradientColorLight
+            }
+            
             newGradient.colors = [
                 backgroundColor.withAlphaComponent(0).cgColor,  // Transparent
                 backgroundColor.withAlphaComponent(1).cgColor   // Solid
             ]
 
             newGradient.locations = [0, 1]
-            newGradient.startPoint = CGPoint(x: 0.25, y: 0.5)
-            newGradient.endPoint = CGPoint(x: 0.75, y: 0.5)
+            newGradient.startPoint = CGPoint(x: 0, y: 0.5)
+            newGradient.endPoint = CGPoint(x: 1, y: 0.5)
             newGradient.frame = gradientView.bounds
+
+            // Performance optimizations
+            newGradient.shouldRasterize = true
+            newGradient.rasterizationScale = UIScreen.main.scale
+            newGradient.allowsGroupOpacity = false
 
             gradientView.layer.addSublayer(newGradient)
 
@@ -222,21 +243,17 @@ class CreditCardInputAccessoryView: UIView {
         }
     }
 
-    private func shouldShowGradient() -> Bool {
-        // Force layout to ensure we have accurate measurements
-        layoutIfNeeded()
-
-        // Check if scroll view content is wider than its visible bounds
-        return scrollView.contentSize.width > scrollView.bounds.width
-    }
-
-
     private func createCardView(for card: CreditCardRowViewModel) -> UIView {
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
-        containerView.backgroundColor = UIColor(designSystemColor: .container)
-        containerView.layer.cornerRadius = 8
-
+        if ThemeManager.shared.properties.isExperimentalThemingEnabled {
+            containerView.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
+            containerView.layer.cornerRadius = 16
+        } else {
+            containerView.backgroundColor = UIColor(designSystemColor: .container)
+            containerView.layer.cornerRadius = 8
+        }
+        
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(cardTapped(_:)))
         containerView.addGestureRecognizer(tapGesture)
         containerView.isUserInteractionEnabled = true
@@ -273,7 +290,8 @@ class CreditCardInputAccessoryView: UIView {
         let titleLabel = UILabel()
         titleLabel.text = card.compactDisplayTitle
         titleLabel.font = UIFont.systemFont(ofSize: 13, weight: .regular)
-        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+        titleLabel.textColor = UIColor(designSystemColor: .textSecondary)
+        titleLabel.numberOfLines = 1
         containerView.addSubview(titleLabel)
 
         // Details
@@ -307,7 +325,7 @@ class CreditCardInputAccessoryView: UIView {
         // Add vertical separator and expiration date only if expiration date is available
         if !card.compactExpirationDate.isEmpty {
             let verticalLine = UIView()
-            verticalLine.backgroundColor = UIColor(designSystemColor: .lines).withAlphaComponent(0.2)
+            verticalLine.backgroundColor = UIColor(designSystemColor: .lines)
             verticalLine.translatesAutoresizingMaskIntoConstraints = false
 
             let expirationLabel = UILabel()
@@ -335,12 +353,12 @@ class CreditCardInputAccessoryView: UIView {
         textStackView.addArrangedSubview(detailsContainer)
 
         NSLayoutConstraint.activate([
-            iconImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            iconImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 4),
             iconImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             iconImageView.widthAnchor.constraint(equalToConstant: 32),
             iconImageView.heightAnchor.constraint(equalToConstant: 32),
 
-            textStackView.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 6),
+            textStackView.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: 8),
             textStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -6),
             textStackView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
 

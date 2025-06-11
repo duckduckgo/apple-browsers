@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct CreditCardInputAccessoryContent: View {
     let creditCards: [CreditCardRowViewModel]
@@ -64,7 +65,7 @@ struct CreditCardInputAccessoryContent: View {
             Button {
                 
             } label: {
-                Image(.creditCard24)
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.creditCard)
             }
             .buttonStyle(PlainButtonStyle())
             

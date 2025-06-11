@@ -19,12 +19,45 @@
 
 import UIKit
 import WebKit
+import os.log
 
 final class WebView: WKWebView {
-    private var accessory = KeyboardInputAccessoryView()
-    
+    private lazy var accessory = KeyboardInputAccessoryView()
+    var suppressSystemInputView: Bool = false
+    private var lastAccessoryState: String = ""
+
     override var inputAccessoryView: UIView? {
-        return accessory
+       let hasContent = accessory.currentContent != nil
+       let returnValue: UIView?
+
+        if hasContent || suppressSystemInputView {
+           returnValue = accessory
+       } else {
+           returnValue = super.inputAccessoryView
+       }
+
+       // Create state string that's always comparable
+       let currentState = createStateString(returnValue, isCustom: hasContent)
+
+       if lastAccessoryState != currentState {
+           Logger.autofill.debug("🔄 ACCESSORY CHANGE: \(self.lastAccessoryState) -> \(currentState)")
+           lastAccessoryState = currentState
+           DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+               Logger.autofill.debug("Delayed reload after update")
+               self.reloadContentViewInputViews()
+           }
+       }
+
+       return returnValue
+    }
+
+    private func createStateString(_ accessory: UIView?, isCustom: Bool) -> String {
+        if let accessory = accessory {
+            let id = ObjectIdentifier(accessory)
+            return "\(isCustom ? "custom" : "system"):\(id)"
+        } else {
+            return "nil"
+        }
     }
     
     override var canBecomeFirstResponder: Bool {
@@ -32,13 +65,21 @@ final class WebView: WKWebView {
     }
 
     func setAccessoryContentView(_ contentView: UIView, height: CGFloat) {
+        Logger.autofill.debug("Setting accessory content view")
         accessory.setContentView(contentView, contentHeight: height)
-        reloadContentViewInputViews()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            Logger.autofill.debug("Delayed reload after keyboard stabilization")
+            self.reloadContentViewInputViews()
+        }
     }
 
     func removeAccessoryContentView() {
+        Logger.autofill.debug("Removing accessory content view")
         accessory.setContentView(nil)
-        reloadContentViewInputViews()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.reloadContentViewInputViews()
+        }
     }
 
     private func reloadContentViewInputViews() {

@@ -23,7 +23,7 @@ final class KeyboardInputAccessoryView: UIView {
 
     private let container = UIView()
     private var containerHeight: NSLayoutConstraint!
-    private var currentContent: UIView?
+    var currentContent: UIView?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -38,36 +38,38 @@ final class KeyboardInputAccessoryView: UIView {
     }
 
     override var intrinsicContentSize: CGSize {
+        let height = max(containerHeight.constant, 0)
         return CGSize(width: UIView.noIntrinsicMetric,
-                height: containerHeight.constant)
+                height: height)
     }
 
     private func setupContainer() {
         addSubview(container)
         container.translatesAutoresizingMaskIntoConstraints = false
 
+        containerHeight = container.heightAnchor.constraint(equalToConstant: 0)
+
         NSLayoutConstraint.activate([
             container.leadingAnchor.constraint(equalTo: leadingAnchor),
             container.trailingAnchor.constraint(equalTo: trailingAnchor),
-            container.topAnchor.constraint(equalTo: topAnchor)
+            container.topAnchor.constraint(equalTo: topAnchor),
+            container.bottomAnchor.constraint(equalTo: bottomAnchor),
+            containerHeight
         ])
-        containerHeight = container.heightAnchor.constraint(equalToConstant: 0)
-        containerHeight.isActive = true
     }
 
     // MARK: - Public methods
 
     /// Swap in a new content view (fixed height), or nil to hide.
     func setContentView(_ view: UIView?, contentHeight: CGFloat = 48) {
-        currentContent?.removeFromSuperview()
-        currentContent = nil
-
-        defer {
-            invalidateIntrinsicContentSize()
+        if let oldContent = currentContent {
+            oldContent.removeFromSuperview()
         }
 
         guard let view else {
+            currentContent = view
             containerHeight.constant = 0
+            invalidateIntrinsicContentSize()
             return
         }
 
@@ -77,10 +79,13 @@ final class KeyboardInputAccessoryView: UIView {
             view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             view.topAnchor.constraint(equalTo: container.topAnchor),
-            view.heightAnchor.constraint(equalToConstant: contentHeight)
+            view.bottomAnchor.constraint(equalTo: container.bottomAnchor)
         ])
 
         containerHeight.constant = contentHeight
         currentContent = view
+
+        invalidateIntrinsicContentSize()
+        layoutIfNeeded()
     }
 }

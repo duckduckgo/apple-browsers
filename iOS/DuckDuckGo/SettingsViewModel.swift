@@ -82,6 +82,8 @@ final class SettingsViewModel: ObservableObject {
     // Subscription Free Trials
     private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
 
+    private let keyValueStore: ThrowingKeyValueStoring
+
     // Closures to interact with legacy view controllers through the container
     var onRequestPushLegacyView: ((UIViewController) -> Void)?
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
@@ -496,7 +498,8 @@ final class SettingsViewModel: ObservableObject {
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()
+         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
+         keyValueStore: ThrowingKeyValueStoring
     ) {
 
         self.state = SettingsState.defaults
@@ -520,6 +523,7 @@ final class SettingsViewModel: ObservableObject {
         self.duckPlayerPixelHandler = duckPlayerPixelHandler
         self.featureDiscovery = featureDiscovery
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
+        self.keyValueStore = keyValueStore
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }

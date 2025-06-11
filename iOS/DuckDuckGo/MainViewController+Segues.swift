@@ -288,7 +288,8 @@ extension MainViewController {
                                                             tabManager: tabManager,
                                                             syncPausedStateManager: syncPausedStateManager,
                                                             fireproofing: fireproofing,
-                                                            websiteDataManager: websiteDataManager)
+                                                            websiteDataManager: websiteDataManager,
+                                                            keyValueStore: keyValueStore)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
@@ -307,7 +308,8 @@ extension MainViewController {
                                                   aiChatSettings: aiChatSettings,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
                                                   themeManager: themeManager,
-                                                  experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger))
+                                                  experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
+                                                  keyValueStore: keyValueStore)
         Pixel.fire(pixel: .settingsPresented)
 
         if let navigationController = self.presentedViewController as? UINavigationController,
@@ -336,7 +338,8 @@ extension MainViewController {
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             tabManager: self.tabManager,
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
-            fireproofing: self.fireproofing))
+            fireproofing: self.fireproofing,
+            keyValueStore: self.keyValueStore))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic

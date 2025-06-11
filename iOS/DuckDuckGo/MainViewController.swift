@@ -218,6 +218,7 @@ class MainViewController: UIViewController {
 
     let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
+    let keyValueStore: ThrowingKeyValueStoring
 
     private var duckPlayerEntryPointVisible = false
     private var isExperimentalAppearanceEnabled: Bool { themeManager.properties.isExperimentalThemingEnabled }
@@ -262,7 +263,8 @@ class MainViewController: UIViewController {
         aiChatSettings: AIChatSettingsProvider,
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
-        themeManager: ThemeManaging
+        themeManager: ThemeManaging,
+        keyValueStore: ThrowingKeyValueStoring
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -319,6 +321,7 @@ class MainViewController: UIViewController {
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
+        self.keyValueStore = keyValueStore
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self

@@ -345,7 +345,11 @@ final class MainViewController: NSViewController {
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
             if visualStyle.addToolbarShadow {
-                mainView.divider.backgroundColor = .shadowSecondary
+                if mainView.isBannerViewShown {
+                    mainView.divider.backgroundColor = .bannerViewDivider
+                } else {
+                    mainView.divider.backgroundColor = .shadowSecondary
+                }
             } else {
                 let backgroundColor: NSColor = {
                     if mainView.isBannerViewShown {

@@ -171,7 +171,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_macos_notarized_build_duration
+        pixel-name: m_ci_apple_duration_macos_notarized_build
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
@@ -346,7 +346,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_macos_create_dmg_duration
+        pixel-name: m_ci_apple_duration_macos_create_dmg
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 

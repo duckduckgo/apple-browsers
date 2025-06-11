@@ -47,7 +47,11 @@ open class GRDBSecureStorageDatabaseProvider: SecureStorageDatabaseProvider {
         do {
             self.db = try Self.createDatabase(file: file, key: key, writerType: writerType, registerMigrationsHandler: registerMigrationsHandler)
         } catch SecureStorageDatabaseError.corruptedDatabase {
-            self.db = try Self.recreateDatabase(withKey: key, databaseURL: file, writerType: writerType, registerMigrationsHandler: registerMigrationsHandler)
+            do {
+                self.db = try Self.recreateDatabase(withKey: key, databaseURL: file, writerType: writerType, registerMigrationsHandler: registerMigrationsHandler)
+            } catch {
+                throw SecureStorageDatabaseError.databaseRecreationFailed(error)
+            }
         }
     }
 
@@ -82,7 +86,6 @@ open class GRDBSecureStorageDatabaseProvider: SecureStorageDatabaseProvider {
             try migrator.migrate(writer)
         } catch {
             Logger.secureStorage.error("database migration error: \(error.localizedDescription, privacy: .public)")
-            throw error
             throw SecureStorageDatabaseError.migrationFailed(error)
         }
 

@@ -23,11 +23,13 @@ import PixelKit
 public enum SecureStorageDatabaseError: Error, CustomNSError {
     case corruptedDatabase(DatabaseError)
     case migrationFailed(Error)
+    case databaseRecreationFailed(Error)
 
     var underlyingError: Error? {
         switch self {
         case .corruptedDatabase(let dbError): return dbError
         case .migrationFailed(let error): return error
+        case .databaseRecreationFailed(let error): return error
         }
     }
 
@@ -39,6 +41,7 @@ public enum SecureStorageDatabaseError: Error, CustomNSError {
         switch self {
         case .corruptedDatabase: return 100
         case .migrationFailed: return 101
+        case .databaseRecreationFailed: return 102
         }
     }
 }

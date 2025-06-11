@@ -13,7 +13,6 @@ inputs:
   pixel-params:
     description: 'Additional query parameters as YAML key-value pairs'
     required: false
-    default: '{}'
 outputs:
   start-timestamp:
     description: 'Start timestamp (returned in start mode)'

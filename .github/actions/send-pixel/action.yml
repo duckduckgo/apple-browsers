@@ -11,7 +11,6 @@ inputs:
   query-params:
     description: 'Query parameters as YAML key-value pairs'
     required: false
-    default: '{}'
 runs:
   using: 'composite'
   steps:
@@ -27,7 +26,7 @@ runs:
         QUERY_STRING="workflow=$(printf '%s' "${WORKFLOW_URL}" | yq -r '@uri')"
 
         # Add user-provided query params if any
-        if [[ "${{ inputs.query-params }}" != "{}" && -n "${{ inputs.query-params }}" ]]; then
+        if [[ -n "${{ inputs.query-params }}" ]]; then
           USER_PARAMS=$(yq -r 'to_entries | map("\(.key)=\(.value | tostring | @uri)") | join("&")' <<< '${{ inputs.query-params }}')
 
           if [[ -n "${USER_PARAMS}" && "${USER_PARAMS}" != "null" ]]; then

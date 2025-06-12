@@ -47,4 +47,3 @@ enum PictureInPictureEvent: CustomDebugStringConvertible {
         }
     }
 }
-

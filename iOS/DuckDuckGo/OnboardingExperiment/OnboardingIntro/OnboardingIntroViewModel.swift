@@ -153,7 +153,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         }
         pixelReporter.measureChooseBrowserCTAAction()
 
-        //makeNextViewState()
+        // makeNextViewState()
     }
 
     func completedSetDefaultBrowserAction() {

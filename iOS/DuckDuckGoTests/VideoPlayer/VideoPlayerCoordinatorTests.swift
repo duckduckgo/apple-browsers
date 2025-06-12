@@ -134,26 +134,6 @@ final class VideoPlayerCoordinatorTests {
 
     // MARK: - Picture In Picture
 
-//    @Test(
-//        "Check Picture In Picture Is Setup",
-//        arguments: [
-//            VideoPlayerConfiguration(loopVideo: false),
-//            VideoPlayerConfiguration(loopVideo: false, allowsPictureInPicturePlayback: true, requiresLinearPlayback: true)
-//        ]
-//    )
-//    func whenInitializedThenPictureInPictureConfigurationIsTheOneExpected(configuration: VideoPlayerConfiguration) {
-//        // GIVEN
-//        mockPlayer = .init()
-//        let sut = makeSUT(url: fakeURL, configuration: configuration, player: mockPlayer)
-//
-//        // WHEN
-//        sut.setupPictureInPicture(playerLayer: AVPlayerLayer())
-//
-//        // THEN
-//        #expect(mockPlayer.preventsDisplaySleepDuringVideoPlayback == configuration.preventsDisplaySleepDuringVideoPlayback)
-//        #expect(mockPlayer.allowsExternalPlayback == configuration.allowsExternalPlayback)
-//    }
-
     @Test(
         "Check Audio Session Is Configured When Picture In Picture Required",
         arguments: [
@@ -223,7 +203,7 @@ final class VideoPlayerCoordinatorTests {
         var capturedIsActive: Bool = false
         let c = sut.$isPictureInPictureActive
             .sink { isActive in
-                capturedIsActive = true
+                capturedIsActive = isActive
             }
 
         // WHEN

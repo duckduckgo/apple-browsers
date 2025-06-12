@@ -35,7 +35,7 @@ struct PlayerView: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> UIView {
-        let view = PlayerUIView(player:coordinator.player)
+        let view = PlayerUIView(player: coordinator.player)
         coordinator.setupPictureInPicture(playerLayer: view.playerLayer)
         return view
     }

@@ -461,7 +461,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(
                 privacyConfigurationManager: privacyConfigurationManager,
                 purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform
-            )
+            ),
+            internalUserDecider: internalUserDecider
         )
         self.windowControllersManager = windowControllersManager
 

@@ -417,7 +417,12 @@ extension WindowControllersManager {
 
     /// Shows the non-privacy pro feedback modal
     func showFeedbackModal(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
-        FeedbackPresenter.presentFeedbackForm(preselectedFormOption: preselectedFormOption)
+        let internalUserDecider = NSApp.delegateTyped.internalUserDecider
+        if internalUserDecider.isInternalUser {
+            Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
+        } else {
+            FeedbackPresenter.presentFeedbackForm(preselectedFormOption: preselectedFormOption)
+        }
     }
 
     /// Shows the Privacy Pro feedback modal

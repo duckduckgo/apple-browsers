@@ -32,12 +32,21 @@ struct OnboardingView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var model: OnboardingIntroViewModel
 
+    @State private var isPlayingSetAsDefaultVideo: Bool = false
+
     init(model: OnboardingIntroViewModel) {
         self.model = model
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
+            // Position the 'Set Default Browser' video tutorial behind the onboarding background.
+            // When we want to show the PiP video to the user we will start playing and then deeplink into the settings.
+            if model.state.intro?.type == .browsersComparisonDialog {
+                setAsDefaultTutorialVideoView
+                    .frame(width: 300, height: 100) // Fixed size prevents stretching in ZStack and smooths PiP transition. PiP size is auto-determined by OS.
+            }
+
             OnboardingBackground()
 
             switch model.state {
@@ -155,8 +164,10 @@ struct OnboardingView: View {
             showContent: $model.browserComparisonState.showComparisonButton,
             isSkipped: $model.isSkipped,
             setAsDefaultBrowserAction: {
-                model.setDefaultBrowserAction()
-            }, cancelAction: {
+                // Check if should play video or not depending on experiment
+                isPlayingSetAsDefaultVideo = true
+            },
+            cancelAction: {
                 model.cancelSetDefaultBrowserAction()
             }
         )
@@ -195,6 +206,18 @@ struct OnboardingView: View {
             action: model.selectAddressBarPositionAction
         )
         .onboardingDaxDialogStyle()
+    }
+
+    private var setAsDefaultTutorialVideoView: some View {
+        SetAsDefaultVideoTutorialView(isPlaying: $isPlayingSetAsDefaultVideo, onPiPStarted: {
+            model.setDefaultBrowserAction()
+        })
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            Logger.videoPlayer.debug("Will Enter Foreground - Is Playing Video:  \(isPlayingSetAsDefaultVideo)")
+            if isPlayingSetAsDefaultVideo {
+                model.completedSetDefaultBrowserAction()
+            }
+        }
     }
 
     private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {

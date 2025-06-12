@@ -112,8 +112,8 @@ final class PreferencesSectionTests: XCTestCase {
                                                                     shouldHideSubscriptionPurchase: true,
                                                                     personalInformationRemovalStatus: .off,
                                                                     identityTheftRestorationStatus: .off,
-                                                                    paidDuckAIRestorationStatus: .off,
-                                                                    isPaidDuckAIEnabled: false)
+                                                                    paidAIChatStatus: .off,
+                                                                    isPaidAIChatEnabled: false)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
@@ -134,8 +134,8 @@ final class PreferencesSectionTests: XCTestCase {
                                                                     shouldHideSubscriptionPurchase: false,
                                                                     personalInformationRemovalStatus: .off,
                                                                     identityTheftRestorationStatus: .off,
-                                                                    paidDuckAIRestorationStatus: .off,
-                                                                    isPaidDuckAIEnabled: false)
+                                                                    paidAIChatStatus: .off,
+                                                                    isPaidAIChatEnabled: false)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
@@ -160,8 +160,8 @@ final class PreferencesSectionTests: XCTestCase {
                                                                     shouldHideSubscriptionPurchase: false,
                                                                     personalInformationRemovalStatus: .off,
                                                                     identityTheftRestorationStatus: .off,
-                                                                    paidDuckAIRestorationStatus: .off,
-                                                                    isPaidDuckAIEnabled: true)
+                                                                    paidAIChatStatus: .off,
+                                                                    isPaidAIChatEnabled: true)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
@@ -186,8 +186,8 @@ final class PreferencesSectionTests: XCTestCase {
                                                                     shouldHideSubscriptionPurchase: false,
                                                                     personalInformationRemovalStatus: .off,
                                                                     identityTheftRestorationStatus: .off,
-                                                                    paidDuckAIRestorationStatus: .off,
-                                                                    isPaidDuckAIEnabled: false)
+                                                                    paidAIChatStatus: .off,
+                                                                    isPaidAIChatEnabled: false)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
@@ -212,8 +212,8 @@ final class PreferencesSectionTests: XCTestCase {
                                                                     shouldHideSubscriptionPurchase: false,
                                                                     personalInformationRemovalStatus: .off,
                                                                     identityTheftRestorationStatus: .off,
-                                                                    paidDuckAIRestorationStatus: .off,
-                                                                    isPaidDuckAIEnabled: false)
+                                                                    paidAIChatStatus: .off,
+                                                                    isPaidAIChatEnabled: false)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,

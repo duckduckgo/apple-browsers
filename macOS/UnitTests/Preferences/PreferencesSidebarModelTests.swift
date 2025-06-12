@@ -160,14 +160,14 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
         // Then
         XCTAssertTrue(model.currentSubscriptionState.hasSubscription)
-        XCTAssertTrue(model.currentSubscriptionState.isPaidDuckAIEnabled)
+        XCTAssertTrue(model.currentSubscriptionState.isPaidAIChatEnabled)
         XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.networkProtection))
         XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.dataBrokerProtection))
         XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.identityTheftRestoration))
         XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.paidAIChat))
     }
 
-    func testCurrentSubscriptionStateIsPaidDuckAIEnabledIsFalseWhenFeatureFlagIsOff() async throws {
+    func testCurrentSubscriptionStateIsPaidAIChatEnabledIsFalseWhenFeatureFlagIsOff() async throws {
         // Given
         mockFeatureFlagger.isFeatureOn = { _ in false }
 
@@ -177,7 +177,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         try await Task.sleep(interval: 0.1)
 
         // Then
-        XCTAssertFalse(model.currentSubscriptionState.isPaidDuckAIEnabled)
+        XCTAssertFalse(model.currentSubscriptionState.isPaidAIChatEnabled)
     }
 
     func testCurrentSubscriptionStateForUserEntitlements() async throws {

@@ -84,7 +84,7 @@ struct PreferencesSection: Hashable, Identifiable {
                 if currentSubscriptionFeatures.contains(.dataBrokerProtection) {
                     subscriptionPanes.append(.personalInformationRemoval)
                 }
-                if currentSubscriptionFeatures.contains(.paidAIChat) && subscriptionState.isPaidDuckAIEnabled {
+                if currentSubscriptionFeatures.contains(.paidAIChat) && subscriptionState.isPaidAIChatEnabled {
                     subscriptionPanes.append(.paidAIChat)
                 }
                 if currentSubscriptionFeatures.contains(.identityTheftRestoration) || currentSubscriptionFeatures.contains(.identityTheftRestorationGlobal) {

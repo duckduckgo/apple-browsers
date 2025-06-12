@@ -225,7 +225,7 @@ final class PreferencesSidebarModel: ObservableObject {
         case .personalInformationRemoval:
             return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.personalInformationRemovalStatus)
         case .paidAIChat:
-            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.paidDuckAIRestorationStatus)
+            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.paidAIChatStatus)
         case .identityTheftRestoration:
             return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.identityTheftRestorationStatus)
         default:
@@ -294,8 +294,8 @@ final class PreferencesSidebarModel: ObservableObject {
                     personalInformationRemovalSubject.send(updatedState.personalInformationRemovalStatus)
                 }
 
-                if self.currentSubscriptionState.paidDuckAIRestorationStatus != updatedState.paidDuckAIRestorationStatus {
-                    paidAIChatSubject.send(updatedState.paidDuckAIRestorationStatus)
+                if self.currentSubscriptionState.paidAIChatStatus != updatedState.paidAIChatStatus {
+                    paidAIChatSubject.send(updatedState.paidAIChatStatus)
                 }
 
                 if self.currentSubscriptionState.identityTheftRestorationStatus != updatedState.identityTheftRestorationStatus {
@@ -348,8 +348,8 @@ final class PreferencesSidebarModel: ObservableObject {
                                                        shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
                                                        personalInformationRemovalStatus: currentPersonalInformationRemovalStatus,
                                                        identityTheftRestorationStatus: currentIdentityTheftRestorationStatus,
-                                                       paidDuckAIRestorationStatus: currentPaidAIChatStatus,
-                                                       isPaidDuckAIEnabled: featureFlagger.isFeatureOn(.paidAIChat))
+                                                       paidAIChatStatus: currentPaidAIChatStatus,
+                                                       isPaidAIChatEnabled: featureFlagger.isFeatureOn(.paidAIChat))
         } else {
             return PreferencesSidebarSubscriptionState(hasSubscription: false,
                                                        subscriptionFeatures: currentSubscriptionFeatures,
@@ -357,8 +357,8 @@ final class PreferencesSidebarModel: ObservableObject {
                                                        shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
                                                        personalInformationRemovalStatus: .off,
                                                        identityTheftRestorationStatus: .off,
-                                                       paidDuckAIRestorationStatus: .off,
-                                                       isPaidDuckAIEnabled: featureFlagger.isFeatureOn(.paidAIChat))
+                                                       paidAIChatStatus: .off,
+                                                       isPaidAIChatEnabled: featureFlagger.isFeatureOn(.paidAIChat))
         }
     }
 

@@ -52,8 +52,10 @@ struct SettingsRootView: View {
 
         List {
             if #available(iOS 18.2, *) {
-                SettingsGetStartedView()
-                    .listRowBackground(Color(designSystemColor: .surface))
+                if viewModel.shouldShowSetAsDefaultBrowser || viewModel.shouldShowImportPasswords {
+                    SettingsCompleteSetupView()
+                        .listRowBackground(Color(designSystemColor: .surface))
+                }
             }
             SettingsPrivacyProtectionsView()
                 .listRowBackground(Color(designSystemColor: .surface))

@@ -1104,6 +1104,8 @@
 		374EFDF12D01C70A00B30939 /* Utilities in Frameworks */ = {isa = PBXBuildFile; productRef = 374EFDF02D01C70A00B30939 /* Utilities */; };
 		374EFDF32D01C99E00B30939 /* ActiveRemoteMessageModel+NewTabPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374EFDF22D01C99700B30939 /* ActiveRemoteMessageModel+NewTabPage.swift */; };
 		374EFDF42D01C99E00B30939 /* ActiveRemoteMessageModel+NewTabPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374EFDF22D01C99700B30939 /* ActiveRemoteMessageModel+NewTabPage.swift */; };
+		375284C22DFB06FE00FA192E /* SuggestionContainer+NewTabPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375284C12DFB06F800FA192E /* SuggestionContainer+NewTabPage.swift */; };
+		375284C32DFB06FE00FA192E /* SuggestionContainer+NewTabPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375284C12DFB06F800FA192E /* SuggestionContainer+NewTabPage.swift */; };
 		37534C9E28104D9B002621E7 /* TabLazyLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37534C9D28104D9B002621E7 /* TabLazyLoaderTests.swift */; };
 		37534CA028113101002621E7 /* LazyLoadable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37534C9F28113101002621E7 /* LazyLoadable.swift */; };
 		37534CA3281132CB002621E7 /* TabLazyLoaderDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37534CA2281132CB002621E7 /* TabLazyLoaderDataSource.swift */; };
@@ -4118,6 +4120,7 @@
 		374EF08229B751FC003D2E87 /* RecentlyClosedCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentlyClosedCoordinatorTests.swift; sourceTree = "<group>"; };
 		374EFDF22D01C99700B30939 /* ActiveRemoteMessageModel+NewTabPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ActiveRemoteMessageModel+NewTabPage.swift"; sourceTree = "<group>"; };
 		374F18B32D006F940032EA4E /* NewTabPage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NewTabPage; sourceTree = "<group>"; };
+		375284C12DFB06F800FA192E /* SuggestionContainer+NewTabPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SuggestionContainer+NewTabPage.swift"; sourceTree = "<group>"; };
 		37534C9D28104D9B002621E7 /* TabLazyLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabLazyLoaderTests.swift; sourceTree = "<group>"; };
 		37534C9F28113101002621E7 /* LazyLoadable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazyLoadable.swift; sourceTree = "<group>"; };
 		37534CA2281132CB002621E7 /* TabLazyLoaderDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabLazyLoaderDataSource.swift; sourceTree = "<group>"; };
@@ -6738,6 +6741,7 @@
 				372D15EB2D00FA1400A11576 /* AppearancePreferences+NewTabPage.swift */,
 				3772BEDC2D019CDF0019B9EF /* DefaultsFavoritesActionHandler.swift */,
 				376E8C1C2D41920200D5D2EC /* RecentActivityProvider.swift */,
+				375284C12DFB06F800FA192E /* SuggestionContainer+NewTabPage.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -13013,6 +13017,7 @@
 				4B4D60E32A0C883A00BCD287 /* AppMain.swift in Sources */,
 				567A23BF2C7F539C0010F66C /* SpecialErrorPageUserScriptExtension.swift in Sources */,
 				37197EA12942441700394917 /* Tab+UIDelegate.swift in Sources */,
+				375284C32DFB06FE00FA192E /* SuggestionContainer+NewTabPage.swift in Sources */,
 				4BF97ADD2B43C5FC00EB4240 /* KeychainType+ClientDefault.swift in Sources */,
 				B6BCC51F2AFCD9ED002C5499 /* DataImportSourcePicker.swift in Sources */,
 				3706FBDF293F65D500E42796 /* String+Punycode.swift in Sources */,
@@ -14907,6 +14912,7 @@
 				AA9FF95D24A1FA1C0039E328 /* TabCollection.swift in Sources */,
 				1DA84D322C119AE70011C80F /* UpdateMenuItemFactory.swift in Sources */,
 				3772BEDE2D019CE90019B9EF /* DefaultsFavoritesActionHandler.swift in Sources */,
+				375284C22DFB06FE00FA192E /* SuggestionContainer+NewTabPage.swift in Sources */,
 				F1D447232D9EAA950085809A /* AuthV2PixelHandler.swift in Sources */,
 				B6B4D1CF2B0E0DD000C26286 /* DataImportNoDataView.swift in Sources */,
 				B688B4DA273E6D3B0087BEAF /* MainView.swift in Sources */,

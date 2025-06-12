@@ -83,7 +83,7 @@ final class SuggestionContainer {
         self.windowControllersManager = windowControllersManager
     }
 
-    func getSuggestions(for query: String, useCachedData: Bool = false) {
+    func getSuggestions(for query: String, useCachedData: Bool = false, completion: ((SuggestionResult?) -> Void)? = nil) {
         latestQuery = query
 
         // Don't use cache by default
@@ -108,6 +108,7 @@ final class SuggestionContainer {
             }
 
             self.result = result
+            completion?(result)
         }
     }
 

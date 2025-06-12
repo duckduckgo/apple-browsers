@@ -15,66 +15,38 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-//
-//import Combine
-//import Common
-//import os.log
-//import UserScriptActionsManager
-//import WebKit
-//
-//public final class NewTabPageSearchClient: NewTabPageUserScriptClient {
-//
-//    private let model: NewTabPageSearchModel
-//    private var cancellables: Set<AnyCancellable> = []
-//
-//    enum MessageName: String, CaseIterable {
-//        case getData = "activity_getData"
-//        case onBurnComplete = "activity_onBurnComplete"
-//        case onDataUpdate = "activity_onDataUpdate"
-//        case addFavorite = "activity_addFavorite"
-//        case removeFavorite = "activity_removeFavorite"
-//        case removeItem = "activity_removeItem"
-//        case confirmBurn = "activity_confirmBurn"
-//        case open = "activity_open"
-//    }
-//
-//    public init(model: NewTabPageRecentActivityModel) {
-//        self.model = model
-//        super.init()
-//
-//        model.activityProvider.activityPublisher
-//            .sink { [weak self] activity in
-//                Task { @MainActor in
-//                    self?.notifyDataUpdated(activity)
-//                }
-//            }
-//            .store(in: &cancellables)
-//
-//        model.actionsHandler.burnDidCompletePublisher
-//            .sink { [weak self] _ in
-//                Task { @MainActor in
-//                    self?.notifyBurnDidComplete()
-//                }
-//            }
-//            .store(in: &cancellables)
-//    }
-//
-//    public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
-//        userScript.registerMessageHandlers([
-//            MessageName.getData.rawValue: { [weak self] in try await self?.getData(params: $0, original: $1) },
-//            MessageName.addFavorite.rawValue: { [weak self] in try await self?.addFavorite(params: $0, original: $1) },
-//            MessageName.removeFavorite.rawValue: { [weak self] in try await self?.removeFavorite(params: $0, original: $1) },
-//            MessageName.confirmBurn.rawValue: { [weak self] in try await self?.confirmBurn(params: $0, original: $1) },
-//            MessageName.open.rawValue: { [weak self] in try await self?.open(params: $0, original: $1) }
-//        ])
-//    }
-//
-//    @MainActor
-//    private func getData(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-//        return NewTabPageDataModel.ActivityData(activity: model.activityProvider.refreshActivity())
-//    }
-//
-//    @MainActor
-//    private func notifyDataUpdated(_ activity: [NewTabPageDataModel.DomainActivity]) {
-//        pushMessage(named: MessageName.onDataUpdate.rawValue, params: NewTabPageDataModel.ActivityData(activity: activity))
-//    }
+
+import Combine
+import Common
+import os.log
+import UserScriptActionsManager
+import WebKit
+
+public final class NewTabPageSearchClient: NewTabPageUserScriptClient {
+
+    private let model: NewTabPageSearchModel
+    private var cancellables: Set<AnyCancellable> = []
+
+    enum MessageName: String, CaseIterable {
+        case getSuggestions = "search_getSuggestions"
+    }
+
+    public init(model: NewTabPageSearchModel) {
+        self.model = model
+        super.init()
+    }
+
+    public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
+        userScript.registerMessageHandlers([
+            MessageName.getSuggestions.rawValue: { [weak self] in try await self?.getSuggestions(params: $0, original: $1) }
+        ])
+    }
+
+    @MainActor
+    private func getSuggestions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let request: NewTabPageDataModel.SearchGetSuggestionsRequest = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        return await model.searchSuggestionsProvider.suggestions(for: request.term)
+    }
+}

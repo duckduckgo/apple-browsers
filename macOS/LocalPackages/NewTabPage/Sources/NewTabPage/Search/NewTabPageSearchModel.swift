@@ -29,12 +29,26 @@ public protocol NewTabPageSearchSuggestionsProviding: AnyObject {
     func suggestions(for term: String) async -> NewTabPageDataModel.Suggestions
 }
 
+public protocol NewTabPageSearchActionsHandling: AnyObject {
+    @MainActor
+    func open(_ suggestion: NewTabPageDataModel.Suggestion) async throws
+}
+
 public final class NewTabPageSearchModel {
 
     let searchSuggestionsProvider: NewTabPageSearchSuggestionsProviding
+    private let actionsHandler: NewTabPageSearchActionsHandling
 
-    public init(searchSuggestionsProvider: NewTabPageSearchSuggestionsProviding) {
+    public init(searchSuggestionsProvider: NewTabPageSearchSuggestionsProviding, actionsHandler: NewTabPageSearchActionsHandling) {
         self.searchSuggestionsProvider = searchSuggestionsProvider
+        self.actionsHandler = actionsHandler
+    }
+
+    // MARK: - Actions
+
+    @MainActor
+    public func open(_ suggestion: NewTabPageDataModel.Suggestion) async throws {
+        try await actionsHandler.open(suggestion)
     }
 }
 

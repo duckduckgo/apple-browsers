@@ -155,3 +155,16 @@ public extension NewTabPageDataModel {
         }
     }
 }
+
+extension NewTabPageDataModel {
+
+    struct SearchOpenSuggestion: Codable, Equatable {
+        let suggestion: Suggestion
+        let target: ActivityOpenAction.OpenTarget
+    }
+
+    struct SearchSubmitParams: Codable, Equatable {
+        let term: String
+        let target: ActivityOpenAction.OpenTarget
+    }
+}

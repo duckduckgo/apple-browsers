@@ -29,6 +29,8 @@ public final class NewTabPageSearchClient: NewTabPageUserScriptClient {
 
     enum MessageName: String, CaseIterable {
         case getSuggestions = "search_getSuggestions"
+        case openSuggestion = "search_openSuggestion"
+        case submit = "search_submit"
     }
 
     public init(model: NewTabPageSearchModel) {
@@ -38,7 +40,9 @@ public final class NewTabPageSearchClient: NewTabPageUserScriptClient {
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
         userScript.registerMessageHandlers([
-            MessageName.getSuggestions.rawValue: { [weak self] in try await self?.getSuggestions(params: $0, original: $1) }
+            MessageName.getSuggestions.rawValue: { [weak self] in try await self?.getSuggestions(params: $0, original: $1) },
+            MessageName.openSuggestion.rawValue: { [weak self] in try await self?.openSuggestion(params: $0, original: $1) },
+            MessageName.submit.rawValue: { [weak self] in try await self?.submit(params: $0, original: $1) }
         ])
     }
 
@@ -48,5 +52,23 @@ public final class NewTabPageSearchClient: NewTabPageUserScriptClient {
             return nil
         }
         return NewTabPageDataModel.SuggestionsData(suggestions: await model.searchSuggestionsProvider.suggestions(for: request.term))
+    }
+
+    @MainActor
+    private func openSuggestion(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.SearchOpenSuggestion = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        try await model.open(action.suggestion)
+        return nil
+    }
+
+    @MainActor
+    private func submit(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.SearchSubmitParams = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        try await model.open(.phrase(phrase: action.term))
+        return nil
     }
 }

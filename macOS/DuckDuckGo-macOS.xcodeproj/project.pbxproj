@@ -1106,6 +1106,8 @@
 		374EFDF42D01C99E00B30939 /* ActiveRemoteMessageModel+NewTabPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 374EFDF22D01C99700B30939 /* ActiveRemoteMessageModel+NewTabPage.swift */; };
 		375284C22DFB06FE00FA192E /* SuggestionContainer+NewTabPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375284C12DFB06F800FA192E /* SuggestionContainer+NewTabPage.swift */; };
 		375284C32DFB06FE00FA192E /* SuggestionContainer+NewTabPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375284C12DFB06F800FA192E /* SuggestionContainer+NewTabPage.swift */; };
+		375284C52DFB15EE00FA192E /* DefaultSearchActionsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375284C42DFB15E900FA192E /* DefaultSearchActionsHandler.swift */; };
+		375284C62DFB15EE00FA192E /* DefaultSearchActionsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375284C42DFB15E900FA192E /* DefaultSearchActionsHandler.swift */; };
 		37534C9E28104D9B002621E7 /* TabLazyLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37534C9D28104D9B002621E7 /* TabLazyLoaderTests.swift */; };
 		37534CA028113101002621E7 /* LazyLoadable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37534C9F28113101002621E7 /* LazyLoadable.swift */; };
 		37534CA3281132CB002621E7 /* TabLazyLoaderDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37534CA2281132CB002621E7 /* TabLazyLoaderDataSource.swift */; };
@@ -4121,6 +4123,7 @@
 		374EFDF22D01C99700B30939 /* ActiveRemoteMessageModel+NewTabPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ActiveRemoteMessageModel+NewTabPage.swift"; sourceTree = "<group>"; };
 		374F18B32D006F940032EA4E /* NewTabPage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NewTabPage; sourceTree = "<group>"; };
 		375284C12DFB06F800FA192E /* SuggestionContainer+NewTabPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SuggestionContainer+NewTabPage.swift"; sourceTree = "<group>"; };
+		375284C42DFB15E900FA192E /* DefaultSearchActionsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultSearchActionsHandler.swift; sourceTree = "<group>"; };
 		37534C9D28104D9B002621E7 /* TabLazyLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabLazyLoaderTests.swift; sourceTree = "<group>"; };
 		37534C9F28113101002621E7 /* LazyLoadable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazyLoadable.swift; sourceTree = "<group>"; };
 		37534CA2281132CB002621E7 /* TabLazyLoaderDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabLazyLoaderDataSource.swift; sourceTree = "<group>"; };
@@ -6742,6 +6745,7 @@
 				3772BEDC2D019CDF0019B9EF /* DefaultsFavoritesActionHandler.swift */,
 				376E8C1C2D41920200D5D2EC /* RecentActivityProvider.swift */,
 				375284C12DFB06F800FA192E /* SuggestionContainer+NewTabPage.swift */,
+				375284C42DFB15E900FA192E /* DefaultSearchActionsHandler.swift */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -12777,6 +12781,7 @@
 				3706FB67293F65D500E42796 /* DownloadListCoordinator.swift in Sources */,
 				C172E7382C93968E00521D9A /* SyncPromoPixelKitEvent.swift in Sources */,
 				3706FB68293F65D500E42796 /* NSNotificationName+Debug.swift in Sources */,
+				375284C52DFB15EE00FA192E /* DefaultSearchActionsHandler.swift in Sources */,
 				31CF74562CDC177D004ACCE5 /* AIChatUserScript.swift in Sources */,
 				31FBF22F2CDD068000626C17 /* AIChatUserScriptHandling.swift in Sources */,
 				84CE00162DAE41F100852AA2 /* ResizablePreviewView.swift in Sources */,
@@ -14331,6 +14336,7 @@
 				C1858CD22C7C971D00C9BEAB /* FreemiumDBPFeature.swift in Sources */,
 				37AFCE8527DA2D3900471A10 /* PreferencesSidebar.swift in Sources */,
 				3797C7A32C62C38800DA77FB /* NewTabPageCustomizationModel.swift in Sources */,
+				375284C62DFB15EE00FA192E /* DefaultSearchActionsHandler.swift in Sources */,
 				3702DC5F2D75ECD4007BF609 /* HistoryViewDeleteDialog.swift in Sources */,
 				B6C00ED5292FB21E009C73A6 /* HoveredLinkTabExtension.swift in Sources */,
 				4B0526612B1D55320054955A /* UnifiedFeedbackSender.swift in Sources */,

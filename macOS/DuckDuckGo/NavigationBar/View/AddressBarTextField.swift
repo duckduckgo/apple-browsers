@@ -315,7 +315,7 @@ final class AddressBarTextField: NSTextField {
         hideSuggestionWindow()
     }
 
-    private func navigate(suggestion: Suggestion?) {
+    func navigate(suggestion: Suggestion?) {
         let autocompletePixel: GeneralPixel? = {
             switch suggestion {
             case .phrase:

@@ -221,4 +221,8 @@ class SwitchBarTextEntryViewController: UIViewController {
     override func resignFirstResponder() -> Bool {
         return textEntryView.resignFirstResponder()
     }
+
+    func selectAllText() {
+        textEntryView.selectAllText()
+    }
 }

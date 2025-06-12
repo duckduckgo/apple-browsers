@@ -220,6 +220,10 @@ class SwitchBarTextEntryView: UIView {
     override func resignFirstResponder() -> Bool {
         return textView.resignFirstResponder()
     }
+    
+    func selectAllText() {
+        textView.selectAll(nil)
+    }
 }
 
 extension SwitchBarTextEntryView: UITextViewDelegate {

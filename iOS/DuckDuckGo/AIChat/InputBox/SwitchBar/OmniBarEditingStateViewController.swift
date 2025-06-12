@@ -272,4 +272,8 @@ final class OmniBarEditingStateViewController: UIViewController {
             .store(in: &cancellables)
 
     }
+    
+    func selectAllText() {
+        switchBarVC.textEntryViewController.selectAllText()
+    }
 }

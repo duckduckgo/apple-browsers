@@ -489,15 +489,7 @@ class TabViewController: UIViewController {
 
         self.adClickExternalOpenDetector.mitigationHandler = { [weak self] in
             guard let self else { return }
-            if self.tabModel.link?.title == nil {
-                self.closeTab()
-            } else {
-                // Navigate back
-                guard let currentItem = self.webView.backForwardList.currentItem else {
-                    return
-                }
-                self.delegate?.tab(self, didRequestLoadURL: currentItem.url)
-            }
+            self.closeTab()
         }
     }
 
@@ -921,17 +913,18 @@ class TabViewController: UIViewController {
             progressWorker.progressDidChange(webView.estimatedProgress)
             
         case #keyPath(WKWebView.url):
-        // A short delay is required here, because the URL takes some time
-        // to propagate to the webView.url property accessor and might not
-        // be immediately available in the observer
-        let previousURL = self.url
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.webViewUrlHasChanged(previousURL: previousURL, newURL: self?.webView.url)
-        }
-            
+            // A short delay is required here, because the URL takes some time
+            // to propagate to the webView.url property accessor and might not
+            // be immediately available in the observer
+            let previousURL = self.url
+            let newURL = self.webView.url
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                self?.webViewUrlHasChanged(previousURL: previousURL, newURL: newURL)
+            }
+
         case #keyPath(WKWebView.canGoBack):
             delegate?.tabLoadingStateDidChange(tab: self)
-            
+
         case #keyPath(WKWebView.canGoForward):
             delegate?.tabLoadingStateDidChange(tab: self)
 
@@ -944,17 +937,25 @@ class TabViewController: UIViewController {
     }
     
     func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
-        
+        Logger.general.debug("WebView URL did change from \(previousURL?.host ?? "nil") to \(newURL?.host ?? "nil"), current URL: \(self.webView.url?.host ?? "nil")")
+
         // Handle DuckPlayer Navigation URL changes
         if let currentURL = newURL ?? webView.url {
             _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL)
         }
-            
-        if url == nil {
-            url = webView.url
-        } else if let currentHost = url?.host, let newHost = webView.url?.host, currentHost == newHost {
-            url = webView.url
+
+        guard let newURL else {
+            return
         }
+
+//        if url == nil {
+//            url = newURL
+//        } else if let currentHost = url?.host, let newHost = newURL.host, currentHost == newHost {
+//            url = newURL
+//        } else {
+//            Logger.general.debug("Discarding URL change for \(newURL.host ?? "nil")")
+//        }
+        url = newURL
     }
     
     func enableFireproofingForDomain(_ domain: String) {
@@ -1444,7 +1445,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
 
         if let url = webView.url {
-            let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url) ?? url
+            let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             historyCapture.webViewDidCommit(url: finalURL)
             instrumentation.willLoad(url: url)
         }

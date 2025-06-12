@@ -1,4 +1,4 @@
-# bookmarks.yaml
+# ai-chat.yaml
 appId: com.duckduckgo.mobile.ios
 tags:
     - release
@@ -35,8 +35,13 @@ tags:
 - tapOn: "Close 24"
 - tapOn: "New Tab"
 
-# Turn it off
-- tapOn: "Cancel"
+# Turn it off (Cancel tap only needed on iPhone)
+- runFlow:
+    when:
+      true: '${DEVICE_TYPE == "phone"}'
+    commands:
+      - tapOn: "Cancel"
+
 - tapOn: "Browsing Menu"
 - tapOn: "Settings"
 - scrollUntilVisible: 

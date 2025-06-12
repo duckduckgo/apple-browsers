@@ -94,6 +94,7 @@ fi
 
 # Configure device settings based on selection
 # These names need to match the friendly name in xcrun simctl list
+# They match the CI devices so please don't change unless the device and os version in CI are also available
 case $device_type in
     "phone")
         target_device="iPhone 16"
@@ -205,6 +206,10 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "$device_uuid" > $device_uuid_path
+
+# Store device type for use in test runs
+echo "$device_type" > $device_type_path
+echo "ℹ️ Device type '$device_type' stored in $device_type_path"
 
 echo
 echo "✅ Environment ready for running UI tests."

@@ -1389,7 +1389,7 @@ class MainViewController: UIViewController {
 
     func refreshMenuButtonState() {
         if !homeTabManager.isNewTabPageSectionsEnabled && newTabPageViewController != nil {
-            viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.bookmarksButtonHint
+            viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = isPad ? UserText.menuButtonHint : UserText.bookmarksButtonHint
             viewCoordinator.updateToolbarWithState(.newTab)
             presentedMenuButton.setState(.menuImage, animated: false)
 

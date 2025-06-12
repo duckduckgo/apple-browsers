@@ -8,6 +8,7 @@ project_root="${PROJECT_ROOT:-$(realpath $(dirname $0)/..)}"
 derived_data_path="$project_root"/DerivedData
 app_location="$derived_data_path/Build/Products/Debug-iphonesimulator/DuckDuckGo.app"
 device_uuid_path="$derived_data_path/device_uuid.txt"
+device_type_path="$derived_data_path/device_type.txt"
 
 # The simulator command requires the hyphens
 target_device="${TARGET_DEVICE:-iPhone-16}"

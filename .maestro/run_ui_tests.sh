@@ -37,8 +37,14 @@ run_flow() {
 
 	echo "⏲️ Starting flow $( basename $flow)"
 
+	# Read device type
+	device_type="phone"  # default fallback
+	if [ -f "$device_type_path" ]; then
+		device_type=$(cat $device_type_path)
+	fi
+
 	export MAESTRO_DRIVER_STARTUP_TIMEOUT=60000
-	maestro --udid=$device_uuid test -e ONBOARDING_COMPLETED=true $flow
+	maestro --udid=$device_uuid test -e ONBOARDING_COMPLETED=true -e DEVICE_TYPE=$device_type $flow
 	if [ $? -ne 0 ]; then
 		log_message $run_log "❌ FAIL: $flow"
 		echo "🚨 Flow failed $flow"

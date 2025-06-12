@@ -93,7 +93,7 @@ GEM
       faraday_middleware
       multi_json
     fastimage (2.4.0)
-    fastlane (2.227.2)
+    fastlane (2.228.0)
       CFPropertyList (>= 2.3, < 4.0.0)
       addressable (>= 2.8, < 3.0.0)
       artifactory (~> 3.0)
@@ -272,7 +272,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  fastlane (= 2.227.2)
+  fastlane (= 2.228.0)
   fastlane-plugin-ddg_apple_automation!
   httparty
 

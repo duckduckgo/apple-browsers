@@ -47,6 +47,6 @@ public final class NewTabPageSearchClient: NewTabPageUserScriptClient {
         guard let request: NewTabPageDataModel.SearchGetSuggestionsRequest = DecodableHelper.decode(from: params) else {
             return nil
         }
-        return await model.searchSuggestionsProvider.suggestions(for: request.term)
+        return NewTabPageDataModel.SuggestionsData(suggestions: await model.searchSuggestionsProvider.suggestions(for: request.term))
     }
 }

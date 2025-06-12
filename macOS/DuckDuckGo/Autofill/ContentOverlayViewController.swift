@@ -271,6 +271,10 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         // no-op on macOS
     }
 
+    public func secureVaultManagerDidFocus(_: SecureVaultManager, forType type: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        // no-op on macOS
+    }
+
     public func secureVaultManager(_: SecureVaultManager,
                                    promptUserWithGeneratedPassword password: String,
                                    completionHandler: @escaping (Bool) -> Void) {

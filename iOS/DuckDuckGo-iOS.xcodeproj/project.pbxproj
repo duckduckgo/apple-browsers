@@ -6224,7 +6224,7 @@
 		9F012C602DF7BD5500AE0F43 /* PictureInPicture */ = {
 			isa = PBXGroup;
 			children = (
-				9FD6E6062DF8FA3700C2B032 /* AudioSessionManager */,
+				9FD6E6062DF8FA3700C2B032 /* AudioSession */,
 				9F012C642DF7BE1800AE0F43 /* PictureInPictureController.swift */,
 			);
 			path = PictureInPicture;
@@ -6460,10 +6460,10 @@
 		9F8E0F2B2CCA617C001EA7C5 /* VideoPlayer */ = {
 			isa = PBXGroup;
 			children = (
+				9FD6E6142DFA6EFB00C2B032 /* Logging */,
 				9F012C602DF7BD5500AE0F43 /* PictureInPicture */,
 				9F8E0F2C2CCA618E001EA7C5 /* VideoPlayerView.swift */,
 				9F8E0F2E2CCA6202001EA7C5 /* VideoPlayerViewModel.swift */,
-				9F0311392DF7C6AC00AC4DB5 /* Logger+VideoPlayer.swift */,
 			);
 			path = VideoPlayer;
 			sourceTree = "<group>";
@@ -6519,13 +6519,13 @@
 			path = BrowsersComparison;
 			sourceTree = "<group>";
 		};
-		9FD6E6062DF8FA3700C2B032 /* AudioSessionManager */ = {
+		9FD6E6062DF8FA3700C2B032 /* AudioSession */ = {
 			isa = PBXGroup;
 			children = (
 				9F012C622DF7BD9100AE0F43 /* AudioSession.swift */,
 				9FD6E6042DF8225C00C2B032 /* AudioSessionManager.swift */,
 			);
-			path = AudioSessionManager;
+			path = AudioSession;
 			sourceTree = "<group>";
 		};
 		9FD6E6072DF9025500C2B032 /* VideoPlayer */ = {
@@ -6543,6 +6543,14 @@
 				9FD6E60B2DF902E400C2B032 /* AVAudioSessionSpy.swift */,
 			);
 			path = Mocks;
+			sourceTree = "<group>";
+		};
+		9FD6E6142DFA6EFB00C2B032 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				9F0311392DF7C6AC00AC4DB5 /* Logger+VideoPlayer.swift */,
+			);
+			path = Logging;
 			sourceTree = "<group>";
 		};
 		9FDEC7BD2C9125EC00C7A692 /* AddressBarPositionPicker */ = {

@@ -415,6 +415,12 @@ extension WindowControllersManager {
         windowController.mainViewController.navigationBarViewController.showNetworkProtectionStatus()
     }
 
+    /// Shows the non-privacy pro feedback modal
+    func showFeedbackModal(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
+        FeedbackPresenter.presentFeedbackForm(preselectedFormOption: preselectedFormOption)
+    }
+
+    /// Shows the Privacy Pro feedback modal
     func showShareFeedbackModal(source: UnifiedFeedbackSource = .default) {
         let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source)
         let feedbackFormWindowController = feedbackFormViewController.wrappedInWindowController()

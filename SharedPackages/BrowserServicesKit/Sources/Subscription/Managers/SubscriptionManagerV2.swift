@@ -61,6 +61,8 @@ public enum SubscriptionPixelType {
     case migrationFailed(Error)
     case subscriptionIsActive
     case getTokensError(AuthTokensCachePolicy, Error)
+    case invalidRefreshTokenSignedOut
+    case invalidRefreshTokenRecovered
 }
 
 /// Pixels handler
@@ -124,8 +126,8 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// A user cant have an entitlement without the feature, if a user is missing an entitlement the feature is disabled
     func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionFeatureV2]
 
-    /// True if the feature can be used by the user, false otherwise
-    func isFeatureAvailableForUser(_ entitlement: SubscriptionEntitlement) async throws -> Bool
+    /// True if the feature is available in the subscription and can be used by the user, false otherwise
+    func isSubscriptionFeatureEnabled(_ entitlement: SubscriptionEntitlement) async throws -> Bool
 
     // MARK: - Token Management
 
@@ -162,9 +164,11 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     public let currentEnvironment: SubscriptionEnvironment
     private let isInternalUserEnabled: () -> Bool
     private let legacyAccountStorage: AccountKeychainStorage?
+    private let userDefaults: UserDefaults
 
     public init(storePurchaseManager: StorePurchaseManagerV2? = nil,
                 oAuthClient: any OAuthClient,
+                userDefaults: UserDefaults,
                 subscriptionEndpointService: SubscriptionEndpointServiceV2,
                 subscriptionEnvironment: SubscriptionEnvironment,
                 pixelHandler: SubscriptionPixelHandler,
@@ -174,6 +178,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 isInternalUserEnabled: @escaping () -> Bool =  { false }) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
+        self.userDefaults = userDefaults
         self.subscriptionEndpointService = subscriptionEndpointService
         self.currentEnvironment = subscriptionEnvironment
         self.pixelHandler = pixelHandler
@@ -269,7 +274,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     @discardableResult
     public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
-        guard await isUserAuthenticated() else {
+        guard isUserAuthenticated else {
             throw SubscriptionEndpointServiceError.noData
         }
 
@@ -349,7 +354,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     }
 
     public func getCustomerPortalURL() async throws -> URL {
-        guard await isUserAuthenticated() else {
+        guard isUserAuthenticated else {
             throw SubscriptionEndpointServiceError.noData
         }
 
@@ -364,16 +369,20 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     // MARK: - User
     public var isUserAuthenticated: Bool {
-        return (try? oAuthClient.currentTokenContainer())?.accessToken != nil
-    }
-
-    private func isUserAuthenticated() async -> Bool {
-        let tokenContainer = try? await getTokenContainer(policy: .local)
-        return tokenContainer != nil
+        userDefaults.isUserAuthenticated
     }
 
     public var userEmail: String? {
         return (try? oAuthClient.currentTokenContainer())?.decodedAccessToken.email
+    }
+
+    var cachedUserEntitlements: [SubscriptionEntitlement] {
+        get {
+            userDefaults.userEntitlements ?? []
+        }
+        set {
+            userDefaults.userEntitlements = newValue
+        }
     }
 
     // MARK: -
@@ -389,11 +398,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
             let newEntitlements = resultTokenContainer.decodedAccessToken.subscriptionEntitlements
+            cachedUserEntitlements = newEntitlements
 
             // Send "accountDidSignIn" notification when login changes
             if currentCachedTokenContainer == nil {
                 Logger.subscription.debug("New login detected")
-                NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
+                accountDidChange(isAuthenticated: true)
             }
 
             // Send notification when entitlements change
@@ -408,6 +418,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             return resultTokenContainer
         } catch OAuthClientError.missingTokenContainer {
             // Expected when no tokens are available
+            cachedUserEntitlements = []
             throw SubscriptionManagerError.tokenUnavailable(error: OAuthClientError.missingTokenContainer)
         } catch {
             pixelHandler.handle(pixelType: .getTokensError(policy, error))
@@ -422,8 +433,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             case OAuthClientError.refreshTokenExpired,
                 OAuthClientError.invalidTokenRequest:
                 do {
-                    return try await attemptTokenRecovery()
+                    let recoveredTokenContainer = try await attemptTokenRecovery()
+                    pixelHandler.handle(pixelType: .invalidRefreshTokenRecovered)
+                    return recoveredTokenContainer
                 } catch {
+                    await signOut(notifyUI: false)
+                    pixelHandler.handle(pixelType: .invalidRefreshTokenSignedOut)
                     throw SubscriptionManagerError.tokenUnavailable(error: error)
                 }
 
@@ -440,7 +455,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
         Logger.subscription.log("The refresh token is expired, attempting subscription recovery...")
         pixelHandler.handle(pixelType: .invalidRefreshToken)
-        await signOut(notifyUI: false)
 
         try await tokenRecoveryHandler()
 
@@ -449,7 +463,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func exchange(tokenV1: String) async throws -> TokenContainer {
         let tokenContainer = try await oAuthClient.exchange(accessTokenV1: tokenV1)
-        NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
+        accountDidChange(isAuthenticated: true)
         return tokenContainer
     }
 
@@ -464,12 +478,23 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         oAuthClient.adopt(tokenContainer: tokenContainer)
         // It’s important to force refresh the token to immediately branch from the one received.
         // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-        _ = try await oAuthClient.getTokens(policy: .localForceRefresh)
-        NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
+        let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
+        cachedUserEntitlements = refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements
+        accountDidChange(isAuthenticated: true)
+    }
+
+    private func accountDidChange(isAuthenticated: Bool) {
+        userDefaults.isUserAuthenticated = isAuthenticated
+        if isAuthenticated {
+            NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
+        } else {
+            NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
+        }
     }
 
     public func removeLocalAccount() {
         Logger.subscription.log("Removing local account")
+        accountDidChange(isAuthenticated: false)
         oAuthClient.removeLocalAccount()
     }
 
@@ -479,7 +504,9 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         clearSubscriptionCache()
         if notifyUI {
             Logger.subscription.log("SignOut: Notifying the UI")
-            NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
+            accountDidChange(isAuthenticated: false)
+        } else {
+            userDefaults.isUserAuthenticated = false
         }
         Logger.subscription.log("Removing V1 Account")
         try? legacyAccountStorage?.clearAuthenticationState()
@@ -502,7 +529,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     /// - Parameter forceRefresh: ignore subscription and token cache and re-download everything
     /// - Returns: An Array of SubscriptionFeature where each feature is enabled or disabled based on the user entitlements
     public func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionFeatureV2] {
-        guard await isUserAuthenticated() else { return [] }
+        guard isUserAuthenticated else { return [] }
 
         var userEntitlements: [SubscriptionEntitlement]
         var availableFeatures: [SubscriptionEntitlement]
@@ -531,8 +558,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         return result
     }
 
-    public func isFeatureAvailableForUser(_ entitlement: SubscriptionEntitlement) async throws -> Bool {
-        guard await isUserAuthenticated() else { return false }
+    public func isSubscriptionFeatureEnabled(_ entitlement: SubscriptionEntitlement) async throws -> Bool {
+        guard isUserAuthenticated else { return false }
 
         let currentFeatures = try await currentSubscriptionFeatures(forceRefresh: false)
         return currentFeatures.contains { feature in
@@ -544,10 +571,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 extension DefaultSubscriptionManagerV2: SubscriptionTokenProvider {
     public func getAccessToken() async throws -> String {
         try await getTokenContainer(policy: .localValid).accessToken
-    }
-
-    public func removeAccessToken() {
-        removeLocalAccount()
     }
 }
 
@@ -567,6 +590,42 @@ extension SubscriptionEntitlement {
             return Entitlement(product: .paidAIChat)
         case .unknown:
             return Entitlement(product: .unknown)
+        }
+    }
+}
+
+fileprivate extension UserDefaults {
+
+    static let isUserAuthenticatedKey = "com.duckduckgo.subscription.isUserAuthenticated"
+    var isUserAuthenticated: Bool {
+        get {
+            return bool(forKey: Self.isUserAuthenticatedKey)
+        }
+        set {
+            set(newValue, forKey: Self.isUserAuthenticatedKey)
+            if newValue == false {
+                userEntitlements = nil
+            }
+        }
+    }
+
+    static let userEntitlementsKey = "com.duckduckgo.subscription.userEntitlements"
+    var userEntitlements: [SubscriptionEntitlement]? {
+        get {
+            guard let data = data(forKey: Self.userEntitlementsKey) else {
+                return nil
+            }
+            return (try? JSONDecoder().decode([SubscriptionEntitlement].self, from: data))
+        }
+        set {
+            guard let newValue else {
+                removeObject(forKey: Self.userEntitlementsKey)
+                return
+            }
+
+            if let data = try? JSONEncoder().encode(newValue) {
+                set(data, forKey: Self.userEntitlementsKey)
+            }
         }
     }
 }

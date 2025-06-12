@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-import os.log
-@testable import DuckDuckGo_Privacy_Browser
 import Common
+import os.log
+import WebKit
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
 
 final class FireproofingReferenceTests: XCTestCase {
     private var referenceTests = [Test]()

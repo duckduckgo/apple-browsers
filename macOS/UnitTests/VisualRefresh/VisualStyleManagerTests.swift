@@ -28,14 +28,14 @@ class VisualStyleManagerTests: XCTestCase {
 
     private var mockInternalUserDecider: MockInternalUserDecider!
     private var mockFeatureFlagger: MockFeatureFlagger!
-    var visualStyleManager: VisualStyleManager!
+    var visualStyleDecider: VisualStyleDecider!
 
     override func setUp() {
         super.setUp()
         mockInternalUserDecider = MockInternalUserDecider()
         mockFeatureFlagger = MockFeatureFlagger(internalUserDecider: mockInternalUserDecider)
 
-        visualStyleManager = VisualStyleManager(
+        visualStyleDecider = DefaultVisualStyleDecider(
             featureFlagger: mockFeatureFlagger,
             internalUserDecider: mockInternalUserDecider
         )
@@ -44,7 +44,7 @@ class VisualStyleManagerTests: XCTestCase {
     override func tearDown() {
         mockInternalUserDecider = nil
         mockFeatureFlagger = nil
-        visualStyleManager = nil
+        visualStyleDecider = nil
         super.tearDown()
     }
 
@@ -56,7 +56,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = []
 
         // When
-        let style = visualStyleManager.style
+        let style = visualStyleDecider.style
 
         // Then
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Should return legacy corner radius")
@@ -71,7 +71,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates]
 
         // When
-        let style = visualStyleManager.style
+        let style = visualStyleDecider.style
 
         // Then
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0, "Should return current corner radius")
@@ -88,7 +88,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [] // No feature flags enabled
 
         // When
-        let style = visualStyleManager.style
+        let style = visualStyleDecider.style
 
         // Then
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Internal users should get legacy style when visualUpdatesInternalOnly is disabled")
@@ -103,7 +103,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdatesInternalOnly]
 
         // When
-        let style = visualStyleManager.style
+        let style = visualStyleDecider.style
 
         // Then
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0, "Internal users should get current style when visualUpdatesInternalOnly is enabled")
@@ -118,7 +118,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates] // Regular feature flag enabled
 
         // When
-        let style = visualStyleManager.style
+        let style = visualStyleDecider.style
 
         // Then - Should return legacy style (internal users ignore .visualUpdates flag)
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Internal users should ignore .visualUpdates flag and only respond to .visualUpdatesInternalOnly")
@@ -135,7 +135,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = []
 
         // When
-        let style = visualStyleManager.style
+        let style = visualStyleDecider.style
 
         // Then
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
@@ -158,7 +158,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates]
 
         // When
-        let style = visualStyleManager.style
+        let style = visualStyleDecider.style
 
         // Then
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0)
@@ -183,7 +183,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates]
 
         // When
-        let style = visualStyleManager.style
+        let style = visualStyleDecider.style
 
         // Then - Should return legacy style (internal users ignore .visualUpdates)
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Internal users should ignore .visualUpdates flag")
@@ -192,7 +192,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdatesInternalOnly]
 
         // When
-        let styleWithInternalFlag = visualStyleManager.style
+        let styleWithInternalFlag = visualStyleDecider.style
 
         // Then - Should return current style
         XCTAssertEqual(styleWithInternalFlag.toolbarButtonsCornerRadius, 9.0, "Internal users should respond to .visualUpdatesInternalOnly flag")
@@ -204,7 +204,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdatesInternalOnly]
 
         // When
-        let style = visualStyleManager.style
+        let style = visualStyleDecider.style
 
         // Then - Should return legacy style (non-internal users ignore .visualUpdatesInternalOnly)
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Non-internal users should ignore .visualUpdatesInternalOnly flag")
@@ -213,7 +213,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates]
 
         // When
-        let styleWithVisualUpdates = visualStyleManager.style
+        let styleWithVisualUpdates = visualStyleDecider.style
 
         // Then - Should return current style
         XCTAssertEqual(styleWithVisualUpdates.toolbarButtonsCornerRadius, 9.0, "Non-internal users should respond to .visualUpdates flag")
@@ -225,7 +225,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates, .visualUpdatesInternalOnly]
 
         // When
-        let style = visualStyleManager.style
+        let style = visualStyleDecider.style
 
         // Then - Should return current style (both flags enabled, internal user uses internal-only flag)
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0, "Internal users should use .visualUpdatesInternalOnly when both flags are enabled")
@@ -237,7 +237,7 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates, .visualUpdatesInternalOnly]
 
         // When
-        let style = visualStyleManager.style
+        let style = visualStyleDecider.style
 
         // Then - Should return current style (both flags enabled, non-internal user uses .visualUpdates flag)
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0, "Non-internal users should use .visualUpdates when both flags are enabled")
@@ -251,21 +251,21 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = []
 
         // When/Then - Should return legacy style
-        var style = visualStyleManager.style
+        var style = visualStyleDecider.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
 
         // Given - Change to internal user (still no feature flags)
         mockInternalUserDecider.isInternalUser = true
 
         // When/Then - Should still return legacy style (internal users need .visualUpdatesInternalOnly)
-        style = visualStyleManager.style
+        style = visualStyleDecider.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
 
         // Given - Enable internal-only feature flag
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdatesInternalOnly]
 
         // When/Then - Should now return current style
-        style = visualStyleManager.style
+        style = visualStyleDecider.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0)
     }
 
@@ -275,14 +275,14 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = []
 
         // When/Then - Should return legacy style
-        var style = visualStyleManager.style
+        var style = visualStyleDecider.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
 
         // Given - Enable the feature for non-internal users
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates]
 
         // When/Then - Should return current style
-        style = visualStyleManager.style
+        style = visualStyleDecider.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0)
     }
 
@@ -292,34 +292,34 @@ class VisualStyleManagerTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = []
 
         // When/Then - Should return legacy style
-        var style = visualStyleManager.style
+        var style = visualStyleDecider.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
 
         // Given - Enable regular visualUpdates (should be ignored by internal users)
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates]
 
         // When/Then - Should still return legacy style
-        style = visualStyleManager.style
+        style = visualStyleDecider.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
 
         // Given - Enable internal-only feature
         mockFeatureFlagger.enabledFeatureFlags = [.visualUpdatesInternalOnly]
 
         // When/Then - Should return current style
-        style = visualStyleManager.style
+        style = visualStyleDecider.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0)
 
         // Given - Disable internal-only feature
         mockFeatureFlagger.enabledFeatureFlags = []
 
         // When/Then - Should return legacy style again
-        style = visualStyleManager.style
+        style = visualStyleDecider.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
     }
 
     // MARK: - Mock Classes
 
-    private class MockInternalUserDecider: InternalUserDecider {
+    class MockInternalUserDecider: InternalUserDecider {
         var isInternalUser: Bool = false
         var isInternalUserPublisher: AnyPublisher<Bool, Never> {
             isInternalUserSubject.eraseToAnyPublisher()

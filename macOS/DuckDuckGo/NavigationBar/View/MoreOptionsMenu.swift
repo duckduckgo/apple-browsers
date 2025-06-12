@@ -112,7 +112,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
-         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -134,7 +134,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.featureFlagger = featureFlagger
-        self.moreOptionsMenuIconsProvider = visualStyleManager.style.iconsProvider.moreOptionsMenuIconsProvider
+        self.moreOptionsMenuIconsProvider = visualStyle.iconsProvider.moreOptionsMenuIconsProvider
 
         super.init(title: "")
 
@@ -775,6 +775,7 @@ final class FeedbackSubMenu: NSMenu {
                                  moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         removeAllItems()
 
+#if FEEDBACK
         let browserFeedbackItem = NSMenuItem(title: UserText.browserFeedback,
                                              action: #selector(sendFeedback(_:)),
                                              keyEquivalent: "")
@@ -803,8 +804,10 @@ final class FeedbackSubMenu: NSMenu {
             addItem(.separator())
             addItem(withTitle: "Copy Version", action: #selector(AppDelegate.copyVersion(_:)), keyEquivalent: "")
         }
+#endif
     }
 
+#if FEEDBACK
     @MainActor
     @objc private func sendFeedback(_ sender: Any?) {
         PixelKit.fire(MoreOptionsMenuPixel.feedbackActionClicked, frequency: .daily)
@@ -816,6 +819,7 @@ final class FeedbackSubMenu: NSMenu {
         PixelKit.fire(MoreOptionsMenuPixel.feedbackActionClicked, frequency: .daily)
         Application.appDelegate.openPProFeedback(sender)
     }
+#endif
 }
 
 final class ZoomSubMenu: NSMenu {

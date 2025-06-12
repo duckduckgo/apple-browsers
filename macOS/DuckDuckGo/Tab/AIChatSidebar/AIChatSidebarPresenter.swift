@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
 import Combine
+import Foundation
 
 /// Represents an event of hiding or showing an AI Chat tab sidebar.
 ///

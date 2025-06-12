@@ -1,7 +1,7 @@
 //
-//  PixelEventTests.swift
+//  BerkeleyDB.h
 //
-//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,16 +16,4 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import BrowserServicesKit
-@testable import DuckDuckGo_Privacy_Browser
-
-final class PixelEventTests: XCTestCase {
-
-    func testWhenFormattingJSPixel_ThenJSPixelIncludesPixelName() throws {
-        let pixel = AutofillUserScript.JSPixel(pixelName: "pixel_name", pixelParameters: nil)
-        let event = Pixel.Event.jsPixel(pixel)
-
-        XCTAssertEqual(event.name, "m_mac_pixel_name")
-    }
-}
+#import <db.h>

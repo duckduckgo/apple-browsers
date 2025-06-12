@@ -81,8 +81,8 @@ final class PreferencesSidebarModel: ObservableObject {
         vpnTunnelIPCClient: VPNControllerXPCClient = .shared,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         notificationCenter: NotificationCenter = .default,
-        settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.visualStyleManager.style.iconsProvider.settingsIconProvider,
         featureFlagger: FeatureFlagger,
+        settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.visualStyle.iconsProvider.settingsIconProvider,
         pixelFiring: PixelFiring?
     ) {
         self.loadSections = loadSections

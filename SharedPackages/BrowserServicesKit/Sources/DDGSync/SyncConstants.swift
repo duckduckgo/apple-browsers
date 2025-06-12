@@ -1,7 +1,7 @@
 //
-//  MockFreemiumDBPPixelExperimentManager.swift
+//  SyncConstants.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,14 +16,20 @@
 //  limitations under the License.
 //
 
-@testable import DuckDuckGo_Privacy_Browser
+public enum SyncSetupRole {
+    case receiver(SyncSetupSource, SyncCodeSource)
+    case sharer
+}
 
-class MockFreemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManaging {
-    var isTreatment: Bool = true
+public enum SyncSetupSource: String {
+    case recovery
+    case exchange
+    case connect
+    case unknown
+}
 
-    var pixelParameters: [String: String]?
-
-    func assignUserToCohort() {
-    }
-
+public enum SyncCodeSource: String {
+    case qrCode
+    case pastedCode
+    case deepLink
 }

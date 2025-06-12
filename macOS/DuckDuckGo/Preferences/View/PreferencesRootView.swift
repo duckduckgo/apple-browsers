@@ -59,11 +59,11 @@ enum Preferences {
         init(model: PreferencesSidebarModel,
              subscriptionManager: SubscriptionManager,
              subscriptionUIHandler: SubscriptionUIHandling,
-             visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
-            self.visualStyle = visualStyleManager.style
+            self.visualStyle = visualStyle
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
@@ -292,13 +292,13 @@ enum Preferences {
             subscriptionManager: SubscriptionManagerV2,
             subscriptionUIHandler: SubscriptionUIHandling,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
-            visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+            visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
         ) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
-            self.visualStyle = visualStyleManager.style
             self.showTab = showTab
+            self.visualStyle = visualStyle
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()

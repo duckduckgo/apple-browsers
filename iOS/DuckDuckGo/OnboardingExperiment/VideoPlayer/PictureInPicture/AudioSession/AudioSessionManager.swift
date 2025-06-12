@@ -19,7 +19,7 @@
 
 import AVFoundation
 
-enum PlaybackOption {
+enum AudioSessionPlaybackOption {
     /// An option that indicates whether audio from this session mixes with audio from active sessions in other audio apps
     case mixWithOthers
     /// An option that reduces the volume of other audio sessions while audio from this session plays
@@ -30,7 +30,7 @@ protocol AudioSessionManaging: AnyObject {
     /// Sets  the current Audio Session to playback and activates it. The default behaviour of the session is to mix with audio from active sessions in other audio apps.
     ///
     /// Calling this method when a higher-priority audio session is in progress (E.g. Phone Call) will do nothing.
-    func setPlaybackSessionActive(option: PlaybackOption)
+    func setPlaybackSessionActive(option: AudioSessionPlaybackOption)
     /// Deactivates the current audio session.
     ///
     /// Call this method when AVPlayer has not an active AVPlayerItem currentItem. Failing in do so will  cause a failure to deactivate the Audio Session.
@@ -59,7 +59,7 @@ final class AudioSessionManager {
 
 extension AudioSessionManager: AudioSessionManaging {
 
-    public func setPlaybackSessionActive(option: PlaybackOption) {
+    public func setPlaybackSessionActive(option: AudioSessionPlaybackOption) {
         do {
             try audioSession.setCategory(.playback, mode: .moviePlayback, options: AVAudioSession.CategoryOptions(option))
             try audioSession.setActive(true)
@@ -85,7 +85,7 @@ extension AudioSessionManager: AudioSessionManaging {
 
 extension AVAudioSession.CategoryOptions {
 
-    init(_ playbackOption: PlaybackOption) {
+    init(_ playbackOption: AudioSessionPlaybackOption) {
         switch playbackOption {
         case .mixWithOthers:
             self = .mixWithOthers

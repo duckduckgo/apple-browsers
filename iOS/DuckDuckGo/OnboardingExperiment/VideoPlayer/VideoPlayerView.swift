@@ -22,40 +22,29 @@ import AVFoundation
 
 struct VideoPlayerView: View {
 
-    @ObservedObject private var model: VideoPlayerViewModel
+    @ObservedObject private var model: VideoPlayerCoordinator
 
-    private let shouldShowPictureInPictureWhenBackgrounded: Bool
-    private var isPlaying: Binding<Bool>
-    private let onPlayerLayerReady: ((AVPlayerLayer) -> Void)?
-
-    init(
-        model: VideoPlayerViewModel,
-        shouldShowPictureInPictureWhenBackgrounded: Bool = false,
-        isPlaying: Binding<Bool> = .constant(true),
-        onPlayerLayerReady: ((AVPlayerLayer) -> Void)? = nil
-    ) {
+    init(model: VideoPlayerCoordinator) {
         self.model = model
-        self.shouldShowPictureInPictureWhenBackgrounded = shouldShowPictureInPictureWhenBackgrounded
-        self.isPlaying = isPlaying
-        self.onPlayerLayerReady = onPlayerLayerReady
     }
 
     var body: some View {
-        PlayerView(player: model.player, onPlayerLayerReady: onPlayerLayerReady)
-            .onChange(of: isPlaying.wrappedValue) { newValue in
+        PlayerView(coordinator: model)
+            .onChange(of: model.isPictureInPictureActive) { newValue in
                 if newValue {
+                    Logger.videoPlayer.debug("Resuming Playback for PIP: \(model.isPictureInPictureActive)")
                     model.play()
-                } else {
-                    model.pause()
                 }
             }
-            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification), perform: { _ in
-                // If PiP is enabled don't pause the playback when the app goes to the background as it should be a seamless transition.
-                guard !shouldShowPictureInPictureWhenBackgrounded else { return }
-                isPlaying.wrappedValue = false
-            })
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+                Logger.videoPlayer.debug("Will Resign Active. Is Picture In Picture Active: \(model.isPictureInPictureActive)")
+                guard !model.isPictureInPictureActive else { return }
+                model.pause()
+
+            }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-                isPlaying.wrappedValue = true
+                Logger.videoPlayer.debug("Did Become Active")
+                model.play()
             }
     }
 
@@ -65,17 +54,19 @@ struct VideoPlayerView: View {
 // The issue is that is not possible to change the background/foreground colour of the view so the default colour is black.
 // Using UIKit -> AVPlayerLayer solves the problem.
 struct PlayerView: UIViewRepresentable {
-    private let player: AVPlayer
-    private let onPlayerLayerReady: ((AVPlayerLayer) -> Void)?
+    private let coordinator: VideoPlayerCoordinator
 
-    init(player: AVPlayer, onPlayerLayerReady: ((AVPlayerLayer) -> Void)? = nil) {
-        self.player = player
-        self.onPlayerLayerReady = onPlayerLayerReady
+    init(coordinator: VideoPlayerCoordinator) {
+        self.coordinator = coordinator
+    }
+
+    func makeCoordinator() -> VideoPlayerCoordinator {
+        coordinator
     }
 
     func makeUIView(context: Context) -> UIView {
-        let view = PlayerUIView(player: player)
-        onPlayerLayerReady?(view.playerLayer)
+        let view = PlayerUIView(player:coordinator.player)
+        coordinator.setupPictureInPicture(playerLayer: view.playerLayer)
         return view
     }
 
@@ -110,17 +101,14 @@ struct VideoPlayerView_Previews: PreviewProvider {
     @MainActor
     struct VideoPlayerPreview: View {
         static let videoURL = Bundle.main.url(forResource: "add-to-dock-demo", withExtension: "mp4")!
-        @State var isPlaying = false
-        @State var model = VideoPlayerViewModel(url: Self.videoURL, loopVideo: true)
+        @State var model = VideoPlayerCoordinator(url: Self.videoURL, configuration: .init(loopVideo: true))
 
         var body: some View {
             VideoPlayerView(
-                model: model,
-                shouldShowPictureInPictureWhenBackgrounded: false,
-                isPlaying: $isPlaying
+                model: model
             )
             .onAppear(perform: {
-                isPlaying = true
+                model.play()
             })
         }
     }

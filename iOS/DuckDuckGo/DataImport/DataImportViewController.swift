@@ -32,6 +32,10 @@ protocol DataImportViewControllerDelegate: AnyObject {
 
 final class DataImportViewController: UIViewController {
 
+    public struct Notifications {
+        public static let dataImported = Notification.Name("com.duckduckgo.app.DataImported")
+    }
+    
     weak var delegate: DataImportViewControllerDelegate?
 
     private let viewModel: DataImportViewModel
@@ -129,6 +133,7 @@ final class DataImportViewController: UIViewController {
             self.navigationController?.present(DataImportSummaryViewController(summary: summary, importScreen: importScreen, syncService: syncService), animated: true) { [weak self] in
                 guard let self = self else { return }
 
+                NotificationCenter.default.post(name: Notifications.dataImported, object: nil)
                 self.navigationController?.popViewController(animated: false)
                 delegate?.dataImportViewControllerDidFinish(self)
             }

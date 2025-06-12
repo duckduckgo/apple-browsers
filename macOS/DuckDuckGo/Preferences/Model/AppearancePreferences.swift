@@ -31,6 +31,7 @@ protocol AppearancePreferencesPersistor {
     var showFullURL: Bool { get set }
     var currentThemeName: String { get set }
     var favoritesDisplayMode: String? { get set }
+    var isSearchVisible: Bool { get set }
     var isFavoriteVisible: Bool { get set }
     var isProtectionsReportVisible: Bool { get set }
     var isContinueSetUpVisible: Bool { get set }
@@ -49,6 +50,7 @@ struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersisto
 
     enum Key: String {
         case newTabPageIsProtectionsReportVisible = "new-tab-page.protections-report.is-visible"
+        case newTabPageIsSearchVisible = "new-tab-page.search.is-visible"
     }
 
     var isProtectionsReportVisible: Bool {
@@ -62,6 +64,11 @@ struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersisto
             return value
         }
         set { try? keyValueStore.set(newValue, forKey: Key.newTabPageIsProtectionsReportVisible.rawValue) }
+    }
+
+    var isSearchVisible: Bool {
+        get { (try? keyValueStore.object(forKey: Key.newTabPageIsSearchVisible.rawValue) as? Bool) ?? true }
+        set { try? keyValueStore.set(newValue, forKey: Key.newTabPageIsSearchVisible.rawValue) }
     }
 
     @UserDefaultsWrapper(key: .showFullURL, defaultValue: false)
@@ -249,6 +256,12 @@ final class AppearancePreferences: ObservableObject {
         }
     }
 
+    @Published var isSearchVisible: Bool {
+        didSet {
+            persistor.isSearchVisible = isSearchVisible
+        }
+    }
+
     @Published var isFavoriteVisible: Bool {
         didSet {
             persistor.isFavoriteVisible = isFavoriteVisible
@@ -400,6 +413,7 @@ final class AppearancePreferences: ObservableObject {
         currentThemeName = .init(rawValue: persistor.currentThemeName) ?? .systemDefault
         showFullURL = persistor.showFullURL
         favoritesDisplayMode = persistor.favoritesDisplayMode.flatMap(FavoritesDisplayMode.init) ?? .default
+        isSearchVisible = persistor.isSearchVisible
         isFavoriteVisible = persistor.isFavoriteVisible
         isProtectionsReportVisible = persistor.isProtectionsReportVisible
         showBookmarksBar = persistor.showBookmarksBar

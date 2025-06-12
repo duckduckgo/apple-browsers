@@ -30,6 +30,10 @@ extension AppearancePreferences: NewTabPageSectionsVisibilityProviding {
         }
     }
 
+    var isSearchVisiblePublisher: AnyPublisher<Bool, Never> {
+        $isSearchVisible.dropFirst().removeDuplicates().eraseToAnyPublisher()
+    }
+
     var isFavoritesVisiblePublisher: AnyPublisher<Bool, Never> {
         $isFavoriteVisible.dropFirst().removeDuplicates().eraseToAnyPublisher()
     }

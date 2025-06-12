@@ -24,9 +24,11 @@ import UserScriptActionsManager
 import WebKit
 
 public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
+    var isSearchVisible: Bool { get set }
     var isFavoritesVisible: Bool { get set }
     var isProtectionsReportVisible: Bool { get set }
 
+    var isSearchVisiblePublisher: AnyPublisher<Bool, Never> { get }
     var isFavoritesVisiblePublisher: AnyPublisher<Bool, Never> { get }
     var isProtectionsReportVisiblePublisher: AnyPublisher<Bool, Never> { get }
 }
@@ -62,7 +64,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         self.eventMapper = eventMapper
         super.init()
 
-        Publishers.Merge(
+        Publishers.Merge3(
+            sectionsVisibilityProvider.isSearchVisiblePublisher,
             sectionsVisibilityProvider.isFavoritesVisiblePublisher,
             sectionsVisibilityProvider.isProtectionsReportVisiblePublisher
         )
@@ -107,6 +110,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     private func fetchWidgetConfigs() -> [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] {
         [
+            .init(id: .search, isVisible: sectionsVisibilityProvider.isSearchVisible),
             .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
             .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible)
         ]
@@ -125,6 +129,12 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
         for menuItem in params.visibilityMenuItems {
             switch menuItem.id {
+            case .search:
+                let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = menuItem.id
+                item.state = sectionsVisibilityProvider.isSearchVisible ? .on : .off
+                menu.addItem(item)
             case .favorites:
                 let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
                 item.target = self
@@ -151,6 +161,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     @objc private func toggleVisibility(_ sender: NSMenuItem) {
         switch sender.representedObject as? NewTabPageDataModel.WidgetId {
+        case .search:
+            sectionsVisibilityProvider.isSearchVisible.toggle()
         case .favorites:
             sectionsVisibilityProvider.isFavoritesVisible.toggle()
         case .protections:
@@ -190,6 +202,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         }
         for widgetConfig in widgetConfigs {
             switch widgetConfig.id {
+            case .search:
+                sectionsVisibilityProvider.isSearchVisible = widgetConfig.visibility.isVisible
             case .favorites:
                 sectionsVisibilityProvider.isFavoritesVisible = widgetConfig.visibility.isVisible
             case .protections:

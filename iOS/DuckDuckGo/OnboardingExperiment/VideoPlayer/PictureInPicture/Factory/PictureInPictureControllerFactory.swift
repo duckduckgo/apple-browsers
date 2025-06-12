@@ -32,12 +32,12 @@ final class AVPictureInPictureControllerFactory: PictureInPictureControllerFacto
 
     func makePictureInPictureController(playerLayer: AVPlayerLayer) -> AVPictureInPictureController? {
         guard isPictureInPictureSupported else {
-            Logger.videoPlayer.debug("Picture In Picture Not Supported")
+            Logger.videoPlayer.debug("[Video Player] - Picture In Picture Not Supported")
             return nil
         }
 
         guard let controller = AVPictureInPictureController(playerLayer: playerLayer) else {
-            Logger.videoPlayer.debug("Could Not initialise PictureInPictureController")
+            Logger.videoPlayer.debug("[Video Player] - Could Not initialise PictureInPictureController")
             return nil
         }
 

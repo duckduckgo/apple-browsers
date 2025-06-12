@@ -32,18 +32,18 @@ struct VideoPlayerView: View {
         PlayerView(coordinator: model)
             .onChange(of: model.isPictureInPictureActive) { newValue in
                 if newValue {
-                    Logger.videoPlayer.debug("Resuming Playback for PIP: \(model.isPictureInPictureActive)")
+                    Logger.videoPlayer.debug("[Video Player] - Resuming Playback for PIP: \(model.isPictureInPictureActive)")
                     model.play()
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-                Logger.videoPlayer.debug("Will Resign Active. Is Picture In Picture Active: \(model.isPictureInPictureActive)")
+                Logger.videoPlayer.debug("[Video Player] - Will Resign Active. Is Picture In Picture Active: \(model.isPictureInPictureActive)")
                 guard !model.isPictureInPictureActive else { return }
                 model.pause()
 
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-                Logger.videoPlayer.debug("Did Become Active")
+                Logger.videoPlayer.debug("[Video Player] - Did Become Active")
                 model.play()
             }
     }

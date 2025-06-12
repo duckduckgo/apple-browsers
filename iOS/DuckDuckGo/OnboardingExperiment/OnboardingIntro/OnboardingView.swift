@@ -213,7 +213,7 @@ struct OnboardingView: View {
             model.setDefaultBrowserAction()
         })
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-            Logger.videoPlayer.debug("Will Enter Foreground - Is Playing Video:  \(isPlayingSetAsDefaultVideo)")
+            Logger.videoPlayer.debug("[Video Player] - Will Enter Foreground - Is Playing Video:  \(isPlayingSetAsDefaultVideo)")
             if isPlayingSetAsDefaultVideo {
                 model.completedSetDefaultBrowserAction()
             }

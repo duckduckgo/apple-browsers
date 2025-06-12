@@ -77,27 +77,27 @@ final class VideoPlayerCoordinator: ObservableObject {
     }
 
     func play() {
-        Logger.videoPlayer.debug("Play")
+        Logger.videoPlayer.debug("[Video Player] - Play")
         player.play()
     }
 
     func pause() {
-        Logger.videoPlayer.debug("Pause")
+        Logger.videoPlayer.debug("[Video Player] - Pause")
         player.pause()
     }
 
     func setupPictureInPicture(playerLayer: AVPlayerLayer) {
-        Logger.videoPlayer.debug("Setup Picture in Picture")
+        Logger.videoPlayer.debug("[Video Player] - Setup Picture in Picture")
         pictureInPictureController.setupPictureInPicture(playerLayer: playerLayer)
     }
 
     func stopPictureInPicture() {
-        Logger.videoPlayer.debug("Stop Picture In Picture")
+        Logger.videoPlayer.debug("[Video Player] - Stop Picture In Picture")
         pictureInPictureController.stopPictureInPicture()
     }
 
     deinit {
-        Logger.videoPlayer.debug("Video Coordinator deinitialized")
+        Logger.videoPlayer.debug("[Video Player] - Video Coordinator deinitialized")
         audioSessionManager.setPlaybackSessionInactive()
     }
 }
@@ -110,7 +110,7 @@ private extension VideoPlayerCoordinator {
         pictureInPictureActiveCancellable = pictureInPictureController
             .pictureInPictureEventPublisher
             .handleEvents(receiveOutput: { event in
-                Logger.videoPlayer.debug("Received Picture In Picture Event: \(event.debugDescription)")
+                Logger.videoPlayer.debug("[Video Player] - Received Picture In Picture Event: \(event.debugDescription)")
             })
             .compactMap { $0 == .didStartPictureInPicture }
             .assign(to: \.isPictureInPictureActive, onWeaklyHeld: self)

@@ -63,9 +63,9 @@ extension AudioSessionManager: AudioSessionManaging {
         do {
             try audioSession.setCategory(.playback, mode: .moviePlayback, options: AVAudioSession.CategoryOptions(option))
             try audioSession.setActive(true)
-            Logger.videoPlayer.debug("Audio session activated successfully.")
+            Logger.videoPlayer.debug("[Video Player] - Audio session activated successfully.")
         } catch{
-            Logger.videoPlayer.debug("Failed to activate audio session. Reason: \(error.localizedDescription)")
+            Logger.videoPlayer.debug("[Video Player] - Failed to activate audio session. Reason: \(error.localizedDescription)")
         }
     }
 
@@ -73,9 +73,9 @@ extension AudioSessionManager: AudioSessionManaging {
         do {
             // This would throw an error if the session is deactivated while AVPlayer has a current AVPlayerItem.
             try audioSession.setActive(false)
-            Logger.videoPlayer.debug("Audio session deactivated successfully.")
+            Logger.videoPlayer.debug("[Video Player] - Audio session deactivated successfully.")
         } catch {
-            Logger.videoPlayer.debug("Failed to deactivate audio session. Reason: \(error.localizedDescription)")
+            Logger.videoPlayer.debug("[Video Player] - Failed to deactivate audio session. Reason: \(error.localizedDescription)")
         }
     }
 

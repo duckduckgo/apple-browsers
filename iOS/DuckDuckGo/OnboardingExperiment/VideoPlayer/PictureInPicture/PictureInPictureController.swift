@@ -71,7 +71,7 @@ extension PictureInPictureController: PictureInPictureControlling {
 
     func setupPictureInPicture(playerLayer: AVPlayerLayer) {
         guard let controller = factory.makePictureInPictureController(playerLayer: playerLayer) else { return }
-        Logger.videoPlayer.debug("PictureInPictureController initialised")
+        Logger.videoPlayer.debug("[Video Player] - PictureInPictureController initialised")
         controller.canStartPictureInPictureAutomaticallyFromInline = configuration.canStartPictureInPictureAutomaticallyFromInline
         controller.requiresLinearPlayback = configuration.requiresLinearPlayback
         controller.delegate = self
@@ -79,7 +79,7 @@ extension PictureInPictureController: PictureInPictureControlling {
     }
 
     func stopPictureInPicture() {
-        Logger.videoPlayer.debug("Stop Picture In Picture")
+        Logger.videoPlayer.debug("[Video Player] - Stop Picture In Picture")
         controller?.stopPictureInPicture()
     }
 }
@@ -89,27 +89,27 @@ extension PictureInPictureController: PictureInPictureControlling {
 extension PictureInPictureController: AVPictureInPictureControllerDelegate {
 
     func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
-        Logger.videoPlayer.debug("Will Start Picture in Picture")
+        Logger.videoPlayer.debug("[Video Player] - Will Start Picture in Picture")
         subject.send(.willStartPictureInPicture)
     }
 
     func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
-        Logger.videoPlayer.debug("Picture in Picture Started")
+        Logger.videoPlayer.debug("[Video Player] - Picture in Picture Started")
         subject.send(.didStartPictureInPicture)
     }
 
     func pictureInPictureControllerWillStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
-        Logger.videoPlayer.debug("Will Stop Picture in Picture")
+        Logger.videoPlayer.debug("[Video Player] - Will Stop Picture in Picture")
         subject.send(.willStopPictureInPicture)
     }
 
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
-        Logger.videoPlayer.debug("Picture in Picture Stopped")
+        Logger.videoPlayer.debug("[Video Player] - Picture in Picture Stopped")
         subject.send(.didStopPictureInPicture)
     }
 
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: any Error) {
-        Logger.videoPlayer.debug("Picture in Picture Failed: \(error)")
+        Logger.videoPlayer.debug("[Video Player] - Picture in Picture Failed: \(error)")
         subject.send(.failedToStartPictureInPicture)
     }
 }

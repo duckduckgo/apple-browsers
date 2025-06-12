@@ -25,6 +25,7 @@ import Networking
 import Subscription
 import NetworkProtectionIPC
 import LoginItems
+import PixelKit
 import PreferencesUI_macOS
 import SubscriptionUI
 
@@ -34,7 +35,17 @@ final class PreferencesSidebarModel: ObservableObject {
 
     @Published private(set) var sections: [PreferencesSection] = []
     @Published var selectedTabIndex: Int = 0
-    @Published private(set) var selectedPane: PreferencePaneIdentifier = .defaultBrowser
+    @Published private(set) var selectedPane: PreferencePaneIdentifier = .defaultBrowser {
+        didSet {
+            isInitialSelectedPanePixelFired = true
+            switch selectedPane {
+            case .aiChat:
+                pixelFiring?.fire(AIChatPixel.aiChatSettingsDisplayed, frequency: .dailyAndCount)
+            default:
+                pixelFiring?.fire(SettingsPixel.settingsPaneOpened(selectedPane), frequency: .daily)
+            }
+        }
+    }
 
     let vpnTunnelIPCClient: VPNControllerXPCClient
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
@@ -49,6 +60,8 @@ final class PreferencesSidebarModel: ObservableObject {
     public let identityTheftRestorationUpdates: AnyPublisher<StatusIndicator, Never>
 
     private let notificationCenter: NotificationCenter
+    private let pixelFiring: PixelFiring?
+    private var isInitialSelectedPanePixelFired = false
 
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()
@@ -64,7 +77,8 @@ final class PreferencesSidebarModel: ObservableObject {
         vpnTunnelIPCClient: VPNControllerXPCClient = .shared,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         notificationCenter: NotificationCenter = .default,
-        settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.visualStyleManager.style.iconsProvider.settingsIconProvider
+        settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.visualStyle.iconsProvider.settingsIconProvider,
+        pixelFiring: PixelFiring?
     ) {
         self.loadSections = loadSections
         self.tabSwitcherTabs = tabSwitcherTabs
@@ -72,6 +86,7 @@ final class PreferencesSidebarModel: ObservableObject {
         self.subscriptionManager = subscriptionManager
         self.notificationCenter = notificationCenter
         self.settingsIconProvider = settingsIconProvider
+        self.pixelFiring = pixelFiring
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
         self.identityTheftRestorationUpdates = identityTheftRestorationSubject.eraseToAnyPublisher()
@@ -83,12 +98,14 @@ final class PreferencesSidebarModel: ObservableObject {
         subscribeToFeatureFlagChanges(syncService: syncService,
                                       privacyConfigurationManager: privacyConfigurationManager)
         subscribeToSubscriptionChanges()
+
+        forceSelectedPanePixelIfNeeded()
     }
 
     @MainActor
     convenience init(
         tabSwitcherTabs: [Tab.TabContent] = Tab.TabContent.displayableTabTypes,
-        privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
         syncService: DDGSyncing,
         vpnGatekeeper: VPNFeatureGatekeeper,
         includeDuckPlayer: Bool,
@@ -109,7 +126,9 @@ final class PreferencesSidebarModel: ObservableObject {
                   tabSwitcherTabs: tabSwitcherTabs,
                   privacyConfigurationManager: privacyConfigurationManager,
                   syncService: syncService,
-                  subscriptionManager: subscriptionManager)
+                  subscriptionManager: subscriptionManager,
+                  pixelFiring: PixelKit.shared
+        )
     }
 
     public func onAppear() {
@@ -146,6 +165,12 @@ final class PreferencesSidebarModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    private func forceSelectedPanePixelIfNeeded() {
+        if !isInitialSelectedPanePixelFired {
+            selectedPane = selectedPane
+        }
+    }
+
     func isSidebarItemEnabled(for pane: PreferencePaneIdentifier) -> Bool {
         switch pane {
         case .vpn:
@@ -169,6 +194,8 @@ final class PreferencesSidebarModel: ObservableObject {
         case .privateSearch:
             return PrivacyProtectionStatus(statusIndicator: .on)
         case .webTrackingProtection:
+            return PrivacyProtectionStatus(statusIndicator: .on)
+        case .threatProtection:
             return PrivacyProtectionStatus(statusIndicator: .on)
         case .cookiePopupProtection:
             return  PrivacyProtectionStatus(statusPublisher: CookiePopupProtectionPreferences.shared.$isAutoconsentEnabled) { isAutoconsentEnabled in
@@ -351,7 +378,7 @@ final class PreferencesSidebarModel: ObservableObject {
         // Open a new tab in case of special panes
         if identifier.rawValue.hasPrefix(URL.NavigationalScheme.https.rawValue),
             let url = URL(string: identifier.rawValue) {
-            WindowControllersManager.shared.show(url: url,
+            Application.appDelegate.windowControllersManager.show(url: url,
                                                  source: .ui,
                                                  newTab: true)
         }

@@ -32,7 +32,7 @@ final class BookmarksAndPasswordsImportStatusProvider: DataImportStatusProviding
     let bookmarkManager: BookmarkManager
 
     init(secureVault: (any AutofillSecureVault)? = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared),
-         bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
+         bookmarkManager: BookmarkManager) {
         self.secureVault = secureVault
         self.bookmarkManager = bookmarkManager
     }
@@ -81,7 +81,7 @@ final class BookmarksAndPasswordsImportStatusProvider: DataImportStatusProviding
             let identitiesDates = try secureVault.identities().map(\.created)
             dates.append(contentsOf: identitiesDates)
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
         }
         guard dates.count >= 2 else {
             return false

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import NetworkProtectionProxy
 import NetworkProtectionUI
@@ -61,7 +62,7 @@ extension DefaultExcludedDomainsViewModel: ExcludedDomainsViewModel {
 
     @MainActor
     func askUserToReportIssues(withDomain domain: String, in window: NSWindow? = nil) async {
-        let parentWindow = window ?? WindowControllersManager.shared.lastKeyMainWindowController?.window
+        let parentWindow = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
         await ReportSiteIssuesPresenter(userDefaults: .netP).show(withDomain: domain, in: parentWindow)
     }
 }

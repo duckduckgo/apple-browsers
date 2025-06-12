@@ -25,6 +25,8 @@ protocol IconsProviding {
     var settingsIconProvider: SettingsIconsProviding { get }
     var bookmarksIconsProvider: BookmarksIconsProviding { get }
     var vpnNavigationIconsProvider: IconProvider { get }
+    var suggestionsIconsProvider: SuggestionsIconsProviding { get }
+    var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding { get }
 }
 
 final class LegacyIconsProvider: IconsProviding {
@@ -35,6 +37,8 @@ final class LegacyIconsProvider: IconsProviding {
     var settingsIconProvider: SettingsIconsProviding = LegacySettingsIconProvider()
     var bookmarksIconsProvider: BookmarksIconsProviding = LegacyBookmarksIconsProvider()
     var vpnNavigationIconsProvider: IconProvider = NavigationBarIconProvider()
+    var suggestionsIconsProvider: SuggestionsIconsProviding = LegacySuggestionsIconsProvider()
+    var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding = LegacyAddressBarPermissionButtonIconsProvider()
 }
 
 final class CurrentIconsProvider: IconsProviding {
@@ -45,4 +49,6 @@ final class CurrentIconsProvider: IconsProviding {
     var settingsIconProvider: SettingsIconsProviding = CurrentSettingsIconProvider()
     var bookmarksIconsProvider: BookmarksIconsProviding = CurrentBookmarksIconsProvider()
     var vpnNavigationIconsProvider: IconProvider = CurrentVPNNavigationBarIconProvider()
+    var suggestionsIconsProvider: SuggestionsIconsProviding = CurrentSuggestionsIconsProvider()
+    var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding = CurrentAddressBarPermissionButtonIconsProvider()
 }

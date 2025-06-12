@@ -17,6 +17,7 @@
 //
 
 import AppInfoRetriever
+import AppKit
 import Foundation
 import NetworkProtectionIPC
 import NetworkProtectionProxy

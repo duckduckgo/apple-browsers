@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
+import Foundation
+
 enum DefaultBrowserAndDockPromptType {
     case bothDefaultBrowserAndDockPrompt
     case setAsDefaultPrompt
@@ -91,12 +94,12 @@ enum DefaultBrowserAndDockPromptContent {
         }
     }
 
-    var secondaryButtonTitle: String? {
+    var secondaryButtonTitle: String {
         switch self {
         case .popover:
             return UserText.notNow
-        default:
-            return nil
+        case .banner:
+            return UserText.setAsDefaultAndAddToDockPermanentlyDismissAction
         }
     }
 }

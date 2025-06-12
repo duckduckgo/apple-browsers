@@ -22,6 +22,8 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
 
     static let identifier = NSUserInterfaceItemIdentifier(rawValue: "TabBarFooter")
 
+    private let visualStyle = NSApp.delegateTyped.visualStyle
+
     let addButton = MouseOverButton(image: .add, target: nil, action: #selector(TabBarViewController.addButtonAction))
 
     var target: MouseOverButtonDelegate? {
@@ -52,13 +54,13 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
         addButton.translatesAutoresizingMaskIntoConstraints = false
         addButton.isBordered = false
         addButton.bezelStyle = .shadowlessSquare
-        addButton.cornerRadius = 4
-        addButton.normalTintColor = .button
+        addButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         addButton.mouseDownColor = .buttonMouseDown
-        addButton.mouseOverColor = .buttonMouseOver
+        addButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         addButton.imagePosition = .imageOnly
         addButton.imageScaling = .scaleNone
         addButton.registerForDraggedTypes([.string])
+        addButton.cornerRadius = visualStyle.toolbarButtonsCornerRadius
         toolTip = UserText.newTabTooltip
 
         addSubview(addButton)
@@ -71,7 +73,9 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
     override func layout() {
         super.layout()
 
-        addButton.frame = NSRect(x: ((bounds.width - 28) * 0.5).rounded(), y: ((bounds.height - 28) * 0.5).rounded(), width: 28, height: 28)
+        let buttonSize = visualStyle.tabBarButtonSize
+
+        addButton.frame = NSRect(x: ((bounds.width - buttonSize) * 0.5).rounded(), y: ((bounds.height - buttonSize) * 0.5).rounded(), width: buttonSize, height: buttonSize)
     }
 
 }

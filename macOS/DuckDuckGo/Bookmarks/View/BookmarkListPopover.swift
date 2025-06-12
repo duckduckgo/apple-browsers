@@ -26,13 +26,13 @@ protocol BookmarkListPopoverDelegate: NSPopoverDelegate {
 
 final class BookmarkListPopover: NSPopover {
 
-    override init() {
+    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) {
         super.init()
 
         self.animates = false
         self.behavior = .transient
 
-        setupContentController()
+        setupContentController(using: bookmarkManager, dragDropManager: dragDropManager)
     }
 
     required init?(coder: NSCoder) {
@@ -42,8 +42,8 @@ final class BookmarkListPopover: NSPopover {
     // swiftlint:disable:next force_cast
     var viewController: BookmarkListViewController { contentViewController as! BookmarkListViewController }
 
-    private func setupContentController() {
-        let controller = BookmarkListViewController()
+    private func setupContentController(using bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) {
+        let controller = BookmarkListViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
         controller.delegate = self
         contentViewController = controller
     }

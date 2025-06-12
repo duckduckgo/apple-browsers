@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct AutofillBreakageReportCellContentView: View {
 
@@ -27,7 +28,7 @@ struct AutofillBreakageReportCellContentView: View {
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
-                Image(.alertRecolorable16)
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.alertRecolorable)
                 Text(UserText.autofillSettingsReportNotWorkingTitle)
                     .fontWeight(.semibold)
                     .font(.callout)

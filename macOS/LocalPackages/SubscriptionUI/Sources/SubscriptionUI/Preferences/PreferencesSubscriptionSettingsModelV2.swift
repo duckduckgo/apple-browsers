@@ -28,6 +28,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     @Published var subscriptionDetails: String?
     @Published var subscriptionStatus: PrivacyProSubscription.Status = .unknown
+    @Published private var hasActiveTrialOffer: Bool = false
 
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
@@ -83,14 +84,15 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
             }
         }
 
-        Publishers.CombineLatest($subscriptionStatus, subscriptionStateUpdate)
-            .map { status, state in
+        Publishers.CombineLatest3($subscriptionStatus, $hasActiveTrialOffer, subscriptionStateUpdate)
+            .map { status, hasTrialOffer, state in
 
                 let hasAnyEntitlement = !state.userEntitlements.isEmpty
 
                 Logger.subscription.debug("""
 Update subscription state:
 subscriptionStatus: \(status.rawValue)
+hasActiveTrialOffer: \(hasTrialOffer)
 hasAnyEntitlement: \(hasAnyEntitlement)
 """)
 
@@ -98,7 +100,10 @@ hasAnyEntitlement: \(hasAnyEntitlement)
                 case .expired, .inactive:
                     return PreferencesSubscriptionSettingsState.subscriptionExpired
                 case .autoRenewable, .notAutoRenewable, .gracePeriod:
-                    if hasAnyEntitlement {
+                    // Check for free trial first
+                    if hasTrialOffer {
+                        return PreferencesSubscriptionSettingsState.subscriptionFreeTrialActive
+                    } else if hasAnyEntitlement {
                         return PreferencesSubscriptionSettingsState.subscriptionActive
                     } else {
                         return PreferencesSubscriptionSettingsState.subscriptionPendingActivation
@@ -278,9 +283,10 @@ hasAnyEntitlement: \(hasAnyEntitlement)
         do {
             let subscription = try await subscriptionManager.getSubscription(cachePolicy: cachePolicy)
             Task { @MainActor in
-                updateDescription(for: subscription.expiresOrRenewsAt, status: subscription.status, period: subscription.billingPeriod)
+                updateDescription(for: subscription)
                 subscriptionPlatform = subscription.platform
                 subscriptionStatus = subscription.status
+                hasActiveTrialOffer = subscription.hasActiveTrialOffer
             }
         } catch {
             Logger.subscription.error("Error getting subscription: \(error, privacy: .public)")
@@ -288,16 +294,29 @@ hasAnyEntitlement: \(hasAnyEntitlement)
     }
 
     @MainActor
-    func updateDescription(for date: Date, status: PrivacyProSubscription.Status, period: PrivacyProSubscription.BillingPeriod) {
-        let formattedDate = dateFormatter.string(from: date)
+    func updateDescription(for subscription: PrivacyProSubscription) {
+        let hasActiveTrialOffer = subscription.hasActiveTrialOffer
+        let status = subscription.status
+        let period = subscription.billingPeriod
+        let formattedDate = dateFormatter.string(from: subscription.expiresOrRenewsAt)
 
         switch status {
         case .autoRenewable:
-            self.subscriptionDetails = UserText.preferencesSubscriptionRenewingCaption(billingPeriod: period, formattedDate: formattedDate)
+            if hasActiveTrialOffer {
+                self.subscriptionDetails = UserText.preferencesTrialSubscriptionRenewingCaption(billingPeriod: period, formattedDate: formattedDate)
+            } else {
+                self.subscriptionDetails = UserText.preferencesSubscriptionRenewingCaption(billingPeriod: period, formattedDate: formattedDate)
+            }
+
         case .expired, .inactive:
             self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(formattedDate: formattedDate)
         default:
-            self.subscriptionDetails = UserText.preferencesSubscriptionExpiringCaption(billingPeriod: period, formattedDate: formattedDate)
+            if hasActiveTrialOffer {
+                self.subscriptionDetails = UserText.preferencesTrialSubscriptionExpiringCaption(formattedDate: formattedDate)
+            } else {
+                self.subscriptionDetails = UserText.preferencesSubscriptionExpiringCaption(billingPeriod: period, formattedDate: formattedDate)
+            }
+
         }
     }
 

@@ -80,6 +80,7 @@ public extension DesignSystemImages {
             public static var privacyCheckGray: DesignSystemImage { .init(resource: .privacyCheckGrayColor16) }
             public static var privacyPro: DesignSystemImage { .init(resource: .privacyProColor16) }
             public static var profile: DesignSystemImage { .init(resource: .profileColor16) }
+            public static var radar: DesignSystemImage { .init(resource: .radarColor16) }
             public static var releaseNotes: DesignSystemImage { .init(resource: .releaseNotesColor16) }
             public static var rocket: DesignSystemImage { .init(resource: .rocketColor16) }
             public static var sessionRestore: DesignSystemImage { .init(resource: .sessionRestoreColor16) }
@@ -109,6 +110,7 @@ public extension DesignSystemImages {
             public static var addWidget: DesignSystemImage { .init(resource: .addWidgetColor24) }
             public static var addressBarBottom: DesignSystemImage { .init(resource: .addressBarBottomColor24) }
             public static var adsBlocked: DesignSystemImage { .init(resource: .adsBlockedColor24) }
+            public static var radar: DesignSystemImage { .init(resource: .radarColor24) }
             public static var adsFewer: DesignSystemImage { .init(resource: .adsFewerColor24) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChatColor24) }
             public static var aiChatGradient: DesignSystemImage { .init(resource: .aiChatGradientColor24) }

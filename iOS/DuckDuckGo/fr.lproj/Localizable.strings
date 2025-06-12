@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "La synchronisation a été suspendue. Si vous souhaitez continuer à synchroniser cet appareil, reconnectez-vous à l’aide d’un autre appareil ou de votre code de récupération.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Synchroniser maintenant";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "« %@ » pourra accéder à vos données DuckDuckGo synchronisées.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Synchroniser un nouvel appareil ?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "En savoir plus";
 
@@ -261,6 +270,12 @@
 
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Voulez-vous vraiment supprimer tous les signets ? Cette action est irréversible.";
+
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Êtes-vous sûr de vouloir supprimer cette discussion ? Cette action ne peut pas être annulée.";
+
+/* No comment provided by engineer. */
+"Ask anything..." = "Demandez ce que vous voulez...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Se connecter";
@@ -920,6 +935,9 @@
 "close.all.tabs" = "Fermer tous les onglets";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Cohorte : %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Confirmer";
 
 /* Button to continue the onboarding process */
@@ -1475,6 +1493,9 @@
 "empty.search" = "Aucune correspondance trouvée";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Inscriptions : %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1527,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Favoris sur mobile uniquement";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Fonctionnalité : %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Bloquer les publicités et les fenêtres contextuelles";
@@ -2276,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Bloquez les fenêtres contextuelles de cookies";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Bloquez les publicités qui pistent";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Bloquez les publicités ciblées";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Supprimez les données de navigation d'un seul clic";
@@ -2430,6 +2454,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Envoyer vos remarques";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Bloqueur d'escroqueries";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "La désactivation de cette fonctionnalité peut mettre vos informations personnelles en danger.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "M'avertir sur les sites signalés pour des escroqueries, de l’hameçonnage et des logiciels malveillants. [En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Met automatiquement à niveau les liens vers HTTPS lorsque c'est possible. [En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Meilleur cryptage";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Toujours activé";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Protection contre les menaces";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Les protections améliorées de DuckDuckGo bloquent les menaces courantes tout en sécurisant votre connexion.\n[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Certains signets ou mots de passe sont mal formatés ou trop longs et n'ont pas été synchronisés.";
@@ -2864,7 +2912,13 @@
 "siteFeedback.urlPlaceholder" = "Quel site Web pose problème ?";
 
 /* No comment provided by engineer. */
+"Stop generating..." = "Arrêter la génération...";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Nom d'hôte enregistré : %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Sous-fonctionnalité : %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Ajouter à un appareil";
@@ -3389,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Bloquez plus de 150 000 domaines signalés comme hébergeant des logiciels malveillants, des attaques de phishing et des escroqueries en ligne grâce à une liste de blocage au niveau du DNS. [En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blocage et filtrage de contenu";
+"vpn.settings.dns.server.content.blocking.header" = "Blocage de contenu malveillant";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Bloquer les domaines à risque";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Bloqueur d'escroqueries";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

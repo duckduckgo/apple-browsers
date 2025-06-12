@@ -49,13 +49,17 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
         case .invalidRefreshToken:
             PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenDetected(source), frequency: .dailyAndCount)
         case .subscriptionIsActive:
-            PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive, frequency: .daily)
+            PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive, frequency: .legacyDaily)
         case .migrationFailed(let error):
             PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationFailed(source, error), frequency: .dailyAndCount)
         case .migrationSucceeded:
             PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationSucceeded(source), frequency: .dailyAndCount)
         case .getTokensError(let policy, let error):
             PixelKit.fire(PrivacyProPixel.privacyProAuthV2GetTokensError(policy, source, error), frequency: .dailyAndCount)
+        case .invalidRefreshTokenSignedOut:
+            PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
+        case .invalidRefreshTokenRecovered:
+            PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenRecovered, frequency: .dailyAndCount)
         }
     }
 

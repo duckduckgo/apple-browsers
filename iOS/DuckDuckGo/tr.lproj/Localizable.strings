@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Senkronizasyon duraklatıldı. Bu cihazın senkronizasyonuna devam etmek istiyorsanız, başka bir cihaz veya kurtarma kodunuzu kullanarak yeniden bağlanın.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Şimdi Senkronize Et";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "\"%@\" senkronize edilmiş DuckDuckGo verilerinize erişebilecek.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Yeni cihaz senkronize edilsin mi?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Daha Fazla Bilgi";
 
@@ -261,6 +270,12 @@
 
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Tüm yer işaretlerinizi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.";
+
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Bu sohbeti silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.";
+
+/* No comment provided by engineer. */
+"Ask anything..." = "Herhangi bir şey sorun...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Oturum Aç";
@@ -920,6 +935,9 @@
 "close.all.tabs" = "Tüm Sekmeleri Kapat";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Grup: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Onayla";
 
 /* Button to continue the onboarding process */
@@ -1475,6 +1493,9 @@
 "empty.search" = "Eşleşme bulunamadı";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Kayıtlı: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1527,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Yalnızca Mobil Favoriler";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Özellik: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklam ve pop-up engelleme";
@@ -2276,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Çerez açılır pencerelerini engelle";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "İzleme reklamlarını engelleyin";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Hedefli reklamları engelleyin";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Tarama verilerini tek bir düğmeyle silin";
@@ -2430,6 +2454,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Geri Bildirim gönder";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Dolandırıcılık Engelleyici";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Bu özelliği devre dışı bırakmak kişisel bilgilerinizi riske atabilir.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Dolandırıcılık, kimlik avı veya kötü amaçlı yazılım için işaretlenen siteler olduğunda uyarı göster. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Mümkün olduğunda bağlantıları otomatik olarak HTTPS'ye yükseltir. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Her Zaman Açık";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Tehdit Koruması";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGo'nun gelişmiş korumaları, bağlantıyı güvende tutarken yaygın tehditleri durdurur.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Bazı yer işaretleri veya parolalar yanlış veya çok uzun biçimlendirilmiş ve senkronize edilmemiş.";
@@ -2864,7 +2912,13 @@
 "siteFeedback.urlPlaceholder" = "Hangi web sitesi hatalı?";
 
 /* No comment provided by engineer. */
+"Stop generating..." = "Oluşturmayı durdur...";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Depolanan Ana Bilgisayar Adı: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Alt özellik: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Cihaza Ekle";
@@ -3389,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "DNS düzeyinde bir engelleme listesiyle kötü amaçlı yazılım, kimlik avı saldırıları ve çevrimiçi dolandırıcılık barındırdığı için işaretlenmiş 150.000'den fazla alan adını engelleyin. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "İçerik Engelleme ve Filtreleme";
+"vpn.settings.dns.server.content.blocking.header" = "Kötü Amaçlı İçerik Engelleme";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Riskli alan adlarını engelleyin";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Dolandırıcılık Engelleyici";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

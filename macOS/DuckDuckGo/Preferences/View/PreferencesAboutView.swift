@@ -31,6 +31,16 @@ extension Preferences {
         @ObservedObject var model: AboutPreferences
         @State private var areAutomaticUpdatesEnabled: Bool = true
 
+#if SPARKLE
+        var autoUpdatesEnabled: Bool {
+#if DEBUG
+            return NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG)
+#else
+            return true
+#endif
+        }
+#endif
+
         var body: some View {
             PreferencePane {
                 VStack(alignment: .leading) {
@@ -50,7 +60,7 @@ extension Preferences {
                 }
             }.task {
 #if SPARKLE
-                if model.mustCheckForUpdatesBeforeUserCanTakeAction {
+                if autoUpdatesEnabled && model.mustCheckForUpdatesBeforeUserCanTakeAction {
                     model.checkForUpdate(userInitiated: false)
                 }
 #endif
@@ -96,7 +106,7 @@ extension Preferences {
 
         private var rightColumnContent: some View {
             Group {
-                #if APPSTORE
+#if APPSTORE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGoForMacAppStore)
                         .font(.companyName)
@@ -124,7 +134,7 @@ extension Preferences {
                             model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                         })
                     }))
-                #else
+#elseif SPARKLE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGo)
                         .font(.companyName)
@@ -156,7 +166,7 @@ extension Preferences {
                 .padding(.bottom, 4)
 
                 updateButton
-                #endif
+#endif
             }
         }
 

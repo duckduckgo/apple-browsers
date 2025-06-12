@@ -27,6 +27,8 @@ import AIChat
 @MainActor
 protocol WindowControllersManagerProtocol {
 
+    var stateChanged: AnyPublisher<Void, Never> { get }
+
     var mainWindowControllers: [MainWindowController] { get }
     var selectedTab: Tab? { get }
     var allTabCollectionViewModels: [TabCollectionViewModel] { get }
@@ -74,10 +76,6 @@ extension WindowControllersManagerProtocol {
 
 @MainActor
 final class WindowControllersManager: WindowControllersManagerProtocol {
-
-    static let shared = WindowControllersManager(pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
-                                                 subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability()
-    )
 
     var activeViewController: MainViewController? {
         lastKeyMainWindowController?.mainViewController
@@ -417,6 +415,12 @@ extension WindowControllersManager {
         windowController.mainViewController.navigationBarViewController.showNetworkProtectionStatus()
     }
 
+    /// Shows the non-privacy pro feedback modal
+    func showFeedbackModal(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
+        FeedbackPresenter.presentFeedbackForm(preselectedFormOption: preselectedFormOption)
+    }
+
+    /// Shows the Privacy Pro feedback modal
     func showShareFeedbackModal(source: UnifiedFeedbackSource = .default) {
         let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source)
         let feedbackFormWindowController = feedbackFormViewController.wrappedInWindowController()
@@ -426,7 +430,7 @@ extension WindowControllersManager {
             return
         }
 
-        if let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController {
+        if let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
             parentWindowController.window?.beginSheet(feedbackFormWindow)
         } else {
             let tabCollection = TabCollection(tabs: [])
@@ -437,7 +441,7 @@ extension WindowControllersManager {
     }
 
     func showMainWindow() {
-        guard WindowControllersManager.shared.lastKeyMainWindowController == nil else { return }
+        guard Application.appDelegate.windowControllersManager.lastKeyMainWindowController == nil else { return }
         let tabCollection = TabCollection(tabs: [])
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel)
@@ -448,7 +452,7 @@ extension WindowControllersManager {
         let locationsWindowController = locationsViewController.wrappedInWindowController()
 
         guard let locationsFormWindow = locationsWindowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController else {
+              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
             assertionFailure("Failed to present native VPN feedback form")
             return
         }

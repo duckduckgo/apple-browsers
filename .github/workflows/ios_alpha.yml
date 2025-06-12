@@ -45,7 +45,7 @@ jobs:
     steps:
 
     - name: Register SSH keys for access to certificates
-      uses: webfactory/ssh-agent@v0.7.0
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -75,8 +75,11 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
-    - name: Prepare fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: iOS
+        cache-key-prefix: ios-ruby
 
     - name: Archive and upload the app
       env:

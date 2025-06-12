@@ -21,6 +21,7 @@ import Cocoa
 import Carbon.HIToolbox
 import Combine
 import Common
+import History
 import NetworkProtection
 import NetworkProtectionIPC
 import os.log
@@ -32,14 +33,20 @@ final class MainViewController: NSViewController {
     let tabBarViewController: TabBarViewController
     let navigationBarViewController: NavigationBarViewController
     let browserTabViewController: BrowserTabViewController
+    let aiChatSidebarPresenter: AIChatSidebarPresenting
     let findInPageViewController: FindInPageViewController
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
     let featureFlagger: FeatureFlagger
+    let fireCoordinator: FireCoordinator
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
+    private let visualStyle: VisualStyleProviding
 
     let tabCollectionViewModel: TabCollectionViewModel
+    let bookmarkManager: BookmarkManager
+    let historyCoordinator: HistoryCoordinator
+    let fireproofDomains: FireproofDomains
     let isBurner: Bool
 
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
@@ -59,7 +66,7 @@ final class MainViewController: NSViewController {
     var shouldShowBookmarksBar: Bool {
         return !isInPopUpWindow
         && bookmarksBarVisibilityManager.isBookmarksBarVisible
-        && (!(view.window?.isFullScreen ?? false) || AppearancePreferences.shared.showTabsAndBookmarksBarOnFullScreen)
+        && (!(view.window?.isFullScreen ?? false) || NSApp.delegateTyped.appearancePreferences.showTabsAndBookmarksBarOnFullScreen)
     }
 
     private var isInPopUpWindow: Bool {
@@ -71,23 +78,40 @@ final class MainViewController: NSViewController {
     }
 
     init(tabCollectionViewModel: TabCollectionViewModel? = nil,
-         bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
+         bookmarkManager: BookmarkManager = NSApp.delegateTyped.bookmarkManager,
+         bookmarkDragDropManager: BookmarkDragDropManager = NSApp.delegateTyped.bookmarkDragDropManager,
+         historyCoordinator: HistoryCoordinator = NSApp.delegateTyped.historyCoordinator,
+         contentBlocking: ContentBlockingProtocol = NSApp.delegateTyped.privacyFeatures.contentBlocking,
+         fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
+         permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager,
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
-         brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
+         brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter
+         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+         fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
         let tabCollectionViewModel = tabCollectionViewModel ?? TabCollectionViewModel()
         self.tabCollectionViewModel = tabCollectionViewModel
+        self.bookmarkManager = bookmarkManager
+        self.historyCoordinator = historyCoordinator
+        self.fireproofDomains = fireproofDomains
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
+        self.visualStyle = visualStyle
+        self.fireCoordinator = fireCoordinator
 
-        tabBarViewController = TabBarViewController.create(tabCollectionViewModel: tabCollectionViewModel, activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel)
+        tabBarViewController = TabBarViewController.create(
+            tabCollectionViewModel: tabCollectionViewModel,
+            bookmarkManager: bookmarkManager,
+            fireproofDomains: fireproofDomains,
+            activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel
+        )
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
 
         let networkProtectionPopoverManager: NetPPopoverManager = { @MainActor in
@@ -106,7 +130,7 @@ final class MainViewController: NSViewController {
             return NetworkProtectionNavBarPopoverManager(
                 ipcClient: vpnXPCClient,
                 vpnUninstaller: vpnUninstaller,
-                vpnUIPresenting: WindowControllersManager.shared)
+                vpnUIPresenting: Application.appDelegate.windowControllersManager)
         }()
         let networkProtectionStatusReporter: NetworkProtectionStatusReporter = {
             var connectivityIssuesObserver: ConnectivityIssueObserver!
@@ -131,16 +155,29 @@ final class MainViewController: NSViewController {
             )
         }()
 
+        browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
+        aiChatSidebarPresenter = AIChatSidebarPresenter(sidebarHost: browserTabViewController)
+
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
+                                                                         bookmarkManager: bookmarkManager,
+                                                                         bookmarkDragDropManager: bookmarkDragDropManager,
+                                                                         historyCoordinator: historyCoordinator,
+                                                                         contentBlocking: contentBlocking,
+                                                                         fireproofDomains: fireproofDomains,
+                                                                         permissionManager: permissionManager,
                                                                          networkProtectionPopoverManager: networkProtectionPopoverManager,
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
-                                                                         brokenSitePromptLimiter: brokenSitePromptLimiter)
+                                                                         brokenSitePromptLimiter: brokenSitePromptLimiter,
+                                                                         aiChatSidebarPresenter: aiChatSidebarPresenter)
 
-        browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
         findInPageViewController = FindInPageViewController.create()
-        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel)
-        bookmarksBarViewController = BookmarksBarViewController.create(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
+        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel)
+        bookmarksBarViewController = BookmarksBarViewController.create(
+            tabCollectionViewModel: tabCollectionViewModel,
+            bookmarkManager: bookmarkManager,
+            dragDropManager: bookmarkDragDropManager
+        )
 
         super.init(nibName: nil, bundle: nil)
         browserTabViewController.delegate = self
@@ -200,7 +237,6 @@ final class MainViewController: NSViewController {
         registerForBookmarkBarPromptNotifications()
 
         adjustFirstResponder(force: true)
-        showSetAsDefaultAndAddToDockIfNeeded()
     }
 
     var bookmarkBarPromptObserver: Any?
@@ -232,6 +268,7 @@ final class MainViewController: NSViewController {
         updateReloadMenuItem()
         updateStopMenuItem()
         browserTabViewController.windowDidBecomeKey()
+        showSetAsDefaultAndAddToDockIfNeeded()
     }
 
     func windowDidResignKey() {
@@ -307,15 +344,23 @@ final class MainViewController: NSViewController {
 
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
-            let backgroundColor: NSColor = {
+            if visualStyle.addToolbarShadow {
                 if mainView.isBannerViewShown {
-                    return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
+                    mainView.divider.backgroundColor = .bannerViewDivider
                 } else {
-                    return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
+                    mainView.divider.backgroundColor = .shadowSecondary
                 }
-            }()
+            } else {
+                let backgroundColor: NSColor = {
+                    if mainView.isBannerViewShown {
+                        return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
+                    } else {
+                        return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
+                    }
+                }()
 
-            mainView.divider.backgroundColor = backgroundColor
+                mainView.divider.backgroundColor = backgroundColor
+            }
         }
     }
 
@@ -500,11 +545,6 @@ final class MainViewController: NSViewController {
     // MARK: - Set As Default and Add To Dock Prompts configuration
 
     private func subscribeToSetAsDefaultAndAddToDockPromptsNotifications() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(showSetAsDefaultAndAddToDockIfNeeded),
-                                               name: .setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange,
-                                               object: nil)
-
         bannerDismissedCancellable = defaultBrowserAndDockPromptPresenting.bannerDismissedPublisher
             .sink { [weak self] in
                 self?.hideBanner()
@@ -731,7 +771,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
         }
 
         lazy var areOtherWindowsWithPinnedTabsAvailable: Bool = {
-            WindowControllersManager.shared.mainWindowControllers
+            Application.appDelegate.windowControllersManager.mainWindowControllers
                 .contains { mainWindowController -> Bool in
                     mainWindowController.mainViewController !== self
                     && mainWindowController.mainViewController.isBurner == false
@@ -752,12 +792,17 @@ extension MainViewController: BrowserTabViewControllerDelegate {
 @available(macOS 14.0, *)
 #Preview(traits: .fixedLayout(width: 700, height: 660)) {
 
-    let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [
-        BookmarkFolder(id: "1", title: "Folder", children: [
-            Bookmark(id: "2", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: true)
-        ]),
-        Bookmark(id: "3", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: true, parentFolderUUID: "1")
-    ]))
+    let bkman = LocalBookmarkManager(
+        bookmarkStore: BookmarkStoreMock(
+            bookmarks: [
+                BookmarkFolder(id: "1", title: "Folder", children: [
+                    Bookmark(id: "2", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: true)
+                ]),
+                Bookmark(id: "3", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: true, parentFolderUUID: "1")
+            ]
+        ),
+        appearancePreferences: .mock
+    )
     bkman.loadBookmarks()
 
     let vc = MainViewController(bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter())

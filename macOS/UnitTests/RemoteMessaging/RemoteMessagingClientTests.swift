@@ -120,17 +120,21 @@ final class RemoteMessagingClientTests: XCTestCase {
 
     private func makeClient() {
         client = RemoteMessagingClient(
-            database: remoteMessagingDatabase,
+            remoteMessagingDatabase: remoteMessagingDatabase,
             configFetcher: MockRemoteMessagingConfigFetcher(),
             configMatcherProvider: RemoteMessagingConfigMatcherProvider(
                 bookmarksDatabase: bookmarksDatabase,
-                appearancePreferences: AppearancePreferences(persistor: AppearancePreferencesPersistorMock()),
+                appearancePreferences: AppearancePreferences(
+                    persistor: AppearancePreferencesPersistorMock(),
+                    privacyConfigurationManager: MockPrivacyConfigurationManager()
+                ),
                 pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
                 internalUserDecider: InternalUserDeciderMock(),
                 statisticsStore: MockStatisticsStore(),
                 variantManager: MockVariantManager(),
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
-                featureFlagger: MockFeatureFlagger()
+                featureFlagger: MockFeatureFlagger(),
+                visualStyle: VisualStyle.current
             ),
             remoteMessagingAvailabilityProvider: availabilityProvider
         )

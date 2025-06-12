@@ -184,6 +184,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Sync has been paused. If you want to continue syncing this device, reconnect using another device or your recovery code.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Sync Now";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "\"%@\" will be able to access your synced DuckDuckGo data.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Sync new device?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Learn More";
 
@@ -2235,7 +2244,7 @@ https://duckduckgo.com/mac";
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Block cookie pop-ups";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Block tracking ads";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Block targeted ads";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Delete browsing data with one button";
@@ -2389,6 +2398,30 @@ https://duckduckgo.com/mac";
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Send Feedback";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Scam Blocker";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Disabling this feature can put your personal information at risk.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Warn on sites flagged for scams, phishing, or malware. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Automatically upgrades links to HTTPS whenever possible. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Always On";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Threat Protection";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Some bookmarks or passwords are formatted incorrectly or too long and were not synced.";
@@ -3318,10 +3351,10 @@ Take back control of your personal information with the browser designed for dat
 "vpn.settings.dns.server.content.blocking.explanation" = "Block 150,000+ domains flagged for hosting malware, phishing attacks, and online scams with a DNS-level blocklist. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Content Blocking and Filtering";
+"vpn.settings.dns.server.content.blocking.header" = "Malicious Content Blocking";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Block risky domains";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Scam Blocker";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

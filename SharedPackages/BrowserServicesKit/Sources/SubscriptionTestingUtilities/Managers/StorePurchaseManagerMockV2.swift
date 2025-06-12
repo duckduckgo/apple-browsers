@@ -78,7 +78,7 @@ public final class StorePurchaseManagerMockV2: StorePurchaseManagerV2 {
         return purchaseSubscriptionResult!
     }
 
-    public func isUserEligibleForFreeTrial() async -> Bool {
+    public func isUserEligibleForFreeTrial() -> Bool {
         isEligibleForFreeTrialResult
     }
 }

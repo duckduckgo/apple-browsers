@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Common
 import Foundation
@@ -83,14 +84,10 @@ final class RecentActivityItemBurner: RecentActivityItemBurning {
     let fire: () async -> Fire
     let fireproofStatusProvider: URLFireproofStatusProviding
 
-    init(
-        fireproofStatusProvider: URLFireproofStatusProviding = FireproofDomains.shared,
-        tld: TLD = ContentBlocking.shared.tld,
-        fire: (() async -> Fire)? = nil
-    ) {
+    init(fireproofStatusProvider: URLFireproofStatusProviding, tld: TLD, fire: @escaping () async -> Fire) {
         self.fireproofStatusProvider = fireproofStatusProvider
         self.tld = tld
-        self.fire = fire ?? { @MainActor in FireCoordinator.fireViewModel.fire }
+        self.fire = fire
     }
 
     @MainActor func burn(_ url: URL, burningDidComplete: @escaping () -> Void) async -> Bool {
@@ -127,10 +124,7 @@ final class DefaultRecentActivityActionsHandler: RecentActivityActionsHandling {
     let burnDidCompletePublisher: AnyPublisher<Void, Never>
     private let burnDidCompleteSubject = PassthroughSubject<Void, Never>()
 
-    init(
-        favoritesHandler: RecentActivityFavoritesHandling = LocalBookmarkManager.shared,
-        burner: RecentActivityItemBurning = RecentActivityItemBurner()
-    ) {
+    init(favoritesHandler: RecentActivityFavoritesHandling, burner: RecentActivityItemBurning) {
         self.favoritesHandler = favoritesHandler
         self.burner = burner
         self.burnDidCompletePublisher = burnDidCompleteSubject.eraseToAnyPublisher()

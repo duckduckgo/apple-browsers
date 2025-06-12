@@ -146,7 +146,9 @@ final class DebugScanJob: SubJobWebRunning {
             }
         }
 
-        await webViewHandler?.execute(action: action, data: .userData(query.profileQuery, self.extractedProfile))
+        await webViewHandler?.execute(action: action,
+                                      ofType: actionsHandler?.step.type,
+                                      data: .userData(query.profileQuery, self.extractedProfile))
     }
 
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
@@ -172,8 +174,16 @@ final class DebugScanJob: SubJobWebRunning {
         await executeNextStep()
     }
 
+    func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
+        if action.actionType == .expectation {
+            retriesCountOnError = 1
+        }
+
+        return false
+    }
+
     public func executeNextStep() async {
-        retriesCountOnError = 0 // We reset the retries on error when it is successful
+        resetRetriesCount()
         Logger.action.debug("SCAN Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
 
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)

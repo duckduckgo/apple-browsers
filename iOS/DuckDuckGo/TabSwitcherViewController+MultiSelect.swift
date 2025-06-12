@@ -21,6 +21,8 @@ import UIKit
 import BrowserServicesKit
 import Core
 import Bookmarks
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 // MARK: Source agnostic action implementations
 extension TabSwitcherViewController {
@@ -287,38 +289,38 @@ extension TabSwitcherViewController {
         let items = [
 
             UIMenu(title: "", options: .displayInline, children: [
-                canShowDeselectAll ? action(UserText.deselectAllTabs, "Check-Circle-16", { [weak self] in
+                canShowDeselectAll ? action(UserText.deselectAllTabs, DesignSystemImages.Glyphs.Size16.checkCircle, { [weak self] in
                     self?.deselectAllTabs()
                 }) : nil,
-                canShowSelectAll ? action(UserText.selectAllTabs, "Check-Circle-16", { [weak self] in
+                canShowSelectAll ? action(UserText.selectAllTabs, DesignSystemImages.Glyphs.Size16.checkCircle, { [weak self] in
                     self?.selectAllTabs()
                 }) : nil,
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [
-                canShare ? action(UserText.shareLinks(withCount: selectedTabs.count), "Share-Apple-16", { [weak self] in
+                canShare ? action(UserText.shareLinks(withCount: selectedTabs.count), DesignSystemImages.Glyphs.Size16.shareApple, { [weak self] in
                     self?.selectModeShareLinks()
                 }) : nil,
-                canAddBookmarks ? action(UserText.bookmarkSelectedTabs(withCount: selectedTabs.count), "Bookmark-Add-16", { [weak self] in
+                canAddBookmarks ? action(UserText.bookmarkSelectedTabs(withCount: selectedTabs.count), DesignSystemImages.Glyphs.Size16.bookmarkAdd, { [weak self] in
                     self?.selectModeBookmarkSelected()
                 }) : nil,
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [
                 // Always use plural here
-                canCloseOther ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", { [weak self] in
+                canCloseOther ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), DesignSystemImages.Glyphs.Size16.tabCloseAlt, { [weak self] in
                     self?.selectModeCloseOtherTabs()
                 }) : nil,
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [
-                canClose ? destructive(UserText.closeTabs(withCount: selectedTabs.count), "Close-16", { [weak self] in
+                canClose ? destructive(UserText.closeTabs(withCount: selectedTabs.count), imageForCloseTabs(selectedTabs.count), { [weak self] in
                     self?.selectModeCloseSelectedTabs()
                 }) : nil,
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [
-                canBookmarkAll ? action(UserText.tabSwitcherBookmarkAllTabs, "Bookmark-All-16", { [weak self] in
+                canBookmarkAll ? action(UserText.tabSwitcherBookmarkAllTabs, DesignSystemImages.Glyphs.Size16.bookmarkAll, { [weak self] in
                     self?.selectModeBookmarkAll()
                 }) : nil,
             ].compactMap { $0 })
@@ -339,12 +341,12 @@ extension TabSwitcherViewController {
     func createEditMenu() -> UIMenu {
         let items = [
             // Force plural version for the menu - this really means "switch to select tabs mode"
-            action(UserText.tabSwitcherSelectTabs(withCount: 2), "Check-Circle-16", { [weak self] in
+            action(UserText.tabSwitcherSelectTabs(withCount: 2), DesignSystemImages.Glyphs.Size16.checkCircle, { [weak self] in
                 self?.editMenuEnterSelectMode()
             }),
 
             UIMenu(title: "", options: [.displayInline], children: [
-                destructive(UserText.closeAllTabs, "Tab-Close-16", { [weak self] in
+                destructive(UserText.closeAllTabs, DesignSystemImages.Glyphs.Size16.tabCloseAlt, { [weak self] in
                     self?.editMenuCloseAllTabs()
                 })
             ]),
@@ -380,30 +382,36 @@ extension TabSwitcherViewController {
         
         return UIMenu(title: title, children: [
             UIMenu(title: "", options: .displayInline, children: [
-                containsWebPages ? action(UserText.shareLinks(withCount: tabs.count), "Share-Apple-16", { [weak self] in
+                containsWebPages ? action(UserText.shareLinks(withCount: tabs.count), DesignSystemImages.Glyphs.Size16.shareApple, { [weak self] in
                     self?.longPressMenuShareLinks(tabs: tabs)
                 }) : nil,
-                containsWebPages ? action(UserText.bookmarkSelectedTabs(withCount: tabs.count), "Bookmark-Add-16", { [weak self] in
+                containsWebPages ? action(UserText.bookmarkSelectedTabs(withCount: tabs.count), DesignSystemImages.Glyphs.Size16.bookmarkAdd, { [weak self] in
                     self?.longPressMenuBookmarkTabs(indexPaths: indexPaths)
                 }) : nil,
-                canSelect ? action(UserText.tabSwitcherSelectTabs(withCount: 1), "Check-Circle-16", { [weak self] in
+                canSelect ? action(UserText.tabSwitcherSelectTabs(withCount: 1), DesignSystemImages.Glyphs.Size16.checkCircle, { [weak self] in
                     self?.longPressMenuSelectTabs(indexPaths: indexPaths)
                 }) : nil,
             ].compactMap { $0 }),
             
             UIMenu(title: "", options: .displayInline, children: [
-                destructive(UserText.closeTabs(withCount: tabs.count), "Close-16", { [weak self] in
+                destructive(UserText.closeTabs(withCount: tabs.count), imageForCloseTabs(tabs.count), { [weak self] in
                     self?.longPressMenuCloseTabs(indexPaths: indexPaths)
                 })
             ]),
 
             UIMenu(title: "", options: .displayInline, children: [
                 // Always use plural here
-                canCloseOthers ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", { [weak self] in
+                canCloseOthers ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), imageForCloseTabs(2), { [weak self] in
                     self?.longPressMenuCloseOtherTabs(retainingIndexPaths: indexPaths)
                 }) : nil
             ].compactMap { $0 }),
         ].compactMap { $0 })
+    }
+
+    private func imageForCloseTabs(_ count: Int) -> UIImage {
+        return count < 2 ?
+            DesignSystemImages.Glyphs.Size16.closeOutline :
+            DesignSystemImages.Glyphs.Size16.tabCloseAlt
     }
 
     private func shouldShowBookmarkThisPageLongPressMenuItem(_ tab: Tab, _ bookmarksModel: MenuBookmarksViewModel) -> Bool {
@@ -419,14 +427,14 @@ extension TabSwitcherViewController {
 
     func refreshBarButtons() {
         barsHandler.tabSwitcherStyleButton.accessibilityLabel = tabsStyle.accessibilityLabel
-        barsHandler.tabSwitcherStyleButton.primaryAction = action(image: tabsStyle.rawValue, { [weak self] in
+        barsHandler.tabSwitcherStyleButton.primaryAction = action(image: tabsStyle.image, { [weak self] in
             guard let self else { return }
             self.onTabStyleChange()
         })
         barsHandler.tabSwitcherStyleButton.tintColor = UIColor(designSystemColor: .icons)
 
         barsHandler.addAllBookmarksButton.accessibilityLabel = UserText.bookmarkAllTabs
-        barsHandler.addAllBookmarksButton.primaryAction = action(image: "Bookmark-New-24") { [weak self] in
+        barsHandler.addAllBookmarksButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.bookmarkNew) { [weak self] in
             self?.bookmarkTabs(withIndexPaths: self!.tabsModel.tabs.indices.map { IndexPath(row: $0, section: 0) },
                                title: UserText.alertTitleBookmarkAll(withCount: self!.tabsModel.count),
                                message: UserText.alertBookmarkAllMessage,
@@ -435,12 +443,12 @@ extension TabSwitcherViewController {
         }
 
         barsHandler.plusButton.accessibilityLabel = UserText.keyCommandNewTab
-        barsHandler.plusButton.primaryAction = action(image: "Add-24", { [weak self] in
+        barsHandler.plusButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.add, { [weak self] in
             self?.addNewTab()
         })
 
         barsHandler.fireButton.accessibilityLabel = "Close all tabs and clear data"
-        barsHandler.fireButton.primaryAction = action(image: "Fire") { [weak self] in
+        barsHandler.fireButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.fireSolid) { [weak self] in
             self?.burn(sender: self!.barsHandler.fireButton)
         }
 
@@ -460,7 +468,7 @@ extension TabSwitcherViewController {
         }
 
         barsHandler.menuButton.accessibilityLabel = "More Menu"
-        barsHandler.menuButton.image = UIImage(resource: .moreApple24)
+        barsHandler.menuButton.image = DesignSystemImages.Glyphs.Size24.moreApple
         barsHandler.menuButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.menuButton.menu = createMultiSelectionMenu()
         barsHandler.menuButton.isEnabled = canShowSelectionMenu
@@ -471,7 +479,7 @@ extension TabSwitcherViewController {
         }
 
         barsHandler.duckChatButton.tintColor = UIColor(designSystemColor: .icons)
-        barsHandler.duckChatButton.primaryAction = action(image: "AIChat-24", { [weak self] in
+        barsHandler.duckChatButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.aiChat, { [weak self] in
             self?.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self!)
         })
     }
@@ -601,20 +609,20 @@ extension TabSwitcherViewController {
 // MARK: UIAction factories
 extension TabSwitcherViewController {
     
-    func action(_ title: String, _ image: String = "", _ handler: @escaping () -> Void) -> UIAction {
-        return UIAction(title: title, image: image.isEmpty ? nil : UIImage(named: image)) { _ in
+    func action(_ title: String, _ image: UIImage? = nil, _ handler: @escaping () -> Void) -> UIAction {
+        return UIAction(title: title, image: image) { _ in
             handler()
         }
     }
 
-    func action(image: String, _ handler: @escaping () -> Void) -> UIAction {
-        return UIAction(title: "", image: UIImage(named: image)) { _ in
+    func action(image: UIImage, _ handler: @escaping () -> Void) -> UIAction {
+        return UIAction(title: "", image: image) { _ in
             handler()
         }
     }
     
-    func destructive(_ title: String, _ imageNamed: String, _ handler: @escaping () -> Void) -> UIAction {
-        return UIAction(title: title, image: UIImage(named: imageNamed), attributes: .destructive) { _ in
+    func destructive(_ title: String, _ image: UIImage, _ handler: @escaping () -> Void) -> UIAction {
+        return UIAction(title: title, image: image, attributes: .destructive) { _ in
             handler()
         }
     }

@@ -22,7 +22,7 @@ import Core
 import DesignResourcesKit
 
 private extension UIImage {
-    static let highlightedAlertButtonTint = UIImage(named: "AlertButtonHighlightedTint")
+    static let highlightedAlertButtonTint = UIImage(resource: .alertButtonHighlightedTint)
 }
 
 final class JSAlertController: UIViewController {

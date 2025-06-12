@@ -16,20 +16,29 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Common
 import ContentBlocking
 import Foundation
 import Navigation
+import NewTabPage
 import PrivacyStats
+import TrackerRadarKit
 
 final class PrivacyStatsTabExtension: NSObject {
 
     let privacyStats: PrivacyStatsCollecting
+    private var trackerData: TrackerData
     private var cancellables = Set<AnyCancellable>()
 
-    init(privacyStats: PrivacyStatsCollecting = NSApp.delegateTyped.privacyStats, trackersPublisher: some Publisher<DetectedTracker, Never>) {
+    init(
+        privacyStats: PrivacyStatsCollecting = NSApp.delegateTyped.privacyStats,
+        trackersPublisher: some Publisher<DetectedTracker, Never>,
+        trackerDataProvider: PrivacyStatsTrackerDataProviding
+    ) {
         self.privacyStats = privacyStats
+        self.trackerData = trackerDataProvider.trackerData
         super.init()
 
         trackersPublisher
@@ -37,10 +46,21 @@ final class PrivacyStatsTabExtension: NSObject {
                 self?.recordDetectedTracker(tracker)
             }
             .store(in: &cancellables)
+
+        trackerDataProvider.trackerDataUpdatesPublisher
+            .sink { [weak self, weak trackerDataProvider] in
+                guard let self, let trackerDataProvider else {
+                    return
+                }
+                trackerData = trackerDataProvider.trackerData
+            }
+            .store(in: &cancellables)
     }
 
     private func recordDetectedTracker(_ tracker: DetectedTracker) {
-        guard tracker.request.isBlocked, let entityName = tracker.request.entityName else {
+        guard tracker.request.isBlocked,
+              let host = tracker.request.url.url?.host,
+              let entityName = trackerData.findParentEntityOrFallback(forHost: host)?.displayName else {
             return
         }
         switch tracker.type {

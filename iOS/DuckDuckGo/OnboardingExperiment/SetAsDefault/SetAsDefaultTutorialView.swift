@@ -28,7 +28,7 @@ struct SetAsDefaultVideoTutorialView: View {
     var onPiPStarted: () -> Void
 
     var body: some View {
-        VideoPlayerView(model: videoPlayerModel)
+        PlayerView(coordinator: videoPlayerModel)
             .onChange(of: isPlaying.wrappedValue) { newValue in
                 if newValue {
                     startPictureInPicture()

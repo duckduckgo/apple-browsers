@@ -20,36 +20,6 @@
 import SwiftUI
 import AVFoundation
 
-struct VideoPlayerView: View {
-
-    @ObservedObject private var model: VideoPlayerCoordinator
-
-    init(model: VideoPlayerCoordinator) {
-        self.model = model
-    }
-
-    var body: some View {
-        PlayerView(coordinator: model)
-            .onChange(of: model.isPictureInPictureActive) { newValue in
-                if newValue {
-                    Logger.videoPlayer.debug("[Video Player] - Resuming Playback for PIP: \(model.isPictureInPictureActive)")
-                    model.play()
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-                Logger.videoPlayer.debug("[Video Player] - Will Resign Active. Is Picture In Picture Active: \(model.isPictureInPictureActive)")
-                guard !model.isPictureInPictureActive else { return }
-                model.pause()
-
-            }
-            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-                Logger.videoPlayer.debug("[Video Player] - Did Become Active")
-                model.play()
-            }
-    }
-
-}
-
 // AVKit provides a SwiftUI view called VideoPlayer view to render AVPlayer.
 // The issue is that is not possible to change the background/foreground colour of the view so the default colour is black.
 // Using UIKit -> AVPlayerLayer solves the problem.
@@ -96,16 +66,16 @@ private final class PlayerUIView: UIView {
 
 // MARK: - Preview
 
-struct VideoPlayerView_Previews: PreviewProvider {
+struct PlayerView_Previews: PreviewProvider {
 
     @MainActor
-    struct VideoPlayerPreview: View {
+    struct PlayerPreview: View {
         static let videoURL = Bundle.main.url(forResource: "add-to-dock-demo", withExtension: "mp4")!
         @State var model = VideoPlayerCoordinator(url: Self.videoURL, configuration: .init(loopVideo: true))
 
         var body: some View {
-            VideoPlayerView(
-                model: model
+            PlayerView(
+                coordinator: model
             )
             .onAppear(perform: {
                 model.play()
@@ -114,7 +84,7 @@ struct VideoPlayerView_Previews: PreviewProvider {
     }
 
     static var previews: some View {
-        VideoPlayerPreview()
+        PlayerPreview()
             .preferredColorScheme(.light)
    }
 }

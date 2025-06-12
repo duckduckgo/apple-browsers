@@ -489,7 +489,11 @@ class TabViewController: UIViewController {
 
         self.adClickExternalOpenDetector.mitigationHandler = { [weak self] in
             guard let self else { return }
-            self.closeTab()
+            if self.tabModel.link?.title == nil {
+                self.closeTab()
+            } else if url != webView.url {
+                url = webView.url
+            }
         }
     }
 
@@ -944,18 +948,11 @@ class TabViewController: UIViewController {
             _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL)
         }
 
-        guard let newURL else {
-            return
+        if url == nil {
+            url = newURL
+        } else if let currentHost = url?.host, let newHost = newURL?.host, currentHost == newHost {
+            url = newURL
         }
-
-//        if url == nil {
-//            url = newURL
-//        } else if let currentHost = url?.host, let newHost = newURL.host, currentHost == newHost {
-//            url = newURL
-//        } else {
-//            Logger.general.debug("Discarding URL change for \(newURL.host ?? "nil")")
-//        }
-        url = newURL
     }
     
     func enableFireproofingForDomain(_ domain: String) {

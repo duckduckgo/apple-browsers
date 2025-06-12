@@ -132,12 +132,10 @@ class SwitchBarViewController: UIViewController {
         self.isExpanded = isExpanded
 
         if isExpanded {
-            // Expanded state: show segmented control and use expanded constraint
             collapsedStateConstraint?.isActive = false
             segmentedControlTopConstraint?.isActive = true
             expandedStateConstraint?.isActive = true
         } else {
-            // Collapsed state: hide segmented control and use collapsed constraint  
             expandedStateConstraint?.isActive = false
             segmentedControlTopConstraint?.isActive = false
             collapsedStateConstraint?.isActive = true
@@ -153,7 +151,6 @@ class SwitchBarViewController: UIViewController {
         collapsedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
         expandedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: Constants.textEntryViewTopPadding)
         
-        // Store reference to segmented control top constraint so we can manage it
         segmentedControlTopConstraint = segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
 
         // Create bottom constraint with lower priority to avoid conflicts with parent constraints

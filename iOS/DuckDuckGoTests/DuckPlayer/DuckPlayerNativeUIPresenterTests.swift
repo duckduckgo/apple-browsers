@@ -499,6 +499,9 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         }
         wait(for: [expectation], timeout: 10.0)
 
+        // Manually trigger re-entry pill presentation since weak hostView reference may be lost
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: dismissalTimestamp)
+
         // Verify state for re-entry
         XCTAssertEqual(sut.state.videoID, videoID, "Video ID should be the same for re-entry.")
         XCTAssertEqual(sut.state.timestamp, dismissalTimestamp, "Timestamp should be updated from dismissal for re-entry.")

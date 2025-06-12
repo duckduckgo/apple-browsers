@@ -105,7 +105,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case tokenReset
 
         // Subscription Errors - 100+
-        case vpnAccessRevoked(_ underlyingError: Error?)
+        case vpnAccessRevoked(_ underlyingError: Error)
         case entitlementCheckFailure
 
         // State Reset - 200+

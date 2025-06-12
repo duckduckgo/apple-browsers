@@ -616,7 +616,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Given
         let videoID = "test123"
         let timestamp: TimeInterval? = 30
-        var receivedRequest: (videoID: String, timestamp: TimeInterval?)?
+        var receivedRequest: (videoID: String, timestamp: TimeInterval?, pillType: DuckPlayerNativeUIPresenter.PillType)?
         mockDuckPlayerSettings.welcomeMessageShown = true
 
         sut.videoPlaybackRequest.sink { request in
@@ -627,7 +627,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
 
         // Simulate the video playback request directly
-        sut.videoPlaybackRequest.send((videoID, timestamp))
+        sut.videoPlaybackRequest.send((videoID, timestamp, .entry))
 
         // Then
         XCTAssertNotNil(receivedRequest)

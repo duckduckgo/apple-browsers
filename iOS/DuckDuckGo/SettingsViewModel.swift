@@ -599,7 +599,7 @@ extension SettingsViewModel {
         updateRecentlyVisitedSitesVisibility()
 
         if #available(iOS 18.2, *) {
-            updateVisiblityCompleteSetupSection()
+            updateCompleteSetupSectionVisiblity()
         }
         
         setupSubscribers()
@@ -670,7 +670,7 @@ extension SettingsViewModel {
     }
 
     @available(iOS 18.2, *)
-    private func updateVisiblityCompleteSetupSection() {
+    private func updateCompleteSetupSectionVisiblity() {
         guard featureFlagger.isFeatureOn(.showSettingsCompleteSetupSection) else {
             return
         }
@@ -689,11 +689,18 @@ extension SettingsViewModel {
             shouldShowImportPasswords = true
         }
 
-        // Only proceed with checks if one of the rows has not already been dismissed
+        // Only proceed with checks if one of the rows from this section has not already been dismissed
         guard shouldShowSetAsDefaultBrowser || shouldShowImportPasswords else {
             return
         }
-        
+
+        if let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter()),
+           let passwordsCount = try? secureVault.accountsCount(),
+           passwordsCount >= 25 {
+            permanentlyDismissCompleteSetupSection()
+            return
+        }
+
         if let checkIfDefaultBrowser = try? keyValueStore.object(forKey: Constants.shouldCheckIfDefaultBrowserKey) as? Bool {
             do {
                 if checkIfDefaultBrowser, try UIApplication.shared.isDefault(.webBrowser) {
@@ -707,12 +714,6 @@ extension SettingsViewModel {
 
             // only want to check default browser state once after the first time a user interacts with this row due to API restrictions. After that users can swipe to dismiss
             try? keyValueStore.set(false, forKey: Constants.shouldCheckIfDefaultBrowserKey)
-        }
-
-        if let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter()),
-           let passwordsCount = try? secureVault.accountsCount(),
-           passwordsCount >= 25 {
-            permanentlyDismissCompleteSetupSection()
         }
     }
 
@@ -771,13 +772,13 @@ extension SettingsViewModel {
     @available(iOS 18.2, *)
     func dismissSetAsDefaultBrowser() {
         try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
-        updateVisiblityCompleteSetupSection()
+        updateCompleteSetupSectionVisiblity()
     }
 
     @available(iOS 18.2, *)
     func dismissImportPasswords() {
         try? keyValueStore.set(true, forKey: Constants.didDismissImportPasswordsKey)
-        updateVisiblityCompleteSetupSection()
+        updateCompleteSetupSectionVisiblity()
     }
 
     @MainActor func shouldPresentLoginsViewWithAccount(accountDetails: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource? = nil) {
@@ -1065,8 +1066,8 @@ extension SettingsViewModel {
         if #available(iOS 18.2, *) {
             appForegroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { [weak self] _ in
                 guard let self = self else { return }
-                if self.shouldShowSetAsDefaultBrowser {
-                    self.updateVisiblityCompleteSetupSection()
+                if self.shouldShowSetAsDefaultBrowser, let shouldCheckIfDefaultBrowser = try? keyValueStore.object(forKey: Constants.shouldCheckIfDefaultBrowserKey) as? Bool, shouldCheckIfDefaultBrowser {
+                    self.updateCompleteSetupSectionVisiblity()
                 }
             }
         }

@@ -70,7 +70,8 @@ public enum FeatureFlag: String, CaseIterable {
     case failsafeExamplePlatformSpecificSubfeature
 
     /// https://app.asana.com/0/72649045549333/1209793701087222/f
-    case visualRefresh
+    case visualUpdates
+    case visualUpdatesInternalOnly
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
     case tabCrashDebugging
@@ -93,6 +94,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
     case canScanUrlBasedSyncSetupBarcodes
 
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210052464460517?focus=true
+    case privacyProFreeTrial
+
+	/// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
+    case paidAIChat
+
     /// https://app.asana.com/1/137249556945/task/1210330600670666
     case removeWWWInCanonicalizationInThreatProtection
 
@@ -106,7 +113,7 @@ public enum FeatureFlag: String, CaseIterable {
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .removeWWWInCanonicalizationInThreatProtection:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .removeWWWInCanonicalizationInThreatProtection, .visualUpdatesInternalOnly:
             true
         default:
             false
@@ -136,16 +143,19 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .scamSiteProtection,
                 .failsafeExampleCrossPlatformFeature,
                 .failsafeExamplePlatformSpecificSubfeature,
-                .visualRefresh,
+                .visualUpdates,
+                .visualUpdatesInternalOnly,
                 .tabCrashDebugging,
                 .tabCrashRecovery,
                 .maliciousSiteProtection,
                 .delayedWebviewPresentation,
                 .syncSetupBarcodeIsUrlBased,
+                .paidAIChat,
                 .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
+				.privacyProFreeTrial,
                 .removeWWWInCanonicalizationInThreatProtection,
-                .aiChatSidebar,
+				.aiChatSidebar,
                 .shortHistoryMenu:
             return true
         case .debugMenu,
@@ -209,7 +219,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
-        case .visualRefresh:
+        case .visualUpdates:
+            return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
+        case .visualUpdatesInternalOnly:
             return .internalOnly()
         case .tabCrashDebugging:
             return .disabled
@@ -225,6 +237,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
+        case .privacyProFreeTrial:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
+        case .paidAIChat:
+			return .disabled
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:

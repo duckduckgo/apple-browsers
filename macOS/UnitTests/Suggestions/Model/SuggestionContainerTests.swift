@@ -19,10 +19,11 @@
 import Combine
 import Common
 import History
+import InlineSnapshotTesting
 import NetworkingTestingUtils
 import os.log
-import InlineSnapshotTesting
 import Suggestions
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -97,7 +98,7 @@ final class SuggestionContainerTests: XCTestCase {
 
         XCTAssertNil(suggestionContainer.suggestionDataCache)
         let e = expectation(description: "Suggestions updated")
-        suggestionContainer.suggestionLoading(suggestionLoadingMock, suggestionDataFromUrl: URL.testsServer, withParameters: [:]) { data, error in
+        suggestionContainer.suggestionLoading(suggestionLoadingMock, suggestionDataFromUrl: URL.duckDuckGo, withParameters: [:]) { data, error in
             XCTAssertNotNil(suggestionContainer.suggestionDataCache)
             e.fulfill()
 

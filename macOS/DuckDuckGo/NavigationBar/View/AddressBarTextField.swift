@@ -56,7 +56,7 @@ final class AddressBarTextField: NSTextField {
         tabCollectionViewModel.isBurner
     }
 
-    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
+    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
 
     private var suggestionResultCancellable: AnyCancellable?
     private var selectedSuggestionViewModelCancellable: AnyCancellable?

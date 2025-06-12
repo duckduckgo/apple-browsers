@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Common
-import UserScript
 import AIChat
+import Common
+import Foundation
+import UserScript
 
 final class AIChatUserScript: NSObject, Subfeature {
     private let handler: AIChatUserScriptHandling

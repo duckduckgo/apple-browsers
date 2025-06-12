@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Combine
-import BrowserServicesKit
 import AIChat
+import AppKit
+import BrowserServicesKit
+import Combine
 
 protocol AIChatMenuVisibilityConfigurable {
 

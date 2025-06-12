@@ -59,11 +59,11 @@ enum Preferences {
         init(model: PreferencesSidebarModel,
              subscriptionManager: SubscriptionManager,
              subscriptionUIHandler: SubscriptionUIHandling,
-             visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
-            self.visualStyle = visualStyleManager.style
+            self.visualStyle = visualStyle
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
@@ -187,7 +187,8 @@ enum Preferences {
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
                                                         userEventHandler: userEventHandler,
-                                                        sheetActionHandler: sheetActionHandler)
+                                                        sheetActionHandler: sheetActionHandler,
+                                                        featureFlagger: NSApp.delegateTyped.featureFlagger)
         }
 
         private func makePersonalInformationRemovalViewModel() -> PreferencesPersonalInformationRemovalModel {
@@ -286,12 +287,12 @@ enum Preferences {
             model: PreferencesSidebarModel,
             subscriptionManager: SubscriptionManagerV2,
             subscriptionUIHandler: SubscriptionUIHandling,
-            visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+            visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
         ) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
-            self.visualStyle = visualStyleManager.style
+            self.visualStyle = visualStyle
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
@@ -412,7 +413,8 @@ enum Preferences {
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
                                                         userEventHandler: userEventHandler,
-                                                        sheetActionHandler: sheetActionHandler)
+                                                        sheetActionHandler: sheetActionHandler,
+                                                        featureFlagger: NSApp.delegateTyped.featureFlagger)
         }
 
         private func makePersonalInformationRemovalViewModel() -> PreferencesPersonalInformationRemovalModel {

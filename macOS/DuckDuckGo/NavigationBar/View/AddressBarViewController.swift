@@ -78,6 +78,7 @@ final class AddressBarViewController: NSViewController {
     private let tabCollectionViewModel: TabCollectionViewModel
     private let bookmarkManager: BookmarkManager
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let permissionManager: PermissionManagerProtocol
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
@@ -136,15 +137,17 @@ final class AddressBarViewController: NSViewController {
           bookmarkManager: BookmarkManager,
           historyCoordinator: SuggestionContainer.HistoryProvider,
           privacyConfigurationManager: PrivacyConfigurationManaging,
+          permissionManager: PermissionManagerProtocol,
           burnerMode: BurnerMode,
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
+          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
           aiChatSidebarPresenter: AIChatSidebarPresenting) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.permissionManager = permissionManager
         self.popovers = popovers
         self.suggestionContainerViewModel = SuggestionContainerViewModel(
             isHomePage: tabViewModel?.tab.content == .newtab,
@@ -155,12 +158,12 @@ final class AddressBarViewController: NSViewController {
                 burnerMode: burnerMode,
                 isUrlIgnored: { _ in false }
             ),
-            visualStyle: visualStyleManager.style
+            visualStyle: visualStyle
         )
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatSettings = aiChatSettings
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
 
         super.init(coder: coder)
@@ -171,6 +174,7 @@ final class AddressBarViewController: NSViewController {
                                                          tabCollectionViewModel: tabCollectionViewModel,
                                                          bookmarkManager: bookmarkManager,
                                                          privacyConfigurationManager: privacyConfigurationManager,
+                                                         permissionManager: permissionManager,
                                                          popovers: popovers,
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
                                                          aiChatMenuConfig: AIChatMenuConfiguration(storage: aiChatSettings),

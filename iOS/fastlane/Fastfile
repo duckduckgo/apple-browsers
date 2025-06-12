@@ -17,7 +17,7 @@ platform :ios do
 
   desc 'Fetches and updates certificates and provisioning profiles for Ad-Hoc distribution'
   lane :sync_signing_adhoc do |options|
-    do_sync_signing(options.merge(readonly: true))
+    do_sync_signing(options)
   end
 
   desc 'Fetches and updates certificates and provisioning profiles for Alpha distribution'
@@ -27,7 +27,7 @@ platform :ios do
 
   desc 'Fetches and updates certificates and provisioning profiles for Ad-Hoc distribution'
   lane :sync_signing_alpha_adhoc do |options|
-    do_sync_signing(options.merge(readonly: true))
+    do_sync_signing(options)
   end
 
   desc 'Makes Ad-Hoc build with a specified name and alpha bundle ID in a given directory'
@@ -349,9 +349,7 @@ platform :ios do
     sync_code_signing(
       api_key: get_api_key,
       username: get_username(options),
-      # TODO: remove readonly once we have a way to manage certificates in CI
-      # https://github.com/fastlane/fastlane/issues/29499
-      readonly: options[:readonly] || !is_ci
+      readonly: !is_ci
     )
   end
 

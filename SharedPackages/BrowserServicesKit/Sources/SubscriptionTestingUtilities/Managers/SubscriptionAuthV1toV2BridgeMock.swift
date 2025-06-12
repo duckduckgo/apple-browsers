@@ -22,10 +22,15 @@ import Common
 
 public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridge {
 
+    public var isEligibleForFreeTrialResult: Bool = false
+
     public init() {}
 
     public var enabledFeatures: [Subscription.Entitlement.ProductName] = []
-    public func isEnabled(feature: Subscription.Entitlement.ProductName, cachePolicy: Subscription.APICachePolicy) async throws -> Bool {
+    public func isFeatureAvailableAndEnabled(feature: Subscription.Entitlement.ProductName, cachePolicy: Subscription.APICachePolicy) async throws -> Bool {
+        enabledFeatures.contains(feature)
+    }
+    public func isFeatureEnabledForUser(feature: Subscription.Entitlement.ProductName) async -> Bool {
         enabledFeatures.contains(feature)
     }
 
@@ -94,5 +99,9 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
         case .failure:
             return false
         }
+    }
+
+    public func isUserEligibleForFreeTrial() -> Bool {
+        isEligibleForFreeTrialResult
     }
 }

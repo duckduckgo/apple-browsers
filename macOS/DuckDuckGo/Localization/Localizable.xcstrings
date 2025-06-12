@@ -66999,6 +66999,66 @@
         }
       }
     },
+    "subscription.free-trial.settings.menu.item" : {
+      "comment" : "Title for Subscription Free Trial promotion item in the options menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KOSTENLOS TESTEN"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "TRY FOR FREE"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PROBAR GRATIS"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ESSAYEZ GRATUITEMENT"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PROVA GRATUITAMENTE"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PROBEER GRATIS"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WYPRÓBUJ BEZPŁATNIE"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EXPERIMENTAR GRATUITAMENTE"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "БЕСПЛАТНОЕ ОЗНАКОМЛЕНИЕ"
+          }
+        }
+      }
+    },
     "subscription.progress.view.completing.purchase" : {
       "comment" : "Progress view title when completing the purchase",
       "extractionState" : "extracted_with_value",

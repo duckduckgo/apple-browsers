@@ -78,6 +78,8 @@ final class SettingsViewModel: ObservableObject {
     // App Data State Notification Observer
     private var appDataClearingObserver: Any?
     private var textZoomObserver: Any?
+    private var dataImportObserver: Any?
+    private var appForegroundObserver: Any?
 
     // Subscription Free Trials
     private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
@@ -112,6 +114,9 @@ final class SettingsViewModel: ObservableObject {
     @Published var isInternalUser: Bool = AppDependencyProvider.shared.internalUserDecider.isInternalUser
 
     @Published var selectedFeedbackFlow: String?
+
+    @Published var shouldShowSetAsDefaultBrowser: Bool = false
+    @Published var shouldShowImportPasswords: Bool = false
 
     // MARK: - Deep linking
     // Used to automatically navigate to a specific section
@@ -532,6 +537,10 @@ final class SettingsViewModel: ObservableObject {
         subscriptionSignOutObserver = nil
         appDataClearingObserver = nil
         textZoomObserver = nil
+        if #available(iOS 18.2, *) {
+            dataImportObserver = nil
+            appForegroundObserver = nil
+        }
     }
 }
 
@@ -589,6 +598,11 @@ extension SettingsViewModel {
             .store(in: &cancellables)
 
         updateRecentlyVisitedSitesVisibility()
+
+        if #available(iOS 18.2, *) {
+            updateVisiblityCompleteSetupSection()
+        }
+        
         setupSubscribers()
         Task { await setupSubscriptionEnvironment() }
     }
@@ -655,6 +669,60 @@ extension SettingsViewModel {
         state.duckPlayerNativeUISERPEnabled = duckPlayerSettings.nativeUISERPEnabled
         state.duckPlayerNativeYoutubeMode = duckPlayerSettings.nativeUIYoutubeMode
     }
+
+    @available(iOS 18.2, *)
+    private func updateVisiblityCompleteSetupSection() {
+        guard featureFlagger.isFeatureOn(.showSettingsCompleteSetupSection) else {
+            return
+        }
+
+        if let didDismissBrowserPrompt = try? keyValueStore.object(forKey: Constants.didDismissSetAsDefaultBrowserKey) as? Bool {
+            shouldShowSetAsDefaultBrowser = !didDismissBrowserPrompt
+        } else {
+            // No dismissal record found, show by default
+            shouldShowSetAsDefaultBrowser = true
+        }
+        
+        if let didDismissImportPrompt = try? keyValueStore.object(forKey: Constants.didDismissImportPasswordsKey) as? Bool {
+            shouldShowImportPasswords = !didDismissImportPrompt
+        } else {
+            // No dismissal record found, show by default
+            shouldShowImportPasswords = true
+        }
+
+        // Only proceed with checks if one of the rows has not already been dismissed
+        guard shouldShowSetAsDefaultBrowser || shouldShowImportPasswords else {
+            return
+        }
+        
+        if let checkIfDefaultBrowser = try? keyValueStore.object(forKey: Constants.shouldCheckIfDefaultBrowserKey) as? Bool {
+            do {
+                if checkIfDefaultBrowser, try UIApplication.shared.isDefault(.webBrowser) {
+                    try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
+                    shouldShowSetAsDefaultBrowser = false
+                }
+            } catch {
+                try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
+                shouldShowSetAsDefaultBrowser = false
+            }
+
+            // only want to check default browser state once after the first time a user interacts with this row due to API restrictions. After that users can swipe to dismiss
+            try? keyValueStore.set(false, forKey: Constants.shouldCheckIfDefaultBrowserKey)
+        }
+
+        if let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter()),
+           let passwordsCount = try? secureVault.accountsCount(),
+           passwordsCount >= 25 {
+            permanentlyDismissCompleteSetupSection()
+        }
+    }
+
+    private func permanentlyDismissCompleteSetupSection() {
+        try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
+        try? keyValueStore.set(true, forKey: Constants.didDismissImportPasswordsKey)
+        shouldShowSetAsDefaultBrowser = false
+        shouldShowImportPasswords = false
+    }
 }
 
 // MARK: Subscribers
@@ -674,7 +742,13 @@ extension SettingsViewModel {
 
 // MARK: Public Methods
 extension SettingsViewModel {
-    
+
+    enum Constants {
+        static let didDismissSetAsDefaultBrowserKey = "com.duckduckgo.settings.setup.browser-default-dismissed"
+        static let didDismissImportPasswordsKey = "com.duckduckgo.settings.setup.import-passwords-dismissed"
+        static let shouldCheckIfDefaultBrowserKey = "com.duckduckgo.settings.setup.check-browser-default"
+    }
+
     func onAppear() {
         Task {
             await initState()
@@ -685,13 +759,28 @@ extension SettingsViewModel {
     func onDisappear() {
         self.deepLinkTarget = nil
     }
-    
+
     func setAsDefaultBrowser() {
         Pixel.fire(pixel: .settingsSetAsDefault)
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
+        if shouldShowSetAsDefaultBrowser {
+            try? keyValueStore.set(true, forKey: Constants.shouldCheckIfDefaultBrowserKey)
+        }
     }
-    
+
+    @available(iOS 18.2, *)
+    func dismissSetAsDefaultBrowser() {
+        try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
+        updateVisiblityCompleteSetupSection()
+    }
+
+    @available(iOS 18.2, *)
+    func dismissImportPasswords() {
+        try? keyValueStore.set(true, forKey: Constants.didDismissImportPasswordsKey)
+        updateVisiblityCompleteSetupSection()
+    }
+
     @MainActor func shouldPresentLoginsViewWithAccount(accountDetails: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource? = nil) {
         state.activeWebsiteAccount = accountDetails
         state.autofillSource = source
@@ -973,6 +1062,20 @@ extension SettingsViewModel {
             guard let self = self else { return }
             self.state.textZoom = SettingsState.TextZoom(enabled: true, level: self.appSettings.defaultTextZoomLevel)
         })
+
+        if #available(iOS 18.2, *) {
+            dataImportObserver = NotificationCenter.default.addObserver(forName: DataImportViewController.Notifications.dataImported, object: nil, queue: .main) { [weak self] _ in
+                guard let self = self else { return }
+                self.permanentlyDismissCompleteSetupSection()
+            }
+
+            appForegroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { [weak self] _ in
+                guard let self = self else { return }
+                if self.shouldShowSetAsDefaultBrowser {
+                    self.updateVisiblityCompleteSetupSection()
+                }
+            }
+        }
     }
 
     func restoreAccountPurchase() async {

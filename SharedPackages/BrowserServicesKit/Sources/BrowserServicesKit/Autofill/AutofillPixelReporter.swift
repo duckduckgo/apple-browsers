@@ -37,18 +37,21 @@ public enum AutofillPixelEvent {
     }
 }
 
-public protocol AutofillUsageStoring {
+public protocol AutofillUsageProvider {
     var formattedFillDate: String { get }
     var fillDate: Date? { get }
     var searchDauDate: Date? { get }
     var isOnboarded: Bool { get }
+}
+
+public protocol AutofillUsageStoreUpdating {
     func setFillDateToNow()
     func setSearchDauDateToNow()
     func setOnboarded(_ onboarded: Bool)
     func resetToDefaults()
 }
 
-public class AutofillUsageStore: AutofillUsageStoring {
+public class AutofillUsageStore {
     private let userDefaults: UserDefaults
     private static let yyyyMMddFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -63,39 +66,11 @@ public class AutofillUsageStore: AutofillUsageStoring {
         static public let autofillDauMigratedKey = "com.duckduckgo.app.autofill.DauDataMigrated"
     }
     
-    public init(standardUserDefaults: UserDefaults, appGroupUserDefaults: UserDefaults? = nil) {
+    public init(standardUserDefaults: UserDefaults, appGroupUserDefaults: UserDefaults?) {
         self.userDefaults = appGroupUserDefaults ?? standardUserDefaults
         if let appGroupUserDefaults {
             migrateDataIfNeeded(from: standardUserDefaults, to: appGroupUserDefaults)
         }
-    }
-    
-    public var fillDate: Date? {
-        userDefaults.object(forKey: Keys.autofillFillDateKey) as? Date ?? .distantPast
-    }
-    
-    public var searchDauDate: Date? {
-        userDefaults.object(forKey: Keys.autofillSearchDauDateKey) as? Date ?? .distantPast
-    }
-    
-    public var isOnboarded: Bool {
-        userDefaults.object(forKey: Keys.autofillOnboardedUserKey) as? Bool ?? false
-    }
-    
-    public var formattedFillDate: String {
-        Self.yyyyMMddFormatter.string(from: Date())
-    }
-    
-    public func setFillDateToNow() {
-        userDefaults.set(Date(), forKey: Keys.autofillFillDateKey)
-    }
-    
-    public func setSearchDauDateToNow() {
-        userDefaults.set(Date(), forKey: Keys.autofillSearchDauDateKey)
-    }
-    
-    public func setOnboarded(_ onboarded: Bool) {
-        userDefaults.set(onboarded, forKey: Keys.autofillOnboardedUserKey)
     }
     
     private func migrateDataIfNeeded(from source: UserDefaults, to destination: UserDefaults) {
@@ -119,6 +94,20 @@ public class AutofillUsageStore: AutofillUsageStoring {
 
         destination.set(true, forKey: Keys.autofillDauMigratedKey)
     }
+}
+
+extension AutofillUsageStore: AutofillUsageStoreUpdating {
+    public func setFillDateToNow() {
+        userDefaults.set(Date(), forKey: Keys.autofillFillDateKey)
+    }
+
+    public func setSearchDauDateToNow() {
+        userDefaults.set(Date(), forKey: Keys.autofillSearchDauDateKey)
+    }
+
+    public func setOnboarded(_ onboarded: Bool) {
+        userDefaults.set(onboarded, forKey: Keys.autofillOnboardedUserKey)
+    }
 
     public func resetToDefaults() {
         userDefaults.set(Date.distantPast, forKey: Keys.autofillSearchDauDateKey)
@@ -126,6 +115,26 @@ public class AutofillUsageStore: AutofillUsageStoring {
         userDefaults.set(false, forKey: Keys.autofillOnboardedUserKey)
     }
 }
+
+extension AutofillUsageStore: AutofillUsageProvider {
+    public var fillDate: Date? {
+        userDefaults.object(forKey: Keys.autofillFillDateKey) as? Date ?? .distantPast
+    }
+
+    public var searchDauDate: Date? {
+        userDefaults.object(forKey: Keys.autofillSearchDauDateKey) as? Date ?? .distantPast
+    }
+
+    public var isOnboarded: Bool {
+        userDefaults.object(forKey: Keys.autofillOnboardedUserKey) as? Bool ?? false
+    }
+
+    public var formattedFillDate: String {
+        Self.yyyyMMddFormatter.string(from: Date())
+    }
+}
+
+public typealias AutofillUsageStoring = AutofillUsageStoreUpdating & AutofillUsageProvider
 
 public final class AutofillPixelReporter {
     enum BucketName: String {
@@ -141,7 +150,7 @@ public final class AutofillPixelReporter {
         case searchDAU
     }
 
-    private let userDefaultsStorage: AutofillUsageStoring
+    private let usageStore: AutofillUsageStoring
     private let eventMapping: EventMapping<AutofillPixelEvent>
     private var secureVault: (any AutofillSecureVault)?
     private var reporter: SecureVaultReporting?
@@ -150,8 +159,7 @@ public final class AutofillPixelReporter {
     private var installDate: Date?
     private var autofillEnabled: Bool
 
-    public init(standardUserDefaults: UserDefaults,
-                appGroupUserDefaults: UserDefaults?,
+    public init(usageStore: AutofillUsageStoring,
                 autofillEnabled: Bool,
                 eventMapping: EventMapping<AutofillPixelEvent>,
                 secureVault: (any AutofillSecureVault)? = nil,
@@ -159,7 +167,7 @@ public final class AutofillPixelReporter {
                 passwordManager: PasswordManager? = nil,
                 installDate: Date? = nil
     ) {
-        self.userDefaultsStorage = AutofillUsageStore(standardUserDefaults: standardUserDefaults, appGroupUserDefaults: appGroupUserDefaults)
+        self.usageStore = usageStore
         self.autofillEnabled = autofillEnabled
         self.eventMapping = eventMapping
         self.secureVault = secureVault
@@ -174,7 +182,7 @@ public final class AutofillPixelReporter {
     }
 
     public func resetStoreDefaults() {
-        userDefaultsStorage.resetToDefaults()
+        usageStore.resetToDefaults()
     }
 
     private func createNotificationObservers() {
@@ -185,33 +193,33 @@ public final class AutofillPixelReporter {
 
     @objc
     private func didReceiveSearchDAU() {
-        guard let searchDauDate = userDefaultsStorage.searchDauDate, !Date.isSameDay(Date(), searchDauDate) else {
+        guard let searchDauDate = usageStore.searchDauDate, !Date.isSameDay(Date(), searchDauDate) else {
             return
         }
 
-        userDefaultsStorage.setSearchDauDateToNow()
+        usageStore.setSearchDauDateToNow()
         firePixelsFor(.searchDAU)
     }
 
     @objc
     private func didReceiveFillEvent() {
-        guard let fillDate = userDefaultsStorage.fillDate, !Date.isSameDay(Date(), fillDate) else {
+        guard let fillDate = usageStore.fillDate, !Date.isSameDay(Date(), fillDate) else {
             return
         }
 
-        userDefaultsStorage.setFillDateToNow()
+        usageStore.setFillDateToNow()
         firePixelsFor(.fill)
     }
 
     @objc
     private func didReceiveSaveEvent() {
-        guard !userDefaultsStorage.isOnboarded else {
+        guard !usageStore.isOnboarded else {
             return
         }
 
         if shouldFireOnboardedUserPixel() {
             eventMapping.fire(.autofillOnboardedUser)
-            userDefaultsStorage.setOnboarded(true)
+            usageStore.setOnboarded(true)
         }
     }
 
@@ -259,14 +267,14 @@ public final class AutofillPixelReporter {
 
     private func shouldFireActiveUserPixel() -> Bool {
         let today = Date()
-        if Date.isSameDay(today, userDefaultsStorage.searchDauDate) && Date.isSameDay(today, userDefaultsStorage.fillDate) {
+        if Date.isSameDay(today, usageStore.searchDauDate) && Date.isSameDay(today, usageStore.fillDate) {
             return true
         }
         return false
     }
 
     private func shouldFireEnabledUserPixel() -> Bool {
-        if Date.isSameDay(Date(), userDefaultsStorage.searchDauDate) {
+        if Date.isSameDay(Date(), usageStore.searchDauDate) {
             if let passwordManager = passwordManager, passwordManager.isEnabled {
                 return true
             } else if autofillEnabled, let count = try? vault()?.accountsCount(), count >= 10 {
@@ -277,7 +285,7 @@ public final class AutofillPixelReporter {
     }
 
     private func shouldFireOnboardedUserPixel() -> Bool {
-        guard !userDefaultsStorage.isOnboarded, let installDate = installDate else {
+        guard !usageStore.isOnboarded, let installDate = installDate else {
             return false
         }
 
@@ -287,11 +295,11 @@ public final class AutofillPixelReporter {
             if let passwordManager = passwordManager, passwordManager.isEnabled {
                 return true
             } else if let count = try? vault()?.accountsCount(), count > 0 {
-                userDefaultsStorage.setOnboarded(true)
+                usageStore.setOnboarded(true)
                 return true
             }
         } else {
-            userDefaultsStorage.setOnboarded(true)
+            usageStore.setOnboarded(true)
         }
 
         return false

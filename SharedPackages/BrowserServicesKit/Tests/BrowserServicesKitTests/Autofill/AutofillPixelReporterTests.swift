@@ -560,8 +560,8 @@ final class AutofillPixelReporterTests: XCTestCase {
     }
 
     private func createAutofillPixelReporter(appGroupUserDefaults: UserDefaults? = nil, installDate: Date? = Date(), autofillEnabled: Bool = true) -> AutofillPixelReporter {
-        return AutofillPixelReporter(standardUserDefaults: standardDefaults,
-                                     appGroupUserDefaults: appGroupUserDefaults,
+        let usageStore = AutofillUsageStore(standardUserDefaults: standardDefaults, appGroupUserDefaults: appGroupUserDefaults)
+        return AutofillPixelReporter(usageStore: usageStore,
                                      autofillEnabled: autofillEnabled,
                                      eventMapping: eventMapping,
                                      secureVault: vault,

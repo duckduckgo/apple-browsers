@@ -68,8 +68,7 @@ class AutofillDebugViewController: UITableViewController {
                 let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
                 try? secureVault?.deleteAllWebsiteCredentials()
                 let autofillPixelReporter = AutofillPixelReporter(
-                        standardUserDefaults: .standard,
-                        appGroupUserDefaults: UserDefaults(suiteName: "\(Global.groupIdPrefix).autofill"),
+                        usageStore: AutofillUsageStore(),
                         autofillEnabled: AppUserDefaults().autofillCredentialsEnabled,
                         eventMapping: EventMapping<AutofillPixelEvent> { _, _, _, _ in })
                 autofillPixelReporter.resetStoreDefaults()

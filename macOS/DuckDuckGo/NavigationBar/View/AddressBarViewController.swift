@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Cocoa
 import Combine
 import Lottie
@@ -76,11 +77,14 @@ final class AddressBarViewController: NSViewController {
 
     private let tabCollectionViewModel: TabCollectionViewModel
     private let bookmarkManager: BookmarkManager
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let permissionManager: PermissionManagerProtocol
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
     private let visualStyle: VisualStyleProviding
     private var tabViewModel: TabViewModel?
+    private let aiChatSidebarPresenter: AIChatSidebarPresenting
 
     private var aiChatSettings: AIChatPreferencesStorage
     @IBOutlet weak var activeOuterBorderTrailingConstraint: NSLayoutConstraint!
@@ -131,18 +135,25 @@ final class AddressBarViewController: NSViewController {
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
           bookmarkManager: BookmarkManager,
+          historyCoordinator: SuggestionContainer.HistoryProvider,
+          privacyConfigurationManager: PrivacyConfigurationManaging,
+          permissionManager: PermissionManagerProtocol,
           burnerMode: BurnerMode,
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
+          aiChatSidebarPresenter: AIChatSidebarPresenting) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.permissionManager = permissionManager
         self.popovers = popovers
         self.suggestionContainerViewModel = SuggestionContainerViewModel(
             isHomePage: tabViewModel?.tab.content == .newtab,
             isBurner: burnerMode.isBurner,
             suggestionContainer: SuggestionContainer(
+                historyProvider: historyCoordinator,
                 bookmarkProvider: SuggestionsBookmarkProvider(bookmarkManager: bookmarkManager),
                 burnerMode: burnerMode,
                 isUrlIgnored: { _ in false }
@@ -153,6 +164,7 @@ final class AddressBarViewController: NSViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatSettings = aiChatSettings
         self.visualStyle = visualStyleManager.style
+        self.aiChatSidebarPresenter = aiChatSidebarPresenter
 
         super.init(coder: coder)
     }
@@ -161,9 +173,12 @@ final class AddressBarViewController: NSViewController {
         let controller = AddressBarButtonsViewController(coder: coder,
                                                          tabCollectionViewModel: tabCollectionViewModel,
                                                          bookmarkManager: bookmarkManager,
+                                                         privacyConfigurationManager: privacyConfigurationManager,
+                                                         permissionManager: permissionManager,
                                                          popovers: popovers,
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
-                                                         aiChatMenuConfig: AIChatMenuConfiguration(storage: aiChatSettings))
+                                                         aiChatMenuConfig: AIChatMenuConfiguration(storage: aiChatSettings),
+                                                         aiChatSidebarPresenter: aiChatSidebarPresenter)
 
         self.addressBarButtonsViewController = controller
         controller?.delegate = self

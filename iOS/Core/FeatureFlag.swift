@@ -86,9 +86,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
-    /// Umbrella flag for experimental browser theming and appearance
+    /// Flag for visual updates changes
     /// https://app.asana.com/0/1206226850447395/1209291055975934
-    case experimentalBrowserTheming
+    case visualUpdates
 
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
@@ -102,6 +102,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210055762484807?focus=true
     case experimentalAIChat
+
+    /// https://app.asana.com/1/137249556945/task/1210496258241813
+    case experimentalSwitcherBarTransition
 
     /// https://app.asana.com/1/137249556945/task/1210139454006070
     case privacyProOnboardingPromotion
@@ -118,11 +121,17 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1198964220583541/task/1210272333893232?focus=true
     case autofillPasswordVariantCategorization
 
+    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
+    case paidAIChat
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
     case canInterceptSyncSetupUrls
 
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1210325960030113?focus=true
     case exchangeKeysToSyncWithAnotherDevice
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210422840951066?focus=true
+    case aiChatKeepSession
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -151,7 +160,7 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .textZoom,
-             .experimentalBrowserTheming,
+             .visualUpdates,
              .networkProtectionRiskyDomainsProtection,
              .privacyProAuthV2,
              .scamSiteProtection,
@@ -165,8 +174,10 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillPasswordVariantCategorization,
              .syncSetupBarcodeIsUrlBased,
              .canScanUrlBasedSyncSetupBarcodes,
+             .paidAIChat,
              .canInterceptSyncSetupUrls,
-             .exchangeKeysToSyncWithAnotherDevice:
+             .exchangeKeysToSyncWithAnotherDevice,
+             .experimentalSwitcherBarTransition:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -257,8 +268,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
-        case .experimentalBrowserTheming:
-            return .remoteReleasable(.subfeature(ExperimentalBrowserThemingSubfeature.onByDefault))
+        case .visualUpdates:
+            return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .onboardingSetAsDefaultBrowser:
@@ -268,6 +279,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .experimentalAIChat:
+            return .internalOnly()
+        case .experimentalSwitcherBarTransition:
             return .internalOnly()
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
@@ -281,10 +294,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .autofillPasswordVariantCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
+        case .paidAIChat:
+            return .disabled
         case .canInterceptSyncSetupUrls:
             return .remoteReleasable(.subfeature(SyncSubfeature.canInterceptSyncSetupUrls))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .aiChatKeepSession:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         }
     }
 }

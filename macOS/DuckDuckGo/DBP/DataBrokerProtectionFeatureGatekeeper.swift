@@ -38,7 +38,7 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
          featureDisabler: DataBrokerProtectionFeatureDisabling = DataBrokerProtectionFeatureDisabler(),
          pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler(),
          userDefaults: UserDefaults = .standard,
@@ -91,11 +91,8 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
         if !isAuthenticated && freemiumDBPUserStateManager.didActivate { return true }
 
         // NOTE: This check In AuthV1 this can fail in case of bad network, in AuthV2 works as expected in any network condition
-        let hasEntitlements = (try? await subscriptionManager.isEnabled(feature: .dataBrokerProtection,
-                                                                        cachePolicy: .reloadIgnoringLocalCacheData)) ?? false
-
+        let hasEntitlements = await subscriptionManager.isFeatureEnabledForUser(feature: .dataBrokerProtection)
         firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: hasEntitlements, isAuthenticatedResult: isAuthenticated)
-
         return hasEntitlements && isAuthenticated
     }
 }

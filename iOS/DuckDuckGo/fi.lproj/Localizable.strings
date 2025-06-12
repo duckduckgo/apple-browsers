@@ -3443,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Estä yli 150 000 verkkotunnusta, jotka on lisätty DNS-tason estolistalle haittaohjelmien, tietojenkalasteluhyökkäysten ja verkkohuijausten vuoksi. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Sisällön estäminen ja suodattaminen";
+"vpn.settings.dns.server.content.blocking.header" = "Haitallisen sisällön estäminen";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Estä vaaralliset verkkotunnukset";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Huijausten esto";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

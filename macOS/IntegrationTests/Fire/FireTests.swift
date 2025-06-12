@@ -30,8 +30,8 @@ final class FireTests: XCTestCase {
     @MainActor
     override func tearDown() {
         WindowsManager.closeWindows()
-        for controller in WindowControllersManager.shared.mainWindowControllers {
-            WindowControllersManager.shared.unregister(controller)
+        for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
+            Application.appDelegate.windowControllersManager.unregister(controller)
         }
     }
 
@@ -45,9 +45,9 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
 
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
@@ -83,10 +83,10 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
 
@@ -115,10 +115,10 @@ final class FireTests: XCTestCase {
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
                         savedZoomLevelsCoordinating: zoomLevelsCoordinator,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
-                        tld: ContentBlocking.shared.tld,
+                        tld: Application.appDelegate.tld,
                         getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) })
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
@@ -148,7 +148,7 @@ final class FireTests: XCTestCase {
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
                         faviconManagement: faviconManager,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
 
         _ = TabCollectionViewModel.makeTabCollectionViewModel()
 
@@ -180,7 +180,7 @@ final class FireTests: XCTestCase {
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
                         stateRestorationManager: appStateRestorationManager,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
 
         XCTAssertTrue(appStateRestorationManager.canRestoreLastSessionState)
         fire.burnAll()
@@ -199,7 +199,7 @@ final class FireTests: XCTestCase {
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
                         stateRestorationManager: appStateRestorationManager,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
 
         XCTAssertTrue(appStateRestorationManager.canRestoreLastSessionState)
         fire.burnEntity(entity: .none(selectedDomains: Set()))
@@ -211,7 +211,7 @@ final class FireTests: XCTestCase {
         let domainsToBurn: Set<String> = ["test.com", "provola.co.uk"]
         let zoomLevelsCoordinator = MockSavedZoomCoordinator()
         let fire = Fire(savedZoomLevelsCoordinating: zoomLevelsCoordinator,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
 
         fire.burnEntity(entity: .none(selectedDomains: domainsToBurn))
 
@@ -231,10 +231,10 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
-                        tld: ContentBlocking.shared.tld,
+                        tld: Application.appDelegate.tld,
                         getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) })
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
@@ -242,7 +242,7 @@ final class FireTests: XCTestCase {
 
         let finishedBurningExpectation = expectation(description: "Finished burning")
         fire.burnVisits([],
-                        except: FireproofDomains.shared,
+                        except: Application.appDelegate.fireproofDomains,
                         isToday: true,
                         completion: {
             finishedBurningExpectation.fulfill()
@@ -271,10 +271,10 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
-                        tld: ContentBlocking.shared.tld,
+                        tld: Application.appDelegate.tld,
                         getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) })
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
@@ -290,7 +290,7 @@ final class FireTests: XCTestCase {
             Visit(date: Date(), identifier: nil, historyEntry: historyEntries[0]),
             Visit(date: Date(), identifier: nil, historyEntry: historyEntries[1]),
                         ],
-                        except: FireproofDomains.shared,
+                        except: Application.appDelegate.fireproofDomains,
                         isToday: false,
                         completion: {
             finishedBurningExpectation.fulfill()
@@ -328,7 +328,7 @@ fileprivate extension TabCollectionViewModel {
     @MainActor
     static func makeTabCollectionViewModel(with pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil) -> TabCollectionViewModel {
 
-        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(), pinnedTabsManagerProvider: pinnedTabsManagerProvider ?? WindowControllersManager.shared.pinnedTabsManagerProvider)
+        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(), pinnedTabsManagerProvider: pinnedTabsManagerProvider ?? Application.appDelegate.windowControllersManager.pinnedTabsManagerProvider)
         tabCollectionViewModel.append(tab: Tab(content: .none))
         tabCollectionViewModel.append(tab: Tab(content: .none))
         return tabCollectionViewModel

@@ -54,9 +54,13 @@ final class UserContentUpdating {
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          experimentManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
          tld: TLD,
+         onboardingNavigationDelegate: OnboardingNavigating,
          appearancePreferences: AppearancePreferences,
          startupPreferences: StartupPreferences,
-         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
+         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+         historyCoordinator: HistoryDataSource,
+         fireproofDomains: DomainFireproofStatusProviding,
+         fireCoordinator: FireCoordinator
     ) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
@@ -67,9 +71,13 @@ final class UserContentUpdating {
                                                       trackerDataManager: trackerDataManager,
                                                       experimentManager: experimentManager(),
                                                       tld: tld,
+                                                      onboardingNavigationDelegate: onboardingNavigationDelegate,
                                                       appearancePreferences: appearancePreferences,
                                                       startupPreferences: startupPreferences,
-                                                      bookmarkManager: bookmarkManager)
+                                                      bookmarkManager: bookmarkManager,
+                                                      historyCoordinator: historyCoordinator,
+                                                      fireproofDomains: fireproofDomains,
+                                                      fireCoordinator: fireCoordinator)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
         }
 

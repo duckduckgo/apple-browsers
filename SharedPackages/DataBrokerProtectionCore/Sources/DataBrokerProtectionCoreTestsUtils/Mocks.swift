@@ -1017,6 +1017,7 @@ public final class MockAppVersion: AppVersionNumberProvider {
 public final class MockStageDurationCalculator: StageDurationCalculator {
     public var isImmediateOperation: Bool = false
     public var attemptId: UUID = UUID()
+    public var tries = 1
     public var stage: Stage?
 
     public init() {}
@@ -1085,6 +1086,12 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
     }
 
     public func setLastActionId(_ actionID: String) {
+    }
+
+    public func resetTries() {
+    }
+
+    public func incrementTries() {
     }
 
     func clear() {

@@ -22,6 +22,7 @@ import Cocoa
 import Combine
 import Common
 import Freemium
+import History
 import NetworkProtection
 import NetworkProtectionIPC
 import NetworkProtectionUI
@@ -102,6 +103,10 @@ final class NavigationBarViewController: NSViewController {
 
     private let bookmarkDragDropManager: BookmarkDragDropManager
     private let bookmarkManager: BookmarkManager
+    private let historyCoordinator: HistoryCoordinator
+    private let fireproofDomains: FireproofDomains
+    private let contentBlocking: ContentBlockingProtocol
+    private let permissionManager: PermissionManagerProtocol
 
     private var subscriptionManager: SubscriptionAuthV1toV2Bridge {
         Application.appDelegate.subscriptionAuthV1toV2Bridge
@@ -140,6 +145,7 @@ final class NavigationBarViewController: NSViewController {
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
     private let visualStyle: VisualStyleProviding
+    private let aiChatSidebarPresenter: AIChatSidebarPresenting
 
     private var leftFocusSpacer: NSView?
     private var rightFocusSpacer: NSView?
@@ -155,12 +161,17 @@ final class NavigationBarViewController: NSViewController {
                        downloadListCoordinator: DownloadListCoordinator = .shared,
                        bookmarkManager: BookmarkManager,
                        bookmarkDragDropManager: BookmarkDragDropManager,
+                       historyCoordinator: HistoryCoordinator,
+                       contentBlocking: ContentBlockingProtocol,
+                       fireproofDomains: FireproofDomains,
+                       permissionManager: PermissionManagerProtocol,
                        networkProtectionPopoverManager: NetPPopoverManager,
                        networkProtectionStatusReporter: NetworkProtectionStatusReporter,
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                       visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+                       visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
+                       aiChatSidebarPresenter: AIChatSidebarPresenting
     ) -> NavigationBarViewController {
         NSStoryboard(name: "NavigationBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -169,12 +180,17 @@ final class NavigationBarViewController: NSViewController {
                 downloadListCoordinator: downloadListCoordinator,
                 bookmarkManager: bookmarkManager,
                 bookmarkDragDropManager: bookmarkDragDropManager,
+                historyCoordinator: historyCoordinator,
+                contentBlocking: contentBlocking,
+                fireproofDomains: fireproofDomains,
+                permissionManager: permissionManager,
                 networkProtectionPopoverManager: networkProtectionPopoverManager,
                 networkProtectionStatusReporter: networkProtectionStatusReporter,
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
-                visualStyle: visualStyleManager.style
+                visualStyle: visualStyleManager.style,
+                aiChatSidebarPresenter: aiChatSidebarPresenter
             )
         }!
     }
@@ -185,17 +201,25 @@ final class NavigationBarViewController: NSViewController {
         downloadListCoordinator: DownloadListCoordinator,
         bookmarkManager: BookmarkManager,
         bookmarkDragDropManager: BookmarkDragDropManager,
+        historyCoordinator: HistoryCoordinator,
+        contentBlocking: ContentBlockingProtocol,
+        fireproofDomains: FireproofDomains,
+        permissionManager: PermissionManagerProtocol,
         networkProtectionPopoverManager: NetPPopoverManager,
         networkProtectionStatusReporter: NetworkProtectionStatusReporter,
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
-        visualStyle: VisualStyleProviding
+        visualStyle: VisualStyleProviding,
+        aiChatSidebarPresenter: AIChatSidebarPresenting
     ) {
 
         self.popovers = NavigationBarPopovers(
             bookmarkManager: bookmarkManager,
             bookmarkDragDropManager: bookmarkDragDropManager,
+            contentBlocking: contentBlocking,
+            fireproofDomains: fireproofDomains,
+            permissionManager: permissionManager,
             networkProtectionPopoverManager: networkProtectionPopoverManager,
             autofillPopoverPresenter: autofillPopoverPresenter,
             isBurner: tabCollectionViewModel.isBurner
@@ -207,11 +231,16 @@ final class NavigationBarViewController: NSViewController {
         self.downloadListCoordinator = downloadListCoordinator
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
+        self.historyCoordinator = historyCoordinator
+        self.contentBlocking = contentBlocking
+        self.permissionManager = permissionManager
+        self.fireproofDomains = fireproofDomains
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
         self.featureFlagger = featureFlagger
         self.visualStyle = visualStyle
-        goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel)
-        goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel)
+        self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
+        goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
         super.init(coder: coder)
     }
 
@@ -359,9 +388,13 @@ final class NavigationBarViewController: NSViewController {
         guard let addressBarViewController = AddressBarViewController(coder: coder,
                                                                       tabCollectionViewModel: tabCollectionViewModel,
                                                                       bookmarkManager: bookmarkManager,
+                                                                      historyCoordinator: historyCoordinator,
+                                                                      privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
+                                                                      permissionManager: permissionManager,
                                                                       burnerMode: burnerMode,
                                                                       popovers: popovers,
-                                                                      onboardingPixelReporter: onboardingPixelReporter) else {
+                                                                      onboardingPixelReporter: onboardingPixelReporter,
+                                                                      aiChatSidebarPresenter: aiChatSidebarPresenter) else {
             fatalError("NavigationBarViewController: Failed to init AddressBarViewController")
         }
 
@@ -481,6 +514,8 @@ final class NavigationBarViewController: NSViewController {
 #endif
         let menu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                    bookmarkManager: bookmarkManager,
+                                   historyCoordinator: historyCoordinator,
+                                   fireproofDomains: fireproofDomains,
                                    passwordManagerCoordinator: PasswordManagerCoordinator.shared,
                                    vpnFeatureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
                                    internalUserDecider: internalUserDecider,
@@ -627,7 +662,7 @@ final class NavigationBarViewController: NSViewController {
     func listenToFeedbackFormNotifications() {
         feedbackFormCancellable = NotificationCenter.default.publisher(for: .OpenUnifiedFeedbackForm).receive(on: DispatchQueue.main).sink { notification in
             let source = UnifiedFeedbackSource(userInfo: notification.userInfo)
-            WindowControllersManager.shared.showShareFeedbackModal(source: source)
+            Application.appDelegate.windowControllersManager.showShareFeedbackModal(source: source)
         }
     }
 
@@ -1003,7 +1038,7 @@ final class NavigationBarViewController: NSViewController {
             .sink { [weak self] _ in
                 guard let self, !self.isDownloadsPopoverShown,
                       DownloadsPreferences.shared.shouldOpenPopupOnCompletion,
-                      WindowControllersManager.shared.lastKeyMainWindowController?.window === downloadsButton.window else { return }
+                      Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window === downloadsButton.window else { return }
 
                 self.popovers.showDownloadsPopoverAndAutoHide(from: downloadsButton, popoverDelegate: self, downloadsDelegate: self)
             }
@@ -1618,7 +1653,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 extension NavigationBarViewController: OptionsButtonMenuDelegate {
 
     func optionsButtonMenuRequestedDataBrokerProtection(_ menu: NSMenu) {
-        WindowControllersManager.shared.showDataBrokerProtectionTab()
+        Application.appDelegate.windowControllersManager.showDataBrokerProtectionTab()
     }
 
     func optionsButtonMenuRequestedOpenExternalPasswordManager(_ menu: NSMenu) {
@@ -1641,7 +1676,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedBookmarkManagementInterface(_ menu: NSMenu) {
-        WindowControllersManager.shared.showBookmarksTab()
+        Application.appDelegate.windowControllersManager.showBookmarksTab()
     }
 
     func optionsButtonMenuRequestedBookmarkImportInterface(_ menu: NSMenu) {
@@ -1665,34 +1700,34 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedPrint(_ menu: NSMenu) {
-        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.printWebView(self)
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.printWebView(self)
     }
 
     func optionsButtonMenuRequestedPreferences(_ menu: NSMenu) {
-        WindowControllersManager.shared.showPreferencesTab()
+        Application.appDelegate.windowControllersManager.showPreferencesTab()
     }
 
     func optionsButtonMenuRequestedAppearancePreferences(_ menu: NSMenu) {
-        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .appearance)
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .appearance)
     }
 
     func optionsButtonMenuRequestedAccessibilityPreferences(_ menu: NSMenu) {
-        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .accessibility)
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .accessibility)
     }
 
     func optionsButtonMenuRequestedSubscriptionPurchasePage(_ menu: NSMenu) {
         let url = subscriptionManager.url(for: .purchase)
-        WindowControllersManager.shared.showTab(with: .subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appMenu.rawValue)))
+        Application.appDelegate.windowControllersManager.showTab(with: .subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appMenu.rawValue)))
         PixelKit.fire(PrivacyProPixel.privacyProOfferScreenImpression)
     }
 
     func optionsButtonMenuRequestedSubscriptionPreferences(_ menu: NSMenu) {
-        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .subscriptionSettings)
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .subscriptionSettings)
     }
 
     func optionsButtonMenuRequestedIdentityTheftRestoration(_ menu: NSMenu) {
         let url = subscriptionManager.url(for: .identityTheftRestoration)
-        WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
+        Application.appDelegate.windowControllersManager.showTab(with: .identityTheftRestoration(url))
     }
 }
 

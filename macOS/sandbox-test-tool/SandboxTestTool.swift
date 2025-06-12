@@ -35,6 +35,13 @@ final class SandboxTestToolApp: NSApplication {
     private var _delegate: SandboxTestToolAppDelegate!
 
     override init() {
+        // swizzle `startAccessingSecurityScopedResource` and `stopAccessingSecurityScopedResource`
+        // methods to accurately reflect the current number of start and stop calls
+        // stored in the associated `NSURL.sandboxExtensionRetainCount` value.
+        //
+        // See SecurityScopedFileURLController.swift
+        NSURL.swizzleStartStopAccessingSecurityScopedResourceOnce()
+
         super.init()
 
         _delegate = SandboxTestToolAppDelegate()

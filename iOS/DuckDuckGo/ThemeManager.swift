@@ -126,13 +126,13 @@ private extension ThemeManager {
         }
 
         func toggleExperimentalTheming() {
-            featureFlagger.localOverrides?.toggleOverride(for: FeatureFlag.experimentalBrowserTheming)
+            featureFlagger.localOverrides?.toggleOverride(for: FeatureFlag.visualUpdates)
         }
 
         // MARK: - Private
 
         private var isExperimentalThemingEnabled: Bool {
-            featureFlagger.isFeatureOn(for: FeatureFlag.experimentalBrowserTheming, allowOverride: true)
+            featureFlagger.isFeatureOn(for: FeatureFlag.visualUpdates, allowOverride: true)
         }
 
         private let isRoundedCornersTreatmentEnabled = false

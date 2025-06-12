@@ -23,7 +23,7 @@ struct NewTabPageLinkOpener: NewTabPageLinkOpening {
     @MainActor
     static func open(_ url: URL, source: Tab.Content.URLSource, setBurner: Bool? = nil, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
         var tabCollectionViewModel: TabCollectionViewModel? {
-            WindowControllersManager.shared.mainWindowController(for: sourceWindow)?.mainViewController.tabCollectionViewModel
+            Application.appDelegate.windowControllersManager.mainWindowController(for: sourceWindow)?.mainViewController.tabCollectionViewModel
         }
         let linkOpenBehavior: LinkOpenBehavior = {
             switch sender {
@@ -46,9 +46,9 @@ struct NewTabPageLinkOpener: NewTabPageLinkOpening {
                 }
             }
         }()
-        let targetWindowController = WindowControllersManager.shared.mainWindowController(for: sourceWindow ?? NSApp.currentEvent?.window)
+        let targetWindowController = Application.appDelegate.windowControllersManager.mainWindowController(for: sourceWindow ?? NSApp.currentEvent?.window)
 
-        WindowControllersManager.shared.open(url, with: linkOpenBehavior, setBurner: setBurner, source: source, target: targetWindowController)
+        Application.appDelegate.windowControllersManager.open(url, with: linkOpenBehavior, setBurner: setBurner, source: source, target: targetWindowController)
     }
 
     func openLink(_ target: NewTabPageDataModel.OpenAction.Target) async {
@@ -60,7 +60,7 @@ struct NewTabPageLinkOpener: NewTabPageLinkOpening {
 
     private func openAppearanceSettings() {
         Task.detached { @MainActor in
-            WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .appearance)
+            Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .appearance)
         }
     }
 }

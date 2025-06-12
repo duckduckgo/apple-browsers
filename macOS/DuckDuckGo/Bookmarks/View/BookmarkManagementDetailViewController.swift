@@ -464,7 +464,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         managementDetailViewModel.onBookmarkTapped()
 
         if let bookmark = entity as? Bookmark {
-            WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+            Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
         } else if let folder = entity as? BookmarkFolder {
             clearSearch()
             resetSelections()
@@ -477,7 +477,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
               let row = tableView.withMouseLocationInViewCoordinates(event.locationInWindow, convert: tableView.row(at:)), row != -1,
               let bookmark = fetchEntity(at: row) as? Bookmark else { return }
 
-        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
     }
 
     @objc func presentAddBookmarkModal(_ sender: Any) {
@@ -697,7 +697,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
     }
 
     fileprivate func openBookmarksInNewTabs(_ bookmarks: [Bookmark]) {
-        guard let tabCollection = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else {
+        guard let tabCollection = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else {
             assertionFailure("Cannot open in new tabs")
             return
         }

@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Common
 import History
 import CoreImage
+import Persistence
 
 protocol FaviconManagement: AnyObject {
 
@@ -30,9 +31,6 @@ protocol FaviconManagement: AnyObject {
     var isCacheLoaded: Bool { get }
 
     var faviconsLoadedPublisher: Published<Bool>.Publisher { get }
-
-    @MainActor
-    func loadFavicons() async throws
 
     @MainActor
     func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> Favicon?
@@ -93,19 +91,20 @@ extension FaviconManagement {
 final class FaviconManager: FaviconManagement {
 
     enum CacheType {
-        case standard
+        case standard(_ database: CoreDataDatabase)
         case inMemory
     }
 
     init(
         cacheType: CacheType,
         bookmarkManager: BookmarkManager,
+        fireproofDomains: FireproofDomains,
         imageCache: ((FaviconStoring) -> FaviconImageCaching)? = nil,
         referenceCache: ((FaviconStoring) -> FaviconReferenceCaching)? = nil
     ) {
         switch cacheType {
-        case .standard:
-            store = FaviconStore()
+        case .standard(let database):
+            store = FaviconStore(database: database)
         case .inMemory:
             store = FaviconNullStore()
         }
@@ -114,7 +113,7 @@ final class FaviconManager: FaviconManagement {
         self.referenceCache = referenceCache?(store) ?? FaviconReferenceCache(faviconStoring: store)
 
         Task {
-            try? await loadFavicons()
+            try? await loadFavicons(fireproofDomains)
         }
     }
 
@@ -126,11 +125,11 @@ final class FaviconManager: FaviconManagement {
     @Published private var faviconsLoaded = false
     var faviconsLoadedPublisher: Published<Bool>.Publisher { $faviconsLoaded }
 
-    func loadFavicons() async throws {
+    private func loadFavicons(_ fireproofDomains: FireproofDomains) async throws {
         try await imageCache.load()
-        await imageCache.cleanOld(except: FireproofDomains.shared, bookmarkManager: bookmarkManager)
+        await imageCache.cleanOld(except: fireproofDomains, bookmarkManager: bookmarkManager)
         try await referenceCache.load()
-        await referenceCache.cleanOld(except: FireproofDomains.shared, bookmarkManager: bookmarkManager)
+        await referenceCache.cleanOld(except: fireproofDomains, bookmarkManager: bookmarkManager)
         faviconsLoaded = true
     }
 

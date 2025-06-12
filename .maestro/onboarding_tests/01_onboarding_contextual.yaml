@@ -33,7 +33,7 @@ tags:
 # Handle Privacy Dashboard
 - assertVisible: "Got It!"
 - tapOn:
-    point: "6%,10%" # Shield icon.
+    id: "privacy-icon-shield.button"
 - assertVisible:
     text: "View Tracker Companies"
 - assertVisible:

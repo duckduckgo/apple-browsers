@@ -237,4 +237,60 @@ final class SubscriptionManagerTests: XCTestCase {
         // Then
         XCTAssertEqual(stagingPurchaseURL, SubscriptionURL.purchase.subscriptionURL(environment: .staging))
     }
+
+    // MARK: - Tests for Free Trial Eligibility
+
+    func testWhenPlatformIsStripeUserIsEligibleForFreeTrialThenReturnsNotEligible() throws {
+        // Given
+        storePurchaseManager.isEligibleForFreeTrialResult = true
+        let stripeEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        let sut = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
+                                                                       accountManager: accountManager,
+                                                                       subscriptionEndpointService: subscriptionService,
+                                                                       authEndpointService: authService,
+                                                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
+                                                                       subscriptionEnvironment: stripeEnvironment)
+
+        // When
+        let result = sut.isUserEligibleForFreeTrial()
+
+        // Then
+        XCTAssertFalse(result)
+    }
+
+    func testWhenPlatformIsAppStoreAndUserIsEligibleForFreeTrialThenReturnsEligible() throws {
+        // Given
+        storePurchaseManager.isEligibleForFreeTrialResult = true
+        let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let sut = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
+                                                                       accountManager: accountManager,
+                                                                       subscriptionEndpointService: subscriptionService,
+                                                                       authEndpointService: authService,
+                                                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
+                                                                       subscriptionEnvironment: appStoreEnvironment)
+
+        // When
+        let result = sut.isUserEligibleForFreeTrial()
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
+    func testWhenPlatformIsAppStoreAndUserIsNotEligibleForFreeTrialThenReturnsNotEligible() throws {
+        // Given
+        storePurchaseManager.isEligibleForFreeTrialResult = false
+        let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let sut = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
+                                                                       accountManager: accountManager,
+                                                                       subscriptionEndpointService: subscriptionService,
+                                                                       authEndpointService: authService,
+                                                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
+                                                                       subscriptionEnvironment: appStoreEnvironment)
+
+        // When
+        let result = sut.isUserEligibleForFreeTrial()
+
+        // Then
+        XCTAssertFalse(result)
+    }
 }

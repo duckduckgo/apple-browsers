@@ -25,7 +25,7 @@ import os.log
 
 @MainActor
 private func getFirstAvailableWebView() -> WKWebView? {
-    let wcm = WindowControllersManager.shared
+    let wcm = Application.appDelegate.windowControllersManager
     if wcm.lastKeyMainWindowController?.mainViewController.browserTabViewController == nil {
         WindowsManager.openNewWindow()
     }
@@ -38,7 +38,17 @@ private func getFirstAvailableWebView() -> WKWebView? {
 }
 
 final class DownloadListCoordinator {
-    static let shared = DownloadListCoordinator()
+    static let shared: DownloadListCoordinator = {
+#if DEBUG
+        if AppVersion.runType.requiresEnvironment {
+            return DownloadListCoordinator()
+        } else {
+            return DownloadListCoordinator(store: DownloadListStore(database: nil))
+        }
+#else
+        return DownloadListCoordinator()
+#endif
+    }()
 
     private let store: DownloadListStoring
     private let downloadManager: FileDownloadManagerProtocol
@@ -68,7 +78,7 @@ final class DownloadListCoordinator {
     private let regularWindowDownloadProgress = Progress()
     @MainActor private var fireWindowSessionsProgress = [FireWindowSessionRef: Progress]()
 
-    init(store: DownloadListStoring = DownloadListStore(),
+    init(store: DownloadListStoring = DownloadListStore(database: Application.appDelegate.database.db),
          downloadManager: FileDownloadManagerProtocol = FileDownloadManager.shared,
          clearItemsOlderThan clearDate: Date = .daysAgo(2),
          webViewProvider: (() -> WKWebView?)? = nil) {

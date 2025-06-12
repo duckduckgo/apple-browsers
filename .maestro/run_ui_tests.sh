@@ -74,7 +74,7 @@ echo
 echo "ℹ️ Running UI tests for $1"
 
 device_uuid=$(cat $device_uuid_path)
-echo "ℹ️ using device $device_uuid"
+echo "ℹ️ using device $device_uuid (configured during setup)"
 
 # Simulator should already be up and running from running the setup script
 #  re-run the setup script with `--skip-build` to set up again 

@@ -1,0 +1,7 @@
+**/.bundle
+**/.index
+**/.build
+
+**/vendor/
+**/DerivedData/
+.maestro/*.log

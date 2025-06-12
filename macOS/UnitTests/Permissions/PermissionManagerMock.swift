@@ -30,6 +30,16 @@ final class PermissionManagerMock: PermissionManagerProtocol {
 
     var savedPermissions = [String: [PermissionType: Bool]]()
 
+    var persistedPermissionTypes: Set<PermissionType> {
+        savedPermissions.reduce(into: Set<PermissionType>()) { partialResult, permissions in
+            partialResult.formUnion(permissions.value.keys)
+        }
+    }
+
+    func hasPermissionPersisted(forDomain domain: String, permissionType: DuckDuckGo_Privacy_Browser.PermissionType) -> Bool {
+        savedPermissions[domain.droppingWwwPrefix()]?[permissionType] != nil
+    }
+
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {
         guard let allow = savedPermissions[domain.droppingWwwPrefix()]?[permissionType] else { return .ask }
         return PersistedPermissionDecision(allow: allow, isRemoved: false)

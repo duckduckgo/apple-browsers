@@ -29,6 +29,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
     var onFireButtonPressedCalled = false
     var onFireButtonPressed: (() -> Void)!
 
+    @MainActor
     override func setUpWithError() throws {
         onGotItPressed = {
             self.onGotItPressedCalled = true
@@ -41,7 +42,14 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         }
 
         reporter = CapturingOnboardingPixelReporter()
-        viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: reporter, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        viewModel = OnboardingFireButtonDialogViewModel(
+            onboardingPixelReporter: reporter,
+            fireCoordinator: fireCoordinator,
+            onDismiss: onDismiss,
+            onGotItPressed: onGotItPressed,
+            onFireButtonPressed: onFireButtonPressed
+        )
     }
 
     @MainActor
@@ -60,9 +68,19 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() throws {
-        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            fireCoordinator: fireCoordinator
+        )
         let window = MockWindow(isVisible: false)
-        let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
+        let mainWindowController = MainWindowController(
+            window: window,
+            mainViewController: mainViewController,
+            popUp: false,
+            fireViewModel: fireCoordinator.fireViewModel
+        )
         mainWindowController.window = window
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
 

@@ -40,6 +40,7 @@ final class NewTabPageCoordinator {
         privacyStats: PrivacyStatsCollecting,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
         tld: TLD,
+        fireCoordinator: FireCoordinator,
         keyValueStore: ThrowingKeyValueStoring,
         legacyKeyValueStore: KeyValueStoring = UserDefaultsWrapper<Any>.sharedDefaults,
         notificationCenter: NotificationCenter = .default,
@@ -65,7 +66,8 @@ final class NewTabPageCoordinator {
             privacyStats: privacyStats,
             protectionsReportModel: protectionsReportModel,
             freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
-            tld: tld
+            tld: tld,
+            fire: { @MainActor in fireCoordinator.fireViewModel.fire }
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

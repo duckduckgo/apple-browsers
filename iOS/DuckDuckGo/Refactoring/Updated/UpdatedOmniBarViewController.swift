@@ -23,12 +23,39 @@ import PrivacyDashboard
 final class UpdatedOmniBarViewController: OmniBarViewController {
 
     private lazy var omniBarView = UpdatedOmniBarView.create()
+    private let experimentalManager = ExperimentalAIChatManager()
+    private weak var editingStateViewController: OmniBarEditingStateViewController?
 
     override func loadView() {
         view = omniBarView
     }
 
     // MARK: - Initialization
+
+    override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        if experimentalManager.isExperimentalTransitionEnabled {
+
+            let switchBarHandler = SwitchBarHandler()
+            if let text = self.omniBarView.text {
+                if let url = textField.text.flatMap({ URL(trimmedAddressBarString: $0.trimmingWhitespace()) }) {
+                    let urlText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: true)
+                    switchBarHandler.updateCurrentText(urlText.string)
+                } else {
+                    switchBarHandler.updateCurrentText(text)
+                }
+            }
+
+            let editingStateVC = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
+            editingStateVC.delegate = self
+            editingStateVC.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
+            editingStateVC.modalPresentationStyle = .overFullScreen
+            present(editingStateVC, animated: false)
+            self.editingStateViewController = editingStateVC
+
+            return false
+        }
+        return super.textFieldShouldBeginEditing(textField)
+    }
 
     override func animateDismissButtonTransition(from oldView: UIView, to newView: UIView) {
         dismissButtonAnimator?.stopAnimation(true)
@@ -50,7 +77,6 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
                 oldView.isHidden = true
             }
         }
-
         dismissButtonAnimator?.startAnimation()
     }
 
@@ -114,5 +140,21 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     override func preventShadowsOnBottom() {
         omniBarView.updateMaskLayer(maskTop: false)
+    }
+}
+
+extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
+    func onQueryUpdated(_ query: String) {
+    }
+
+    func onQuerySubmitted(_ query: String) {
+        editingStateViewController?.dismissAnimated()
+        omniDelegate?.onOmniQuerySubmitted(query)
+    }
+
+    func onPromptSubmitted(_ query: String) {
+        editingStateViewController?.dismissAnimated {
+            self.omniDelegate?.onOmniPromptSubmitted(query)
+        }
     }
 }

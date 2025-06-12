@@ -16,23 +16,43 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
+import Combine
+import Foundation
+
+/// Represents an event of hiding or showing an AI Chat tab sidebar.
+///
+/// - Note: This only refers to the logic of tab having sidebar shown or hidden,
+///         not to sidebars getting on and off the screen due to switching browser tabs.
+struct AIChatSidebarPresenceChange: Equatable {
+    let tabID: TabIdentifier
+    let isShown: Bool
+}
 
 /// Manages the presentation of an AI Chat sidebar in the browser.
 ///
 /// Handles visibility, state management, and feature flag coordination for the AI Chat sidebar.
 protocol AIChatSidebarPresenting {
 
-    /// Toggles the AI Chat sidebar visibility with appropriate animations.
+    /// Toggles the AI Chat sidebar visibility on a current tab, using appropriate animation.
     func toggleSidebar()
+
+    /// Returns whether the AI Chat sidebar is open on a current tab.
+    var isSidebarOpen: Bool { get }
+
+    /// Emits events whenever sidebar is shown or hidden for a tab.
+    var sidebarPresenceWillChangePublisher: AnyPublisher<AIChatSidebarPresenceChange, Never> { get }
 }
 
 final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
+    let sidebarPresenceWillChangePublisher: AnyPublisher<AIChatSidebarPresenceChange, Never>
+
     private let sidebarHost: AIChatSidebarHosting
     private let sidebarProvider: AIChatSidebarProviding
     private let featureFlagger: FeatureFlagger
+    private let sidebarPresenceWillChangeSubject = PassthroughSubject<AIChatSidebarPresenceChange, Never>()
 
     init(sidebarHost: AIChatSidebarHosting,
          sidebarProvider: AIChatSidebarProviding = AIChatSidebarProvider(),
@@ -41,6 +61,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         self.sidebarProvider = sidebarProvider
         self.featureFlagger = featureFlagger
 
+        sidebarPresenceWillChangePublisher = sidebarPresenceWillChangeSubject.eraseToAnyPublisher()
         self.sidebarHost.aiChatSidebarHostingDelegate = self
     }
 
@@ -49,7 +70,15 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         guard let currentTabID = sidebarHost.currentTabID else { return }
 
         let willShowSidebar = !sidebarProvider.isShowingSidebar(for: currentTabID)
+
+        sidebarPresenceWillChangeSubject.send(.init(tabID: currentTabID, isShown: willShowSidebar))
         updateSidebarConstraints(for: currentTabID, isShowingSidebar: willShowSidebar, withAnimation: true)
+    }
+
+    var isSidebarOpen: Bool {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return false }
+        guard let currentTabID = sidebarHost.currentTabID else { return false }
+        return sidebarProvider.isShowingSidebar(for: currentTabID)
     }
 
     private func updateSidebarConstraints(for tabID: TabIdentifier, isShowingSidebar: Bool, withAnimation: Bool) {

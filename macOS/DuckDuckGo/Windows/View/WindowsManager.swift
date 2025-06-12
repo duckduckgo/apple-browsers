@@ -185,15 +185,26 @@ final class WindowsManager {
     private class func makeNewWindow(tabCollectionViewModel: TabCollectionViewModel? = nil,
                                      popUp: Bool = false,
                                      burnerMode: BurnerMode,
-                                     autofillPopoverPresenter: AutofillPopoverPresenter) -> MainWindowController {
-        let mainViewController = MainViewController(tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode), autofillPopoverPresenter: autofillPopoverPresenter)
+                                     autofillPopoverPresenter: AutofillPopoverPresenter,
+                                     fireCoordinator: FireCoordinator? = nil) -> MainWindowController {
+        let fireCoordinator = fireCoordinator ?? NSApp.delegateTyped.fireCoordinator
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode),
+            autofillPopoverPresenter: autofillPopoverPresenter,
+            fireCoordinator: fireCoordinator
+        )
 
         let fireWindowSession = if case .burner = burnerMode {
             Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: {
                 $0.mainViewController.tabCollectionViewModel.burnerMode == burnerMode
             })?.fireWindowSession ?? FireWindowSession()
         } else { FireWindowSession?.none }
-        return MainWindowController(mainViewController: mainViewController, popUp: popUp, fireWindowSession: fireWindowSession)
+        return MainWindowController(
+            mainViewController: mainViewController,
+            popUp: popUp,
+            fireWindowSession: fireWindowSession,
+            fireViewModel: fireCoordinator.fireViewModel
+        )
     }
 
 }

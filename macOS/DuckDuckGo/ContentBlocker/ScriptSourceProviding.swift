@@ -56,7 +56,8 @@ protocol ScriptSourceProviding {
         startupPreferences: Application.appDelegate.startupPreferences,
         bookmarkManager: Application.appDelegate.bookmarkManager,
         historyCoordinator: Application.appDelegate.historyCoordinator,
-        fireproofDomains: Application.appDelegate.fireproofDomains
+        fireproofDomains: Application.appDelegate.fireproofDomains,
+        fireCoordinator: Application.appDelegate.fireCoordinator
     )
 }
 
@@ -93,7 +94,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          startupPreferences: StartupPreferences,
          bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
          historyCoordinator: HistoryDataSource,
-         fireproofDomains: DomainFireproofStatusProviding
+         fireproofDomains: DomainFireproofStatusProviding,
+         fireCoordinator: FireCoordinator
     ) {
 
         self.configStorage = configStorage
@@ -115,7 +117,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.historyViewActionsManager = HistoryViewActionsManager(
             historyCoordinator: historyCoordinator,
             bookmarksHandler: bookmarkManager,
-            fireproofStatusProvider: fireproofDomains
+            fireproofStatusProvider: fireproofDomains,
+            fire: { @MainActor in fireCoordinator.fireViewModel.fire }
         )
         self.currentCohorts = generateCurrentCohorts()
     }

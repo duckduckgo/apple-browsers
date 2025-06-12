@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
+import Foundation
 
 extension DataImport {
 

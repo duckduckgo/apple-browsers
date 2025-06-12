@@ -18,6 +18,8 @@
 
 #if DEBUG
 import Common
+import Combine
+import Foundation
 import History
 
 final class FaviconManagerMock: FaviconManagement {

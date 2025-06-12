@@ -46,8 +46,6 @@ final class AIChatViewControllerManager {
 
     private var aiChatUserScript: AIChatUserScript?
     private var payloadHandler = AIChatPayloadHandler()
-    private var inputBoxHandler: AIChatInputBoxHandling?
-    private var inputBoxViewModel: AIChatInputBoxViewModel?
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
@@ -153,7 +151,6 @@ final class AIChatViewControllerManager {
         }
         let webViewConfiguration = createWebViewConfiguration()
         let inspectableWebView = isInspectableWebViewEnabled()
-        let chatInputBox = setupChatInputBoxIfNeeded()
 
         let aiChatViewController = AIChatViewController(
             settings: aiChatSettings,
@@ -161,9 +158,7 @@ final class AIChatViewControllerManager {
             requestAuthHandler: AIChatRequestAuthorizationHandler(debugSettings: AIChatDebugSettings()),
             inspectableWebView: inspectableWebView,
             downloadsPath: downloadsDirectoryHandler.downloadsDirectory,
-            userAgentManager: userAgentManager,
-            chatInputBoxViewController: chatInputBox,
-            chatInputBoxHandler: inputBoxHandler
+            userAgentManager: userAgentManager
         )
 
         aiChatViewController.delegate = self
@@ -201,28 +196,6 @@ final class AIChatViewControllerManager {
 #endif
     }
 
-    private func setupChatInputBoxIfNeeded() -> UIViewController? {
-        guard experimentalAIChatManager.isExperimentalAIChatSettingsEnabled else { return nil }
-        let viewModel = AIChatInputBoxViewModel()
-        let handler = AIChatInputBoxHandler(inputBoxViewModel: viewModel)
-
-        inputBoxViewModel = viewModel
-        inputBoxHandler = handler
-        setupAIChatSubscriptions()
-        return ChatInputBoxViewController(viewModel: viewModel)
-    }
-
-    private func setupAIChatSubscriptions() {
-        guard let inputBoxHandler = inputBoxHandler else { return }
-
-        inputBoxHandler.didSubmitQuery
-            .sink { [weak self] submittedText in
-                guard let self = self else { return }
-                self.loadQuery(submittedText)
-            }
-            .store(in: &cancellables)
-    }
-
     private func cleanUpUserContent() async {
         await userContentController?.removeAllContentRuleLists()
         await userContentController?.cleanUpBeforeClosing()
@@ -253,7 +226,6 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
         aiChatUserScript?.delegate = self
         aiChatUserScript?.setPayloadHandler(payloadHandler)
         aiChatUserScript?.webView = chatViewController?.webView
-        aiChatUserScript?.inputBoxHandler = inputBoxHandler
     }
 }
 

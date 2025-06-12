@@ -464,7 +464,7 @@ final class AutofillPixelReporterTests: XCTestCase {
     func testWhenSaveAndUserIsAlreadyOnboardedThenOnboardedUserPixelShouldNotBeFired() {
         let autofillPixelReporter = createAutofillPixelReporter(installDate: Date().addingTimeInterval(.days(-1)))
         autofillPixelReporter.resetStoreDefaults()
-        standardDefaults.set(true, forKey: AutofillPixelReporter.Keys.autofillOnboardedUserKey)
+        standardDefaults.set(true, forKey: AutofillUsageStore.Keys.autofillOnboardedUserKey)
 
         NotificationCenter.default.post(name: .autofillSaveEvent, object: nil)
 
@@ -517,46 +517,46 @@ final class AutofillPixelReporterTests: XCTestCase {
 
     func testWhenMigrationRequiredAndDataExistsThenDataIsMigratedToAppGroupUserDefaults() {
         let testDate = Date()
-        standardDefaults.set(testDate, forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey)
-        standardDefaults.set(testDate, forKey: AutofillPixelReporter.Keys.autofillFillDateKey)
-        standardDefaults.set(true, forKey: AutofillPixelReporter.Keys.autofillOnboardedUserKey)
+        standardDefaults.set(testDate, forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey)
+        standardDefaults.set(testDate, forKey: AutofillUsageStore.Keys.autofillFillDateKey)
+        standardDefaults.set(true, forKey: AutofillUsageStore.Keys.autofillOnboardedUserKey)
 
         _ = createAutofillPixelReporter(appGroupUserDefaults: appGroupDefaults)
 
-        XCTAssertEqual(appGroupDefaults.object(forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey) as? Date, testDate)
-        XCTAssertEqual(appGroupDefaults.bool(forKey: AutofillPixelReporter.Keys.autofillOnboardedUserKey), true)
-        XCTAssertNil(standardDefaults.object(forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey))
-        XCTAssertTrue(appGroupDefaults.bool(forKey: AutofillPixelReporter.Keys.autofillDauMigratedKey))
+        XCTAssertEqual(appGroupDefaults.object(forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey) as? Date, testDate)
+        XCTAssertEqual(appGroupDefaults.bool(forKey: AutofillUsageStore.Keys.autofillOnboardedUserKey), true)
+        XCTAssertNil(standardDefaults.object(forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey))
+        XCTAssertTrue(appGroupDefaults.bool(forKey: AutofillUsageStore.Keys.autofillDauMigratedKey))
     }
 
     func testWhenMigrationRequiredAndNoDataExistsThenMigratedKeyIsTrue() {
         _ = createAutofillPixelReporter(appGroupUserDefaults: appGroupDefaults)
 
-        XCTAssertTrue(appGroupDefaults.bool(forKey: AutofillPixelReporter.Keys.autofillDauMigratedKey))
-        XCTAssertNil(appGroupDefaults.object(forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey))
-        XCTAssertNil(appGroupDefaults.object(forKey: AutofillPixelReporter.Keys.autofillFillDateKey))
-        XCTAssertNil(appGroupDefaults.object(forKey: AutofillPixelReporter.Keys.autofillOnboardedUserKey))
+        XCTAssertTrue(appGroupDefaults.bool(forKey: AutofillUsageStore.Keys.autofillDauMigratedKey))
+        XCTAssertNil(appGroupDefaults.object(forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey))
+        XCTAssertNil(appGroupDefaults.object(forKey: AutofillUsageStore.Keys.autofillFillDateKey))
+        XCTAssertNil(appGroupDefaults.object(forKey: AutofillUsageStore.Keys.autofillOnboardedUserKey))
     }
 
     func testWhenMigrationCompleteThenMigrationDoesNotSecondTime() {
         let testDate = Date()
-        standardDefaults.set(testDate, forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey)
-        appGroupDefaults.set(true, forKey: AutofillPixelReporter.Keys.autofillDauMigratedKey)
+        standardDefaults.set(testDate, forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey)
+        appGroupDefaults.set(true, forKey: AutofillUsageStore.Keys.autofillDauMigratedKey)
 
         _ = createAutofillPixelReporter(appGroupUserDefaults: appGroupDefaults)
 
-        XCTAssertNotNil(standardDefaults.object(forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey))
-        XCTAssertNil(appGroupDefaults.object(forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey))
+        XCTAssertNotNil(standardDefaults.object(forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey))
+        XCTAssertNil(appGroupDefaults.object(forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey))
     }
 
     func testWhenNilAppGroupUserDefaultsProvidedThenNoMigrationOccurs() {
         let testDate = Date()
-        standardDefaults.set(testDate, forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey)
+        standardDefaults.set(testDate, forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey)
 
         _ = createAutofillPixelReporter(appGroupUserDefaults: nil)
 
-        XCTAssertNotNil(standardDefaults.object(forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey))
-        XCTAssertNil(appGroupDefaults.object(forKey: AutofillPixelReporter.Keys.autofillDauMigratedKey))
+        XCTAssertNotNil(standardDefaults.object(forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey))
+        XCTAssertNil(appGroupDefaults.object(forKey: AutofillUsageStore.Keys.autofillDauMigratedKey))
     }
 
     private func createAutofillPixelReporter(appGroupUserDefaults: UserDefaults? = nil, installDate: Date? = Date(), autofillEnabled: Bool = true) -> AutofillPixelReporter {
@@ -612,16 +612,16 @@ final class AutofillPixelReporterTests: XCTestCase {
 
     private func setAutofillSearchDauDate(daysAgo: Int) {
         let date = Date().addingTimeInterval(.days(-daysAgo))
-        standardDefaults.set(date, forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey)
+        standardDefaults.set(date, forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey)
     }
 
     private func setAutofillFillDate(daysAgo: Int) {
         let date = Date().addingTimeInterval(.days(-daysAgo))
-        standardDefaults.set(date, forKey: AutofillPixelReporter.Keys.autofillFillDateKey)
+        standardDefaults.set(date, forKey: AutofillUsageStore.Keys.autofillFillDateKey)
     }
 
     private func getAutofillOnboardedUserState() -> Bool? {
-        return standardDefaults.object(forKey: AutofillPixelReporter.Keys.autofillOnboardedUserKey) as? Bool
+        return standardDefaults.object(forKey: AutofillUsageStore.Keys.autofillOnboardedUserKey) as? Bool
     }
 
 }

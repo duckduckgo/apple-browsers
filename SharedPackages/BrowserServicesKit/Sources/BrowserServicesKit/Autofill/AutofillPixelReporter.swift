@@ -31,9 +31,14 @@ public enum AutofillPixelEvent {
     case autofillCreditCardsStacked
     case autofillIdentitiesStacked
 
-    enum Parameter {
+    public enum Parameter {
         static let countBucket = "count_bucket"
+        public static let lastUsed = "last_used"
     }
+}
+
+public protocol AutofillFormattedFillDateProviding {
+    var formattedFillDate: String { get }
 }
 
 public final class AutofillPixelReporter {
@@ -66,6 +71,12 @@ public final class AutofillPixelReporter {
     private let passwordManager: PasswordManager?
     private var installDate: Date?
     private var autofillEnabled: Bool
+
+    private static let yyyyMMddFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 
     private var autofillSearchDauDate: Date? { userDefaults.object(forKey: Keys.autofillSearchDauDateKey) as? Date ?? .distantPast }
     private var autofillFillDate: Date? { userDefaults.object(forKey: Keys.autofillFillDateKey) as? Date ?? .distantPast }
@@ -291,6 +302,12 @@ public final class AutofillPixelReporter {
         }
     }
 
+}
+
+extension AutofillPixelReporter: AutofillFormattedFillDateProviding {
+    public var formattedFillDate: String {
+        Self.yyyyMMddFormatter.string(from: Date())
+    }
 }
 
 public extension NSNotification.Name {

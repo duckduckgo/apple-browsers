@@ -1251,6 +1251,12 @@
 		9FD6E6052DF8226000C2B032 /* AudioSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E6042DF8225C00C2B032 /* AudioSessionManager.swift */; };
 		9FD6E6092DF9026300C2B032 /* AudioSessionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E6082DF9025D00C2B032 /* AudioSessionManagerTests.swift */; };
 		9FD6E60C2DF902EA00C2B032 /* AVAudioSessionSpy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E60B2DF902E400C2B032 /* AVAudioSessionSpy.swift */; };
+		9FD6E6112DFA6B3200C2B032 /* PictureInPictureConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E6102DFA6B2B00C2B032 /* PictureInPictureConfiguration.swift */; };
+		9FD6E6132DFA6B4900C2B032 /* PictureInPictureEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E6122DFA6B4400C2B032 /* PictureInPictureEvent.swift */; };
+		9FD6E6172DFA71A800C2B032 /* PictureInPictureControllerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E6162DFA71A000C2B032 /* PictureInPictureControllerFactory.swift */; };
+		9FD6E6192DFA72C200C2B032 /* PictureInPictureControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E6182DFA72BC00C2B032 /* PictureInPictureControllerTests.swift */; };
+		9FD6E61B2DFA739200C2B032 /* MockAVPictureInPictureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E61A2DFA738800C2B032 /* MockAVPictureInPictureController.swift */; };
+		9FD6E61D2DFA743300C2B032 /* MockPIctureInPictureControllerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD6E61C2DFA742A00C2B032 /* MockPIctureInPictureControllerFactory.swift */; };
 		9FDD72052D895D8C0016246B /* CombineSchedulers in Frameworks */ = {isa = PBXBuildFile; productRef = 9FDD72042D895D8C0016246B /* CombineSchedulers */; };
 		9FDEC7B42C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */; };
 		9FDEC7B82C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B72C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift */; };
@@ -1267,6 +1273,7 @@
 		9FEA222E2C324ECD006B03BF /* ViewVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEA222D2C324ECD006B03BF /* ViewVisibility.swift */; };
 		9FEA22322C3270BD006B03BF /* TimerInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEA22312C3270BD006B03BF /* TimerInterface.swift */; };
 		9FF7E9862C23D10300902BE5 /* BrowsersComparisonChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF7E9852C23D10300902BE5 /* BrowsersComparisonChart.swift */; };
+		9FFDA8372DFA885C007923F7 /* PictureInPictureControllerFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFDA8362DFA8854007923F7 /* PictureInPictureControllerFactoryTests.swift */; };
 		AA3D854523D9942200788410 /* AppIconSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3D854423D9942200788410 /* AppIconSettingsViewController.swift */; };
 		AA3D854723D9E88E00788410 /* AppIconSettingsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3D854623D9E88E00788410 /* AppIconSettingsCell.swift */; };
 		AA3D854923DA1DFB00788410 /* AppIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3D854823DA1DFB00788410 /* AppIcon.swift */; };
@@ -3347,6 +3354,12 @@
 		9FD6E6042DF8225C00C2B032 /* AudioSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionManager.swift; sourceTree = "<group>"; };
 		9FD6E6082DF9025D00C2B032 /* AudioSessionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionManagerTests.swift; sourceTree = "<group>"; };
 		9FD6E60B2DF902E400C2B032 /* AVAudioSessionSpy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVAudioSessionSpy.swift; sourceTree = "<group>"; };
+		9FD6E6102DFA6B2B00C2B032 /* PictureInPictureConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PictureInPictureConfiguration.swift; sourceTree = "<group>"; };
+		9FD6E6122DFA6B4400C2B032 /* PictureInPictureEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PictureInPictureEvent.swift; sourceTree = "<group>"; };
+		9FD6E6162DFA71A000C2B032 /* PictureInPictureControllerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PictureInPictureControllerFactory.swift; sourceTree = "<group>"; };
+		9FD6E6182DFA72BC00C2B032 /* PictureInPictureControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PictureInPictureControllerTests.swift; sourceTree = "<group>"; };
+		9FD6E61A2DFA738800C2B032 /* MockAVPictureInPictureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAVPictureInPictureController.swift; sourceTree = "<group>"; };
+		9FD6E61C2DFA742A00C2B032 /* MockPIctureInPictureControllerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPIctureInPictureControllerFactory.swift; sourceTree = "<group>"; };
 		9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAddressBarPositionPickerViewModelTests.swift; sourceTree = "<group>"; };
 		9FDEC7B72C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingIntroViewModel+Copy.swift"; sourceTree = "<group>"; };
 		9FDEC7B92C9006E000C7A692 /* BrowserComparisonModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserComparisonModelTests.swift; sourceTree = "<group>"; };
@@ -3362,6 +3375,7 @@
 		9FEA222D2C324ECD006B03BF /* ViewVisibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewVisibility.swift; sourceTree = "<group>"; };
 		9FEA22312C3270BD006B03BF /* TimerInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerInterface.swift; sourceTree = "<group>"; };
 		9FF7E9852C23D10300902BE5 /* BrowsersComparisonChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowsersComparisonChart.swift; sourceTree = "<group>"; };
+		9FFDA8362DFA8854007923F7 /* PictureInPictureControllerFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PictureInPictureControllerFactoryTests.swift; sourceTree = "<group>"; };
 		AA3D854423D9942200788410 /* AppIconSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconSettingsViewController.swift; sourceTree = "<group>"; };
 		AA3D854623D9E88E00788410 /* AppIconSettingsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconSettingsCell.swift; sourceTree = "<group>"; };
 		AA3D854823DA1DFB00788410 /* AppIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIcon.swift; sourceTree = "<group>"; };
@@ -6224,7 +6238,9 @@
 		9F012C602DF7BD5500AE0F43 /* PictureInPicture */ = {
 			isa = PBXGroup;
 			children = (
+				9FD6E6152DFA719A00C2B032 /* Factory */,
 				9FD6E6062DF8FA3700C2B032 /* AudioSession */,
+				9FD6E60F2DFA6B1B00C2B032 /* Model */,
 				9F012C642DF7BE1800AE0F43 /* PictureInPictureController.swift */,
 			);
 			path = PictureInPicture;
@@ -6533,6 +6549,8 @@
 			children = (
 				9FD6E60A2DF902DE00C2B032 /* Mocks */,
 				9FD6E6082DF9025D00C2B032 /* AudioSessionManagerTests.swift */,
+				9FD6E6182DFA72BC00C2B032 /* PictureInPictureControllerTests.swift */,
+				9FFDA8362DFA8854007923F7 /* PictureInPictureControllerFactoryTests.swift */,
 			);
 			path = VideoPlayer;
 			sourceTree = "<group>";
@@ -6540,9 +6558,20 @@
 		9FD6E60A2DF902DE00C2B032 /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
+				9FD6E61A2DFA738800C2B032 /* MockAVPictureInPictureController.swift */,
+				9FD6E61C2DFA742A00C2B032 /* MockPIctureInPictureControllerFactory.swift */,
 				9FD6E60B2DF902E400C2B032 /* AVAudioSessionSpy.swift */,
 			);
 			path = Mocks;
+			sourceTree = "<group>";
+		};
+		9FD6E60F2DFA6B1B00C2B032 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				9FD6E6122DFA6B4400C2B032 /* PictureInPictureEvent.swift */,
+				9FD6E6102DFA6B2B00C2B032 /* PictureInPictureConfiguration.swift */,
+			);
+			path = Model;
 			sourceTree = "<group>";
 		};
 		9FD6E6142DFA6EFB00C2B032 /* Logging */ = {
@@ -6551,6 +6580,14 @@
 				9F0311392DF7C6AC00AC4DB5 /* Logger+VideoPlayer.swift */,
 			);
 			path = Logging;
+			sourceTree = "<group>";
+		};
+		9FD6E6152DFA719A00C2B032 /* Factory */ = {
+			isa = PBXGroup;
+			children = (
+				9FD6E6162DFA71A000C2B032 /* PictureInPictureControllerFactory.swift */,
+			);
+			path = Factory;
 			sourceTree = "<group>";
 		};
 		9FDEC7BD2C9125EC00C7A692 /* AddressBarPositionPicker */ = {
@@ -9849,6 +9886,7 @@
 				C17BA71F2D945A1600562138 /* AutofillCreditCardDetailsViewController.swift in Sources */,
 				C17BA7202D945A1600562138 /* AutofillCreditCardDetailsView.swift in Sources */,
 				C17BA7212D945A1600562138 /* AutofillCreditCardDetailsViewModel.swift in Sources */,
+				9FD6E6132DFA6B4900C2B032 /* PictureInPictureEvent.swift in Sources */,
 				31951E8E2823003200CAF535 /* AutofillLoginDetailsHeaderView.swift in Sources */,
 				F194FAED1F14E2B3009B4DF8 /* UIFontExtension.swift in Sources */,
 				98F0FC2021FF18E700CE77AB /* AutoClearSettingsViewController.swift in Sources */,
@@ -9976,6 +10014,7 @@
 				1E908BF129827C480008C8F3 /* AutoconsentUserScript.swift in Sources */,
 				1D200C972BA3157A00108701 /* SettingsNextStepsView.swift in Sources */,
 				4B0295192537BC6700E00CEF /* ConfigurationDebugViewController.swift in Sources */,
+				9FD6E6172DFA71A800C2B032 /* PictureInPictureControllerFactory.swift in Sources */,
 				7B020B9A2D11F99D00876178 /* FavoritesDisplayMode+UserDefaults.swift in Sources */,
 				7B1C892C2CF714AA0008224E /* VPNTipsModel.swift in Sources */,
 				1E7A71192934EC6100B7EA19 /* OmniBarNotificationContainerView.swift in Sources */,
@@ -10118,6 +10157,7 @@
 				31CE145C2D5505520027F11D /* OmnibarDependencyProvider.swift in Sources */,
 				9F23B8012C2BC94400950875 /* OnboardingBackground.swift in Sources */,
 				9FE08BD32C2A5B88001D5EBC /* OnboardingTextStyles.swift in Sources */,
+				9FD6E6112DFA6B3200C2B032 /* PictureInPictureConfiguration.swift in Sources */,
 				F17669D71E43401C003D3222 /* MainViewController.swift in Sources */,
 				6FE127462C2054A900EB5724 /* NewTabPageViewController.swift in Sources */,
 				984D60B2222A1284003B9E3B /* FeedbackFormViewController.swift in Sources */,
@@ -10177,6 +10217,7 @@
 				9FE05CF12C36468A00D9046B /* OnboardingPixelReporterTests.swift in Sources */,
 				6FE23A862DF193CF00E44664 /* RemoteMessagingConfigMatcherProviderTest.swift in Sources */,
 				9FDEC7B42C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift in Sources */,
+				9FD6E61D2DFA743300C2B032 /* MockPIctureInPictureControllerFactory.swift in Sources */,
 				85BA58581F34F72F00C6E8CA /* AppUserDefaultsTests.swift in Sources */,
 				986CD53E2DE8FA1400AFA98A /* ConfigurationMocks.swift in Sources */,
 				9FCFCD802C6AF56D006EB7A0 /* LaunchOptionsHandlerTests.swift in Sources */,
@@ -10198,6 +10239,7 @@
 				9876DF2D2DEEE21700E30713 /* MockThemeManager.swift in Sources */,
 				6FF915822B88E07A0042AC87 /* AdAttributionFetcherTests.swift in Sources */,
 				84EFBCC92D81796000706739 /* AutocompleteSuggestionsDataSourceTests.swift in Sources */,
+				9FFDA8372DFA885C007923F7 /* PictureInPictureControllerFactoryTests.swift in Sources */,
 				98E5630B2DE8AF3100E6E75F /* HtmlTestDataLoader.swift in Sources */,
 				98E5630D2DE8AF3100E6E75F /* InitHelpers.swift in Sources */,
 				98E563122DE8AF3100E6E75F /* CombineTestUtilities.swift in Sources */,
@@ -10208,6 +10250,7 @@
 				98E5632C2DE8AF3100E6E75F /* WebViewWarmupHelper.swift in Sources */,
 				98E563312DE8AF3100E6E75F /* XCTestCaseExtension.swift in Sources */,
 				98E563352DE8AF3100E6E75F /* UserDefaultsExtension.swift in Sources */,
+				9FD6E6192DFA72C200C2B032 /* PictureInPictureControllerTests.swift in Sources */,
 				98E563362DE8AF3100E6E75F /* JsonTestDataLoader.swift in Sources */,
 				1E4E6C572C78B8540059C0FA /* StorePurchaseManagerTests.swift in Sources */,
 				859DB81E2CE62766001F7210 /* TextZoomTests.swift in Sources */,
@@ -10331,6 +10374,7 @@
 				98E564092DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				9F4CC5172C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift in Sources */,
 				F13B4BFB1F18E3D900814661 /* TabsModelPersistenceTests.swift in Sources */,
+				9FD6E61B2DFA739200C2B032 /* MockAVPictureInPictureController.swift in Sources */,
 				8528AE7E212EF5FF00D0BD74 /* AppRatingPromptTests.swift in Sources */,
 				981FED692201FE69008488D7 /* AutoClearSettingsScreenTests.swift in Sources */,
 				4BC21A2F27238B7500229F0E /* RunLoopExtensionTests.swift in Sources */,

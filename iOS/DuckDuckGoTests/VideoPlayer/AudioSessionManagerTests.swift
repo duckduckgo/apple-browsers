@@ -20,6 +20,7 @@
 import Testing
 @testable import DuckDuckGo
 
+@Suite("Video Player - Audio Session Manager")
 struct AudioSessionManagerTests {
     private var sut: AudioSessionManager!
     private var audioSessionSpy: AVAudioSessionSpy!

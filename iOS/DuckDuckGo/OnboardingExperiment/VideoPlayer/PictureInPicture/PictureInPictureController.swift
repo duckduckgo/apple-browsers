@@ -20,65 +20,62 @@
 import AVKit
 import Combine
 
-struct PictureInPictureConfiguration {
-    /// A Boolean value that indicates whether Picture in Picture starts automatically when the controller embeds its content inline and the app transitions to the background. Default value is false.
-    var canStartPictureInPictureAutomaticallyFromInline: Bool = false
-    /// A Boolean value that determines whether the controller allows the user to skip media content. Default value is true meaning that the skip playback controls won't be shown.
-    var requiresLinearPlayback: Bool = true
+/// A type that controls the Picture in Picture functionality.
+protocol PictureInPictureControlling {
+    /// A publisher that emits Picture in Picture playback events.
+    var pictureInPictureEventPublisher: AnyPublisher<PictureInPictureEvent, Never> { get }
+
+    /// Sets up the Picture in Picture functionality for the specified player layer.
+    ///
+    /// This method configures the necessary components to enable Picture-in-Picture mode
+    /// for video content. It should be called after the player and player layer are
+    /// properly configured.
+    ///
+    /// - Parameter playerLayer: The `AVPlayerLayer` instance that contains the video
+    ///   content to be displayed in Picture in Picture mode. This layer must be
+    ///   associated with an `AVPlayer` that has loaded media content.
+    func setupPictureInPicture(playerLayer: AVPlayerLayer)
+
+    /// Programmatically stops the current Picture in Picture session.
+    func stopPictureInPicture()
 }
 
 final class PictureInPictureController: NSObject, ObservableObject {
-    @Published private(set) var isPictureInPictureActive: Bool = false
+    private let subject = PassthroughSubject<PictureInPictureEvent, Never>()
 
     private let configuration: PictureInPictureConfiguration
-    private let audioSessionManager: AudioSessionManaging
+    private let factory: PictureInPictureControllerFactory
     private var controller: AVPictureInPictureController?
     private var pictureInPictureCancellable: AnyCancellable?
 
-    init(
-        configuration: PictureInPictureConfiguration = .init(),
-        audioSessionManager: AudioSessionManaging = AudioSessionManager()
-    ) {
+#if DEBUG
+    var isAVPictureInPictureControllerInitialised: Bool {
+        controller != nil
+    }
+#endif
+
+    init(configuration: PictureInPictureConfiguration = .init(), factory: PictureInPictureControllerFactory = AVPictureInPictureControllerFactory()) {
         self.configuration = configuration
-        self.audioSessionManager = audioSessionManager
-        audioSessionManager.setPlaybackSessionActive()
+        self.factory = factory
         super.init()
     }
-
-    deinit {
-        audioSessionManager.setPlaybackSessionInactive()
-    }
-
 }
 
-// MARK: - Public
+// MARK: - PictureInPictureControlling
 
-extension PictureInPictureController {
+extension PictureInPictureController: PictureInPictureControlling {
+
+    var pictureInPictureEventPublisher: AnyPublisher<PictureInPictureEvent, Never> {
+        subject.eraseToAnyPublisher()
+    }
 
     func setupPictureInPicture(playerLayer: AVPlayerLayer) {
-        guard
-            AVPictureInPictureController.isPictureInPictureSupported(),
-            let controller = AVPictureInPictureController(playerLayer: playerLayer)
-        else {
-            return
-        }
+        guard let controller = factory.makePictureInPictureController(playerLayer: playerLayer) else { return }
         Logger.videoPlayer.debug("PictureInPictureController initialised")
-
         controller.canStartPictureInPictureAutomaticallyFromInline = configuration.canStartPictureInPictureAutomaticallyFromInline
         controller.requiresLinearPlayback = configuration.requiresLinearPlayback
         controller.delegate = self
         self.controller = controller
-    }
-
-    func canStartPictureInPicture() -> Bool {
-        Logger.videoPlayer.debug("Can Start PictureInPicture: \(self.controller?.isPictureInPicturePossible ?? false)")
-        return controller?.isPictureInPicturePossible ?? false
-    }
-
-    func startPictureInPicture() {
-        guard canStartPictureInPicture() else { return }
-        Logger.videoPlayer.debug("Start Picture In Picture")
-        controller?.startPictureInPicture()
     }
 
     func stopPictureInPicture() {
@@ -93,26 +90,26 @@ extension PictureInPictureController: AVPictureInPictureControllerDelegate {
 
     func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Logger.videoPlayer.debug("Will Start Picture in Picture")
-        Logger.videoPlayer.debug("Will Start Picture in Picture - Is Active: \(self.controller?.isPictureInPictureActive ?? false)")
+        subject.send(.willStartPictureInPicture)
     }
 
     func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Logger.videoPlayer.debug("Picture in Picture Started")
-        isPictureInPictureActive = true
+        subject.send(.didStartPictureInPicture)
     }
 
     func pictureInPictureControllerWillStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Logger.videoPlayer.debug("Will Stop Picture in Picture")
+        subject.send(.willStopPictureInPicture)
     }
 
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Logger.videoPlayer.debug("Picture in Picture Stopped")
-        isPictureInPictureActive = false
+        subject.send(.didStopPictureInPicture)
     }
 
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: any Error) {
         Logger.videoPlayer.debug("Picture in Picture Failed: \(error)")
-        isPictureInPictureActive = false
+        subject.send(.failedToStartPictureInPicture)
     }
 }
-

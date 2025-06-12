@@ -15,7 +15,10 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+
+import AppKit
 import DesignResourcesKitIcons
+import Foundation
 
 protocol AddressBarStyleProviding {
     func navigationBarHeight(for type: AddressBarSizeClass) -> CGFloat
@@ -189,6 +192,6 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     }
 
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat {
-        return 28
+        return 32
     }
 }

@@ -41,6 +41,9 @@ extension Tab: NavigationResponder {
 
     func setupNavigationDelegate() {
         navigationDelegate.setResponders(
+            // AI Chat navigations handling
+            .weak(nullable: self.aiChat),
+
             .weak(nullable: self.navigationHotkeyHandler),
             .weak(nullable: self.brokenSiteInfo),
             .weak(nullable: self.tabCrashRecovery),
@@ -53,9 +56,6 @@ extension Tab: NavigationResponder {
 
             // Duck Player overlay navigations handling
             .weak(nullable: self.duckPlayer),
-
-            // AI Chat onboarding navigations handling
-            .weak(nullable: self.aiChatOnboarding),
 
             // open external scheme link in another app
             .weak(nullable: self.externalAppSchemeHandler),
@@ -98,6 +98,9 @@ extension Tab: NavigationResponder {
             .weak(nullable: self.releaseNotes),
 
             .weak(nullable: self.networkProtection),
+
+            // Internal Feedback Form
+            .weak(nullable: self.internalFeedbackForm),
 
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)

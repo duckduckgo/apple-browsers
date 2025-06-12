@@ -56,7 +56,7 @@ final class AddressBarTextField: NSTextField {
         tabCollectionViewModel.isBurner
     }
 
-    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
+    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
 
     private var suggestionResultCancellable: AnyCancellable?
     private var selectedSuggestionViewModelCancellable: AnyCancellable?
@@ -525,7 +525,7 @@ final class AddressBarTextField: NSTextField {
 
     private func upgradeToHttps(url: URL, userEnteredValue: String, completion: @escaping (URL?, String, Bool) -> Void) {
         Task {
-            let result = await PrivacyFeatures.httpsUpgrade.upgrade(url: url)
+            let result = await NSApp.delegateTyped.privacyFeatures.httpsUpgrade.upgrade(url: url)
             switch result {
             case let .success(upgradedUrl):
                 completion(upgradedUrl, userEnteredValue, true)
@@ -1128,7 +1128,7 @@ extension AddressBarTextField: NSTextViewDelegate {
 
         if let sharingMenuItem = menu.item(with: Self.shareMenuItemAction) {
             sharingMenuItem.title = UserText.shareMenuItem
-            sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem)
+            sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem, location: .addressBarTextField)
         }
 
         let additionalMenuItems: [NSMenuItem] = [

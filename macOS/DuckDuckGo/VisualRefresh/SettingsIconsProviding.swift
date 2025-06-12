@@ -15,6 +15,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+
+import AppKit
 import DesignResourcesKitIcons
 
 protocol SettingsIconsProviding {
@@ -66,7 +68,7 @@ final class LegacySettingsIconProvider: SettingsIconsProviding {
 final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var defaultBrowserIcon: NSImage = DesignSystemImages.Color.Size16.defaultBrowser
     var privateSearchIcon: NSImage = DesignSystemImages.Color.Size16.findSearch
-    var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shield
+    var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
     var threatProtectionIcon: NSImage = DesignSystemImages.Color.Size16.radar
     var cookiePopUpProtectionIcon: NSImage = DesignSystemImages.Color.Size16.cookie
     var emailProtectionIcon: NSImage = DesignSystemImages.Color.Size16.emailProtection

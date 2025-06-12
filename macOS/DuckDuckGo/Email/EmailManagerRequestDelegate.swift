@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import Foundation
 import PixelKit
 
 extension EmailManagerRequestDelegate {

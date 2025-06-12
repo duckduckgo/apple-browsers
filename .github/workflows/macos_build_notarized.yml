@@ -89,6 +89,7 @@ jobs:
       dsym-url: ${{ steps.upload-dsyms-to-s3-test-build.outputs.dsym-url }}
 
     env:
+      RUNS_ON: macos-15-xlarge # keep this in sync with runs-on above
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
@@ -104,6 +105,12 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ env.branch }}
+
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
@@ -158,6 +165,15 @@ jobs:
         else
           ./scripts/archive.sh ${{ env.release-type }}
         fi
+
+    - name: Report job duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_macos_notarized_build
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
     - name: Set app name and version
       id: set-outputs
@@ -261,6 +277,7 @@ jobs:
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       upload-to: ${{ needs.export-notarized-app.outputs.upload-to }}
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
+      RUNS_ON: macos-15 # keep this in sync with runs-on above
 
     steps:
 
@@ -278,6 +295,12 @@ jobs:
           macOS/Gemfile.lock
           macOS/fastlane
           macOS/scripts/assets
+
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
@@ -317,6 +340,15 @@ jobs:
             --app-drop-link 430 160 "${dmg}" \
             "dmg"
         echo "dmg=${dmg}" >> $GITHUB_OUTPUT
+
+    - name: Report job duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_macos_create_dmg
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
     - name: Upload DMG artifact
       uses: actions/upload-artifact@v4

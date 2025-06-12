@@ -61,8 +61,7 @@ final class SecureVaultReporter: SecureVaultReporting {
         Task {
             let isBackgrounded = await isAppBackgrounded()
             // including the appVersion for debugging purposes, it should be removed before the feature is public
-            let pixelParams = [PixelParameters.isBackgrounded: isBackgrounded ? "true" : "false",
-                               PixelParameters.appVersion: AppVersion.shared.versionAndBuildNumber]
+            let pixelParams = [PixelParameters.isBackgrounded: isBackgrounded ? "true" : "false"]
             switch error {
             case .initFailed(let error):
                 // Silencing pixel reporting for error -25308 (attempt to access keychain while the device was locked)

@@ -165,9 +165,9 @@ final class PasswordManagementViewController: NSViewController {
 
     private let emailManager = EmailManager()
     private let urlMatcher = AutofillDomainNameUrlMatcher()
-    private let tld = ContentBlocking.shared.tld
+    private let tld = NSApp.delegateTyped.tld
     private let urlSort = AutofillDomainNameUrlSort()
-    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
+    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -467,6 +467,7 @@ final class PasswordManagementViewController: NSViewController {
         },
                                                      urlMatcher: urlMatcher,
                                                      emailManager: emailManager,
+                                                     tld: tld,
                                                      urlSort: urlSort)
 
         self.itemModel = itemModel

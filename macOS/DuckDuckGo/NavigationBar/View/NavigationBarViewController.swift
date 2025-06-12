@@ -104,6 +104,9 @@ final class NavigationBarViewController: NSViewController {
     private let bookmarkDragDropManager: BookmarkDragDropManager
     private let bookmarkManager: BookmarkManager
     private let historyCoordinator: HistoryCoordinator
+    private let fireproofDomains: FireproofDomains
+    private let contentBlocking: ContentBlockingProtocol
+    private let permissionManager: PermissionManagerProtocol
 
     private var subscriptionManager: SubscriptionAuthV1toV2Bridge {
         Application.appDelegate.subscriptionAuthV1toV2Bridge
@@ -142,6 +145,7 @@ final class NavigationBarViewController: NSViewController {
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
     private let visualStyle: VisualStyleProviding
+    private let aiChatSidebarPresenter: AIChatSidebarPresenting
 
     private var leftFocusSpacer: NSView?
     private var rightFocusSpacer: NSView?
@@ -158,12 +162,16 @@ final class NavigationBarViewController: NSViewController {
                        bookmarkManager: BookmarkManager,
                        bookmarkDragDropManager: BookmarkDragDropManager,
                        historyCoordinator: HistoryCoordinator,
+                       contentBlocking: ContentBlockingProtocol,
+                       fireproofDomains: FireproofDomains,
+                       permissionManager: PermissionManagerProtocol,
                        networkProtectionPopoverManager: NetPPopoverManager,
                        networkProtectionStatusReporter: NetworkProtectionStatusReporter,
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                       visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+                       visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+                       aiChatSidebarPresenter: AIChatSidebarPresenting
     ) -> NavigationBarViewController {
         NSStoryboard(name: "NavigationBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -173,12 +181,16 @@ final class NavigationBarViewController: NSViewController {
                 bookmarkManager: bookmarkManager,
                 bookmarkDragDropManager: bookmarkDragDropManager,
                 historyCoordinator: historyCoordinator,
+                contentBlocking: contentBlocking,
+                fireproofDomains: fireproofDomains,
+                permissionManager: permissionManager,
                 networkProtectionPopoverManager: networkProtectionPopoverManager,
                 networkProtectionStatusReporter: networkProtectionStatusReporter,
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
-                visualStyle: visualStyleManager.style
+                visualStyle: visualStyle,
+                aiChatSidebarPresenter: aiChatSidebarPresenter
             )
         }!
     }
@@ -190,17 +202,24 @@ final class NavigationBarViewController: NSViewController {
         bookmarkManager: BookmarkManager,
         bookmarkDragDropManager: BookmarkDragDropManager,
         historyCoordinator: HistoryCoordinator,
+        contentBlocking: ContentBlockingProtocol,
+        fireproofDomains: FireproofDomains,
+        permissionManager: PermissionManagerProtocol,
         networkProtectionPopoverManager: NetPPopoverManager,
         networkProtectionStatusReporter: NetworkProtectionStatusReporter,
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
-        visualStyle: VisualStyleProviding
+        visualStyle: VisualStyleProviding,
+        aiChatSidebarPresenter: AIChatSidebarPresenting
     ) {
 
         self.popovers = NavigationBarPopovers(
             bookmarkManager: bookmarkManager,
             bookmarkDragDropManager: bookmarkDragDropManager,
+            contentBlocking: contentBlocking,
+            fireproofDomains: fireproofDomains,
+            permissionManager: permissionManager,
             networkProtectionPopoverManager: networkProtectionPopoverManager,
             autofillPopoverPresenter: autofillPopoverPresenter,
             isBurner: tabCollectionViewModel.isBurner
@@ -213,9 +232,13 @@ final class NavigationBarViewController: NSViewController {
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
         self.historyCoordinator = historyCoordinator
+        self.contentBlocking = contentBlocking
+        self.permissionManager = permissionManager
+        self.fireproofDomains = fireproofDomains
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
         self.featureFlagger = featureFlagger
         self.visualStyle = visualStyle
+        self.aiChatSidebarPresenter = aiChatSidebarPresenter
         goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
         goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
         super.init(coder: coder)
@@ -366,9 +389,12 @@ final class NavigationBarViewController: NSViewController {
                                                                       tabCollectionViewModel: tabCollectionViewModel,
                                                                       bookmarkManager: bookmarkManager,
                                                                       historyCoordinator: historyCoordinator,
+                                                                      privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
+                                                                      permissionManager: permissionManager,
                                                                       burnerMode: burnerMode,
                                                                       popovers: popovers,
-                                                                      onboardingPixelReporter: onboardingPixelReporter) else {
+                                                                      onboardingPixelReporter: onboardingPixelReporter,
+                                                                      aiChatSidebarPresenter: aiChatSidebarPresenter) else {
             fatalError("NavigationBarViewController: Failed to init AddressBarViewController")
         }
 
@@ -489,6 +515,7 @@ final class NavigationBarViewController: NSViewController {
         let menu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                    bookmarkManager: bookmarkManager,
                                    historyCoordinator: historyCoordinator,
+                                   fireproofDomains: fireproofDomains,
                                    passwordManagerCoordinator: PasswordManagerCoordinator.shared,
                                    vpnFeatureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
                                    internalUserDecider: internalUserDecider,

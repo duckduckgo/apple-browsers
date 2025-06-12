@@ -40,10 +40,15 @@ class OnboardingManagerTests: XCTestCase {
         dockCustomization = CapturingDockCustomizer()
         defaultBrowserProvider = CapturingDefaultBrowserProvider()
         appearancePersistor = MockAppearancePreferencesPersistor()
-        appearancePreferences = AppearancePreferences(persistor: appearancePersistor)
+        appearancePreferences = AppearancePreferences(persistor: appearancePersistor, privacyConfigurationManager: MockPrivacyConfigurationManager())
         startupPersistor = StartupPreferencesUserDefaultsPersistor()
         fireButtonPreferencesPersistor = MockFireButtonPreferencesPersistor()
-        dataClearingPreferences = DataClearingPreferences(persistor: fireButtonPreferencesPersistor)
+        dataClearingPreferences = DataClearingPreferences(
+            persistor: fireButtonPreferencesPersistor,
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock()
+        )
         startupPreferences = StartupPreferences(persistor: startupPersistor, appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
         importProvider = CapturingDataImportProvider()
         manager = OnboardingActionsManager(navigationDelegate: navigationDelegate, dockCustomization: dockCustomization, defaultBrowserProvider: defaultBrowserProvider, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences, dataImportProvider: importProvider)

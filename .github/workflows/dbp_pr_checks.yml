@@ -25,8 +25,9 @@ jobs:
 
       runs-on: macos-15
       timeout-minutes: 30
-      
+
       env:
+        RUNS_ON: macos-15 # keep this in sync with runs-on above
         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
@@ -38,6 +39,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Start measuring duration
+        id: start-duration-macos
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: start
 
       - name: Set cache key hash
         run: |
@@ -72,6 +79,16 @@ jobs:
         id: run-unit-tests
         run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
 
+      - name: Report job duration
+        if: success() || (always() && steps.run-unit-tests.outcome == 'failure')
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: stop
+          start-timestamp: ${{ steps.start-duration-macos.outputs.start-timestamp }}
+          pixel-name: m_ci_apple_duration_dbp_unit_tests_macos
+          pixel-params: |
+            runner: ${{ env.RUNS_ON }}
+
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
         if: always()
@@ -80,11 +97,12 @@ jobs:
           report_paths: SharedPackages/DataBrokerProtectionCore/package-tests.xml
           require_tests: true
           check_retries: true
-          
+
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
-        run: |
-          curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_dbp_main_unit_tests_ios_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
+        uses: ./.github/actions/send-pixel
+        with:
+          pixel-name: m_ci_apple_status_dbp_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}
 
       - name: Update Asana with failed unit tests
         if: always() # always run even if the previous step fails
@@ -123,12 +141,21 @@ jobs:
       runs-on: macos-15
       timeout-minutes: 30
 
+      env:
+        RUNS_ON: macos-15 # keep this in sync with runs-on above
+
       steps:
 
       - name: Check out the code
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Start measuring duration
+        id: start-duration-ios
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: start
 
       - name: Set cache key hash
         run: |
@@ -165,6 +192,7 @@ jobs:
           # mv .build/* DerivedData/SourcePackages
 
       - name: Run tests
+        id: run-unit-tests
         run: |
           set -o pipefail && xcodebuild test \
             -scheme DataBrokerProtectionCore \
@@ -178,6 +206,16 @@ jobs:
             | tee -a ios-build-log.txt \
             | xcbeautify --report junit --report-path . --junit-report-filename dbp-ios-unittests.xml
 
+      - name: Report job duration
+        if: success() || (always() && steps.run-unit-tests.outcome == 'failure')
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: stop
+          start-timestamp: ${{ steps.start-duration-ios.outputs.start-timestamp }}
+          pixel-name: m_ci_apple_duration_dbp_unit_tests_ios
+          pixel-params: |
+            runner: ${{ env.RUNS_ON }}
+
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
         if: always()
@@ -185,6 +223,12 @@ jobs:
           check_name: DBP Test Report (iOS)
           report_paths: SharedPackages/DataBrokerProtectionCore/dbp-ios-unittests.xml
           require_tests: true
+
+      - name: Send Unit Tests Status Pixel
+        if: always() && github.ref_name == 'main'
+        uses: ./.github/actions/send-pixel
+        with:
+          pixel-name: m_ci_apple_status_dbp_main_unit_tests_ios_${{ steps.run-unit-tests.outcome }}
 
       - name: Update Asana with failed unit tests
         if: always() # always run even if the previous step fails
@@ -224,6 +268,7 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
+          github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:
     name: Close Asana Task
@@ -242,3 +287,4 @@ jobs:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
+          github-token: ${{ secrets.GH_RO_PAT }}

@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
 import Common
+import Foundation
 
 enum SecureVaultItem: Equatable, Identifiable, Comparable {
 
@@ -324,7 +325,7 @@ final class PasswordManagementItemListModel: ObservableObject {
     init(passwordManagerCoordinator: PasswordManagerCoordinating,
          syncPromoManager: SyncPromoManaging,
          urlMatcher: AutofillDomainNameUrlMatcher = AutofillDomainNameUrlMatcher(),
-         tld: TLD = ContentBlocking.shared.tld,
+         tld: TLD = NSApp.delegateTyped.tld,
          autofillPreferences: AutofillPreferencesPersistor = AutofillPreferences(),
          onItemSelected: @escaping (_ old: SecureVaultItem?, _ new: SecureVaultItem?) -> Void,
          onAddItemSelected: @escaping (_ category: SecureVaultSorting.Category) -> Void) {

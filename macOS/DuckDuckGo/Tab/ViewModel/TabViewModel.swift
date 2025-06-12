@@ -38,6 +38,7 @@ final class TabViewModel {
         static let dataBrokerProtection = NSImage.personalInformationRemovalMulticolor16
         static let subscription = NSImage.privacyPro
         static let identityTheftRestoration = NSImage.identityTheftRestorationMulticolor16
+        static let aiChat = NSImage.aiChatPreferences
     }
 
     private(set) var tab: Tab
@@ -127,7 +128,7 @@ final class TabViewModel {
         switch tab.content {
         case .url(let url, _, _):
             return !(url.isDuckPlayer || url.isDuckURLScheme)
-        case .subscription, .identityTheftRestoration, .releaseNotes, .webExtensionUrl:
+        case .subscription, .identityTheftRestoration, .releaseNotes, .webExtensionUrl, .aiChat:
             return true
 
         case .newtab, .settings, .bookmarks, .history, .onboarding, .dataBrokerProtection, .none:
@@ -210,7 +211,8 @@ final class TabViewModel {
                      .subscription,
                      .identityTheftRestoration,
                      .releaseNotes,
-                     .webExtensionUrl:
+                     .webExtensionUrl,
+                     .aiChat:
                     // Update the address bar instantly for built-in content types or user-initiated navigations
                     return Just( () ).eraseToAnyPublisher()
                 }
@@ -404,6 +406,8 @@ final class TabViewModel {
                 .emailProtectionTrustedIndicator
         case .url(let url, _, _), .webExtensionUrl(let url):
             NSAttributedString(string: passiveAddressBarString(with: url, showFullURL: showFullURL))
+        case .aiChat:
+                .aiChatTrustedIndicator
         }
     }
 
@@ -453,7 +457,7 @@ final class TabViewModel {
             } else {
                 title = UserText.tabHomeTitle
             }
-        case .url, .none, .subscription, .identityTheftRestoration, .onboarding, .webExtensionUrl:
+        case .url, .none, .subscription, .identityTheftRestoration, .onboarding, .webExtensionUrl, .aiChat:
             if let tabTitle = tab.title?.trimmingWhitespace(), !tabTitle.isEmpty {
                 title = tabTitle
             } else if let host = tab.url?.host?.droppingWwwPrefix() {
@@ -506,6 +510,8 @@ final class TabViewModel {
             Favicon.emailProtection
         case .url, .onboarding, .webExtensionUrl, .none:
             tabFavicon ?? tab.favicon
+        case .aiChat:
+            Favicon.aiChat
         }
     }
 
@@ -644,5 +650,7 @@ private extension NSAttributedString {
                                                                                   title: UserText.emailProtectionPreferences)
     static let releaseNotesTrustedIndicator = trustedIndicatorAttributedString(with: .releaseNotesIndicator,
                                                                                title: UserText.releaseNotesTitle)
+    static let aiChatTrustedIndicator = trustedIndicatorAttributedString(with: .aiChatPreferences,
+                                                                         title: UserText.aiChat)
 
 }

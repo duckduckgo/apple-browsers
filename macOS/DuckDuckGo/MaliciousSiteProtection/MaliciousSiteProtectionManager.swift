@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import BrowserServicesKit
 import Combine
 import Common
@@ -128,11 +129,12 @@ public class MaliciousSiteProtectionManager: MaliciousSiteDetecting {
         dataManager: MaliciousSiteProtection.DataManager? = nil,
         detector: MaliciousSiteProtection.MaliciousSiteDetecting? = nil,
         detectionPreferences: MaliciousSiteProtectionPreferences = MaliciousSiteProtectionPreferences.shared,
-        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+        privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
         configManager: PrivacyConfigurationManaging? = nil,
         updateIntervalProvider: UpdateManager.UpdateIntervalProvider? = nil
     ) {
-        self.featureFlags = featureFlagger.maliciousSiteProtectionFeatureFlags()
+        self.featureFlags = featureFlagger.maliciousSiteProtectionFeatureFlags(configManager: privacyConfigurationManager)
 
         let embeddedDataProvider = embeddedDataProvider ?? EmbeddedDataProvider()
         let dataManager = dataManager ?? {
@@ -212,9 +214,7 @@ public class MaliciousSiteProtectionManager: MaliciousSiteDetecting {
 }
 
 extension FeatureFlagger {
-    func maliciousSiteProtectionFeatureFlags(configManager: PrivacyConfigurationManaging? = nil) -> MaliciousSiteProtectionFeatureFlags {
-        let configManager = configManager ?? AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager
-        return .init(privacyConfigManager: configManager,
-                     isMaliciousSiteProtectionEnabled: { self.isFeatureOn(.maliciousSiteProtection) })
+    func maliciousSiteProtectionFeatureFlags(configManager: PrivacyConfigurationManaging) -> MaliciousSiteProtectionFeatureFlags {
+        .init(privacyConfigManager: configManager, isMaliciousSiteProtectionEnabled: { self.isFeatureOn(.maliciousSiteProtection) })
     }
 }

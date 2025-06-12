@@ -31,6 +31,8 @@ import Common
 @testable import DuckDuckGo
 @testable import PersistenceTestingUtils
 
+// swiftlint:disable force_try
+
 final class OnboardingDaxFavouritesTests: XCTestCase {
     private var sut: MainViewController!
     private var tutorialSettingsMock: MockTutorialSettings!
@@ -159,3 +161,5 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
     }
 
 }
+
+// swiftlint:enable force_try

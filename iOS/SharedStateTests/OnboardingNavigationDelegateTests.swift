@@ -32,6 +32,8 @@ import Common
 @testable import Core
 import PersistenceTestingUtils
 
+// swiftlint:disable force_try
+
 final class OnboardingNavigationDelegateTests: XCTestCase {
 
     var mainVC: MainViewController!
@@ -205,3 +207,5 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
     }
 
 }
+
+// swiftlint:enable force_try

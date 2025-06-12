@@ -5,6 +5,7 @@ import Foundation
 import Network
 import NetworkExtension
 import Common
+import os.log
 
 /// A type alias for `Result` type that holds a tuple with source and resolved endpoint.
 typealias EndpointResolutionResult = Result<(Endpoint, Endpoint), DNSResolutionError>
@@ -113,8 +114,7 @@ final class PacketTunnelSettingsGenerator {
         }
 
         let addresses = Self.routes(from: tunnelConfiguration.interface.addresses)
-        let includedRoutes = Self.routes(from: tunnelConfiguration.interface.includedRoutes
-                                               + tunnelConfiguration.peers.reduce([]) { $0 + $1.allowedIPs })
+        let includedRoutes = Self.routes(from: tunnelConfiguration.interface.includedRoutes)
         let excludedRoutes = Self.routes(from: tunnelConfiguration.interface.excludedRoutes)
 
         let ipv4Settings = NEIPv4Settings(addresses: addresses.ipv4.map { $0.destinationAddress },
@@ -122,6 +122,17 @@ final class PacketTunnelSettingsGenerator {
         ipv4Settings.includedRoutes = includedRoutes.ipv4
         ipv4Settings.excludedRoutes = excludedRoutes.ipv4
         networkSettings.ipv4Settings = ipv4Settings
+
+        let includedRoutesDesc = includedRoutes.ipv4.reduce("") { result, route in
+            "\(result), \(route.destinationAddress)/\(route.destinationSubnetMask)"
+        }
+
+        let excludedRoutesDesc = excludedRoutes.ipv4.reduce("") { result, route in
+            "\(result), \(route.destinationAddress)/\(route.destinationSubnetMask)"
+        }
+
+        Logger.networkProtection.log("[GEN] Routing table information - Included Routes: \(includedRoutesDesc, privacy: .public)")
+        Logger.networkProtection.log("[GEN] Routing table information - Excluded Routes: \(excludedRoutesDesc, privacy: .public)")
 
         let ipv6Settings = NEIPv6Settings(addresses: addresses.ipv6.map { $0.destinationAddress },
                                           networkPrefixLengths: addresses.ipv6.map { $0.destinationNetworkPrefixLength })

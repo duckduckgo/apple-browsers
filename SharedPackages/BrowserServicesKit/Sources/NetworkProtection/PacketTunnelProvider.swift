@@ -105,7 +105,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case tokenReset
 
         // Subscription Errors - 100+
-        case vpnAccessRevoked
+        case vpnAccessRevoked(_ underlyingError: Error?)
+        case entitlementCheckFailure
 
         // State Reset - 200+
         case appRequestedCancellation
@@ -114,7 +115,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             switch self {
             case .startingTunnelWithoutAuthToken(let internalError):
                 return "Missing auth token at startup: \(internalError.debugDescription)"
-            case .vpnAccessRevoked:
+            case .vpnAccessRevoked, .entitlementCheckFailure:
                 return "VPN disconnected due to expired subscription"
             case .couldNotGenerateTunnelConfiguration(let internalError):
                 return "Failed to generate a tunnel configuration: \(internalError.localizedDescription)"
@@ -136,6 +137,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             case .tokenReset: return 3
                 // Subscription Errors - 100+
             case .vpnAccessRevoked: return 100
+            case .entitlementCheckFailure: return 101
                 // State Reset - 200+
             case .appRequestedCancellation: return 200
             }
@@ -145,6 +147,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             switch self {
             case .simulateTunnelFailureError,
                     .vpnAccessRevoked,
+                    .entitlementCheckFailure,
                     .appRequestedCancellation,
                     .tokenReset:
                 return [:]
@@ -314,7 +317,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private func subscriptionAccessErrorHandler(_ error: Error) async {
         switch error {
         case TunnelError.vpnAccessRevoked:
-            await handleAccessRevoked(attemptsShutdown: true)
+            await handleAccessRevoked(dueTo: error, attemptsShutdown: true)
         default:
             break
         }
@@ -1049,11 +1052,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 dnsSettings: dnsSettings,
                 regenerateKey: regenerateKey
             )
-        } catch {
-            if let error = error as? NetworkProtectionError, case .vpnAccessRevoked = error {
-                throw TunnelError.vpnAccessRevoked
+        } catch let error as NetworkProtectionError {
+            switch error {
+            case .vpnAccessRevoked, .noAuthTokenFound:
+                throw TunnelError.vpnAccessRevoked(error)
+            default:
+                throw TunnelError.couldNotGenerateTunnelConfiguration(internalError: error)
             }
-
+        } catch {
             throw TunnelError.couldNotGenerateTunnelConfiguration(internalError: error)
         }
 
@@ -1220,7 +1226,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             handleSendTestNotification(completionHandler: completionHandler)
         case .disableConnectOnDemandAndShutDown:
             Task { [weak self] in
-                await self?.attemptShutdownDueToRevokedAccess()
+                await self?.attemptShutdown(dueTo: TunnelError.appRequestedCancellation)
                 completionHandler?(nil)
             }
         case .removeVPNConfiguration:
@@ -1366,7 +1372,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @available(iOS 17, *)
     @MainActor
-    public func handleShutDown() async throws {
+    public func handleShutDown(dueTo error: Error) async throws {
+        enum ShutDownError: Error {
+            case noManagerFound
+        }
+
         Logger.networkProtection.log("🔴 Disabling Connect On Demand and shutting down the tunnel")
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
 
@@ -1374,14 +1384,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             Logger.networkProtection.log("Could not find a viable manager, bailing out of shutdown")
             // Doesn't matter a lot what error we throw here, since we'll try cancelling the
             // tunnel.
-            throw TunnelError.vpnAccessRevoked
+            throw TunnelError.vpnAccessRevoked(ShutDownError.noManagerFound)
         }
 
         manager.isOnDemandEnabled = false
         try await manager.saveToPreferences()
         try await manager.loadFromPreferences()
 
-        await cancelTunnel(with: TunnelError.vpnAccessRevoked)
+        await cancelTunnel(with: error)
     }
 
     private func simulateTunnelFailure(completionHandler: ((Data?) -> Void)? = nil) {
@@ -1553,7 +1563,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             /// Ignore otherwise
             switch result {
             case .invalidEntitlement:
-                await self?.handleAccessRevoked(attemptsShutdown: true)
+                await self?.handleAccessRevoked(dueTo: TunnelError.appRequestedCancellation, attemptsShutdown: true)
             case .validEntitlement, .error:
                 break
             }
@@ -1592,7 +1602,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     @MainActor
-    private func handleAccessRevoked(attemptsShutdown: Bool) async {
+    private func handleAccessRevoked(dueTo error: Error, attemptsShutdown: Bool) async {
         defaults.enableEntitlementMessaging()
         notificationsPresenter.showEntitlementNotification()
 
@@ -1602,7 +1612,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         try? await Task.sleep(interval: .seconds(5))
 
         if attemptsShutdown {
-            await attemptShutdownDueToRevokedAccess()
+            await attemptShutdown(dueTo: error)
         }
     }
 
@@ -1613,16 +1623,16 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     ///
 #if os(macOS)
     @MainActor
-    private func attemptShutdownDueToRevokedAccess() async {
+    private func attemptShutdown(dueTo error: Error) async {
         Logger.networkProtection.log("Shutting down due to revoked access")
         let cancelTunnel = {
             try? await self.tokenHandlerProvider().removeToken()
-            self.cancelTunnelWithError(TunnelError.vpnAccessRevoked)
+            self.cancelTunnelWithError(error)
         }
 
         if #available(iOS 17, *) {
             do {
-                try await handleShutDown()
+                try await handleShutDown(dueTo: error)
             } catch {
                 await cancelTunnel()
             }
@@ -1632,14 +1642,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
     #else
     @MainActor
-    private func attemptShutdownDueToRevokedAccess() async {
+    private func attemptShutdown(dueTo error: Error) async {
         let cancelTunnel = {
-            self.cancelTunnelWithError(TunnelError.vpnAccessRevoked)
+            self.cancelTunnelWithError(error)
         }
 
         if #available(iOS 17, *) {
             do {
-                try await handleShutDown()
+                try await handleShutDown(dueTo: error)
             } catch {
                 cancelTunnel()
             }

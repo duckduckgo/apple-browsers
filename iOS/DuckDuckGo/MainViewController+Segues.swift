@@ -88,7 +88,8 @@ extension MainViewController {
                                     bookmarksSearch: self.bookmarksCachingSearch,
                                     syncService: self.syncService,
                                     syncDataProviders: self.syncDataProviders,
-                                    appSettings: self.appSettings)
+                                    appSettings: self.appSettings,
+                                    keyValueStore: self.keyValueStore)
         }
         bookmarks.delegate = self
 

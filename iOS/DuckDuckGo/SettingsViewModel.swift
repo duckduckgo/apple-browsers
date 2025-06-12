@@ -78,7 +78,6 @@ final class SettingsViewModel: ObservableObject {
     // App Data State Notification Observer
     private var appDataClearingObserver: Any?
     private var textZoomObserver: Any?
-    private var dataImportObserver: Any?
     private var appForegroundObserver: Any?
 
     // Subscription Free Trials
@@ -538,7 +537,6 @@ final class SettingsViewModel: ObservableObject {
         appDataClearingObserver = nil
         textZoomObserver = nil
         if #available(iOS 18.2, *) {
-            dataImportObserver = nil
             appForegroundObserver = nil
         }
     }
@@ -1065,11 +1063,6 @@ extension SettingsViewModel {
         })
 
         if #available(iOS 18.2, *) {
-            dataImportObserver = NotificationCenter.default.addObserver(forName: DataImportViewController.Notifications.dataImported, object: nil, queue: .main) { [weak self] _ in
-                guard let self = self else { return }
-                self.permanentlyDismissCompleteSetupSection()
-            }
-
             appForegroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { [weak self] _ in
                 guard let self = self else { return }
                 if self.shouldShowSetAsDefaultBrowser {

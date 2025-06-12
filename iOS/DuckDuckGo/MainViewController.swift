@@ -1479,7 +1479,8 @@ class MainViewController: UIViewController {
             openSearch: openSearch,
             source: source,
             bookmarksDatabase: self.bookmarksDatabase,
-            favoritesDisplayMode: self.appSettings.favoritesDisplayMode
+            favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
+            keyValueStore: self.keyValueStore
         )
         autofillLoginListViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: autofillLoginListViewController)

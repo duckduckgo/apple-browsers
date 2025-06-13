@@ -68,7 +68,7 @@ final class VPNService: NSObject {
     }
 
     private func presentExpiredEntitlementNotificationIfNeeded() {
-        let presenter = NetworkProtectionNotificationsPresenterTogglableDecorator(
+        let presenter = VPNNotificationsPresenterTogglableDecorator(
             settings: AppDependencyProvider.shared.vpnSettings,
             defaults: .networkProtectionGroupDefaults,
             wrappee: NetworkProtectionUNNotificationPresenter()

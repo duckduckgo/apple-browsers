@@ -169,7 +169,7 @@ extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
 
     func didClickOpenInNewTabButton(currentAIChatURL: URL) {
         Task { @MainActor in
-            NSApp.delegateTyped.aiChatTabOpener.openNewAIChatTab(currentAIChatURL, target: .newTabSelected)
+            Application.appDelegate.aiChatTabOpener.openNewAIChatTab(currentAIChatURL, target: .newTabSelected)
         }
     }
 

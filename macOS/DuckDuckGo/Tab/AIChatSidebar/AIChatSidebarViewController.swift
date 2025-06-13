@@ -247,7 +247,7 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     @objc private func openInNewTabButtonClicked() {
-        delegate?.didClickOpenInNewTabButton(currentAIChatURL: currentAIChatURL)
+        delegate?.didClickOpenInNewTabButton(currentAIChatURL: currentAIChatURL.removingPlacementParameter())
     }
 
     @objc private func closeButtonClicked() {

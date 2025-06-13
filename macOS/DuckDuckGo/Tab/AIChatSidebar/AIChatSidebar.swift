@@ -52,10 +52,12 @@ final class AIChatSidebar: NSObject {
         }
     }
 
+    private let aiChatRemoteSettings = AIChatRemoteSettings()
+
     /// Creates a sidebar wrapper with the specified initial AI chat URL.
     /// - Parameter initialAIChatURL: The initial AI chat URL to load. If nil, defaults to the URL from AIChatRemoteSettings.
     init(initialAIChatURL: URL? = nil) {
-        self.initialAIChatURL = initialAIChatURL ?? AIChatRemoteSettings().aiChatURL
+        self.initialAIChatURL = initialAIChatURL ?? aiChatRemoteSettings.aiChatURL.forSidebar()
     }
 }
 
@@ -78,5 +80,25 @@ extension AIChatSidebar: NSSecureCoding {
 
     static var supportsSecureCoding: Bool {
         return true
+    }
+}
+
+fileprivate extension URL {
+
+    enum PlacementParameter {
+        static let name = "placement"
+        static let sidebar = "sidebar"
+    }
+
+    func forSidebar() -> URL {
+        self.appendingParameter(name: PlacementParameter.name, value: PlacementParameter.sidebar)
+    }
+
+}
+
+extension URL {
+
+    public func removingPlacementParameter() -> URL {
+        self.removingParameters(named: [PlacementParameter.name])
     }
 }

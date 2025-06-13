@@ -133,7 +133,7 @@ jobs:
         workspace: .maestro
         include-tags: ${{ matrix.test-tag }}
         env: ONBOARDING_COMPLETED=true,DEVICE_TYPE=${{ matrix.device-env }}
-        device-os: 18.2
+        device-os: 18
         device-model: ${{ matrix.device-model }}
 
     - name: Report job duration

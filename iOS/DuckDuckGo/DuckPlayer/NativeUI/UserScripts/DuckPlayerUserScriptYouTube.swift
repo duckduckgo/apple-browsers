@@ -38,8 +38,8 @@ final class DuckPlayerUserScriptYouTube: NSObject, Subfeature {
     
     private var otherEventsQueue: [QueuedEvent] = []
     private var areScriptsReady = false
-    private var duckPlayer: DuckPlayerControlling
-    private var webView: WKWebView?
+    private weak var duckPlayer: DuckPlayerControlling?
+    private weak var webView: WKWebView?
     private var cancellables = Set<AnyCancellable>()
 
     weak var broker: UserScriptMessageBroker?
@@ -64,19 +64,19 @@ final class DuckPlayerUserScriptYouTube: NSObject, Subfeature {
 
     private func setupSubscriptions() {
 
-        duckPlayer.mediaControlPublisher
+        duckPlayer?.mediaControlPublisher
             .sink { [weak self] pause in
                 self?.handleMediaControl(pause: pause)
             }
             .store(in: &cancellables)
 
-        duckPlayer.muteAudioPublisher
+        duckPlayer?.muteAudioPublisher
             .sink { [weak self] mute in
                 self?.handleMuteAudio(mute: mute)
             }
             .store(in: &cancellables)
 
-        duckPlayer.urlChangedPublisher
+        duckPlayer?.urlChangedPublisher
             .sink { [weak self] url in
                 self?.onUrlChanged(url: url)
             }
@@ -196,7 +196,7 @@ final class DuckPlayerUserScriptYouTube: NSObject, Subfeature {
               let timeInterval = Double(timeString) else {
             return [:] as [String: String]
         }
-        duckPlayer.currentTimeStampPublisher.send(timeInterval)
+        duckPlayer?.currentTimeStampPublisher.send(timeInterval)
         return [:] as [String: String]
     }
 

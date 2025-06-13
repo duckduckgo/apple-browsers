@@ -16,12 +16,7 @@
 //  limitations under the License.
 //
 
-import AppLauncher
 import Foundation
-import UserNotifications
-import NetworkProtection
-import NetworkProtectionUI
-import VPNAppLauncher
 
 final class UserText {
 

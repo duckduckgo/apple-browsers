@@ -20,7 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 
-struct PrivacyProtectionDescription {
+struct PreferencesDescription {
     let imageName: String
     let title: String
     let status: StatusIndicator
@@ -28,9 +28,9 @@ struct PrivacyProtectionDescription {
 }
 
 // Universal protection description view
-struct PrivacyProtectionDescriptionView: View {
+struct PreferencesDescriptionView: View {
 
-    let content: PrivacyProtectionDescription
+    let content: PreferencesDescription
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var body: some View {

@@ -478,6 +478,10 @@ final class SettingsViewModel: ObservableObject {
         subscriptionAuthV1toV2Bridge.isUserAuthenticated
     }
 
+    var isPaidAIChatAvailable: Bool {
+        state.subscription.subscriptionFeatures.contains(Entitlement.ProductName.paidAIChat)
+    }
+
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
@@ -723,6 +727,10 @@ extension SettingsViewModel {
     func openMoreSearchSettings() {
         Pixel.fire(pixel: .settingsMoreSearchSettings)
         UIApplication.shared.open(URL.searchSettings)
+    }
+
+    func openAIChat() {
+        UIApplication.shared.open(AppDeepLinkSchemes.openAIChat.url)
     }
 
     var shouldDisplayDuckPlayerContingencyMessage: Bool {

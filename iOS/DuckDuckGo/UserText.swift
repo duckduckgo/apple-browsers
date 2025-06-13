@@ -1362,7 +1362,9 @@ Take back control of your personal information with the browser designed for dat
     public static let subscriptionSubscribed = NSLocalizedString("subscription.subscribed", value: "Subscribed", comment: "Subtitle in header when subscribed")
     public static let subscriptionCloseButton = NSLocalizedString("subscription.close", value: "Close", comment: "Navigation Button for closing subscription view")
     public static let trialSubscription = NSLocalizedString("subscription.trial", value: "Free Trial Active", comment: "Subtitle in header when on a free trial subscription")
-
+    public static let aiChatSubscriptionTitle = NSLocalizedString("subscription.duck.ai.title", value: "Duck.ai", comment: "Title of the setting page of Duck.ai")
+    static let aiChatSubscriptionCaption = NSLocalizedString("subscription.duck.ai.caption", value: "Upgrades Duck.ai with advanced AI models.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)", comment: "Caption of the Duck.ai settings (do not modify link)")
+    public static let openSubscriptionAIChat = NSLocalizedString("subscription.duck.ai.open", value: "Open Duck.ai", comment: "Title of the setting page action to open Duck.ai")
 
     static func renewingSubscriptionInfo(billingPeriod: PrivacyProSubscription.BillingPeriod, renewalDate: String) -> String {
         let localized: String

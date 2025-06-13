@@ -39,6 +39,7 @@ struct SettingsSubscriptionView: View {
     @State var isShowingDBP = false
     @State var isShowingITP = false
     @State var isShowingVPN = false
+    @State var isShowingPaidAIChat = false
     @State var isShowingRestoreFlow = false
     @State var isShowingGoogleView = false
     @State var isShowingStripeView = false
@@ -277,7 +278,7 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
             let hasAIChatEntitlement = userEntitlements.contains(.paidAIChat)
 
-            NavigationLink(destination: LazyView(SubscriptionPIRView()), isActive: $isShowingDBP) {
+            NavigationLink(destination: LazyView(SubscriptionDuckAIView(viewModel: settingsViewModel)), isActive: $isShowingPaidAIChat) {
                 SettingsCellView(
                     label: UserText.settingsSubscriptionAiChatTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),

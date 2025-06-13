@@ -44,14 +44,7 @@ final class VPNNotificationsObserver {
 
     private var cancellables = Set<AnyCancellable>()
 
-    func applicationDidFinishLaunching(_ aNotification: Notification) {
-        Logger.networkProtection.info("Login item finished launching")
-
-        startObservingVPNStatusChanges()
-        Logger.networkProtection.log("Login item listening")
-    }
-
-    private func startObservingVPNStatusChanges() {
+    func startObservingVPNStatusChanges() {
         Logger.networkProtection.log("Register with sysex")
 
         distributedNotificationCenter.publisher(for: .showIssuesStartedNotification)

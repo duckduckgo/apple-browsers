@@ -328,6 +328,8 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
+    private let vpnNotificationsObserver = VPNNotificationsObserver()
+
     @MainActor
     private lazy var vpnAppEventsHandler = {
         VPNAppEventsHandler(tunnelController: tunnelController, appState: vpnAppState)
@@ -490,6 +492,8 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
         Logger.networkProtection.log("DuckDuckGoVPN started")
+
+        vpnNotificationsObserver.startObservingVPNStatusChanges()
 
         // Setup Remote Configuration
         Configuration.setURLProvider(VPNAgentConfigurationURLProvider())

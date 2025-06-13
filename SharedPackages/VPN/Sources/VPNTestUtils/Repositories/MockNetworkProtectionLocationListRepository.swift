@@ -40,7 +40,7 @@ final class MockNetworkProtectionLocationListRepository: NetworkProtectionLocati
         }
     }
 
-    func fetchLocationListIgnoringCache() async throws -> [NetworkProtection.NetworkProtectionLocation] {
+    func fetchLocationListIgnoringCache() async throws -> [VPN.NetworkProtectionLocation] {
         spyIgnoreCache = true
         return try await fetchLocationList()
     }

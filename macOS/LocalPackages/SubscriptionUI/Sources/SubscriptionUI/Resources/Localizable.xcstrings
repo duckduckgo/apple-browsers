@@ -1853,6 +1853,19 @@
         }
       }
     },
+    "subscription.paid.ai.chat.title" : {
+      "comment" : "Title of the preferences pane for Duck.ai Pro",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Pro"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "subscription.preferences.button.view.plans" : {
       "comment" : "Button for viewing subscription plans on expired subscription",
       "extractionState" : "extracted_with_value",
@@ -2393,6 +2406,19 @@
         }
       }
     },
+    "subscription.preferences.paid.ai.chat.button" : {
+      "comment" : "Title for the preferences pane button to open Duck.ai Pro",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai Pro"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "subscription.preferences.personal.information.removal.title" : {
       "comment" : "Title of the preferences pane for Personal Information Removal",
       "extractionState" : "extracted_with_value",
@@ -2932,6 +2958,32 @@
           }
         }
       }
+    },
+    "subscription.preferences.services.paid.ai.chat.description" : {
+      "comment" : "Description for the Duck.ai premium service listed in the subscription preferences pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Upgrades Duck.ai with advanced AI models."
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "subscription.preferences.services.paid.ai.chat.title" : {
+      "comment" : "Title for the duck.ai premium listed in the subscription preferences pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Pro"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "subscription.preferences.services.personal.information.removal.button.title" : {
       "comment" : "Title for the Personal Information Removal service button to open its settings",
@@ -4563,6 +4615,25 @@
       "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Two premium protections and Duck.ai Pro in one subscription."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Deux protections haut de gamme dans un seul abonnement."
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "subscription.preferences.subscription.inactive.row.caption.deprecated" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4620,6 +4691,25 @@
       }
     },
     "subscription.preferences.subscription.inactive.us.caption" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Three premium protections and Duck.ai Pro in one subscription."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trois protections haut de gamme en un seul abonnement."
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "subscription.preferences.subscription.inactive.us.caption.deprecated" : {
       "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
       "extractionState" : "extracted_with_value",
       "localizations" : {

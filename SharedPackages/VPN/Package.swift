@@ -11,7 +11,7 @@ let package = Package(
     ],
     products: [
         .library(name: "VPN", targets: ["VPN"]),
-        .library(name: "VPNTestUtils", targets: ["VPN"]),
+        .library(name: "VPNTestUtils", targets: ["VPNTestUtils"]),
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),

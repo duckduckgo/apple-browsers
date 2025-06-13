@@ -1571,8 +1571,8 @@
 		D6FEB8B52B74994000C3615F /* HeadlessWebViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FEB8B42B74994000C3615F /* HeadlessWebViewCoordinator.swift */; };
 		EA39B7E2268A1A35000C62CD /* privacy-reference-tests in Resources */ = {isa = PBXBuildFile; fileRef = EA39B7E1268A1A35000C62CD /* privacy-reference-tests */; };
 		EAB19EDA268963510015D3EA /* DomainMatchingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB19ED9268963510015D3EA /* DomainMatchingTests.swift */; };
-		EE00D2D42DFB295900B79E9D /* UserDefaults+Autofill.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00D2D32DFB295000B79E9D /* UserDefaults+Autofill.swift */; };
 		EE00D2D72DFB2D4900B79E9D /* AutofillUsageStore+App.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00D2D62DFB2D4000B79E9D /* AutofillUsageStore+App.swift */; };
+		EE00D2D82DFC3A3300B79E9D /* UserDefaults+Autofill.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00D2D32DFB295000B79E9D /* UserDefaults+Autofill.swift */; };
 		EE0153E12A6EABE0002A8B26 /* NetworkProtectionConvenienceInitialisers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0153E02A6EABE0002A8B26 /* NetworkProtectionConvenienceInitialisers.swift */; };
 		EE0153ED2A6FF9E6002A8B26 /* NetworkProtectionRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0153EC2A6FF9E6002A8B26 /* NetworkProtectionRootView.swift */; };
 		EE01EB402AFBD0000096AAC9 /* NetworkProtectionVPNSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE01EB3F2AFBD0000096AAC9 /* NetworkProtectionVPNSettingsViewModel.swift */; };
@@ -6907,6 +6907,7 @@
 				C19D90D02CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift */,
 				C1CAAA992CFCAD3E00C37EE6 /* AutofillLoginItem.swift */,
 				C1CAAA9B2CFCB39800C37EE6 /* AutofillLoginListSorting.swift */,
+				EE00D2D32DFB295000B79E9D /* UserDefaults+Autofill.swift */,
 			);
 			name = Autofill;
 			sourceTree = "<group>";
@@ -8182,7 +8183,6 @@
 			isa = PBXGroup;
 			children = (
 				EE00D2D52DFB2D3000B79E9D /* Usage */,
-				EE00D2D32DFB295000B79E9D /* UserDefaults+Autofill.swift */,
 				F4147353283BF834004AA7A5 /* AutofillContentScopeFeatureToggles.swift */,
 				C1D21E2C293A5965006E5A05 /* AutofillLoginSession.swift */,
 				C1CDA3152AFB9C7F006D1476 /* AutofillNeverPromptWebsitesManager.swift */,
@@ -9754,7 +9754,6 @@
 				6FD7D9962D9D30C500420D0C /* OmniBarProgressView.swift in Sources */,
 				1DDF40292BA04FCD006850D9 /* SettingsPrivacyProtectionsView.swift in Sources */,
 				6526CA6F2D70CE2A0048819E /* DuckPlayerState.swift in Sources */,
-				EE00D2D42DFB295900B79E9D /* UserDefaults+Autofill.swift in Sources */,
 				BDE91CD82C629A910005CB74 /* UnifiedFeedbackSender.swift in Sources */,
 				7B4DC5C32CB2AF0700EE5CC2 /* WidgetKind.swift in Sources */,
 				6F64AA5F2C49463C00CF4489 /* ShortcutsModel.swift in Sources */,
@@ -10732,6 +10731,7 @@
 				EE7A92872AC6DE4700832A36 /* NetworkProtectionNotificationIdentifier.swift in Sources */,
 				836A941D247F23C600BF8EF5 /* UserAgentManager.swift in Sources */,
 				F143C3181E4A99D200CFDE3A /* Link.swift in Sources */,
+				EE00D2D82DFC3A3300B79E9D /* UserDefaults+Autofill.swift in Sources */,
 				6F03CB092C32F331004179A8 /* PixelFiringAsync.swift in Sources */,
 				37CEFCAC2A673B90001EF741 /* CredentialsCleanupErrorHandling.swift in Sources */,
 				CB2A7EF128410DF700885F67 /* PixelEvent.swift in Sources */,

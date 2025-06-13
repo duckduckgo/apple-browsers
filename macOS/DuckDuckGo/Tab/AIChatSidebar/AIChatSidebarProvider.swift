@@ -49,6 +49,9 @@ protocol AIChatSidebarProviding: AnyObject {
     /// This dictionary maintains the state of all chat sidebars across different browser tabs.
     var model: AIChatSidebarProviderModel { get }
 
+    /// Restores the sidebar provider's state from a previously saved model.
+    /// This method cleans up all existing sidebars and replaces the current model with the provided one.
+    /// - Parameter model: The sidebar model to restore, containing tab IDs mapped to their chat sidebars
     func restoreModel(_ model: AIChatSidebarProviderModel)
 }
 

@@ -56,7 +56,7 @@ final class WindowsManager {
 
     @discardableResult
     class func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel? = nil,
-                             aiChatSidebarModel: AIChatSidebarProviderModel? = nil,
+                             aiChatSidebarProvider: AIChatSidebarProviding = Application.appDelegate.aiChatSidebarProvider,
                              burnerMode: BurnerMode = .regular,
                              droppingPoint: NSPoint? = nil,
                              contentSize: NSSize? = nil,
@@ -70,7 +70,7 @@ final class WindowsManager {
                                                  popUp: popUp,
                                                  burnerMode: burnerMode,
                                                  autofillPopoverPresenter: autofillPopoverPresenter,
-                                                 aiChatSidebarModel: aiChatSidebarModel)
+                                                 aiChatSidebarProvider: aiChatSidebarProvider)
 
         if let contentSize {
             mainWindowController.window?.setContentSize(contentSize)
@@ -189,12 +189,12 @@ final class WindowsManager {
                                      burnerMode: BurnerMode,
                                      autofillPopoverPresenter: AutofillPopoverPresenter,
                                      fireCoordinator: FireCoordinator? = nil,
-                                     aiChatSidebarModel: AIChatSidebarProviderModel?) -> MainWindowController {
+                                     aiChatSidebarProvider: AIChatSidebarProviding) -> MainWindowController {
         let fireCoordinator = fireCoordinator ?? NSApp.delegateTyped.fireCoordinator
         let mainViewController = MainViewController(
             tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode),
             autofillPopoverPresenter: autofillPopoverPresenter,
-            aiChatSidebarModel: aiChatSidebarModel,
+            aiChatSidebarProvider: aiChatSidebarProvider,
             fireCoordinator: fireCoordinator
         )
 

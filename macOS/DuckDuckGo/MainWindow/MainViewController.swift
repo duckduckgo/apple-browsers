@@ -34,7 +34,6 @@ final class MainViewController: NSViewController {
     let navigationBarViewController: NavigationBarViewController
     let browserTabViewController: BrowserTabViewController
     let aiChatSidebarPresenter: AIChatSidebarPresenting
-    let aiChatSidebarProvider: AIChatSidebarProviding
     let findInPageViewController: FindInPageViewController
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
@@ -88,7 +87,7 @@ final class MainViewController: NSViewController {
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
-         aiChatSidebarModel: AIChatSidebarProviderModel? = nil,
+         aiChatSidebarProvider: AIChatSidebarProviding,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
@@ -158,7 +157,6 @@ final class MainViewController: NSViewController {
         }()
 
         browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
-        aiChatSidebarProvider = AIChatSidebarProvider(currentState: aiChatSidebarModel)
         aiChatSidebarPresenter = AIChatSidebarPresenter(sidebarHost: browserTabViewController,
                                                         sidebarProvider: aiChatSidebarProvider)
 
@@ -809,7 +807,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
     )
     bkman.loadBookmarks()
 
-    let vc = MainViewController(bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+    let vc = MainViewController(bookmarkManager: bkman, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider())
     var c: AnyCancellable!
     c = vc.publisher(for: \.view.window).sink { window in
         window?.titlebarAppearsTransparent = true

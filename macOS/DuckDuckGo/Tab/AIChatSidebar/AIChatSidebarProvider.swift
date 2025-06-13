@@ -48,6 +48,8 @@ protocol AIChatSidebarProviding: AnyObject {
     /// The underlying model containing all active chat sidebars mapped by their tab identifiers.
     /// This dictionary maintains the state of all chat sidebars across different browser tabs.
     var model: AIChatSidebarProviderModel { get }
+
+    func restoreModel(_ model: AIChatSidebarProviderModel)
 }
 
 final class AIChatSidebarProvider: AIChatSidebarProviding {
@@ -91,5 +93,10 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         for tabID in tabIDsForRemoval {
             handleSidebarDidClose(for: tabID)
         }
+    }
+
+    func restoreModel(_ model: AIChatSidebarProviderModel) {
+        cleanUp(for: [])
+        self.model = model
     }
 }

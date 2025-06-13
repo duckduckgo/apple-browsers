@@ -201,15 +201,12 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 }
 
 extension DefaultSubscriptionManager: SubscriptionTokenProvider {
+
     public func getAccessToken() async throws -> String {
         guard let token = accountManager.accessToken else {
-            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+            throw SubscriptionManagerError.noTokenAvailable
         }
         return token
-    }
-
-    public func removeAccessToken() {
-        try? accountManager.removeAccessToken()
     }
 }
 

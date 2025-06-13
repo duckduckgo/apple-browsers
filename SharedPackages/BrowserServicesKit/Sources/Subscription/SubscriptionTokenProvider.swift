@@ -24,7 +24,4 @@ public protocol SubscriptionTokenProvider {
 
     /// Get a valid access token
     func getAccessToken() async throws -> String
-
-    /// Remove the access token
-    func removeAccessToken()
 }

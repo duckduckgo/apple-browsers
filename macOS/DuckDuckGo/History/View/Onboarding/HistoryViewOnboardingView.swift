@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import SwiftUI
 import SwiftUIExtensions
 
 struct HistoryViewOnboardingView: View {

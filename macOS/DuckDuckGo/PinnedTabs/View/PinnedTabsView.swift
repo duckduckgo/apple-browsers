@@ -19,7 +19,7 @@
 import SwiftUI
 
 struct PinnedTabsView: View {
-    private let tabStyleProvider: TabStyleProviding = NSApp.delegateTyped.visualStyleManager.style.tabStyleProvider
+    private let tabStyleProvider: TabStyleProviding = NSApp.delegateTyped.visualStyle.tabStyleProvider
 
     @ObservedObject var model: PinnedTabsViewModel
     @State private var draggedTab: Tab?

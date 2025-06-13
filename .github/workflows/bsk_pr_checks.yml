@@ -93,7 +93,7 @@ jobs:
         if: always() && github.ref_name == 'main'
         uses: ./.github/actions/send-pixel
         with:
-          pixel-name: m_ci_apple_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}
+          pixel-name: m_ci_apple_status_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}
 
       - name: Report job duration
         if: success() || (always() && steps.run-unit-tests.outcome == 'failure')
@@ -101,7 +101,7 @@ jobs:
         with:
           mode: stop
           start-timestamp: ${{ steps.start-duration-macos.outputs.start-timestamp }}
-          pixel-name: m_ci_apple_bsk_unit_tests_macos_duration
+          pixel-name: m_ci_apple_duration_bsk_unit_tests_macos
           pixel-params: |
             runner: ${{ env.RUNS_ON }}
 
@@ -247,7 +247,7 @@ jobs:
         with:
           mode: stop
           start-timestamp: ${{ steps.start-duration-ios.outputs.start-timestamp }}
-          pixel-name: m_ci_apple_bsk_unit_tests_ios_duration
+          pixel-name: m_ci_apple_duration_bsk_unit_tests_ios
           pixel-params: |
             runner: ${{ env.RUNS_ON }}
 
@@ -255,7 +255,7 @@ jobs:
         if: always() && github.ref_name == 'main'
         uses: ./.github/actions/send-pixel
         with:
-          pixel-name: m_ci_apple_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
+          pixel-name: m_ci_apple_status_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4

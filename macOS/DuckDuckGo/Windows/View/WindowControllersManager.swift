@@ -82,9 +82,11 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     }
 
     init(pinnedTabsManagerProvider: PinnedTabsManagerProviding,
-         subscriptionFeatureAvailability: SubscriptionFeatureAvailability) {
+         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+         internalUserDecider: InternalUserDecider) {
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
+        self.internalUserDecider = internalUserDecider
     }
 
     /**
@@ -94,6 +96,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     @Published private(set) var mainWindowControllers = [MainWindowController]()
     private(set) var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
+    private let internalUserDecider: InternalUserDecider
 
     weak var lastKeyMainWindowController: MainWindowController? {
         didSet {
@@ -415,6 +418,16 @@ extension WindowControllersManager {
         windowController.mainViewController.navigationBarViewController.showNetworkProtectionStatus()
     }
 
+    /// Shows the non-privacy pro feedback modal
+    func showFeedbackModal(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
+        if internalUserDecider.isInternalUser {
+            showTab(with: .url(.internalFeedbackForm, source: .ui))
+        } else {
+            FeedbackPresenter.presentFeedbackForm(preselectedFormOption: preselectedFormOption)
+        }
+    }
+
+    /// Shows the Privacy Pro feedback modal
     func showShareFeedbackModal(source: UnifiedFeedbackSource = .default) {
         let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source)
         let feedbackFormWindowController = feedbackFormViewController.wrappedInWindowController()

@@ -43,6 +43,19 @@ final class FeedbackViewController: NSViewController {
             default: return nil
             }
         }
+
+        var tag: Int {
+            switch self {
+            case .feedback(let feedbackCategory):
+                switch feedbackCategory {
+                case .bug: return 1
+                case .featureRequest: return 2
+                case .other: return 3
+                case .generalFeedback, .designFeedback, .usability, .dataImport:
+                    return -1 // Unsupported categories
+                }
+            }
+        }
     }
     @IBOutlet weak var titleLabel: NSTextField!
     @IBOutlet weak var okButton: NSButton!
@@ -83,6 +96,13 @@ final class FeedbackViewController: NSViewController {
         return url.trimmingQueryItemsAndFragment()
     }
 
+    /// Optional pre-selected form option to initialize the feedback form with
+    var preselectedFormOption: FormOption? {
+        didSet {
+            setupPreselectedOption()
+        }
+    }
+
     private let feedbackSender = FeedbackSender()
 
     override func viewDidLoad() {
@@ -90,6 +110,7 @@ final class FeedbackViewController: NSViewController {
 
         setContentViewHeight(Constants.defaultContentHeight, animated: false)
         setupTextViews()
+        setupPreselectedOption()
     }
 
     override func viewDidAppear() {
@@ -294,6 +315,20 @@ final class FeedbackViewController: NSViewController {
             unsupportedOsView.isHidden = false
             unsupportedOsChildView = view
         }
+    }
+
+    private func setupPreselectedOption() {
+        guard let preselectedFormOption = preselectedFormOption else {
+            return
+        }
+
+        let tag = preselectedFormOption.tag
+        guard tag >= 0, let menuItem = optionPopUpButton.menu?.item(withTag: tag) else {
+            return
+        }
+
+        optionPopUpButton.select(menuItem)
+        updateViews()
     }
 
 }

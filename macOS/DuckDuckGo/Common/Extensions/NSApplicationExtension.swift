@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import Cocoa
+import AppKit
 import Combine
 
 extension NSApplication {

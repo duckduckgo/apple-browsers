@@ -21,7 +21,7 @@ import Cocoa
 enum FeedbackPresenter {
 
     @MainActor
-    static func presentFeedbackForm() {
+    static func presentFeedbackForm(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
         // swiftlint:disable:next force_cast
         let windowController = NSStoryboard.feedback.instantiateController(withIdentifier: "FeedbackWindowController") as! NSWindowController
 
@@ -31,6 +31,7 @@ enum FeedbackPresenter {
             return
         }
 
+        feedbackWindow.feedbackViewController.preselectedFormOption = preselectedFormOption
         feedbackWindow.feedbackViewController.currentTab =
             parentWindowController.mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab
         parentWindowController.window?.beginSheet(feedbackWindow) { _ in }

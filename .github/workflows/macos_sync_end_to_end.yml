@@ -176,7 +176,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_macos_${{ matrix.os-version }}_sync_tests_duration
+        pixel-name: m_ci_apple_duration_macos_${{ matrix.os-version }}_sync_tests
         pixel-params: |
           runner: ${{ matrix.runner }}
 

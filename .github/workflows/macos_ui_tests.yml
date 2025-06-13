@@ -276,7 +276,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ needs.setup-tests.outputs.start-timestamp }}
-        pixel-name: ${{ (needs.setup-tests.outputs.all-os-versions == true) && 'm_ci_apple_macos_ui_tests_all_duration' || 'm_ci_apple_macos_ui_tests_latest_duration' }}
+        pixel-name: ${{ (needs.setup-tests.outputs.all-os-versions == true) && 'm_ci_apple_duration_macos_ui_tests_all' || 'm_ci_apple_duration_macos_ui_tests_latest' }}
 
   notify-failure:
     name: Notify on failure

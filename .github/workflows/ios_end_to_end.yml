@@ -123,7 +123,7 @@ jobs:
 
     - name: End to End tests on ${{ matrix.device-env }}
       id: upload
-      uses: loremattei/action-maestro-cloud@fix-timeout-handling
+      uses: mobile-dev-inc/action-maestro-cloud@fix-timeout-handling
       with:
         api-key: ${{ secrets.ROBIN_API_KEY }}
         project-id: ${{ vars.ROBIN_PROJECT_KEY }}

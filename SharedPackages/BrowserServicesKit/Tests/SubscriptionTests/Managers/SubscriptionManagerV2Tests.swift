@@ -243,12 +243,12 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
     func testDeadTokenRecoveryFailure() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.refreshTokenExpired)
-        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = SubscriptionManagerError.tokenRefreshFailed(error: nil)
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = SubscriptionManagerError.errorRetrievingTokenContainer(error: nil)
 
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
             XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
-        } catch SubscriptionManagerError.tokenUnavailable {
+        } catch SubscriptionManagerError.noTokenAvailable {
 
         } catch {
             XCTFail("Wrong error: \(error)")
@@ -263,7 +263,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
             XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
-        } catch SubscriptionManagerError.tokenUnavailable {
+        } catch SubscriptionManagerError.noTokenAvailable {
 
         } catch {
             XCTFail("Unexpected error: \(error)")
@@ -272,7 +272,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
             XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
-        } catch SubscriptionManagerError.tokenUnavailable {
+        } catch SubscriptionManagerError.noTokenAvailable {
 
         } catch {
             XCTFail("Unexpected error: \(error)")

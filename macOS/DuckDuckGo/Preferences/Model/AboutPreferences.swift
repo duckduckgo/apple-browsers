@@ -136,10 +136,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         return SupportedOSChecker.isCurrentOSReceivingUpdates
     }
 
+#if FEEDBACK
     @MainActor
     func openFeedbackForm() {
         NSApp.delegateTyped.openFeedback(nil)
     }
+#endif
 
     func copy(_ value: String) {
         NSPasteboard.general.copy(value)

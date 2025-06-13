@@ -15,7 +15,10 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+
+import AppKit
 import DesignResourcesKitIcons
+import Foundation
 
 protocol AddressBarStyleProviding {
     func navigationBarHeight(for type: AddressBarSizeClass) -> CGFloat
@@ -123,8 +126,8 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
 }
 
 final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
-    private let navigationBarHeightForDefault: CGFloat = 52
-    private let navigationBarHeightForHomePage: CGFloat = 52
+    private let navigationBarHeightForDefault: CGFloat = 51
+    private let navigationBarHeightForHomePage: CGFloat = 51
     private let navigationBarHeightForPopUpWindow: CGFloat = 42
     private let addressBarTopPaddingForDefault: CGFloat = 6
     private let addressBarTopPaddingForHomePage: CGFloat = 6

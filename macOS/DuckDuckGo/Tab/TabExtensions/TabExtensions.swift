@@ -24,6 +24,7 @@ import History
 import MaliciousSiteProtection
 import PrivacyDashboard
 import SpecialErrorPages
+import WebKit
 
 /**
  Tab Extensions should conform to TabExtension protocol
@@ -259,6 +260,13 @@ extension TabExtensionsBuilder {
             add {
                 NetworkProtectionControllerTabExtension(tunnelController: tunnelController)
             }
+        }
+
+        add {
+            InternalFeedbackFormTabExtension(
+                webViewPublisher: args.webViewFuture,
+                internalUserDecider: dependencies.featureFlagger.internalUserDecider
+            )
         }
     }
 

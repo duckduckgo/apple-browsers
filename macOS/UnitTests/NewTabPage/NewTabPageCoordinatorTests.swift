@@ -74,7 +74,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             activeRemoteMessageModel: ActiveRemoteMessageModel(
                 remoteMessagingStore: MockRemoteMessagingStore(),
                 remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
-                openURLHandler: { _ in }
+                openURLHandler: { _ in },
+                navigateToFeedbackHandler: { }
             ),
             historyCoordinator: HistoryCoordinatingMock(),
             contentBlocking: ContentBlockingMock(),
@@ -88,6 +89,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                 freemiumDBPExperimentPixelHandler: MockFreemiumDBPExperimentPixelHandler()
             ),
             tld: Application.appDelegate.tld,
+            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),
             keyValueStore: keyValueStore,
             notificationCenter: notificationCenter,
             fireDailyPixel: { self.firePixelCalls.append($0) }

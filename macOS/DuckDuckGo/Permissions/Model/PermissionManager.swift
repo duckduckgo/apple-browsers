@@ -26,27 +26,17 @@ protocol PermissionManagerProtocol: AnyObject {
     typealias PublishedPermission = (domain: String, permissionType: PermissionType, decision: PersistedPermissionDecision)
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { get }
 
+    func hasPermissionPersisted(forDomain domain: String, permissionType: PermissionType) -> Bool
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType)
 
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping () -> Void)
     func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping () -> Void)
 
+    var persistedPermissionTypes: Set<PermissionType> { get }
 }
 
 final class PermissionManager: PermissionManagerProtocol {
-
-    static let shared: PermissionManager = {
-#if DEBUG
-        if AppVersion.runType.requiresEnvironment {
-            return PermissionManager()
-        } else {
-            return PermissionManager(store: LocalPermissionStore(database: nil))
-        }
-#else
-        return PermissionManager()
-#endif
-    }()
 
     private let store: PermissionStore
     private var permissions = [String: [PermissionType: StoredPermission]]()
@@ -54,7 +44,7 @@ final class PermissionManager: PermissionManagerProtocol {
     private let permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { permissionSubject.eraseToAnyPublisher() }
 
-    init(store: PermissionStore = LocalPermissionStore(database: Application.appDelegate.database.db)) {
+    init(store: PermissionStore) {
         self.store = store
         loadPermissions()
     }

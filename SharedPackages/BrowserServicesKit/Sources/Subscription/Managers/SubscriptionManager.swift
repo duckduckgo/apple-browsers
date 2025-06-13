@@ -207,10 +207,6 @@ extension DefaultSubscriptionManager: SubscriptionTokenProvider {
         }
         return token
     }
-
-    public func removeAccessToken() {
-        try? accountManager.removeAccessToken()
-    }
 }
 
 extension DefaultSubscriptionManager: SubscriptionAuthenticationStateProvider {

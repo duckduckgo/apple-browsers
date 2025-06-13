@@ -18,6 +18,7 @@
 
 import AIChat
 import BrowserServicesKit
+import UserScript
 
 enum AIChatMessageType {
     case nativeConfigValues
@@ -27,16 +28,21 @@ enum AIChatMessageType {
 
 protocol AIChatMessageHandling {
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable?
+
+    var payloadHandler: AIChatPayloadHandler { get }
 }
 
-struct AIChatMessageHandler: AIChatMessageHandling {
+final class AIChatMessageHandler: AIChatMessageHandling {
     private let featureFlagger: FeatureFlagger
     private let promptHandler: any AIChatConsumableDataHandling
+    public let payloadHandler: AIChatPayloadHandler
 
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
-         promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared) {
+         promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
+         payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler()) {
         self.featureFlagger = featureFlagger
         self.promptHandler = promptHandler
+        self.payloadHandler = payloadHandler
     }
 
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable? {
@@ -55,7 +61,7 @@ struct AIChatMessageHandler: AIChatMessageHandling {
 extension AIChatMessageHandler {
     private func getNativeConfigValues() -> Encodable? {
         if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            return AIChatNativeConfigValues(isAIChatHandoffEnabled: false,
+            return AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
                                             supportsClosingAIChat: true,
                                             supportsOpeningSettings: true,
                                             supportsNativePrompt: true,
@@ -67,7 +73,8 @@ extension AIChatMessageHandler {
     }
 
     private func getNativeHandoffData() -> Encodable? {
-        return nil
+        guard let payload = payloadHandler.consumeData() else { return nil }
+        return AIChatNativeHandoffData.defaultValuesWithPayload(payload)
     }
 
     private func getAIChatNativePrompt() -> Encodable? {

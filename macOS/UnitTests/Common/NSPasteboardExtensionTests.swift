@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Testing
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @Suite("Pasteboard Extensions Unit Tests", .serialized)

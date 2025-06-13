@@ -1615,6 +1615,7 @@ Take back control of your personal information with the browser designed for dat
     // MARK: - AI Chat
     public static let settingsAIChatExperimentalMainSwitch = NotLocalizedString("settings.aichat.native.experimental", value: "Experimental Duck.ai", comment: "")
     public static let settingsAIChatExperimentalSection = NotLocalizedString("settings.aichat.experimental.section.title", value: "Experimental Duck.ai (internal only) ", comment: "")
+    public static let settingsAIChatExperimentalTransition = NotLocalizedString("settings.aichat.native.experimental.transition", value: "Experimental switcher bar transition", comment: "")
 
     public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Enable Duck.ai", comment: "Settings screen cell text for enabling AI chat")
 

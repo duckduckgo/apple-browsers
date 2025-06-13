@@ -22,6 +22,7 @@ import Foundation
 import MaliciousSiteProtection
 import Navigation
 import SpecialErrorPages
+import WebKit
 
 enum ErrorPageHTMLFactory {
 

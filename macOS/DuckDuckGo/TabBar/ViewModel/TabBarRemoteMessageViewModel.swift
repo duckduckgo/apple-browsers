@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Foundation
 import RemoteMessaging
 
 final class TabBarRemoteMessageViewModel: ObservableObject {

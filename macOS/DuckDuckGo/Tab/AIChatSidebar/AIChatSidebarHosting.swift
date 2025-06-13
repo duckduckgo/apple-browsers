@@ -41,6 +41,9 @@ protocol AIChatSidebarHosting: AnyObject  {
     /// The delegate that receives tab-related events from the sidebar.
     var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate? { get set }
 
+    /// Tells if the sidebar host is in the key application window.
+    var isInKeyWindow: Bool { get }
+
     /// The identifier of the currently active tab, if any.
     var currentTabID: TabIdentifier? { get }
 
@@ -56,6 +59,10 @@ protocol AIChatSidebarHosting: AnyObject  {
 }
 
 extension BrowserTabViewController: AIChatSidebarHosting {
+
+    var isInKeyWindow: Bool {
+        view.window?.isKeyWindow ?? false
+    }
 
     var currentTabID: TabIdentifier? {
         tabViewModel?.tab.uuid

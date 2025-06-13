@@ -69,9 +69,11 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         NotificationCenter.default.publisher(for: .aiChatNativeHandoffData)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
-                if let payload = notification.object as? AIChatPayload {
-                    self?.handleAIChatHandoff(with: payload)
-                }
+                guard sidebarHost.isInKeyWindow,
+                      let payload = notification.object as? AIChatPayload
+                else { return }
+
+                self?.handleAIChatHandoff(with: payload)
             }
             .store(in: &cancellables)
     }

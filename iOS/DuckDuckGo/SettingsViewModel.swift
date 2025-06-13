@@ -53,6 +53,7 @@ final class SettingsViewModel: ObservableObject {
     private let duckPlayerSettings: DuckPlayerSettings
     private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
     let featureDiscovery: FeatureDiscovery
+    private let urlOpener: URLOpener
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -504,7 +505,8 @@ final class SettingsViewModel: ObservableObject {
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()
+         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
+         urlOpener: URLOpener = UIApplication.shared
     ) {
 
         self.state = SettingsState.defaults
@@ -528,6 +530,7 @@ final class SettingsViewModel: ObservableObject {
         self.duckPlayerPixelHandler = duckPlayerPixelHandler
         self.featureDiscovery = featureDiscovery
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
+        self.urlOpener = urlOpener
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -693,7 +696,7 @@ extension SettingsViewModel {
     func setAsDefaultBrowser() {
         Pixel.fire(pixel: .settingsSetAsDefault)
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(url)
+        urlOpener.open(url)
     }
     
     @MainActor func shouldPresentLoginsViewWithAccount(accountDetails: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource? = nil) {
@@ -709,28 +712,28 @@ extension SettingsViewModel {
     }
 
     func openEmailProtection() {
-        UIApplication.shared.open(URL.emailProtectionQuickLink)
+        urlOpener.open(URL.emailProtectionQuickLink)
     }
 
     func openEmailAccountManagement() {
-        UIApplication.shared.open(URL.emailProtectionAccountLink)
+        urlOpener.open(URL.emailProtectionAccountLink)
     }
 
     func openEmailSupport() {
-        UIApplication.shared.open(URL.emailProtectionSupportLink)
+        urlOpener.open(URL.emailProtectionSupportLink)
     }
 
     func openOtherPlatforms() {
-        UIApplication.shared.open(URL.otherDevices)
+        urlOpener.open(URL.otherDevices)
     }
 
     func openMoreSearchSettings() {
         Pixel.fire(pixel: .settingsMoreSearchSettings)
-        UIApplication.shared.open(URL.searchSettings)
+        urlOpener.open(URL.searchSettings)
     }
 
     func openAIChat() {
-        UIApplication.shared.open(AppDeepLinkSchemes.openAIChat.url)
+        urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
     }
 
     var shouldDisplayDuckPlayerContingencyMessage: Bool {
@@ -740,7 +743,7 @@ extension SettingsViewModel {
     func openDuckPlayerContingencyMessageSite() {
         guard let url = duckPlayerContingencyHandler.learnMoreURL else { return }
         Pixel.fire(pixel: .duckPlayerContingencyLearnMoreClicked)
-        UIApplication.shared.open(url)
+        urlOpener.open(url)
     }
 
     @MainActor func openCookiePopupManagement() {

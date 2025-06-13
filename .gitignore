@@ -60,3 +60,4 @@ tmp
 .windsurf/
 .vscode/*
 /buildServer.json
+default.profraw

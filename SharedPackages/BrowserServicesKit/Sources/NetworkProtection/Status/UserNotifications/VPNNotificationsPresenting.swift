@@ -1,5 +1,5 @@
 //
-//  NetworkProtectionNotificationsPresenter.swift
+//  VPNNotificationsPresenting.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import Foundation
 
 /// Abstracts the notification presentation.
 ///
-public protocol NetworkProtectionNotificationsPresenter {
+public protocol VPNNotificationsPresenting {
 
     /// Present a "connected" notification to the user.
     func showConnectedNotification(serverLocation: String?, snoozeEnded: Bool)

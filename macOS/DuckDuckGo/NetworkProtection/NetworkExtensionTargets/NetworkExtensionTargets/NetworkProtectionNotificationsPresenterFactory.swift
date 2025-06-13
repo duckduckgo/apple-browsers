@@ -19,22 +19,25 @@
 import AppLauncher
 import Foundation
 import NetworkProtection
+#if !NETP_SYSTEM_EXTENSION
+import VPNNotifications
+#endif
 
 /// A convenience class for making notification presenters.
 ///
 struct NetworkProtectionNotificationsPresenterFactory {
-    func make(settings: VPNSettings, defaults: UserDefaults) -> NetworkProtectionNotificationsPresenter {
+    func make(settings: VPNSettings, defaults: UserDefaults) -> VPNNotificationsPresenting {
         let presenterForBuildType = makePresenterForBuildType()
 
-        return NetworkProtectionNotificationsPresenterTogglableDecorator(
+        return VPNNotificationsPresenterTogglableDecorator(
             settings: settings,
             defaults: defaults,
             wrappee: presenterForBuildType)
     }
 
-    private func makePresenterForBuildType() -> NetworkProtectionNotificationsPresenter {
+    private func makePresenterForBuildType() -> VPNNotificationsPresenting {
     #if NETP_SYSTEM_EXTENSION
-            return NetworkProtectionAgentNotificationsPresenter(notificationCenter: DistributedNotificationCenter.default())
+            return VPNProxyNotificationsPresenter(notificationCenter: DistributedNotificationCenter.default())
     #else
             let parentBundlePath = "../../../"
             let mainAppURL: URL
@@ -43,7 +46,7 @@ struct NetworkProtectionNotificationsPresenterFactory {
             } else {
                 mainAppURL = URL(fileURLWithPath: parentBundlePath, relativeTo: Bundle.main.bundleURL)
             }
-            return NetworkProtectionUNNotificationsPresenter(appLauncher: AppLauncher(appBundleURL: mainAppURL))
+            return VPNNotificationsPresenter(appLauncher: AppLauncher(appBundleURL: mainAppURL))
     #endif
     }
 }

@@ -20,6 +20,21 @@
 import UIKit
 import DesignResourcesKit
 import Combine
+import BrowserServicesKit
+import Bookmarks
+import Persistence
+import History
+import Core
+import Suggestions
+
+struct SuggestionTrayDependencies {
+    let favoritesViewModel: FavoritesListInteracting
+    let bookmarksDatabase: CoreDataDatabase
+    let historyManager: HistoryManaging
+    let tabsModel: TabsModel
+    let featureFlagger: FeatureFlagger
+    let appSettings: AppSettings
+}
 
 protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onQueryUpdated(_ query: String)
@@ -36,9 +51,9 @@ final class OmniBarEditingStateViewController: UIViewController {
     private let switchBarHandler: SwitchBarHandling
     private lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
-
+    private var suggestionTrayViewController: SuggestionTrayViewController?
     var expectedStartFrame: CGRect?
-
+    var suggestionTrayDependencies: SuggestionTrayDependencies?
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     private var topSwitchBarConstraint: NSLayoutConstraint?
 
@@ -55,6 +70,8 @@ final class OmniBarEditingStateViewController: UIViewController {
         super.viewDidLoad()
 
         installSwitchBarVC()
+        installSuggestionsTray()
+
         self.view.backgroundColor = .clear
     }
 
@@ -62,6 +79,50 @@ final class OmniBarEditingStateViewController: UIViewController {
         super.viewDidAppear(animated)
 
         animateAppearance()
+    }
+
+    private func installSuggestionsTray() {
+        guard let dependencies = suggestionTrayDependencies else { return }
+        let storyboard = UIStoryboard(name: "SuggestionTray", bundle: nil)
+
+        guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
+            SuggestionTrayViewController(coder: coder,
+                                         favoritesViewModel: dependencies.favoritesViewModel,
+                                         bookmarksDatabase: dependencies.bookmarksDatabase,
+                                         historyManager: dependencies.historyManager,
+                                         tabsModel: dependencies.tabsModel,
+                                         featureFlagger: dependencies.featureFlagger,
+                                         appSettings: dependencies.appSettings)
+        }) else {
+            assertionFailure()
+            return
+        }
+        controller.view.frame = self.view.bounds
+
+        addChild(controller)
+        view.addSubview(controller.view)
+        suggestionTrayViewController = controller
+        controller.view.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            controller.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            controller.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            controller.view.topAnchor.constraint(equalTo: switchBarVC.view.bottomAnchor),
+            controller.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+        ])
+
+        controller.autocompleteDelegate = self
+        controller.favoritesOverlayDelegate = self
+        print("test")
+        suggestionTrayViewController = controller
+
+       // controller.view.frame = viewCoordinator.suggestionTrayContainer.bounds
+//        viewCoordinator.suggestionTrayContainer.addSubview(controller.view)
+//
+//        controller.dismissHandler = dismissSuggestionTray
+//        controller.autocompleteDelegate = self
+//        controller.favoritesOverlayDelegate = self
+//        suggestionTrayController = controller
     }
 
     private func animateAppearance() {
@@ -232,7 +293,11 @@ final class OmniBarEditingStateViewController: UIViewController {
 
         switchBarVC.backButton.addTarget(self, action: #selector(dismissButtonTapped), for: .touchUpInside)
         setupSubscriptions()
+    }
 
+    private func handleQueryUpdate(_ query: String) {
+        suggestionTrayViewController?.show(for: .autocomplete(query: query))
+        suggestionTrayViewController?.fill()
     }
 
     private func setupSubscriptions() {
@@ -240,6 +305,7 @@ final class OmniBarEditingStateViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] currentText in
                 self?.delegate?.onQueryUpdated(currentText)
+                self?.handleQueryUpdate(currentText)
             }
             .store(in: &cancellables)
 
@@ -273,5 +339,34 @@ final class OmniBarEditingStateViewController: UIViewController {
     
     func selectAllText() {
         switchBarVC.textEntryViewController.selectAllText()
+    }
+}
+
+extension OmniBarEditingStateViewController: AutocompleteViewControllerDelegate {
+    func autocompleteDidEndWithUserQuery() {
+
+    }
+
+    func autocomplete(selectedSuggestion suggestion: Suggestion) {
+
+    }
+
+    func autocomplete(highlighted suggestion: Suggestion, for query: String) {
+
+    }
+
+    func autocomplete(pressedPlusButtonForSuggestion suggestion: Suggestion) {
+
+    }
+
+    func autocompleteWasDismissed() {
+        
+    }
+}
+
+extension OmniBarEditingStateViewController: FavoritesOverlayDelegate {
+
+    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
+
     }
 }

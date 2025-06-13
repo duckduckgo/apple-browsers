@@ -131,12 +131,13 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     private func presentExperimentalEditingState(for textField: UITextField) {
         let switchBarHandler = createSwitchBarHandler(for: textField)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
+        let suggestionsDependencies = SuggestionTrayDependencies(favoritesViewModel: dependencies.favoritesViewModel, bookmarksDatabase: dependencies.bookmarksDatabase, historyManager: dependencies.historyManager, tabsModel: dependencies.tabsModel, featureFlagger: dependencies.featureFlagger, appSettings: dependencies.appSettings)
 
         let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
         editingStateViewController.delegate = self
         editingStateViewController.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
         editingStateViewController.modalPresentationStyle = .overFullScreen
-
+        editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
         present(editingStateViewController, animated: false)
         self.editingStateViewController = editingStateViewController
 

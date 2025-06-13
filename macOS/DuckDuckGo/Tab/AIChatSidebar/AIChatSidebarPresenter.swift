@@ -154,10 +154,14 @@ extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
         updateSidebarConstraints(for: tabID, isShowingSidebar: isShowingSidebar, withAnimation: false)
     }
 
-    func sidebarHostDidUpdateTabs(_ currentTabIDs: [TabIdentifier]) {
+    func sidebarHostDidUpdateTabs() {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
 
-        sidebarProvider.cleanUp(for: currentTabIDs)
+        Task { @MainActor in
+            let allPinnedTabIDs = Application.appDelegate.windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
+            let allTabIDs = Application.appDelegate.windowControllersManager.allTabCollectionViewModels.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
+            sidebarProvider.cleanUp(for: allPinnedTabIDs + allTabIDs)
+        }
     }
 }
 

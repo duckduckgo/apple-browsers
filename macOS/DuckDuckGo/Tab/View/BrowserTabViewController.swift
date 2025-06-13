@@ -353,7 +353,8 @@ final class BrowserTabViewController: NSViewController {
                 guard let self else { return }
                 setDelegate(for: tabs)
                 removeDataBrokerViewIfNecessary(for: tabs)
-                cleanUpSidebarsForClosedTabs(for: tabs)
+                
+                aiChatSidebarHostingDelegate?.sidebarHostDidUpdateTabs()
             }
             .store(in: &cancellables)
     }
@@ -424,12 +425,6 @@ final class BrowserTabViewController: NSViewController {
             tab.autofill?.setDelegate(self)
             tab.downloads?.delegate = self
         }
-    }
-
-    private func cleanUpSidebarsForClosedTabs(for currentTabs: [Tab]) {
-        let currentTabIDs = currentTabs.map { $0.uuid }
-        let currentPinnedTabIDs = tabCollectionViewModel.pinnedTabsCollection?.tabs.map { $0.uuid } ?? []
-        aiChatSidebarHostingDelegate?.sidebarHostDidUpdateTabs(currentTabIDs + currentPinnedTabIDs)
     }
 
     private func removeWebViewFromHierarchy(webView: WebView? = nil,

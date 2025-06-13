@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import NetworkProtection
+import VPN
 import NetworkExtension
 import NetworkProtectionTestUtils
 @testable import DuckDuckGo

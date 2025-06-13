@@ -21,7 +21,7 @@ import Foundation
 import Combine
 import Common
 import LoginItems
-import NetworkProtection
+import VPN
 import NetworkProtectionProxy
 import os.log
 import SwiftUI

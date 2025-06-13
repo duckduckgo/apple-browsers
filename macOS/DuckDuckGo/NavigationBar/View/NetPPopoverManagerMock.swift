@@ -21,7 +21,7 @@
 import AppKit
 import Combine
 import Foundation
-import NetworkProtection
+import VPN
 
 final class NetPPopoverManagerMock: NetPPopoverManager {
     var isShown: Bool { false }

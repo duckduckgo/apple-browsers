@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import NetworkProtection
+import VPN
 @testable import DuckDuckGo
 
 final class NetworkProtectionDNSSettingsViewModelTests: XCTestCase {

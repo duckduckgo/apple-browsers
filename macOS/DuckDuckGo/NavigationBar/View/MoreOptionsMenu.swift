@@ -22,7 +22,7 @@ import Common
 import BrowserServicesKit
 import History
 import PixelKit
-import NetworkProtection
+import VPN
 import Subscription
 import os.log
 import Freemium

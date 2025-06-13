@@ -19,7 +19,7 @@
 import BrowserServicesKit
 import Foundation
 import NetworkExtension
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 import SystemExtensionManager
 import SystemExtensions

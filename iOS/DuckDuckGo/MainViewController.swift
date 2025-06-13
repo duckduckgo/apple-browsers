@@ -33,7 +33,7 @@ import Networking
 import Suggestions
 import Subscription
 import SwiftUI
-import NetworkProtection
+import VPN
 import Onboarding
 import os.log
 import PageRefreshMonitor

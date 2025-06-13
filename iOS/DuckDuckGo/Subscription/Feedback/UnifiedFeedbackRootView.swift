@@ -18,7 +18,7 @@
 //
 
 import SwiftUI
-import NetworkProtection
+import VPN
 
 struct UnifiedFeedbackRootView: View {
     @StateObject var viewModel: UnifiedFeedbackFormViewModel

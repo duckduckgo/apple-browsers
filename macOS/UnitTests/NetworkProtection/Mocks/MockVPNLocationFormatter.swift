@@ -18,7 +18,7 @@
 
 import Foundation
 import SwiftUI
-import NetworkProtection
+import VPN
 @testable import DuckDuckGo_Privacy_Browser
 
 struct MockVPNLocationFormatter: VPNLocationFormatting {

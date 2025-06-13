@@ -32,8 +32,6 @@ let package = Package(
         .library(name: "RemoteMessagingTestsUtils", targets: ["RemoteMessagingTestsUtils"]),
         .library(name: "Navigation", targets: ["Navigation"]),
         .library(name: "SyncDataProviders", targets: ["SyncDataProviders"]),
-        .library(name: "NetworkProtection", targets: ["NetworkProtection"]),
-        .library(name: "NetworkProtectionTestUtils", targets: ["NetworkProtectionTestUtils"]),
         .library(name: "SecureStorage", targets: ["SecureStorage"]),
         .library(name: "Subscription", targets: ["Subscription"]),
         .library(name: "SubscriptionTestingUtilities", targets: ["SubscriptionTestingUtilities"]),
@@ -336,17 +334,6 @@ let package = Package(
             ]
         ),
         .target(
-            name: "NetworkProtection",
-            dependencies: [
-                .target(name: "WireGuardC"),
-                "Common",
-                "Networking"
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
             name: "SecureStorage",
             dependencies: [
                 "Common",
@@ -360,13 +347,6 @@ let package = Package(
             name: "SecureStorageTestsUtils",
             dependencies: [
                 "SecureStorage",
-            ]
-        ),
-        .target(name: "WireGuardC"),
-        .target(
-            name: "NetworkProtectionTestUtils",
-            dependencies: [
-                "NetworkProtection",
             ]
         ),
         .target(
@@ -633,19 +613,6 @@ let package = Package(
                 "BookmarksTestsUtils",
                 "SecureStorageTestsUtils",
                 "SyncDataProviders",
-            ]
-        ),
-        .testTarget(
-            name: "NetworkProtectionTests",
-            dependencies: [
-                "NetworkProtection",
-                "NetworkProtectionTestUtils",
-                "NetworkingTestingUtils",
-            ],
-            resources: [
-                .copy("Resources/servers-original-endpoint.json"),
-                .copy("Resources/servers-updated-endpoint.json"),
-                .copy("Resources/locations-endpoint.json")
             ]
         ),
         .testTarget(

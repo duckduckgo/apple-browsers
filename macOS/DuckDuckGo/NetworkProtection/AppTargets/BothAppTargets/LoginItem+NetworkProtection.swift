@@ -18,7 +18,7 @@
 
 import Foundation
 import LoginItems
-import NetworkProtection
+import VPN
 import os.log
 
 extension LoginItem {

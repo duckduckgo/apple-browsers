@@ -28,7 +28,7 @@ import DuckPlayer
 import Crashes
 
 import Subscription
-import NetworkProtection
+import VPN
 import AIChat
 
 final class SettingsViewModel: ObservableObject {

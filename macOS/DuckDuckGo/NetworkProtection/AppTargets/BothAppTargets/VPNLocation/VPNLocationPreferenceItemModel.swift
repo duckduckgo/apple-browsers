@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 
 final class VPNLocationPreferenceItemModel: ObservableObject {
     enum LocationIcon {

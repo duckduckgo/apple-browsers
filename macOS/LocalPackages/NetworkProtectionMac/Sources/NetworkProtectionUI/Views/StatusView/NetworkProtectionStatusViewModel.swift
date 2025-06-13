@@ -20,7 +20,7 @@ import Combine
 import Common
 import LoginItems
 import NetworkExtension
-import NetworkProtection
+import VPN
 import ServiceManagement
 import SwiftUI
 

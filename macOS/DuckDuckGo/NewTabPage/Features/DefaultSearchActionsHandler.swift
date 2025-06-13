@@ -71,7 +71,7 @@ final class DefaultSearchActionsHandler: NewTabPageSearchActionsHandling {
     }
 }
 
-final class DefaultPromptctionsHandler: NewTabPagePromptActionsHandling {
+final class DefaultPromptActionsHandler: NewTabPagePromptActionsHandling {
 
     func open(_ prompt: String) async throws {
         let nativePrompt: AIChatNativePrompt = .queryPrompt(prompt, autoSubmit: true)

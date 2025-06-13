@@ -82,7 +82,7 @@ extension NewTabPageActionsManager {
         )
         let searchModel = NewTabPageSearchModel(searchSuggestionsProvider: suggestionContainer,
                                                 actionsHandler: DefaultSearchActionsHandler(),
-                                                promptHandler: DefaultPromptctionsHandler())
+                                                promptHandler: DefaultPromptActionsHandler())
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(

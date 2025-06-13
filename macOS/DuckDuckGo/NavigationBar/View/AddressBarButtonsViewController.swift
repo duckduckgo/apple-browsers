@@ -367,24 +367,29 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBAction func aiChatButtonAction(_ sender: Any) {
         PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
-        var behavior = LinkOpenBehavior(event: NSApp.currentEvent, switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened)
+        let shouldSelectNewTab: Bool = {
+            guard let tabContent = tabViewModel?.tab.content, let url = tabViewModel?.tab.url else {
+                return false
+            }
+            return !url.isDuckAIURL && tabContent != .newtab
+        }()
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar), case .url = tabViewModel?.tabContent, !isTextFieldEditorFirstResponder, behavior == .currentTab {
+        let behavior = LinkOpenBehavior(
+            event: NSApp.currentEvent,
+            switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
+            shouldSelectNewTab: shouldSelectNewTab
+        )
+
+        if featureFlagger.isFeatureOn(.aiChatSidebar),
+           case .url = tabViewModel?.tabContent,
+           !isTextFieldEditorFirstResponder,
+           behavior == .currentTab || aiChatSidebarPresenter.isSidebarOpen {
+
             aiChatSidebarPresenter.toggleSidebar()
+        } else if let value = textFieldValue {
+            aiChatTabOpener.openAIChatTab(value, with: behavior)
         } else {
-
-            if let tabViewModel = tabViewModel,
-               let tabURL = tabViewModel.tab.url,
-               !tabURL.isDuckAIURL,
-               tabViewModel.tab.content != .newtab {
-                behavior = .newTab(selected: true)
-            }
-
-            if let value = textFieldValue {
-                aiChatTabOpener.openAIChatTab(value, with: behavior)
-            } else {
-                aiChatTabOpener.openAIChatTab(nil, with: behavior)
-            }
+            aiChatTabOpener.openAIChatTab(nil, with: behavior)
         }
     }
 

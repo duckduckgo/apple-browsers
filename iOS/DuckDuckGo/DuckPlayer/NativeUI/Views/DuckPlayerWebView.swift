@@ -40,7 +40,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
         uiView.uiDelegate = nil
         
         // Clean up JavaScript execution - but don't remove scripts that might be reused
-        // uiView.configuration.userContentController.removeAllUserScripts()
+        uiView.configuration.userContentController.removeAllUserScripts()
         
         // Clean up UserScript references
         coordinator.duckPlayerUserScript?.webView = nil

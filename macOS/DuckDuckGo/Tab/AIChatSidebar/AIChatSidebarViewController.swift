@@ -18,7 +18,6 @@
 
 import AppKit
 import BrowserServicesKit
-import Combine
 import AIChat
 
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.

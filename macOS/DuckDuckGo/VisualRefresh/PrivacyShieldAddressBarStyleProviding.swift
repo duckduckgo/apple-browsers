@@ -15,6 +15,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+
+import AppKit
 import DesignResourcesKitIcons
 
 protocol PrivacyShieldAddressBarStyleProviding {
@@ -51,7 +53,7 @@ final class LegacyPrivacyShieldAddressBarStyleProvider: PrivacyShieldAddressBarS
 }
 
 final class CurrentPrivacyShieldAddressBarStyleProvider: PrivacyShieldAddressBarStyleProviding {
-    let icon: NSImage = DesignSystemImages.Color.Size16.shield
+    let icon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
     let iconWithDot: NSImage = DesignSystemImages.Color.Size16.shieldNeutralAlert
 
     func hoverAnimation(forLightMode: Bool) -> String {

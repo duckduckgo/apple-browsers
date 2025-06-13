@@ -130,7 +130,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 let devices = try await syncService.updateDeviceName(name)
                 mapDevices(devices)
             } catch {
-                handleError(SyncErrorMessage.unableToUpdateDeviceName, error: error, event: .syncUpdateDeviceError)
+                await handleError(SyncErrorMessage.unableToUpdateDeviceName, error: error, event: .syncUpdateDeviceError)
             }
             syncService.scheduler.resumeSyncQueue()
         }
@@ -150,36 +150,48 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     self.refreshDevices()
                     self.navigationController?.topViewController?.dismiss(animated: true, completion: self.showRecoveryPDF)
                 } catch {
-                    self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncSignupError)
+                    await self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncSignupError)
                 }
             }
         }
     }
 
     @MainActor
-    func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event?) {
-        if type.shouldSendPixel, let event = event {
-            firePixelIfNeededFor(event: event, error: error)
-        }
-        let alertController = UIAlertController(
-            title: type.title,
-            message: [type.description, error?.localizedDescription].compactMap({ $0 }).joined(separator: "\n"),
-            preferredStyle: .alert)
-        let okAction = UIAlertAction(title: UserText.syncPausedAlertOkButton, style: .default, handler: nil)
-        alertController.addAction(okAction)
-
-        if type == .unableToSyncToServer ||
-            type == .unableToSyncWithDevice ||
-            type == .unableToMergeTwoAccounts {
-            // Gives time to the is syncing view to appear
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.dismissPresentedViewController { [weak self] in
-                    self?.present(alertController, animated: true, completion: nil)
-                }
+    func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event?) async {
+        await withCheckedContinuation { continuation in
+            if type.shouldSendPixel, let event = event {
+                firePixelIfNeededFor(event: event, error: error)
             }
-        } else {
-            self.dismissPresentedViewController { [weak self] in
-                self?.present(alertController, animated: true, completion: nil)
+            let alertController = UIAlertController(
+                title: type.title,
+                message: [type.description, error?.localizedDescription].compactMap({ $0 }).joined(separator: "\n"),
+                preferredStyle: .alert)
+            let okAction = UIAlertAction(title: UserText.syncPausedAlertOkButton, style: .default, handler: nil)
+            alertController.addAction(okAction)
+
+            if type == .unableToSyncToServer || type == .unableToSyncWithDevice || type == .unableToMergeTwoAccounts {
+                // Gives time to the is syncing view to appear
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    self.dismissPresentedViewController { [weak self] in
+                        guard let self else {
+                            continuation.resume()
+                            return
+                        }
+                        self.present(alertController, animated: true) {
+                            continuation.resume()
+                        }
+                    }
+                }
+            } else {
+                self.dismissPresentedViewController { [weak self] in
+                    guard let self else {
+                        continuation.resume()
+                        return
+                    }
+                    self.present(alertController, animated: true) {
+                        continuation.resume()
+                    }
+                }
             }
         }
     }
@@ -321,23 +333,26 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
         Task { @MainActor in
             let pairingInfo: PairingInfo
+            let source: SyncSetupSource
             if isSyncEnabled {
                 do {
                     pairingInfo = try await connectionController.startExchangeMode()
+                    source = .exchange
                 } catch {
-                    self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
+                    await handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
                     return
                 }
             } else {
                 do {
                     pairingInfo = try await connectionController.startConnectMode()
+                    source = .connect
                 } catch {
-                    self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                    await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
             }
             let stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
-            presentScanOrPasteCodeView(codeForDisplayOrPasting: pairingInfo.base64Code, stringForQRCode: stringForQRCode, showQRCode: showQRCode)
+            presentScanOrPasteCodeView(codeForDisplayOrPasting: pairingInfo.base64Code, stringForQRCode: stringForQRCode, showQRCode: showQRCode, onPresentPixelInfo: .init(pixel: .syncSetupBarcodeScreenShown, source: source))
         }
     }
 
@@ -345,24 +360,27 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         Task {
             let stringForQRCode: String
             let codeForDisplayOrPasting: String
+            let onPresentPixelInfo: SyncSetupPixelInfo?
             if isSyncEnabled {
                 stringForQRCode = recoveryCode
                 codeForDisplayOrPasting = recoveryCode
+                onPresentPixelInfo = nil
             } else {
                 do {
                     let pairingInfo = try await connectionController.startConnectMode()
                     stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
                     codeForDisplayOrPasting = pairingInfo.base64Code
+                    onPresentPixelInfo = .init(pixel: .syncSetupBarcodeScreenShown, source: .connect)
                 } catch {
-                    self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                    await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
             }
-            presentScanOrPasteCodeView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode, showQRCode: showQRCode)
+            presentScanOrPasteCodeView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode, showQRCode: showQRCode, onPresentPixelInfo: onPresentPixelInfo)
         }
     }
 
-    private func presentScanOrPasteCodeView(codeForDisplayOrPasting: String, stringForQRCode: String, showQRCode: Bool) {
+    private func presentScanOrPasteCodeView(codeForDisplayOrPasting: String, stringForQRCode: String, showQRCode: Bool, onPresentPixelInfo: SyncSetupPixelInfo?) {
         let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: stringForQRCode)
         model.delegate = self
         
@@ -382,6 +400,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         navController.modalPresentationStyle = .fullScreen
         navigationController?.present(navController, animated: true) {
             self.checkCameraPermission(model: model)
+            if let onPresentPixelInfo {
+                Pixel.fire(onPresentPixelInfo.pixel, withAdditionalParameters: [PixelParameters.source: onPresentPixelInfo.source.rawValue])
+            }
         }
     }
 
@@ -407,19 +428,20 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             let alert = UIAlertController(title: UserText.syncTurnOffConfirmTitle,
                                           message: UserText.syncTurnOffConfirmMessage,
                                           preferredStyle: .alert)
-            self.onConfirmSyncDisable = {
-                   Task { @MainActor in
-                       do {
-                           try await self.syncService.disconnect()
-                           self.rootView.model.isSyncEnabled = false
-                           self.syncPausedStateManager.syncDidTurnOff()
-                           continuation.resume(returning: true)
-                       } catch {
-                           self.handleError(SyncErrorMessage.unableToTurnSyncOff, error: error, event: .syncLogoutError)
-                           continuation.resume(returning: false)
-                       }
-                   }
-               }
+            self.onConfirmSyncDisable = { [weak self] in
+                guard let self else { return }
+                Task { @MainActor in
+                    do {
+                        try await self.syncService.disconnect()
+                        self.rootView.model.isSyncEnabled = false
+                        self.syncPausedStateManager.syncDidTurnOff()
+                        continuation.resume(returning: true)
+                    } catch {
+                        await self.handleError(SyncErrorMessage.unableToTurnSyncOff, error: error, event: .syncLogoutError)
+                        continuation.resume(returning: false)
+                    }
+                }
+            }
             let cancelAction = UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
                 continuation.resume(returning: false)
             }
@@ -440,15 +462,15 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             alert.addAction(title: UserText.actionCancel, style: .cancel) {
                 continuation.resume(returning: false)
             }
-            self.onConfirmAndDeleteAllData = {
+            self.onConfirmAndDeleteAllData = { [weak self] in
                 Task { @MainActor in
                     do {
-                        try await self.syncService.deleteAccount()
-                        self.rootView.model.isSyncEnabled = false
-                        self.syncPausedStateManager.syncDidTurnOff()
+                        try await self?.syncService.deleteAccount()
+                        self?.rootView.model.isSyncEnabled = false
+                        self?.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)
                     } catch {
-                        self.handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)
+                        await self?.handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)
                         continuation.resume(returning: false)
                     }
                 }
@@ -458,12 +480,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             }
             self.present(alert, animated: true)
         }
-    }
-
-    func copyCode() {
-        UIPasteboard.general.string = recoveryCode
-        ActionMessageView.present(message: UserText.syncCodeCopied,
-                                  presentationLocation: .withoutBottomBar)
     }
 
     func confirmRemoveDevice(_ device: SyncSettingsViewModel.Device) async -> Bool {
@@ -487,9 +503,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 try await syncService.disconnect(deviceId: device.id)
                 refreshDevices()
             } catch {
-                handleError(SyncErrorMessage.unableToRemoveDevice, error: error, event: .syncRemoveDeviceError)
+                await handleError(SyncErrorMessage.unableToRemoveDevice, error: error, event: .syncRemoveDeviceError)
             }
         }
+    }
+
+    func codeEntryScreenShown() {
+        Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown, includedParameters: [.appVersion])
     }
 }
 
@@ -521,4 +541,9 @@ private class PortraitNavigationController: UINavigationController {
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         [.portrait, .portraitUpsideDown]
     }
+}
+
+private struct SyncSetupPixelInfo {
+    let pixel: Pixel.Event
+    let source: SyncSetupSource
 }

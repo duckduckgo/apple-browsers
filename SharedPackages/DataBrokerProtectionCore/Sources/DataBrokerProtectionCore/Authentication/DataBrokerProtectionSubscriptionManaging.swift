@@ -41,7 +41,7 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
             if !isAuthV2Enabled {
                 tokenKey = "PRIVACYPRO_STAGING_TOKEN"
             } else {
-                tokenKey = "PRIVACYPRO_STAGING_TOKEN_V2"
+                tokenKey = "PRIVACYPRO_STAGING_ACCESS_TOKEN_V2"
             }
 
             if let token = ProcessInfo.processInfo.environment[tokenKey] {
@@ -58,7 +58,11 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
     }
 
     public func hasValidEntitlement() async throws -> Bool {
-        try await subscriptionManager.isEnabled(feature: .dataBrokerProtection)
+        if runTypeProvider.runType == .integrationTests {
+            return true // real entitlements check are not possible here in AuthV2 because the SubscriptionManager has no token
+        } else {
+            return await subscriptionManager.isFeatureEnabledForUser(feature: .dataBrokerProtection)
+        }
     }
 }
 

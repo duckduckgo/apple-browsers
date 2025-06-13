@@ -102,7 +102,7 @@ final class SwiftObjectRetainCycleBreakerTests {
         var aDeallocated = false
         var bDeallocated = false
 
-        var a: A! = A()
+        let a: A! = A()
         var b: B! = a.b
         a.didDeinit = { aDeallocated = true }
         b.didDeinit = { bDeallocated = true }

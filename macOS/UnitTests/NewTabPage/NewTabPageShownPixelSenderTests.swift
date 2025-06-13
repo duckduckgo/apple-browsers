@@ -43,7 +43,10 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         firePixelCalls.removeAll()
 
         let appearancePreferencesPersistor = AppearancePreferencesPersistorMock()
-        appearancePreferences = AppearancePreferences(persistor: appearancePreferencesPersistor)
+        appearancePreferences = AppearancePreferences(
+            persistor: appearancePreferencesPersistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
 
         visibleFeedProvider = MockNewTabPageProtectionsReportVisibleFeedProvider()
 

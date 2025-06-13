@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import BrowserServicesKit
 import Foundation
 import History
@@ -71,7 +72,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
     init(
         historyDataSource: HistoryDataSource,
-        historyBurner: HistoryBurning = FireHistoryBurner(),
+        historyBurner: HistoryBurning,
         dateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter(),
         featureFlagger: FeatureFlagger? = nil,
         pixelHandler: HistoryViewDataProviderPixelFiring = HistoryViewDataProviderPixelHandler()

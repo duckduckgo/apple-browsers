@@ -22,11 +22,13 @@ import XCTest
 final class OnboardingNavigatingTests: XCTestCase {
 
     var onboardingNavigation: OnboardingNavigating!
+    var fireCoordinator: FireCoordinator!
 
     @MainActor
     override func setUp() {
         super.setUp()
         onboardingNavigation = Application.appDelegate.windowControllersManager
+        fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
         assert(Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty)
     }
 
@@ -41,7 +43,11 @@ final class OnboardingNavigatingTests: XCTestCase {
     func testOnImportData_DataImportViewShown() throws {
         // Given
         let mockWindow = MockWindow(isVisible: false)
-        let mvc = MainWindowController(window: mockWindow, mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false)
+        let mvc = MainWindowController(
+            window: mockWindow,
+            mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireCoordinator: fireCoordinator),
+            popUp: false,
+            fireViewModel: fireCoordinator.fireViewModel)
         mvc.window = mockWindow
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
 
@@ -56,7 +62,12 @@ final class OnboardingNavigatingTests: XCTestCase {
     func testOnFocusOnAddressBar_AddressBarIsFocussed() throws {
         // Given
         let mockWindow = MockWindow(isVisible: false)
-        let mvc = MainWindowController(window: mockWindow, mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false)
+        let mvc = MainWindowController(
+            window: mockWindow,
+            mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireCoordinator: fireCoordinator),
+            popUp: false,
+            fireViewModel: fireCoordinator.fireViewModel
+        )
         mvc.window = mockWindow
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
 

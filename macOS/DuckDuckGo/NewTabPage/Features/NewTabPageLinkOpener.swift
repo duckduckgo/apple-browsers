@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+import Foundation
 import NewTabPage
 
 struct NewTabPageLinkOpener: NewTabPageLinkOpening {

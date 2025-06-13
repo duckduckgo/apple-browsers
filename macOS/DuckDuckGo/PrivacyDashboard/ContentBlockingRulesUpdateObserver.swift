@@ -27,6 +27,11 @@ final class ContentBlockingRulesUpdateObserver {
     public private(set) weak var tabViewModel: TabViewModel?
     private var onPendingUpdates: (() -> Void)?
     private var rulesRecompilationCancellable: AnyCancellable?
+    private let userContentUpdating: UserContentUpdating
+
+    init(userContentUpdating: UserContentUpdating) {
+        self.userContentUpdating = userContentUpdating
+    }
 
     public func updateTabViewModel(_ tabViewModel: TabViewModel, onPendingUpdates: @escaping () -> Void) {
         rulesRecompilationCancellable?.cancel()
@@ -35,7 +40,7 @@ final class ContentBlockingRulesUpdateObserver {
         self.tabViewModel = tabViewModel
         self.onPendingUpdates = onPendingUpdates
 
-        bindContentBlockingRulesRecompilation(publisher: (ContentBlocking.shared as? AppContentBlocking)!.userContentUpdating.userContentBlockingAssets)
+        bindContentBlockingRulesRecompilation(publisher: userContentUpdating.userContentBlockingAssets)
     }
 
     public func startCompilation(for domain: String, token: ContentBlockerRulesManager.CompletionToken ) {

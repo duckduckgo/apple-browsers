@@ -222,13 +222,6 @@ class MainViewController: UIViewController {
     private var duckPlayerEntryPointVisible = false
     private var isExperimentalAppearanceEnabled: Bool { themeManager.properties.isExperimentalThemingEnabled }
 
-    private lazy var aiChatOmnibarExperimentOverlayButton: UIButton = {
-        let button = UIButton(type: .custom)
-        button.backgroundColor = .clear
-        button.addTarget(self, action: #selector(onAIChatOmnibarExperimentOverlayButtonPressed), for: .touchUpInside)
-        return button
-    }()
-
     init(
         bookmarksDatabase: CoreDataDatabase,
         bookmarksDatabaseCleaner: BookmarkDatabaseCleaner,
@@ -358,10 +351,6 @@ class MainViewController: UIViewController {
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger)
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
-
-        if experimentalAIChatManager.isExperimentalAIChatSettingsEnabled {
-            setupAIChatOmnibarExperimentOverlayButton()
-        }
 
         setUpToolbarButtonsActions()
         installSwipeTabs()
@@ -1651,10 +1640,6 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         newTabPageViewController?.openedAsNewTab(allowingKeyboard: allowingKeyboard)
         themeColorManager.updateThemeColor()
-        
-        if experimentalAIChatManager.isExperimentalAIChatSettingsEnabled {
-            onAIChatOmnibarExperimentOverlayButtonPressed()
-        }
     }
     
     func updateFindInPage() {
@@ -1944,54 +1929,6 @@ class MainViewController: UIViewController {
         featureDiscovery.setWasUsedBefore(.aiChat)
         aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, on: self)
     }
-
-    private func setupAIChatOmnibarExperimentOverlayButton() {
-        guard experimentalAIChatManager.isExperimentalAIChatSettingsEnabled else { return }
-
-        viewCoordinator.omniBar.barView.addSubview(aiChatOmnibarExperimentOverlayButton)
-        aiChatOmnibarExperimentOverlayButton.translatesAutoresizingMaskIntoConstraints = false
-
-        guard let searchContainer = viewCoordinator.omniBar.barView.searchContainer else { return }
-
-        NSLayoutConstraint.activate([
-            aiChatOmnibarExperimentOverlayButton.topAnchor.constraint(equalTo: searchContainer.topAnchor),
-            aiChatOmnibarExperimentOverlayButton.leadingAnchor.constraint(equalTo: searchContainer.leadingAnchor),
-            aiChatOmnibarExperimentOverlayButton.trailingAnchor.constraint(equalTo: searchContainer.trailingAnchor),
-            aiChatOmnibarExperimentOverlayButton.bottomAnchor.constraint(equalTo: searchContainer.bottomAnchor)
-        ])
-    }
-
-    @objc private func onAIChatOmnibarExperimentOverlayButtonPressed() {
-        let viewModel = AIChatInputBoxViewModel(state: .ready, visibility: .visible)
-        let containerVC = ChatInputBoxContainerViewController(viewModel: viewModel, position: appSettings.currentAddressBarPosition)
-        containerVC.delegate = self
-        containerVC.modalPresentationStyle = .fullScreen
-        containerVC.modalTransitionStyle = .crossDissolve
-        containerVC.view.alpha = 0
-        present(containerVC, animated: false) {
-            UIView.animate(withDuration: 0.3) {
-                containerVC.view.alpha = 1
-            }
-        }
-    }
-}
-
-extension MainViewController: ChatInputBoxContainerViewControllerDelegate {
-    func chatInputBoxContainerViewControllerDidPressBack(_ viewController: ChatInputBoxContainerViewController) {
-        viewController.dismiss(animated: true)
-    }
-    
-    func chatInputBoxContainerViewController(_ viewController: ChatInputBoxContainerViewController, didSubmitQuery query: String) {
-        viewController.dismiss(animated: true) { [weak self] in
-            self?.loadQuery(query)
-        }
-    }
-    
-    func chatInputBoxContainerViewController(_ viewController: ChatInputBoxContainerViewController, didSubmitPrompt prompt: String) {
-        viewController.dismiss(animated: true) { [weak self] in
-            self?.openAIChat(prompt, autoSend: true)
-        }
-    }
 }
 
 extension MainViewController: FindInPageDelegate {
@@ -2139,6 +2076,10 @@ extension MainViewController: BrowserChromeDelegate {
 }
 
 extension MainViewController: OmniBarDelegate {
+
+    func onOmniPromptSubmitted(_ query: String) {
+        openAIChat(query, autoSend: true)
+    }
 
     func onSharePressed() {
         shareCurrentURLFromAddressBar()

@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Utilities"),
-        .package(path: "../BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
     ],
     targets: [
         .target(

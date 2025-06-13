@@ -52,7 +52,8 @@ final class Application: NSApplication {
             faviconManager: delegate.faviconManager,
             aiChatMenuConfig: AIChatMenuConfiguration(),
             internalUserDecider: delegate.internalUserDecider,
-            appearancePreferences: delegate.appearancePreferences
+            appearancePreferences: delegate.appearancePreferences,
+            privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager
         )
         self.mainMenu = mainMenu
 

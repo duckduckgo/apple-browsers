@@ -683,9 +683,15 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
                     let url: URL = .youtube(videoID)
                     navigationRequest.send(url)
                 }
-                hostingController?.dismiss(animated: true) {
+
+                Task { @MainActor in
+                    await withCheckedContinuation { continuation in
+                        hostingController?.dismiss(animated: true) {
+                            continuation.resume()
+                        }
+                    }
                     // Clean up after navigation away
-                    self?.schedulePlayerCleanup()
+                    self?.cleanupPlayer()
                 }
             }
             .store(in: &playerCancellables)

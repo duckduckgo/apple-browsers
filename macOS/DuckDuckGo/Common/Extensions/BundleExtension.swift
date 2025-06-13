@@ -30,8 +30,6 @@ extension Bundle {
         static let typeExtensions = "CFBundleTypeExtensions"
         static let vpnMenuAgentBundleId = "AGENT_BUNDLE_ID"
         static let vpnMenuAgentProductName = "AGENT_PRODUCT_NAME"
-        static let notificationsAgentBundleId = "NOTIFICATIONS_AGENT_BUNDLE_ID"
-        static let notificationsAgentProductName = "NOTIFICATIONS_AGENT_PRODUCT_NAME"
 
         static let ipcAppGroup = "IPC_APP_GROUP"
 
@@ -62,20 +60,6 @@ extension Bundle {
     var vpnMenuAgentURL: URL {
         guard let productName = object(forInfoDictionaryKey: Keys.vpnMenuAgentProductName) as? String else {
             fatalError("Info.plist is missing \(Keys.vpnMenuAgentProductName)")
-        }
-        return loginItemsURL.appendingPathComponent(productName + ".app")
-    }
-
-    var notificationsAgentBundleId: String {
-        guard let bundleID = object(forInfoDictionaryKey: Keys.notificationsAgentBundleId) as? String else {
-            fatalError("Info.plist is missing \(Keys.notificationsAgentBundleId)")
-        }
-        return bundleID
-    }
-
-    var notificationsAgentURL: URL {
-        guard let productName = object(forInfoDictionaryKey: Keys.notificationsAgentProductName) as? String else {
-            fatalError("Info.plist is missing \(Keys.notificationsAgentProductName)")
         }
         return loginItemsURL.appendingPathComponent(productName + ".app")
     }

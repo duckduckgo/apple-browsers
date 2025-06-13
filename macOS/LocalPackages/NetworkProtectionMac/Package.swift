@@ -108,7 +108,9 @@ let package = Package(
         .target(
             name: "VPNNotifications",
             dependencies: [
+                "VPNAppLauncher",
                 .product(name: "AppLauncher", package: "AppLauncher"),
+                .product(name: "NetworkProtection", package: "BrowserServicesKit"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

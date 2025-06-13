@@ -20,7 +20,6 @@ import AppLauncher
 import Foundation
 import UserNotifications
 import NetworkProtection
-import NetworkProtectionUI
 import VPNAppLauncher
 
 extension UNNotificationAction {

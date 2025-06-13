@@ -108,6 +108,7 @@ let package = Package(
         .target(
             name: "VPNNotifications",
             dependencies: [
+                .product(name: "AppLauncher", package: "AppLauncher"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 extension URL {
 
     // Generates all possible URL variants for bookmark comparison, including http/https and optional trailing slashes.

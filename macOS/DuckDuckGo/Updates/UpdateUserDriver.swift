@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Sparkle
-import PixelKit
+import AppKit
 import BrowserServicesKit
 import Combine
+import Foundation
 import os.log
+import PixelKit
+import Sparkle
 
 #if SPARKLE
 

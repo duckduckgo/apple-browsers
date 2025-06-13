@@ -31,6 +31,8 @@ protocol OmniBarDelegate: AnyObject {
     
     func onOmniQuerySubmitted(_ query: String)
 
+    func onOmniPromptSubmitted(_ query: String)
+
     func onOmniSuggestionSelected(_ suggestion: Suggestion)
     
     func onEditingEnd() -> OmniBarEditingEndResult

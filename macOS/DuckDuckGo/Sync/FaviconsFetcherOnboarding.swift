@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
-import Foundation
-import DDGSync
-import SyncUI_macOS
 import Common
+import DDGSync
+import Foundation
+import SyncUI_macOS
 
 final class FaviconsFetcherOnboarding {
 

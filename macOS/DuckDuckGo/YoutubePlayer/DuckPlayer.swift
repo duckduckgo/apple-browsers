@@ -182,7 +182,7 @@ final class DuckPlayer {
 
     init(
         preferences: DuckPlayerPreferences = .shared,
-        privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+        privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
         onboardingDecider: DuckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider()
     ) {
         self.preferences = preferences

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 extension NSPrintInfo {
 
     private static let isStartedKey = "isStartedKey"

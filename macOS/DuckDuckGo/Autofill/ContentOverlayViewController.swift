@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
-import Cocoa
-import WebKit
-import Combine
-import BrowserServicesKit
-import SecureStorage
 import AutofillResources
+import BrowserServicesKit
+import Cocoa
+import Combine
+import Common
 import PixelKit
+import SecureStorage
+import WebKit
 
 @MainActor
 public final class ContentOverlayViewController: NSViewController, EmailManagerRequestDelegate {
@@ -39,12 +40,10 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         return emailManager
     }()
 
-    lazy var featureFlagger = NSApp.delegateTyped.featureFlagger
-
     lazy var vaultManager: SecureVaultManager = {
         let manager = SecureVaultManager(passwordManager: PasswordManagerCoordinator.shared,
                                          shouldAllowPartialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves),
-                                         tld: ContentBlocking.shared.tld)
+                                         tld: tld)
         manager.delegate = self
         return manager
     }()
@@ -60,9 +59,27 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         return model
     }()
 
+    init?(
+        coder: NSCoder,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        featureFlagger: FeatureFlagger,
+        tld: TLD
+    ) {
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.featureFlagger = featureFlagger
+        self.tld = tld
+        super.init(coder: coder)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     lazy var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
 
-    lazy var privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let featureFlagger: FeatureFlagger
+    private let tld: TLD
 
     public override func viewDidLoad() {
         initWebView()

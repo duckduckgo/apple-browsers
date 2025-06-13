@@ -255,8 +255,10 @@ public class Pixel {
                             includedParameters: [QueryParameters] = [.appVersion],
                             onComplete: @escaping (Error?) -> Void = { _ in }) {
         var newParams = params
-        if includedParameters.contains(.appVersion) {
-            newParams[PixelParameters.appVersion] = AppVersion.shared.versionAndBuildNumber
+
+        // Only add app version if not already present
+        if includedParameters.contains(.appVersion) && newParams[PixelParameters.appVersion] == nil {
+            newParams[PixelParameters.appVersion] = AppVersion.shared.versionNumber
         }
 
         guard !isDryRun else {

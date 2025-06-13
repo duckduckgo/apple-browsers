@@ -17,7 +17,9 @@
 //
 
 import Common
+import Foundation
 import ObjectiveC
+import WebKit
 
 @testable import DuckDuckGo_Privacy_Browser
 

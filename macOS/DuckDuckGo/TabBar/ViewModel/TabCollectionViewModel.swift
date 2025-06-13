@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Common
 import Foundation
 import History
 import os.log
 import PixelKit
+import WebKit
 
 /**
  * The delegate callbacks are triggered for events related to unpinned tabs only.

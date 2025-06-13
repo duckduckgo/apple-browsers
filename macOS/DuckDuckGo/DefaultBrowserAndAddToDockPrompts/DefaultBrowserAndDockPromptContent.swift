@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
+import Foundation
+
 enum DefaultBrowserAndDockPromptType {
     case bothDefaultBrowserAndDockPrompt
     case setAsDefaultPrompt

@@ -64,15 +64,27 @@ extension SaveCredentialsViewController: MouseOverViewDelegate {
 
 final class SaveCredentialsViewController: NSViewController {
 
-    static func create() -> SaveCredentialsViewController {
+    static func create(fireproofDomains: FireproofDomains) -> SaveCredentialsViewController {
         let storyboard = NSStoryboard(name: "PasswordManager", bundle: nil)
-        let controller: SaveCredentialsViewController = storyboard.instantiateController(identifier: "SaveCredentials")
+        let controller: SaveCredentialsViewController = storyboard.instantiateController(identifier: "SaveCredentials") { coder in
+            self.init(coder: coder, fireproofDomains: fireproofDomains)
+        }
         controller.loadView()
 
         return controller
     }
 
+    init?(coder: NSCoder, fireproofDomains: FireproofDomains) {
+        self.fireproofDomains = fireproofDomains
+        super.init(coder: coder)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     private let backfilledKey = GeneralPixel.AutofillParameterKeys.backfilled
+    private let fireproofDomains: FireproofDomains
 
     @IBOutlet var ddgPasswordManagerTitle: NSView!
     @IBOutlet var titleLabel: NSTextField!
@@ -198,7 +210,7 @@ final class SaveCredentialsViewController: NSViewController {
         self.visiblePasswordField.stringValue = self.hiddenPasswordField.stringValue
         self.loadFaviconForDomain(credentials.account.domain)
 
-        if let domain = credentials.account.domain, FireproofDomains.shared.isFireproof(fireproofDomain: domain) {
+        if let domain = credentials.account.domain, fireproofDomains.isFireproof(fireproofDomain: domain) {
             fireproofCheck.state = .on
         } else {
             fireproofCheck.state = .off
@@ -320,11 +332,11 @@ final class SaveCredentialsViewController: NSViewController {
 
         if let domain = account.domain {
             if self.fireproofCheck.state == .on {
-                FireproofDomains.shared.add(domain: domain)
+                fireproofDomains.add(domain: domain)
             } else {
                 // If the Fireproof checkbox has been unchecked, and the domain is Fireproof, then un-Fireproof it.
-                guard FireproofDomains.shared.isFireproof(fireproofDomain: domain) else { return }
-                FireproofDomains.shared.remove(domain: domain)
+                guard fireproofDomains.isFireproof(fireproofDomain: domain) else { return }
+                fireproofDomains.remove(domain: domain)
             }
         }
     }
@@ -380,7 +392,7 @@ final class SaveCredentialsViewController: NSViewController {
 
         let host = domainLabel.stringValue
         // Don't ask if already fireproofed.
-        guard !FireproofDomains.shared.isFireproof(fireproofDomain: host) else {
+        guard !fireproofDomains.isFireproof(fireproofDomain: host) else {
             notifyDelegate()
             return
         }
@@ -388,7 +400,7 @@ final class SaveCredentialsViewController: NSViewController {
         let alert = NSAlert.fireproofAlert(with: host.droppingWwwPrefix())
         alert.beginSheetModal(for: window) { response in
             if response == NSApplication.ModalResponse.alertFirstButtonReturn {
-                FireproofDomains.shared.add(domain: host)
+                self.fireproofDomains.add(domain: host)
             }
             notifyDelegate()
         }

@@ -27,7 +27,7 @@ final class PasswordManagementItemModelTests: XCTestCase {
     var deletedCredentials: SecureVaultModels.WebsiteCredentials?
     var urlMatcher = AutofillDomainNameUrlMatcher()
     var emailManager = EmailManager()
-    var tld = ContentBlocking.shared.tld
+    var tld = Application.appDelegate.tld
     var urlSort = AutofillDomainNameUrlSort()
 
     func testWhenCredentialsAreSavedThenSaveIsRequested() {
@@ -35,6 +35,7 @@ final class PasswordManagementItemModelTests: XCTestCase {
                                                  onDeleteRequested: onDeleteRequested,
                                                  urlMatcher: urlMatcher,
                                                  emailManager: emailManager,
+                                                 tld: Application.appDelegate.tld,
                                                  urlSort: urlSort)
 
         model.credentials = makeCredentials(id: "1")
@@ -49,6 +50,7 @@ final class PasswordManagementItemModelTests: XCTestCase {
                                                 onDeleteRequested: onDeleteRequested,
                                                  urlMatcher: urlMatcher,
                                                  emailManager: emailManager,
+                                                 tld: Application.appDelegate.tld,
                                                  urlSort: urlSort)
 
         model.credentials = makeCredentials(id: "1")
@@ -63,6 +65,7 @@ final class PasswordManagementItemModelTests: XCTestCase {
                                                 onDeleteRequested: onDeleteRequested,
                                                  urlMatcher: urlMatcher,
                                                  emailManager: emailManager,
+                                                 tld: Application.appDelegate.tld,
                                                  urlSort: urlSort)
 
         model.createNew()
@@ -78,6 +81,7 @@ final class PasswordManagementItemModelTests: XCTestCase {
                                                 onDeleteRequested: onDeleteRequested,
                                                  urlMatcher: urlMatcher,
                                                  emailManager: emailManager,
+                                                 tld: Application.appDelegate.tld,
                                                  urlSort: urlSort)
 
         model.credentials = makeCredentials(id: "1")

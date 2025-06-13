@@ -64,6 +64,8 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
 
     lazy var privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager
 
+    lazy var usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
+
     public override func viewDidLoad() {
         initWebView()
         addTrackingArea()
@@ -304,7 +306,8 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
     }
 
     public func secureVaultManager(_: SecureVaultManager, didAutofill type: AutofillType, withObjectId objectId: String) {
-        PixelKit.fire(GeneralPixel.formAutofilled(kind: type.formAutofillKind))
+        let parameters = usageProvider.formattedFillDate.flatMap { [AutofillPixelKitEvent.Parameter.lastUsed: $0] } ?? [:]
+        PixelKit.fire(GeneralPixel.formAutofilled(kind: type.formAutofillKind), withAdditionalParameters: parameters)
         NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
 
         if type.formAutofillKind == .password &&

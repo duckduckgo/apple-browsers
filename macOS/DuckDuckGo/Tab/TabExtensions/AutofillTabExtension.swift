@@ -60,6 +60,7 @@ final class AutofillTabExtension: TabExtension {
     private let credentialsImportManager: AutofillCredentialsImportManager
     private var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
     private let privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager
+    private let usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
     private let isBurner: Bool
 
     @Published var autofillDataToSave: AutofillData?
@@ -154,7 +155,8 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
     }
 
     func secureVaultManager(_: SecureVaultManager, didAutofill type: AutofillType, withObjectId objectId: String) {
-        PixelKit.fire(GeneralPixel.formAutofilled(kind: type.formAutofillKind))
+        let parameters = usageProvider.formattedFillDate.flatMap { [AutofillPixelKitEvent.Parameter.lastUsed: $0] } ?? [:]
+        PixelKit.fire(GeneralPixel.formAutofilled(kind: type.formAutofillKind), withAdditionalParameters: parameters)
 
         if type.formAutofillKind == .password &&
             passwordManagerCoordinator.isEnabled {

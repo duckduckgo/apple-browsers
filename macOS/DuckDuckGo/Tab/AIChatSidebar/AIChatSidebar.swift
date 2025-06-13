@@ -38,7 +38,7 @@ final class AIChatSidebar: NSObject {
         }
     }
 
-    // swiftlint:disable:next identifier_name
+    // swiftlint:disable identifier_name
     private var _sidebarViewController: AIChatSidebarViewController?
 
     /// The current AI chat URL being displayed.
@@ -51,6 +51,7 @@ final class AIChatSidebar: NSObject {
             }
         }
     }
+    // swiftlint:enable identifier_name
 
     private let aiChatRemoteSettings = AIChatRemoteSettings()
 

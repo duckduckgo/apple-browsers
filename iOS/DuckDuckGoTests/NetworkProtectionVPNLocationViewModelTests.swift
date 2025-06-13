@@ -20,7 +20,7 @@
 import XCTest
 import VPN
 import NetworkExtension
-import NetworkProtectionTestUtils
+import VPNTestUtils
 @testable import DuckDuckGo
 
 final class NetworkProtectionVPNLocationViewModelTests: XCTestCase {
@@ -678,7 +678,7 @@ final class MockNetworkProtectionLocationListRepository: NetworkProtectionLocati
         }
     }
 
-    func fetchLocationListIgnoringCache() async throws -> [NetworkProtection.NetworkProtectionLocation] {
+    func fetchLocationListIgnoringCache() async throws -> [VPN.NetworkProtectionLocation] {
         didCallFetchLocationListIgnoringCache = true
         if let stubError {
             throw stubError

@@ -411,6 +411,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                    Task { @MainActor in
                        do {
                            try await self.syncService.disconnect()
+                           Pixel.fire(pixel: .syncDisabled)
                            self.rootView.model.isSyncEnabled = false
                            self.syncPausedStateManager.syncDidTurnOff()
                            continuation.resume(returning: true)
@@ -433,6 +434,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func confirmAndDeleteAllData() async -> Bool {
+        let deviceCount = viewModel?.devices.count ?? 0
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncDeleteAllConfirmTitle,
                                           message: UserText.syncDeleteAllConfirmMessage,
@@ -444,6 +446,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 Task { @MainActor in
                     do {
                         try await self.syncService.deleteAccount()
+                        Pixel.fire(pixel: .syncDisabledAndDeleted, withAdditionalParameters: [PixelParameters.connectedDevices: "\(deviceCount)"])
                         self.rootView.model.isSyncEnabled = false
                         self.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)

@@ -21,10 +21,22 @@ import AVKit
 import Combine
 
 struct VideoPlayerConfiguration {
-    let loopVideo: Bool
+    /// A Boolean value that indicates whether the video should loop. Default value is `false`
+    var loopVideo: Bool = false
+    /// A Boolean value that indicates whether the layer prevents the system from sleeping during video playback. Default value is `false`
+    ///
+    /// Setting this property to false doesn’t force the display to sleep; it only stops preventing display sleep. Other apps or frameworks within your app may still be preventing display sleep for various reasons.
     var preventsDisplaySleepDuringVideoPlayback: Bool = false
+    
+    /// A Boolean value that indicates whether the player allows switching to external playback mode (E.g. AirPlay). Default value is `false`
     var allowsExternalPlayback: Bool = false
+    
+    /// A Boolean value that indicates whether Picture in Picture starts automatically when the controller embeds its content inline and the app transitions to the background. Default value is `false`
     var allowsPictureInPicturePlayback: Bool = false
+
+    /// A Boolean value that determines whether the controller allows the user to skip media content.
+    ///
+    /// This is used for showing/hiding the skip controls on the Picture in Picture window.
     var requiresLinearPlayback: Bool = false
 }
 
@@ -117,8 +129,7 @@ private extension VideoPlayerCoordinator {
     }
 
     func configureVideoPlayer(configuration: VideoPlayerConfiguration) {
-        // Let the application goes to sleep if needed when the video is playing. Set to false as we're not playing a movie.
-        // If in the future we have cases where these values need to be different we can inject a configuration.
+        // Let the application goes to sleep if needed when the video is playing. Default value is false as we're not playing a movie.
         player.preventsDisplaySleepDuringVideoPlayback = configuration.preventsDisplaySleepDuringVideoPlayback
         // Disable playback video on external displays.
         player.allowsExternalPlayback = configuration.allowsExternalPlayback

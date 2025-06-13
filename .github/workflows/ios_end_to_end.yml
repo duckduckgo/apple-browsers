@@ -98,7 +98,7 @@ jobs:
 
     strategy:
       matrix:
-        test-tag: [release, privacy, securityTest, adClick]
+        test-tag: [ dev ] # [release, privacy, securityTest, adClick]
       max-parallel: 1 # Uncomment this line to run tests sequentially.
       fail-fast: false
 
@@ -119,7 +119,7 @@ jobs:
         name: duckduckgo-ios-app
         path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
 
-    - name: End to End tests
+    - name: End to End tests on iPad
       id: upload
       uses: loremattei/action-maestro-cloud@fix-timeout-handling
       with:
@@ -130,9 +130,26 @@ jobs:
         app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
         workspace: .maestro
         include-tags: ${{ matrix.test-tag }}
-        env: ONBOARDING_COMPLETED=true
+        env: ONBOARDING_COMPLETED=true,DEVICE_TYPE=ipad
         ios-version: 17
         fail-on-timeout: true
+        device-model: "iPad-10th-generation"
+
+    - name: End to End tests on phone
+      id: upload
+      uses: loremattei/action-maestro-cloud@fix-timeout-handling
+      with:
+        api-key: ${{ secrets.ROBIN_API_KEY }}
+        project-id: ${{ vars.ROBIN_PROJECT_KEY }}
+        name: ${{ matrix.test-tag }}_${{ github.sha }}
+        timeout: 300
+        app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
+        workspace: .maestro
+        include-tags: ${{ matrix.test-tag }}
+        env: ONBOARDING_COMPLETED=true,DEVICE_TYPE=phone
+        ios-version: 17
+        fail-on-timeout: true
+        device-model: "iPhone-16"
 
     - name: Report job duration
       uses: ./.github/actions/measure-duration

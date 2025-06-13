@@ -38,7 +38,7 @@ public enum AutofillPixelEvent {
 }
 
 public protocol AutofillUsageProvider {
-    var formattedFillDate: String { get }
+    var formattedFillDate: String? { get }
     var fillDate: Date? { get }
     var searchDauDate: Date? { get }
     var isOnboarded: Bool { get }
@@ -118,7 +118,7 @@ extension AutofillUsageStore: AutofillUsageStoreUpdating {
 
 extension AutofillUsageStore: AutofillUsageProvider {
     public var fillDate: Date? {
-        userDefaults.object(forKey: Keys.autofillFillDateKey) as? Date ?? .distantPast
+        userDefaults.object(forKey: Keys.autofillFillDateKey) as? Date
     }
 
     public var searchDauDate: Date? {
@@ -129,8 +129,8 @@ extension AutofillUsageStore: AutofillUsageProvider {
         userDefaults.object(forKey: Keys.autofillOnboardedUserKey) as? Bool ?? false
     }
 
-    public var formattedFillDate: String {
-        Self.yyyyMMddFormatter.string(from: Date())
+    public var formattedFillDate: String? {
+        fillDate.flatMap(Self.yyyyMMddFormatter.string(from:))
     }
 }
 

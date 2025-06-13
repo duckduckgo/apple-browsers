@@ -80,7 +80,9 @@ extension NewTabPageActionsManager {
             burnerMode: .regular,
             isUrlIgnored: { _ in false}
         )
-        let searchModel = NewTabPageSearchModel(searchSuggestionsProvider: suggestionContainer, actionsHandler: DefaultSearchActionsHandler())
+        let searchModel = NewTabPageSearchModel(searchSuggestionsProvider: suggestionContainer,
+                                                actionsHandler: DefaultSearchActionsHandler(),
+                                                promptHandler: DefaultPromptctionsHandler())
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(

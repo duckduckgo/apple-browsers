@@ -167,4 +167,9 @@ extension NewTabPageDataModel {
         let term: String
         let target: ActivityOpenAction.OpenTarget
     }
+
+    struct AIChatSubmitParams: Codable, Equatable {
+        let chat: String
+        let target: ActivityOpenAction.OpenTarget
+    }
 }

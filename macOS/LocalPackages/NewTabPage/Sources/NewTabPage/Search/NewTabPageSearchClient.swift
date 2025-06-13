@@ -31,6 +31,7 @@ public final class NewTabPageSearchClient: NewTabPageUserScriptClient {
         case getSuggestions = "search_getSuggestions"
         case openSuggestion = "search_openSuggestion"
         case submit = "search_submit"
+        case submitChat = "search_submitChat"
     }
 
     public init(model: NewTabPageSearchModel) {
@@ -42,7 +43,8 @@ public final class NewTabPageSearchClient: NewTabPageUserScriptClient {
         userScript.registerMessageHandlers([
             MessageName.getSuggestions.rawValue: { [weak self] in try await self?.getSuggestions(params: $0, original: $1) },
             MessageName.openSuggestion.rawValue: { [weak self] in try await self?.openSuggestion(params: $0, original: $1) },
-            MessageName.submit.rawValue: { [weak self] in try await self?.submit(params: $0, original: $1) }
+            MessageName.submit.rawValue: { [weak self] in try await self?.submit(params: $0, original: $1) },
+            MessageName.submitChat.rawValue: { [weak self] in try await self?.submitChat(params: $0, original: $1) }
         ])
     }
 
@@ -69,6 +71,15 @@ public final class NewTabPageSearchClient: NewTabPageUserScriptClient {
             return nil
         }
         try await model.open(.phrase(phrase: action.term))
+        return nil
+    }
+
+    @MainActor
+    private func submitChat(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.AIChatSubmitParams = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        try await model.open(action.chat)
         return nil
     }
 }

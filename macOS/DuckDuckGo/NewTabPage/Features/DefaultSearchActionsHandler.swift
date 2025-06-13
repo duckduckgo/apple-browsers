@@ -22,6 +22,7 @@ import Common
 import Foundation
 import NewTabPage
 import Suggestions
+import AIChat
 
 extension NewTabPageDataModel.Suggestion {
     var suggestion: Suggestion? {
@@ -69,3 +70,17 @@ final class DefaultSearchActionsHandler: NewTabPageSearchActionsHandling {
             .navigate(suggestion: suggestion.suggestion)
     }
 }
+
+final class DefaultPromptctionsHandler: NewTabPagePromptActionsHandling {
+
+    func open(_ prompt: String) async throws {
+        let nativePrompt: AIChatNativePrompt = .queryPrompt(prompt, autoSubmit: true)
+        let promptHandler = AIChatPromptHandler.shared
+        promptHandler.setData(nativePrompt)
+
+        let tabOpener = AIChatTabOpener(promptHandler: promptHandler, addressBarQueryExtractor: AIChatAddressBarPromptExtractor())
+        tabOpener.openAIChatTab()
+    }
+}
+
+

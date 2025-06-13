@@ -45,7 +45,7 @@ final class AutofillService {
             eventMapping: EventMapping<AutofillPixelEvent> { [weak self] event, _, params, _ in
                 switch event {
                 case .autofillActiveUser:
-                    Pixel.fire(pixel: .autofillActiveUser)
+                    Pixel.fire(pixel: .autofillActiveUser, withAdditionalParameters: params ?? [:])
                 case .autofillEnabledUser:
                     Pixel.fire(pixel: .autofillEnabledUser)
                 case .autofillOnboardedUser:

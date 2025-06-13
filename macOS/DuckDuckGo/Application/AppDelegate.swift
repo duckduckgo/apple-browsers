@@ -1134,7 +1134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             eventMapping: EventMapping<AutofillPixelEvent> {event, _, params, _ in
                 switch event {
                 case .autofillActiveUser:
-                    PixelKit.fire(GeneralPixel.autofillActiveUser)
+                    PixelKit.fire(GeneralPixel.autofillActiveUser, withAdditionalParameters: params)
                 case .autofillEnabledUser:
                     PixelKit.fire(GeneralPixel.autofillEnabledUser)
                 case .autofillOnboardedUser:

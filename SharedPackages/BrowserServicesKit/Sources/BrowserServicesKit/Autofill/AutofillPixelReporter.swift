@@ -31,9 +31,9 @@ public enum AutofillPixelEvent {
     case autofillCreditCardsStacked
     case autofillIdentitiesStacked
 
-    public enum Parameter {
+    enum Parameter {
         static let countBucket = "count_bucket"
-        public static let lastUsed = "last_used"
+        static let lastUsed = "last_used"
     }
 }
 
@@ -41,38 +41,42 @@ public protocol AutofillUsageProvider {
     var formattedFillDate: String? { get }
     var fillDate: Date? { get }
     var searchDauDate: Date? { get }
+    var lastActiveDate: Date? { get }
+    var formattedLastActiveDate: String? { get }
     var isOnboarded: Bool { get }
 }
 
 public protocol AutofillUsageStoreUpdating {
     func setFillDateToNow()
     func setSearchDauDateToNow()
+    func setLastActiveDateToNow()
     func setOnboarded(_ onboarded: Bool)
     func resetToDefaults()
 }
 
 public class AutofillUsageStore {
     private let userDefaults: UserDefaults
-    private static let yyyyMMddFormatter: DateFormatter = {
+    static let yyyyMMddFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
-    
+
     public enum Keys {
         static let autofillSearchDauDateKey = "com.duckduckgo.app.autofill.SearchDauDate"
         static let autofillFillDateKey = "com.duckduckgo.app.autofill.FillDate"
         static let autofillOnboardedUserKey = "com.duckduckgo.app.autofill.OnboardedUser"
+        static let autofillLastActiveKey = "com.duckduckgo.app.autofill.LastActive"
         static public let autofillDauMigratedKey = "com.duckduckgo.app.autofill.DauDataMigrated"
     }
-    
+
     public init(standardUserDefaults: UserDefaults, appGroupUserDefaults: UserDefaults?) {
         self.userDefaults = appGroupUserDefaults ?? standardUserDefaults
         if let appGroupUserDefaults {
             migrateDataIfNeeded(from: standardUserDefaults, to: appGroupUserDefaults)
         }
     }
-    
+
     private func migrateDataIfNeeded(from source: UserDefaults, to destination: UserDefaults) {
         let isMigrated = destination.bool(forKey: Keys.autofillDauMigratedKey)
         guard !isMigrated else {
@@ -105,6 +109,10 @@ extension AutofillUsageStore: AutofillUsageStoreUpdating {
         userDefaults.set(Date(), forKey: Keys.autofillSearchDauDateKey)
     }
 
+    public func setLastActiveDateToNow() {
+        userDefaults.set(Date(), forKey: Keys.autofillLastActiveKey)
+    }
+
     public func setOnboarded(_ onboarded: Bool) {
         userDefaults.set(onboarded, forKey: Keys.autofillOnboardedUserKey)
     }
@@ -112,6 +120,7 @@ extension AutofillUsageStore: AutofillUsageStoreUpdating {
     public func resetToDefaults() {
         userDefaults.set(Date.distantPast, forKey: Keys.autofillSearchDauDateKey)
         userDefaults.set(Date.distantPast, forKey: Keys.autofillFillDateKey)
+        userDefaults.set(Date.distantPast, forKey: Keys.autofillLastActiveKey)
         userDefaults.set(false, forKey: Keys.autofillOnboardedUserKey)
     }
 }
@@ -125,12 +134,20 @@ extension AutofillUsageStore: AutofillUsageProvider {
         userDefaults.object(forKey: Keys.autofillSearchDauDateKey) as? Date ?? .distantPast
     }
 
+    public var lastActiveDate: Date? {
+        userDefaults.object(forKey: Keys.autofillLastActiveKey) as? Date
+    }
+
     public var isOnboarded: Bool {
         userDefaults.object(forKey: Keys.autofillOnboardedUserKey) as? Bool ?? false
     }
 
     public var formattedFillDate: String? {
         fillDate.flatMap(Self.yyyyMMddFormatter.string(from:))
+    }
+
+    public var formattedLastActiveDate: String? {
+        lastActiveDate.flatMap(Self.yyyyMMddFormatter.string(from:))
     }
 }
 
@@ -225,7 +242,10 @@ public final class AutofillPixelReporter {
 
     private func firePixelsFor(_ type: EventType) {
         if shouldFireActiveUserPixel() {
-            eventMapping.fire(.autofillActiveUser)
+            let parameters = usageStore.formattedLastActiveDate.flatMap { [AutofillPixelEvent.Parameter.lastUsed: $0] }
+            eventMapping.fire(.autofillActiveUser, parameters: parameters)
+
+            usageStore.setLastActiveDateToNow()
 
             if let accountsCountBucket = getAccountsCountBucket() {
                 eventMapping.fire(.autofillLoginsStacked, parameters: [AutofillPixelEvent.Parameter.countBucket: accountsCountBucket])

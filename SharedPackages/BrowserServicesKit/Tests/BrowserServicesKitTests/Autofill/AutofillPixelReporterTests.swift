@@ -29,11 +29,14 @@ final class AutofillPixelReporterTests: XCTestCase {
         static var loginsParam: String?
         static var creditCardsParam: String?
         static var identitiesParam: String?
+        static var lastUsedParam: String?
 
         public init() {
             super.init { event, _, param, _ in
                 Self.events.append(event)
                 switch event {
+                case .autofillActiveUser:
+                    Self.lastUsedParam = param?[AutofillPixelEvent.Parameter.lastUsed]
                 case .autofillLoginsStacked:
                     Self.loginsParam = param?[AutofillPixelEvent.Parameter.countBucket]
                 case .autofillCreditCardsStacked:
@@ -557,6 +560,37 @@ final class AutofillPixelReporterTests: XCTestCase {
 
         XCTAssertNotNil(standardDefaults.object(forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey))
         XCTAssertNil(appGroupDefaults.object(forKey: AutofillUsageStore.Keys.autofillDauMigratedKey))
+    }
+
+    func testWhenAutofillActiveUserEventIsFiredThenLastActiveDateIsSet() {
+        let autofillPixelReporter = createAutofillPixelReporter()
+        autofillPixelReporter.resetStoreDefaults()
+        setAutofillFillDate(daysAgo: 3)
+        setAutofillSearchDauDate(daysAgo: 0)
+
+        NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
+
+        // Verify lastActiveDate was set to a recent date (within last minute)
+        let lastActiveDate = standardDefaults.object(forKey: AutofillUsageStore.Keys.autofillLastActiveKey) as? Date
+        XCTAssertNotNil(lastActiveDate)
+        XCTAssertLessThanOrEqual(Date().timeIntervalSince(lastActiveDate ?? .distantFuture), 60)
+    }
+
+    func testWhenAutofillActiveUserEventIsFiredThenLastUsedParameterContainsLastActiveDate() {
+        let autofillPixelReporter = createAutofillPixelReporter()
+        autofillPixelReporter.resetStoreDefaults()
+        setAutofillFillDate(daysAgo: 3)
+        setAutofillSearchDauDate(daysAgo: 0)
+
+        // Set a specific last active date
+        let testDate = Date().addingTimeInterval(.days(-5))
+        standardDefaults.set(testDate, forKey: AutofillUsageStore.Keys.autofillLastActiveKey)
+
+        NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
+
+        XCTAssertNotNil(MockEventMapping.lastUsedParam)
+        XCTAssertEqual(MockEventMapping.lastUsedParam?.count, 10)
+        XCTAssertEqual(MockEventMapping.lastUsedParam, AutofillUsageStore.yyyyMMddFormatter.string(from: testDate))
     }
 
     private func createAutofillPixelReporter(appGroupUserDefaults: UserDefaults? = nil, installDate: Date? = Date(), autofillEnabled: Bool = true) -> AutofillPixelReporter {

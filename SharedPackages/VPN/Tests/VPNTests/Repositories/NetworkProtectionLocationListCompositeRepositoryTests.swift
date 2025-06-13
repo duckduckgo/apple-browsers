@@ -22,7 +22,7 @@ import XCTest
 @testable import VPNTestUtils
 import Common
 
-class NetworkProtectionLocationListCompositeRepositoryTests: XCTestCase {
+final class NetworkProtectionLocationListCompositeRepositoryTests: XCTestCase {
     var repository: NetworkProtectionLocationListCompositeRepository!
     var client: MockNetworkProtectionClient!
     var tokenHandler: SubscriptionTokenHandlingMock!

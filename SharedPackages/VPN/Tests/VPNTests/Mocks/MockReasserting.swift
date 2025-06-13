@@ -19,7 +19,7 @@
 import Foundation
 @testable import VPN
 
-class MockReasserting: Reasserting {
+final class MockReasserting: Reasserting {
 
     var startReassertingCallCount = 0
     func startReasserting() {

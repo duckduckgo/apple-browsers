@@ -22,16 +22,19 @@ import os.log
 import Networking
 
 public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
-    case tokenUnavailable(error: Error?)
+    /// The app has no `TokenContainer`
+    case noTokenAvailable
+    /// There was a failure wile retrieving, updating or creating the `TokenContainer`
+    case errorRetrievingTokenContainer(error: Error?)
+
     case confirmationHasInvalidSubscription
     case noProductsFound
-    case tokenRefreshFailed(error: Error?)
 
     public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
         switch (lhs, rhs) {
-        case (.tokenUnavailable(let lhsError), .tokenUnavailable(let rhsError)):
-            return lhsError?.localizedDescription == rhsError?.localizedDescription
-        case (.tokenRefreshFailed(let lhsError), .tokenRefreshFailed(let rhsError)):
+        case (.noTokenAvailable, .noTokenAvailable):
+            return true
+        case (.errorRetrievingTokenContainer(let lhsError), .errorRetrievingTokenContainer(let rhsError)):
             return lhsError?.localizedDescription == rhsError?.localizedDescription
         case (.confirmationHasInvalidSubscription, .confirmationHasInvalidSubscription),
             (.noProductsFound, .noProductsFound):
@@ -43,14 +46,14 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .tokenUnavailable(error: let error):
-            "Token unavailable: \(String(describing: error))"
+        case .noTokenAvailable:
+            "No token available"
+        case .errorRetrievingTokenContainer(error: let error):
+            "Error retrieving token container: \(String(describing: error))"
         case .confirmationHasInvalidSubscription:
             "Confirmation has an invalid subscription"
         case .noProductsFound:
             "No products found"
-        case .tokenRefreshFailed(error: let error):
-            "Token is not refreshable: \(String(describing: error))"
         }
     }
 }
@@ -135,8 +138,8 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// - Parameter policy: The policy that will be used to get the token, it effects the tokens source and validity
     /// - Returns: The TokenContainer
     /// - Throws: A `SubscriptionManagerError`.
-    ///     `tokenRefreshFailed` if the token cannot be refreshed, typically due to an expired refresh token.
-    ///     `tokenUnavailable` if the token is not available for the reason specified by the underlying error.
+    ///     `noTokenAvailable` if the TokenContainer is not present.
+    ///     `errorRetrievingTokenContainer(error:...)` in case of any error retrieving, refreshing or creating the TokenContainer, this can be caused by networking issues or keychain errors etc.
     @discardableResult
     func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer
 
@@ -419,7 +422,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         } catch OAuthClientError.missingTokenContainer {
             // Expected when no tokens are available
             cachedUserEntitlements = []
-            throw SubscriptionManagerError.tokenUnavailable(error: OAuthClientError.missingTokenContainer)
+            throw SubscriptionManagerError.noTokenAvailable
         } catch {
             pixelHandler.handle(pixelType: .getTokensError(policy, error))
 
@@ -428,7 +431,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             case OAuthClientError.unknownAccount:
                 Logger.subscription.error("Refresh failed, the account is unknown. Logging out...")
                 await signOut(notifyUI: true)
-                throw SubscriptionManagerError.tokenUnavailable(error: error)
+                throw SubscriptionManagerError.noTokenAvailable
 
             case OAuthClientError.refreshTokenExpired,
                 OAuthClientError.invalidTokenRequest:
@@ -439,18 +442,18 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 } catch {
                     await signOut(notifyUI: false)
                     pixelHandler.handle(pixelType: .invalidRefreshTokenSignedOut)
-                    throw SubscriptionManagerError.tokenUnavailable(error: error)
+                    throw SubscriptionManagerError.noTokenAvailable
                 }
 
             default:
-                throw SubscriptionManagerError.tokenUnavailable(error: error)
+                throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
             }
         }
     }
 
     func attemptTokenRecovery() async throws -> TokenContainer {
         guard let tokenRecoveryHandler else {
-            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+            throw SubscriptionManagerError.errorRetrievingTokenContainer(error: nil)
         }
 
         Logger.subscription.log("The refresh token is expired, attempting subscription recovery...")

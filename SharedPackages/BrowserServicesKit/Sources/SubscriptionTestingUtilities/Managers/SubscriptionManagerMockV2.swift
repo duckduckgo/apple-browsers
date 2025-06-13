@@ -188,7 +188,7 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
     public func getAccessToken() async throws -> String {
         guard let accessToken = resultTokenContainer?.accessToken else {
-            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+            throw SubscriptionManagerError.noTokenAvailable
         }
         return accessToken
     }

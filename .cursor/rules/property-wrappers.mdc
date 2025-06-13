@@ -1,11 +1,9 @@
 ---
-description: Property wrapper patterns and custom wrappers for DuckDuckGo browser
-globs:
-  - "**/*.swift"
+description: User Default Settings storage and reading and user preferences customisation for DuckDuckGo browser
+globs: 
 alwaysApply: false
 ---
-
-# Property Wrapper Patterns
+# User Defaults Settings storage and reading
 
 ## @UserDefaultsWrapper for Settings
 Use the established property wrapper pattern for all persistent settings:
@@ -13,6 +11,7 @@ Use the established property wrapper pattern for all persistent settings:
 ```swift
 // ✅ CORRECT - UserDefaults property wrapper
 extension AppUserDefaults {
+    // the wrapped property must be local, not static!
     @UserDefaultsWrapper(key: .newFeatureEnabled, defaultValue: false)
     var newFeatureEnabled: Bool
     
@@ -29,6 +28,23 @@ extension UserDefaultsWrapper.Key {
     static let lastUpdateCheck: UserDefaultsWrapper.Key = "com.duckduckgo.lastUpdate"
     static let userPreferences: UserDefaultsWrapper.Key = "com.duckduckgo.preferences"
 }
+
+// ❌ INCORRECT - Direct User Defaults creation
+var newFeatureEnabled: Bool {
+    get {
+        return UserDefaults.standard.bool(forKey: "com.duckduckgo.newFeature")
+    }
+    set {
+        UserDefaults.standard.set(newValue, forKey: "com.duckduckgo.newFeature")
+    }
+}
+
+// ❌ INCORRECT - Static property usage
+extension AppUserDefaults {
+    @UserDefaultsWrapper(key: .newFeatureEnabled, defaultValue: false)
+    static var newFeatureEnabled: Bool  // Static properties don't work with property wrappers!
+}
+
 ```
 
 ## Custom Property Wrappers

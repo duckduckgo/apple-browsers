@@ -69,9 +69,7 @@ final class DefaultSearchActionsHandler: NewTabPageSearchActionsHandling {
             .addressBarTextField
             .navigate(suggestion: suggestion.suggestion)
     }
-}
 
-final class DefaultPromptActionsHandler: NewTabPagePromptActionsHandling {
 
     func open(_ prompt: String) async throws {
         let nativePrompt: AIChatNativePrompt = .queryPrompt(prompt, autoSubmit: true)
@@ -82,5 +80,3 @@ final class DefaultPromptActionsHandler: NewTabPagePromptActionsHandling {
         tabOpener.openAIChatTab()
     }
 }
-
-

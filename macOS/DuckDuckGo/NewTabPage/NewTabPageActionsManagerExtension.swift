@@ -81,8 +81,7 @@ extension NewTabPageActionsManager {
             isUrlIgnored: { _ in false}
         )
         let searchModel = NewTabPageSearchModel(searchSuggestionsProvider: suggestionContainer,
-                                                actionsHandler: DefaultSearchActionsHandler(),
-                                                promptHandler: DefaultPromptActionsHandler())
+                                                actionsHandler: DefaultSearchActionsHandler())
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(

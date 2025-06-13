@@ -32,9 +32,7 @@ public protocol NewTabPageSearchSuggestionsProviding: AnyObject {
 public protocol NewTabPageSearchActionsHandling: AnyObject {
     @MainActor
     func open(_ suggestion: NewTabPageDataModel.Suggestion) async throws
-}
 
-public protocol NewTabPagePromptActionsHandling: AnyObject {
     @MainActor
     func open(_ prompt: String) async throws
 }
@@ -43,14 +41,11 @@ public final class NewTabPageSearchModel {
 
     let searchSuggestionsProvider: NewTabPageSearchSuggestionsProviding
     private let actionsHandler: NewTabPageSearchActionsHandling
-    private let promptHandler: NewTabPagePromptActionsHandling
 
     public init(searchSuggestionsProvider: NewTabPageSearchSuggestionsProviding,
-                actionsHandler: NewTabPageSearchActionsHandling,
-                promptHandler: NewTabPagePromptActionsHandling) {
+                actionsHandler: NewTabPageSearchActionsHandling) {
         self.searchSuggestionsProvider = searchSuggestionsProvider
         self.actionsHandler = actionsHandler
-        self.promptHandler = promptHandler
     }
 
     // MARK: - Actions
@@ -62,7 +57,7 @@ public final class NewTabPageSearchModel {
 
     @MainActor
     public func open(_ prompt: String) async throws {
-        try await promptHandler.open(prompt)
+        try await actionsHandler.open(prompt)
     }
 }
 

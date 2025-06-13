@@ -35,7 +35,7 @@ import SystemExtensions
 import VPNExtensionManagement
 import VPNAppState
 
-typealias NetworkProtectionStatusChangeHandler = (NetworkProtection.ConnectionStatus) -> Void
+typealias NetworkProtectionStatusChangeHandler = (VPN.ConnectionStatus) -> Void
 typealias NetworkProtectionConfigChangeHandler = () -> Void
 
 final class NetworkProtectionTunnelController: TunnelController, TunnelSessionProvider {

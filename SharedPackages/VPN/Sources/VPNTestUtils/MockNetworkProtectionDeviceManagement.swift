@@ -26,15 +26,15 @@ public final class MockNetworkProtectionDeviceManagement: NetworkProtectionDevic
     }
 
     public var spyGenerateTunnelConfiguration: (
-        selectionMethod: NetworkProtection.NetworkProtectionServerSelectionMethod,
+        selectionMethod: VPN.NetworkProtectionServerSelectionMethod,
         excludeLocalNetworks: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
         regenerateKey: Bool
     )?
 
     public var stubGenerateTunnelConfiguration: (
-        tunnelConfiguration: NetworkProtection.TunnelConfiguration,
-        server: NetworkProtection.NetworkProtectionServer
+        tunnelConfiguration: VPN.TunnelConfiguration,
+        server: VPN.NetworkProtectionServer
     )?
 
     public var stubGenerateTunnelConfigurationError: Error?
@@ -42,10 +42,10 @@ public final class MockNetworkProtectionDeviceManagement: NetworkProtectionDevic
     public init() {}
 
     public func generateTunnelConfiguration(
-        resolvedSelectionMethod: NetworkProtection.NetworkProtectionServerSelectionMethod,
+        resolvedSelectionMethod: VPN.NetworkProtectionServerSelectionMethod,
         excludeLocalNetworks: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
-        regenerateKey: Bool) async throws -> (tunnelConfiguration: NetworkProtection.TunnelConfiguration, server: NetworkProtection.NetworkProtectionServer) {
+        regenerateKey: Bool) async throws -> (tunnelConfiguration: VPN.TunnelConfiguration, server: VPN.NetworkProtectionServer) {
             spyGenerateTunnelConfiguration = (
                 selectionMethod: resolvedSelectionMethod,
                 excludeLocalNetworks: excludeLocalNetworks,

@@ -28,7 +28,7 @@ import NetworkProtectionUI
 final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
 
     private let networkProtectionStatusReporter: NetworkProtectionStatusReporter
-    private var status: NetworkProtection.ConnectionStatus = .default
+    private var status: VPN.ConnectionStatus = .default
     private let popoverManager: NetPPopoverManager
 
     // MARK: - Subscriptions

@@ -129,7 +129,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     func testCurrentSubscriptionStateWhenNoSubscriptionPresent() async throws {
         // Given
-        mockSubscriptionManager.accessTokenResult = .failure(SubscriptionManagerError.tokenUnavailable(error: nil))
+        mockSubscriptionManager.accessTokenResult = .failure(SubscriptionManagerError.noTokenAvailable)
         XCTAssertFalse(mockSubscriptionManager.isUserAuthenticated)
 
         // When

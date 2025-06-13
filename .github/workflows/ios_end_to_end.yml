@@ -99,7 +99,6 @@ jobs:
     strategy:
       matrix:
         device-model: [ "iPhone-16", "iPad-10th-generation" ]
-        device-env: [ "phone", "ipad" ]
         test-tag: [ dev ] # [release, privacy, securityTest, adClick]
       max-parallel: 1 # Uncomment this line to run tests sequentially.
       fail-fast: false
@@ -134,7 +133,7 @@ jobs:
         include-tags: ${{ matrix.test-tag }}
         env: |
           ONBOARDING_COMPLETED=true
-          DEVICE_TYPE=${{ matrix.device-env }}
+          DEVICE_TYPE=${{ (matrix.device-model == 'iPhone-16') && 'phone' || 'ipad' }}
         device-os: 18
         device-model: ${{ matrix.device-model }}
 

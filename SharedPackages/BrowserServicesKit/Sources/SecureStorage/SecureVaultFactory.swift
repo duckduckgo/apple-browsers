@@ -34,7 +34,7 @@ public class SecureVaultFactory<Vault: SecureVault> {
 
     public typealias CryptoProviderInitialization = () -> SecureStorageCryptoProvider
     public typealias KeyStoreProviderInitialization = (_ reporter: SecureVaultReporting?) -> SecureStorageKeyStoreProvider
-    public typealias DatabaseProviderInitialization = (_ key: Data) throws -> Vault.DatabaseProvider
+    public typealias DatabaseProviderInitialization = (_ key: Data, _ reporter: SecureVaultReporting?) throws -> Vault.DatabaseProvider
 
     private var lock = NSLock()
     private var vault: Vault?
@@ -95,7 +95,7 @@ public class SecureVaultFactory<Vault: SecureVault> {
         guard let existingL1Key = try keystoreProvider.l1Key() else { throw SecureStorageError.noL1Key }
 
         do {
-            let databaseProvider = try self.makeDatabaseProvider(existingL1Key)
+            let databaseProvider = try self.makeDatabaseProvider(existingL1Key, reporter)
             return SecureStorageProviders(crypto: cryptoProvider, database: databaseProvider, keystore: keystoreProvider)
         } catch {
             throw SecureStorageError.failedToOpenDatabase(cause: error)

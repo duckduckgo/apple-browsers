@@ -21,12 +21,12 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 
-struct SubscriptionDuckAIView: View {
+struct SubscriptionAIChatView: View {
 
     let viewModel: SettingsViewModel
 
     var description: PreferencesDescription {
-        PreferencesDescription(imageName: "DuckAI-Settings",
+        PreferencesDescription(imageName: "AIChat-Settings",
                                      title: UserText.aiChatSubscriptionTitle,
                                      status: viewModel.isPaidAIChatAvailable ? .on : .off,
                                      explanation: UserText.aiChatSubscriptionCaption)

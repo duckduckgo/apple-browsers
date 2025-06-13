@@ -278,7 +278,7 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
             let hasAIChatEntitlement = userEntitlements.contains(.paidAIChat)
 
-            NavigationLink(destination: LazyView(SubscriptionDuckAIView(viewModel: settingsViewModel)), isActive: $isShowingPaidAIChat) {
+            NavigationLink(destination: LazyView(SubscriptionAIChatView(viewModel: settingsViewModel)), isActive: $isShowingPaidAIChat) {
                 SettingsCellView(
                     label: UserText.settingsSubscriptionAiChatTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),

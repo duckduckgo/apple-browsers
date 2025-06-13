@@ -127,7 +127,7 @@ jobs:
       with:
         api-key: ${{ secrets.ROBIN_API_KEY }}
         project-id: ${{ vars.ROBIN_PROJECT_KEY }}
-        name: ${{ matrix.test-tag }}_${{ github.sha }}
+        name: ${{ matrix.device-model }}_${{ matrix.test-tag }}_${{ github.sha }}
         timeout: 300
         app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
         workspace: .maestro

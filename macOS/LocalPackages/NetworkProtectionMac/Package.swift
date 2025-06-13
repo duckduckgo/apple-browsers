@@ -37,13 +37,13 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.5.1"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
-        .package(path: "../../../SharedPackages/VPN"),
         .package(path: "../AppInfoRetriever"),
         .package(path: "../AppLauncher"),
         .package(path: "../UDSHelper"),
         .package(path: "../XPCHelper"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../LoginItems"),
+        .package(path: "../VPN"),
     ],
     targets: [
 

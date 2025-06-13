@@ -24,29 +24,29 @@ public final class MockNetworkProtectionClient: NetworkProtectionClient {
     }
 
     public var spyGetLocationsAuthToken: String?
-    public var stubGetLocations: Result<[NetworkProtection.NetworkProtectionLocation], NetworkProtection.NetworkProtectionClientError> = .success([])
+    public var stubGetLocations: Result<[VPN.NetworkProtectionLocation], VPN.NetworkProtectionClientError> = .success([])
     public var getLocationsCalled: Bool {
         spyGetLocationsAuthToken != nil
     }
 
-    public func getLocations(authToken: String) async -> Result<[NetworkProtection.NetworkProtectionLocation], NetworkProtection.NetworkProtectionClientError> {
+    public func getLocations(authToken: String) async -> Result<[VPN.NetworkProtectionLocation], VPN.NetworkProtectionClientError> {
         spyGetLocationsAuthToken = authToken
         return stubGetLocations
     }
 
     public var spyGetServerStatusAuthToken: String?
     public var spyGetServerStatusServerName: String?
-    public var stubServerStatus: Result<NetworkProtection.NetworkProtectionServerStatus, NetworkProtection.NetworkProtectionClientError> = .success(
+    public var stubServerStatus: Result<VPN.NetworkProtectionServerStatus, VPN.NetworkProtectionClientError> = .success(
         .init(shouldMigrate: true)
     )
-    public func getServerStatus(authToken: String, serverName: String) async -> Result<NetworkProtection.NetworkProtectionServerStatus, NetworkProtection.NetworkProtectionClientError> {
+    public func getServerStatus(authToken: String, serverName: String) async -> Result<VPN.NetworkProtectionServerStatus, VPN.NetworkProtectionClientError> {
         spyGetServerStatusAuthToken = authToken
         spyGetServerStatusServerName = serverName
         return stubServerStatus
     }
     public var spyRedeemInviteCode: String?
     public var spyRedeemAccessToken: String?
-    public var stubRedeem: Result<String, NetworkProtection.NetworkProtectionClientError> = .success("")
+    public var stubRedeem: Result<String, VPN.NetworkProtectionClientError> = .success("")
     public var redeemCalled: Bool {
         spyRedeemInviteCode != nil
     }
@@ -61,29 +61,29 @@ public final class MockNetworkProtectionClient: NetworkProtectionClient {
 
     public func redeem(
         inviteCode: String
-    ) async -> Result<String, NetworkProtection.NetworkProtectionClientError> {
+    ) async -> Result<String, VPN.NetworkProtectionClientError> {
         spyRedeemInviteCode = inviteCode
         return stubRedeem
     }
 
     public var spyGetServersAuthToken: String?
-    public var stubGetServers: Result<[NetworkProtection.NetworkProtectionServer], NetworkProtection.NetworkProtectionClientError> = .success([])
+    public var stubGetServers: Result<[VPN.NetworkProtectionServer], VPN.NetworkProtectionClientError> = .success([])
     public var getServersCalled: Bool {
         spyGetServersAuthToken != nil
     }
 
-    public func getServers(authToken: String) async -> Result<[NetworkProtection.NetworkProtectionServer], NetworkProtection.NetworkProtectionClientError> {
+    public func getServers(authToken: String) async -> Result<[VPN.NetworkProtectionServer], VPN.NetworkProtectionClientError> {
         spyGetServersAuthToken = authToken
         return stubGetServers
     }
 
-    public var spyRegister: (authToken: String, requestBody: NetworkProtection.RegisterKeyRequestBody)?
+    public var spyRegister: (authToken: String, requestBody: VPN.RegisterKeyRequestBody)?
     public var registerCalled: Bool {
         spyRegister != nil
     }
-    public var stubRegister: Result<[NetworkProtection.NetworkProtectionServer], NetworkProtection.NetworkProtectionClientError> = .success([])
+    public var stubRegister: Result<[VPN.NetworkProtectionServer], VPN.NetworkProtectionClientError> = .success([])
 
-    public func register(authToken: String, requestBody: NetworkProtection.RegisterKeyRequestBody) async -> Result<[NetworkProtection.NetworkProtectionServer], NetworkProtection.NetworkProtectionClientError> {
+    public func register(authToken: String, requestBody: VPN.RegisterKeyRequestBody) async -> Result<[VPN.NetworkProtectionServer], VPN.NetworkProtectionClientError> {
         spyRegister = (authToken: authToken, requestBody: requestBody)
         return stubRegister
     }

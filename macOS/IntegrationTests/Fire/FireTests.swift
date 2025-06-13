@@ -47,7 +47,7 @@ final class FireTests: XCTestCase {
                         permissionManager: permissionManager,
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
 
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
@@ -86,7 +86,7 @@ final class FireTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
 
@@ -118,7 +118,7 @@ final class FireTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
-                        tld: ContentBlocking.shared.tld,
+                        tld: Application.appDelegate.tld,
                         getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) })
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
@@ -148,7 +148,7 @@ final class FireTests: XCTestCase {
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
                         faviconManagement: faviconManager,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
 
         _ = TabCollectionViewModel.makeTabCollectionViewModel()
 
@@ -180,7 +180,7 @@ final class FireTests: XCTestCase {
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
                         stateRestorationManager: appStateRestorationManager,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
 
         XCTAssertTrue(appStateRestorationManager.canRestoreLastSessionState)
         fire.burnAll()
@@ -199,7 +199,7 @@ final class FireTests: XCTestCase {
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
                         stateRestorationManager: appStateRestorationManager,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
 
         XCTAssertTrue(appStateRestorationManager.canRestoreLastSessionState)
         fire.burnEntity(entity: .none(selectedDomains: Set()))
@@ -211,7 +211,7 @@ final class FireTests: XCTestCase {
         let domainsToBurn: Set<String> = ["test.com", "provola.co.uk"]
         let zoomLevelsCoordinator = MockSavedZoomCoordinator()
         let fire = Fire(savedZoomLevelsCoordinating: zoomLevelsCoordinator,
-                        tld: ContentBlocking.shared.tld)
+                        tld: Application.appDelegate.tld)
 
         fire.burnEntity(entity: .none(selectedDomains: domainsToBurn))
 
@@ -234,7 +234,7 @@ final class FireTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
-                        tld: ContentBlocking.shared.tld,
+                        tld: Application.appDelegate.tld,
                         getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) })
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
@@ -274,7 +274,7 @@ final class FireTests: XCTestCase {
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
-                        tld: ContentBlocking.shared.tld,
+                        tld: Application.appDelegate.tld,
                         getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) })
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)

@@ -31,7 +31,7 @@ let package = Package(
             targets: ["UserScriptActionsManager"]),
     ],
     dependencies: [
-        .package(path: "../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
     ],
     targets: [
         .target(

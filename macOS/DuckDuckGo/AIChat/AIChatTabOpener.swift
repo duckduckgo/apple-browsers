@@ -24,6 +24,9 @@ protocol AIChatTabOpening {
 
     @MainActor
     func openAIChatTab(_ value: AddressBarTextField.Value, target: AIChatTabOpenerTarget)
+
+    @MainActor
+    func openNewAIChatTab(withPayload payload: AIChatPayload)
 }
 
 extension AIChatTabOpening {
@@ -77,5 +80,15 @@ struct AIChatTabOpener: AIChatTabOpening {
             promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
         }
         Application.appDelegate.windowControllersManager.openAIChat(aiChatRemoteSettings.aiChatURL, target: target, hasPrompt: query != nil)
+    }
+
+    @MainActor
+    func openNewAIChatTab(withPayload payload: AIChatPayload) {
+        guard let tabCollectionViewModel = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+
+        let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
+        newAIChatTab.aiChat?.setAIChatNativeHandoffData(payload: payload)
+
+        tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
     }
 }

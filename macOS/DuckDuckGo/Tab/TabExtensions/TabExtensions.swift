@@ -24,6 +24,7 @@ import History
 import MaliciousSiteProtection
 import PrivacyDashboard
 import SpecialErrorPages
+import WebKit
 
 /**
  Tab Extensions should conform to TabExtension protocol
@@ -169,6 +170,7 @@ extension TabExtensionsBuilder {
 
         add {
             AutofillTabExtension(autofillUserScriptPublisher: userScripts.map(\.?.autofillScript),
+                                 privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
                                  isBurner: args.isTabBurner)
         }
         add {
@@ -258,6 +260,13 @@ extension TabExtensionsBuilder {
             add {
                 NetworkProtectionControllerTabExtension(tunnelController: tunnelController)
             }
+        }
+
+        add {
+            InternalFeedbackFormTabExtension(
+                webViewPublisher: args.webViewFuture,
+                internalUserDecider: dependencies.featureFlagger.internalUserDecider
+            )
         }
     }
 

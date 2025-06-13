@@ -73,7 +73,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
         remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider(),
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        visualStyle: VisualStyleProviding
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             database: database,
@@ -82,7 +83,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             internalUserDecider: internalUserDecider,
             subscriptionManager: subscriptionManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            visualStyle: visualStyle
         )
         self.init(
             remoteMessagingDatabase: remoteMessagingDatabase,

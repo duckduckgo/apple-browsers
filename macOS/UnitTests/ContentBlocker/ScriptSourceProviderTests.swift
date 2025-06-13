@@ -46,7 +46,10 @@ final class ScriptSourceProviderTests: XCTestCase {
 
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
 
-        let appearancePreferences = AppearancePreferences(keyValueStore: try MockKeyValueFileStore())
+        let appearancePreferences = AppearancePreferences(
+            keyValueStore: try MockKeyValueFileStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
         let dataClearingPreferences = DataClearingPreferences(
             persistor: MockFireButtonPreferencesPersistor(),
             fireproofDomains: MockFireproofDomains(domains: []),
@@ -66,13 +69,14 @@ final class ScriptSourceProviderTests: XCTestCase {
             contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
             trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
             experimentManager: experimentManager,
-            tld: TLD(),
+            tld: Application.appDelegate.tld,
             onboardingNavigationDelegate: CapturingOnboardingNavigation(),
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
-            fireproofDomains: MockFireproofDomains(domains: [])
+            fireproofDomains: MockFireproofDomains(domains: []),
+            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld)
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

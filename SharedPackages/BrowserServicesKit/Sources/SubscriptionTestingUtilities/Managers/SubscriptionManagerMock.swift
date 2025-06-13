@@ -21,8 +21,9 @@ import Common
 @testable import Subscription
 
 public final class SubscriptionManagerMock: SubscriptionManager {
-
     public var email: String?
+
+    public var isEligibleForFreeTrialResult: Bool = false
 
     public var accountManager: AccountManager
     public var subscriptionEndpointService: SubscriptionEndpointService
@@ -88,7 +89,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func getToken() async throws -> String {
         guard let accessToken = accountManager.accessToken else {
-            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+            throw SubscriptionManagerError.noTokenAvailable
         }
         return accessToken
     }
@@ -117,7 +118,14 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         accountManager.isUserAuthenticated
     }
 
-    public func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
+    public func isFeatureEnabledForUser(feature: Subscription.Entitlement.ProductName) async -> Bool {
+        guard let hasEntitlement = try? await isFeatureAvailableAndEnabled(feature: feature, cachePolicy: .returnCacheDataElseLoad) else {
+            return false
+        }
+        return hasEntitlement
+    }
+
+    public func isFeatureAvailableAndEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
 
         let result = await accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: cachePolicy)
         switch result {
@@ -147,5 +155,9 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func isSubscriptionPresent() -> Bool {
         isUserAuthenticated
+    }
+
+    public func isUserEligibleForFreeTrial() -> Bool {
+        isEligibleForFreeTrialResult
     }
 }

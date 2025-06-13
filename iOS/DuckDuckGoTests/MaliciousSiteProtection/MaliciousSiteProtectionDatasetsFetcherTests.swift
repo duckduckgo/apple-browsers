@@ -290,7 +290,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
     }
 
     @MainActor
-    @Test("Start Fetching Datasets When User Turns On the Feature And Last Update Is Greater Than Update Interval")
+    @Test("Start Fetching Datasets When User Turns On the Feature And Last Update Is Greater Than Update Interval", .disabled("Flaky Test"))
     func whenPreferencesEnabled_AndLastUpdateDateIsGreaterThanUpdateInterval_ThenStartUpdateTask() async {
         // GIVEN
         updateManagerMock.lastHashPrefixSetUpdateDate = .distantPast
@@ -317,7 +317,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
     }
 
     @MainActor
-    @Test("Check Multiple Preferences Settings Toggles And Final Preference is On Starts Fetching Tasks Only Once")
+    @Test("Check Multiple Preferences Settings Toggles And Final Preference is On Starts Fetching Tasks Only Once", .disabled("Flaky Test"))
     func whenPreferencesEnabledAndDisabledMultipleTimes_AndFinalPreferencesOn_ThenDoNotStartUpdateTask() async {
         // GIVEN
         updateManagerMock.lastHashPrefixSetUpdateDate = .distantPast

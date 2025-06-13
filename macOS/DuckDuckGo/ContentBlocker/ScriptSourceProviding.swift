@@ -45,18 +45,19 @@ protocol ScriptSourceProviding {
 @MainActor func DefaultScriptSourceProvider() -> ScriptSourceProviding {
     ScriptSourceProvider(
         configStorage: Application.appDelegate.configurationStore,
-        privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+        privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
-        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-        trackerDataManager: ContentBlocking.shared.trackerDataManager,
+        contentBlockingManager: Application.appDelegate.privacyFeatures.contentBlocking.contentBlockingManager,
+        trackerDataManager: Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager,
         experimentManager: Application.appDelegate.contentScopeExperimentsManager,
-        tld: ContentBlocking.shared.tld,
+        tld: Application.appDelegate.tld,
         onboardingNavigationDelegate: Application.appDelegate.windowControllersManager,
         appearancePreferences: Application.appDelegate.appearancePreferences,
         startupPreferences: Application.appDelegate.startupPreferences,
         bookmarkManager: Application.appDelegate.bookmarkManager,
         historyCoordinator: Application.appDelegate.historyCoordinator,
-        fireproofDomains: Application.appDelegate.fireproofDomains
+        fireproofDomains: Application.appDelegate.fireproofDomains,
+        fireCoordinator: Application.appDelegate.fireCoordinator
     )
 }
 
@@ -93,7 +94,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          startupPreferences: StartupPreferences,
          bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
          historyCoordinator: HistoryDataSource,
-         fireproofDomains: DomainFireproofStatusProviding
+         fireproofDomains: DomainFireproofStatusProviding,
+         fireCoordinator: FireCoordinator
     ) {
 
         self.configStorage = configStorage
@@ -115,7 +117,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.historyViewActionsManager = HistoryViewActionsManager(
             historyCoordinator: historyCoordinator,
             bookmarksHandler: bookmarkManager,
-            fireproofStatusProvider: fireproofDomains
+            fireproofStatusProvider: fireproofDomains,
+            fire: { @MainActor in fireCoordinator.fireViewModel.fire }
         )
         self.currentCohorts = generateCurrentCohorts()
     }

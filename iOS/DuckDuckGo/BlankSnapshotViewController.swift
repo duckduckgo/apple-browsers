@@ -21,6 +21,7 @@ import UIKit
 import Core
 import Suggestions
 import BrowserServicesKit
+import DesignResourcesKitIcons
 
 protocol BlankSnapshotViewRecoveringDelegate: AnyObject {
     
@@ -95,7 +96,6 @@ class BlankSnapshotViewController: UIViewController {
         decorate()
     }
 
-
     private func addTapInterceptor() {
         let interceptView = UIView(frame: view.bounds)
         interceptView.backgroundColor = .clear
@@ -165,6 +165,7 @@ extension BlankSnapshotViewController: UICollectionViewDataSource {
             fatalError("Not \(OmniBarCell.self)")
         }
         cell.omniBar = viewCoordinator.omniBar
+        cell.omniBar?.barView.accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
         return cell
     }
 
@@ -209,6 +210,10 @@ extension BlankSnapshotViewController {
         viewCoordinator.toolbar.tintColor = theme.barTintColor
 
         viewCoordinator.toolbarTabSwitcherButton.tintColor = theme.barTintColor
+
+        // We don't want this to appear as a real button to users using acessibility devices and our UI tests
+        viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = false
+        viewCoordinator.toolbarTabSwitcherButton.accessibilityLabel = nil
 
         viewCoordinator.logoText.tintColor = theme.ddgTextTintColor
      }

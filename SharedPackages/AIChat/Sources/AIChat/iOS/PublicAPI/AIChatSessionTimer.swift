@@ -71,12 +71,12 @@ public final class AIChatSessionTimer: AIChatSessionTiming {
     }
 
     public func start() {
+        startDate = Date()
         start(duration: durationInSeconds)
     }
 
     private func start(duration: TimeInterval) {
         cancel()
-        startDate = Date()
         timer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
             self?.completion()
         }
@@ -85,7 +85,6 @@ public final class AIChatSessionTimer: AIChatSessionTiming {
     public func cancel() {
         timer?.invalidate()
         timer = nil
-        startDate = nil
     }
 
     @objc private func appWillEnterForeground() {

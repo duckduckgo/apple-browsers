@@ -38,6 +38,7 @@ final class MainViewController: NSViewController {
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
     let featureFlagger: FeatureFlagger
+    let fireCoordinator: FireCoordinator
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
     private let visualStyle: VisualStyleProviding
@@ -80,14 +81,17 @@ final class MainViewController: NSViewController {
          bookmarkManager: BookmarkManager = NSApp.delegateTyped.bookmarkManager,
          bookmarkDragDropManager: BookmarkDragDropManager = NSApp.delegateTyped.bookmarkDragDropManager,
          historyCoordinator: HistoryCoordinator = NSApp.delegateTyped.historyCoordinator,
+         contentBlocking: ContentBlockingProtocol = NSApp.delegateTyped.privacyFeatures.contentBlocking,
          fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
+         permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager,
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
-         brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
+         brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
-         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+         fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -99,7 +103,8 @@ final class MainViewController: NSViewController {
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
+        self.fireCoordinator = fireCoordinator
 
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
@@ -157,7 +162,9 @@ final class MainViewController: NSViewController {
                                                                          bookmarkManager: bookmarkManager,
                                                                          bookmarkDragDropManager: bookmarkDragDropManager,
                                                                          historyCoordinator: historyCoordinator,
+                                                                         contentBlocking: contentBlocking,
                                                                          fireproofDomains: fireproofDomains,
+                                                                         permissionManager: permissionManager,
                                                                          networkProtectionPopoverManager: networkProtectionPopoverManager,
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
@@ -165,7 +172,7 @@ final class MainViewController: NSViewController {
                                                                          aiChatSidebarPresenter: aiChatSidebarPresenter)
 
         findInPageViewController = FindInPageViewController.create()
-        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel)
+        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel)
         bookmarksBarViewController = BookmarksBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,
@@ -338,7 +345,11 @@ final class MainViewController: NSViewController {
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
             if visualStyle.addToolbarShadow {
-                mainView.divider.backgroundColor = .shadowSecondary
+                if mainView.isBannerViewShown {
+                    mainView.divider.backgroundColor = .bannerViewDivider
+                } else {
+                    mainView.divider.backgroundColor = .shadowSecondary
+                }
             } else {
                 let backgroundColor: NSColor = {
                     if mainView.isBannerViewShown {

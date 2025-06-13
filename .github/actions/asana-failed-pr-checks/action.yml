@@ -25,6 +25,7 @@ runs:
   using: "composite"
   steps:
     - id: get-asana-user-id
+      if: inputs.action == 'create-task'
       uses: duckduckgo/native-github-asana-sync@v1.9
       with:
         action: 'get-asana-user-id'

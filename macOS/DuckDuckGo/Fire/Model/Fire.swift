@@ -94,7 +94,7 @@ final class Fire {
     @MainActor
     init(cacheManager: WebCacheManager? = nil,
          historyCoordinating: HistoryCoordinating? = nil,
-         permissionManager: PermissionManagerProtocol = PermissionManager.shared,
+         permissionManager: PermissionManagerProtocol? = nil,
          savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
          downloadListCoordinator: DownloadListCoordinator = DownloadListCoordinator.shared,
          windowControllerManager: WindowControllersManager? = nil,
@@ -114,7 +114,7 @@ final class Fire {
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
-        self.permissionManager = permissionManager
+        self.permissionManager = permissionManager ?? NSApp.delegateTyped.permissionManager
         self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating
         self.downloadListCoordinator = downloadListCoordinator
         self.windowControllerManager = windowControllerManager ?? Application.appDelegate.windowControllersManager
@@ -401,7 +401,7 @@ final class Fire {
     }
 
     private func burnHistory(of baseDomains: Set<String>, completion: @escaping (Set<URL>) -> Void) {
-        historyCoordinating.burnDomains(baseDomains, tld: ContentBlocking.shared.tld, completion: completion)
+        historyCoordinating.burnDomains(baseDomains, tld: tld, completion: completion)
     }
 
     private func burnAllHistory(completion: @escaping () -> Void) {

@@ -33,7 +33,7 @@ import os.log
 import PixelKit
 import ServiceManagement
 import Subscription
-import SwiftUICore
+import SwiftUI
 import VPNAppLauncher
 import VPNAppState
 import VPNExtensionManagement

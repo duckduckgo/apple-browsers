@@ -36,14 +36,9 @@ protocol ContentBlockingProtocol {
 
 }
 
-typealias AnyContentBlocking = any ContentBlockingProtocol & AdClickAttributionDependencies
-
-// refactor: ContentBlocking.shared to be removed, ContentBlockingProtocol to be renamed to ContentBlocking
+// refactor: AnyContentBlocking to be removed, ContentBlockingProtocol to be renamed to ContentBlocking
 // ContentBlocking to be passed to init methods as `some ContentBlocking`
-typealias ContentBlocking = AppContentBlocking
-extension ContentBlocking {
-    static var shared: AnyContentBlocking { PrivacyFeatures.contentBlocking }
-}
+typealias AnyContentBlocking = any ContentBlockingProtocol & AdClickAttributionDependencies
 
 final class AppContentBlocking {
     let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -79,6 +74,7 @@ final class AppContentBlocking {
         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
         historyCoordinator: HistoryDataSource,
         fireproofDomains: DomainFireproofStatusProviding,
+        fireCoordinator: FireCoordinator,
         tld: TLD
     ) {
         let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
@@ -98,6 +94,7 @@ final class AppContentBlocking {
             bookmarkManager: bookmarkManager,
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
+            fireCoordinator: fireCoordinator,
             tld: tld
         )
     }
@@ -114,6 +111,7 @@ final class AppContentBlocking {
         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
         historyCoordinator: HistoryDataSource,
         fireproofDomains: DomainFireproofStatusProviding,
+        fireCoordinator: FireCoordinator,
         tld: TLD
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -145,7 +143,8 @@ final class AppContentBlocking {
                                                   startupPreferences: startupPreferences,
                                                   bookmarkManager: bookmarkManager,
                                                   historyCoordinator: historyCoordinator,
-                                                  fireproofDomains: fireproofDomains)
+                                                  fireproofDomains: fireproofDomains,
+                                                  fireCoordinator: fireCoordinator)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,
@@ -164,7 +163,7 @@ final class AppContentBlocking {
             domainEvent = .trackerDataParseFailed
             if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[Constants.ParameterName.experimentName] = experimentName
-                finalParameters[Constants.ParameterName.etag] = ContentBlocking.shared.trackerDataManager.fetchedData?.etag ?? ""
+                finalParameters[Constants.ParameterName.etag] = Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.fetchedData?.etag ?? ""
             }
 
         case .trackerDataReloadFailed:
@@ -219,7 +218,7 @@ final class AppContentBlocking {
                                                                      timeBucketAggregation: timeBucket)
             if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[Constants.ParameterName.experimentName] = experimentName
-                finalParameters[Constants.ParameterName.etag] = ContentBlocking.shared.trackerDataManager.fetchedData?.etag ?? ""
+                finalParameters[Constants.ParameterName.etag] = Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.fetchedData?.etag ?? ""
             }
         }
 

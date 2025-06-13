@@ -106,7 +106,7 @@ extension Preferences {
 
         private var rightColumnContent: some View {
             Group {
-                #if APPSTORE
+#if APPSTORE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGoForMacAppStore)
                         .font(.companyName)
@@ -134,7 +134,7 @@ extension Preferences {
                             model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                         })
                     }))
-                #else
+#elseif SPARKLE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGo)
                         .font(.companyName)
@@ -166,7 +166,7 @@ extension Preferences {
                 .padding(.bottom, 4)
 
                 updateButton
-                #endif
+#endif
             }
         }
 

@@ -19,7 +19,9 @@
 import BrowserServicesKit
 import Common
 import PersistenceTestingUtils
+import WebKit
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class AutoconsentMessageProtocolTests: XCTestCase {
@@ -30,7 +32,10 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     override func setUp() async throws{
         try await super.setUp()
 
-        let appearancePreferences = AppearancePreferences(keyValueStore: try MockKeyValueFileStore())
+        let appearancePreferences = AppearancePreferences(
+            keyValueStore: try MockKeyValueFileStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
         let dataClearingPreferences = DataClearingPreferences(
             persistor: MockFireButtonPreferencesPersistor(),
             fireproofDomains: MockFireproofDomains(domains: []),
@@ -53,13 +58,14 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                                                       embeddedDataProvider: AppTrackerDataSetProvider(),
                                                                                       errorReporting: nil),
                                                experimentManager: MockContentScopeExperimentManager(),
-                                               tld: TLD(),
+                                               tld: Application.appDelegate.tld,
                                                onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                                appearancePreferences: appearancePreferences,
                                                startupPreferences: startupPreferences,
                                                bookmarkManager: MockBookmarkManager(),
                                                historyCoordinator: CapturingHistoryDataSource(),
-                                               fireproofDomains: MockFireproofDomains(domains: [])
+                                               fireproofDomains: MockFireproofDomains(domains: []),
+                                               fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld)
                                               ),
             config: MockPrivacyConfiguration()
         )

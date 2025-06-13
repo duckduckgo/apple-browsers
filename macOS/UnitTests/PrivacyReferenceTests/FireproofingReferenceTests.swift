@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-import os.log
-@testable import DuckDuckGo_Privacy_Browser
 import Common
+import os.log
+import WebKit
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
 
 final class FireproofingReferenceTests: XCTestCase {
     private var referenceTests = [Test]()
@@ -62,7 +64,7 @@ final class FireproofingReferenceTests: XCTestCase {
         Logger.general.debug("Testing \(test.name)")
 
         let loginDomains = testData.fireButtonFireproofing.fireproofedSites.map { sanitizedSite($0) }
-        let logins = MockPreservedLogins(domains: loginDomains, tld: ContentBlocking.shared.tld)
+        let logins = MockPreservedLogins(domains: loginDomains, tld: Application.appDelegate.tld)
 
         let webCacheManager = WebCacheManager(fireproofDomains: logins, websiteDataStore: dataStore)
 

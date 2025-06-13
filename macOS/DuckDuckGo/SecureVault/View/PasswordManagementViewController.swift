@@ -167,7 +167,7 @@ final class PasswordManagementViewController: NSViewController {
     private let urlMatcher = AutofillDomainNameUrlMatcher()
     private let tld = NSApp.delegateTyped.tld
     private let urlSort = AutofillDomainNameUrlSort()
-    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
+    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
 
     override func viewDidLoad() {
         super.viewDidLoad()

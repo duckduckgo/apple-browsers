@@ -127,6 +127,7 @@ final class MockDDGSyncing: DDGSyncing {
 }
 
 final class MockSyncConnectionControlling: SyncConnectionControlling {
+    
     func cancel() async {
     }
 
@@ -142,7 +143,7 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
         true
     }
 
-    func syncCodeEntered(code: String, canScanURLBarcodes: Bool) async -> Bool {
+    func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
         true
     }
 

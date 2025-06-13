@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
+import QuartzCore
 
 typealias ContentBlockingAssetsCompilationTimeReporter = AbstractContentBlockingAssetsCompilationTimeReporter<UInt64>
 extension ContentBlockingAssetsCompilationTimeReporter {

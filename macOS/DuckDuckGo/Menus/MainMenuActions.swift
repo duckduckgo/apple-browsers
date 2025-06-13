@@ -231,7 +231,7 @@ extension AppDelegate {
         NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
     }
 
-    #endif
+#endif
 
     @objc func navigateToBookmark(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem else {
@@ -1331,9 +1331,10 @@ extension AppDelegate: NSMenuItemValidation {
         case #selector(AppDelegate.openExportLogins(_:)):
             return areTherePasswords
 
+#if FEEDBACK
         case #selector(AppDelegate.openReportBrokenSite(_:)):
             return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
-
+#endif
         default:
             return true
         }

@@ -19,6 +19,7 @@
 import Combine
 import Foundation
 import Navigation
+import CommonObjCExtensions
 import UniformTypeIdentifiers
 
 final class FindInPageTabExtension: TabExtension {

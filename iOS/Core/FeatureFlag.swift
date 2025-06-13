@@ -103,6 +103,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210055762484807?focus=true
     case experimentalAIChat
 
+    /// https://app.asana.com/1/137249556945/task/1210496258241813
+    case experimentalSwitcherBarTransition
+
     /// https://app.asana.com/1/137249556945/task/1210139454006070
     case privacyProOnboardingPromotion
 
@@ -173,7 +176,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canScanUrlBasedSyncSetupBarcodes,
              .paidAIChat,
              .canInterceptSyncSetupUrls,
-             .exchangeKeysToSyncWithAnotherDevice:
+             .exchangeKeysToSyncWithAnotherDevice,
+             .experimentalSwitcherBarTransition:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -275,6 +279,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .experimentalAIChat:
+            return .internalOnly()
+        case .experimentalSwitcherBarTransition:
             return .internalOnly()
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))

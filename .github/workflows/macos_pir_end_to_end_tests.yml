@@ -50,6 +50,12 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
+
     - name: Check out the PIR fake broker code
       uses: actions/checkout@v4
       with:
@@ -112,6 +118,7 @@ jobs:
         xcode-version: ${{ matrix.xcode-version }}
 
     - name: Run PIR e2e Tests
+      id: run-tests
       run: |
         launchctl setenv PRIVACYPRO_STAGING_TOKEN '${{ secrets.PRIVACYPRO_STAGING_TOKEN }}'
         set -o pipefail && xcodebuild test \
@@ -127,6 +134,16 @@ jobs:
           | tee pir-e2e-tests.log
       env:
           PRIVACYPRO_STAGING_TOKEN: ${{ secrets.PRIVACYPRO_STAGING_TOKEN }}
+
+    - name: Report job duration
+      if: success() || (always() && steps.run-tests.outcome == 'failure')
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_macos_pir_e2e_tests
+        pixel-params: |
+          runner: ${{ matrix.runner }}
 
     - name: Prepare test report
       if: always()

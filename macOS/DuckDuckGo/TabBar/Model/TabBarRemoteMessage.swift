@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 struct TabBarRemoteMessage {
     static let tabBarPermanentSurveyRemoteMessageId = "macos_permanent_survey_tab_bar"
 

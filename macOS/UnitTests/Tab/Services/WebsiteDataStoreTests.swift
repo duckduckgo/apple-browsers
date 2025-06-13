@@ -17,7 +17,9 @@
 //
 
 import Common
+import WebKit
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class WebCacheManagerTests: XCTestCase {

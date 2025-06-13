@@ -357,14 +357,6 @@ final class DuckPlayerNativeUIPresenter {
         playerCancellables.removeAll()
         playerViewModel = nil
     }
-    
-    @MainActor
-    private func schedulePlayerCleanup() {
-        // Delay cleanup to ensure the view is fully dismissed
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.cleanupPlayer()
-        }
-    }
 
     @MainActor
     private func displayToast(with message: AttributedString, buttonTitle: String, onButtonTapped: (() -> Void)?) {

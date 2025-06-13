@@ -157,6 +157,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let visualStyle: VisualStyleProviding
+    private let visualStyleDecider: VisualStyleDecider
 
     let isAuthV2Enabled: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -458,11 +459,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(
                 privacyConfigurationManager: privacyConfigurationManager,
                 purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform, paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) }
-            )
+            ),
+            internalUserDecider: internalUserDecider
         )
         self.windowControllersManager = windowControllersManager
 
-        let visualStyleDecider = DefaultVisualStyleDecider(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
+        self.visualStyleDecider = DefaultVisualStyleDecider(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
         visualStyle = visualStyleDecider.style
 
 #if DEBUG
@@ -798,6 +800,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         crashReporter.checkForNewReports()
 #endif
+
+        if visualStyleDecider.shouldFirePixel(style: visualStyle) {
+            PixelKit.fire(VisualStylePixel.visualUpdatesEnabled, frequency: .uniqueByName)
+        }
 
         urlEventHandler.applicationDidFinishLaunching()
 

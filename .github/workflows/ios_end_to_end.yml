@@ -132,7 +132,9 @@ jobs:
         app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
         workspace: .maestro
         include-tags: ${{ matrix.test-tag }}
-        env: ONBOARDING_COMPLETED=true,DEVICE_TYPE=${{ matrix.device-env }}
+        env: |
+          ONBOARDING_COMPLETED=true
+          DEVICE_TYPE=${{ matrix.device-env }}
         device-os: 18
         device-model: ${{ matrix.device-model }}
 

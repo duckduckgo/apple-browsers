@@ -43,7 +43,7 @@ struct SettingsCompleteSetupView: View {
             if viewModel.shouldShowSetAsDefaultBrowser {
                 SettingsCellView(label: UserText.setAsDefaultBrowser,
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.defaultBrowserMobile),
-                                 action: { viewModel.setAsDefaultBrowser() },
+                                 action: { viewModel.setAsDefaultBrowser("complete-setup") },
                                  webLinkIndicator: true,
                                  isButton: true)
                 .swipeActions {

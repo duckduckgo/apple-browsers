@@ -760,8 +760,12 @@ extension SettingsViewModel {
         self.deepLinkTarget = nil
     }
 
-    func setAsDefaultBrowser() {
-        Pixel.fire(pixel: .settingsSetAsDefault)
+    func setAsDefaultBrowser(_ source: String? = nil) {
+        var parameters: [String: String] = [:]
+        if let source = source {
+            parameters[PixelParameters.source] = source
+        }
+        Pixel.fire(pixel: .settingsSetAsDefault, withAdditionalParameters: parameters)
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
         if shouldShowSetAsDefaultBrowser {

@@ -164,12 +164,11 @@ class SettingsLegacyViewProvider: ObservableObject {
                                                   favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
                                                   tld: AppDependencyProvider.shared.storageCache.tld)
         let viewController = DataImportViewController(importManager: dataImportManager,
-                                                      importScreen: DataImportViewModel.ImportScreen.passwords,
+                                                      importScreen: DataImportViewModel.ImportScreen.settings,
                                                       syncService: syncService,
                                                       keyValueStore: keyValueStore)
         viewController.delegate = delegate
         return viewController
-
     }
 
 }

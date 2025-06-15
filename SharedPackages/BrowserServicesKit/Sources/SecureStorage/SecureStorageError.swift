@@ -33,7 +33,7 @@ public enum SecureStorageDatabaseError: Error, CustomNSError {
         }
     }
 
-    public var errorUserInfo: [String : Any] {
+    public var errorUserInfo: [String: Any] {
         [:]
     }
 
@@ -121,7 +121,7 @@ extension SecureStorageError: CustomNSError, ErrorWithPixelParameters {
         return errorUserInfo
     }
 
-    public var errorParameters: [String : String] {
+    public var errorParameters: [String: String] {
         switch self {
         case .initFailed(cause: let error),
                 .authError(cause: let error),

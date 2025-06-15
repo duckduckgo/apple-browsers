@@ -218,27 +218,17 @@ class DataImportViewModelTests: XCTestCase {
         let summary = DataImport.DataTypeSummary(successful: 1, duplicate: 0, failed: 0)
         mockImportManager.mockImportFileSummary = [.passwords: .success(summary)]
 
-        var seen: [Bool] = []
-        let expectation = XCTestExpectation(description: "Observed isLoading [true, false]")
-
-        let _ = viewModel.$isLoading
-            .dropFirst()
-            .receive(on: RunLoop.main)
-            .sink { value in
-                seen.append(value)
-                if seen.suffix(2) == [true, false] {
-                    expectation.fulfill()
-                }
-            }
-
-        XCTAssertFalse(viewModel.isLoading)
-        viewModel.handleFileSelection(url, type: .zip)
-
-        await fulfillment(of: [expectation], timeout: 2.0)
-        XCTAssertEqual(seen.suffix(2), [true, false])
+        await MainActor.run {
+            XCTAssertFalse(viewModel.isLoading)
+            viewModel.handleFileSelection(url, type: .zip)
+            XCTAssertTrue(viewModel.isLoading)
+        }
 
         await fulfillment(of: [mockDelegate.summaryExpectation], timeout: 1.0)
-        XCTAssertFalse(viewModel.isLoading)
+
+        await MainActor.run {
+            XCTAssertFalse(viewModel.isLoading)
+        }
     }
 
     func testLoadingState_DuringCSVImport() async {
@@ -251,27 +241,17 @@ class DataImportViewModelTests: XCTestCase {
         let summary = DataImport.DataTypeSummary(successful: 5, duplicate: 0, failed: 0)
         mockImportManager.mockImportFileSummary = [.passwords: .success(summary)]
 
-        var seen: [Bool] = []
-        let expectation = XCTestExpectation(description: "Observed isLoading [true, false]")
-
-        let _ = viewModel.$isLoading
-            .dropFirst()
-            .receive(on: RunLoop.main)
-            .sink { value in
-                seen.append(value)
-                if seen.suffix(2) == [true, false] {
-                    expectation.fulfill()
-                }
-            }
-        
-        XCTAssertFalse(viewModel.isLoading)
-        viewModel.handleFileSelection(url, type: .csv)
-
-        await fulfillment(of: [expectation], timeout: 2.0)
-        XCTAssertEqual(seen.suffix(2), [true, false])
+        await MainActor.run {
+            XCTAssertFalse(viewModel.isLoading)
+            viewModel.handleFileSelection(url, type: .csv)
+            XCTAssertTrue(viewModel.isLoading)
+        }
 
         await fulfillment(of: [mockDelegate.summaryExpectation], timeout: 1.0)
-        XCTAssertFalse(viewModel.isLoading)
+
+        await MainActor.run {
+            XCTAssertFalse(viewModel.isLoading)
+        }
     }
 
     // MARK: - Error Handling Tests
@@ -298,28 +278,6 @@ class DataImportViewModelTests: XCTestCase {
         viewModel.handleFileSelection(url, type: .html)
         XCTAssertFalse(mockDelegate.didRequestPresentSummary)
     }
-    
-    private func expectLoadingTransitions(for viewModel: DataImportViewModel, transitions: [Bool], timeout: TimeInterval = 2.0) async {
-        var seen: [Bool] = []
-        let expectation = XCTestExpectation(description: "Observed expected loading transitions")
-
-        let cancellable = viewModel.$isLoading
-            .dropFirst()
-            .sink { value in
-                seen.append(value)
-
-                // Allow matching subsequence [true, false] anywhere in seen
-                if seen.suffix(transitions.count) == transitions {
-                    expectation.fulfill()
-                }
-            }
-
-        await fulfillment(of: [expectation], timeout: timeout)
-        cancellable.cancel()
-
-        XCTAssertTrue(seen.contains(where: { $0 == transitions.first }),
-                      "Expected to see transitions \(transitions), got \(seen)")
-    }
 }
 
 // MARK: - Mock Classes
@@ -330,8 +288,6 @@ private class MockDataImportManager: DataImportManaging {
     var mockImportData: DataImportSummary = [:]
 
     func importFile(at url: URL, for fileType: DataImportFileType) async throws -> DataImportSummary? {
-        // Sleep 40 ms so DataImportViewModel emits `true` long enough for Combine tests on CI.
-        try await Task.sleep(nanoseconds: 40_000_000)
         return mockImportFileSummary
     }
 

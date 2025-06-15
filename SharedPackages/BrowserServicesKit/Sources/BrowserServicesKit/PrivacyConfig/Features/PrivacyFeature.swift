@@ -66,6 +66,7 @@ public enum PrivacyFeature: String {
     case adAttributionReporting
     case forceOldAppDelegate
     case htmlHistoryPage
+    case shortHistoryMenu
     case tabManager
     case webViewStateRestoration
     case experimentalTheming

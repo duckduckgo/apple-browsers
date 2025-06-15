@@ -89,7 +89,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func getToken() async throws -> String {
         guard let accessToken = accountManager.accessToken else {
-            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+            throw SubscriptionManagerError.noTokenAvailable
         }
         return accessToken
     }

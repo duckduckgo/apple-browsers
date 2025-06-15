@@ -161,6 +161,9 @@ class SwitchBarTextEntryViewController: UIViewController {
 
         actionViewBottomConstraint = actionView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         textEntryBottomConstraint = textEntryView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+        textEntryBottomConstraint?.priority = UILayoutPriority(999)
+
+        let spacingConstraint = actionView.topAnchor.constraint(equalTo: textEntryView.bottomAnchor, constant: 8)
 
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -171,26 +174,28 @@ class SwitchBarTextEntryViewController: UIViewController {
             textEntryView.topAnchor.constraint(equalTo: containerView.topAnchor),
             textEntryView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             textEntryView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            textEntryBottomConstraint,
 
-            actionView.topAnchor.constraint(equalTo: textEntryView.bottomAnchor, constant: 8),
             actionView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             actionView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            actionViewBottomConstraint,
-        ].compactMap({ $0 }))
+            spacingConstraint
+        ])
 
         updateConstraintsForCurrentMode()
     }
 
     func updateConstraintsForCurrentMode() {
-
-        self.actionViewBottomConstraint?.isActive = showsActionView
-        self.actionViewController?.view.alpha = showsActionView ? 1 : 0
-        self.textEntryBottomConstraint?.isActive = !showsActionView
+        if showsActionView {
+            textEntryBottomConstraint?.isActive = false
+            actionViewBottomConstraint?.isActive = true
+            actionViewController?.view.alpha = 1
+        } else {
+            actionViewBottomConstraint?.isActive = false
+            textEntryBottomConstraint?.isActive = true
+            actionViewController?.view.alpha = 0
+        }
     }
 
     private func setupSubscriptions() {
-
         handler.currentTextPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -220,5 +225,9 @@ class SwitchBarTextEntryViewController: UIViewController {
     @discardableResult
     override func resignFirstResponder() -> Bool {
         return textEntryView.resignFirstResponder()
+    }
+
+    func selectAllText() {
+        textEntryView.selectAllText()
     }
 }

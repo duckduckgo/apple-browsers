@@ -18,6 +18,7 @@
 
 import AppKit
 import BrowserServicesKit
+import AIChat
 
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
@@ -48,6 +49,7 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     weak var delegate: AIChatSidebarViewControllerDelegate?
+    public var aiChatPayload: AIChatPayload?
 
     private var openInNewTabButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -69,6 +71,10 @@ final class AIChatSidebarViewController: NSViewController {
         let container = NSView()
         container.wantsLayer = true
         container.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor
+
+        if let aiChatPayload {
+            aiTab.aiChat?.setAIChatNativeHandoffData(payload: aiChatPayload)
+        }
 
         createAndSetupSeparator(in: container)
         createAndSetupTopBar(in: container)

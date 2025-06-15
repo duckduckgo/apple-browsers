@@ -383,14 +383,10 @@ final class AddressBarTextField: NSTextField {
         }
 
         // reset to actual value
-        let oldValue = value
         clearValue()
         updateValue(selectedTabViewModel: nil, addressBarString: nil)
 
-        if oldValue == value {
-            // resign first responder if nothing has changed
-            self.window?.makeFirstResponder(nil)
-        }
+        self.window?.makeFirstResponder(nil)
     }
 
     override func becomeFirstResponder() -> Bool {

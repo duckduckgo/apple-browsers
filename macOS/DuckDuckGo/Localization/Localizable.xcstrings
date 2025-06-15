@@ -59256,6 +59256,19 @@
         }
       }
     },
+    "preferences.paidAIChat" : {
+      "comment" : "Title of the option to show the Duck.ai Pro preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "preferences.personalInformationRemoval" : {
       "comment" : "Title of the option to show the Personal Information Removal preferences",
       "extractionState" : "extracted_with_value",

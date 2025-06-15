@@ -221,7 +221,7 @@ class DataImportViewModelTests: XCTestCase {
         var seen: [Bool] = []
         let expectation = XCTestExpectation(description: "Observed isLoading [true, false]")
 
-        let cancellable = viewModel.$isLoading
+        let _ = viewModel.$isLoading
             .dropFirst()
             .receive(on: RunLoop.main)
             .sink { value in
@@ -254,7 +254,7 @@ class DataImportViewModelTests: XCTestCase {
         var seen: [Bool] = []
         let expectation = XCTestExpectation(description: "Observed isLoading [true, false]")
 
-        let cancellable = viewModel.$isLoading
+        let _ = viewModel.$isLoading
             .dropFirst()
             .receive(on: RunLoop.main)
             .sink { value in
@@ -330,6 +330,8 @@ private class MockDataImportManager: DataImportManaging {
     var mockImportData: DataImportSummary = [:]
 
     func importFile(at url: URL, for fileType: DataImportFileType) async throws -> DataImportSummary? {
+        // Sleep 40 ms so DataImportViewModel emits `true` long enough for Combine tests on CI.
+        try await Task.sleep(nanoseconds: 40_000_000)
         return mockImportFileSummary
     }
 

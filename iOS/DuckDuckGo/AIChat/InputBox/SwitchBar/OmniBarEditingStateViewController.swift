@@ -81,50 +81,6 @@ final class OmniBarEditingStateViewController: UIViewController {
         animateAppearance()
     }
 
-    private func installSuggestionsTray() {
-        guard let dependencies = suggestionTrayDependencies else { return }
-        let storyboard = UIStoryboard(name: "SuggestionTray", bundle: nil)
-
-        guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
-            SuggestionTrayViewController(coder: coder,
-                                         favoritesViewModel: dependencies.favoritesViewModel,
-                                         bookmarksDatabase: dependencies.bookmarksDatabase,
-                                         historyManager: dependencies.historyManager,
-                                         tabsModel: dependencies.tabsModel,
-                                         featureFlagger: dependencies.featureFlagger,
-                                         appSettings: dependencies.appSettings)
-        }) else {
-            assertionFailure()
-            return
-        }
-        controller.view.frame = self.view.bounds
-
-        addChild(controller)
-        view.addSubview(controller.view)
-        suggestionTrayViewController = controller
-        controller.view.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            controller.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            controller.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            controller.view.topAnchor.constraint(equalTo: switchBarVC.view.bottomAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-        ])
-
-        controller.autocompleteDelegate = self
-        controller.favoritesOverlayDelegate = self
-        print("test")
-        suggestionTrayViewController = controller
-
-       // controller.view.frame = viewCoordinator.suggestionTrayContainer.bounds
-//        viewCoordinator.suggestionTrayContainer.addSubview(controller.view)
-//
-//        controller.dismissHandler = dismissSuggestionTray
-//        controller.autocompleteDelegate = self
-//        controller.favoritesOverlayDelegate = self
-//        suggestionTrayController = controller
-    }
-
     private func animateAppearance() {
 
         guard let expectedStartFrame else {
@@ -230,7 +186,6 @@ final class OmniBarEditingStateViewController: UIViewController {
         } else {
             bottomPositionDismissal(completion)
         }
-
     }
 
     private func topPositionDismissal(_ completion: (() -> Void)?) {
@@ -296,8 +251,7 @@ final class OmniBarEditingStateViewController: UIViewController {
     }
 
     private func handleQueryUpdate(_ query: String) {
-        suggestionTrayViewController?.show(for: .autocomplete(query: query))
-        suggestionTrayViewController?.fill()
+        handdleSuggestionTrayWithQuery(query)
     }
 
     private func setupSubscriptions() {
@@ -368,5 +322,61 @@ extension OmniBarEditingStateViewController: FavoritesOverlayDelegate {
 
     func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
 
+    }
+}
+
+// MARK: - Suggestion Tray methods
+
+extension OmniBarEditingStateViewController {
+    private func handdleSuggestionTrayWithQuery(_ query: String) {
+        if query.isEmpty {
+            //hideSuggestionTray()
+            showSuggestionTray(.favorites)
+        } else {
+            showSuggestionTray(.autocomplete(query: query))
+        }
+    }
+
+    private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
+        suggestionTrayViewController?.show(for: type)
+        suggestionTrayViewController?.view.isHidden = false
+    }
+
+    func hideSuggestionTray() {
+        suggestionTrayViewController?.view.isHidden = true
+        suggestionTrayViewController?.didHide()
+    }
+
+    private func installSuggestionsTray() {
+        guard let dependencies = suggestionTrayDependencies else { return }
+        let storyboard = UIStoryboard(name: "SuggestionTray", bundle: nil)
+
+        guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
+            SuggestionTrayViewController(coder: coder,
+                                         favoritesViewModel: dependencies.favoritesViewModel,
+                                         bookmarksDatabase: dependencies.bookmarksDatabase,
+                                         historyManager: dependencies.historyManager,
+                                         tabsModel: dependencies.tabsModel,
+                                         featureFlagger: dependencies.featureFlagger,
+                                         appSettings: dependencies.appSettings)
+        }) else {
+            assertionFailure()
+            return
+        }
+        addChild(controller)
+        view.addSubview(controller.view)
+        suggestionTrayViewController = controller
+        controller.view.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            controller.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            controller.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            controller.view.topAnchor.constraint(equalTo: switchBarVC.view.bottomAnchor),
+        ])
+
+        controller.autocompleteDelegate = self
+        controller.favoritesOverlayDelegate = self
+        suggestionTrayViewController = controller
+        controller.view.backgroundColor = .purple
     }
 }

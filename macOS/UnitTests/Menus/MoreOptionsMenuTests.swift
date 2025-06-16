@@ -701,27 +701,3 @@ final class MockFreemiumDBPPresenter: FreemiumDBPPresenter {
         didCallShowFreemium = true
     }
 }
-
-//final class MockFeatureFlagger: FeatureFlagger {
-//    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
-//    var localOverrides: FeatureFlagLocalOverriding?
-//    
-//    var enabledFeatureFlags: [FeatureFlag] = []
-//    
-//    func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-//        guard let flag = featureFlag as? FeatureFlag else {
-//            return false
-//        }
-//        return enabledFeatureFlags.contains(flag)
-//    }
-//    
-//    func getCohortIfEnabled(_ subfeature: any PrivacySubfeature) -> CohortID? {
-//        return nil
-//    }
-//    
-//    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-//        return nil
-//    }
-//    
-//    var allActiveExperiments: Experiments = [:]
-//}

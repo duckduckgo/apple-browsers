@@ -385,7 +385,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             let url = subscriptionManager.url(for: .identityTheftRestoration)
             await uiHandler.showTab(with: .identityTheftRestoration(url))
         case .paidAIChat:
-            // Follow up: Implement paidAIChat selection
             break
         case .unknown:
             break

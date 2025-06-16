@@ -41,7 +41,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     }
     
     enum SelectedFeature {
-        case netP, dbp, itr, none
+        case netP, dbp, itr, aiChat, none
     }
         
     struct State {
@@ -125,8 +125,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
                      UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
                      self.state.selectedFeature = .itr
                  case .paidAIChat:
-                     // Follow up: Implement paidAIChat selection
-                     break
+                     UniquePixel.fire(pixel: .privacyProWelcomeAIChat)
+                     self.state.selectedFeature = .aiChat
                  case .unknown:
                      break
                  }

@@ -83,11 +83,13 @@ final class MainViewController: NSViewController {
          historyCoordinator: HistoryCoordinator = NSApp.delegateTyped.historyCoordinator,
          contentBlocking: ContentBlockingProtocol = NSApp.delegateTyped.privacyFeatures.contentBlocking,
          fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
+         windowControllersManager: WindowControllersManager = NSApp.delegateTyped.windowControllersManager,
          permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager,
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
          aiChatSidebarProvider: AIChatSidebarProviding,
+         aiChatTabOpener: AIChatTabOpening = NSApp.delegateTyped.aiChatTabOpener,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
@@ -157,8 +159,13 @@ final class MainViewController: NSViewController {
         }()
 
         browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
-        aiChatSidebarPresenter = AIChatSidebarPresenter(sidebarHost: browserTabViewController,
-                                                        sidebarProvider: aiChatSidebarProvider)
+        aiChatSidebarPresenter = AIChatSidebarPresenter(
+            sidebarHost: browserTabViewController,
+            sidebarProvider: aiChatSidebarProvider,
+            aiChatTabOpener: aiChatTabOpener,
+            featureFlagger: featureFlagger,
+            windowControllersManager: windowControllersManager
+        )
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          bookmarkManager: bookmarkManager,

@@ -51,17 +51,25 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
     private let sidebarHost: AIChatSidebarHosting
     private let sidebarProvider: AIChatSidebarProviding
+    private let aiChatTabOpener: AIChatTabOpening
     private let featureFlagger: FeatureFlagger
+    private let windowControllersManager: WindowControllersManagerProtocol
     private let sidebarPresenceWillChangeSubject = PassthroughSubject<AIChatSidebarPresenceChange, Never>()
 
     private var cancellables = Set<AnyCancellable>()
 
-    init(sidebarHost: AIChatSidebarHosting,
-         sidebarProvider: AIChatSidebarProviding = AIChatSidebarProvider(),
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+    init(
+        sidebarHost: AIChatSidebarHosting,
+        sidebarProvider: AIChatSidebarProviding = AIChatSidebarProvider(),
+        aiChatTabOpener: AIChatTabOpening,
+        featureFlagger: FeatureFlagger,
+        windowControllersManager: WindowControllersManagerProtocol
+    ) {
         self.sidebarHost = sidebarHost
         self.sidebarProvider = sidebarProvider
+        self.aiChatTabOpener = aiChatTabOpener
         self.featureFlagger = featureFlagger
+        self.windowControllersManager = windowControllersManager
 
         sidebarPresenceWillChangePublisher = sidebarPresenceWillChangeSubject.eraseToAnyPublisher()
         self.sidebarHost.aiChatSidebarHostingDelegate = self
@@ -158,8 +166,8 @@ extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
 
         Task { @MainActor in
-            let allPinnedTabIDs = Application.appDelegate.windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
-            let allTabIDs = Application.appDelegate.windowControllersManager.allTabCollectionViewModels.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
+            let allPinnedTabIDs = windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
+            let allTabIDs = windowControllersManager.allTabCollectionViewModels.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
             sidebarProvider.cleanUp(for: allPinnedTabIDs + allTabIDs)
         }
     }
@@ -169,7 +177,7 @@ extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
 
     func didClickOpenInNewTabButton(currentAIChatURL: URL) {
         Task { @MainActor in
-            Application.appDelegate.aiChatTabOpener.openNewAIChatTab(currentAIChatURL, target: .newTabSelected)
+            aiChatTabOpener.openNewAIChatTab(currentAIChatURL, target: .newTabSelected)
         }
     }
 

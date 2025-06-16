@@ -49,13 +49,18 @@ enum AIChatTabOpenerTarget {
 struct AIChatTabOpener: AIChatTabOpening {
     private let promptHandler: AIChatPromptHandler
     private let addressBarQueryExtractor: AIChatAddressBarPromptExtractor
+    private let windowControllersManager: WindowControllersManagerProtocol
 
     let aiChatRemoteSettings = AIChatRemoteSettings()
 
-    init(promptHandler: AIChatPromptHandler,
-         addressBarQueryExtractor: AIChatAddressBarPromptExtractor) {
+    init(
+        promptHandler: AIChatPromptHandler,
+        addressBarQueryExtractor: AIChatAddressBarPromptExtractor,
+        windowControllersManager: WindowControllersManagerProtocol
+    ) {
         self.promptHandler = promptHandler
         self.addressBarQueryExtractor = addressBarQueryExtractor
+        self.windowControllersManager = windowControllersManager
     }
 
     @MainActor
@@ -80,7 +85,7 @@ struct AIChatTabOpener: AIChatTabOpening {
 
     @MainActor
     func openNewAIChatTab(_ aiChatURL: URL, target: AIChatTabOpenerTarget) {
-        Application.appDelegate.windowControllersManager.openAIChat(aiChatURL, target: target)
+        windowControllersManager.openAIChat(aiChatURL, target: target)
     }
 
     @MainActor
@@ -88,12 +93,12 @@ struct AIChatTabOpener: AIChatTabOpening {
         if let query = query {
             promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
         }
-        Application.appDelegate.windowControllersManager.openAIChat(aiChatRemoteSettings.aiChatURL, target: target, hasPrompt: query != nil)
+        windowControllersManager.openAIChat(aiChatRemoteSettings.aiChatURL, target: target, hasPrompt: query != nil)
     }
 
     @MainActor
     func openNewAIChatTab(withPayload payload: AIChatPayload) {
-        guard let tabCollectionViewModel = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+        guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
 
         let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
         newAIChatTab.aiChat?.setAIChatNativeHandoffData(payload: payload)

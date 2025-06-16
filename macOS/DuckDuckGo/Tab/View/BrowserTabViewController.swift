@@ -1054,7 +1054,8 @@ final class BrowserTabViewController: NSViewController {
             let preferencesViewController = PreferencesViewController(
                 syncService: syncService,
                 tabCollectionViewModel: tabCollectionViewModel,
-                privacyConfigurationManager: privacyConfigurationManager
+                privacyConfigurationManager: privacyConfigurationManager,
+                featureFlagger: featureFlagger
             )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController

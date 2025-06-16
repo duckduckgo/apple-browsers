@@ -26,7 +26,7 @@ extension DefaultAccountManager: SubscriptionTokenHandling {
     public func getToken() async throws -> String {
         Logger.subscription.log("[DefaultAccountManager+SubscriptionTokenHandling] Getting token")
         guard let token = accessToken else {
-            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+            throw SubscriptionManagerError.noTokenAvailable
         }
         Logger.subscription.log("[DefaultAccountManager+SubscriptionTokenHandling] Token fetched")
         return token

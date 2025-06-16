@@ -58,6 +58,8 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProVPNSettings
     case privacyProPersonalInformationRemovalSettings
     case privacyProPersonalInformationRemovalSettingsImpression
+    case privacyProPaidAIChatSettings
+    case privacyProPaidAIChatSettingsImpression
     case privacyProIdentityRestorationSettings
     case privacyProIdentityRestorationSettingsImpression
     case privacyProSubscriptionManagementEmail
@@ -107,6 +109,8 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProVPNSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_vpn_click"
         case .privacyProPersonalInformationRemovalSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_personal-information-removal_click"
         case .privacyProPersonalInformationRemovalSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_personal-information-removal_impression"
+        case .privacyProPaidAIChatSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_paid-ai-chat_click"
+        case .privacyProPaidAIChatSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_paid-ai-chat_impression"
         case .privacyProIdentityRestorationSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_click"
         case .privacyProIdentityRestorationSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_impression"
         case .privacyProSubscriptionManagementEmail: return "m_mac_\(appDistribution)_privacy-pro_manage-email_edit_click"

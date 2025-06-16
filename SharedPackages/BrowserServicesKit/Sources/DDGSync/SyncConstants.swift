@@ -1,8 +1,7 @@
 //
-//  CollectionExtension.swift
-//  DuckDuckGo
+//  SyncConstants.swift
 //
-//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,11 +16,20 @@
 //  limitations under the License.
 //
 
-import Foundation
+public enum SyncSetupRole {
+    case receiver(SyncSetupSource, SyncCodeSource)
+    case sharer
+}
 
-public extension Collection {
+public enum SyncSetupSource: String {
+    case recovery
+    case exchange
+    case connect
+    case unknown
+}
 
-    subscript (safe index: Index) -> Element? {
-        return indices.contains(index) ? self[index] : nil
-    }
+public enum SyncCodeSource: String {
+    case qrCode
+    case pastedCode
+    case deepLink
 }

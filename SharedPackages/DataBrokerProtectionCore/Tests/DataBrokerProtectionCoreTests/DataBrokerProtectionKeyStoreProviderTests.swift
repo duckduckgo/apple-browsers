@@ -113,8 +113,8 @@ final class DataBrokerProtectionKeyStoreProviderTests: XCTestCase {
             // Given
             let mockKeychainService = MockDBPKeychainService()
             mockKeychainService.mode = .readError
-            let expectedError = SecureStorageError.keystoreReadError(status: mockKeychainService.mode.statusCode!)
             let sut = DataBrokerProtectionKeyStoreProvider(appGroupName: mockGroupNameProvider.appGroupName, keychainService: mockKeychainService)
+            let expectedError = SecureStorageError.keystoreReadError(field: entry.rawValue, serviceName: sut.keychainServiceName, status: mockKeychainService.mode.statusCode!)
 
             // When
             XCTAssertThrowsError(try sut.readData(named: entry.rawValue, serviceName: sut.keychainServiceName)) { error in

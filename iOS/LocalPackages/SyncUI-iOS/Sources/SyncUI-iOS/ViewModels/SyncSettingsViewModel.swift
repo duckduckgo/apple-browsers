@@ -31,7 +31,6 @@ public protocol SyncManagementViewModelDelegate: AnyObject {
     func createAccountAndStartSyncing(optionsViewModel: SyncSettingsViewModel)
     func confirmAndDisableSync() async -> Bool
     func confirmAndDeleteAllData() async -> Bool
-    func copyCode()
     func confirmRemoveDevice(_ device: SyncSettingsViewModel.Device) async -> Bool
     func removeDevice(_ device: SyncSettingsViewModel.Device)
     func updateDeviceName(_ name: String)
@@ -177,10 +176,6 @@ public class SyncSettingsViewModel: ObservableObject {
             }
             isBusy = false
         }
-    }
-
-    func copyCode() {
-        delegate?.copyCode()
     }
 
     func saveRecoveryPDF() {

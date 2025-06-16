@@ -1,7 +1,7 @@
 //
 //  CollectionExtension.swift
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,10 +18,15 @@
 
 import Foundation
 
-extension Collection {
+public extension Collection {
 
-    subscript (safe index: Index) -> Element? {
-        return indices.contains(index) ? self[index] : nil
+    subscript(safe index: Index) -> Element? {
+        guard self.indices.contains(index) else { return nil }
+        return self[index]
+    }
+
+    subscript(_ index: Index, default value: Element) -> Element {
+        return self[safe: index] ?? value
     }
 
 }

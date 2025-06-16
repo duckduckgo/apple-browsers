@@ -1,0 +1,49 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "SweetPad: Build",
+      "type": "sweetpad",
+      "action": "build",
+      "problemMatcher": [
+        "$sweetpad-xcodebuild-default",
+        "$sweetpad-xcbeautify-errors",
+        "$sweetpad-xcbeautify-warnings"
+      ],
+      "isBackground": true,
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "sweetpad: debuging-launch",
+      "type": "sweetpad",
+      "action": "launch",
+      "isBackground": true,
+      "problemMatcher": [
+        "$sweetpad-watch",
+        "$sweetpad-xcodebuild-default",
+        "$sweetpad-xcbeautify-errors",
+        "$sweetpad-xcbeautify-warnings"
+      ],
+      "detail": "Build and Launch the app"
+    },
+    {
+      "label": "SweetPad: Test",
+      "type": "sweetpad",
+      "action": "test",
+      "problemMatcher": [
+        "$sweetpad-watch",
+        "$sweetpad-xcodebuild-default",
+        "$sweetpad-xcbeautify-errors",
+        "$sweetpad-xcbeautify-warnings"
+      ],
+      "isBackground": true,
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    }
+  ]
+} 

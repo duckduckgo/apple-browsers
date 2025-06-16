@@ -26,7 +26,7 @@ public struct Entitlement: Codable, Equatable {
         case dataBrokerProtection = "Data Broker Protection"
         case identityTheftRestoration = "Identity Theft Restoration"
         case identityTheftRestorationGlobal = "Global Identity Theft Restoration"
-        case paidAIChat = "Premium DuckChat"
+        case paidAIChat = "Duck.ai"
         case unknown
 
         public init(from decoder: Decoder) throws {

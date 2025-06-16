@@ -597,7 +597,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenAppIconPickerContinueActionIsCalledAndSetAsDefaultBrowserEnabledThenCheckIfBrowserIsDefault() {
         // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserExperiment = true
+        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = true
         let sut = makeSUT()
         XCTAssertFalse(defaultBrowserManagerMock.didCallDefaultBrowserInfo)
 
@@ -610,7 +610,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenAppIconPickerContinueActionIsCalledAndSetAsDefaultBrowserDisabledThenDoNotCheckIfBrowserIsDefault() {
         // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserExperiment = false
+        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = false
         let sut = makeSUT()
         XCTAssertFalse(defaultBrowserManagerMock.didCallDefaultBrowserInfo)
 
@@ -623,7 +623,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenDefaultBrowserInfoIsSuccessfulResult_AndIsDefaultBrowserIsTrue_ThenFireDidSetDefaultBrowserPixel() {
         // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserExperiment = true
+        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = true
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: true)
         let sut = makeSUT()
         XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
@@ -639,7 +639,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenDefaultBrowserInfoIsSuccessfulResult_AndIsDefaultBrowserIsFalse_ThenFireDidNotSetDefaultBrowserPixel() {
         // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserExperiment = true
+        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = true
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         let sut = makeSUT()
         XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
@@ -655,7 +655,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenDefaultBrowserInfoIsFailureResult_AndFailureIsRateLimited_ThenDoNotFireSetDefaultBrowserPixels() {
         // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserExperiment = true
+        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = true
         defaultBrowserManagerMock.resultToReturn = .failed(reason: .rateLimitReached(updatedStoredInfo: nil))
         let sut = makeSUT()
         XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
@@ -671,7 +671,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenDefaultBrowserInfoIsFailureResult_AndFailureIsUnkownError_ThenDoNotFireSetDefaultBrowserPixels() {
         // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserExperiment = true
+        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = true
         defaultBrowserManagerMock.resultToReturn = .failed(reason: .unknownError(NSError(domain: #function, code: 0)))
         let sut = makeSUT()
         XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
@@ -687,7 +687,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     func testWhenDefaultBrowserInfoIsFailureResult_AndFailureIsNotSupportedOnCurrentOSVersion_ThenDoNotFireSetDefaultBrowserPixels() {
         // GIVEN
-        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserExperiment = true
+        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserPipVideoExperiment = true
         defaultBrowserManagerMock.resultToReturn = .failed(reason: .notSupportedOnCurrentOSVersion)
         let sut = makeSUT()
         XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)

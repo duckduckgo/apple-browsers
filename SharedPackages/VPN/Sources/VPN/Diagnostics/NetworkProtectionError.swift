@@ -60,10 +60,10 @@ public enum NetworkProtectionError: LocalizedError, CustomNSError {
     case setWireguardConfig(Error)
 
     // Auth errors
-    case noAuthTokenFound
+    case noAuthTokenFound(Error)
 
     // Subscription errors
-    case vpnAccessRevoked
+    case vpnAccessRevoked(Error)
 
     // Unhandled error
     case unhandledError(function: String, line: Int, error: Error)
@@ -129,9 +129,7 @@ public enum NetworkProtectionError: LocalizedError, CustomNSError {
                 .keychainDeleteError,
                 .wireGuardCannotLocateTunnelFileDescriptor,
                 .wireGuardInvalidState,
-                .wireGuardDnsResolution,
-                .noAuthTokenFound,
-                .vpnAccessRevoked:
+                .wireGuardDnsResolution:
             return [:]
         case .failedToFetchServerList(let error),
                 .failedToFetchRegisteredServers(let error):
@@ -151,7 +149,9 @@ public enum NetworkProtectionError: LocalizedError, CustomNSError {
                 .setWireguardConfig(let error),
                 .unhandledError(_, _, let error),
                 .failedToFetchServerStatus(let error),
-                .failedToParseServerStatusResponse(let error):
+                .failedToParseServerStatusResponse(let error),
+                .noAuthTokenFound(let error),
+                .vpnAccessRevoked(let error):
             return [
                 NSUnderlyingErrorKey: error
             ]

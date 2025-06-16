@@ -20,6 +20,7 @@ import Foundation
 import Common
 import NetworkExtension
 import os.log
+import Subscription
 
 public enum NetworkProtectionServerSelectionMethod: CustomDebugStringConvertible {
     public var debugDescription: String {
@@ -102,8 +103,19 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
     /// This method will return the remote server list if available, or the local server list if there was a problem with the service call.
     ///
     public func refreshServerList() async throws -> [NetworkProtectionServer] {
-        guard let token = try? await VPNAuthTokenBuilder.getVPNAuthToken(from: tokenHandler) else {
-            throw NetworkProtectionError.noAuthTokenFound
+        let token: String
+
+        do {
+            token = try await VPNAuthTokenBuilder.getVPNAuthToken(from: tokenHandler)
+        } catch {
+            Logger.networkProtection.error("Missing auth token: \(error.localizedDescription)")
+
+            switch error {
+            case SubscriptionManagerError.noTokenAvailable:
+                throw NetworkProtectionError.vpnAccessRevoked(error)
+            default:
+                throw NetworkProtectionError.noAuthTokenFound(error)
+            }
         }
 
         let result = await networkClient.getServers(authToken: token)
@@ -195,9 +207,19 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
 
         Logger.networkProtection.log("Registering with server using method: \(selectionMethod.debugDescription, privacy: .public)")
 
-        guard let token = try? await VPNAuthTokenBuilder.getVPNAuthToken(from: tokenHandler) else {
-            Logger.networkProtection.error("Missing auth token")
-            throw NetworkProtectionError.noAuthTokenFound
+        let token: String
+
+        do {
+            token = try await VPNAuthTokenBuilder.getVPNAuthToken(from: tokenHandler)
+        } catch {
+            Logger.networkProtection.error("Missing auth token: \(error.localizedDescription)")
+
+            switch error {
+            case SubscriptionManagerError.noTokenAvailable:
+                throw NetworkProtectionError.vpnAccessRevoked(error)
+            default:
+                throw NetworkProtectionError.noAuthTokenFound(error)
+            }
         }
 
         let serverSelection: RegisterServerSelection
@@ -337,8 +359,9 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
     private func handleAccessRevoked(_ error: NetworkProtectionClientError) throws {
         switch error {
         case .accessDenied, .invalidAuthToken:
-            errorEvents?.fire(.vpnAccessRevoked)
-            throw NetworkProtectionError.vpnAccessRevoked
+            let newError = NetworkProtectionError.vpnAccessRevoked(error)
+            errorEvents?.fire(newError)
+            throw newError
         default:
             break
         }

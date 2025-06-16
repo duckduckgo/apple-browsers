@@ -727,6 +727,7 @@ struct UserText {
 
     static let vpn = NSLocalizedString("preferences.vpn", value: "VPN", comment: "Title of the option to show the VPN preferences")
     static let personalInformationRemoval = NSLocalizedString("preferences.personalInformationRemoval", value: "Personal Information Removal", comment: "Title of the option to show the Personal Information Removal preferences")
+    static let paidAIChat = NSLocalizedString("preferences.paidAIChat", value: "Duck.ai", comment: "Title of the option to show the Duck.ai Pro preferences")
     static let identityTheftRestoration = NSLocalizedString("preferences.identityTheftRestoration", value: "Identity Theft Restoration", comment: "Title of the option to show the Identity Theft Restoration preferences")
     static let subscriptionSettings = NSLocalizedString("preferences.subscriptionSettings", value: "Subscription Settings", comment: "Title of the option to show the Subscription Settings preferences")
     static let duckPlayer = NSLocalizedString("preferences.duck-player", value: "Duck Player", comment: "Title of the option to show the Duck Player browser preferences")

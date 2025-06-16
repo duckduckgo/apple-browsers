@@ -40,8 +40,25 @@ final class AIChatTabExtension {
         scriptsPublisher.sink { [weak self] scripts in
             Task { @MainActor in
                 self?.aiChatUserScript = scripts.aiChatUserScript
+
+                // Pass the handoff payload in case it was provided before the user script was loaded
+                if let payload = self?.temporaryAIChatNativeHandoffData {
+                    self?.aiChatUserScript?.handler.messageHandling.payloadHandler.setData(payload)
+                    self?.temporaryAIChatNativeHandoffData = nil
+                }
             }
         }.store(in: &cancellables)
+    }
+
+    private var temporaryAIChatNativeHandoffData: AIChatPayload?
+    func setAIChatNativeHandoffData(payload: AIChatPayload) {
+        guard let aiChatUserScript else {
+            // User script not yet loaded, store the payload and set when ready
+            temporaryAIChatNativeHandoffData = payload
+            return
+        }
+
+        aiChatUserScript.handler.messageHandling.payloadHandler.setData(payload)
     }
 }
 
@@ -64,6 +81,7 @@ extension AIChatTabExtension: NavigationResponder {
 
 protocol AIChatProtocol: AnyObject, NavigationResponder {
     var aiChatUserScript: AIChatUserScript? { get }
+    func setAIChatNativeHandoffData(payload: AIChatPayload)
 }
 
 extension AIChatTabExtension: AIChatProtocol, TabExtension {

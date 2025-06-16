@@ -31,7 +31,9 @@ public enum DuckPlayerConstraintUpdate {
 
 protocol DuckPlayerNativeUIPresenting {
 
-    var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never> { get }
+    var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?, pillType: DuckPlayerNativeUIPresenter.PillType), Never> { get }
+    var presentDuckPlayerRequest: PassthroughSubject<Void, Never> { get }
+    var duckPlayerTimestampUpdate: PassthroughSubject<TimeInterval?, Never> { get }
     var pixelHandler: DuckPlayerPixelFiring.Type { get }
 
     @MainActor func presentPill(for videoID: String, in hostViewController: DuckPlayerHosting, timestamp: TimeInterval?)
@@ -90,14 +92,18 @@ final class DuckPlayerNativeUIPresenter {
     private(set) var source: DuckPlayer.VideoNavigationSource?
     internal var state: DuckPlayerState
 
-    /// The DuckPlayer instance
-    private weak var duckPlayer: DuckPlayerControlling?
-
     /// The view model for the player
     private(set) var playerViewModel: DuckPlayerViewModel?
 
     /// A publisher to notify when a video playback request is needed
-    let videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
+    let videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?, pillType: PillType), Never>()
+    
+    /// A publisher to notify when the DuckPlayer should be presented - after tapping the pill
+    let presentDuckPlayerRequest = PassthroughSubject<Void, Never>()
+    
+    /// A publisher to notify when a DuckPlayer timestamp should be stored
+    let duckPlayerTimestampUpdate = PassthroughSubject<TimeInterval?, Never>()
+    
     private var playerCancellables = Set<AnyCancellable>()
     @MainActor
     private var containerCancellables = Set<AnyCancellable>()
@@ -215,7 +221,7 @@ final class DuckPlayerNativeUIPresenter {
         if pillType == .welcome {
             // Create the welcome pill view model
             let welcomePillViewModel = DuckPlayerWelcomePillViewModel { [weak self] in
-                self?.videoPlaybackRequest.send((videoID, timestamp))
+                self?.videoPlaybackRequest.send((videoID, timestamp, .welcome))
             }
 
             // Create the container view with the welcome pill
@@ -241,7 +247,7 @@ final class DuckPlayerNativeUIPresenter {
         } else if pillType == .entry {
             // Create the pill view model for entry type
             let pillViewModel = DuckPlayerEntryPillViewModel { [weak self] in
-                self?.videoPlaybackRequest.send((videoID, timestamp))
+                self?.videoPlaybackRequest.send((videoID, timestamp, .entry))
             }
 
             // Create the container view with the pill view
@@ -268,7 +274,7 @@ final class DuckPlayerNativeUIPresenter {
             // Create the mini pill view model for re-entry type
             let miniPillViewModel = DuckPlayerMiniPillViewModel(
                 onOpen: { [weak self] in
-                    self?.videoPlaybackRequest.send((videoID, timestamp))
+                    self?.videoPlaybackRequest.send((videoID, timestamp, .reEntry))
                 },
                 videoID: videoID
             )
@@ -342,9 +348,14 @@ final class DuckPlayerNativeUIPresenter {
     }
 
     deinit {
-        playerCancellables.removeAll()
+        cleanupPlayer()
         containerCancellables.removeAll()
         NotificationCenter.default.removeObserver(self)
+    }
+    
+    private func cleanupPlayer() {
+        playerCancellables.removeAll()
+        playerViewModel = nil
     }
 
     @MainActor
@@ -455,7 +466,7 @@ final class DuckPlayerNativeUIPresenter {
 }
 
 extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
-
+    
     /// Presents a bottom pill asking the user how they want to open the video
     ///
     /// - Parameters:
@@ -631,11 +642,15 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
             duckPlayerSettings.pillDismissCount = 0
         }
 
+        // Create publishers for Youtube Navigation & Settings
         // Fire pixels as needed
         fireDuckPlayerPresentationPixels(for: source)
 
         let navigationRequest = PassthroughSubject<URL, Never>()
         let settingsRequest = PassthroughSubject<Void, Never>()
+
+        // Emit a signal about presenting the full player
+        presentDuckPlayerRequest.send()
 
         let viewModel = DuckPlayerViewModel(videoID: videoID, timestamp: timestamp, source: source)
         self.playerViewModel = viewModel  // Keep strong reference
@@ -655,12 +670,21 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // Subscribe to Navigation Request Publisher
         viewModel.youtubeNavigationRequestPublisher
-            .sink { [weak hostingController] videoID in
+            .sink { [weak self, weak hostingController] videoID in
                 if source != .youtube {
                     let url: URL = .youtube(videoID)
                     navigationRequest.send(url)
                 }
-                hostingController?.dismiss(animated: true)
+
+                Task { @MainActor in
+                    await withCheckedContinuation { continuation in
+                        hostingController?.dismiss(animated: true) {
+                            continuation.resume()
+                        }
+                    }
+                    // Clean up after navigation away
+                    self?.cleanupPlayer()
+                }
             }
             .store(in: &playerCancellables)
 
@@ -675,16 +699,23 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
                 guard let self = self else { return }
                 guard let videoID = self.state.videoID, let hostView = self.hostView else { return }
                 self.state.timestamp = timestamp
-                duckPlayerSettings.welcomeMessageShown = true
-                self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
-                self.containerViewModel?.show()
+                self.duckPlayerSettings.welcomeMessageShown = true
+                
+                // Notify DuckPlayer to store this timestamp for re-entry pills
+                self.duckPlayerTimestampUpdate.send(timestamp)
+                
+                // Schedule pill presentation after a short delay to ensure view is dismissed
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
+                    self.containerViewModel?.show()
+                }
             }
             .store(in: &playerCancellables)
 
         hostViewController.present(hostingController, animated: true, completion: nil)
 
-        // Dismiss the Pill
-        dismissPill()
+        // Dismiss the Pill (but don't reset state as we may need to show it again)
+        dismissPill(reset: false)
 
         return (navigationRequest, settingsRequest)
     }

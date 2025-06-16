@@ -1052,15 +1052,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 dnsSettings: dnsSettings,
                 regenerateKey: regenerateKey
             )
-        } catch let error as NetworkProtectionError {
+        } catch {
             switch error {
-            case .vpnAccessRevoked, .noAuthTokenFound:
+            case NetworkProtectionError.vpnAccessRevoked:
                 throw TunnelError.vpnAccessRevoked(error)
             default:
                 throw TunnelError.couldNotGenerateTunnelConfiguration(internalError: error)
             }
-        } catch {
-            throw TunnelError.couldNotGenerateTunnelConfiguration(internalError: error)
         }
 
         let newSelectedServer = configurationResult.server

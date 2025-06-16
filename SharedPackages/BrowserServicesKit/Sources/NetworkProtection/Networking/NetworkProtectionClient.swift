@@ -52,7 +52,7 @@ public enum NetworkProtectionClientError: CustomNSError, NetworkProtectionErrorC
         case .failedToFetchRegisteredServers(let error): return .failedToFetchRegisteredServers(error)
         case .failedToParseRegisteredServersResponse(let error): return .failedToParseRegisteredServersResponse(error)
         case .invalidAuthToken: return .invalidAuthToken
-        case .accessDenied: return .vpnAccessRevoked
+        case .accessDenied: return .vpnAccessRevoked(self)
         }
     }
 

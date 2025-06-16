@@ -21617,8 +21617,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Neuer AI Chat"
+            "state" : "translated",
+            "value" : "Neuer Duck.ai-Chat"
           }
         },
         "en" : {
@@ -21629,44 +21629,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nuevo AI Chat"
+            "state" : "translated",
+            "value" : "Nuevo chat de Duck.ai"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nouvel AI Chat"
+            "state" : "translated",
+            "value" : "Nouveau chat Duck.ai"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nuova AI Chat"
+            "state" : "translated",
+            "value" : "Nuova chat Duck.ai"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nieuwe AI Chat"
+            "state" : "translated",
+            "value" : "Nieuwe Duck.ai Chat"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Nowy AI Chat"
+            "state" : "translated",
+            "value" : "Nowy czat Duck.ai"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Novo AI Chat"
+            "state" : "translated",
+            "value" : "Nova conversa Duck.ai"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Запустить AI Chat"
+            "state" : "translated",
+            "value" : "Новый чат Duck.ai"
           }
         }
       }
@@ -21797,8 +21797,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "„Neuer AI Chat“ in den Datei- und Anwendungsmenüs anzeigen"
+            "state" : "translated",
+            "value" : "„Neuer Duck.ai-Chat“ in den Datei- und Anwendungsmenüs anzeigen"
           }
         },
         "en" : {
@@ -21809,44 +21809,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Mostrar «Nuevo AI Chat» en los menús Archivo y Aplicación"
+            "state" : "translated",
+            "value" : "Mostrar «Nuevo Duck.ai» en los menús Archivo y Aplicación"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Afficher « Nouvel AI Chat » dans les menus Fichier et Application"
+            "state" : "translated",
+            "value" : "Afficher « Nouveau chat Duck.ai » dans les menus Fichier et Application"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Mostra \"AI Chat\" nel menu File e in quello delle applicazioni"
+            "state" : "translated",
+            "value" : "Mostra \"Duck.ai Chat\" nel menu File e in quello delle applicazioni"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "'Nieuwe AI Chat' toevoegen aan de menu's 'Bestand' en 'Toepassing'"
+            "state" : "translated",
+            "value" : "'Nieuwe Duck.ai-chat' weergeven in de menu's 'Bestand' en 'Toepassing'"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Pokaż „Nowy AI Chat” w menu plików i aplikacji"
+            "state" : "translated",
+            "value" : "Pokaż „Nowy czat Duck.ai” w menu plików i aplikacji"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Mostrar “Novo AI Chat” nos menus de ficheiro e aplicação"
+            "state" : "translated",
+            "value" : "Mostrar “Novo Duck.ai Chat” nos menus de ficheiro e aplicação"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Показывать опцию «Запустить AI Chat» в меню «Файл» и меню приложения"
+            "state" : "translated",
+            "value" : "Показывать опцию «Запустить чат с Duck.ai» в меню «Файл» и меню приложения"
           }
         }
       }

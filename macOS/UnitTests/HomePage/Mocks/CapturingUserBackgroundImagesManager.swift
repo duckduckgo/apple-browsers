@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Foundation
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class CapturingUserBackgroundImagesManager: UserBackgroundImagesManaging {

@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
-import UserScript
 import AIChat
+import UserScript
+import WebKit
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AIChatUserScriptTests: XCTestCase {

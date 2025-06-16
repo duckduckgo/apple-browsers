@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import CoreLocation
 import Combine
+import CoreLocation
+import Foundation
+import CommonObjCExtensions
+import WebKit
 
 protocol GeolocationProviderProtocol: AnyObject {
     var isActive: Bool { get }

@@ -24,6 +24,7 @@ import History
 import MaliciousSiteProtection
 import PrivacyDashboard
 import SpecialErrorPages
+import WebKit
 
 /**
  Tab Extensions should conform to TabExtension protocol

@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Foundation
 import NewTabPage
 import RemoteMessaging
 

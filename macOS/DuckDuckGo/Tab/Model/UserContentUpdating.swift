@@ -59,7 +59,8 @@ final class UserContentUpdating {
          startupPreferences: StartupPreferences,
          bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
          historyCoordinator: HistoryDataSource,
-         fireproofDomains: DomainFireproofStatusProviding
+         fireproofDomains: DomainFireproofStatusProviding,
+         fireCoordinator: FireCoordinator
     ) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
@@ -75,7 +76,8 @@ final class UserContentUpdating {
                                                       startupPreferences: startupPreferences,
                                                       bookmarkManager: bookmarkManager,
                                                       historyCoordinator: historyCoordinator,
-                                                      fireproofDomains: fireproofDomains)
+                                                      fireproofDomains: fireproofDomains,
+                                                      fireCoordinator: fireCoordinator)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
         }
 

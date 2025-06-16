@@ -70,7 +70,7 @@ public struct ManagementDialog: View {
                             model.userConfirmedSwitchAccounts(recoveryCode: recoveryCodeModel.recoveryCode)
                         },
                         secondaryButton: .cancel {
-                            model.endFlow()
+                            model.cancelPressed()
                         }
                     )
                 } else {

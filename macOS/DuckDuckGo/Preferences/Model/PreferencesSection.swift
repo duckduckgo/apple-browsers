@@ -84,6 +84,9 @@ struct PreferencesSection: Hashable, Identifiable {
                 if currentSubscriptionFeatures.contains(.dataBrokerProtection) {
                     subscriptionPanes.append(.personalInformationRemoval)
                 }
+                if currentSubscriptionFeatures.contains(.paidAIChat) && subscriptionState.isPaidAIChatEnabled {
+                    subscriptionPanes.append(.paidAIChat)
+                }
                 if currentSubscriptionFeatures.contains(.identityTheftRestoration) || currentSubscriptionFeatures.contains(.identityTheftRestorationGlobal) {
                     subscriptionPanes.append(.identityTheftRestoration)
                 }
@@ -140,6 +143,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case privacyPro
     case vpn
     case personalInformationRemoval
+    case paidAIChat
     case identityTheftRestoration
     case subscriptionSettings
     case autofill
@@ -203,6 +207,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.vpn
         case .personalInformationRemoval:
             return UserText.personalInformationRemoval
+        case .paidAIChat:
+            return UserText.paidAIChat
         case .identityTheftRestoration:
             return UserText.identityTheftRestoration
         case .subscriptionSettings:
@@ -250,6 +256,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.vpnIcon
         case .personalInformationRemoval:
             return settingsIconProvider.personalInformationRemovalIcon
+        case .paidAIChat:
+            return settingsIconProvider.duckAIIcon
         case .identityTheftRestoration:
             return settingsIconProvider.identityTheftRestorationIcon
         case .subscriptionSettings:

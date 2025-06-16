@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Foundation
 import HistoryView
 import PixelKit
 

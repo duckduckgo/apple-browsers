@@ -84,7 +84,14 @@ class CreditCardInputAccessoryView: UIView {
 
     private let containerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(designSystemColor: .background)
+        view.backgroundColor = UIColor(designSystemColor: .surface)
+        return view
+    }()
+    
+    private let topBorderView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor(red: 128.0/255.0, green: 128.0/255.0, blue: 128.0/255.0, alpha: 0.55)
         return view
     }()
 
@@ -155,6 +162,7 @@ class CreditCardInputAccessoryView: UIView {
         containerView.frame = bounds.isEmpty ? CGRect(x: 0, y: 0, width: 390, height: 48) : bounds
         addSubview(containerView)
 
+        containerView.addSubview(topBorderView)
         containerView.addSubview(scrollView)
         containerView.addSubview(gradientView)
         containerView.addSubview(manageButton)
@@ -168,6 +176,11 @@ class CreditCardInputAccessoryView: UIView {
             containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
+            topBorderView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            topBorderView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            topBorderView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            topBorderView.heightAnchor.constraint(equalToConstant: 1),
+            
             manageButton.widthAnchor.constraint(equalToConstant: 44),
             manageButton.heightAnchor.constraint(equalToConstant: 44),
             doneButton.heightAnchor.constraint(equalToConstant: 44),
@@ -205,7 +218,7 @@ class CreditCardInputAccessoryView: UIView {
     }()
     var gradientColorDark: UIColor = {
         let darkTraitCollection = UITraitCollection(userInterfaceStyle: .dark)
-        return UIColor(designSystemColor: .background).resolvedColor(with: darkTraitCollection)
+        return UIColor(designSystemColor: .surface).resolvedColor(with: darkTraitCollection)
     }()
 
     private func setupGradient() {
@@ -275,7 +288,7 @@ class CreditCardInputAccessoryView: UIView {
         let containerView = UIView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
 
-        let iconImageView = UIImageView(image: card.uiIcon)
+        let iconImageView = UIImageView(image: card.uiImageIcon)
         iconImageView.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(iconImageView)
 

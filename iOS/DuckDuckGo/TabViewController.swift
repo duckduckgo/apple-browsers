@@ -3175,7 +3175,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
         autofillCreditCardAccessoryView.updateCreditCards(creditCards)
-        webView.setAccessoryContentView(autofillCreditCardAccessoryView, height: 52.0)
+        webView.setAccessoryContentView(autofillCreditCardAccessoryView, height: 58.0)
 
         autofillCreditCardAccessoryView.onCardSelected = { [weak self] card in
             completionHandler(card)

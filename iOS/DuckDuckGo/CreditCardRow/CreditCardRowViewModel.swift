@@ -49,47 +49,34 @@ struct CreditCardRowViewModel: Identifiable, Hashable {
         }
         return displayTitle
     }
-    
-    var icon: Image {
+
+    private var iconAssetName: String {
         switch type {
         case .amex:
-            return Image(.creditCardBankAmexColor32)
+            "Credit-Card-Bank-Amex-Color-32"
         case .dinersClub:
-            return Image(.creditCardBankDinersClubColor32)
+            "Credit-Card-Bank-Diners-Club-Color-32"
         case .discover:
-            return Image(.creditCardBankDiscoverColor32)
+            "Credit-Card-Bank-Discover-Color-32"
         case .mastercard:
-            return Image(.creditCardBankMastercardColor32)
+            "Credit-Card-Bank-Mastercard-Color-32"
         case .jcb:
-            return Image(.creditCardBankJCBColor32)
+            "Credit-Card-Bank-JCB-Color-32"
         case .unionPay:
-            return Image(.creditCardBankUnionpayColor32)
+            "Credit-Card-Bank-Unionpay-Color-32"
         case .visa:
-            return Image(.creditCardBankVisaColor32)
+            "Credit-Card-Bank-Visa-Color-32"
         case .unknown:
-            return Image(.creditCardColor32)
+            "Credit-Card-Color-32"
         }
     }
+
+    var icon: Image {
+        Image(iconAssetName)
+    }
     
-    var uiIcon: UIImage? {
-        switch type {
-        case .amex:
-            return UIImage(named: "Credit-Card-Bank-Amex-Color-32")
-        case .dinersClub:
-            return UIImage(named: "Credit-Card-Bank-Diners-Club-Color-32")
-        case .discover:
-            return UIImage(named: "Credit-Card-Bank-Discover-Color-32")
-        case .mastercard:
-            return UIImage(named: "Credit-Card-Bank-Mastercard-Color-32")
-        case .jcb:
-            return UIImage(named: "Credit-Card-Bank-JCB-Color-32")
-        case .unionPay:
-            return UIImage(named: "Credit-Card-Bank-Unionpay-Color-32")
-        case .visa:
-            return UIImage(named: "Credit-Card-Bank-Visa-Color-32")
-        case .unknown:
-            return UIImage(named: "Credit-Card-Color-32")
-        }
+    var uiImageIcon: UIImage? {
+        UIImage(named: iconAssetName)
     }
 
     var lastFourDigits: String {

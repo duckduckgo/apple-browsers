@@ -106,7 +106,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         // Subscription Errors - 100+
         case vpnAccessRevoked(_ underlyingError: Error)
-        case entitlementCheckFailure
 
         // State Reset - 200+
         case appRequestedCancellation
@@ -115,7 +114,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             switch self {
             case .startingTunnelWithoutAuthToken(let internalError):
                 return "Missing auth token at startup: \(internalError.debugDescription)"
-            case .vpnAccessRevoked, .entitlementCheckFailure:
+            case .vpnAccessRevoked:
                 return "VPN disconnected due to expired subscription"
             case .couldNotGenerateTunnelConfiguration(let internalError):
                 return "Failed to generate a tunnel configuration: \(internalError.localizedDescription)"
@@ -137,7 +136,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             case .tokenReset: return 3
                 // Subscription Errors - 100+
             case .vpnAccessRevoked: return 100
-            case .entitlementCheckFailure: return 101
                 // State Reset - 200+
             case .appRequestedCancellation: return 200
             }
@@ -147,7 +145,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             switch self {
             case .simulateTunnelFailureError,
                     .vpnAccessRevoked,
-                    .entitlementCheckFailure,
                     .appRequestedCancellation,
                     .tokenReset:
                 return [:]

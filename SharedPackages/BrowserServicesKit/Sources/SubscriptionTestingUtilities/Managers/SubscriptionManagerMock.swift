@@ -64,8 +64,10 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
-        return []
+        return subscriptionFeatures
     }
+
+    public var subscriptionFeatures: [Entitlement.ProductName] = []
 
     public init(accountManager: AccountManager,
                 subscriptionEndpointService: SubscriptionEndpointService,

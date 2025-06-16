@@ -48,6 +48,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     private var mockNotificationCenter: MockNotificationCenter!
     private var mockPixelHandler: MockFreemiumDBPExperimentPixelHandler!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
+    private var mockFeatureFlagger: MockFeatureFlagger!
 
     var moreOptionsMenu: MoreOptionsMenu!
 
@@ -66,6 +67,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         defaultBrowserProvider.isDefault = true
 
         storePurchaseManager = StorePurchaseManagerMock()
+        mockFeatureFlagger = MockFeatureFlagger()
 
         subscriptionManager = SubscriptionManagerMock(accountManager: AccountManagerMock(),
                                                       subscriptionEndpointService: SubscriptionEndpointServiceMock(),
@@ -111,7 +113,7 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           dockCustomizer: dockCustomizer,
                                           defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
                                           notificationCenter: mockNotificationCenter,
-                                          featureFlagger: MockFeatureFlagger(),
+                                          featureFlagger: mockFeatureFlagger,
                                           freemiumDBPExperimentPixelHandler: mockPixelHandler)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
@@ -275,6 +277,82 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(mockNotificationCenter.didCallPostNotification)
         XCTAssertEqual(mockNotificationCenter.lastPostedNotification, .freemiumDBPEntryPointActivated)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, FreemiumDBPExperimentPixel.overFlowResults)
+    }
+
+    // MARK: - Paid AI Chat
+
+    @MainActor
+    func testWhenUserIsAuthenticatedWithPaidAIChatFeatureAndFeatureFlagEnabledThenPaidAIChatItemAppearsInSubscriptionSubmenu() async throws {
+        // Given
+        mockAuthentication()
+        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        mockFeatureFlagger.isFeatureOn = { _ in true }
+        setupMoreOptionsMenu()
+
+        // When
+        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
+        let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
+
+        // Then
+        let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
+        XCTAssertNotNil(paidAIChatItem, "Paid AI Chat item should appear in subscription submenu when user has entitlement and feature flag is enabled")
+    }
+
+    @MainActor
+    func testWhenUserIsAuthenticatedWithPaidAIChatFeatureButFeatureFlagDisabledThenPaidAIChatItemDoesNotAppear() async throws {
+        // Given
+        mockAuthentication()
+        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        mockFeatureFlagger.isFeatureOn = { _ in false }
+        setupMoreOptionsMenu()
+
+        // When
+        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
+        let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
+
+        // Then
+        let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
+        XCTAssertNil(paidAIChatItem, "Paid AI Chat item should not appear when feature flag is disabled")
+    }
+
+    @MainActor
+    func testWhenUserIsAuthenticatedWithoutPaidAIChatFeatureThenPaidAIChatItemDoesNotAppear() async throws {
+        // Given
+        mockAuthentication()
+        subscriptionManager.subscriptionFeatures = []
+        mockFeatureFlagger.isFeatureOn = { _ in true }
+        setupMoreOptionsMenu()
+
+        // When
+        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
+        let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
+
+        // Then
+        let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
+        XCTAssertNil(paidAIChatItem, "Paid AI Chat item should not appear when user doesn't have the entitlement")
+    }
+
+    @MainActor
+    func testWhenClickingPaidAIChatItemThenActionDelegateIsCalled() async throws {
+        // Given
+        mockAuthentication()
+        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        mockFeatureFlagger.isFeatureOn = { _ in true }
+        setupMoreOptionsMenu()
+        moreOptionsMenu.actionDelegate = capturingActionDelegate
+        let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
+        let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
+        let paidAIChatItem = try XCTUnwrap(subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat })
+        let paidAIChatItemIndex = try XCTUnwrap(subscriptionSubmenu.items.firstIndex(of: paidAIChatItem))
+
+        // When
+        subscriptionSubmenu.performActionForItem(at: paidAIChatItemIndex)
+
+        // Then
+        XCTAssertTrue(capturingActionDelegate.optionsButtonMenuRequestedPaidAIChatCalled, "Action delegate should be called when paid AI chat item is clicked")
     }
 
     // MARK: Zoom
@@ -623,3 +701,27 @@ final class MockFreemiumDBPPresenter: FreemiumDBPPresenter {
         didCallShowFreemium = true
     }
 }
+
+//final class MockFeatureFlagger: FeatureFlagger {
+//    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
+//    var localOverrides: FeatureFlagLocalOverriding?
+//    
+//    var enabledFeatureFlags: [FeatureFlag] = []
+//    
+//    func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
+//        guard let flag = featureFlag as? FeatureFlag else {
+//            return false
+//        }
+//        return enabledFeatureFlags.contains(flag)
+//    }
+//    
+//    func getCohortIfEnabled(_ subfeature: any PrivacySubfeature) -> CohortID? {
+//        return nil
+//    }
+//    
+//    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+//        return nil
+//    }
+//    
+//    var allActiveExperiments: Experiments = [:]
+//}

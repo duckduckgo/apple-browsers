@@ -20,10 +20,10 @@ import AIChat
 
 protocol AIChatTabOpening {
     @MainActor
-    func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget)
+    func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior)
 
     @MainActor
-    func openAIChatTab(_ value: AddressBarTextField.Value, target: AIChatTabOpenerTarget)
+    func openAIChatTab(_ value: AddressBarTextField.Value, with linkOpenBehavior: LinkOpenBehavior)
 
     @MainActor
     func openNewAIChatTab(withPayload payload: AIChatPayload)
@@ -32,14 +32,8 @@ protocol AIChatTabOpening {
 extension AIChatTabOpening {
     @MainActor
     func openAIChatTab() {
-        openAIChatTab(nil, target: .sameTab)
+        openAIChatTab(nil, with: .currentTab)
     }
-}
-
-enum AIChatTabOpenerTarget {
-    case newTabSelected
-    case newTabUnselected
-    case sameTab
 }
 
 struct AIChatTabOpener: AIChatTabOpening {
@@ -55,7 +49,7 @@ struct AIChatTabOpener: AIChatTabOpening {
     }
 
     @MainActor
-    func openAIChatTab(_ value: AddressBarTextField.Value, target: AIChatTabOpenerTarget) {
+    func openAIChatTab(_ value: AddressBarTextField.Value, with linkOpenBehavior: LinkOpenBehavior) {
         let query = addressBarQueryExtractor.queryForValue(value)
 
         // We don't want to auto-submit if the user is opening duck.ai from the SERP
@@ -66,20 +60,20 @@ struct AIChatTabOpener: AIChatTabOpening {
         } else {
             shouldAutoSubmit = true
         }
-        openAIChatTab(query, target: target, autoSubmit: shouldAutoSubmit)
+        openAIChatTab(query, with: linkOpenBehavior, autoSubmit: shouldAutoSubmit)
     }
 
     @MainActor
-    func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget) {
-        openAIChatTab(query, target: target, autoSubmit: true)
+    func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior) {
+        openAIChatTab(query, with: linkOpenBehavior, autoSubmit: true)
     }
 
     @MainActor
-    private func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget, autoSubmit: Bool) {
+    private func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) {
         if let query = query {
             promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
         }
-        Application.appDelegate.windowControllersManager.openAIChat(aiChatRemoteSettings.aiChatURL, target: target, hasPrompt: query != nil)
+        Application.appDelegate.windowControllersManager.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
     }
 
     @MainActor

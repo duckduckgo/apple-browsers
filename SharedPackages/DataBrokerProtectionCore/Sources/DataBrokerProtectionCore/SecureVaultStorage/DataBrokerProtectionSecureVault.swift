@@ -28,8 +28,8 @@ public func createDataBrokerProtectionSecureVaultFactory(appGroupName: String?, 
             return DataBrokerProtectionCryptoProvider()
         }, makeKeyStoreProvider: { _ in
             return DataBrokerProtectionKeyStoreProvider(appGroupName: appGroupName)
-        }, makeDatabaseProvider: { key in
-            try DefaultDataBrokerProtectionDatabaseProvider.create(file: databaseFileURL, key: key)
+        }, makeDatabaseProvider: { key, reporter in
+            try DefaultDataBrokerProtectionDatabaseProvider.create(file: databaseFileURL, key: key, reporter: reporter)
         }
     )
 }

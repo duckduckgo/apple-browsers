@@ -311,7 +311,7 @@ final class AddressBarTextField: NSTextField {
 
     func aiChatQueryEnterPressed() {
         suggestionContainerViewModel?.clearUserStringValue()
-        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(value, target: .sameTab)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(value, with: .currentTab)
         hideSuggestionWindow()
     }
 

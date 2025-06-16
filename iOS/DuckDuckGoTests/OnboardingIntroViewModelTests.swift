@@ -147,7 +147,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction(isResumingOnboarding: true)
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 4))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: false), step: .init(currentStep: 1, totalSteps: 4))))
     }
 
     func testWhenConfirmSkipOnboarding_andIsIphoneFlow_ThenDismissOnboardingAndDisableDaxDialogs() throws {
@@ -286,7 +286,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction(isResumingOnboarding: true)
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 2))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: false), step: .init(currentStep: 1, totalSteps: 2))))
     }
 
     func testWhenConfirmSkipOnboarding_andIsIpadFlow_ThenDismissOnboardingAndDisableDaxDialogs() throws {
@@ -318,7 +318,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 2))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: false), step: .init(currentStep: 1, totalSteps: 2))))
     }
 
     func testWhenSetDefaultBrowserActionIsCalledAndIsIpadFlowThenViewStateChangesToChooseAppIconDialogAndProgressIs2Of3() {
@@ -699,6 +699,100 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         // THEN
         XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
         XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
+    }
+
+    // MARK: - Set As Default Browser PiP Experiment
+
+    func testWhenStartOnboardingActionIsCalled_AndUserIsInControlGroup_ThenViewStateShouldBeBrowserComparison_AndShouldNotShowSetDefaultBrowserVideoTutorial() throws {
+        // GIVEN
+        onboardingManagerMock.cohortToReturn = .control
+        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
+        let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
+        let sut = makeSUT(currentOnboardingStep: currentStep)
+
+        // WHEN
+        sut.startOnboardingAction(isResumingOnboarding: false)
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: false), step: .init(currentStep: 1, totalSteps: 4))))
+    }
+
+    func testWhenStartOnboardingActionIsCalled_AndUserIsNotEnrolledInExperiment_ThenViewStateShouldBeBrowserComparison_AndShouldNotShowSetDefaultBrowserVideoTutorial() throws {
+        // GIVEN
+        onboardingManagerMock.cohortToReturn = nil
+        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
+        let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
+        let sut = makeSUT(currentOnboardingStep: currentStep)
+
+        // WHEN
+        sut.startOnboardingAction(isResumingOnboarding: false)
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: false), step: .init(currentStep: 1, totalSteps: 4))))
+    }
+
+    func testWhenStartOnboardingActionIsCalled_AndUserIsInTreatmentGroup_ThenViewStateShouldBeBrowserComparison_AndShouldShowSetDefaultBrowserVideoTutorial() throws {
+        // GIVEN
+        onboardingManagerMock.cohortToReturn = .treatment
+        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
+        let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
+        let sut = makeSUT(currentOnboardingStep: currentStep)
+
+        // WHEN
+        sut.startOnboardingAction(isResumingOnboarding: false)
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: true), step: .init(currentStep: 1, totalSteps: 4))))
+    }
+
+    func testWhenSetDefaultBrowserActionIsCalled_AndUserIsInControlGroup_ThenMakeNextViewState() {
+        // GIVEN
+        onboardingManagerMock.cohortToReturn = .control
+        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
+        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+
+        // WHEN
+        sut.setDefaultBrowserAction()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 4))))
+    }
+
+    func testWhenSetDefaultBrowserActionIsCalled_AndUserNotEnrolledInPiPExperiment_ThenMakeNextViewState() {
+        // GIVEN
+        onboardingManagerMock.cohortToReturn = nil
+        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
+        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+
+        // WHEN
+        sut.setDefaultBrowserAction()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 4))))
+    }
+
+    func testWhenSetDefaultBrowserActionIsCalled_AndUserIsInTreatmentGroup_ThenDoNotMakeNextViewState() {
+        // GIVEN
+        onboardingManagerMock.cohortToReturn = .treatment
+        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
+        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+
+        // WHEN
+        sut.setDefaultBrowserAction()
+
+        // THEN
+        XCTAssertNotEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 4))))
+    }
+
+    func testWhenCompletedSetDefaultBrowserActionIsCalled_ThenMakeNextViewState() {
+        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
+        let sut = makeSUT(currentOnboardingStep: .browserComparison)
+
+        // WHEN
+        sut.completedSetDefaultBrowserAction()
+
+        // THEN
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .addToDockPromoDialog, step: .init(currentStep: 2, totalSteps: 4))))
     }
 
 }

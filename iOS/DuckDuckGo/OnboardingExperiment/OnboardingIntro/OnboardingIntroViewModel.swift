@@ -154,7 +154,9 @@ final class OnboardingIntroViewModel: ObservableObject {
         }
         pixelReporter.measureChooseBrowserCTAAction()
 
-        // makeNextViewState()
+        guard !shouldShowSetDefaultBrowserTutorialVideo() else { return }
+
+        makeNextViewState()
     }
 
     func completedSetDefaultBrowserAction() {
@@ -229,7 +231,7 @@ private extension OnboardingIntroViewModel {
         case .introDialog(let isReturningUser):
             OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: isReturningUser), step: .hidden))
         case .browserComparison:
-            OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog, step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: shouldShowSetDefaultBrowserTutorialVideo()), step: stepInfo()))
         case .addToDockPromo:
             OnboardingView.ViewState.onboarding(.init(type: .addToDockPromoDialog, step: stepInfo()))
         case .appIconSelection:
@@ -264,7 +266,7 @@ private extension OnboardingIntroViewModel {
     }
 
     func measureDDGDefaultBrowserIfNeeded() {
-        guard onboardingManager.isEnrolledInSetAsDefaultBrowserExperiment else { return }
+        guard onboardingManager.isEnrolledInSetAsDefaultBrowserPipVideoExperiment else { return }
 
         defaultBrowserManager.defaultBrowserInfo()
             .onNewValue { newInfo in
@@ -290,6 +292,10 @@ private extension OnboardingIntroViewModel {
         case .chooseAddressBarPositionDialog:
             pixelReporter.measureAddressBarPositionSelectionImpression()
         }
+    }
+
+    func shouldShowSetDefaultBrowserTutorialVideo() -> Bool {
+        onboardingManager.resolveSetAsDefaultBrowserPipVideoExperimentCohort() == .treatment ? true : false
     }
 
 }

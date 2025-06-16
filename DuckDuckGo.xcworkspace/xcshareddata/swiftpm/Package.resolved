@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "branch" : "dbajpeyi/feat/ios-credit-card",
-        "revision" : "657f40e96eccc14f4b5d03a2e6738e21b7962c5e"
+        "revision" : "c504edade04adc0535ecf1b4636cbb17e81b78ad",
+        "version" : "18.0.0"
       }
     },
     {

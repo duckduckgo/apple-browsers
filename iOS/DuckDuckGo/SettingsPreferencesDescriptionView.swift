@@ -1,5 +1,5 @@
 //
-//  SettingsPrivacyProtectionDescriptionView.swift
+//  SettingsPreferencesDescriptionView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -27,7 +27,7 @@ struct PreferencesDescription {
     let explanation: String
 }
 
-// Universal protection description view
+// Universal preferences description view
 struct PreferencesDescriptionView: View {
 
     let content: PreferencesDescription

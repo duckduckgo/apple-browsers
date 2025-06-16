@@ -103,6 +103,7 @@ final class SettingsViewModel: ObservableObject {
         case networkProtection
     }
 
+    // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
     var isPaidAIChatEnabled: Bool {
         featureFlagger.isFeatureOn(.paidAIChat)
     }
@@ -479,6 +480,7 @@ final class SettingsViewModel: ObservableObject {
         subscriptionAuthV1toV2Bridge.isUserAuthenticated
     }
 
+    // Indicates if the Paid AI Chat entitlement flag is available for the current user
     var isPaidAIChatAvailable: Bool {
         state.subscription.subscriptionFeatures.contains(Entitlement.ProductName.paidAIChat)
     }

@@ -1,5 +1,5 @@
 //
-//  SubscriptionDuckAIView.swift
+//  SubscriptionAIChatView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -25,7 +25,7 @@ struct SubscriptionAIChatView: View {
 
     let viewModel: SettingsViewModel
 
-    var description: PreferencesDescription {
+    private var description: PreferencesDescription {
         PreferencesDescription(imageName: "AIChat-Settings",
                                      title: UserText.aiChatSubscriptionTitle,
                                      status: viewModel.isPaidAIChatAvailable ? .on : .off,

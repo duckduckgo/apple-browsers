@@ -138,10 +138,10 @@ class SecureVaultManagerTests: XCTestCase {
             var capturedCreditCards: [SecureVaultModels.CreditCard] = []
             var capturedTrigger: AutofillUserScript.GetTriggerType?
 
-            override func secureVaultManagerShouldPromptUserToAutofillCreditCard(_ manager: SecureVaultManager,
-                                                                                 withCreditCards creditCards: [SecureVaultModels.CreditCard],
-                                                                                 withTrigger trigger: AutofillUserScript.GetTriggerType,
-                                                                                 completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+            override func secureVaultManager(_ manager: SecureVaultManager,
+                                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
+                                             withTrigger trigger: AutofillUserScript.GetTriggerType,
+                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
                 didCallShouldPromptUserToAutofillCreditCard = true
                 capturedCreditCards = creditCards
                 capturedTrigger = trigger
@@ -198,10 +198,10 @@ class SecureVaultManagerTests: XCTestCase {
             var didCallShouldPromptUserToAutofillCreditCard = false
             var capturedCreditCards: [SecureVaultModels.CreditCard] = []
 
-            override func secureVaultManagerShouldPromptUserToAutofillCreditCard(_ manager: SecureVaultManager,
-                                                                                 withCreditCards creditCards: [SecureVaultModels.CreditCard],
-                                                                                 withTrigger trigger: AutofillUserScript.GetTriggerType,
-                                                                                 completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+            override func secureVaultManager(_ manager: SecureVaultManager,
+                                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
+                                             withTrigger trigger: AutofillUserScript.GetTriggerType,
+                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
                 didCallShouldPromptUserToAutofillCreditCard = true
                 capturedCreditCards = creditCards
                 completionHandler(nil)
@@ -236,10 +236,10 @@ class SecureVaultManagerTests: XCTestCase {
     func testWhenUserScriptRequestsCreditCardAndDelegateReturnsNil_ThenNilCardAndFillActionReturned() {
         // Given
         class CreditCardTestDelegate: MockSecureVaultManagerDelegate {
-            override func secureVaultManagerShouldPromptUserToAutofillCreditCard(_ manager: SecureVaultManager,
-                                                                                 withCreditCards creditCards: [SecureVaultModels.CreditCard],
-                                                                                 withTrigger trigger: AutofillUserScript.GetTriggerType,
-                                                                                 completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+            override func secureVaultManager(_ manager: SecureVaultManager,
+                                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
+                                             withTrigger trigger: AutofillUserScript.GetTriggerType,
+                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
                 // Return nil to simulate user cancellation
                 completionHandler(nil)
             }
@@ -1165,7 +1165,9 @@ private class MockSecureVaultManagerDelegate: SecureVaultManagerDelegate {
                             onAccountSelected account: @escaping (BrowserServicesKit.SecureVaultModels.WebsiteAccount?) -> Void,
                             completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {}
 
-    func secureVaultManagerShouldPromptUserToAutofillCreditCard(_: SecureVaultManager, withCreditCards creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {}
+    func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {}
+    
+    func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {}
 
     func secureVaultManager(_: BrowserServicesKit.SecureVaultManager, promptUserWithGeneratedPassword password: String, completionHandler: @escaping (Bool) -> Void) {}
 

@@ -2307,7 +2307,7 @@ extension TabViewController: WKNavigationDelegate {
 
     @objc private func keyboardWillHide(_ notification: Notification) {
         if !fillCreditCardsPromptIsPresenting && isTabCurrentlyPresented() {
-            autofillUserScript?.clearAllHandlers()
+            autofillUserScript?.cancelAllPendingReplies()
             if let webView = webView as? WebView {
                 webView.suppressSystemInputView = false
             }
@@ -3086,7 +3086,10 @@ extension TabViewController: SecureVaultManagerDelegate {
         }
     }
 
-    func secureVaultManagerShouldPromptUserToAutofillCreditCard(_: SecureVaultManager, withCreditCards creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    func secureVaultManager(_: SecureVaultManager,
+                            promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
+                            withTrigger trigger: AutofillUserScript.GetTriggerType,
+                            completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         Logger.autofill.debug("secureVaultManagerShouldPromptUserToAutofillCreditCard")
         guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
             completionHandler(nil)
@@ -3113,17 +3116,17 @@ extension TabViewController: SecureVaultManagerDelegate {
         }
     }
 
-    func secureVaultManagerDidFocus(_: SecureVaultManager,
-                                    forType type: AutofillUserScript.GetAutofillDataMainType,
-                                    withCreditCards creditCards: [SecureVaultModels.CreditCard],
-                                    completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    func secureVaultManager(_: SecureVaultManager,
+                            didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
+                            withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                            completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         Logger.autofill.debug("secureVaultManagerDidFocus")
         guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
             completionHandler(nil)
             return
         }
-        
-        guard type == .creditCards else {
+
+        guard mainType == .creditCards else {
             Logger.autofill.debug("secureVaultManagerDidFocus: not creditCard")
             completionHandler(nil)
             cleanupInputAccessoryView()

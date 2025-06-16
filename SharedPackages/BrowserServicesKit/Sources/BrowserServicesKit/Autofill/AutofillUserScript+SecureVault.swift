@@ -608,102 +608,84 @@ extension AutofillUserScript {
                 }
             }
         } else if request.mainType == .creditCards {
-            Logger.autofill.debug("Incoming getAutofillData request")
-            
             let messageType = request.mainType.rawValue
-            registerHandler(for: messageType, handler: replyHandler)
+            registerReplyCallback(for: messageType, reply: replyHandler)
 
             vaultDelegate?.autofillUserScriptDidRequestCreditCard(self, trigger: request.trigger) { [weak self] creditCard, action in
                 let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
 
                 if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
-                    Logger.autofill.debug("Outgoing getAutofillData response \(jsonString)")
-                    self?.completeHandler(for: messageType, withResponse: jsonString)
+                    self?.sendReply(for: messageType, withResponse: jsonString)
                 }
             }
         }
     }
-    
+
     func getAutofillDataFocus(_ message: UserScriptMessage, _ replyHandler: @escaping MessageReplyHandler) {
         guard let request: GetAutofillDataFocus = DecodableHelper.decode(from: message.messageBody) else {
-            print("Failed to decode GetAutofillDataRequest \(message.messageBody)")
             return
         }
+
         let messageType = request.mainType.rawValue
-        registerHandler(for: messageType, handler: replyHandler)
-        
-        Logger.autofill.debug("Received getAutofillDataFocus message \(message.messageName)")
+        registerReplyCallback(for: messageType, reply: replyHandler)
+
         vaultDelegate?.autofillUserScriptDidFocus(self, mainType: request.mainType) { [weak self] creditCard, action in
             let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
 
             if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
-                Logger.autofill.debug("Outgoing getAutofillDataFocus response \(jsonString)")
-                self?.completeHandler(for: messageType, withResponse: jsonString)
+                self?.sendReply(for: messageType, withResponse: jsonString)
             }
         }
     }
 
-    private func registerHandler(for messageType: String, handler: @escaping MessageReplyHandler) {
-        let key = "\(messageType)"
-        
-        Self.handlersLock.lock()
-        defer { Self.handlersLock.unlock() }
-        
-        var handlers = Self.activeHandlers[key] ?? []
-        
-        // Complete all previous handlers with none response
-        if handlers.count > 0 {
-            let handlersToCancel = handlers
-            handlers.removeAll()
-            
-            // Cancel previous handlers asynchronously to avoid deadlocks
+    // MARK: - Reply Coordination
+
+    private func registerReplyCallback(for messageType: String, reply: @escaping MessageReplyHandler) {
+        Self.pendingRepliesLock.lock()
+        defer { Self.pendingRepliesLock.unlock() }
+
+        var replies = Self.pendingReplies[messageType] ?? []
+
+        if !replies.isEmpty {
+            let toCancel = replies
+            replies.removeAll()
+
             DispatchQueue.main.async {
-                for previousHandler in handlersToCancel {
-                    Logger.autofill.debug("Outgoing getAutofillDataFocus cleanup response on register incoming")
-                    previousHandler("{\"success\": {\"action\": \"none\"}}")
+                for previousReply in toCancel {
+                    previousReply(NoActionResponse.successJSONString)
                 }
             }
         }
-        
-        handlers.append(handler)
-        Self.activeHandlers[key] = handlers
+
+        replies.append(reply)
+        Self.pendingReplies[messageType] = replies
     }
-    
-    private func completeHandler(for messageType: String, withResponse response: String?) {
-        let key = "\(messageType)"
-        
-        Self.handlersLock.lock()
-        var handlers = Self.activeHandlers[key] ?? []
-        
-        if let handler = handlers.first {
-            handlers.removeFirst()
-            Self.activeHandlers[key] = handlers
-            Self.handlersLock.unlock()
-            
-            // Call the handler asynchronously
-            DispatchQueue.main.async {
-                handler(response)
-            }
-        } else {
-            Self.handlersLock.unlock()
+
+    private func sendReply(for messageType: String, withResponse response: String?) {
+        Self.pendingRepliesLock.lock()
+        defer { Self.pendingRepliesLock.unlock() }
+
+        guard var replies = Self.pendingReplies[messageType], let reply = replies.first else {
+            return
         }
-    }
-    
-    public func clearAllHandlers() {
-        var allHandlers: [MessageReplyHandler] = []
-        
-        Self.handlersLock.lock()
-        
-        for (_, handlers) in Self.activeHandlers {
-            allHandlers.append(contentsOf: handlers)
-        }
-        Self.activeHandlers.removeAll()
-        Self.handlersLock.unlock()
-        
+
+        replies.removeFirst()
+        Self.pendingReplies[messageType] = replies
+
         DispatchQueue.main.async {
-            for handler in allHandlers {
-                Logger.autofill.debug("Outgoing getAutofillDataFocus cleanup all response")
-                handler("{\"success\": {\"action\": \"none\"}}")
+            reply(response)
+        }
+    }
+
+    public func cancelAllPendingReplies() {
+        Self.pendingRepliesLock.lock()
+        let allReplies = Self.pendingReplies.flatMap(\.value)
+        Self.pendingReplies.removeAll()
+        Self.pendingRepliesLock.unlock()
+
+        DispatchQueue.main.async {
+            for reply in allReplies {
+                reply(NoActionResponse.successJSONString)
             }
         }
     }
@@ -1182,4 +1164,15 @@ extension AutofillUserScript.AskToUnlockProviderResponse {
         self.init(success: success)
     }
 
+}
+
+extension AutofillUserScript.NoActionResponse {
+    static var successJSONString: String {
+        let response = Self(success: .init(action: .none))
+        if let data = try? JSONEncoder().encode(response),
+           let string = String(data: data, encoding: .utf8) {
+            return string
+        }
+        return "{}"
+    }
 }

@@ -62,12 +62,14 @@ final class KeyboardInputAccessoryView: UIView {
 
     /// Swap in a new content view (fixed height), or nil to hide.
     func setContentView(_ view: UIView?, contentHeight: CGFloat = 48) {
+        guard view != currentContent else { return }
+        
         if let oldContent = currentContent {
             oldContent.removeFromSuperview()
         }
 
         guard let view else {
-            currentContent = view
+            currentContent = nil
             containerHeight.constant = 0
             invalidateIntrinsicContentSize()
             return

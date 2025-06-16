@@ -2310,6 +2310,7 @@ extension TabViewController: WKNavigationDelegate {
             autofillUserScript?.cancelAllPendingReplies()
             if let webView = webView as? WebView {
                 webView.suppressSystemInputView = false
+                cleanupInputAccessoryView()
             }
         }
     }
@@ -3129,9 +3130,9 @@ extension TabViewController: SecureVaultManagerDelegate {
         guard mainType == .creditCards else {
             Logger.autofill.debug("secureVaultManagerDidFocus: not creditCard")
             completionHandler(nil)
-            cleanupInputAccessoryView()
             if let webView = webView as? WebView {
                 webView.suppressSystemInputView = false
+                cleanupInputAccessoryView()
             }
             return
         }

@@ -42,7 +42,7 @@ final class WebView: WKWebView {
        if lastAccessoryState != currentState {
            Logger.autofill.debug("🔄 ACCESSORY CHANGE: \(self.lastAccessoryState) -> \(currentState)")
            lastAccessoryState = currentState
-           DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+           DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                Logger.autofill.debug("Delayed reload after update")
                self.reloadContentViewInputViews()
            }

@@ -19,6 +19,8 @@
 
 import UIKit
 import PrivacyDashboard
+import Suggestions
+import Bookmarks
 
 final class UpdatedOmniBarViewController: OmniBarViewController {
 
@@ -185,5 +187,15 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         editingStateViewController?.dismissAnimated {
             self.omniDelegate?.onOmniPromptSubmitted(query)
         }
+    }
+
+    func onSelectFavorite(_ favorite: BookmarkEntity) {
+        editingStateViewController?.dismissAnimated()
+        omniDelegate?.onSelectFavorite(favorite)
+    }
+
+    func onSelectSuggestion(_ suggestion: Suggestion) {
+        omniDelegate?.onSelectSuggestion(suggestion)
+        editingStateViewController?.dismissAnimated()
     }
 }

@@ -2084,9 +2084,70 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.constraints.navigationBarContainerTop.constant = browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
     }
 
+    private func handleFavoriteSelected(_ favorite: BookmarkEntity) {
+        guard let url = favorite.urlObject else { return }
+        Pixel.fire(pixel: .favoriteLaunchedWebsite)
+        newTabPageViewController?.chromeDelegate = nil
+        dismissOmniBar()
+        Favicons.shared.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
+        if url.isBookmarklet() {
+            executeBookmarklet(url)
+        } else {
+            loadUrl(url)
+        }
+        showHomeRowReminder()
+    }
+
+
+    private func handleSuggestionSelected(_ suggestion: Suggestion) {
+        newTabPageViewController?.chromeDelegate = nil
+        dismissOmniBar()
+        viewCoordinator.omniBar.cancel()
+        switch suggestion {
+        case .phrase(phrase: let phrase):
+            if let url = URL.makeSearchURL(text: phrase) {
+                loadUrl(url)
+            } else {
+                Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
+            }
+
+        case .website(url: let url):
+            if url.isBookmarklet() {
+                executeBookmarklet(url)
+            } else {
+                loadUrl(url)
+            }
+
+        case .bookmark(_, url: let url, _, _):
+            loadUrl(url)
+
+        case .historyEntry(_, url: let url, _):
+            loadUrl(url)
+
+        case .openTab(title: _, url: let url, tabId: let tabId, _):
+            if newTabPageViewController != nil, let tab = tabManager.model.currentTab {
+                self.closeTab(tab)
+            }
+            loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
+
+        case .unknown(value: let value), .internalPage(title: let value, url: _, _):
+            assertionFailure("Unknown suggestion: \(value)")
+        }
+
+        showHomeRowReminder()
+    }
 }
 
+//MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
+
+    func onSelectFavorite(_ favorite: BookmarkEntity) {
+        handleFavoriteSelected(favorite)
+    }
+
+    func onSelectSuggestion(_ suggestion: Suggestion) {
+        handleSuggestionSelected(suggestion)
+    }
 
     func onOmniPromptSubmitted(_ query: String) {
         openAIChat(query, autoSend: true)
@@ -2414,23 +2475,13 @@ extension MainViewController: OmniBarDelegate {
 }
 
 extension MainViewController: FavoritesOverlayDelegate {
-    
-    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
-        guard let url = favorite.urlObject else { return }
-        Pixel.fire(pixel: .favoriteLaunchedWebsite)
-        newTabPageViewController?.chromeDelegate = nil
-        dismissOmniBar()
-        Favicons.shared.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
-        if url.isBookmarklet() {
-            executeBookmarklet(url)
-        } else {
-            loadUrl(url)
-        }
-        showHomeRowReminder()
-    }
 
+    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
+        handleFavoriteSelected(favorite)
+    }
 }
 
+//MARK: - AutocompleteViewControllerDelegate Methods
 extension MainViewController: AutocompleteViewControllerDelegate {
 
     func autocompleteDidEndWithUserQuery() {
@@ -2441,41 +2492,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
     }
 
     func autocomplete(selectedSuggestion suggestion: Suggestion) {
-        newTabPageViewController?.chromeDelegate = nil
-        dismissOmniBar()
-        viewCoordinator.omniBar.cancel()
-        switch suggestion {
-        case .phrase(phrase: let phrase):
-            if let url = URL.makeSearchURL(text: phrase) {
-                loadUrl(url)
-            } else {
-                Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
-            }
-
-        case .website(url: let url):
-            if url.isBookmarklet() {
-                executeBookmarklet(url)
-            } else {
-                loadUrl(url)
-            }
-
-        case .bookmark(_, url: let url, _, _):
-            loadUrl(url)
-
-        case .historyEntry(_, url: let url, _):
-            loadUrl(url)
-
-        case .openTab(title: _, url: let url, tabId: let tabId, _):
-            if newTabPageViewController != nil, let tab = tabManager.model.currentTab {
-                self.closeTab(tab)
-            }
-            loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
-
-        case .unknown(value: let value), .internalPage(title: let value, url: _, _):
-            assertionFailure("Unknown suggestion: \(value)")
-        }
-
-        showHomeRowReminder()
+        handleSuggestionSelected(suggestion)
     }
 
     func autocomplete(pressedPlusButtonForSuggestion suggestion: Suggestion) {

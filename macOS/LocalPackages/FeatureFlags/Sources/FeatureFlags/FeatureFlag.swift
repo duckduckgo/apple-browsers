@@ -198,7 +198,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
-            return .internalOnly()
+            return .enabled
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .autocompleteTabs:

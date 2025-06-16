@@ -31,7 +31,7 @@ final class PacketTunnelProviderTests: XCTestCase {
 
         XCTAssertEqual(TunnelError.startingTunnelWithoutAuthToken(internalError: underlyingError).errorUserInfo[NSUnderlyingErrorKey] as? NSError, underlyingError)
         XCTAssertEqual(TunnelError.simulateTunnelFailureError.errorUserInfo[NSUnderlyingErrorKey] as? NSError, nil)
-        XCTAssertEqual(TunnelError.vpnAccessRevoked.errorUserInfo[NSUnderlyingErrorKey] as? NSError, nil)
+        XCTAssertEqual(TunnelError.vpnAccessRevoked(underlyingError).errorUserInfo[NSUnderlyingErrorKey] as? NSError, nil)
 
         XCTAssertEqual(TunnelError.couldNotGenerateTunnelConfiguration(internalError: underlyingError).errorUserInfo[NSUnderlyingErrorKey] as? NSError, underlyingError)
     }

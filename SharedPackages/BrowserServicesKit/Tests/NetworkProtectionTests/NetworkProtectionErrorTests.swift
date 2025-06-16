@@ -44,8 +44,6 @@ final class NetworkProtectionErrorTests: XCTestCase {
             .serverListInconsistency,
             .wireGuardCannotLocateTunnelFileDescriptor,
             .wireGuardDnsResolution,
-            .noAuthTokenFound,
-            .vpnAccessRevoked,
             .failedToCastKeychainValueToData(field: "test"),
             .keychainReadError(field: "test", status: 1),
             .keychainWriteError(field: "test", status: 1),
@@ -72,6 +70,8 @@ final class NetworkProtectionErrorTests: XCTestCase {
             .failedToParseRegisteredServersResponse(underlyingError),
             .wireGuardSetNetworkSettings(underlyingError),
             .startWireGuardBackend(underlyingError),
+            .noAuthTokenFound(underlyingError),
+            .vpnAccessRevoked(underlyingError),
             .unhandledError(function: #function, line: #line, error: underlyingError),
         ]
 

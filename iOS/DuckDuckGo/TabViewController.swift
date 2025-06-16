@@ -3188,16 +3188,11 @@ extension TabViewController: SecureVaultManagerDelegate {
     }
     
     private func cleanupInputAccessoryView() {
-        guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
-            return
-        }
-        Logger.autofill.debug("cleanupInputAccessoryView")
-        
-        guard let webView = webView as? WebView, webView.inputAccessoryView != nil else {
+        guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings, let webView = webView as? WebView else {
             return
         }
 
-        webView.removeAccessoryContentView()
+        webView.removeAccessoryContentViewIfNecessary()
     }
 
     private func resetCreditCardPrompt() {

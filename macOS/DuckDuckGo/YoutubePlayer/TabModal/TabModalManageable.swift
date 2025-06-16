@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 
 /// A protocol for handling the view controller to be displayed in the modal.

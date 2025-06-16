@@ -25,6 +25,8 @@ import NetworkingTestingUtils
 public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
     public var email: String?
 
+    public var isEligibleForFreeTrialResult: Bool = false
+
     public init() {}
 
     public static var environment: Subscription.SubscriptionEnvironment?
@@ -59,7 +61,9 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
     }
 
     public var resultURL: URL!
+    public var subscriptionURL: SubscriptionURL?
     public func url(for type: Subscription.SubscriptionURL) -> URL {
+        subscriptionURL = type
         return resultURL
     }
 
@@ -203,6 +207,8 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
             return await isFeatureEnabledForUser(feature: .identityTheftRestoration)
         case .identityTheftRestorationGlobal:
             return await isFeatureEnabledForUser(feature: .identityTheftRestorationGlobal)
+        case .paidAIChat:
+            return await isFeatureEnabledForUser(feature: .paidAIChat)
         case .unknown:
             return false
         }
@@ -219,6 +225,8 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
                 return .identityTheftRestoration
             case .identityTheftRestorationGlobal:
                 return .identityTheftRestorationGlobal
+            case .paidAIChat:
+                return .paidAIChat
             case .unknown:
                 return nil
             }
@@ -237,5 +245,9 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
     public func isSubscriptionPresent() -> Bool {
         resultSubscription != nil
+    }
+
+    public func isUserEligibleForFreeTrial() -> Bool {
+        isEligibleForFreeTrialResult
     }
 }

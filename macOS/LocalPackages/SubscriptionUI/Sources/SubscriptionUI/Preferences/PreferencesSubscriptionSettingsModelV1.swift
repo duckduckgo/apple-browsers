@@ -28,6 +28,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @Published var subscriptionDetails: String?
     @Published var subscriptionStatus: PrivacyProSubscription.Status?
+    @Published private var hasActiveTrialOffer: Bool = false
 
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
@@ -73,13 +74,18 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
             }
         }
 
-        Publishers.CombineLatest($subscriptionStatus, subscriptionStateUpdate)
-            .map { status, state in
+        Publishers.CombineLatest3($subscriptionStatus, $hasActiveTrialOffer, subscriptionStateUpdate)
+            .map { status, hasTrialOffer, state in
                 let isSubscriptionActive: Bool? = {
                     guard let status else { return nil }
                     return status != .expired && status != .inactive
                 }()
                 let hasAnyEntitlement = !state.userEntitlements.isEmpty
+
+                // Check for free trial first
+                if hasTrialOffer && isSubscriptionActive == true {
+                    return PreferencesSubscriptionSettingsState.subscriptionFreeTrialActive
+                }
 
                 switch (isSubscriptionActive, hasAnyEntitlement) {
                 case (.some(false), _): return PreferencesSubscriptionSettingsState.subscriptionExpired
@@ -294,25 +300,40 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
         switch await subscriptionManager.subscriptionEndpointService.getSubscription(accessToken: token, cachePolicy: cachePolicy) {
         case .success(let subscription):
-            updateDescription(for: subscription.expiresOrRenewsAt, status: subscription.status, period: subscription.billingPeriod)
+            updateDescription(for: subscription)
             subscriptionPlatform = subscription.platform
             subscriptionStatus = subscription.status
+            hasActiveTrialOffer = subscription.hasActiveTrialOffer
         case .failure:
             break
         }
     }
 
     @MainActor
-    func updateDescription(for date: Date, status: PrivacyProSubscription.Status, period: PrivacyProSubscription.BillingPeriod) {
-        let formattedDate = dateFormatter.string(from: date)
+    func updateDescription(for subscription: PrivacyProSubscription) {
+
+        let hasActiveTrialOffer = subscription.hasActiveTrialOffer
+        let status = subscription.status
+        let period = subscription.billingPeriod
+        let formattedDate = dateFormatter.string(from: subscription.expiresOrRenewsAt)
 
         switch status {
         case .autoRenewable:
-            self.subscriptionDetails = UserText.preferencesSubscriptionRenewingCaption(billingPeriod: period, formattedDate: formattedDate)
+            if hasActiveTrialOffer {
+                self.subscriptionDetails = UserText.preferencesTrialSubscriptionRenewingCaption(billingPeriod: period, formattedDate: formattedDate)
+            } else {
+                self.subscriptionDetails = UserText.preferencesSubscriptionRenewingCaption(billingPeriod: period, formattedDate: formattedDate)
+            }
+
         case .expired, .inactive:
             self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(formattedDate: formattedDate)
         default:
-            self.subscriptionDetails = UserText.preferencesSubscriptionExpiringCaption(billingPeriod: period, formattedDate: formattedDate)
+            if hasActiveTrialOffer {
+                self.subscriptionDetails = UserText.preferencesTrialSubscriptionExpiringCaption(formattedDate: formattedDate)
+            } else {
+                self.subscriptionDetails = UserText.preferencesSubscriptionExpiringCaption(billingPeriod: period, formattedDate: formattedDate)
+            }
+
         }
     }
 
@@ -326,5 +347,5 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 }
 
 public enum PreferencesSubscriptionSettingsState: String {
-    case subscriptionPendingActivation, subscriptionActive, subscriptionExpired
+    case subscriptionPendingActivation, subscriptionActive, subscriptionExpired, subscriptionFreeTrialActive
 }

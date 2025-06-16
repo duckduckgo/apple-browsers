@@ -150,7 +150,7 @@ final class BookmarkListViewController: NSViewController {
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
          metrics: BookmarksSearchAndSortMetrics = BookmarksSearchAndSortMetrics(),
-         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.treeControllerDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)
@@ -161,7 +161,7 @@ final class BookmarkListViewController: NSViewController {
                                                      sortMode: sortBookmarksViewModel.selectedSortMode,
                                                      searchDataSource: treeControllerSearchDataSource,
                                                      isBookmarksBarMenu: false)
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
         super.init(nibName: nil, bundle: nil)
     }
 

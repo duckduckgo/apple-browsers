@@ -17,10 +17,11 @@
 //  limitations under the License.
 //
 
+import Common
 import Core
-import UIKit
 import Lottie
 import PrivacyDashboard
+import UIKit
 
 private enum Const {
     static let maxNumberOfIcons = 4

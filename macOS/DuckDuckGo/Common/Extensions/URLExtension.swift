@@ -410,7 +410,7 @@ extension URL {
     }
 
     static var threatProtectionLearnMore: URL {
-        return URL(string: "duckduckgo.com/duckduckgo-help-pages/threat-protection/")!
+        return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/threat-protection/")!
     }
 
     static var dnsBlocklistLearnMore = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists")!

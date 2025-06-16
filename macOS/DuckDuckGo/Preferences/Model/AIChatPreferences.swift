@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
+import AIChat
+import AppKit
+import BrowserServicesKit
 import Combine
 import Foundation
-import BrowserServicesKit
 import PixelKit
-import AIChat
 
 final class AIChatPreferences: ObservableObject {
     static let shared = AIChatPreferences()

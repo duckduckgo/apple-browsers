@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 protocol ColorPalette {
     var surfaceBackdrop: NSColor { get }
     var surfaceCanvas: NSColor { get }

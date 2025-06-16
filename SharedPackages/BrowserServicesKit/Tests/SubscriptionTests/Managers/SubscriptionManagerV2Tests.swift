@@ -180,7 +180,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
         // When
         DefaultSubscriptionManagerV2.save(subscriptionEnvironment: subscriptionEnvironment,
-                                        userDefaults: userDefaults)
+                                          userDefaults: userDefaults)
         loadedEnvironment = DefaultSubscriptionManagerV2.loadEnvironmentFrom(userDefaults: userDefaults)
 
         // Then
@@ -277,5 +277,70 @@ class SubscriptionManagerV2Tests: XCTestCase {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+    }
+
+    // MARK: - Tests for Free Trial Eligibility
+
+    func testWhenPlatformIsStripeUserIsEligibleForFreeTrialThenReturnsNotEligible() throws {
+        // Given
+        mockStorePurchaseManager.isEligibleForFreeTrialResult = true
+        let stripeEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
+        let sut = DefaultSubscriptionManagerV2(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: stripeEnvironment,
+            pixelHandler: MockPixelHandler()
+        )
+
+        // When
+        let result = sut.isUserEligibleForFreeTrial()
+
+        // Then
+        XCTAssertFalse(result)
+    }
+
+    func testWhenPlatformIsAppStoreAndUserIsEligibleForFreeTrialThenReturnsEligible() throws {
+        // Given
+        mockStorePurchaseManager.isEligibleForFreeTrialResult = true
+        let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
+        let sut = DefaultSubscriptionManagerV2(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: appStoreEnvironment,
+            pixelHandler: MockPixelHandler()
+        )
+
+        // When
+        let result = sut.isUserEligibleForFreeTrial()
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
+    func testWhenPlatformIsAppStoreAndUserIsNotEligibleForFreeTrialThenReturnsNotEligible() throws {
+        // Given
+        mockStorePurchaseManager.isEligibleForFreeTrialResult = false
+        let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
+        let sut = DefaultSubscriptionManagerV2(
+            storePurchaseManager: mockStorePurchaseManager,
+            oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
+            subscriptionEndpointService: mockSubscriptionEndpointService,
+            subscriptionEnvironment: appStoreEnvironment,
+            pixelHandler: MockPixelHandler()
+        )
+
+        // When
+        let result = sut.isUserEligibleForFreeTrial()
+
+        // Then
+        XCTAssertFalse(result)
     }
 }

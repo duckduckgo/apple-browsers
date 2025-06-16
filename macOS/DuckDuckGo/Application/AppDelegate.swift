@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Bookmarks
 import BrokenSitePrompt
 import BrowserServicesKit
@@ -25,31 +26,31 @@ import Common
 import Configuration
 import CoreData
 import Crashes
-import DDGSync
-import FeatureFlags
-import History
-import HistoryView
-import MetricKit
-import Networking
-import NewTabPage
-import Persistence
-import PixelKit
-import PixelExperimentKit
-import ServiceManagement
-import SyncDataProviders
-import UserNotifications
-import Lottie
-import NetworkProtection
-import PrivacyStats
-import Subscription
-import NetworkProtectionIPC
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
-import RemoteMessaging
-import os.log
+import DDGSync
+import FeatureFlags
 import Freemium
+import History
+import HistoryView
+import Lottie
+import MetricKit
+import Networking
+import NetworkProtection
+import NetworkProtectionIPC
+import NewTabPage
+import os.log
+import Persistence
+import PixelExperimentKit
+import PixelKit
+import PrivacyStats
+import RemoteMessaging
+import ServiceManagement
+import Subscription
+import SyncDataProviders
+import UserNotifications
 import VPNAppState
-import AIChat
+import WebKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -122,6 +123,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tld = TLD()
     let privacyFeatures: AnyPrivacyFeatures
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
+    let fireCoordinator: FireCoordinator
+    let permissionManager: PermissionManager
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -136,6 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats: privacyStats,
         freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
         tld: tld,
+        fireCoordinator: fireCoordinator,
         keyValueStore: keyValueStore
     )
 
@@ -152,7 +156,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
     let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
     let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
-    let visualStyleManager: VisualStyleManagerProviding
+    let visualStyle: VisualStyleProviding
+    private let visualStyleDecider: VisualStyleDecider
 
     let isAuthV2Enabled: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -449,27 +454,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         VPNAppState(defaults: .netP).isAuthV2Enabled = isAuthV2Enabled
 
-        windowControllersManager = WindowControllersManager(
+        let windowControllersManager = WindowControllersManager(
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(
                 privacyConfigurationManager: privacyConfigurationManager,
-                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform
-            )
+                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform, paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) }
+            ),
+            internalUserDecider: internalUserDecider
         )
+        self.windowControllersManager = windowControllersManager
 
-        visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
+        self.visualStyleDecider = DefaultVisualStyleDecider(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
+        visualStyle = visualStyleDecider.style
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
             faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db))
         } else {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
             faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil))
         }
 #else
         fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
         faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db))
 #endif
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
@@ -481,7 +492,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pixelFiring: PixelKit.shared
         )
         startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
-        newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager, appearancePreferences: appearancePreferences)
+        newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
+
+        fireCoordinator = FireCoordinator(tld: tld)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
@@ -497,6 +510,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     bookmarkManager: bookmarkManager,
                     historyCoordinator: historyCoordinator,
                     fireproofDomains: fireproofDomains,
+                    fireCoordinator: fireCoordinator,
                     tld: tld
                 ),
                 database: database.db
@@ -518,6 +532,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 bookmarkManager: bookmarkManager,
                 historyCoordinator: historyCoordinator,
                 fireproofDomains: fireproofDomains,
+                fireCoordinator: fireCoordinator,
                 tld: tld
             ),
             database: database.db
@@ -577,10 +592,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     privacyConfigurationManager: privacyConfigurationManager
                 ),
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
-                featureFlagger: self.featureFlagger
+                featureFlagger: self.featureFlagger,
+                visualStyle: self.visualStyle
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
-                Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
+                windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
+            }, navigateToFeedbackHandler: {
+                windowControllersManager.showFeedbackModal(preselectedFormOption: .feedback(feedbackCategory: .other))
             })
         } else {
             // As long as remoteMessagingClient is private to App Delegate and activeRemoteMessageModel
@@ -590,7 +608,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             activeRemoteMessageModel = ActiveRemoteMessageModel(
                 remoteMessagingStore: nil,
                 remoteMessagingAvailabilityProvider: nil,
-                openURLHandler: { _ in }
+                openURLHandler: { _ in },
+                navigateToFeedbackHandler: { }
             )
         }
 
@@ -781,6 +800,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         crashReporter.checkForNewReports()
 #endif
+
+        if visualStyleDecider.shouldFirePixel(style: visualStyle) {
+            PixelKit.fire(VisualStylePixel.visualUpdatesEnabled, frequency: .uniqueByName)
+        }
 
         urlEventHandler.applicationDidFinishLaunching()
 
@@ -1162,7 +1185,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setUpAutoClearHandler() {
         let autoClearHandler = AutoClearHandler(preferences: dataClearingPreferences,
-                                                fireViewModel: FireCoordinator.fireViewModel,
+                                                fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {

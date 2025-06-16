@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import BrowserServicesKit
 import Combine
 import Common
@@ -125,7 +126,7 @@ final class SuggestionContainer {
                         || model.tab.content.urlForWebView?.isSettingsURL == true
                         || model.tab.content.urlForWebView == .bookmarks,
                       let url = model.tab.content.userEditableUrl,
-                      url != selectedTab?.content.userEditableUrl, // doesn‘t match currently selected
+                      url != selectedTab?.content.userEditableUrl, // doesn't match currently selected
                       usedUrls.insert(url.nakedString ?? "").inserted == true /* if did not contain */ else { return nil }
 
                 return OpenTab(tabId: model.tab.id, title: model.title, url: url)
@@ -191,9 +192,13 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
         if !isHistoryOpened {
             result.append(.init(title: UserText.mainMenuHistory, url: .history))
         }
-        result += PreferencePaneIdentifier.allCases.map {
+        result += PreferencePaneIdentifier.allCases.compactMap { pane in
+            // Skip Duck AI if feature flag is off
+            if pane == .paidAIChat && !featureFlagger.isFeatureOn(.paidAIChat) {
+                return nil
+            }
             // preference panes URLs
-            .init(title: UserText.settings + " → " + $0.displayName, url: .settingsPane($0))
+            return .init(title: UserText.settings + " → " + pane.displayName, url: .settingsPane(pane))
         }
         result += {
             guard startupPreferences.launchToCustomHomePage,

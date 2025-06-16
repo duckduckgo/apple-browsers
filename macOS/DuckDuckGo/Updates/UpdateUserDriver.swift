@@ -124,8 +124,8 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
         pendingUpdateSince = Date()
     }
 
-    var daysSinceLastUpdateCheck: Int {
-        Calendar.current.dateComponents([.day], from: pendingUpdateSince, to: Date()).day ?? Int.max
+    var hoursSinceLastUpdateCheck: Int {
+        Calendar.current.dateComponents([.hour], from: pendingUpdateSince, to: Date()).hour ?? Int.max
     }
 
     // Dismiss the current update for the time being but keep the downloaded file around

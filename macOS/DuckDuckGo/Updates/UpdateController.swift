@@ -291,8 +291,8 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // Due to frequent releases (weekly public, daily internal), the downloaded update
     // may become obsolete if the user doesn't relaunch the app for an extended period.
     var shouldForceUpdateCheck: Bool {
-        let thresholdInDays = internalUserDecider.isInternalUser ? 1 : 7
-        guard let userDriver, userDriver.daysSinceLastUpdateCheck > thresholdInDays else { return false }
+        let thresholdInHours = internalUserDecider.isInternalUser ? 1 : 24
+        guard let userDriver, userDriver.hoursSinceLastUpdateCheck > thresholdInHours else { return false }
 
         // This workaround is for internal users for now
         guard internalUserDecider.isInternalUser else { return false }

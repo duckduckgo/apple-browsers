@@ -796,9 +796,8 @@ extension SettingsViewModel {
     func dismissImportPasswords() {
         try? keyValueStore.set(true, forKey: Constants.didDismissImportPasswordsKey)
         updateCompleteSetupSectionVisiblity()
-        urlOpener.open(url)
     }
-    
+
     @MainActor func shouldPresentLoginsViewWithAccount(accountDetails: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource? = nil) {
         state.activeWebsiteAccount = accountDetails
         state.autofillSource = source
@@ -885,6 +884,7 @@ extension SettingsViewModel {
         case .logins:
             pushViewController(legacyViewProvider.loginSettings(delegate: self,
                                                                 selectedAccount: state.activeWebsiteAccount,
+                                                                showPasswordManagement: false,
                                                                 source: state.autofillSource))
 
         case .gpc:

@@ -180,8 +180,8 @@ final class SubscriptionEmailViewModel: ObservableObject {
                     UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
                     self.state.selectedFeature = .itr
                 case .paidAIChat:
-                    UniquePixel.fire(pixel: .privacyProWelcomeAIChat)
-                    self.state.selectedFeature = .aiChat
+                    // Follow up: Implement paidAIChat selection
+                    break
                 case .unknown:
                     break
                 }

@@ -896,7 +896,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         case .identityTheftRestorationGlobal:
             onFeatureSelected?(.identityTheftRestorationGlobal)
         case .paidAIChat:
-            onFeatureSelected?(.paidAIChat)
+            // Follow up: Implement paidAIChat selection
             break
         case .unknown:
             break

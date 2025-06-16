@@ -299,7 +299,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Then
         // Wait for the async menu building to complete
         let expectation = XCTestExpectation(description: "Wait for paid AI chat menu item")
-        
+
         func checkForMenuItem() {
             if subscriptionSubmenu.items.first(where: { $0.title == UserText.paidAIChat }) != nil {
                 expectation.fulfill()
@@ -374,7 +374,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         // Wait for the async menu building to complete
         let expectation = XCTestExpectation(description: "Wait for paid AI chat menu item")
-        
+
         func checkForMenuItem() {
             if subscriptionSubmenu.items.first(where: { $0.title == UserText.paidAIChat }) != nil {
                 expectation.fulfill()

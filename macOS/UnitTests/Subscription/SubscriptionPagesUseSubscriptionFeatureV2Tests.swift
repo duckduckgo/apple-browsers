@@ -210,7 +210,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         // Given
         let params = ["productFeature": "Network Protection"]
         let expectation = expectation(description: "Network protection notification posted")
-        
+
         let observer = mockNotificationCenter.addObserver(forName: .ToggleNetworkProtectionInMainWindow, object: sut, queue: nil) { _ in
             expectation.fulfill()
         }
@@ -230,7 +230,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let params = ["productFeature": "Data Broker Protection"]
         let dbpNotificationExpectation = expectation(description: "DBP notification posted")
         let uiHandlerExpectation = expectation(description: "UI handler show tab called")
-        
+
         let observer = mockNotificationCenter.addObserver(forName: .openPersonalInformationRemoval, object: sut, queue: nil) { _ in
             dbpNotificationExpectation.fulfill()
         }

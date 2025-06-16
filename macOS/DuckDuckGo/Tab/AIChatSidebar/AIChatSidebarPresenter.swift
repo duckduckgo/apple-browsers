@@ -164,7 +164,7 @@ extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
 
     func didClickOpenInNewTabButton() {
         Task { @MainActor in
-            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
+            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: true))
         }
     }
 

@@ -1,5 +1,5 @@
 //
-//  SettingsPrivacyProtectionDescriptionView.swift
+//  SettingsPreferencesDescriptionView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -20,17 +20,17 @@
 import SwiftUI
 import DesignResourcesKit
 
-struct PrivacyProtectionDescription {
+struct PreferencesDescription {
     let imageName: String
     let title: String
     let status: StatusIndicator
     let explanation: String
 }
 
-// Universal protection description view
-struct PrivacyProtectionDescriptionView: View {
+// Universal preferences description view
+struct PreferencesDescriptionView: View {
 
-    let content: PrivacyProtectionDescription
+    let content: PreferencesDescription
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var body: some View {

@@ -39,6 +39,7 @@ struct SettingsSubscriptionView: View {
     @State var isShowingDBP = false
     @State var isShowingITP = false
     @State var isShowingVPN = false
+    @State var isShowingPaidAIChat = false
     @State var isShowingRestoreFlow = false
     @State var isShowingGoogleView = false
     @State var isShowingStripeView = false
@@ -79,9 +80,9 @@ struct SettingsSubscriptionView: View {
             let subtitleText = {
                 switch currentStorefrontRegion {
                 case .usa:
-                    UserText.settingsPProUSDescription
+                    settingsViewModel.isPaidAIChatEnabled ? UserText.settingsSubscriptionUSDescription : UserText.settingsPProUSDescription
                 case .restOfWorld:
-                    UserText.settingsPProROWDescription
+                    settingsViewModel.isPaidAIChatEnabled ? UserText.settingsSubscriptionROWDescription : UserText.settingsPProROWDescription
                 }
             }()
 
@@ -142,6 +143,15 @@ struct SettingsSubscriptionView: View {
             SettingsCellView(
                 label: UserText.settingsPProDBPTitle,
                 image: Image(uiImage: DesignSystemImages.Color.Size24.databroker),
+                statusIndicator: StatusIndicatorView(status: .off),
+                isGreyedOut: true
+            )
+        }
+
+        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
+            SettingsCellView(
+                label: UserText.settingsSubscriptionAiChatTitle,
+                image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
                 statusIndicator: StatusIndicatorView(status: .off),
                 isGreyedOut: true
             )
@@ -263,6 +273,20 @@ struct SettingsSubscriptionView: View {
                 )
             }
             .disabled(!hasDBPEntitlement)
+        }
+
+        if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {
+            let hasAIChatEntitlement = userEntitlements.contains(.paidAIChat)
+
+            NavigationLink(destination: LazyView(SubscriptionAIChatView(viewModel: settingsViewModel)), isActive: $isShowingPaidAIChat) {
+                SettingsCellView(
+                    label: UserText.settingsSubscriptionAiChatTitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
+                    statusIndicator: StatusIndicatorView(status: hasAIChatEntitlement ? .on : .off),
+                    isGreyedOut: !hasAIChatEntitlement
+                )
+            }
+            .disabled(!hasAIChatEntitlement)
         }
 
         if subscriptionFeatures.contains(.identityTheftRestoration) || subscriptionFeatures.contains(.identityTheftRestorationGlobal) {

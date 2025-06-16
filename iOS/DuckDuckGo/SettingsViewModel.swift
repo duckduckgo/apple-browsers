@@ -53,6 +53,7 @@ final class SettingsViewModel: ObservableObject {
     private let duckPlayerSettings: DuckPlayerSettings
     private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
     let featureDiscovery: FeatureDiscovery
+    private let urlOpener: URLOpener
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -100,6 +101,11 @@ final class SettingsViewModel: ObservableObject {
         case addressbarPosition
         case speechRecognition
         case networkProtection
+    }
+
+    // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
+    var isPaidAIChatEnabled: Bool {
+        featureFlagger.isFeatureOn(.paidAIChat)
     }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
@@ -474,6 +480,11 @@ final class SettingsViewModel: ObservableObject {
         subscriptionAuthV1toV2Bridge.isUserAuthenticated
     }
 
+    // Indicates if the Paid AI Chat entitlement flag is available for the current user
+    var isPaidAIChatAvailable: Bool {
+        state.subscription.subscriptionFeatures.contains(Entitlement.ProductName.paidAIChat)
+    }
+
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
@@ -496,7 +507,8 @@ final class SettingsViewModel: ObservableObject {
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()
+         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
+         urlOpener: URLOpener = UIApplication.shared
     ) {
 
         self.state = SettingsState.defaults
@@ -520,6 +532,7 @@ final class SettingsViewModel: ObservableObject {
         self.duckPlayerPixelHandler = duckPlayerPixelHandler
         self.featureDiscovery = featureDiscovery
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
+        self.urlOpener = urlOpener
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -686,7 +699,7 @@ extension SettingsViewModel {
     func setAsDefaultBrowser() {
         Pixel.fire(pixel: .settingsSetAsDefault)
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(url)
+        urlOpener.open(url)
     }
     
     @MainActor func shouldPresentLoginsViewWithAccount(accountDetails: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource? = nil) {
@@ -702,24 +715,28 @@ extension SettingsViewModel {
     }
 
     func openEmailProtection() {
-        UIApplication.shared.open(URL.emailProtectionQuickLink)
+        urlOpener.open(URL.emailProtectionQuickLink)
     }
 
     func openEmailAccountManagement() {
-        UIApplication.shared.open(URL.emailProtectionAccountLink)
+        urlOpener.open(URL.emailProtectionAccountLink)
     }
 
     func openEmailSupport() {
-        UIApplication.shared.open(URL.emailProtectionSupportLink)
+        urlOpener.open(URL.emailProtectionSupportLink)
     }
 
     func openOtherPlatforms() {
-        UIApplication.shared.open(URL.otherDevices)
+        urlOpener.open(URL.otherDevices)
     }
 
     func openMoreSearchSettings() {
         Pixel.fire(pixel: .settingsMoreSearchSettings)
-        UIApplication.shared.open(URL.searchSettings)
+        urlOpener.open(URL.searchSettings)
+    }
+
+    func openAIChat() {
+        urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
     }
 
     var shouldDisplayDuckPlayerContingencyMessage: Bool {
@@ -729,7 +746,7 @@ extension SettingsViewModel {
     func openDuckPlayerContingencyMessageSite() {
         guard let url = duckPlayerContingencyHandler.learnMoreURL else { return }
         Pixel.fire(pixel: .duckPlayerContingencyLearnMoreClicked)
-        UIApplication.shared.open(url)
+        urlOpener.open(url)
     }
 
     @MainActor func openCookiePopupManagement() {
@@ -901,7 +918,7 @@ extension SettingsViewModel {
 
             // Check entitlements and update state
             var currentEntitlements: [Entitlement.ProductName] = []
-            let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal]
+            let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
             for entitlement in entitlementsToCheck {
                 if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isEnabled(feature: entitlement),

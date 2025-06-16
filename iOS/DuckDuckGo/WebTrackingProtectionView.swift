@@ -25,8 +25,8 @@ struct WebTrackingProtectionView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
 
-    var description: PrivacyProtectionDescription {
-        PrivacyProtectionDescription(imageName: "SettingsWebTrackingProtectionContent",
+    var description: PreferencesDescription {
+        PreferencesDescription(imageName: "SettingsWebTrackingProtectionContent",
                                      title: UserText.webTrackingProtection,
                                      status: .alwaysOn,
                                      explanation: UserText.webTrackingProtectionExplanation)
@@ -34,7 +34,7 @@ struct WebTrackingProtectionView: View {
 
     var body: some View {
         List {
-            PrivacyProtectionDescriptionView(content: description)
+            PreferencesDescriptionView(content: description)
             WebTrackingProtectionViewSettings()
         }
         .applySettingsListModifiers(title: UserText.webTrackingProtection,

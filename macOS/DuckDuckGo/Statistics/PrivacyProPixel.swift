@@ -53,6 +53,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProWelcomeAddDevice
     case privacyProWelcomeVPN
     case privacyProWelcomePersonalInformationRemoval
+    case privacyProWelcomeAIChat
     case privacyProWelcomeIdentityRestoration
     case privacyProSubscriptionSettings
     case privacyProVPNSettings
@@ -104,6 +105,8 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProWelcomeAddDevice: return "m_mac_\(appDistribution)_privacy-pro_welcome_add-device_click_u"
         case .privacyProWelcomeVPN: return "m_mac_\(appDistribution)_privacy-pro_welcome_vpn_click_u"
         case .privacyProWelcomePersonalInformationRemoval: return "m_mac_\(appDistribution)_privacy-pro_welcome_personal-information-removal_click_u"
+        case .privacyProWelcomeAIChat:
+            return "m_mac_\(appDistribution)_privacy-pro_welcome_ai-chat_click_u"
         case .privacyProWelcomeIdentityRestoration: return "m_mac_\(appDistribution)_privacy-pro_welcome_identity-theft-restoration_click_u"
         case .privacyProSubscriptionSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_screen_impression"
         case .privacyProVPNSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_vpn_click"

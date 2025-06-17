@@ -1203,6 +1203,11 @@ Take back control of your personal information with the browser designed for dat
     public static let settingsOff = NSLocalizedString("settings.off", value: "Off", comment: "Label describing a feature which is turned off")
     public static let settingsAlwaysOn = NSLocalizedString("settings.always.on", value: "Always On", comment: "Label describing a feature which is turned on always")
 
+    // Complete Your Setup
+    public static let completeSetupSettings = NSLocalizedString("settings.complete.setup", value: "Complete Your Setup", comment: "The name of the settings section containing options to set up the app")
+    public static let setAsDefaultBrowser = NSLocalizedString("settings.set.default.browser", value: "Set As Default Browser", comment: "The name of Settings category in Complete Your Setup related to configuration of the default browser")
+    public static let importPasswords = NSLocalizedString("settings.import.passwords", value: "Import Passwords", comment: "The name of Settings category in Complete Your Setup related to importing  passdwords")
+
     // Privacy Protections
     public static let privateSearchExplanation = NSLocalizedString("settings.private.search.explanation", value: "DuckDuckGo Private Search is your default search engine, so you can search the web without being tracked.", comment: "Explanation in Settings how the private search feature works")
     public static let webTrackingProtectionExplanation = NSLocalizedString("settings.web.tracking.protection.explanation", value: "DuckDuckGo automatically blocks hidden trackers as you browse the web.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)", comment: "Explanation in Settings how the web tracking protection feature works")

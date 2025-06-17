@@ -1310,6 +1310,7 @@
 		C12726EE2A5FF88C00215B02 /* EmailSignupPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12726ED2A5FF88C00215B02 /* EmailSignupPromptView.swift */; };
 		C12726F02A5FF89900215B02 /* EmailSignupPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12726EF2A5FF89900215B02 /* EmailSignupPromptViewModel.swift */; };
 		C12726F22A5FF8CB00215B02 /* EmailSignupPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12726F12A5FF8CB00215B02 /* EmailSignupPromptViewController.swift */; };
+		C128BA252DF0847900ADDC5F /* SettingsCompleteSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C128BA242DF0847900ADDC5F /* SettingsCompleteSetupView.swift */; };
 		C13B32D22A0E750700A59236 /* AutofillSettingStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13B32D12A0E750700A59236 /* AutofillSettingStatus.swift */; };
 		C13C076C2D00A6B7006386CF /* VaultCredentialManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13C076B2D00A6B7006386CF /* VaultCredentialManager.swift */; };
 		C13EEA1E2D64CFCA001D5DC3 /* DataImportViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C13EEA1D2D64CFCA001D5DC3 /* DataImportViewModelTests.swift */; };
@@ -3401,6 +3402,7 @@
 		C12726F12A5FF8CB00215B02 /* EmailSignupPromptViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignupPromptViewController.swift; sourceTree = "<group>"; };
 		C12854D82D08636E00C8353F /* lv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lv; path = lv.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C12854D92D08636E00C8353F /* lv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lv; path = lv.lproj/Localizable.strings; sourceTree = "<group>"; };
+		C128BA242DF0847900ADDC5F /* SettingsCompleteSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCompleteSetupView.swift; sourceTree = "<group>"; };
 		C129DF092D0862D7007AB046 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C129DF0A2D0862D7007AB046 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C132F5A32D0862B8000C81D0 /* fi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fi; path = fi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -4160,6 +4162,7 @@
 		1DDF40272BA04CF3006850D9 /* Sections */ = {
 			isa = PBXGroup;
 			children = (
+				C1F580BA2DFA20AE005E4C12 /* CompleteSetup */,
 				1DEAADE32BA386C600E25A97 /* PrivacyProtections */,
 				1DEAADF72BA488E600E25A97 /* Privacy Pro */,
 				1DEAADE42BA386D100E25A97 /* MainSettings */,
@@ -7021,6 +7024,14 @@
 			name = EmailAddressPrompt;
 			sourceTree = "<group>";
 		};
+		C1F580BA2DFA20AE005E4C12 /* CompleteSetup */ = {
+			isa = PBXGroup;
+			children = (
+				C128BA242DF0847900ADDC5F /* SettingsCompleteSetupView.swift */,
+			);
+			name = CompleteSetup;
+			sourceTree = "<group>";
+		};
 		CB05BCD52D676AFF0034ABA6 /* UICoordination */ = {
 			isa = PBXGroup;
 			children = (
@@ -9577,6 +9588,7 @@
 				1EEC460627A9499600E75FCB /* DownloadsList.swift in Sources */,
 				6F3537A22C4AB97A009F8717 /* NewTabPageSettingsModel.swift in Sources */,
 				9F23B8032C2BCD0000950875 /* DaxDialogStyles.swift in Sources */,
+				C128BA252DF0847900ADDC5F /* SettingsCompleteSetupView.swift in Sources */,
 				C1C18BF62D956FAD00FFBA2E /* AutofillEditableCell.swift in Sources */,
 				65BD16352D8C206F000795DE /* DuckPlayerPrimingModalView.swift in Sources */,
 				65BD16362D8C206F000795DE /* DuckPlayerPrimingModalViewModel.swift in Sources */,

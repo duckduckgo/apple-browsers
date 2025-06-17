@@ -30,11 +30,15 @@ import SubscriptionTestingUtilities
 import Common
 @testable import DuckDuckGo
 @testable import Core
+import PersistenceTestingUtils
+
+// swiftlint:disable force_try
 
 final class OnboardingNavigationDelegateTests: XCTestCase {
 
     var mainVC: MainViewController!
     var onboardingPixelReporter: OnboardingPixelReporterMock!
+    let keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
 
     override func setUpWithError() throws {
         throw XCTSkip("Potentially flaky")
@@ -95,7 +99,8 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
-            themeManager: MockThemeManager()
+            themeManager: MockThemeManager(),
+            keyValueStore: keyValueStore
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()
@@ -202,3 +207,5 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
     }
 
 }
+
+// swiftlint:enable force_try

@@ -739,6 +739,9 @@ class MockSecureVaultDelegate: AutofillSecureVaultDelegate {
     func autofillUserScriptDidOfferGeneratedPassword(_: BrowserServicesKit.AutofillUserScript, password: String, completionHandler: @escaping (Bool) -> Void) {
     }
 
+    func autofillUserScriptDidFocus(_: AutofillUserScript, mainType: AutofillUserScript.GetAutofillDataMainType, completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void) {
+    }
+
     func autofillUserScript(_: AutofillUserScript, didSendPixel pixel: AutofillUserScript.JSPixel) {
     }
 }

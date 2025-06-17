@@ -3058,6 +3058,10 @@ extension TabViewController: SecureVaultManagerDelegate {
 
             presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
                 completionHandler(creditCard)
+
+                if creditCard != nil {
+                    NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
+                }
             }
         } else {
             completionHandler(nil)
@@ -3320,6 +3324,7 @@ extension TabViewController: SaveLoginViewControllerDelegate {
                 guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
                 mainVC.segueToSettingsAutofillWith(account: nil, card: nil, source: .saveLoginDisablePrompt)
             })
+            Pixel.fire(pixel: .autofillCardsSaveDisableSnackbarShown)
         }
     }
 }
@@ -3352,6 +3357,7 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
                 
                 guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
                 mainVC.segueToSettingsAutofillWith(account: nil, card: nil, source: .saveCreditCardDisablePrompt)
+                Pixel.fire(pixel: .autofillCardsSaveDisableSnackbarOpenSettings)
             })
         }
     }

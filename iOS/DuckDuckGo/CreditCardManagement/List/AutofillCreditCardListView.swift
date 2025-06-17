@@ -105,5 +105,5 @@ private struct EmptyStateView: View {
 }
 
 #Preview {
-    AutofillCreditCardListView(viewModel: AutofillCreditCardListViewModel())
+    AutofillCreditCardListView(viewModel: AutofillCreditCardListViewModel(source: .settings))
 }

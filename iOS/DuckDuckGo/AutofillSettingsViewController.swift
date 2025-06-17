@@ -127,7 +127,8 @@ final class AutofillSettingsViewController: UIViewController {
     private func segueToCreditCards() {
         let autofillCreditCardsViewController = AutofillCreditCardListViewController(
             secureVault: viewModel.secureVault,
-            selectedCard: selectedCard)
+            selectedCard: selectedCard,
+            source: source)
         navigationController?.pushViewController(autofillCreditCardsViewController, animated: true)
     }
     

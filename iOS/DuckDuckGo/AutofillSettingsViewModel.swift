@@ -86,12 +86,18 @@ final class AutofillSettingsViewModel: ObservableObject {
     var saveCreditCardsEnabled: Binding<Bool> {
         Binding(
             get: { self.showCreditCards ? self.appSettings.autofillCreditCardsEnabled : false },
-            set: { newValue in
-                guard self.showCreditCards else { return }
+            set: { [weak self] newValue in
+                guard let self = self, self.showCreditCards else { return }
                 
                 self.appSettings.autofillCreditCardsEnabled = newValue
                 self.keyValueStore.set(false, forKey: UserDefaultsWrapper<Bool>.Key.autofillCreditCardsFirstTimeUser.rawValue)
                 NotificationCenter.default.post(name: AppUserDefaults.Notifications.autofillEnabledChange, object: self)
+
+                if newValue {
+                    Pixel.fire(pixel: .autofillCardsSettingsEnabled)
+                } else {
+                    Pixel.fire(pixel: .autofillCardsSettingsDisabled, withAdditionalParameters: ["source": source.rawValue])
+                }
             }
         )
     }

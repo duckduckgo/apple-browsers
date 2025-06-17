@@ -19,6 +19,7 @@
 
 import Foundation
 import BrowserServicesKit
+import Core
 
 protocol CreditCardPromptViewModelDelegate: AnyObject {
     func creditCardPromptViewModel(_ viewModel: CreditCardPromptViewModel, didSelectCreditCard creditCard: SecureVaultModels.CreditCard)
@@ -43,13 +44,16 @@ final class CreditCardPromptViewModel {
     
     init(creditCards: [SecureVaultModels.CreditCard]) {
         self.cards = creditCards.sorted(by: { $0.created > $1.created }).asCardRowViewModels
+        Pixel.fire(pixel: .autofillCardsFillCardManualInlineDisplayed)
     }
     
     func selected(card: CreditCardRowViewModel) {
         delegate?.creditCardPromptViewModel(self, didSelectCreditCard: card.creditCard)
+        Pixel.fire(pixel: .autofillCardsFillCardManualInlineConfirmed)
     }
     
     func cancelButtonPressed() {
         delegate?.creditCardPromptViewModelCancel(self)
+        Pixel.fire(pixel: .autofillCardsFillCardManualInlineDismissed)
     }
 }

@@ -38,9 +38,9 @@ final class AutofillCreditCardListViewController: UIViewController {
                         action: #selector(addButtonPressed))
     }()
     
-    init(secureVault: (any AutofillSecureVault)? = nil, selectedCard: SecureVaultModels.CreditCard? = nil) {
+    init(secureVault: (any AutofillSecureVault)? = nil, selectedCard: SecureVaultModels.CreditCard? = nil, source: AutofillSettingsSource) {
         self.secureVault = secureVault
-        self.viewModel = AutofillCreditCardListViewModel(secureVault: secureVault)
+        self.viewModel = AutofillCreditCardListViewModel(secureVault: secureVault, source: source)
         self.selectedCard = selectedCard
         
         super.init(nibName: nil, bundle: nil)

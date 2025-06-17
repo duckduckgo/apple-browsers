@@ -37,7 +37,7 @@ import SecureStorage
 import History
 import ContentScopeScripts
 import SpecialErrorPages
-import NetworkProtection
+import VPN
 import Onboarding
 import os.log
 import Navigation
@@ -3095,7 +3095,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             completionHandler(nil)
             return
         }
-        
+
         // if user is interacting with the searchBar, don't show the autofill prompt since it will overlay the keyboard
         if let parent = parent as? MainViewController, parent.viewCoordinator.omniBar.isTextFieldEditing {
             completionHandler(nil)
@@ -3126,25 +3126,29 @@ extension TabViewController: SecureVaultManagerDelegate {
             completionHandler(card)
         }
     }
-    
+
     private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         if domainFillCreditCardPromptLastShownOn != url?.host {
             AppDependencyProvider.shared.autofillLoginSession.endSession()
             self.domainFillCreditCardPromptLastShownOn = self.url?.host
             resetCreditCardPrompt()
         }
-        
+
         guard creditCards.count > 0 else {
             completionHandler(nil)
             cleanupInputAccessoryView()
             return
         }
-        
+
         if shouldShowCreditCardPrompt {
             fillCreditCardsPromptIsPresenting = true
             presentAutofillPromptViewController(creditCards: creditCards) { [weak self] creditCard in
                 completionHandler(creditCard)
                 self?.fillCreditCardsPromptIsPresenting = false
+
+                if creditCard != nil {
+                    NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
+                }
             }
             shouldShowCreditCardPrompt = false
             autofillCreditCardAccessoryView?.updateCreditCards(creditCards)
@@ -3193,7 +3197,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             self?.cleanupInputAccessoryView()
         }
     }
-    
+
     private func cleanupInputAccessoryView() {
         guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings, let webView = webView as? WebView else {
             return
@@ -3443,6 +3447,7 @@ extension TabViewController: SaveLoginViewControllerDelegate {
                 guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
                 mainVC.segueToSettingsAutofillWith(account: nil, card: nil, source: .saveLoginDisablePrompt)
             })
+            Pixel.fire(pixel: .autofillCardsSaveDisableSnackbarShown)
         }
     }
 }
@@ -3475,6 +3480,7 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
                 
                 guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
                 mainVC.segueToSettingsAutofillWith(account: nil, card: nil, source: .saveCreditCardDisablePrompt)
+                Pixel.fire(pixel: .autofillCardsSaveDisableSnackbarOpenSettings)
             })
         }
     }

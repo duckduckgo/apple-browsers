@@ -60,7 +60,7 @@ public struct PreferencesPurchaseSubscriptionView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 TextMenuItemHeader(UserText.preferencesSubscriptionInactiveHeader)
-                TextMenuItemCaption(UserText.preferencesSubscriptionInactiveCaption(region: model.subscriptionStorefrontRegion))
+                TextMenuItemCaption(UserText.preferencesSubscriptionInactiveCaption(region: model.subscriptionStorefrontRegion, isPaidAIChatEnabled: model.isPaidAIChatEnabled))
 
                 let purchaseButtonText = model.isUserEligibleForFreeTrial ? UserText.purchaseFreeTrialButton : UserText.purchaseButton
 
@@ -107,6 +107,15 @@ public struct PreferencesPurchaseSubscriptionView: View {
                 Divider()
                     .foregroundColor(Color.secondary)
 
+                if model.isPaidAIChatEnabled {
+                    SectionView(iconName: "Ai-Chat-icon",
+                                title: UserText.paidAIChatTitle,
+                                description: UserText.paidAIChatServiceDescription)
+                }
+
+                Divider()
+                    .foregroundColor(Color.secondary)
+
                 SectionView(iconName: "ITR-Icon",
                             title: UserText.identityTheftRestorationServiceTitle,
                             description: UserText.identityTheftRestorationServiceDescription)
@@ -115,6 +124,15 @@ public struct PreferencesPurchaseSubscriptionView: View {
                 SectionView(iconName: "VPN-Icon",
                             title: UserText.vpnServiceTitle,
                             description: UserText.vpnServiceDescription)
+
+                Divider()
+                    .foregroundColor(Color.secondary)
+
+                if model.isPaidAIChatEnabled {
+                    SectionView(iconName: "Ai-Chat-icon",
+                                title: UserText.paidAIChatTitle,
+                                description: UserText.paidAIChatServiceDescription)
+                }
 
                 Divider()
                     .foregroundColor(Color.secondary)

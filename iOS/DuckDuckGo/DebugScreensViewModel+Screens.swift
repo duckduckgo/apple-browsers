@@ -41,6 +41,11 @@ extension DebugScreensViewModel {
             .action(title: "Reset TipKit", { d in
                 d.tipKitUIActionHandler.resetTipKitTapped()
             }),
+            .action(title: "Reset Settings > Complete Setup", { d in
+                try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
+                try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
+                try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.shouldCheckIfDefaultBrowserKey)
+            }),
             .action(title: "Generate Diagnostic Report", { d in
                 guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
 

@@ -66,11 +66,16 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
     private var cachedDeletedCreditCard: SecureVaultModels.CreditCard?
     private var cancellables: Set<AnyCancellable> = []
     
-    init(secureVault: (any AutofillSecureVault)? = nil) {
+    init(secureVault: (any AutofillSecureVault)? = nil, source: AutofillSettingsSource) {
         self.secureVault = secureVault
         
         if let count = try? secureVault?.creditCardsCount() {
             authenticationNotRequired = count == 0
+            Pixel.fire(pixel: .autofillCardsManagementOpened,
+                       withAdditionalParameters: [
+                        PixelParameters.source: source.rawValue,
+                        "has_cards_saved": "\(count > 0 ? 1 : 0)"
+                       ])
         }
         refreshData()
         setupCancellables()
@@ -204,6 +209,7 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
             self.undoLastDelete()
         }, onDidDismiss: {
             self.clearUndoCache()
+            Pixel.fire(pixel: .autofillCardsManagementDeleteCard)
         })
     }
 }

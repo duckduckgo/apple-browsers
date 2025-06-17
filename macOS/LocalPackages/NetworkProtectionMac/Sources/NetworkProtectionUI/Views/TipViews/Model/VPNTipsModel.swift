@@ -19,7 +19,7 @@
 import AppKit
 import Combine
 import Common
-import NetworkProtection
+import VPN
 import NetworkProtectionProxy
 import os.log
 import TipKit

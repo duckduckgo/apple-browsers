@@ -86,7 +86,6 @@ public class DataBrokerProtectionAgentManagerProvider {
         do {
             vault = try vaultFactory.makeVault(reporter: reporter)
         } catch let error {
-            assertionFailure("Failed to make secure storage vault")
             pixelHandler.fire(.backgroundAgentSetUpFailedSecureVaultInitFailed(error: error))
             return nil
         }

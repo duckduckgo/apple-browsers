@@ -128,7 +128,7 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         case .failure(let error):
             switch error {
             case .internalError(let innerError):
-                XCTAssertEqual(innerError as? SubscriptionManagerError, .tokenUnavailable(error: OAuthServiceError.authAPIError(code: .invalidAuthorizationRequest)))
+                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(code: .invalidAuthorizationRequest)))
             default:
                 XCTFail("Unexpected error \(error)")
             }
@@ -146,7 +146,7 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         case .failure(let error):
             switch error {
             case .internalError(let innerError):
-                XCTAssertEqual(innerError as? SubscriptionManagerError, .tokenUnavailable(error: OAuthServiceError.authAPIError(code: .invalidAuthorizationRequest)))
+                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(code: .invalidAuthorizationRequest)))
             default:
                 XCTFail("Unexpected error \(error)")
             }
@@ -165,7 +165,7 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         case .failure(let error):
             switch error {
             case .internalError(let innerError):
-                XCTAssertEqual(innerError as? SubscriptionManagerError, .tokenUnavailable(error: OAuthServiceError.authAPIError(code: .invalidAuthorizationRequest)))
+                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.authAPIError(code: .invalidAuthorizationRequest)))
             default:
                 XCTFail("Unexpected error \(error)")
             }
@@ -185,7 +185,7 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         case .failure(let error):
             switch error {
             case .internalError(let innerError):
-                XCTAssertEqual(innerError as? SubscriptionManagerError, .tokenUnavailable(error: OAuthServiceError.invalidResponseCode(.badRequest)))
+                XCTAssertEqual(innerError as? SubscriptionManagerError, .errorRetrievingTokenContainer(error: OAuthServiceError.invalidResponseCode(.badRequest)))
             default:
                 XCTFail("Unexpected error \(error)")
             }

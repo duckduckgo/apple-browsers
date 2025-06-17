@@ -18,7 +18,7 @@
 
 import Foundation
 import Combine
-import NetworkProtection
+import VPN
 
 public final class ConnectionServerInfoObserverThroughIPC: ConnectionServerInfoObserver {
     private let subject = CurrentValueSubject<NetworkProtectionStatusServerInfo, Never>(.unknown)

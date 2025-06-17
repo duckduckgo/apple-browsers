@@ -73,18 +73,22 @@ final class SaveCreditCardViewModel {
         self.domainLastShownOn = domainLastShownOn
         self.vault = vault
         self.card = CreditCardRowViewModel(creditCard: creditCard)
+
+        Pixel.fire(pixel: .autofillCardsSaveCardInlineDisplayed)
     }
     
     func cancelButtonPressed() {
         updateRejectionCountIfNeeded()
         delegate?.saveCreditCardViewModelCancel(self)
         showDisableAutofillPromptIfNeeded()
+        Pixel.fire(pixel: .autofillCardsSaveCardInlineDismissed)
     }
     
     func save() {
         guard let card = try? saveCreditCard(creditCard, with: AutofillSecureVaultFactory) else {
             return
         }
+        Pixel.fire(pixel: .autofillCardsSaveCardInlineConfirmed)
         autofillCreditCardsFirstTimeUser = false
         delegate?.saveCreditCardViewModelDidSave(self, creditCard: card)
     }

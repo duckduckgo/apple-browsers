@@ -102,23 +102,20 @@ final class GRDBSecureStorageDatabaseProviderTests: XCTestCase {
             try? FileManager.default.removeItem(at: backupURL)
         }
 
-        do {
-            try! "asdf".data(using: .utf8)!.write(to: temporaryDatabaseURL)
-            _ = try TestGRDBDatabaseProvider(file: temporaryDatabaseURL, key: keyData)
+        try! "asdf".data(using: .utf8)!.write(to: temporaryDatabaseURL)
+        _ = try TestGRDBDatabaseProvider(file: temporaryDatabaseURL, key: keyData)
 
-            XCTFail("Successfully created database provider even through an error was expected")
-        } catch {
-            // Check that the original file was moved to a backup file:
-            let database = try TestGRDBDatabaseProvider(file: temporaryDatabaseURL, key: keyData)
-            XCTAssertEqual(try! Data(contentsOf: backupURL), "asdf".data(using: .utf8))
+        // Check that the original file was moved to a backup file:
+        XCTAssertEqual(try! Data(contentsOf: backupURL), "asdf".data(using: .utf8))
 
-            // Check that the database can now be used:
-            let testModel = TestGRDBModel(id: 1, username: "dax")
-            try database.insert(testModel: testModel)
-            let modelFromDatabase = try database.fetchTestModels().first
+        let database = try TestGRDBDatabaseProvider(file: temporaryDatabaseURL, key: keyData)
 
-            XCTAssertEqual(testModel, modelFromDatabase)
-        }
+        // Check that the database can now be used:
+        let testModel = TestGRDBModel(id: 1, username: "dax")
+        try database.insert(testModel: testModel)
+        let modelFromDatabase = try database.fetchTestModels().first
+
+        XCTAssertEqual(testModel, modelFromDatabase)
     }
 
     func testWhenCreatingDatabaseFilePath_ThenDatabaseFilePathIncludesDirectoryAndFileName() {

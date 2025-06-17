@@ -18,7 +18,7 @@
 
 import Foundation
 import Subscription
-import NetworkProtection
+import VPN
 import Common
 import os.log
 

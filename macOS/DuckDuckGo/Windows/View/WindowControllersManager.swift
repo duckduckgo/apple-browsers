@@ -193,20 +193,15 @@ extension WindowControllersManager {
     ///
     /// - Parameters:
     ///   - url: The AI chat URL to open.
-    ///   - target: Specifies where to open the URL. Can be `.newTabSelected`, `.newTabUnselected`, or `.sameTab`.
-    ///             Defaults to `.sameTab`.
+    ///   - linkOpenBehavior: Specifies where to open the URL. Defaults to `.currentTab`.
     ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `target` is `.newTabSelected`
     ///                or `.newTabUnselected`. Defaults to `false`.
-    func openAIChat(_ url: URL, target: AIChatTabOpenerTarget = .sameTab, hasPrompt: Bool = false) {
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool = false) {
 
         let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
 
-        switch target {
-        case .newTabSelected:
-            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url, source: .ui), selected: true)
-        case .newTabUnselected:
-            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url, source: .ui), selected: false)
-        case .sameTab:
+        switch linkOpenBehavior {
+        case .currentTab:
             if let currentURL = tabCollectionViewModel?.selectedTab?.url, currentURL.isDuckAIURL {
                 if hasPrompt {
                     tabCollectionViewModel?.selectedTab?.reload()
@@ -214,6 +209,8 @@ extension WindowControllersManager {
             } else {
                 show(url: url, source: .ui, newTab: false)
             }
+        default:
+            open(url, with: linkOpenBehavior, source: .ui, target: nil)
         }
     }
 
@@ -268,9 +265,9 @@ extension WindowControllersManager {
         case .newTab(let selected):
             guard windowController?.window?.isPopUpWindow == false,
                   let tabCollectionViewModel = windowController?.mainViewController.tabCollectionViewModel else { fallthrough }
-            tabCollectionViewModel.appendNewTab(with: .url(url, source: .bookmark), selected: selected)
+            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: source), selected: selected)
         case .newWindow(let selected):
-            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: setBurner ?? (windowController?.mainViewController.isBurner ?? false), showWindow: selected)
+            WindowsManager.openNewWindow(with: url, source: source, isBurner: setBurner ?? (windowController?.mainViewController.isBurner ?? false), showWindow: selected)
         }
     }
 

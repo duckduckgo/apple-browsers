@@ -33,7 +33,7 @@ class CreditCardInputAccessoryView: UIView {
     private let authenticator = AutofillLoginListAuthenticator(reason: UserText.autofillCreditCardFillPromptAuthentication,
                                                                cancelTitle: UserText.autofillLoginListAuthenticationCancelButton)
 
-    private lazy var scrollView: UIScrollView = {
+    private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -42,7 +42,7 @@ class CreditCardInputAccessoryView: UIView {
         return scrollView
     }()
 
-    private lazy var cardStackView: UIStackView = {
+    private let cardStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .horizontal
         stackView.spacing = 8
@@ -51,34 +51,19 @@ class CreditCardInputAccessoryView: UIView {
         return stackView
     }()
 
-    private lazy var gradientView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.isUserInteractionEnabled = false
-        view.backgroundColor = UIColor.clear
-        // Optimize layer performance
-        view.layer.shouldRasterize = true
-        view.layer.rasterizationScale = UIScreen.main.scale
-        return view
-    }()
-
-    private var gradientLayer: CAGradientLayer?
-
-    private lazy var manageButton: UIButton = {
+    private let manageButton: UIButton = {
         let button = ThemeManager.shared.properties.isExperimentalThemingEnabled ? BrowserChromeButton() : UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.expand, for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.tintColor = UIColor(designSystemColor: .buttonsSecondaryFillText)
-        button.addTarget(self, action: #selector(manageButtonTapped), for: .touchUpInside)
         return button
     }()
 
-    private lazy var doneButton: UIButton = {
+    private let doneButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle(UserText.navigationTitleDone, for: .normal)
         button.titleLabel?.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(doneButtonTapped), for: .touchUpInside)
         return button
     }()
 
@@ -94,6 +79,28 @@ class CreditCardInputAccessoryView: UIView {
         view.backgroundColor = UIColor(red: 128.0/255.0, green: 128.0/255.0, blue: 128.0/255.0, alpha: 0.55)
         return view
     }()
+
+    private let gradientColorLight: UIColor = {
+        let lightTraitCollection = UITraitCollection(userInterfaceStyle: .light)
+        return UIColor(designSystemColor: .background).resolvedColor(with: lightTraitCollection)
+    }()
+
+    private let gradientColorDark: UIColor = {
+        let darkTraitCollection = UITraitCollection(userInterfaceStyle: .dark)
+        return UIColor(designSystemColor: .surface).resolvedColor(with: darkTraitCollection)
+    }()
+
+    private let gradientView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isUserInteractionEnabled = false
+        view.backgroundColor = UIColor.clear
+        view.layer.shouldRasterize = true
+        view.layer.rasterizationScale = UIScreen.main.scale
+        return view
+    }()
+
+    private var gradientLayer: CAGradientLayer?
 
     // MARK: - Initialization
 
@@ -137,13 +144,11 @@ class CreditCardInputAccessoryView: UIView {
 
         self.creditCards = creditCards
         
-        // Clear existing card views efficiently
         cardStackView.arrangedSubviews.forEach { view in
             cardStackView.removeArrangedSubview(view)
             view.removeFromSuperview()
         }
         
-        // Add new card views
         for card in creditCards {
             let cardView = createCardView(for: card)
             cardStackView.addArrangedSubview(cardView)
@@ -169,6 +174,9 @@ class CreditCardInputAccessoryView: UIView {
         containerView.addSubview(doneButton)
 
         scrollView.addSubview(cardStackView)
+        
+        manageButton.addTarget(self, action: #selector(manageButtonTapped), for: .touchUpInside)
+        doneButton.addTarget(self, action: #selector(doneButtonTapped), for: .touchUpInside)
 
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: topAnchor),
@@ -212,16 +220,21 @@ class CreditCardInputAccessoryView: UIView {
         layoutIfNeeded()
     }
 
-    var gradientColorLight: UIColor = {
-        let lightTraitCollection = UITraitCollection(userInterfaceStyle: .light)
-        return UIColor(designSystemColor: .background).resolvedColor(with: lightTraitCollection)
-    }()
-    var gradientColorDark: UIColor = {
-        let darkTraitCollection = UITraitCollection(userInterfaceStyle: .dark)
-        return UIColor(designSystemColor: .surface).resolvedColor(with: darkTraitCollection)
-    }()
+    private func shouldGradientBePresent() -> Bool {
+        return scrollView.contentSize.width > scrollView.bounds.width
+    }
 
     private func setupGradient() {
+        guard shouldGradientBePresent() else {
+            gradientView.isHidden = true
+            gradientLayer?.removeFromSuperlayer()
+            gradientLayer = nil
+            return
+        }
+
+        // Show gradient and create/update layer
+        gradientView.isHidden = false
+
         if gradientLayer == nil || gradientLayer?.frame != gradientView.bounds {
             gradientLayer?.removeFromSuperlayer()
 

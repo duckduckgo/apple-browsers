@@ -100,7 +100,7 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         clearButton.translatesAutoresizingMaskIntoConstraints = false
 
-        heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight).withPriority(.init(999))
+        heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight)
         heightConstraint?.isActive = true
 
         // Create both trailing constraints for textView
@@ -219,6 +219,10 @@ class SwitchBarTextEntryView: UIView {
     @discardableResult
     override func resignFirstResponder() -> Bool {
         return textView.resignFirstResponder()
+    }
+    
+    func selectAllText() {
+        textView.selectAll(nil)
     }
 }
 

@@ -67,14 +67,12 @@ final class OmniBarEditingStateViewController: UIViewController {
     private func animateAppearance() {
 
         guard let expectedStartFrame else {
-            switchBarVC.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20).isActive = true
             self.switchBarVC.setExpanded(true)
             return
         }
 
         // Prepare initial state
         let heightConstraint = switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height)
-
         if isTopBarPosition {
             heightConstraint.isActive = true
             topPositionAppearance(expectedStartFrame: expectedStartFrame, heightConstraint: heightConstraint)
@@ -85,7 +83,6 @@ final class OmniBarEditingStateViewController: UIViewController {
     }
 
     private func topPositionAppearance(expectedStartFrame: CGRect, heightConstraint: NSLayoutConstraint) {
-
         topSwitchBarConstraint = switchBarVC.view.topAnchor.constraint(equalTo: view.topAnchor, constant: expectedStartFrame.minY)
         topSwitchBarConstraint?.isActive = true
         self.switchBarVC.setExpanded(false)
@@ -180,7 +177,8 @@ final class OmniBarEditingStateViewController: UIViewController {
         let collapseAnimator = UIViewPropertyAnimator(duration: 0.3, dampingRatio: 0.7) {
             self.switchBarVC.setExpanded(false)
             if let expectedStartFrame = self.expectedStartFrame {
-                self.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height).isActive = true
+                let heightConstraint = self.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height)
+                heightConstraint.isActive = true
             }
 
             self.view.layoutIfNeeded()
@@ -271,5 +269,9 @@ final class OmniBarEditingStateViewController: UIViewController {
             }
             .store(in: &cancellables)
 
+    }
+    
+    func selectAllText() {
+        switchBarVC.textEntryViewController.selectAllText()
     }
 }

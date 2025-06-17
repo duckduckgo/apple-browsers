@@ -395,8 +395,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             let url = subscriptionManager.url(for: .identityTheftRestoration)
             await uiHandler.showTab(with: .identityTheftRestoration(url))
         case .paidAIChat:
-            // Follow up: Implement paidAIChat selection
-            break
+            PixelKit.fire(PrivacyProPixel.privacyProWelcomeAIChat, frequency: .uniqueByName)
+            let aiChatURL = URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!
+            await uiHandler.showTab(with: .aiChat(aiChatURL))
         case .unknown:
             break
         }

@@ -96,7 +96,9 @@ private extension NewTabPageView {
     @ViewBuilder
     private var emptyStateView: some View {
         ZStack {
-            NewTabPageDaxLogoView()
+            if messagesModel.homeMessageViewModels.isEmpty {
+                NewTabPageDaxLogoView()
+            }
 
             VStack(spacing: Metrics.sectionSpacing) {
                 messagesSectionView

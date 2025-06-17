@@ -66,6 +66,7 @@ public enum PrivacyFeature: String {
     case adAttributionReporting
     case forceOldAppDelegate
     case htmlHistoryPage
+    case shortHistoryMenu
     case tabManager
     case webViewStateRestoration
     case experimentalTheming
@@ -293,6 +294,7 @@ public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }
 
     case setAsDefaultBrowserExperiment
+    case showSettingsCompleteSetupSection
 }
 
 public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {

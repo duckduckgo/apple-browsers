@@ -22,7 +22,7 @@ import Carbon.HIToolbox
 import Combine
 import Common
 import History
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import os.log
 import BrokenSitePrompt

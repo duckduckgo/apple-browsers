@@ -132,6 +132,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210422840951066?focus=true
     case aiChatKeepSession
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210410396636449?focus=true
+    case showSettingsCompleteSetupSection
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -179,6 +182,12 @@ extension FeatureFlag: FeatureFlagDescribing {
              .exchangeKeysToSyncWithAnotherDevice,
              .experimentalSwitcherBarTransition:
             return true
+        case .showSettingsCompleteSetupSection:
+            if #available(iOS 18.2, *) {
+                return true
+            } else {
+                return false
+            }
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
                 return true
@@ -302,6 +311,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .aiChatKeepSession:
             return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
+        case .showSettingsCompleteSetupSection:
+            return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
         }
     }
 }

@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 import Common
 
 /// Implements convenience default for the client apps making use of this.

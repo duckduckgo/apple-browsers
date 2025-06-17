@@ -19,7 +19,7 @@
 
 import Foundation
 import UserNotifications
-import NetworkProtection
+import VPN
 import Combine
 
 enum NetworkProtectionNotificationsViewKind: Equatable {

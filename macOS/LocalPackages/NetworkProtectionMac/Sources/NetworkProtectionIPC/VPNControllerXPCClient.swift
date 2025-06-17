@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 import XPCHelper
 
 /// This protocol describes the client-side IPC interface for controlling the tunnel

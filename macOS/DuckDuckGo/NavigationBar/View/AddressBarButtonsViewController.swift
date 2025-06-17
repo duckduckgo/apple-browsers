@@ -37,6 +37,7 @@ final class AddressBarButtonsViewController: NSViewController {
     weak var delegate: AddressBarButtonsViewControllerDelegate?
 
     private let accessibilityPreferences: AccessibilityPreferences
+    private let tabsPreferences: TabsPreferences
     private let visualStyle: VisualStyleProviding
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -210,6 +211,7 @@ final class AddressBarButtonsViewController: NSViewController {
           privacyConfigurationManager: PrivacyConfigurationManaging,
           permissionManager: PermissionManagerProtocol,
           accessibilityPreferences: AccessibilityPreferences = AccessibilityPreferences.shared,
+          tabsPreferences: TabsPreferences = TabsPreferences.shared,
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatTabOpener: AIChatTabOpening,
@@ -220,6 +222,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.accessibilityPreferences = accessibilityPreferences
+        self.tabsPreferences = tabsPreferences
         self.popovers = popovers
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatTabOpener = aiChatTabOpener
@@ -364,28 +367,29 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBAction func aiChatButtonAction(_ sender: Any) {
         PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
-        let isCommandPressed = NSEvent.modifierFlags.contains(.command)
-        let isShiftPressed = NSApplication.shared.isShiftPressed
+        let shouldSelectNewTab: Bool = {
+            guard let tabContent = tabViewModel?.tab.content, let url = tabViewModel?.tab.url else {
+                return false
+            }
+            return !url.isDuckAIURL && tabContent != .newtab
+        }()
 
-        var target: AIChatTabOpenerTarget = .sameTab
+        let behavior = LinkOpenBehavior(
+            event: NSApp.currentEvent,
+            switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
+            shouldSelectNewTab: shouldSelectNewTab
+        )
 
-        if isCommandPressed {
-            target = isShiftPressed ? .newTabSelected : .newTabUnselected
-        }
+        if featureFlagger.isFeatureOn(.aiChatSidebar),
+           case .url = tabViewModel?.tabContent,
+           !isTextFieldEditorFirstResponder,
+           behavior == .currentTab || aiChatSidebarPresenter.isSidebarOpen {
 
-        if let tabViewModel = tabViewModel,
-           let tabURL = tabViewModel.tab.url,
-           !tabURL.isDuckAIURL,
-           tabViewModel.tab.content != .newtab {
-            target = .newTabSelected
-        }
-
-        if featureFlagger.isFeatureOn(.aiChatSidebar), case .url = tabViewModel?.tabContent, !isTextFieldEditorFirstResponder {
             aiChatSidebarPresenter.toggleSidebar()
         } else if let value = textFieldValue {
-            aiChatTabOpener.openAIChatTab(value, target: target)
+            aiChatTabOpener.openAIChatTab(value, with: behavior)
         } else {
-            aiChatTabOpener.openAIChatTab(nil, target: target)
+            aiChatTabOpener.openAIChatTab(nil, with: behavior)
         }
     }
 
@@ -948,6 +952,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func configureAIChatButton() {
+        aiChatButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
         aiChatButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage
         aiChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         aiChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor

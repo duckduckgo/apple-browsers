@@ -49,9 +49,9 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
+                featureFlagger: FeatureFlagger,
                 userEventHandler: @escaping (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void,
-                sheetActionHandler: SubscriptionAccessActionHandlers,
-                featureFlagger: FeatureFlagger) {
+                sheetActionHandler: SubscriptionAccessActionHandlers) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.sheetActionHandler = sheetActionHandler
@@ -85,6 +85,10 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     @MainActor
     func openPrivacyPolicy() {
         userEventHandler(.openURL(.privacyPolicy))
+    }
+
+    var isPaidAIChatEnabled: Bool {
+        featureFlagger.isFeatureOn(.paidAIChat)
     }
 
     /// Updates the user's eligibility for a free trial based on feature flag status and subscription manager checks.

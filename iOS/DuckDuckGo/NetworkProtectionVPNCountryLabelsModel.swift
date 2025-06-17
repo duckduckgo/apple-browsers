@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 
 struct NetworkProtectionVPNCountryLabelsModel {
     let emoji: String

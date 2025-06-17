@@ -19,7 +19,6 @@
 
 import BrowserServicesKit
 import AIChat
-import BrowserServicesKit
 import Bookmarks
 import Persistence
 import History

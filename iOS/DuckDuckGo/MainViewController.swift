@@ -2141,7 +2141,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
 }
 
-//MARK: - OmniBarDelegate Methods
+// MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
 
     func onSelectFavorite(_ favorite: BookmarkEntity) {
@@ -2484,7 +2484,7 @@ extension MainViewController: FavoritesOverlayDelegate {
     }
 }
 
-//MARK: - AutocompleteViewControllerDelegate Methods
+// MARK: - AutocompleteViewControllerDelegate Methods
 extension MainViewController: AutocompleteViewControllerDelegate {
 
     func autocompleteDidEndWithUserQuery() {

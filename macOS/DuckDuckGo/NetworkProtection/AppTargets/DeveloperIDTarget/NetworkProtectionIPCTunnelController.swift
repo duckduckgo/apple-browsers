@@ -18,7 +18,7 @@
 
 import Common
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import PixelKit
 import UDSHelper

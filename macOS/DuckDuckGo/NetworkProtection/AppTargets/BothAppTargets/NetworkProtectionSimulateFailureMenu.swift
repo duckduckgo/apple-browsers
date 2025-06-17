@@ -18,7 +18,7 @@
 
 import AppKit
 import Foundation
-import NetworkProtection
+import VPN
 import SwiftUI
 
 /// Implements the logic for the VPN's simulate failures menu.

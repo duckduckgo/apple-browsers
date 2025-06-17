@@ -21,7 +21,7 @@
 import AppKit
 import Combine
 import Foundation
-import NetworkProtection
+import VPN
 
 final class NetPPopoverManagerMock: NetPPopoverManager {
     var isShown: Bool { false }
@@ -38,47 +38,47 @@ final class NetPPopoverManagerMock: NetPPopoverManager {
 
 final class IPCClientMock: NetworkProtectionIPCClient {
 
-    final class ConnectionStatusObserverMock: NetworkProtection.ConnectionStatusObserver {
-        var publisher: AnyPublisher<NetworkProtection.ConnectionStatus, Never> = PassthroughSubject().eraseToAnyPublisher()
-        var recentValue: NetworkProtection.ConnectionStatus = .notConfigured
+    final class ConnectionStatusObserverMock: VPN.ConnectionStatusObserver {
+        var publisher: AnyPublisher<VPN.ConnectionStatus, Never> = PassthroughSubject().eraseToAnyPublisher()
+        var recentValue: VPN.ConnectionStatus = .notConfigured
     }
-    var ipcStatusObserver: any NetworkProtection.ConnectionStatusObserver = ConnectionStatusObserverMock()
+    var ipcStatusObserver: any VPN.ConnectionStatusObserver = ConnectionStatusObserverMock()
 
-    final class ConnectionServerInfoObserverMock: NetworkProtection.ConnectionServerInfoObserver {
-        var publisher: AnyPublisher<NetworkProtection.NetworkProtectionStatusServerInfo, Never> = PassthroughSubject().eraseToAnyPublisher()
-        var recentValue: NetworkProtection.NetworkProtectionStatusServerInfo = .unknown
+    final class ConnectionServerInfoObserverMock: VPN.ConnectionServerInfoObserver {
+        var publisher: AnyPublisher<VPN.NetworkProtectionStatusServerInfo, Never> = PassthroughSubject().eraseToAnyPublisher()
+        var recentValue: VPN.NetworkProtectionStatusServerInfo = .unknown
     }
-    var ipcServerInfoObserver: any NetworkProtection.ConnectionServerInfoObserver = ConnectionServerInfoObserverMock()
+    var ipcServerInfoObserver: any VPN.ConnectionServerInfoObserver = ConnectionServerInfoObserverMock()
 
-    final class ConnectionErrorObserverMock: NetworkProtection.ConnectionErrorObserver {
+    final class ConnectionErrorObserverMock: VPN.ConnectionErrorObserver {
         var publisher: AnyPublisher<String?, Never> = PassthroughSubject().eraseToAnyPublisher()
         var recentValue: String?
     }
-    var ipcConnectionErrorObserver: any NetworkProtection.ConnectionErrorObserver = ConnectionErrorObserverMock()
+    var ipcConnectionErrorObserver: any VPN.ConnectionErrorObserver = ConnectionErrorObserverMock()
 
-    final class ConnectivityIssueObserverMock: NetworkProtection.ConnectivityIssueObserver {
+    final class ConnectivityIssueObserverMock: VPN.ConnectivityIssueObserver {
         var publisher: AnyPublisher<Bool, Never> = PassthroughSubject().eraseToAnyPublisher()
         var recentValue: Bool = false
     }
-    var ipcConnectivityIssuesObserver: any NetworkProtection.ConnectivityIssueObserver = ConnectivityIssueObserverMock()
+    var ipcConnectivityIssuesObserver: any VPN.ConnectivityIssueObserver = ConnectivityIssueObserverMock()
 
-    final class ControllerErrorMesssageObserverMock: NetworkProtection.ControllerErrorMesssageObserver {
+    final class ControllerErrorMesssageObserverMock: VPN.ControllerErrorMesssageObserver {
         var publisher: AnyPublisher<String?, Never> = PassthroughSubject().eraseToAnyPublisher()
         var recentValue: String?
     }
-    var ipcControllerErrorMessageObserver: any NetworkProtection.ControllerErrorMesssageObserver = ControllerErrorMesssageObserverMock()
+    var ipcControllerErrorMessageObserver: any VPN.ControllerErrorMesssageObserver = ControllerErrorMesssageObserverMock()
 
-    final class DataVolumeObserverMock: NetworkProtection.DataVolumeObserver {
+    final class DataVolumeObserverMock: VPN.DataVolumeObserver {
         var publisher: AnyPublisher<DataVolume, Never> = PassthroughSubject().eraseToAnyPublisher()
         var recentValue: DataVolume = .init()
     }
-    var ipcDataVolumeObserver: any NetworkProtection.DataVolumeObserver = DataVolumeObserverMock()
+    var ipcDataVolumeObserver: any VPN.DataVolumeObserver = DataVolumeObserverMock()
 
-    final class KnownFailureObserverMock: NetworkProtection.KnownFailureObserver {
+    final class KnownFailureObserverMock: VPN.KnownFailureObserver {
         var publisher: AnyPublisher<KnownFailure?, Never> = PassthroughSubject().eraseToAnyPublisher()
         var recentValue: KnownFailure?
     }
-    var ipcKnownFailureObserver: any NetworkProtection.KnownFailureObserver = KnownFailureObserverMock()
+    var ipcKnownFailureObserver: any VPN.KnownFailureObserver = KnownFailureObserverMock()
 
     func start(completion: @escaping (Error?) -> Void) {
         completion(nil)

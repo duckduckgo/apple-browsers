@@ -21618,55 +21618,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Neuer AI Chat"
+            "value" : "Neuer Duck.ai-Chat"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "New AI Chat"
+            "value" : "New Duck.ai Chat"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nuevo AI Chat"
+            "value" : "Nuevo chat de Duck.ai"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nouvel AI Chat"
+            "value" : "Nouveau chat Duck.ai"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nuova AI Chat"
+            "value" : "Nuova chat Duck.ai"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nieuwe AI Chat"
+            "value" : "Nieuwe Duck.ai Chat"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nowy AI Chat"
+            "value" : "Nowy czat Duck.ai"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Novo AI Chat"
+            "value" : "Nova conversa Duck.ai"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Запустить AI Chat"
+            "value" : "Новый чат Duck.ai"
           }
         }
       }
@@ -21798,55 +21798,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "„Neuer AI Chat“ in den Datei- und Anwendungsmenüs anzeigen"
+            "value" : "„Neuer Duck.ai-Chat“ in den Datei- und Anwendungsmenüs anzeigen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Show “New AI Chat” in File and application menus"
+            "value" : "Show “New Duck.ai Chat” in File and application menus"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar «Nuevo AI Chat» en los menús Archivo y Aplicación"
+            "value" : "Mostrar «Nuevo Duck.ai» en los menús Archivo y Aplicación"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afficher « Nouvel AI Chat » dans les menus Fichier et Application"
+            "value" : "Afficher « Nouveau chat Duck.ai » dans les menus Fichier et Application"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostra \"AI Chat\" nel menu File e in quello delle applicazioni"
+            "value" : "Mostra \"Duck.ai Chat\" nel menu File e in quello delle applicazioni"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "'Nieuwe AI Chat' toevoegen aan de menu's 'Bestand' en 'Toepassing'"
+            "value" : "'Nieuwe Duck.ai-chat' weergeven in de menu's 'Bestand' en 'Toepassing'"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pokaż „Nowy AI Chat” w menu plików i aplikacji"
+            "value" : "Pokaż „Nowy czat Duck.ai” w menu plików i aplikacji"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar “Novo AI Chat” nos menus de ficheiro e aplicação"
+            "value" : "Mostrar “Novo Duck.ai Chat” nos menus de ficheiro e aplicação"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Показывать опцию «Запустить AI Chat» в меню «Файл» и меню приложения"
+            "value" : "Показывать опцию «Запустить чат с Duck.ai» в меню «Файл» и меню приложения"
           }
         }
       }

@@ -18,7 +18,7 @@
 
 import Combine
 import Foundation
-import NetworkProtection
+import VPN
 
 public final class ConnectionStatusObserverThroughIPC: ConnectionStatusObserver {
 

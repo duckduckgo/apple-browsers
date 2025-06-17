@@ -25,8 +25,8 @@ struct CookiePopUpProtectionView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
 
-    var description: PrivacyProtectionDescription {
-        PrivacyProtectionDescription(imageName: "SettingsCookiePopUpProtectionContent",
+    var description: PreferencesDescription {
+        PreferencesDescription(imageName: "SettingsCookiePopUpProtectionContent",
                                      title: UserText.cookiePopUpProtection,
                                      status: viewModel.cookiePopUpProtectionStatus,
                                      explanation: UserText.cookiePopUpProtectionExplanation)
@@ -34,7 +34,7 @@ struct CookiePopUpProtectionView: View {
 
     var body: some View {
         List {
-            PrivacyProtectionDescriptionView(content: description)
+            PreferencesDescriptionView(content: description)
             CookiePopUpProtectionViewSettings()
         }
         .applySettingsListModifiers(title: UserText.cookiePopUpProtection,

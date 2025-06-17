@@ -106,12 +106,12 @@ final class FirePopoverViewController: NSViewController {
         collectionView.delegate = self
         collectionView.dataSource = self
 
+        updateBurnerButtonAppearance()
+
         if firePopoverViewModel.tabCollectionViewModel?.isBurner ?? false {
             adjustViewForBurnerWindow()
             return
         }
-
-        self.burnerWindowButton.isHidden = true
 
         setUpStrings()
         updateClearButtonAppearance()
@@ -125,44 +125,27 @@ final class FirePopoverViewController: NSViewController {
 
     override func viewWillAppear() {
         super.viewWillAppear()
-
-        firePopoverViewModel.refreshItems()
-    }
-    
-    override func viewDidLayout() {
-        super.viewDidLayout()
         
-        // Update circular background when layout changes
-        if burnerWindowButton.wantsLayer {
-            addCircularBackground(to: burnerWindowButton)
-        }
+        firePopoverViewModel.refreshItems()
     }
 
     private func updateBurnerButtonAppearance() {
         self.burnerWindowButton.image = NSApp.delegateTyped.visualStyle.isNewStyle ?
             DesignSystemImages.Glyphs.Size16.fireWindow : .newBurnerWindow
 
-        // Add 50% transparent circular background
         self.burnerWindowButton.wantsLayer = true
         addCircularBackground(to: self.burnerWindowButton)
     }
     
     private func addCircularBackground(to imageView: NSImageView) {
-        // Remove any existing background layers
-        imageView.layer?.sublayers?.removeAll { $0.name == "circularBackground" }
-        
         let backgroundLayer = CALayer()
-        backgroundLayer.name = "circularBackground"
         backgroundLayer.backgroundColor = NSColor(designSystemColor: .buttonsWhite).withAlphaComponent(0.05).cgColor
 
-        // Set the layer frame to match the image view bounds
         backgroundLayer.frame = imageView.bounds
         
-        // Make it circular by setting corner radius to half the width/height
         let radius = min(imageView.bounds.width, imageView.bounds.height) / 2
         backgroundLayer.cornerRadius = radius
         
-        // Insert the background layer behind the image
         imageView.layer?.insertSublayer(backgroundLayer, at: 0)
     }
 
@@ -211,7 +194,6 @@ final class FirePopoverViewController: NSViewController {
     }
 
     private func adjustViewForBurnerWindow() {
-        updateBurnerButtonAppearance()
         updateCloseBurnerWindowButtonAppearance()
         clearButton.isHidden = true
         cancelButton.isHidden = true

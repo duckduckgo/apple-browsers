@@ -55,8 +55,7 @@ final class WebView: WKWebView {
 
     private func reloadContentViewInputViews() {
         guard let content = scrollView.subviews.first(
-            where: { String(describing: type(of: $0))
-                .hasPrefix("WKContent") })
+            where: { String(describing: type(of: $0)).hasPrefix("WKContent") })
         else { return }
         content.reloadInputViews()
     }

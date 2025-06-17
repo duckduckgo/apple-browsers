@@ -178,7 +178,7 @@ public class AutofillUserScript: NSObject, UserScript, UserScriptMessageEncrypti
     public let generatedSecret: String = UUID().uuidString
     static var pendingReplies = [String: [MessageReplyHandler]]()
     static let pendingRepliesLock = NSLock()
-    
+
     let hostProvider: UserScriptHostProvider
     func hostForMessage(_ message: UserScriptMessage) -> String {
         return hostProvider.hostForMessage(message)

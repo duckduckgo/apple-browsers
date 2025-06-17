@@ -591,7 +591,7 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
             completionHandler(useGeneratedPassword)
         }
     }
-    
+
     public func autofillUserScriptDidFocus(_: AutofillUserScript,
                                            mainType: AutofillUserScript.GetAutofillDataMainType,
                                            completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void) {
@@ -599,7 +599,7 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
             do {
                 let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: self.delegate)
                 let cards: [SecureVaultModels.CreditCard] = try vault.creditCards()
-                
+
                 delegate?.secureVaultManager(self, didFocusFieldFor: mainType, withCreditCards: cards) { creditCard in
                     guard let creditCard else {
                         completionHandler(nil, .none)

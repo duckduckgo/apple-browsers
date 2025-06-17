@@ -410,7 +410,7 @@ class CreditCardInputAccessoryView: UIView {
                 defer {
                     self?.authenticator.logOut()
                 }
-                if let _ = error {
+                if error != nil {
                     AppDependencyProvider.shared.autofillLoginSession.endSession()
                     self?.onCardSelected?(nil)
                     return

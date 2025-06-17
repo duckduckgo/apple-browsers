@@ -77,7 +77,7 @@ public protocol AutofillSecureVaultDelegate: AnyObject {
                                                      password: String,
                                                      completionHandler: @escaping (Bool) -> Void)
 
-    func autofillUserScriptDidFocus(_ : AutofillUserScript,
+    func autofillUserScriptDidFocus(_: AutofillUserScript,
                                     mainType: AutofillUserScript.GetAutofillDataMainType,
                                     completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void)
 
@@ -483,11 +483,11 @@ extension AutofillUserScript {
     }
 
     struct NoActionResponse: Codable {
-        
+
         enum NoActionType: String, Codable {
             case none
         }
-        
+
         struct NoActionResponseContents: Codable {
             let action: NoActionType
         }

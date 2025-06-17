@@ -413,7 +413,7 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
     }
 
     public func matchRemovedByUser(_ matchID: Int64) throws {
-        guard let extractedProfile = try? fetchExtractedProfile(with: matchID) else {
+        guard let extractedProfile = try fetchExtractedProfile(with: matchID) else {
             assertionFailure("Couldn't get extracted profile for matchID \(matchID)")
             return
         }
@@ -422,7 +422,7 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
                                  brokerId: extractedProfile.brokerId,
                                  profileQueryId: extractedProfile.profileQueryId,
                                  type: .matchRemovedByUser)
-        try? add(event)
+        try add(event)
     }
 
     public func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent] {

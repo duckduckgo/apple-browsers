@@ -282,7 +282,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .onboardingSetAsDefaultBrowserPiPVideo:
-            return .remoteDevelopment(.subfeature(OnboardingSubfeature.setAsDefaultBrowserPiPVideoExperiment))
+            return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserPiPVideoExperiment))
         case .failsafeExampleCrossPlatformFeature:
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:

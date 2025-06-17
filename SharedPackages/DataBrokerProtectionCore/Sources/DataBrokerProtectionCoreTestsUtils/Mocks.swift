@@ -755,6 +755,7 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
 }
 
 public final class MockDatabase: DataBrokerProtectionRepository {
+    
     public enum MockError: Error {
         case saveFailed
     }
@@ -765,6 +766,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var wasSaveOptOutOperationCalled = false
     public var wasBrokerProfileQueryDataCalled = false
     public var wasFetchAllBrokerProfileQueryDataCalled = false
+    public var wasFetchAllDataBrokersCalled = false
     public var wasUpdatedPreferredRunDateForScanCalled = false
     public var wasUpdatedPreferredRunDateForOptOutCalled = false
     public var wasUpdateLastRunDateForScanCalled = false
@@ -788,6 +790,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var lastParentBrokerWhereChildSitesWhereFetched: String?
     public var lastProfileQueryIdOnScanUpdatePreferredRunDate: Int64?
     public var brokerProfileQueryDataToReturn = [BrokerProfileQueryData]()
+    public var dataBrokersToReturn = [DataBroker]()
     public var profile: DataBrokerProtectionProfile?
     public var attemptInformation: AttemptInformation?
     public var attemptCount: Int64 = 0
@@ -802,6 +805,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasDeleteProfileDataCalled,
         wasSaveOptOutOperationCalled,
         wasBrokerProfileQueryDataCalled,
+        wasFetchAllDataBrokersCalled,
         wasFetchAllBrokerProfileQueryDataCalled,
         wasUpdatedPreferredRunDateForScanCalled,
         wasUpdatedPreferredRunDateForOptOutCalled,
@@ -872,6 +876,12 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         }
 
         return brokerProfileQueryDataToReturn
+    }
+
+    public func fetchAllDataBrokers() throws -> [DataBrokerProtectionCore.DataBroker] {
+        wasFetchAllDataBrokersCalled = true
+
+        return dataBrokersToReturn
     }
 
     public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) {
@@ -952,6 +962,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         false
     }
 
+    public func matchRemovedByUser(_ matchID: Int64) throws {
+
+    }
+
     public func fetchExtractedProfiles(for brokerId: Int64) -> [ExtractedProfile] {
         return extractedProfilesFromBroker
     }
@@ -982,6 +996,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         wasSaveOptOutOperationCalled = false
         wasBrokerProfileQueryDataCalled = false
         wasFetchAllBrokerProfileQueryDataCalled = false
+        wasFetchAllDataBrokersCalled = false
         wasUpdatedPreferredRunDateForScanCalled = false
         wasUpdatedPreferredRunDateForOptOutCalled = false
         wasUpdateLastRunDateForScanCalled = false
@@ -998,6 +1013,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         lastParentBrokerWhereChildSitesWhereFetched = nil
         lastProfileQueryIdOnScanUpdatePreferredRunDate = nil
         brokerProfileQueryDataToReturn.removeAll()
+        dataBrokersToReturn.removeAll()
         profile = nil
         attemptInformation = nil
         scanEvents.removeAll()

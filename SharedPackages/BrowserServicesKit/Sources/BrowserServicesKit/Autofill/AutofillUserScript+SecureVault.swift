@@ -491,9 +491,9 @@ extension AutofillUserScript {
         struct NoActionResponseContents: Codable {
             let action: NoActionType
         }
-        
+
         let success: NoActionResponseContents
-        
+
     }
 
     // MARK: - Message Handlers

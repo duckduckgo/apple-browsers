@@ -72,7 +72,7 @@ extension CreditCardPromptViewController: CreditCardPromptViewModelDelegate {
         }
         
         authenticator.authenticate { [weak self] error in
-            if let _ = error {
+            if error != nil {
                 AppDependencyProvider.shared.autofillLoginSession.endSession()
                 self?.dismiss(animated: true) {
                     self?.completion?(nil)

@@ -164,7 +164,7 @@ protocol OnboardingSetAsDefaultBrowserPiPVideoExperimentManaging: AnyObject {
 
 extension OnboardingSetAsDefaultBrowserPiPVideoExperimentManaging {
 
-    func resolveSetAsDefaultBrowserPipVideoExperimentCohort()  -> OnboardingSetAsDefaultBrowserPiPVideoCohort? {
+    func resolveSetAsDefaultBrowserPipVideoExperimentCohort() -> OnboardingSetAsDefaultBrowserPiPVideoCohort? {
         resolveSetAsDefaultBrowserPipVideoExperimentCohort(isPictureInPictureSupported: AVPictureInPictureController.isPictureInPictureSupported())
     }
 

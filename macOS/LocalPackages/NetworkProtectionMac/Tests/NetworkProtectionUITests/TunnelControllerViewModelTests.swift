@@ -20,9 +20,9 @@ import Foundation
 import Combine
 import SwiftUI
 import XCTest
-import NetworkProtection
+import VPN
 @testable import NetworkProtectionUI
-import NetworkProtectionTestUtils
+import VPNTestUtils
 
 final class TunnelControllerViewModelTests: XCTestCase {
 

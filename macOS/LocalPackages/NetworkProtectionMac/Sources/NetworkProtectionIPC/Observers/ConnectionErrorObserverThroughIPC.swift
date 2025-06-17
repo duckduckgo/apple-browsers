@@ -18,7 +18,7 @@
 
 import Foundation
 import Combine
-import NetworkProtection
+import VPN
 
 /// This status observer can only be used from the App that owns the tunnel, as other Apps won't have access to the
 /// NEVPNStatusDidChange notifications or tunnel session.

@@ -53,7 +53,7 @@ extension AutofillVaultFactory {
             provider._l1Key = "l1".data(using: .utf8)
             provider._encryptedL2Key = "encrypted".data(using: .utf8)
             return provider
-        }, makeDatabaseProvider: { _ in
+        }, makeDatabaseProvider: { _, _ in
             databaseProvider
         })
     }

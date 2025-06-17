@@ -64,8 +64,10 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     }
 
     public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
-        return []
+        return subscriptionFeatures
     }
+
+    public var subscriptionFeatures: [Entitlement.ProductName] = []
 
     public init(accountManager: AccountManager,
                 subscriptionEndpointService: SubscriptionEndpointService,
@@ -89,7 +91,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func getToken() async throws -> String {
         guard let accessToken = accountManager.accessToken else {
-            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+            throw SubscriptionManagerError.noTokenAvailable
         }
         return accessToken
     }

@@ -51,6 +51,12 @@ struct SettingsRootView: View {
                        isActive: $isShowingSubscribeFlow) { EmptyView() }
 
         List {
+            if #available(iOS 18.2, *) {
+                if viewModel.shouldShowSetAsDefaultBrowser || viewModel.shouldShowImportPasswords {
+                    SettingsCompleteSetupView()
+                        .listRowBackground(Color(designSystemColor: .surface))
+                }
+            }
             SettingsPrivacyProtectionsView()
                 .listRowBackground(Color(designSystemColor: .surface))
             SettingsSubscriptionView().environmentObject(subscriptionNavigationCoordinator)

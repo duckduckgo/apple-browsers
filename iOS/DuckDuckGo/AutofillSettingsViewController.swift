@@ -54,27 +54,33 @@ final class AutofillSettingsViewController: UIViewController {
     private let syncDataProviders: SyncDataProviders
     private let selectedAccount: SecureVaultModels.WebsiteAccount?
     private let selectedCard: SecureVaultModels.CreditCard?
+    private let showPasswordManagement: Bool
     private let source: AutofillSettingsSource
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesDisplayMode: FavoritesDisplayMode
-    
+    private let keyValueStore: ThrowingKeyValueStoring
+
     init(appSettings: AppSettings,
          syncService: DDGSyncing,
          syncDataProviders: SyncDataProviders,
          selectedAccount: SecureVaultModels.WebsiteAccount?,
          selectedCard: SecureVaultModels.CreditCard?,
+         showPasswordManagement: Bool,
          source: AutofillSettingsSource,
          bookmarksDatabase: CoreDataDatabase,
-         favoritesDisplayMode: FavoritesDisplayMode
+         favoritesDisplayMode: FavoritesDisplayMode,
+         keyValueStore: ThrowingKeyValueStoring
     ) {
         self.appSettings = appSettings
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.selectedAccount = selectedAccount
         self.selectedCard = selectedCard
+        self.showPasswordManagement = showPasswordManagement
         self.source = source
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
+        self.keyValueStore = keyValueStore
         self.viewModel = AutofillSettingsViewModel(appSettings: appSettings, source: source)
         
         super.init(nibName: nil, bundle: nil)
@@ -91,7 +97,7 @@ final class AutofillSettingsViewController: UIViewController {
         
         title = UserText.settingsLogins
         
-        if selectedAccount != nil {
+        if selectedAccount != nil || showPasswordManagement {
             segueToPasswords()
         } else if selectedCard != nil {
             segueToCreditCards()
@@ -119,7 +125,8 @@ final class AutofillSettingsViewController: UIViewController {
             openSearch: false,
             source: source,
             bookmarksDatabase: bookmarksDatabase,
-            favoritesDisplayMode: favoritesDisplayMode
+            favoritesDisplayMode: favoritesDisplayMode,
+            keyValueStore: keyValueStore
         )
         navigationController?.pushViewController(autofillLoginListViewController, animated: true)
     }
@@ -139,7 +146,8 @@ final class AutofillSettingsViewController: UIViewController {
                                                   tld: AppDependencyProvider.shared.storageCache.tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
                                                                 importScreen: DataImportViewModel.ImportScreen.passwords,
-                                                                syncService: syncService)
+                                                                syncService: syncService,
+                                                                keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
         navigationController?.pushViewController(dataImportViewController, animated: true)
         Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped, withAdditionalParameters: [PixelParameters.source: "settings"])

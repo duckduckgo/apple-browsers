@@ -37,7 +37,7 @@ import SecureStorage
 import History
 import ContentScopeScripts
 import SpecialErrorPages
-import NetworkProtection
+import VPN
 import Onboarding
 import os.log
 import Navigation

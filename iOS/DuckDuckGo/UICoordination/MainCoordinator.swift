@@ -60,7 +60,8 @@ final class MainCoordinator {
          fireproofing: Fireproofing,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
-         didFinishLaunchingStartTime: CFAbsoluteTime) throws {
+         didFinishLaunchingStartTime: CFAbsoluteTime,
+         keyValueStore: ThrowingKeyValueStoring) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
@@ -102,7 +103,8 @@ final class MainCoordinator {
                                         maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
-                                        themeManager: ThemeManager.shared)
+                                        themeManager: ThemeManager.shared,
+                                        keyValueStore: keyValueStore)
     }
 
     func start() {

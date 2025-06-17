@@ -51,21 +51,13 @@ class MainViewFactory {
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
                                     featureFlagger: FeatureFlagger,
                                     themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties,
-                                    favoritesViewModel: FavoritesListInteracting,
-                                    bookmarksDatabase: CoreDataDatabase,
-                                    historyManager: HistoryManaging,
-                                    tabsModel: TabsModel,
-                                    appSettings: AppSettings) -> MainViewCoordinator {
+                                    suggestionTrayDependencies: SuggestionTrayDependencies? = nil) -> MainViewCoordinator {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
                                                       themingProperties: themingProperties,
-                                                      favoritesViewModel: favoritesViewModel,
-                                                      bookmarksDatabase: bookmarksDatabase,
-                                                      historyManager: historyManager,
-                                                      tabsModel: tabsModel,
-                                                      appSettings: appSettings)
+                                                      suggestionTrayDependencies: suggestionTrayDependencies)
 
 
         let factory = MainViewFactory(parentController: parentController,

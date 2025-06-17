@@ -64,36 +64,36 @@ class BlankSnapshotViewController: UIViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
-//        tabSwitcherButton = ThemeManager.shared.properties.isExperimentalThemingEnabled ? TabSwitcherStaticButton() : TabSwitcherAnimatedButton()
-//
-//        viewCoordinator = MainViewFactory.createViewHierarchy(self,
-//                                                              aiChatSettings: aiChatSettings,
-//                                                              voiceSearchHelper: voiceSearchHelper,
-//                                                              featureFlagger: featureFlagger)
-//        if addressBarPosition.isBottom {
-//            viewCoordinator.moveAddressBarToPosition(.bottom)
-//            viewCoordinator.hideToolbarSeparator()
-//        }
-//
-//        configureOmniBar()
-//
-//        if AppWidthObserver.shared.isLargeWidth {
-//            viewCoordinator.toolbar.isHidden = true
-//            viewCoordinator.constraints.navigationBarContainerTop.constant = 40
-//            configureTabBar()
-//        } else {
-//            viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
-//            viewCoordinator.menuToolbarButton.customView = menuButton
-//            menuButton.setState(.menuImage, animated: false)
-//            viewCoordinator.menuToolbarButton.customView = menuButton
-//        }
-//
-//        addTapInterceptor()
-//        decorate()
+        tabSwitcherButton = ThemeManager.shared.properties.isExperimentalThemingEnabled ? TabSwitcherStaticButton() : TabSwitcherAnimatedButton()
+
+        viewCoordinator = MainViewFactory.createViewHierarchy(self,
+                                                              aiChatSettings: aiChatSettings,
+                                                              voiceSearchHelper: voiceSearchHelper,
+                                                              featureFlagger: featureFlagger)
+        if addressBarPosition.isBottom {
+            viewCoordinator.moveAddressBarToPosition(.bottom)
+            viewCoordinator.hideToolbarSeparator()
+        }
+
+        configureOmniBar()
+
+        if AppWidthObserver.shared.isLargeWidth {
+            viewCoordinator.toolbar.isHidden = true
+            viewCoordinator.constraints.navigationBarContainerTop.constant = 40
+            configureTabBar()
+        } else {
+            viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+            viewCoordinator.menuToolbarButton.customView = menuButton
+            menuButton.setState(.menuImage, animated: false)
+            viewCoordinator.menuToolbarButton.customView = menuButton
+        }
+
+        addTapInterceptor()
+        decorate()
     }
 
     private func addTapInterceptor() {

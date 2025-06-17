@@ -30,12 +30,7 @@ protocol OmnibarDependencyProvider {
     var featureFlagger: FeatureFlagger { get }
     var aiChatSettings: AIChatSettingsProvider { get }
     var themingProperties: ExperimentalThemingProperties { get }
-
-    var favoritesViewModel: FavoritesListInteracting { get }
-    var bookmarksDatabase: CoreDataDatabase { get }
-    var historyManager: HistoryManaging { get }
-    var tabsModel: TabsModel { get }
-    var appSettings: AppSettings { get }
+    var suggestionTrayDependencies: SuggestionTrayDependencies? { get }
 }
 
 struct OmnibarDependencies: OmnibarDependencyProvider {
@@ -43,10 +38,5 @@ struct OmnibarDependencies: OmnibarDependencyProvider {
     let featureFlagger: FeatureFlagger
     let aiChatSettings: AIChatSettingsProvider
     let themingProperties: ExperimentalThemingProperties
-
-    let favoritesViewModel: FavoritesListInteracting
-    let bookmarksDatabase: CoreDataDatabase
-    let historyManager: HistoryManaging
-    let tabsModel: TabsModel
-    let appSettings: AppSettings
+    var suggestionTrayDependencies: SuggestionTrayDependencies?
 }

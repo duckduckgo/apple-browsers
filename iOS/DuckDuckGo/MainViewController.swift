@@ -349,15 +349,19 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
+                                                                    bookmarksDatabase: bookmarksDatabase,
+                                                                    historyManager: historyManager,
+                                                                    tabsModel: tabManager.model,
+                                                                    featureFlagger: featureFlagger,
+                                                                    appSettings: appSettings)
+
+
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
-                                                              favoritesViewModel: favoritesViewModel,
-                                                              bookmarksDatabase: bookmarksDatabase,
-                                                              historyManager: historyManager,
-                                                              tabsModel: tabManager.model,
-                                                              appSettings: appSettings)
+                                                              suggestionTrayDependencies: suggestionTrayDependencies)
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
@@ -446,12 +450,7 @@ class MainViewController: UIViewController {
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
-                                                      themingProperties: themeManager.properties,
-                                                      favoritesViewModel: favoritesViewModel,
-                                                      bookmarksDatabase: bookmarksDatabase,
-                                                      historyManager: historyManager,
-                                                      tabsModel: tabManager.model,
-                                                      appSettings: appSettings)
+                                                      themingProperties: themeManager.properties)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,

@@ -94,18 +94,22 @@ extension MirrorSite {
         ScannedBroker(name: name, url: url, status: status)
     }
 
-    /// Determines whether a mirror site should be included in scan result calculations based on the provided date.
+    /// Determines whether a mirror site was extant on a particular date. Used to see if the mirror site should be included in scan result calculations
     ///
-    /// - Parameter date: The date for which to check if the mirror site should be included. Defaults to the current date.
-    /// - Returns: A Boolean value indicating whether the mirror site should be included.
+    /// - Parameter date: The date to check if the mirror site was extant on.
+    /// - Returns: A Boolean value indicating whether the mirror site was extant.
     ///   - `true`: If the profile was added before the given date and has not been removed, or if it was removed but the provided date is between the `addedAt` and `removedAt` timestamps.
     ///   - `false`: If the profile was either added after the given date or has been removed before the given date.
-    public func shouldWeIncludeMirrorSite(for date: Date = Date()) -> Bool {
+    public func wasExtant(on date: Date) -> Bool {
         if let removedAt = self.removedAt {
             return self.addedAt < date && date < removedAt
         } else {
             return self.addedAt < date
         }
+    }
+
+    public func isExtant() -> Bool {
+        return wasExtant(on: Date())
     }
 }
 

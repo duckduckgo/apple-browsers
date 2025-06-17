@@ -2106,6 +2106,7 @@
 		7BA7CC562AD11FFB0042E5CE /* NetworkProtectionOptionKeyExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4D605F2A0B29FA00BCD287 /* NetworkProtectionOptionKeyExtension.swift */; };
 		7BA7CC5C2AD120C30042E5CE /* EventMapping+NetworkProtectionError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4D60722A0B29FA00BCD287 /* EventMapping+NetworkProtectionError.swift */; };
 		7BA7CC5D2AD120C30042E5CE /* EventMapping+NetworkProtectionError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4D60722A0B29FA00BCD287 /* EventMapping+NetworkProtectionError.swift */; };
+		7BAC0C312DF84292008D26EC /* SupportedOSCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */; };
 		7BAF9E4B2A8A3CC9002D3B6E /* UserDefaults+NetworkProtectionShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */; };
 		7BAF9E4C2A8A3CCA002D3B6E /* UserDefaults+NetworkProtectionShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */; };
 		7BAF9E4D2A8A3CCB002D3B6E /* UserDefaults+NetworkProtectionShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */; };
@@ -4717,6 +4718,7 @@
 		7BA7CC182AD11DC80042E5CE /* DuckDuckGoVPNDebug.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoVPNDebug.entitlements; sourceTree = "<group>"; };
 		7BA7CC1A2AD11DC80042E5CE /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7BA7CC4D2AD11F6F0042E5CE /* NetworkProtectionIPCTunnelController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkProtectionIPCTunnelController.swift; sourceTree = "<group>"; };
+		7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedOSCheckerTests.swift; sourceTree = "<group>"; };
 		7BB4BC622C5BC13D00E06FC8 /* ActiveSiteInfoPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSiteInfoPublisher.swift; sourceTree = "<group>"; };
 		7BB4BC692C5CD96200E06FC8 /* ActiveDomainPublisher.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActiveDomainPublisher.swift; sourceTree = "<group>"; };
 		7BB9F8E72DFC1AB700741690 /* VPN */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = VPN; path = ../SharedPackages/VPN; sourceTree = SOURCE_ROOT; };
@@ -6178,12 +6180,12 @@
 			path = RunningApplication;
 			sourceTree = "<group>";
 		};
-		1D8057C62A83CAD500F4FED6 /* OsVersion */ = {
+		1D8057C62A83CAD500F4FED6 /* OSVersion */ = {
 			isa = PBXGroup;
 			children = (
 				1D8057C72A83CAEE00F4FED6 /* SupportedOsChecker.swift */,
 			);
-			path = OsVersion;
+			path = OSVersion;
 			sourceTree = "<group>";
 		};
 		1D838A302C44EFF20078373F /* Updates */ = {
@@ -8130,6 +8132,14 @@
 			path = DuckDuckGoVPN;
 			sourceTree = "<group>";
 		};
+		7BAC0C2F2DF84271008D26EC /* OSVersion */ = {
+			isa = PBXGroup;
+			children = (
+				7BAC0C302DF84292008D26EC /* SupportedOSCheckerTests.swift */,
+			);
+			path = OSVersion;
+			sourceTree = "<group>";
+		};
 		7BDA36E72B7E037200AD5388 /* VPNProxyExtension */ = {
 			isa = PBXGroup;
 			children = (
@@ -8514,6 +8524,7 @@
 		85F69B3A25EDE7F800978E59 /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				7BAC0C2F2DF84271008D26EC /* OSVersion */,
 				B683097A274DCFE3004B46BB /* Database */,
 				AAEC74B92642E66600C2EFBC /* Extensions */,
 				4BA1A6CE258BF58C00F6F690 /* FileSystem */,
@@ -9282,7 +9293,7 @@
 				4BA1A691258B06F600F6F690 /* FileSystem */,
 				AA80EC52256BE33A007083E7 /* Localizables */,
 				85AC3B3325DA828900C7D2AA /* Network */,
-				1D8057C62A83CAD500F4FED6 /* OsVersion */,
+				1D8057C62A83CAD500F4FED6 /* OSVersion */,
 				4BB88B4E25B7BA20006F6B06 /* Utilities */,
 				1D77921B28FFF26100BE0210 /* RunningApplication */,
 				AA86491424D831C4001BABEE /* View */,
@@ -15498,6 +15509,7 @@
 				1D9EB3172D43C2CF004B7270 /* WebExtensionPathsCacheMock.swift in Sources */,
 				986189E62A7CFB3E001B4519 /* LocalBookmarkStoreSavingTests.swift in Sources */,
 				AA652CD325DDA6E9009059CC /* LocalBookmarkManagerTests.swift in Sources */,
+				7BAC0C312DF84292008D26EC /* SupportedOSCheckerTests.swift in Sources */,
 				7B1522B92DE9D19600887371 /* MockLoginItemsManager.swift in Sources */,
 				CBDD5DE329A67F2700832877 /* MockConfigurationStore.swift in Sources */,
 				9F3910692B68D87B00CB5112 /* ProgressExtensionTests.swift in Sources */,

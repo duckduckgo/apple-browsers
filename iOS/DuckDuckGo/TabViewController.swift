@@ -2306,10 +2306,7 @@ extension TabViewController: WKNavigationDelegate {
     @objc private func keyboardWillHide(_ notification: Notification) {
         if !fillCreditCardsPromptIsPresenting && isTabCurrentlyPresented() {
             autofillUserScript?.cancelAllPendingReplies()
-            if let webView = webView as? WebView {
-                webView.suppressSystemInputView = false
-                cleanupInputAccessoryView()
-            }
+            cleanupInputAccessoryView()
         }
     }
 

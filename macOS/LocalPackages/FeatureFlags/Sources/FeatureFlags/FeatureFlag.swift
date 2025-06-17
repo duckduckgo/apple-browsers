@@ -264,7 +264,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .willSoonDropBigSurSupport:
             return .internalOnly()
         case .shortHistoryMenu:
-            return .disabled
+            return .remoteReleasable(.feature(.shortHistoryMenu))
         }
     }
 }

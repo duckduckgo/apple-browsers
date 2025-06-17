@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import Foundation
+import WebKit
+
 final class DownloadsWebViewMock: WKWebView {
     var startDownloadBlock: (URLRequest) -> NSObject? = { _ in fatalError("Start download block not set") }
     var resumeDownloadBlock: (Data) -> NSObject? = { _ in fatalError("Resume download block not set") }

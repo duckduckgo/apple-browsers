@@ -31,6 +31,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
     private var testNotificationCenter: NotificationCenter!
     private var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
     private var pixelFiringMock: PixelKitMock!
+    private var mockFeatureFlagger: MockFeatureFlagger!
 
     var cancellables = Set<AnyCancellable>()
 
@@ -39,6 +40,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         testNotificationCenter = NotificationCenter()
         mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
         pixelFiringMock = PixelKitMock()
+        mockFeatureFlagger = MockFeatureFlagger()
         cancellables.removeAll()
     }
 
@@ -49,6 +51,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger,
             pixelFiring: pixelFiringMock
         )
     }
@@ -61,6 +64,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             subscriptionManager: mockSubscriptionManager,
             notificationCenter: testNotificationCenter,
+            featureFlagger: mockFeatureFlagger,
             pixelFiring: pixelFiringMock
         )
     }
@@ -129,7 +133,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     func testCurrentSubscriptionStateWhenNoSubscriptionPresent() async throws {
         // Given
-        mockSubscriptionManager.accessTokenResult = .failure(SubscriptionManagerError.tokenUnavailable(error: nil))
+        mockSubscriptionManager.accessTokenResult = .failure(SubscriptionManagerError.noTokenAvailable)
         XCTAssertFalse(mockSubscriptionManager.isUserAuthenticated)
 
         // When
@@ -147,7 +151,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         mockSubscriptionManager.accessTokenResult = .success("token")
         XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
 
-        mockSubscriptionManager.subscriptionFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration]
+        mockSubscriptionManager.subscriptionFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
 
         // When
         let model = PreferencesSidebarModel()
@@ -156,9 +160,24 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
         // Then
         XCTAssertTrue(model.currentSubscriptionState.hasSubscription)
+        XCTAssertTrue(model.currentSubscriptionState.isPaidAIChatEnabled)
         XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.networkProtection))
         XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.dataBrokerProtection))
         XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.identityTheftRestoration))
+        XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.paidAIChat))
+    }
+
+    func testCurrentSubscriptionStateIsPaidAIChatEnabledIsFalseWhenFeatureFlagIsOff() async throws {
+        // Given
+        mockFeatureFlagger.isFeatureOn = { _ in false }
+
+        // When
+        let model = PreferencesSidebarModel()
+        model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
+        try await Task.sleep(interval: 0.1)
+
+        // Then
+        XCTAssertFalse(model.currentSubscriptionState.isPaidAIChatEnabled)
     }
 
     func testCurrentSubscriptionStateForUserEntitlements() async throws {
@@ -166,7 +185,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         mockSubscriptionManager.accessTokenResult = .success("token")
         XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
 
-        mockSubscriptionManager.enabledFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration]
+        mockSubscriptionManager.enabledFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
 
         // When
         let model = PreferencesSidebarModel()
@@ -178,10 +197,12 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertTrue(model.currentSubscriptionState.userEntitlements.contains(.networkProtection))
         XCTAssertTrue(model.currentSubscriptionState.userEntitlements.contains(.dataBrokerProtection))
         XCTAssertTrue(model.currentSubscriptionState.userEntitlements.contains(.identityTheftRestoration))
+        XCTAssertTrue(model.currentSubscriptionState.userEntitlements.contains(.paidAIChat))
 
         XCTAssertTrue(model.isSidebarItemEnabled(for: .vpn))
         XCTAssertTrue(model.isSidebarItemEnabled(for: .personalInformationRemoval))
         XCTAssertTrue(model.isSidebarItemEnabled(for: .identityTheftRestoration))
+        XCTAssertTrue(model.isSidebarItemEnabled(for: .paidAIChat))
     }
 
     func testCurrentSubscriptionStateForMissingUserEntitlements() async throws {
@@ -201,10 +222,12 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertFalse(model.currentSubscriptionState.userEntitlements.contains(.networkProtection))
         XCTAssertFalse(model.currentSubscriptionState.userEntitlements.contains(.dataBrokerProtection))
         XCTAssertFalse(model.currentSubscriptionState.userEntitlements.contains(.identityTheftRestoration))
+        XCTAssertFalse(model.currentSubscriptionState.userEntitlements.contains(.paidAIChat))
 
         XCTAssertFalse(model.isSidebarItemEnabled(for: .vpn))
         XCTAssertFalse(model.isSidebarItemEnabled(for: .personalInformationRemoval))
         XCTAssertFalse(model.isSidebarItemEnabled(for: .identityTheftRestoration))
+        XCTAssertFalse(model.isSidebarItemEnabled(for: .paidAIChat))
     }
 
     // MARK: Tests for subscribed refresh notification triggers

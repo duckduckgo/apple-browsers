@@ -103,6 +103,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210055762484807?focus=true
     case experimentalAIChat
 
+    /// https://app.asana.com/1/137249556945/task/1210496258241813
+    case experimentalSwitcherBarTransition
+
     /// https://app.asana.com/1/137249556945/task/1210139454006070
     case privacyProOnboardingPromotion
 
@@ -129,6 +132,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210422840951066?focus=true
     case aiChatKeepSession
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210410396636449?focus=true
+    case showSettingsCompleteSetupSection
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -173,8 +179,15 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canScanUrlBasedSyncSetupBarcodes,
              .paidAIChat,
              .canInterceptSyncSetupUrls,
-             .exchangeKeysToSyncWithAnotherDevice:
+             .exchangeKeysToSyncWithAnotherDevice,
+             .experimentalSwitcherBarTransition:
             return true
+        case .showSettingsCompleteSetupSection:
+            if #available(iOS 18.2, *) {
+                return true
+            } else {
+                return false
+            }
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
                 return true
@@ -276,6 +289,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .experimentalAIChat:
             return .internalOnly()
+        case .experimentalSwitcherBarTransition:
+            return .internalOnly()
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
         case .syncSetupBarcodeIsUrlBased:
@@ -296,6 +311,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .aiChatKeepSession:
             return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
+        case .showSettingsCompleteSetupSection:
+            return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
         }
     }
 }

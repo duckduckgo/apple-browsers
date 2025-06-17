@@ -34,6 +34,7 @@ enum DebugScreen: Identifiable {
         let tabManager: TabManager
         let tipKitUIActionHandler: TipKitDebugOptionsUIActionHandling
         let fireproofing: Fireproofing
+        let keyValueStore: ThrowingKeyValueStoring
 
     }
 

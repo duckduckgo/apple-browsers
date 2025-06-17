@@ -25,7 +25,7 @@ struct TitledButtonAction {
 }
 
 final class BannerMessageViewController: NSHostingController<BannerView> {
-    private var visualStyle: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+    private var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
     let viewModel: BannerViewModel
 
     init(message: String,
@@ -35,7 +35,7 @@ final class BannerMessageViewController: NSHostingController<BannerView> {
          closeAction: @escaping () -> Void) {
         self.viewModel = .init(message: message,
                                image: image,
-                               backgroundColor: visualStyle.style.colorsProvider.bannerBackgroundColor,
+                               backgroundColor: visualStyle.colorsProvider.bannerBackgroundColor,
                                primaryAction: primaryAction,
                                secondaryAction: secondaryAction,
                                closeAction: closeAction)

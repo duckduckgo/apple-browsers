@@ -25,8 +25,8 @@ struct PrivateSearchView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
 
-    var description: PrivacyProtectionDescription {
-        PrivacyProtectionDescription(imageName: "SettingsPrivateSearchContent",
+    var description: PreferencesDescription {
+        PreferencesDescription(imageName: "SettingsPrivateSearchContent",
                                      title: UserText.privateSearch,
                                      status: .alwaysOn,
                                      explanation: UserText.privateSearchExplanation)
@@ -34,7 +34,7 @@ struct PrivateSearchView: View {
 
     var body: some View {
         List {
-            PrivacyProtectionDescriptionView(content: description)
+            PreferencesDescriptionView(content: description)
                 .listRowBackground(Color(designSystemColor: .surface))
             PrivateSearchViewSettings()
                 .listRowBackground(Color(designSystemColor: .surface))

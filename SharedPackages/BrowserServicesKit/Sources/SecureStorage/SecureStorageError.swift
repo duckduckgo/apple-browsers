@@ -18,13 +18,30 @@
 
 import Foundation
 import GRDB
+import PixelKit
 
-public enum SecureStorageDatabaseError: Error {
+public enum SecureStorageDatabaseError: Error, CustomNSError {
     case corruptedDatabase(DatabaseError)
+    case migrationFailed(Error)
+    case databaseRecreationFailed(Error)
 
-    var databaseError: DatabaseError {
+    var underlyingError: Error? {
         switch self {
         case .corruptedDatabase(let dbError): return dbError
+        case .migrationFailed(let error): return error
+        case .databaseRecreationFailed(let error): return error
+        }
+    }
+
+    public var errorUserInfo: [String: Any] {
+        [:]
+    }
+
+    public var errorCode: Int {
+        switch self {
+        case .corruptedDatabase: return 100
+        case .migrationFailed: return 101
+        case .databaseRecreationFailed: return 102
         }
     }
 }
@@ -44,11 +61,11 @@ public enum SecureStorageError: Error {
     case secError(status: Int32)
     case generalCryptoError
     case encodingFailed
-    case keystoreReadError(status: Int32)
+    case keystoreReadError(field: String, serviceName: String, status: Int32)
     case keystoreUpdateError(status: Int32)
 }
 
-extension SecureStorageError: CustomNSError {
+extension SecureStorageError: CustomNSError, ErrorWithPixelParameters {
 
     /// Uses the legacy "SecureVaultError" name to avoid causing issues with metrics after this was renamed to `SecureStorageError`.
     public static var errorDomain: String { "SecureVaultError" }
@@ -85,13 +102,13 @@ extension SecureStorageError: CustomNSError {
             }
 
             errorUserInfo["NSUnderlyingError"] = error as NSError
-            if let sqliteError = error as? DatabaseError ?? (error as? SecureStorageDatabaseError)?.databaseError {
+            if let sqliteError = (error as? DatabaseError) ?? ((error as? SecureStorageDatabaseError)?.underlyingError as? DatabaseError) {
                 errorUserInfo["SQLiteResultCode"] = NSNumber(value: sqliteError.resultCode.rawValue)
                 errorUserInfo["SQLiteExtendedResultCode"] = NSNumber(value: sqliteError.extendedResultCode.rawValue)
             }
         case .keystoreError(status: let code):
             errorUserInfo["NSUnderlyingError"] = NSError(domain: "keystoreError", code: Int(code), userInfo: nil)
-        case .keystoreReadError(status: let code):
+        case .keystoreReadError(_, _, status: let code):
             errorUserInfo["NSUnderlyingError"] = NSError(domain: "keystoreReadError", code: Int(code), userInfo: nil)
         case .keystoreUpdateError(status: let code):
             errorUserInfo["NSUnderlyingError"] = NSError(domain: "keystoreUpdateError", code: Int(code), userInfo: nil)
@@ -104,4 +121,22 @@ extension SecureStorageError: CustomNSError {
         return errorUserInfo
     }
 
+    public var errorParameters: [String: String] {
+        switch self {
+        case .initFailed(cause: let error),
+                .authError(cause: let error),
+                .failedToOpenDatabase(cause: let error),
+                .databaseError(cause: let error):
+            if let underlyingError = (error as? SecureStorageDatabaseError)?.underlyingError as? NSError {
+                return ["ud2": underlyingError.domain,
+                        "ue2": String(underlyingError.code)]
+            } else {
+                return [:]
+            }
+        case .keystoreReadError(let field, _, _):
+            return ["keystoreField": field]
+        default:
+            return [:]
+        }
+    }
 }

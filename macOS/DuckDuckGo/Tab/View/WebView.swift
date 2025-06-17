@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Cocoa
-import WebKit
 import Carbon.HIToolbox
+import Cocoa
+import CommonObjCExtensions
+import WebKit
 
 protocol WebViewContextMenuDelegate: AnyObject {
     func webView(_ webView: WebView, willOpenContextMenu menu: NSMenu, with event: NSEvent)

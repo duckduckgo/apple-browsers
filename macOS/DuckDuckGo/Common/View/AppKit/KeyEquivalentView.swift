@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 /// Used to catch `performKeyEquivalent:` events in View Controllers
 final class KeyEquivalentView: NSView {
     private let keyEquivalents: [NSEvent.KeyEquivalent: (NSEvent) -> Bool]

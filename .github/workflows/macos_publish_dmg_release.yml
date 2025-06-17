@@ -337,7 +337,8 @@ jobs:
             task_url:"${{ env.asana-task-url }}" \
             template_name:"${{ steps.asana-templates.outputs.task-template }}" \
             github_handle:"${{ github.actor }}" \
-            is_scheduled_release:"${{ github.event_name == 'schedule' }}"
+            is_scheduled_release:"${{ github.event_name == 'schedule' }}" \
+            due_date:"$(date +%Y-%m-%d)"
 
       - name: Create Asana task to handle Asana paperwork
         id: create-asana-paperwork-task
@@ -350,7 +351,8 @@ jobs:
             task_url:"${{ env.asana-task-url }}" \
             template_name:"update-asana-for-public-release" \
             github_handle:"${{ github.actor }}" \
-            is_scheduled_release:"${{ github.event_name == 'schedule' }}"
+            is_scheduled_release:"${{ github.event_name == 'schedule' }}" \
+            due_date:"$(date +%Y-%m-%d)"
 
       - name: Upload patch to the Asana task
         id: upload-patch

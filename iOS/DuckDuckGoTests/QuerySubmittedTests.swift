@@ -131,6 +131,9 @@ final class MockOmniBarDelegate: OmniBarDelegate {
 
     // MARK: - Unused methods
 
+    func onOmniPromptSubmitted(_ query: String) {
+    }
+
     func onAbortPressed() {
     }
 

@@ -70,7 +70,7 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
-            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
+            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: true))
             PixelKit.fire(AIChatPixel.aichatApplicationMenuFileClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
     }
@@ -188,11 +188,11 @@ extension AppDelegate {
 
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
-            /*if self.internalUserDecider.isInternalUser {
+            if self.internalUserDecider.isInternalUser {
                 Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
-            } else {*/
+            } else {
                 FeedbackPresenter.presentFeedbackForm()
-            //}
+            }
         }
     }
 
@@ -233,7 +233,7 @@ extension AppDelegate {
         NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
     }
 
-    #endif
+#endif
 
     @objc func navigateToBookmark(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem else {
@@ -1333,9 +1333,10 @@ extension AppDelegate: NSMenuItemValidation {
         case #selector(AppDelegate.openExportLogins(_:)):
             return areTherePasswords
 
+#if FEEDBACK
         case #selector(AppDelegate.openReportBrokenSite(_:)):
             return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
-
+#endif
         default:
             return true
         }

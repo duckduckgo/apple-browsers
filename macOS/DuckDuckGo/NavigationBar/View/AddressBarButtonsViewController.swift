@@ -37,6 +37,7 @@ final class AddressBarButtonsViewController: NSViewController {
     weak var delegate: AddressBarButtonsViewControllerDelegate?
 
     private let accessibilityPreferences: AccessibilityPreferences
+    private let tabsPreferences: TabsPreferences
     private let visualStyle: VisualStyleProviding
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -69,7 +70,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var bookmarkButton: AddressBarButton!
     @IBOutlet weak var imageButtonWrapper: NSView!
     @IBOutlet weak var imageButton: NSButton!
-    @IBOutlet weak var cancelButton: NSButton!
+    @IBOutlet weak var cancelButton: AddressBarButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
     @IBOutlet weak var aiChatButton: AddressBarMenuButton!
 
@@ -82,11 +83,14 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var privacyShieldLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var animationWrapperViewLeadingConstraint: NSLayoutConstraint!
 
-    @IBOutlet weak var aiChatDivider: NSImageView!
-    @IBOutlet weak var aiChatStackTrailingViewConstraint: NSLayoutConstraint!
+    @IBOutlet weak var leadingAIChatDivider: NSImageView!
+    @IBOutlet weak var trailingAIChatDivider: NSImageView!
+    @IBOutlet weak var trailingStackViewTrailingViewConstraint: NSLayoutConstraint!
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
     @IBOutlet weak var bookmarkButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var bookmarkButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var cancelButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var cancelButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var aiChatButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var aiChatButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
@@ -207,22 +211,24 @@ final class AddressBarButtonsViewController: NSViewController {
           privacyConfigurationManager: PrivacyConfigurationManaging,
           permissionManager: PermissionManagerProtocol,
           accessibilityPreferences: AccessibilityPreferences = AccessibilityPreferences.shared,
+          tabsPreferences: TabsPreferences = TabsPreferences.shared,
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatTabOpener: AIChatTabOpening,
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
           aiChatSidebarPresenter: AIChatSidebarPresenting,
-          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
+          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
           featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.accessibilityPreferences = accessibilityPreferences
+        self.tabsPreferences = tabsPreferences
         self.popovers = popovers
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatTabOpener = aiChatTabOpener
         self.aiChatMenuConfig = aiChatMenuConfig
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.permissionManager = permissionManager
@@ -270,7 +276,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if let superview = aiChatButton.superview {
             aiChatButton.translatesAutoresizingMaskIntoConstraints = false
-            aiChatStackTrailingViewConstraint.constant = isFocused ? 4 : 3
+            trailingStackViewTrailingViewConstraint.constant = isFocused ? 4 : 3
             NSLayoutConstraint.activate([
                 aiChatButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
                 aiChatButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)
@@ -361,28 +367,29 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBAction func aiChatButtonAction(_ sender: Any) {
         PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
-        let isCommandPressed = NSEvent.modifierFlags.contains(.command)
-        let isShiftPressed = NSApplication.shared.isShiftPressed
+        let shouldSelectNewTab: Bool = {
+            guard let tabContent = tabViewModel?.tab.content, let url = tabViewModel?.tab.url else {
+                return false
+            }
+            return !url.isDuckAIURL && tabContent != .newtab
+        }()
 
-        var target: AIChatTabOpenerTarget = .sameTab
+        let behavior = LinkOpenBehavior(
+            event: NSApp.currentEvent,
+            switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
+            shouldSelectNewTab: shouldSelectNewTab
+        )
 
-        if isCommandPressed {
-            target = isShiftPressed ? .newTabSelected : .newTabUnselected
-        }
+        if featureFlagger.isFeatureOn(.aiChatSidebar),
+           case .url = tabViewModel?.tabContent,
+           !isTextFieldEditorFirstResponder,
+           behavior == .currentTab || aiChatSidebarPresenter.isSidebarOpen {
 
-        if let tabViewModel = tabViewModel,
-           let tabURL = tabViewModel.tab.url,
-           !tabURL.isDuckAIURL,
-           tabViewModel.tab.content != .newtab {
-            target = .newTabSelected
-        }
-
-        if featureFlagger.isFeatureOn(.aiChatSidebar), case .url = tabViewModel?.tabContent, !isTextFieldEditorFirstResponder {
             aiChatSidebarPresenter.toggleSidebar()
         } else if let value = textFieldValue {
-            aiChatTabOpener.openAIChatTab(value, target: target)
+            aiChatTabOpener.openAIChatTab(value, with: behavior)
         } else {
-            aiChatTabOpener.openAIChatTab(nil, target: target)
+            aiChatTabOpener.openAIChatTab(nil, with: behavior)
         }
     }
 
@@ -410,6 +417,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private func setupButtonsSize() {
         bookmarkButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         bookmarkButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        cancelButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        cancelButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         aiChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         aiChatButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         privacyShieldButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
@@ -524,12 +533,13 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatDividerVisibility() {
-        let shouldShowDivider = cancelButton.isShown || bookmarkButton.isShown
-        aiChatDivider.isHidden = aiChatButton.isHidden || !shouldShowDivider
+        leadingAIChatDivider.isHidden = aiChatButton.isHidden || bookmarkButton.isHidden
+        trailingAIChatDivider.isHidden = aiChatButton.isHidden || cancelButton.isHidden
     }
 
     private func updateButtonsPosition() {
-        aiChatButton.position = .right
+        cancelButton.position = .right
+        aiChatButton.position = cancelButton.isShown ? .center : .right
         bookmarkButton.position = aiChatButton.isShown ? .center : .right
     }
 
@@ -942,6 +952,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func configureAIChatButton() {
+        aiChatButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
         aiChatButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage
         aiChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         aiChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
@@ -1021,14 +1032,14 @@ final class AddressBarButtonsViewController: NSViewController {
         guard let tabViewModel else { return }
 
         imageButton.contentTintColor = visualStyle.colorsProvider.iconsColor
-
+        imageButton.image = nil
         switch controllerMode {
         case .browsing where tabViewModel.isShowingErrorPage:
             imageButton.image = .web
         case .browsing:
             if let favicon = tabViewModel.favicon {
                 imageButton.image = favicon
-            } else if isTextFieldEditorFirstResponder {
+            } else {
                 imageButton.image = .web
             }
         case .editing(.url):

@@ -133,7 +133,8 @@ final class RemoteMessagingClientTests: XCTestCase {
                 statisticsStore: MockStatisticsStore(),
                 variantManager: MockVariantManager(),
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
-                featureFlagger: MockFeatureFlagger()
+                featureFlagger: MockFeatureFlagger(),
+                visualStyle: VisualStyle.current
             ),
             remoteMessagingAvailabilityProvider: availabilityProvider
         )

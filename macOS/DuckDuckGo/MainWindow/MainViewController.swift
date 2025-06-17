@@ -22,7 +22,7 @@ import Carbon.HIToolbox
 import Combine
 import Common
 import History
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import os.log
 import BrokenSitePrompt
@@ -90,7 +90,7 @@ final class MainViewController: NSViewController {
          brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
-         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator
     ) {
 
@@ -103,7 +103,7 @@ final class MainViewController: NSViewController {
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
         self.fireCoordinator = fireCoordinator
 
         tabBarViewController = TabBarViewController.create(

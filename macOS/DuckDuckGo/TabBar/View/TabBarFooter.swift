@@ -22,7 +22,7 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
 
     static let identifier = NSUserInterfaceItemIdentifier(rawValue: "TabBarFooter")
 
-    private let visualStyle = NSApp.delegateTyped.visualStyleManager.style
+    private let visualStyle = NSApp.delegateTyped.visualStyle
 
     let addButton = MouseOverButton(image: .add, target: nil, action: #selector(TabBarViewController.addButtonAction))
 

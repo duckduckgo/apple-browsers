@@ -134,7 +134,7 @@ extension TabViewController {
                  accessibilityLabel: UserText.actionPrintSite,
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.print : DesignSystemImages.Glyphs.Size24.print,
                  action: { [weak self] in
-            Pixel.fire(pixel: .browsingMenuListPrint)
+            Pixel.fire(pixel: smallIcon ? .browsingMenuListPrint : .browsingMenuPrint)
             self?.print()
         })
     }
@@ -143,7 +143,7 @@ extension TabViewController {
         .regular(name: UserText.actionOpenAIChat,
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChat : DesignSystemImages.Glyphs.Size24.aiChat,
                  action: { [weak self] in
-            Pixel.fire(pixel: .browsingMenuAIChat,
+            Pixel.fire(pixel: smallIcon ? .browsingMenuListAIChat : .browsingMenuAIChat,
                        withAdditionalParameters: self?.featureDiscovery.addToParams([:], forFeature: .aiChat) ?? [:])
             self?.openAIChat()
         })

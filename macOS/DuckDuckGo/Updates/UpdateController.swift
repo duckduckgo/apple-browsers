@@ -26,6 +26,8 @@ import PixelKit
 import SwiftUI
 import os.log
 
+#if SPARKLE
+
 protocol UpdateControllerProtocol: AnyObject {
 
     var latestUpdate: Update? { get }
@@ -52,8 +54,6 @@ protocol UpdateControllerProtocol: AnyObject {
     var isAtRestartCheckpoint: Bool { get }
     var shouldForceUpdateCheck: Bool { get }
 }
-
-#if SPARKLE
 
 final class UpdateController: NSObject, UpdateControllerProtocol {
 
@@ -116,7 +116,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         didSet {
             if oldValue != areAutomaticUpdatesEnabled {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                    try? self?.configureUpdater()
+                    _ = try? self?.configureUpdater()
                     self?.checkForUpdateSkippingRollout()
                 }
             }
@@ -177,7 +177,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         self.internalUserDecider = internalUserDecider
         super.init()
 
-        try? configureUpdater()
+        _ = try? configureUpdater()
 
 #if DEBUG
         if NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) {
@@ -410,7 +410,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         updater = nil
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            try? self?.configureUpdater(needsUpdateCheck: true)
+            _ = try? self?.configureUpdater(needsUpdateCheck: true)
             self?.checkForUpdateSkippingRollout()
         }
     }

@@ -20,7 +20,7 @@
 import Foundation
 import BrowserServicesKit
 import Waitlist
-import NetworkProtection
+import VPN
 import Core
 import Subscription
 import Networking

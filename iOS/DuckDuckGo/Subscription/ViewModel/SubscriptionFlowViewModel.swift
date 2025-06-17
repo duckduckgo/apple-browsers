@@ -132,7 +132,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                  }
              }
          }
-        
+
         subFeature.transactionErrorPublisher
             .receive(on: DispatchQueue.main)
             .removeDuplicates()

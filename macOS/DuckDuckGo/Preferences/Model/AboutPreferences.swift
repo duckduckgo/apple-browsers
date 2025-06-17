@@ -157,10 +157,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         supportedOSChecker.supportWarning
     }
 
+#if FEEDBACK
     @MainActor
     func openFeedbackForm() {
         NSApp.delegateTyped.openFeedback(nil)
     }
+#endif
 
     func copy(_ value: String) {
         NSPasteboard.general.copy(value)

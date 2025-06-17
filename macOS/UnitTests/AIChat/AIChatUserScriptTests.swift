@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
-import UserScript
 import AIChat
+import UserScript
+import WebKit
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AIChatUserScriptTests: XCTestCase {
@@ -67,9 +69,38 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(mockHandler.didGetPrompt, "getAIChatNativePrompt should be called")
         XCTAssertNil(result, "Expected result to be nil")
     }
+
+    @MainActor func testOpenAIChat() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.openAIChat.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didOpenChat, "openAIChat should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testGetAIChatNativeHandoffData() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeHandoffData.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didGetHandoffData, "getAIChatNativeHandoffData should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
 }
 
 final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
+    var didOpenSettings = false
+    var didGetConfigValues = false
+    var didCloseChat = false
+    var didGetPrompt = false
+    var didOpenChat = false
+    var didGetHandoffData = false
+
+    var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
+
+    init(messageHandling: any AIChatMessageHandling = MockAIChatMessageHandling()) {
+        self.messageHandling = messageHandling
+    }
+
     func openAIChatSettings(params: Any, message: UserScriptMessage) async -> (any Encodable)? {
         didOpenSettings = true
         return nil
@@ -90,14 +121,31 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    var didOpenSettings = false
-    var didGetConfigValues = false
-    var didCloseChat = false
-    var didGetPrompt = false
+    func openAIChat(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        didOpenChat = true
+        return nil
+    }
+
+    func getAIChatNativeHandoffData(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didGetHandoffData = true
+        return nil
+    }
 }
 
 private final class AIChatMockDebugSettings: AIChatDebugURLSettingsRepresentable {
     var customURLHostname: String?
     var customURL: String?
     func reset() { }
+}
+
+private final class MockAIChatMessageHandling: AIChatMessageHandling {
+    var payloadHandler: AIChat.AIChatPayloadHandler
+
+    init(payloadHandler: AIChat.AIChatPayloadHandler = AIChatPayloadHandler()) {
+        self.payloadHandler = payloadHandler
+    }
+
+    func getDataForMessageType(_ type: DuckDuckGo_Privacy_Browser.AIChatMessageType) -> (any Encodable)? {
+        nil
+    }
 }

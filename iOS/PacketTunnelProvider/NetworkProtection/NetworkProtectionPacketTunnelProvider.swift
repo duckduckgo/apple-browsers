@@ -24,7 +24,7 @@ import Combine
 import Core
 import Networking
 import NetworkExtension
-import NetworkProtection
+import VPN
 import os.log
 import Subscription
 import WidgetKit
@@ -495,6 +495,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                                    oAuthClient: authClient,
+                                                                   userDefaults: UserDefaults.standard,
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,

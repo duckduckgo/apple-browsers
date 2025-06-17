@@ -932,7 +932,9 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
         AppDependencyProvider.shared.autofillLoginSession.startSession()
         pushViewController(legacyViewProvider.loginSettings(delegate: self,
                                                             selectedAccount: nil,
+                                                            selectedCard: nil,
                                                             showPasswordManagement: true,
+                                                            showCreditCardManagement: false,
                                                             source: state.autofillSource))
     }
 }

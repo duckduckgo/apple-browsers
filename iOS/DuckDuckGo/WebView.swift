@@ -36,7 +36,7 @@ final class WebView: WKWebView {
         return true
     }
 
-    func setAccessoryContentView(_ contentView: UIView, height: CGFloat) {
+    func setAccessoryContentView(_ contentView: UIView) {
         customAccesoryView = contentView
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in

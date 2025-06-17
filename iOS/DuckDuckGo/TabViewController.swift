@@ -237,12 +237,11 @@ class TabViewController: UIViewController {
     var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
 
     lazy var autofillCreditCardAccessoryView: CreditCardInputAccessoryView? = {
-        let screenWidth = view.frame.width
-        let initialFrame = CGRect(x: 0, y: 0, width: screenWidth, height: 52)
+        let initialFrame = CGRect(x: 0, y: 0, width: view.frame.width, height: 58)
         let creditCardInputAccessoryView = CreditCardInputAccessoryView(frame: initialFrame)
         creditCardInputAccessoryView.onCardManagementSelected = { [weak self] in
             guard let self = self else { return }
-            self.webView.evaluateJavaScript("document.activeElement?.blur()")
+            self.dismissKeyboardIfPresent()
             self.delegate?.tabDidRequestSettingsToCreditCardManagement(self, source: .creditCardKeyboardShortcut)
         }
         return creditCardInputAccessoryView
@@ -2228,6 +2227,10 @@ extension TabViewController: WKNavigationDelegate {
         checkForReloadOnError()
     }
     
+    func dismissKeyboardIfPresent() {
+        self.webView.evaluateJavaScript("document.activeElement?.blur()")
+    }
+    
     private func showLoginDetails(with account: SecureVaultModels.WebsiteAccount, source: AutofillSettingsSource) {
         delegate?.tab(self, didRequestAutofillLogins: account, source: source)
     }
@@ -3162,7 +3165,7 @@ extension TabViewController: SecureVaultManagerDelegate {
     private func presentAutofillPromptViewController(creditCards: [SecureVaultModels.CreditCard],
                                                      completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // Ensure keyboard doesn't block prompt
-        webView.resignFirstResponder()
+        dismissKeyboardIfPresent()
 
         let creditCardPromptViewController = CreditCardPromptViewController(creditCards: creditCards) { creditCard in
             completionHandler(creditCard)
@@ -3187,12 +3190,12 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
         autofillCreditCardAccessoryView.updateCreditCards(creditCards)
-        webView.setAccessoryContentView(autofillCreditCardAccessoryView, height: 58.0)
+        webView.setAccessoryContentView(autofillCreditCardAccessoryView)
 
         autofillCreditCardAccessoryView.onCardSelected = { [weak self] card in
             completionHandler(card)
             if card == nil {
-                webView.evaluateJavaScript("document.activeElement?.blur()")
+                self?.dismissKeyboardIfPresent()
             }
             self?.cleanupInputAccessoryView()
         }
@@ -3213,6 +3216,9 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             promptUserWithGeneratedPassword password: String,
                             completionHandler: @escaping (Bool) -> Void) {
+
+        // Ensure keyboard doesn't block prompt
+        dismissKeyboardIfPresent()
 
         var responseSent: Bool = false
 
@@ -3248,7 +3254,7 @@ extension TabViewController: SecureVaultManagerDelegate {
                                              completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {
 
         // Ensure keyboard doesn't block prompt
-        webView.resignFirstResponder()
+        dismissKeyboardIfPresent()
 
         var responseSent: Bool = false
 

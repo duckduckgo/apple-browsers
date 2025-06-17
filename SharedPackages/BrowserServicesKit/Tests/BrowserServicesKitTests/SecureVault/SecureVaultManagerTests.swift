@@ -233,7 +233,7 @@ class SecureVaultManagerTests: XCTestCase {
         XCTAssertEqual(resultAction, RequestVaultDataAction.none)
     }
 
-    func testWhenUserScriptRequestsCreditCardAndDelegateReturnsNil_ThenNilCardAndFillActionReturned() {
+    func testWhenUserScriptRequestsCreditCardAndDelegateReturnsNil_ThenNilCardAndNoneActionReturned() {
         // Given
         class CreditCardTestDelegate: MockSecureVaultManagerDelegate {
             override func secureVaultManager(_ manager: SecureVaultManager,
@@ -267,7 +267,7 @@ class SecureVaultManagerTests: XCTestCase {
 
         // Then
         XCTAssertNil(resultCard)
-        XCTAssertEqual(resultAction, .fill) // Action is still .fill even with nil card
+        XCTAssertEqual(resultAction, RequestVaultDataAction.none)
     }
 
     // MARK: - AutofillSecureVaultDelegate Tests

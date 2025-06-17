@@ -755,7 +755,7 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
 }
 
 public final class MockDatabase: DataBrokerProtectionRepository {
-    
+
     public enum MockError: Error {
         case saveFailed
     }

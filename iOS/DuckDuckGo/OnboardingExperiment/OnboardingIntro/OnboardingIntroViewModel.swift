@@ -146,14 +146,21 @@ final class OnboardingIntroViewModel: ObservableObject {
         onCompletingOnboardingIntro?()
     }
 
+    func enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial() -> Bool {
+        pixelReporter.measureChooseBrowserCTAAction()
+
+        return shouldShowSetDefaultBrowserTutorialVideo()
+    }
+
     func setDefaultBrowserAction() {
         let urlPath = onboardingManager.settingsURLPath
 
         if let url = URL(string: urlPath) {
             urlOpener.open(url)
         }
-        pixelReporter.measureChooseBrowserCTAAction()
 
+        // If the user is in the treatment group do not transition to the next step as it will interrupt PiP.
+        // Manually stopping PiP on willEnterForeground event doesn't seem to work fine. Stopping it on didBecomeActive shows a UI glitch as the player tries to go back in place first.
         guard !shouldShowSetDefaultBrowserTutorialVideo() else { return }
 
         makeNextViewState()
@@ -231,7 +238,7 @@ private extension OnboardingIntroViewModel {
         case .introDialog(let isReturningUser):
             OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: isReturningUser), step: .hidden))
         case .browserComparison:
-            OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: shouldShowSetDefaultBrowserTutorialVideo()), step: stepInfo()))
+            OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog, step: stepInfo()))
         case .addToDockPromo:
             OnboardingView.ViewState.onboarding(.init(type: .addToDockPromoDialog, step: stepInfo()))
         case .appIconSelection:

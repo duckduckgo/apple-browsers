@@ -147,7 +147,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction(isResumingOnboarding: true)
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: false), step: .init(currentStep: 1, totalSteps: 4))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 4))))
     }
 
     func testWhenConfirmSkipOnboarding_andIsIphoneFlow_ThenDismissOnboardingAndDisableDaxDialogs() throws {
@@ -286,7 +286,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction(isResumingOnboarding: true)
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: false), step: .init(currentStep: 1, totalSteps: 2))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 2))))
     }
 
     func testWhenConfirmSkipOnboarding_andIsIpadFlow_ThenDismissOnboardingAndDisableDaxDialogs() throws {
@@ -318,7 +318,7 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         sut.startOnboardingAction()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: false), step: .init(currentStep: 1, totalSteps: 2))))
+        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 2))))
     }
 
     func testWhenSetDefaultBrowserActionIsCalledAndIsIpadFlowThenViewStateChangesToChooseAppIconDialogAndProgressIs2Of3() {
@@ -386,18 +386,6 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(pixelReporterMock.didCallMeasureBrowserComparisonImpression)
-    }
-
-    func testWhenChooseBrowserIsCalledThenPixelReporterTrackChooseBrowserCTAAction() {
-        // GIVEN
-        let sut = makeSUT()
-        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBrowserCTAAction)
-
-        // WHEN
-        sut.setDefaultBrowserAction()
-
-        // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseBrowserCTAAction)
     }
 
     func testWhenAppIconScreenPresentedThenPixelReporterTrackAppIconImpression() {
@@ -703,46 +691,55 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
     // MARK: - Set As Default Browser PiP Experiment
 
-    func testWhenStartOnboardingActionIsCalled_AndUserIsInControlGroup_ThenViewStateShouldBeBrowserComparison_AndShouldNotShowSetDefaultBrowserVideoTutorial() throws {
-        // GIVEN
-        onboardingManagerMock.cohortToReturn = .control
-        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
-        let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
-        let sut = makeSUT(currentOnboardingStep: currentStep)
-
-        // WHEN
-        sut.startOnboardingAction(isResumingOnboarding: false)
-
-        // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: false), step: .init(currentStep: 1, totalSteps: 4))))
-    }
-
-    func testWhenStartOnboardingActionIsCalled_AndUserIsNotEnrolledInExperiment_ThenViewStateShouldBeBrowserComparison_AndShouldNotShowSetDefaultBrowserVideoTutorial() throws {
+    func testWhenEnrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial_AndUserIsNotEnrolledInExperiment_ThenDoNotShowVideoTutorial() {
         // GIVEN
         onboardingManagerMock.cohortToReturn = nil
         onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
-        let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
-        let sut = makeSUT(currentOnboardingStep: currentStep)
+        let sut = makeSUT()
 
         // WHEN
-        sut.startOnboardingAction(isResumingOnboarding: false)
+        let result = sut.enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: false), step: .init(currentStep: 1, totalSteps: 4))))
+        XCTAssertFalse(result)
     }
 
-    func testWhenStartOnboardingActionIsCalled_AndUserIsInTreatmentGroup_ThenViewStateShouldBeBrowserComparison_AndShouldShowSetDefaultBrowserVideoTutorial() throws {
+    func testWhenEnrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial_AndUserIsInControlGroup_ThenDoNotShowVideoTutorial() {
+        // GIVEN
+        onboardingManagerMock.cohortToReturn = .control
+        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
+        let sut = makeSUT()
+
+        // WHEN
+        let result = sut.enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial()
+
+        // THEN
+        XCTAssertFalse(result)
+    }
+
+    func testWhenEnrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial_AndUserIsInTreatmentGroup_ThenShowVideoTutorial() {
         // GIVEN
         onboardingManagerMock.cohortToReturn = .treatment
         onboardingManagerMock.onboardingSteps = OnboardingIntroStep.newUserSteps(isIphone: true)
-        let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
-        let sut = makeSUT(currentOnboardingStep: currentStep)
+        let sut = makeSUT()
 
         // WHEN
-        sut.startOnboardingAction(isResumingOnboarding: false)
+        let result = sut.enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial()
 
         // THEN
-        XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: true), step: .init(currentStep: 1, totalSteps: 4))))
+        XCTAssertTrue(result)
+    }
+
+    func testWhenEnrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial_ThenPixelReporterTrackChooseBrowserCTAAction() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBrowserCTAAction)
+
+        // WHEN
+        _ = sut.enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseBrowserCTAAction)
     }
 
     func testWhenSetDefaultBrowserActionIsCalled_AndUserIsInControlGroup_ThenMakeNextViewState() {

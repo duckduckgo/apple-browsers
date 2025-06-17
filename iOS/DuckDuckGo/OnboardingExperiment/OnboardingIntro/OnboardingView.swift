@@ -161,7 +161,9 @@ struct OnboardingView: View {
             showContent: $model.browserComparisonState.showComparisonButton,
             isSkipped: $model.isSkipped,
             setAsDefaultBrowserAction: {
-                if model.state.shouldShowSetDefaultBrowserTutorialVideo {
+                if model.enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial() {
+                    // Play video first and then deeplink to the settings.
+                    // Once the video starts playing sending the app to the background will start PiP automatically.
                     isPlayingSetAsDefaultVideo = true
                 } else {
                     model.setDefaultBrowserAction()
@@ -224,7 +226,8 @@ struct OnboardingView: View {
     private var setDefaultBrowserTutorialView: some View {
         // Position the 'Set Default Browser' video tutorial behind the onboarding background.
         // When we want to show the PiP video to the user we will start playing and then deeplink into the settings.
-        if model.state.shouldShowSetDefaultBrowserTutorialVideo {
+        // We explicitly not call the associated function associated with `.browsersComparisonDialog` because it will enrol the user in the experiment. We want to enrol the user in the experiment when they tap the CTA button.
+        if case .browsersComparisonDialog = model.state.intro?.type {
             setAsDefaultTutorialVideoView
                 .frame(width: 300, height: 100) // Fixed size prevents stretching in ZStack and smooths PiP transition. PiP size is auto-determined by OS.
         } else {
@@ -257,6 +260,7 @@ struct OnboardingView: View {
             }
         }
     }
+
 }
 
 // MARK: - View State
@@ -273,15 +277,6 @@ extension OnboardingView {
                 return nil
             case let .onboarding(intro):
                 return intro
-            }
-        }
-
-        var shouldShowSetDefaultBrowserTutorialVideo: Bool {
-            switch intro?.type {
-            case let .browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo):
-                return shouldShowSetDefaultBrowserTutorialVideo
-            default:
-                return false
             }
         }
     }
@@ -301,7 +296,7 @@ extension OnboardingView.ViewState.Intro {
 
     enum IntroType: Equatable {
         case startOnboardingDialog(canSkipTutorial: Bool)
-        case browsersComparisonDialog(shouldShowSetDefaultBrowserTutorialVideo: Bool)
+        case browsersComparisonDialog
         case addToDockPromoDialog
         case chooseAppIconDialog
         case chooseAddressBarPositionDialog

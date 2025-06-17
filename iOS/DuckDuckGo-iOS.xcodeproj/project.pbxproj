@@ -6640,6 +6640,14 @@
 			path = SaveCreditCard;
 			sourceTree = "<group>";
 		};
+		C11A8E962E01B76B002A602B /* KeyboardInputAccessory */ = {
+			isa = PBXGroup;
+			children = (
+				C13830FD2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift */,
+			);
+			path = KeyboardInputAccessory;
+			sourceTree = "<group>";
+		};
 		C13EEA1C2D64CFBA001D5DC3 /* DataImport */ = {
 			isa = PBXGroup;
 			children = (
@@ -8309,6 +8317,7 @@
 				C1B3BF462D8D99DA00EE1D43 /* CreditCardManagement */,
 				C1AD33272DBAD18E003B80A4 /* CreditCardPrompt */,
 				C1641EAD2BC2F46C0012607A /* ImportViaSync */,
+				C11A8E962E01B76B002A602B /* KeyboardInputAccessory */,
 				C17B59552A03AAC40055F2D1 /* PasswordGeneration */,
 				310C4B4A281B69BC00BA79A9 /* PasswordManagement */,
 				C15516042D47D2D9001B94E9 /* Resources */,
@@ -8316,7 +8325,6 @@
 				F407605428131923006B1E0B /* SaveLogin */,
 				C181289E2D737D5B00807C09 /* Settings */,
 				31951E9328230D8900CAF535 /* Shared */,
-				C13830FD2DCD3FFC00A29B3C /* CreditCardInputAccessoryView.swift */,
 			);
 			name = Autofill;
 			sourceTree = "<group>";

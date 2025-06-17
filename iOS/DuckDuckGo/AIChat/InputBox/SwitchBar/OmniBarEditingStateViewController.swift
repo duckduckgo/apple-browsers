@@ -254,7 +254,7 @@ final class OmniBarEditingStateViewController: UIViewController {
     }
 
     private func handleQueryUpdate(_ query: String) {
-        handdleSuggestionTrayWithQuery(query)
+        handleSuggestionTrayWithQuery(query)
     }
 
     private func setupSubscriptions() {
@@ -337,7 +337,7 @@ extension OmniBarEditingStateViewController: FavoritesOverlayDelegate {
 // MARK: - Suggestion Tray methods
 
 extension OmniBarEditingStateViewController {
-    private func handdleSuggestionTrayWithQuery(_ query: String) {
+    private func handleSuggestionTrayWithQuery(_ query: String) {
         guard switchBarHandler.currentToggleState == .search else { return }
 
         if query.isEmpty {

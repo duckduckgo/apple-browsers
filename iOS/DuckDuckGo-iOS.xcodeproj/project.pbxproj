@@ -1443,7 +1443,6 @@
 		C1F341C52A6924000032057B /* EmailAddressPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F341C42A6924000032057B /* EmailAddressPromptView.swift */; };
 		C1F341C72A6924100032057B /* EmailAddressPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F341C62A6924100032057B /* EmailAddressPromptViewModel.swift */; };
 		C1F341C92A6926920032057B /* EmailAddressPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F341C82A6926920032057B /* EmailAddressPromptViewController.swift */; };
-		C1F6DE452DDA4EFB0068C0E1 /* KeyboardInputAccessoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F6DE442DDA4EFB0068C0E1 /* KeyboardInputAccessoryView.swift */; };
 		C1FFBD462C761BE20073622B /* SyncPromoManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1FFBD452C761BE20073622B /* SyncPromoManagerTests.swift */; };
 		C1FFBD482C7749A90073622B /* SyncSettingsViewController+PlatformLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1FFBD472C7749A90073622B /* SyncSettingsViewController+PlatformLinks.swift */; };
 		CB05BCD42D67652F0034ABA6 /* UIWindowExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB05BCD32D67652F0034ABA6 /* UIWindowExtension.swift */; };
@@ -3578,7 +3577,6 @@
 		C1F341C42A6924000032057B /* EmailAddressPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailAddressPromptView.swift; sourceTree = "<group>"; };
 		C1F341C62A6924100032057B /* EmailAddressPromptViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailAddressPromptViewModel.swift; sourceTree = "<group>"; };
 		C1F341C82A6926920032057B /* EmailAddressPromptViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailAddressPromptViewController.swift; sourceTree = "<group>"; };
-		C1F6DE442DDA4EFB0068C0E1 /* KeyboardInputAccessoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardInputAccessoryView.swift; sourceTree = "<group>"; };
 		C1F883372D08627900DFF79A /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1F883382D08627900DFF79A /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C1FE93E52D0863AA009F8F5E /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nl; path = nl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -7704,7 +7702,6 @@
 		F13B4BF61F18C76600814661 /* UI */ = {
 			isa = PBXGroup;
 			children = (
-				C1F6DE442DDA4EFB0068C0E1 /* KeyboardInputAccessoryView.swift */,
 				C13830FB2DCD3F1400A29B3C /* WebView.swift */,
 				984147C224F026A300362052 /* Tab.storyboard */,
 				F1386BA31E6846C40062FC3C /* TabDelegate.swift */,
@@ -9653,7 +9650,6 @@
 				1DDF40202BA049FA006850D9 /* SettingsRootView.swift in Sources */,
 				D68DF81E2B5830380023DBEA /* SubscriptionRestoreViewModel.swift in Sources */,
 				F4F6DFB426E6B63700ED7E12 /* BookmarkFolderCell.swift in Sources */,
-				C1F6DE452DDA4EFB0068C0E1 /* KeyboardInputAccessoryView.swift in Sources */,
 				D6F93E3E2B50A8A0004C268D /* SubscriptionSettingsView.swift in Sources */,
 				1D200C9B2BA31A6A00108701 /* AboutView.swift in Sources */,
 				65D091262D47DF2A00226164 /* DuckPlayerView.swift in Sources */,

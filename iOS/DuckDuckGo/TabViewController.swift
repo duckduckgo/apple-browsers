@@ -242,7 +242,7 @@ class TabViewController: UIViewController {
         let creditCardInputAccessoryView = CreditCardInputAccessoryView(frame: initialFrame)
         creditCardInputAccessoryView.onCardManagementSelected = { [weak self] in
             guard let self = self else { return }
-            self.webView.resignFirstResponder()
+            self.webView.evaluateJavaScript("document.activeElement?.blur()")
             self.delegate?.tabDidRequestSettingsToCreditCardManagement(self, source: .creditCardKeyboardShortcut)
         }
         return creditCardInputAccessoryView
@@ -547,7 +547,6 @@ class TabViewController: UIViewController {
         unregisterFromResignActive()
         unregisterFromKeyboardNotifications()
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
-        cleanupInputAccessoryView()
     }
 
     private func registerForAddressBarLocationNotifications() {
@@ -1030,7 +1029,6 @@ class TabViewController: UIViewController {
         cachedRuntimeConfigurationForDomain = [:]
         duckPlayerNavigationHandler.handleReload(webView: webView)
         delegate?.tabLoadingStateDidChange(tab: self)
-        cleanupInputAccessoryView()
         resetCreditCardPrompt()
     }
     
@@ -3102,10 +3100,6 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
         
-        if let webView = webView as? WebView {
-            webView.suppressSystemInputView = true
-        }
-
         // if user is interacting with the searchBar, don't show the autofill prompt since it will overlay the keyboard
         if let parent = parent as? MainViewController, parent.viewCoordinator.omniBar.isTextFieldEditing {
             completionHandler(nil)
@@ -3130,10 +3124,7 @@ extension TabViewController: SecureVaultManagerDelegate {
         guard mainType == .creditCards else {
             Logger.autofill.debug("secureVaultManagerDidFocus: not creditCard")
             completionHandler(nil)
-            if let webView = webView as? WebView {
-                webView.suppressSystemInputView = false
-                cleanupInputAccessoryView()
-            }
+            cleanupInputAccessoryView()
             return
         }
 
@@ -3181,7 +3172,7 @@ extension TabViewController: SecureVaultManagerDelegate {
         autofillCreditCardAccessoryView.onCardSelected = { [weak self] card in
             completionHandler(card)
             if card == nil {
-                self?.webView.resignFirstResponder()
+                webView.evaluateJavaScript("document.activeElement?.blur()")
             }
             self?.cleanupInputAccessoryView()
         }

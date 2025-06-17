@@ -19,7 +19,6 @@
 import WebKit
 import Common
 import UserScript
-import os.log
 
 public enum RequestVaultDataAction: String, Codable {
     case none

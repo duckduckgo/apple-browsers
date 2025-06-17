@@ -2959,7 +2959,7 @@ extension TabViewController: SecureVaultManagerDelegate {
     
     private func presentSaveCreditCardModal(with vault: SecureVaultManager, creditCard: SecureVaultModels.CreditCard) {
         guard CreditCardValidation.isValidCardNumber(creditCard.cardNumber) else {
-            Logger.autofill.debug("Invalid credit card number: \(creditCard.cardNumber), not presenting save prompt")
+            Logger.autofill.debug("Invalid credit card number, not presenting save prompt")
             return
         }
         
@@ -3086,7 +3086,6 @@ extension TabViewController: SecureVaultManagerDelegate {
                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
                             withTrigger trigger: AutofillUserScript.GetTriggerType,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
-        Logger.autofill.debug("secureVaultManagerShouldPromptUserToAutofillCreditCard")
         guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
             completionHandler(nil)
             return
@@ -3112,14 +3111,12 @@ extension TabViewController: SecureVaultManagerDelegate {
                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
-        Logger.autofill.debug("secureVaultManagerDidFocus")
         guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
             completionHandler(nil)
             return
         }
 
         guard mainType == .creditCards else {
-            Logger.autofill.debug("secureVaultManagerDidFocus: not creditCard")
             completionHandler(nil)
             cleanupInputAccessoryView()
             return
@@ -3157,7 +3154,29 @@ extension TabViewController: SecureVaultManagerDelegate {
             }
         }
     }
-    
+
+    private func presentAutofillPromptViewController(creditCards: [SecureVaultModels.CreditCard],
+                                                     completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        // Ensure keyboard doesn't block prompt
+        webView.resignFirstResponder()
+
+        let creditCardPromptViewController = CreditCardPromptViewController(creditCards: creditCards) { creditCard in
+            completionHandler(creditCard)
+        }
+
+        if let presentationController = creditCardPromptViewController.presentationController as? UISheetPresentationController {
+            if #available(iOS 16.0, *) {
+                presentationController.detents = [.custom(resolver: { _ in
+                    AutofillViews.loginPromptMinHeight
+                })]
+            } else {
+                presentationController.detents =  [.medium()]
+            }
+        }
+
+        self.present(creditCardPromptViewController, animated: true, completion: nil)
+    }
+
     private func addCreditCardInputAccessoryView(creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         guard let webView = webView as? WebView, let autofillCreditCardAccessoryView = autofillCreditCardAccessoryView else {
             completionHandler(nil)
@@ -3187,28 +3206,6 @@ extension TabViewController: SecureVaultManagerDelegate {
         shouldShowCreditCardPrompt = true
     }
 
-    private func presentAutofillPromptViewController(creditCards: [SecureVaultModels.CreditCard],
-                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
-        // Ensure keyboard doesn't block prompt
-        webView.resignFirstResponder()
-        
-        let creditCardPromptViewController = CreditCardPromptViewController(creditCards: creditCards) { creditCard in
-            completionHandler(creditCard)
-        }
-
-        if let presentationController = creditCardPromptViewController.presentationController as? UISheetPresentationController {
-            if #available(iOS 16.0, *) {
-                presentationController.detents = [.custom(resolver: { _ in
-                    AutofillViews.loginPromptMinHeight
-                })]
-            } else {
-                presentationController.detents =  [.medium()]
-            }
-        }
-
-        self.present(creditCardPromptViewController, animated: true, completion: nil)
-    }
-    
     func secureVaultManager(_: SecureVaultManager,
                             promptUserWithGeneratedPassword password: String,
                             completionHandler: @escaping (Bool) -> Void) {

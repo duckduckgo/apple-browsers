@@ -68,6 +68,7 @@ final class FirePopoverViewController: NSViewController {
     @IBOutlet weak var clearButton: NSButton!
     @IBOutlet weak var cancelButton: NSButton!
     @IBOutlet weak var closeBurnerWindowButton: NSButton!
+    @IBOutlet weak var burnerWindowButton: NSImageView!
 
     private var viewModelCancellable: AnyCancellable?
     private var selectedCancellable: AnyCancellable?
@@ -114,6 +115,7 @@ final class FirePopoverViewController: NSViewController {
         setupOptionsButton()
         setupOpenCloseDetailsButton()
         updateWarningWrapperView()
+        updateBurnerButtonAppearance()
 
         subscribeToViewModel()
         subscribeToSelected()
@@ -123,6 +125,11 @@ final class FirePopoverViewController: NSViewController {
         super.viewWillAppear()
 
         firePopoverViewModel.refreshItems()
+    }
+
+    private func updateBurnerButtonAppearance() {
+        self.burnerWindowButton.image = NSApp.delegateTyped.visualStyle.isNewStyle ?
+            .updatedBurnerWindowButtonIcon : .burnerWindowButtonIcon
     }
 
     private func setUpStrings() {

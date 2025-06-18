@@ -167,7 +167,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     public let currentEnvironment: SubscriptionEnvironment
     private let isInternalUserEnabled: () -> Bool
     private let legacyAccountStorage: AccountKeychainStorage?
-    let userDefaults: UserDefaults
+    private let userDefaults: UserDefaults
 
     public init(storePurchaseManager: StorePurchaseManagerV2? = nil,
                 oAuthClient: any OAuthClient,

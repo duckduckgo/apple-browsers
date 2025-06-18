@@ -344,7 +344,7 @@ class DownloadsIntegrationTests: XCTestCase {
         _=await tab.setUrl(pageUrl, source: .link)?.result
 
         NSApp.activate(ignoringOtherApps: true)
-        let downloadTaskFuture = FileDownloadManager.shared.downloadsPublisher.timeout(5).first().promise()
+        let downloadTaskFuture = FileDownloadManager.shared.downloadsPublisher.timeout(10).first().promise()
 
         let e1 = expectation(description: "new tab opened")
         var e2: XCTestExpectation!

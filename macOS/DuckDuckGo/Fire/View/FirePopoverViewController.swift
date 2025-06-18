@@ -124,7 +124,8 @@ final class FirePopoverViewController: NSViewController {
     }
 
     override func viewWillAppear() {
-        super.viewWillAppear()        
+        super.viewWillAppear()
+
         firePopoverViewModel.refreshItems()
     }
 

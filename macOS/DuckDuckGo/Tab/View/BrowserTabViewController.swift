@@ -349,12 +349,17 @@ final class BrowserTabViewController: NSViewController {
 
     private func subscribeToTabs() {
         tabCollectionViewModel.tabCollection.$tabs
-            .dropFirst()
             .sink {  [weak self] tabs in
                 guard let self else { return }
                 setDelegate(for: tabs)
                 removeDataBrokerViewIfNecessary(for: tabs)
+            }
+            .store(in: &cancellables)
 
+        tabCollectionViewModel.tabCollection.$tabs
+            .dropFirst()
+            .sink {  [weak self] _ in
+                guard let self else { return }
                 aiChatSidebarHostingDelegate?.sidebarHostDidUpdateTabs()
             }
             .store(in: &cancellables)

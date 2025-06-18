@@ -124,8 +124,7 @@ final class FirePopoverViewController: NSViewController {
     }
 
     override func viewWillAppear() {
-        super.viewWillAppear()
-        
+        super.viewWillAppear()        
         firePopoverViewModel.refreshItems()
     }
 
@@ -136,16 +135,13 @@ final class FirePopoverViewController: NSViewController {
         self.burnerWindowButton.wantsLayer = true
         addCircularBackground(to: self.burnerWindowButton)
     }
-    
+
     private func addCircularBackground(to imageView: NSImageView) {
         let backgroundLayer = CALayer()
         backgroundLayer.backgroundColor = NSColor(designSystemColor: .buttonsWhite).withAlphaComponent(0.05).cgColor
-
         backgroundLayer.frame = imageView.bounds
-        
         let radius = min(imageView.bounds.width, imageView.bounds.height) / 2
         backgroundLayer.cornerRadius = radius
-        
         imageView.layer?.insertSublayer(backgroundLayer, at: 0)
     }
 

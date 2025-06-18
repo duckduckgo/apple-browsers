@@ -238,7 +238,9 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     private func subscribeToURLChanges() {
-        aiTab.$content.sink { [weak self] content in
+        aiTab.$content
+            .dropFirst()
+            .sink { [weak self] content in
             if let currentURL = content.urlForWebView {
                 self?.currentAIChatURL = currentURL
             }

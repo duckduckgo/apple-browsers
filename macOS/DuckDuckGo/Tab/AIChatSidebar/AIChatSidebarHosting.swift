@@ -23,6 +23,7 @@ import AppKit
 ///
 /// This delegate is responsible for handling tab selection and tab list updates
 /// that occur within the AI Chat sidebar interface.
+@MainActor
 protocol AIChatSidebarHostingDelegate: AnyObject {
     /// Called when a tab is selected in the AI Chat sidebar.
     /// - Parameter tabID: The unique identifier of the selected tab.
@@ -37,6 +38,7 @@ protocol AIChatSidebarHostingDelegate: AnyObject {
 ///
 /// This protocol provides the necessary properties and methods to manage the AI Chat sidebar's
 /// layout, embedding, and tab-related functionality within a host view controller.
+@MainActor
 protocol AIChatSidebarHosting: AnyObject  {
     /// The delegate that receives tab-related events from the sidebar.
     var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate? { get set }

@@ -33,6 +33,7 @@ struct AIChatSidebarPresenceChange: Equatable {
 /// Manages the presentation of an AI Chat sidebar in the browser.
 ///
 /// Handles visibility, state management, and feature flag coordination for the AI Chat sidebar.
+@MainActor
 protocol AIChatSidebarPresenting {
 
     /// Toggles the AI Chat sidebar visibility on a current tab, using appropriate animation.
@@ -146,9 +147,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
             updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
         } else {
             // If sidebar is open then pass the payload to a new AIChat tab
-            Task { @MainActor in
-                aiChatTabOpener.openNewAIChatTab(withPayload: payload)
-            }
+            aiChatTabOpener.openNewAIChatTab(withPayload: payload)
         }
     }
 }
@@ -165,11 +164,9 @@ extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
     func sidebarHostDidUpdateTabs() {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
 
-        Task { @MainActor in
-            let allPinnedTabIDs = windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
-            let allTabIDs = windowControllersManager.allTabCollectionViewModels.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
-            sidebarProvider.cleanUp(for: allPinnedTabIDs + allTabIDs)
-        }
+        let allPinnedTabIDs = windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
+        let allTabIDs = windowControllersManager.allTabCollectionViewModels.flatMap { $0.tabViewModels.keys }.map { $0.uuid }
+        sidebarProvider.cleanUp(for: allPinnedTabIDs + allTabIDs)
     }
 }
 

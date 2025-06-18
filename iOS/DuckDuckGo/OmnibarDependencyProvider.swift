@@ -19,12 +19,17 @@
 
 import BrowserServicesKit
 import AIChat
+import Bookmarks
+import Persistence
+import History
+import Core
 
 protocol OmnibarDependencyProvider {
     var voiceSearchHelper: VoiceSearchHelperProtocol { get }
     var featureFlagger: FeatureFlagger { get }
     var aiChatSettings: AIChatSettingsProvider { get }
     var themingProperties: ExperimentalThemingProperties { get }
+    var suggestionTrayDependencies: SuggestionTrayDependencies? { get }
 }
 
 struct OmnibarDependencies: OmnibarDependencyProvider {
@@ -32,4 +37,5 @@ struct OmnibarDependencies: OmnibarDependencyProvider {
     let featureFlagger: FeatureFlagger
     let aiChatSettings: AIChatSettingsProvider
     let themingProperties: ExperimentalThemingProperties
+    var suggestionTrayDependencies: SuggestionTrayDependencies?
 }

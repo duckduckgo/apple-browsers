@@ -214,8 +214,8 @@ final class DuckPlayerViewModelTests: XCTestCase {
     @MainActor
     func testDismissPublisher_OnDisappear() {
         // Given
-        let expectedTimestamp: TimeInterval = 42.0
-        viewModel.timestamp = expectedTimestamp
+        let expectedCurrentTimestamp: TimeInterval = 42.0
+        viewModel.currentTimeStamp = expectedCurrentTimestamp // Use currentTimeStamp instead of timestamp
         let expectation = XCTestExpectation(description: "Dismiss publisher emitted")
         var receivedTimestamp: TimeInterval?
 
@@ -231,50 +231,48 @@ final class DuckPlayerViewModelTests: XCTestCase {
 
         // Then
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertEqual(receivedTimestamp, expectedTimestamp, "Dismiss publisher should emit the current timestamp")
+        XCTAssertEqual(receivedTimestamp, expectedCurrentTimestamp, "Dismiss publisher should emit the current video playback timestamp")
     }
 
-    // MARK: - Timestamp Observation Tests
-    // Note: Testing the timer scheduling directly is tricky. We test the effect.
     @MainActor
-    func testTimestampObservation_UpdatesTimestampPeriodically() async {
+    func testUpdateTimeStamp_UpdatesCurrentTimeStamp() {
         // Given
-        let mockWebView = MockWebView()
-        // We need a viewModel instance to initialize the Coordinator subclass
-        let tempViewModel = DuckPlayerViewModel(videoID: "coordInit")
-        let mockCoordinator = TestableDuckPlayerWebViewCoordinator(viewModel: tempViewModel)
-        let initialTimestamp: TimeInterval = 0
-        let updatedTimestamp: TimeInterval = 5.0
-
-        viewModel.timestamp = initialTimestamp
-        mockCoordinator.mockTimestamp = updatedTimestamp
-
-        // When: Start observing
-        viewModel.startObservingTimestamp(webView: mockWebView, coordinator: mockCoordinator)
-
-        // Then: Verify timestamp is updated after a short delay (simulating timer firing)
-        // We need to wait slightly longer than the timer interval (0.3s)
-        try? await Task.sleep(nanoseconds: 400_000_000) // 0.4 seconds
-
-        // Perform the check
-        await MainActor.run {
-            XCTAssertEqual(viewModel.timestamp, updatedTimestamp, "Timestamp should be updated by the observer")
-            XCTAssertGreaterThan(mockCoordinator.getCurrentTimestampCallCount, 0, "getCurrentTimestamp should have been called")
-        }
-
-        // When: Stop observing
-        let callCountBeforeStop = mockCoordinator.getCurrentTimestampCallCount
-        viewModel.stopObservingTimestamp()
-
-        // Wait again to ensure no more updates happen
-        try? await Task.sleep(nanoseconds: 400_000_000) // 0.4 seconds
-
-        await MainActor.run {
-             XCTAssertEqual(mockCoordinator.getCurrentTimestampCallCount, callCountBeforeStop, "getCurrentTimestamp should not be called after stopping observation")
-        }
-
-        // Ensure timestamp didn't change further
-        XCTAssertEqual(viewModel.timestamp, updatedTimestamp, "Timestamp should remain unchanged after stopping observation")
+        let newTimestamp: TimeInterval = 123.45
+        XCTAssertEqual(viewModel.currentTimeStamp, 0, "Initial timestamp should be 0")
+        
+        // When
+        viewModel.updateTimeStamp(timeStamp: newTimestamp)
+        
+        // Then
+        XCTAssertEqual(viewModel.currentTimeStamp, newTimestamp, "Current timestamp should be updated")
     }
+
+    @MainActor
+    func testDismissPublisher_WithUpdatedTimestamp() {
+        // Given
+        let initialTimestamp: TimeInterval = 30.0
+        let updatedTimestamp: TimeInterval = 75.5
+        viewModel.timestamp = initialTimestamp // Initial video position
+        viewModel.updateTimeStamp(timeStamp: updatedTimestamp) // Simulate video playback progress
+        
+        let expectation = XCTestExpectation(description: "Dismiss publisher emitted with updated timestamp")
+        var receivedTimestamp: TimeInterval?
+
+        viewModel.dismissPublisher
+            .sink { timestamp in
+                receivedTimestamp = timestamp
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        viewModel.onDisappear()
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedTimestamp, updatedTimestamp, "Should emit the updated current timestamp, not the initial timestamp")
+        XCTAssertNotEqual(receivedTimestamp, initialTimestamp, "Should not emit the initial timestamp")
+    }
+
 
 }

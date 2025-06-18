@@ -191,7 +191,7 @@ class AddressBarTests: XCTestCase {
     @MainActor
     func testWhenAddressIsTyped_LoadedTopHitSuggestionIsCorrectlyAppendedAndSelected() {
         // top hits should only work for visited urls
-        HistoryCoordinator.shared.addVisit(of: URL(string: "https://youtube.com")!)
+        NSApp.delegateTyped.historyCoordinator.addVisit(of: URL(string: "https://youtube.com")!)
         let tab = Tab(content: .newtab, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         window = WindowsManager.openNewWindow(with: tab)!
 

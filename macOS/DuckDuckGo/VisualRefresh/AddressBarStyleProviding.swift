@@ -15,7 +15,10 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+
+import AppKit
 import DesignResourcesKitIcons
+import Foundation
 
 protocol AddressBarStyleProviding {
     func navigationBarHeight(for type: AddressBarSizeClass) -> CGFloat
@@ -126,12 +129,12 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     private let navigationBarHeightForDefault: CGFloat = 52
     private let navigationBarHeightForHomePage: CGFloat = 52
     private let navigationBarHeightForPopUpWindow: CGFloat = 42
-    private let addressBarTopPaddingForDefault: CGFloat = 6
-    private let addressBarTopPaddingForHomePage: CGFloat = 6
-    private let addressBarTopPaddingForPopUpWindow: CGFloat = 6
-    private let addressBarBottomPaddingForDefault: CGFloat = 6
-    private let addressBarBottomPaddingForHomePage: CGFloat = 6
-    private let addressBarBottomPaddingForPopUpWindow: CGFloat = 6
+    private let addressBarTopPaddingForDefault: CGFloat = 7
+    private let addressBarTopPaddingForHomePage: CGFloat = 7
+    private let addressBarTopPaddingForPopUpWindow: CGFloat = 7
+    private let addressBarBottomPaddingForDefault: CGFloat = 7
+    private let addressBarBottomPaddingForHomePage: CGFloat = 7
+    private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
 
     let defaultAddressBarFontSize: CGFloat = 13
     let newTabOrHomePageAddressBarFontSize: CGFloat = 13
@@ -143,7 +146,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let shouldAddAddressBarShadowWhenInactive: Bool = true
     let tabBarButtonSize: CGFloat = 28
     let addressBarButtonSize: CGFloat = 28
-    let addTabButtonPadding: CGFloat = 5
+    let addTabButtonPadding: CGFloat = 32 // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)
     let addressBarActiveBackgroundViewRadius: CGFloat = 15
     let addressBarInactiveBackgroundViewRadius: CGFloat = 12
     let addressBarInnerBorderViewRadius: CGFloat = 15
@@ -189,6 +192,6 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     }
 
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat {
-        return 28
+        return 32
     }
 }

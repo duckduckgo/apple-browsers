@@ -20,7 +20,7 @@ import Combine
 import Common
 import LoginItems
 import NetworkExtension
-import NetworkProtection
+import VPN
 import ServiceManagement
 import SwiftUI
 
@@ -76,7 +76,7 @@ extension NetworkProtectionStatusView {
 
         @MainActor
         @Published
-        private var connectionStatus: NetworkProtection.ConnectionStatus = .default
+        private var connectionStatus: VPN.ConnectionStatus = .default
 
         /// The type of extension that's being used for NetP
         ///

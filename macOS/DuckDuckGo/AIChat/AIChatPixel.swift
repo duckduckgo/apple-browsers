@@ -26,10 +26,10 @@ import PixelKit
 
 enum AIChatPixel: PixelKitEventV2 {
 
-    /// Event Trigger: AI Chat is opened via the ... Menu -> New AI Chat
+    /// Event Trigger: AI Chat is opened via the ... Menu -> New Duck.ai Chat
     case aichatApplicationMenuAppClicked
 
-    /// Event Trigger: AI Chat is opened via File -> New AI Chat
+    /// Event Trigger: AI Chat is opened via File -> New Duck.ai Chat
     case aichatApplicationMenuFileClicked
 
     /// Event Trigger: Can't find privacy config settings for AI Chat
@@ -50,6 +50,10 @@ enum AIChatPixel: PixelKitEventV2 {
     case aiChatSettingsApplicationMenuShortcutTurnedOn
 
     /// Event Trigger: Duck.ai settings panel is displayed
+    ///
+    /// - Note:
+    /// This pixel is used in place of `SettingsPixel.settingsPaneOpened(.aiChat)`.
+    /// Before removing it, verify that it's not needed for measuring settings interaction.
     case aiChatSettingsDisplayed
 
     /// Event Trigger: User clicks in the Omnibar duck.ai button

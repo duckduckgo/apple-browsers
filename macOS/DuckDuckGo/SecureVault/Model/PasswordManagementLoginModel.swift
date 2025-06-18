@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import Combine
+import AppKit
 import BrowserServicesKit
+import Combine
 import Common
+import Foundation
 import PixelKit
 
 final class PasswordManagementLoginModel: ObservableObject, PasswordManagementItemModel {
@@ -137,7 +139,7 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
          onDeleteRequested: @escaping (SecureVaultModels.WebsiteCredentials) -> Void,
          urlMatcher: AutofillDomainNameUrlMatcher,
          emailManager: EmailManager,
-         tld: TLD = ContentBlocking.shared.tld,
+         tld: TLD,
          urlSort: AutofillDomainNameUrlSort) {
         self.onSaveRequested = onSaveRequested
         self.onDeleteRequested = onDeleteRequested
@@ -209,7 +211,7 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
 
     @MainActor
     func openURL(_ url: URL) {
-        WindowControllersManager.shared.show(url: url, source: .bookmark, newTab: true)
+        Application.appDelegate.windowControllersManager.show(url: url, source: .bookmark, newTab: true)
     }
 
     func togglePrivateEmailStatus() {

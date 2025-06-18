@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
+import Foundation
+
 protocol TabStyleProviding {
     var separatorColor: NSColor { get }
     var separatorHeight: CGFloat { get }
@@ -28,6 +31,7 @@ protocol TabStyleProviding {
 
     var shouldShowSShapedTab: Bool { get }
     var selectedTabColor: NSColor { get }
+    var hoverTabColor: NSColor { get }
     var isRoundedBackgroundPresentOnHover: Bool { get }
     var tabSpacing: CGFloat { get }
     var applyTabShadow: Bool { get }
@@ -45,6 +49,7 @@ final class LegacyTabStyleProvider: TabStyleProviding {
     let pinnedTabHeight: CGFloat = 34
     let shouldShowSShapedTab = false
     let selectedTabColor: NSColor = .navigationBarBackground
+    let hoverTabColor: NSColor = .tabMouseOver
     let isRoundedBackgroundPresentOnHover = false
     let tabSpacing: CGFloat = 0
     let applyTabShadow: Bool = false
@@ -57,12 +62,13 @@ final class NewlineTabStyleProvider: TabStyleProviding {
 
     var separatorColor: NSColor { palette.decorationTertiary }
     var selectedTabColor: NSColor { palette.surfacePrimary }
+    var hoverTabColor: NSColor { palette.controlsFillPrimary }
 
     let separatorHeight: CGFloat = 16
     let tabsScrollViewHeight: CGFloat = 38
     let pinnedTabsContainerViewHeight: CGFloat = 38
     let standardTabHeight: CGFloat = 38
-    let pinnedTabWidth: CGFloat = 34
+    let pinnedTabWidth: CGFloat = 38
     let pinnedTabHeight: CGFloat = 38
     let shouldShowSShapedTab = true
     let isRoundedBackgroundPresentOnHover = true

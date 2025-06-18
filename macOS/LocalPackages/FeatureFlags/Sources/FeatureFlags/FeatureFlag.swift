@@ -58,21 +58,20 @@ public enum FeatureFlag: String, CaseIterable {
     case autocompleteTabs
     case webExtensions
     case syncSeamlessAccountSwitching
-    /// SAD & ATT Prompts experiiment: https://app.asana.com/0/1204006570077678/1209185383520514
-    case popoverVsBannerExperiment
+
+    /// SAD & ATT Prompts: https://app.asana.com/1/137249556945/project/1206329551987282/task/1210225579353384?focus=true
+    case scheduledSetDefaultBrowserAndAddToDockPrompts
 
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
-
-    /// https://app.asana.com/0/72649045549333/1209633877674689/f
-    case exchangeKeysToSyncWithAnotherDevice
 
     // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
     case failsafeExampleCrossPlatformFeature
     case failsafeExamplePlatformSpecificSubfeature
 
     /// https://app.asana.com/0/72649045549333/1209793701087222/f
-    case visualRefresh
+    case visualUpdates
+    case visualUpdatesInternalOnly
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
     case tabCrashDebugging
@@ -89,17 +88,41 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
     case syncSetupBarcodeIsUrlBased
 
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1210325960030113?focus=true
+    case exchangeKeysToSyncWithAnotherDevice
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
     case canScanUrlBasedSyncSetupBarcodes
 
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210052464460517?focus=true
+    case privacyProFreeTrial
+
+	/// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
+    case paidAIChat
+
     /// https://app.asana.com/1/137249556945/task/1210330600670666
     case removeWWWInCanonicalizationInThreatProtection
+
+    /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210410403692636?focus=true
+    case aiChatSidebar
+
+    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    case osSupportForceUnsupportedMessage
+
+    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    case osSupportForceWillSoonDropSupportMessage
+
+    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    case willSoonDropBigSurSupport
+
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210493210455717?focus=true
+    case shortHistoryMenu
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes, .removeWWWInCanonicalizationInThreatProtection:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .removeWWWInCanonicalizationInThreatProtection, .visualUpdatesInternalOnly:
             true
         default:
             false
@@ -108,18 +131,10 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
-        case .popoverVsBannerExperiment:
-            return PopoverVSBannerExperimentCohort.self
         default:
             return nil
         }
     }
-
-    public enum PopoverVSBannerExperimentCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case popover
-        case banner
-     }
 
     public var supportsLocalOverriding: Bool {
         switch self {
@@ -133,20 +148,27 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
-                .popoverVsBannerExperiment,
                 .privacyProAuthV2,
                 .scamSiteProtection,
-                .exchangeKeysToSyncWithAnotherDevice,
                 .failsafeExampleCrossPlatformFeature,
                 .failsafeExamplePlatformSpecificSubfeature,
-                .visualRefresh,
+                .visualUpdates,
+                .visualUpdatesInternalOnly,
                 .tabCrashDebugging,
                 .tabCrashRecovery,
                 .maliciousSiteProtection,
                 .delayedWebviewPresentation,
                 .syncSetupBarcodeIsUrlBased,
+                .paidAIChat,
+                .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
-                .removeWWWInCanonicalizationInThreatProtection:
+				.privacyProFreeTrial,
+                .removeWWWInCanonicalizationInThreatProtection,
+                .osSupportForceUnsupportedMessage,
+                .osSupportForceWillSoonDropSupportMessage,
+                .willSoonDropBigSurSupport,
+				.aiChatSidebar,
+                .shortHistoryMenu:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -155,7 +177,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .dbpRemoteBrokerDelivery:
+                .dbpRemoteBrokerDelivery,
+                .scheduledSetDefaultBrowserAndAddToDockPrompts:
             return false
         }
     }
@@ -200,17 +223,17 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
-        case .popoverVsBannerExperiment:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
+        case .scheduledSetDefaultBrowserAndAddToDockPrompts:
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
-        case .exchangeKeysToSyncWithAnotherDevice:
-            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .failsafeExampleCrossPlatformFeature:
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
-        case .visualRefresh:
+        case .visualUpdates:
+            return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
+        case .visualUpdatesInternalOnly:
             return .internalOnly()
         case .tabCrashDebugging:
             return .disabled
@@ -221,11 +244,27 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dbpRemoteBrokerDelivery:
             return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         case .syncSetupBarcodeIsUrlBased:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
+        case .exchangeKeysToSyncWithAnotherDevice:
+            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
+        case .privacyProFreeTrial:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
+        case .paidAIChat:
+			return .disabled
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
+        case .aiChatSidebar:
+            return .internalOnly()
+        case .osSupportForceUnsupportedMessage:
+            return .disabled
+        case .osSupportForceWillSoonDropSupportMessage:
+            return .disabled
+        case .willSoonDropBigSurSupport:
+            return .internalOnly()
+        case .shortHistoryMenu:
+            return .remoteReleasable(.feature(.shortHistoryMenu))
         }
     }
 }

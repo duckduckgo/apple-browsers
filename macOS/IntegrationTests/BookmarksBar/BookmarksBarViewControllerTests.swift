@@ -39,7 +39,11 @@ final class BookmarksBarViewControllerTests: XCTestCase {
     @MainActor
     func testWhenImportBookmarksClicked_ThenDataImportViewShown() throws {
         let mockWindow = MockWindow()
-        let mainViewController = MainViewController(bookmarkManager: bookmarksManager, autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let mainViewController = MainViewController(
+            bookmarkManager: bookmarksManager,
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld)
+        )
         mockWindow.contentView = mainViewController.view
 
         vc = mainViewController.bookmarksBarViewController
@@ -57,7 +61,7 @@ final class BookmarksBarViewControllerTests: XCTestCase {
     func testWhenThereAreBookmarks_ThenImportBookmarksButtonIsHidden() throws {
         // Given
         let boolmarkList = BookmarkList(topLevelEntities: [Bookmark(id: "test", url: "", title: "Something", isFavorite: false), Bookmark(id: "test", url: "", title: "Impori", isFavorite: false)])
-        let vc = BookmarksBarViewController.create(tabCollectionViewModel: TabCollectionViewModel(), bookmarkManager: bookmarksManager)
+        let vc = BookmarksBarViewController.create(tabCollectionViewModel: TabCollectionViewModel(), bookmarkManager: bookmarksManager, dragDropManager: .init(bookmarkManager: bookmarksManager))
         _=vc.view
         vc.viewWillAppear()
         vc.viewDidAppear()
@@ -82,7 +86,7 @@ final class BookmarksBarViewControllerTests: XCTestCase {
     @MainActor
     func testWhenThereAreNoBookmarks_AndbookmarkListEmpty_ThenImportBookmarksButtonIsNotShown() throws {
         // Given
-        let vc = BookmarksBarViewController.create(tabCollectionViewModel: TabCollectionViewModel(), bookmarkManager: bookmarksManager)
+        let vc = BookmarksBarViewController.create(tabCollectionViewModel: TabCollectionViewModel(), bookmarkManager: bookmarksManager, dragDropManager: .init(bookmarkManager: bookmarksManager))
         _=vc.view
         vc.viewWillAppear()
         vc.viewDidAppear()
@@ -95,7 +99,7 @@ final class BookmarksBarViewControllerTests: XCTestCase {
     func testWhenThereAreNoBookmarks_ThenImportBookmarksButtonIsShown() throws {
         // Given
         let boolmarkList = BookmarkList(topLevelEntities: [])
-        let vc = BookmarksBarViewController.create(tabCollectionViewModel: TabCollectionViewModel(), bookmarkManager: bookmarksManager)
+        let vc = BookmarksBarViewController.create(tabCollectionViewModel: TabCollectionViewModel(), bookmarkManager: bookmarksManager, dragDropManager: .init(bookmarkManager: bookmarksManager))
         _=vc.view
         vc.viewWillAppear()
         vc.viewDidAppear()

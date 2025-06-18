@@ -24,16 +24,19 @@ final class ContextualDaxDialogFactoryIntegrationTests: XCTestCase {
 
     private var factory: ContextualDaxDialogsFactory!
     private var delegate: CapturingOnboardingNavigationDelegate!
+    private var fireCoordinator: FireCoordinator!
 
-    override func setUpWithError() throws {
+    @MainActor override func setUpWithError() throws {
         try super.setUpWithError()
-        factory = DefaultContextualDaxDialogViewFactory()
+        fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        factory = DefaultContextualDaxDialogViewFactory(fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
     }
 
     @MainActor override func tearDownWithError() throws {
         factory = nil
         delegate = nil
+        fireCoordinator = nil
         try super.tearDownWithError()
     }
 
@@ -57,11 +60,11 @@ final class ContextualDaxDialogFactoryIntegrationTests: XCTestCase {
         let expectation = self.expectation(description: "Wait for FirePopover to appear")
         self.waitForPopoverToAppear(expectation: expectation)
         wait(for: [expectation], timeout: 3.0)
-        WindowControllersManager.shared.lastKeyMainWindowController?.window?.close()
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window?.close()
     }
 
     @MainActor private func waitForPopoverToAppear(expectation: XCTestExpectation) {
-        if let popover = FireCoordinator.firePopover, popover.isShown {
+        if let popover = fireCoordinator.firePopover, popover.isShown {
             // Fulfill the expectation if the popover is shown
             expectation.fulfill()
         } else {

@@ -40,7 +40,7 @@ final class BookmarksBarViewController: NSViewController {
     private let viewModel: BookmarksBarViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
     private let appereancePreferences: AppearancePreferencesPersistor
-    private let visualStyleManager: VisualStyleManagerProviding
+    private let visualStyle: VisualStyleProviding
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -56,28 +56,29 @@ final class BookmarksBarViewController: NSViewController {
     @UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false)
     var bookmarksBarPromptShown: Bool
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) -> BookmarksBarViewController {
+    static func create(tabCollectionViewModel: TabCollectionViewModel, bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) -> BookmarksBarViewController {
         NSStoryboard(name: "BookmarksBar", bundle: nil).instantiateInitialController { coder in
-            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
+            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
         }!
     }
 
-    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
-          bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
-          dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared,
+    init?(coder: NSCoder,
+          tabCollectionViewModel: TabCollectionViewModel,
+          bookmarkManager: BookmarkManager,
+          dragDropManager: BookmarkDragDropManager,
           appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
-          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.appereancePreferences = appereancePreferences
-        self.visualStyleManager = visualStyleManager
+        self.visualStyle = visualStyle
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,
                                                dragDropManager: dragDropManager,
                                                tabCollectionViewModel: tabCollectionViewModel,
-                                               visualStyleManager: visualStyleManager)
+                                               visualStyle: visualStyle)
 
         super.init(coder: coder)
     }
@@ -97,7 +98,7 @@ final class BookmarksBarViewController: NSViewController {
 
         viewModel.delegate = self
 
-        backgroundColorView.backgroundColor = visualStyleManager.style.colorsProvider.navigationBackgroundColor
+        backgroundColorView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
 
         let nib = NSNib(nibNamed: "BookmarksBarCollectionViewItem", bundle: .main)
         bookmarksBarCollectionView.setDraggingSourceOperationMask([.copy, .move], forLocal: true)
@@ -105,7 +106,7 @@ final class BookmarksBarViewController: NSViewController {
         bookmarksBarCollectionView.allowsMultipleSelection = false
 
         bookmarksBarCollectionView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
-        bookmarksBarCollectionView.backgroundColors = [visualStyleManager.style.colorsProvider.navigationBackgroundColor]
+        bookmarksBarCollectionView.backgroundColors = [visualStyle.colorsProvider.navigationBackgroundColor]
         bookmarksBarCollectionView.setAccessibilityIdentifier("BookmarksBarViewController.bookmarksBarCollectionView")
 
         clippedItemsIndicator.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
@@ -301,7 +302,7 @@ extension BookmarksBarViewController: BookmarksBarViewModelDelegate {
 
         switch entity {
         case let bookmark as Bookmark:
-            WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+            Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
         case let folder as BookmarkFolder:
             showSubmenu(for: folder, from: item.view)
         default:
@@ -439,7 +440,7 @@ private extension BookmarksBarViewController {
             }
             bookmarkMenuPopover.reloadData(withRootFolder: folder)
         } else {
-            bookmarkMenuPopover = BookmarksBarMenuPopover(rootFolder: folder)
+            bookmarkMenuPopover = BookmarksBarMenuPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
             bookmarkMenuPopover.delegate = self
             self.bookmarkMenuPopover = bookmarkMenuPopover
         }
@@ -457,11 +458,11 @@ private extension BookmarksBarViewController {
     }
 
     @objc func manageBookmarks() {
-        WindowControllersManager.shared.showBookmarksTab()
+        Application.appDelegate.windowControllersManager.showBookmarksTab()
     }
 
     @objc func addFolder(sender: NSMenuItem) {
-        showDialog(BookmarksDialogViewFactory.makeAddBookmarkFolderView(parentFolder: nil))
+        showDialog(BookmarksDialogViewFactory.makeAddBookmarkFolderView(parentFolder: nil, bookmarkManager: bookmarkManager))
     }
 
 }

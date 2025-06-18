@@ -65,4 +65,22 @@ extension NSWindow {
         }
     }
 
+    /// Determines if the window is approximately half the width of the screen
+    /// with some tolerance for system margins (useful for detecting split screen in fullscreen mode)
+    var isApproximatelyHalfScreenWide: Bool {
+        guard let screen = screen else { return false }
+
+        let windowWidth = frame.width
+        let screenWidth = screen.frame.width
+        let windowHeight = frame.height
+        let screenHeight = screen.frame.height
+
+        // Check if window width is approximately half screen width
+        // Allow some tolerance for system margins (e.g., 1278 of 1280 for 2560 screen)
+        let isApproximatelyHalfWidth = abs(windowWidth - screenWidth / 2) < 20 // Allow 20px tolerance
+        let isSignificantHeight = windowHeight > screenHeight * 0.8 // Height should be at least 80% of screen
+
+        return isApproximatelyHalfWidth && isSignificantHeight
+    }
+
 }

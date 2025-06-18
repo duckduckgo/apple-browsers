@@ -20,13 +20,14 @@ import Combine
 import Common
 import ContentBlocking
 import Foundation
-import Navigation
 import History
+import Navigation
+import WebKit
 
 final class HistoryTabExtension: NSObject {
 
     private let historyCoordinating: HistoryCoordinating
-    private let isBurner: Bool
+    private let isCapturingHistory: Bool
 
     private(set) var localHistory: [Visit] {
         get {
@@ -62,14 +63,14 @@ final class HistoryTabExtension: NSObject {
     }
     private var visitState: VisitState = .expected
 
-    init(isBurner: Bool,
+    init(isCapturingHistory: Bool,
          historyCoordinating: HistoryCoordinating,
          trackersPublisher: some Publisher<DetectedTracker, Never>,
          urlPublisher: some Publisher<URL?, Never>,
          titlePublisher: some Publisher<String?, Never>) {
 
         self.historyCoordinating = historyCoordinating
-        self.isBurner = isBurner
+        self.isCapturingHistory = isCapturingHistory
         super.init()
 
         trackersPublisher.sink { [weak self] tracker in
@@ -105,7 +106,7 @@ final class HistoryTabExtension: NSObject {
     }
 
     private func addVisit() {
-        guard !isBurner else { return }
+        guard isCapturingHistory else { return }
 
         guard let url else {
             assertionFailure("HistoryTabExtension.state.currentUrl not set")
@@ -122,14 +123,14 @@ final class HistoryTabExtension: NSObject {
     }
 
     private func updateVisitTitle(_ title: String) {
-        guard !isBurner else { return }
+        guard isCapturingHistory else { return }
 
         guard let url else { return }
         historyCoordinating.updateTitleIfNeeded(title: title, url: url)
     }
 
     private func commitBeforeClosing() {
-        guard !isBurner else { return }
+        guard isCapturingHistory else { return }
 
         guard let url else { return }
         historyCoordinating.commitChanges(url: url)

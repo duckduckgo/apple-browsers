@@ -37,7 +37,7 @@ final class RecentlyClosedCoordinatorTests: XCTestCase {
             ])
         ]
 
-        cache.burn(for: ["site1.com", "site3.com"], tld: ContentBlocking.shared.tld)
+        cache.burn(for: ["site1.com", "site3.com"], tld: Application.appDelegate.tld)
 
         XCTAssertEqual(cache.count, 2)
         let tab = try XCTUnwrap(cache[0] as? RecentlyClosedTab)
@@ -58,7 +58,7 @@ final class RecentlyClosedCoordinatorTests: XCTestCase {
             ])
         ]
 
-        cache.burn(for: ["unrelatedsite1.com", "unrelatedsite2.com"], tld: ContentBlocking.shared.tld)
+        cache.burn(for: ["unrelatedsite1.com", "unrelatedsite2.com"], tld: Application.appDelegate.tld)
 
         XCTAssertEqual(cache.count, 3)
 
@@ -88,6 +88,8 @@ private extension RecentlyClosedWindow {
 }
 
 final class WindowControllersManagerMock: WindowControllersManagerProtocol {
+
+    var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
 
     var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 

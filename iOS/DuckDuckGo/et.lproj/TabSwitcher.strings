@@ -7,17 +7,11 @@
 /* Class = "UILabel"; text = "Title"; ObjectID = "2GU-MM-UwX"; */
 "2GU-MM-UwX.text" = "Pealkiri";
 
-/* Class = "UIButton"; accessibilityLabel = "Add new tab"; ObjectID = "cYd-YU-sSj"; */
-"cYd-YU-sSj.accessibilityLabel" = "Lisa uus vahekaart";
-
 /* Class = "UIButton"; accessibilityLabel = "Close Tab"; ObjectID = "G2C-qh-g3T"; */
 "G2C-qh-g3T.accessibilityLabel" = "Sulge vaheleht";
 
 /* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "Gyy-py-IOg"; */
 "Gyy-py-IOg.accessibilityLabel" = "Vahekaart lugemata";
-
-/* Class = "UIButton"; accessibilityLabel = "Clear tabs and data"; ObjectID = "Hcx-F2-HgO"; */
-"Hcx-F2-HgO.accessibilityLabel" = "Kustuta vahekaardid ja andmed";
 
 /* Class = "UILabel"; text = "Link"; ObjectID = "LbT-NO-T0G"; */
 "LbT-NO-T0G.text" = "Link";

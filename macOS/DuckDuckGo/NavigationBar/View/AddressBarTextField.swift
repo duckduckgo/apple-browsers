@@ -56,7 +56,7 @@ final class AddressBarTextField: NSTextField {
         tabCollectionViewModel.isBurner
     }
 
-    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
+    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
 
     private var suggestionResultCancellable: AnyCancellable?
     private var selectedSuggestionViewModelCancellable: AnyCancellable?
@@ -311,7 +311,7 @@ final class AddressBarTextField: NSTextField {
 
     func aiChatQueryEnterPressed() {
         suggestionContainerViewModel?.clearUserStringValue()
-        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(value, target: .sameTab)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(value, with: .currentTab)
         hideSuggestionWindow()
     }
 
@@ -383,14 +383,10 @@ final class AddressBarTextField: NSTextField {
         }
 
         // reset to actual value
-        let oldValue = value
         clearValue()
         updateValue(selectedTabViewModel: nil, addressBarString: nil)
 
-        if oldValue == value {
-            // resign first responder if nothing has changed
-            self.window?.makeFirstResponder(nil)
-        }
+        self.window?.makeFirstResponder(nil)
     }
 
     override func becomeFirstResponder() -> Bool {
@@ -414,7 +410,7 @@ final class AddressBarTextField: NSTextField {
             NSAlert.cannotOpenFileAlert().beginSheetModal(for: window) { response in
                 switch response {
                 case .alertSecondButtonReturn:
-                    WindowControllersManager.shared.show(url: URL.ddgLearnMore, source: .ui, newTab: false)
+                    Application.appDelegate.windowControllersManager.show(url: URL.ddgLearnMore, source: .ui, newTab: false)
                     return
                 default:
                     window.makeFirstResponder(self)
@@ -492,7 +488,7 @@ final class AddressBarTextField: NSTextField {
     private func switchTo(_ tab: OpenTab) {
         // reset value so it‘s not restored next time we come back to the tab
         value = .text("", userTyped: false)
-        WindowControllersManager.shared.show(url: tab.url, tabId: tab.tabId, source: .switchToOpenTab, newTab: true /* in case not found */)
+        Application.appDelegate.windowControllersManager.show(url: tab.url, tabId: tab.tabId, source: .switchToOpenTab, newTab: true /* in case not found */)
     }
 
     private func makeUrl(suggestion: Suggestion?, stringValueWithoutSuffix: String, completion: @escaping (URL?, String, Bool) -> Void) {
@@ -525,7 +521,7 @@ final class AddressBarTextField: NSTextField {
 
     private func upgradeToHttps(url: URL, userEnteredValue: String, completion: @escaping (URL?, String, Bool) -> Void) {
         Task {
-            let result = await PrivacyFeatures.httpsUpgrade.upgrade(url: url)
+            let result = await NSApp.delegateTyped.privacyFeatures.httpsUpgrade.upgrade(url: url)
             switch result {
             case let .success(upgradedUrl):
                 completion(upgradedUrl, userEnteredValue, true)
@@ -1128,7 +1124,7 @@ extension AddressBarTextField: NSTextViewDelegate {
 
         if let sharingMenuItem = menu.item(with: Self.shareMenuItemAction) {
             sharingMenuItem.title = UserText.shareMenuItem
-            sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem)
+            sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem, location: .addressBarTextField)
         }
 
         let additionalMenuItems: [NSMenuItem] = [

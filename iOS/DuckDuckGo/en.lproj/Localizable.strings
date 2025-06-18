@@ -184,6 +184,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Sync has been paused. If you want to continue syncing this device, reconnect using another device or your recovery code.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Sync Now";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "\"%@\" will be able to access your synced DuckDuckGo data.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Sync new device?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Learn More";
 
@@ -2235,7 +2244,7 @@ https://duckduckgo.com/mac";
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Block cookie pop-ups";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Block tracking ads";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Block targeted ads";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Delete browsing data with one button";
@@ -2594,6 +2603,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automatically Clear Data";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Complete Your Setup";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Cookie Pop-Up Protection";
 
@@ -2657,6 +2669,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "App Icon";
 
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Import Passwords";
+
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Keyboard";
 
@@ -2696,6 +2711,12 @@ Take back control of your personal information with the browser designed for dat
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Privacy Policy and Terms of Service";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Includes our VPN and Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Includes our VPN, Personal Information Removal, and Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Long-Press Previews";
 
@@ -2716,6 +2737,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Automatically send crash reports to DuckDuckGo.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Set As Default Browser";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Set Your Address Bar Position";
@@ -2753,17 +2777,11 @@ Take back control of your personal information with the browser designed for dat
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Subscription Settings";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Includes our VPN and Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Protect your connection and identity with Privacy Pro";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free" = "Try Privacy Pro Free";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Includes our VPN, Personal Information Removal, and Identity Theft Restoration.";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3342,10 +3360,10 @@ Take back control of your personal information with the browser designed for dat
 "vpn.settings.dns.server.content.blocking.explanation" = "Block 150,000+ domains flagged for hosting malware, phishing attacks, and online scams with a DNS-level blocklist. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Content Blocking and Filtering";
+"vpn.settings.dns.server.content.blocking.header" = "Malicious Content Blocking";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Block risky domains";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Scam Blocker";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
 import Combine
 import Common
-import PixelKit
+import Foundation
 import os.log
+import PixelKit
 
 protocol SavePaymentMethodDelegate: AnyObject {
 
@@ -96,12 +97,12 @@ final class SavePaymentMethodViewController: NSViewController {
             try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared).storeCreditCard(paymentMethod)
         } catch {
             Logger.secureVault.error("Failed to store payment method \(error.localizedDescription)")
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
         }
     }
 
     @IBAction func onOpenPreferencesClicked(sender: NSButton) {
-        WindowControllersManager.shared.showPreferencesTab()
+        Application.appDelegate.windowControllersManager.showPreferencesTab()
         self.delegate?.shouldCloseSavePaymentMethodViewController(self)
     }
 

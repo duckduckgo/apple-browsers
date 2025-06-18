@@ -267,7 +267,7 @@ final class SuggestionViewController: NSViewController {
 
         selectedRowCache = tableView.selectedRow
 
-        HistoryCoordinator.shared.removeUrlEntry(url) { [weak self] error in
+        NSApp.delegateTyped.historyCoordinator.removeUrlEntry(url) { [weak self] error in
             guard let self = self, error == nil else {
                 return
             }

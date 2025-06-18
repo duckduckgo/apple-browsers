@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Combine
+import Common
 import Foundation
 import History
 import NewTabPage
@@ -30,15 +32,19 @@ final class NewTabPageCoordinator {
     init(
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
-        bookmarkManager: BookmarkManager & URLFavoriteStatusProviding = LocalBookmarkManager.shared,
+        bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryCoordinating,
+        contentBlocking: ContentBlockingProtocol,
+        fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
+        tld: TLD,
+        fireCoordinator: FireCoordinator,
         keyValueStore: ThrowingKeyValueStoring,
         legacyKeyValueStore: KeyValueStoring = UserDefaultsWrapper<Any>.sharedDefaults,
         notificationCenter: NotificationCenter = .default,
-        fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .daily) }
+        fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
 
         let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: legacyKeyValueStore)
@@ -53,11 +59,15 @@ final class NewTabPageCoordinator {
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
             bookmarkManager: bookmarkManager,
+            contentBlocking: contentBlocking,
             activeRemoteMessageModel: activeRemoteMessageModel,
             historyCoordinator: historyCoordinator,
+            fireproofDomains: fireproofDomains,
             privacyStats: privacyStats,
             protectionsReportModel: protectionsReportModel,
-            freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator
+            freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
+            tld: tld,
+            fire: { @MainActor in fireCoordinator.fireViewModel.fire }
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

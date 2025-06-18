@@ -17,10 +17,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Core
-import Onboarding
 import class UIKit.UIApplication
+import Common
+import Core
+import Foundation
+import Onboarding
 
 @MainActor
 final class OnboardingIntroViewModel: ObservableObject {

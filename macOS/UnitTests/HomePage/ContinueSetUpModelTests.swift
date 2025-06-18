@@ -97,7 +97,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         XCTAssertFalse(vm.isMoreOrLessButtonNeeded)
@@ -113,7 +114,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, expectedMatrix)
@@ -317,7 +319,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, [[]])
@@ -332,7 +335,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
         vm.shouldShowAllFeatures = true
         let expectedMatrix = expectedFeatureMatrixWithout(types: [])

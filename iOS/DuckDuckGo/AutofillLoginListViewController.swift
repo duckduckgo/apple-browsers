@@ -178,6 +178,7 @@ final class AutofillLoginListViewController: UIViewController {
     let source: AutofillSettingsSource
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesDisplayMode: FavoritesDisplayMode
+    private let keyValueStore: ThrowingKeyValueStoring
 
     init(appSettings: AppSettings,
          currentTabUrl: URL? = nil,
@@ -188,7 +189,9 @@ final class AutofillLoginListViewController: UIViewController {
          openSearch: Bool = false,
          source: AutofillSettingsSource,
          bookmarksDatabase: CoreDataDatabase,
-         favoritesDisplayMode: FavoritesDisplayMode) {
+         favoritesDisplayMode: FavoritesDisplayMode,
+         keyValueStore: ThrowingKeyValueStoring
+    ) {
         let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
         if secureVault == nil {
             Logger.autofill.fault("Failed to make vault")
@@ -200,6 +203,7 @@ final class AutofillLoginListViewController: UIViewController {
         self.source = source
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
+        self.keyValueStore = keyValueStore
         super.init(nibName: nil, bundle: nil)
 
         authenticate()
@@ -416,7 +420,8 @@ final class AutofillLoginListViewController: UIViewController {
                                                   tld: tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
                                                                 importScreen: DataImportViewModel.ImportScreen.passwords,
-                                                                syncService: syncService)
+                                                                syncService: syncService,
+                                                                keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
         navigationController?.pushViewController(dataImportViewController, animated: true)
     }
@@ -433,7 +438,7 @@ final class AutofillLoginListViewController: UIViewController {
             if let source = source {
                 settingsVC.viewModel.shouldPresentSyncViewWithSource(source)
             } else {
-                settingsVC.viewModel.presentLegacyView(.sync)
+                settingsVC.viewModel.presentLegacyView(.sync(nil))
             }
         } else if let mainVC = self.presentingViewController as? MainViewController {
             dismiss(animated: true) {

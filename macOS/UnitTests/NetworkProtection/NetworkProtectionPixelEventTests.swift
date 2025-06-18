@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import NetworkProtection
+import VPN
 import PixelKit
 import PixelKitTestingUtilities
 import XCTest
@@ -62,7 +62,7 @@ final class NetworkProtectionPixelEventTests: XCTestCase {
     ///
     func testVPNPixelFireExpectations() {
         fire(NetworkProtectionPixelEvent.networkProtectionActiveUser,
-             frequency: .legacyDaily,
+             frequency: .legacyDailyNoSuffix,
              and: .expect(pixelName: "m_mac_netp_daily_active"),
              file: #filePath,
              line: #line)
@@ -153,7 +153,7 @@ final class NetworkProtectionPixelEventTests: XCTestCase {
              file: #filePath,
              line: #line)
         fire(NetworkProtectionPixelEvent.networkProtectionLatencyError,
-             frequency: .legacyDaily,
+             frequency: .legacyDailyNoSuffix,
              and: .expect(pixelName: "m_mac_netp_ev_latency_error"),
              file: #filePath,
              line: #line)

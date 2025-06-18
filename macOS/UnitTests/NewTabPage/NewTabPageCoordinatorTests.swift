@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit
@@ -52,7 +53,10 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         firePixelCalls.removeAll()
 
         let appearancePreferencesPersistor = AppearancePreferencesPersistorMock()
-        appearancePreferences = AppearancePreferences(persistor: appearancePreferencesPersistor)
+        appearancePreferences = AppearancePreferences(
+            persistor: appearancePreferencesPersistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
 
         customizationModel = NewTabPageCustomizationModel(
             appearancePreferences: appearancePreferences,
@@ -70,9 +74,12 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             activeRemoteMessageModel: ActiveRemoteMessageModel(
                 remoteMessagingStore: MockRemoteMessagingStore(),
                 remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
-                openURLHandler: { _ in }
+                openURLHandler: { _ in },
+                navigateToFeedbackHandler: { }
             ),
             historyCoordinator: HistoryCoordinatingMock(),
+            contentBlocking: ContentBlockingMock(),
+            fireproofDomains: MockFireproofDomains(domains: []),
             privacyStats: MockPrivacyStats(),
             freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator(
                 freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager(),
@@ -81,6 +88,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                 notificationCenter: notificationCenter,
                 freemiumDBPExperimentPixelHandler: MockFreemiumDBPExperimentPixelHandler()
             ),
+            tld: Application.appDelegate.tld,
+            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),
             keyValueStore: keyValueStore,
             notificationCenter: notificationCenter,
             fireDailyPixel: { self.firePixelCalls.append($0) }

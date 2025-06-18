@@ -20,9 +20,10 @@ import BrowserServicesKit
 import Combine
 import Common
 import DDGSync
+import Foundation
 import Persistence
-import SyncDataProviders
 import PixelKit
+import SyncDataProviders
 
 final class SyncDataProviders: DataProvidersSource {
     public let bookmarksAdapter: SyncBookmarksAdapter
@@ -95,6 +96,7 @@ final class SyncDataProviders: DataProvidersSource {
 
     init(
         bookmarksDatabase: CoreDataDatabase,
+        bookmarkManager: BookmarkManager,
         secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
         appearancePreferences: AppearancePreferences,
         syncErrorHandler: SyncErrorHandler
@@ -103,7 +105,7 @@ final class SyncDataProviders: DataProvidersSource {
         self.secureVaultFactory = secureVaultFactory
         self.appearancePreferences = appearancePreferences
         self.syncErrorHandler = syncErrorHandler
-        bookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase, appearancePreferences: appearancePreferences, syncErrorHandler: syncErrorHandler)
+        bookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase, bookmarkManager: bookmarkManager, appearancePreferences: appearancePreferences, syncErrorHandler: syncErrorHandler)
         credentialsAdapter = SyncCredentialsAdapter(secureVaultFactory: secureVaultFactory, syncErrorHandler: syncErrorHandler)
         settingsAdapter = SyncSettingsAdapter(syncErrorHandler: syncErrorHandler)
     }

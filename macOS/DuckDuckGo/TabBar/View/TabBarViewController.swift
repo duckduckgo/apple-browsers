@@ -78,7 +78,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
     }
 
-    private let bookmarkManager: BookmarkManager = LocalBookmarkManager.shared
+    private let bookmarkManager: BookmarkManager
+    private let fireproofDomains: FireproofDomains
     private let visualStyle: VisualStyleProviding
     private var pinnedTabsViewModel: PinnedTabsViewModel?
     private var pinnedTabsView: PinnedTabsView?
@@ -138,9 +139,20 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
     }
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, activeRemoteMessageModel: ActiveRemoteMessageModel) -> TabBarViewController {
+    static func create(
+        tabCollectionViewModel: TabCollectionViewModel,
+        bookmarkManager: BookmarkManager,
+        fireproofDomains: FireproofDomains,
+        activeRemoteMessageModel: ActiveRemoteMessageModel
+    ) -> TabBarViewController {
         NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
-            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, activeRemoteMessageModel: activeRemoteMessageModel)
+            self.init(
+                coder: coder,
+                tabCollectionViewModel: tabCollectionViewModel,
+                bookmarkManager: bookmarkManager,
+                fireproofDomains: fireproofDomains,
+                activeRemoteMessageModel: activeRemoteMessageModel
+            )
         }!
     }
 
@@ -148,16 +160,21 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         fatalError("TabBarViewController: Bad initializer")
     }
 
-    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
+    init?(coder: NSCoder,
+          tabCollectionViewModel: TabCollectionViewModel,
+          bookmarkManager: BookmarkManager,
+          fireproofDomains: FireproofDomains,
           activeRemoteMessageModel: ActiveRemoteMessageModel,
-          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.tabCollectionViewModel = tabCollectionViewModel
+        self.bookmarkManager = bookmarkManager
+        self.fireproofDomains = fireproofDomains
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
                                                                          isFireWindow: tabCollectionViewModel.isBurner)
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
         if !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection {
-            let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection)
+            let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection, fireproofDomains: fireproofDomains, bookmarkManager: bookmarkManager)
             let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel)
             self.pinnedTabsViewModel = pinnedTabsViewModel
             self.pinnedTabsView = pinnedTabsView
@@ -168,7 +185,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             self.pinnedTabsHostingView = nil
         }
 
-        standardTabHeight = visualStyleManager.style.tabStyleProvider.standardTabHeight
+        standardTabHeight = visualStyle.tabStyleProvider.standardTabHeight
 
         super.init(coder: coder)
     }
@@ -640,15 +657,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return 0
         }
 
-        let insets: NSEdgeInsets
-        let tabsWidth: CGFloat
-        if visualStyle.tabStyleProvider.shouldShowSShapedTab {
-            insets = self.collectionView(self.collectionView, layout: self.collectionView.collectionViewLayout!, insetForSectionAt: 0)
-            tabsWidth = scrollView.bounds.width - footerCurrentWidthDimension - insets.left - insets.right
-        } else {
-            tabsWidth = scrollView.bounds.width - footerCurrentWidthDimension
-        }
-
+        let tabsWidth = scrollView.bounds.width - footerCurrentWidthDimension
         let minimumWidth = selected ? TabBarViewItem.Width.minimumSelected : TabBarViewItem.Width.minimum
 
         if tabMode == .divided {
@@ -1075,7 +1084,10 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         // open Add Bookmark modal dialog
         guard let url = tabViewModel.tabContent.userEditableUrl else { return }
 
-        let dialog = BookmarksDialogViewFactory.makeAddBookmarkView(currentTab: WebsiteInfo(url: url, title: tabViewModel.title))
+        let dialog = BookmarksDialogViewFactory.makeAddBookmarkView(
+            currentTab: WebsiteInfo(url: url, title: tabViewModel.title),
+            bookmarkManager: bookmarkManager
+        )
         dialog.show(in: view.window)
     }
 
@@ -1093,7 +1105,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
             return
         }
 
-        FireproofDomains.shared.add(domain: host)
+        fireproofDomains.add(domain: host)
     }
 
     private func removeFireproofing(from tab: Tab) {
@@ -1102,7 +1114,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
             return
         }
 
-        FireproofDomains.shared.remove(domain: host)
+        fireproofDomains.remove(domain: host)
     }
 
 }
@@ -1120,7 +1132,7 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
         if visualStyle.tabStyleProvider.shouldShowSShapedTab {
             let isRightScrollButtonVisible = !rightScrollButton.isHidden
             let isLeftScrollButonVisible = !leftScrollButton.isHidden
-            return NSEdgeInsets(top: 0, left: isLeftScrollButonVisible ? 6 : 12, bottom: 0, right: isRightScrollButtonVisible ? 6 : 0)
+            return NSEdgeInsets(top: 0, left: isLeftScrollButonVisible ? 6 : 12, bottom: 0, right: isRightScrollButtonVisible ? 6 : -12)
         } else if let flowLayout = collectionViewLayout as? NSCollectionViewFlowLayout {
             return flowLayout.sectionInset
         } else {
@@ -1153,6 +1165,7 @@ extension TabBarViewController: NSCollectionViewDataSource {
             return tabBarViewItem
         }
 
+        tabBarViewItem.fireproofDomains = fireproofDomains
         tabBarViewItem.delegate = self
         tabBarViewItem.isBurner = tabCollectionViewModel.isBurner
         tabBarViewItem.subscribe(to: tabViewModel)
@@ -1460,7 +1473,10 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
     func tabBarViewItemBookmarkAllOpenTabsAction(_ tabBarViewItem: TabBarViewItem) {
         let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
-        BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo).show()
+        BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(
+            websitesInfo: websitesInfo,
+            bookmarkManager: bookmarkManager
+        ).show()
     }
 
     func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem) {

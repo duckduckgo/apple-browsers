@@ -185,7 +185,6 @@ final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
     @MainActor
     func testWhenRecentlyOpenedTabIsClosedAfterAnotherTabIsSelected_thenItSelectsTheNextAvailableTab() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
-        let firstTab = tabCollectionViewModel.tabCollection.tabs[0]
 
         for _ in 1..<100 {
             tabCollectionViewModel.append(tab: Tab(), selected: false)

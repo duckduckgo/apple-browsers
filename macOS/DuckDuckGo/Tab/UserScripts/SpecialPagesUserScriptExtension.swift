@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
+import Foundation
 import SpecialErrorPages
 
 extension SpecialPagesUserScript {
@@ -55,10 +56,12 @@ extension SpecialPagesUserScript {
     @MainActor
     private func buildOnboardingActionsManager() -> OnboardingActionsManaging {
         return OnboardingActionsManager(
-            navigationDelegate: WindowControllersManager.shared,
+            navigationDelegate: Application.appDelegate.windowControllersManager,
             dockCustomization: DockCustomizer(),
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: NSApp.delegateTyped.appearancePreferences,
-            startupPreferences: NSApp.delegateTyped.startupPreferences)
+            startupPreferences: NSApp.delegateTyped.startupPreferences,
+            bookmarkManager: NSApp.delegateTyped.bookmarkManager
+        )
     }
 }

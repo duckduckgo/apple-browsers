@@ -63,6 +63,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private var textAreaTopPaddingConstraint: NSLayoutConstraint?
     private var textAreaBottomPaddingConstraint: NSLayoutConstraint?
 
+    let fieldContainerLayoutGuide = UILayoutGuide()
+
     // iPad elements
 
     var isBackButtonHidden: Bool {
@@ -289,6 +291,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
         addSubview(activeOutlineView)
+        addLayoutGuide(fieldContainerLayoutGuide)
     }
 
     private func setUpConstraints() {
@@ -342,6 +345,11 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
             // We want searchAreaStackView to grow as much as it's possible
             searchAreaStackView.widthAnchor.constraint(equalTo: widthAnchor).withPriority(.defaultHigh),
+
+            fieldContainerLayoutGuide.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+            fieldContainerLayoutGuide.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+            fieldContainerLayoutGuide.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
+            fieldContainerLayoutGuide.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
         ])
 
         UpdatedOmniBarView.activateItemSizeConstraints(for: backButtonView)
@@ -470,8 +478,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         accessoryButton.accessibilityTraits = .button
 
         // This is for compatibility purposes with old OmniBar
-        searchAreaView.accessibilityIdentifier = "searchEntry"
-        searchAreaView.accessibilityTraits = .searchField
+        searchAreaView.textField.accessibilityIdentifier = "searchEntry"
+        searchAreaView.textField.accessibilityTraits = .searchField
 
         privacyIconView?.accessibilityIdentifier = "PrivacyIcon"
         privacyIconView?.accessibilityTraits = .button
@@ -500,7 +508,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private func updateAccessoryAccessibility() {
         switch accessoryType {
         case .chat:
-            accessoryButton.accessibilityLabel = "AI Chat"
+            accessoryButton.accessibilityLabel = UserText.aiChatFeatureName
             accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
         }
         accessoryButton.accessibilityTraits = .button

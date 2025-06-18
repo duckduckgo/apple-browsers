@@ -22,7 +22,7 @@ import Common
 import FeatureFlags
 import Foundation
 import LoginItems
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 import NetworkProtectionIPC
 import NetworkExtension
@@ -71,19 +71,14 @@ final class VPNAppEventsHandler {
     ///
     private func loginItemsControlCheckpoint(canRestart: Bool) {
         Task { @MainActor [loginItemsManager] in
-            guard loginItemsManager.isAnyEnabled(LoginItemsManager.vpnLoginItems) else {
-
-                return
-            }
-
             switch try? await featureGatekeeper.canStartVPN() {
-            case .some(true):
+            case .some(true) where loginItemsManager.isAnyEnabled(LoginItemsManager.vpnLoginItems):
                 if canRestart {
                     restartLoginItem(using: loginItemsManager)
                 }
-            case .some(false):
+            case .some(false) where loginItemsManager.isAnyInstalled(LoginItemsManager.vpnLoginItems):
                 disableLoginItem(using: loginItemsManager)
-            case .none:
+            default:
                 break
             }
         }

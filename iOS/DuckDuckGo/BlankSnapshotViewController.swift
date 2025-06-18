@@ -21,6 +21,7 @@ import UIKit
 import Core
 import Suggestions
 import BrowserServicesKit
+import DesignResourcesKitIcons
 
 protocol BlankSnapshotViewRecoveringDelegate: AnyObject {
     
@@ -95,7 +96,6 @@ class BlankSnapshotViewController: UIViewController {
         decorate()
     }
 
-
     private func addTapInterceptor() {
         let interceptView = UIView(frame: view.bounds)
         interceptView.backgroundColor = .clear
@@ -121,10 +121,7 @@ class BlankSnapshotViewController: UIViewController {
     }
 
     private func configureTabBar() {
-        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
-        guard let controller = storyboard.instantiateViewController(withIdentifier: "TabsBar") as? TabsBarViewController else {
-            fatalError("Failed to instantiate tabs bar controller")
-        }
+        let controller = TabsBarViewController.createFromXib(themingProperties: ThemeManager.shared.properties)
         controller.view.frame = CGRect(x: 0, y: 24, width: view.frame.width, height: 40)
         controller.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(controller.view)
@@ -168,6 +165,7 @@ extension BlankSnapshotViewController: UICollectionViewDataSource {
             fatalError("Not \(OmniBarCell.self)")
         }
         cell.omniBar = viewCoordinator.omniBar
+        cell.omniBar?.barView.accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
         return cell
     }
 
@@ -212,6 +210,10 @@ extension BlankSnapshotViewController {
         viewCoordinator.toolbar.tintColor = theme.barTintColor
 
         viewCoordinator.toolbarTabSwitcherButton.tintColor = theme.barTintColor
+
+        // We don't want this to appear as a real button to users using acessibility devices and our UI tests
+        viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = false
+        viewCoordinator.toolbarTabSwitcherButton.accessibilityLabel = nil
 
         viewCoordinator.logoText.tintColor = theme.ddgTextTintColor
      }

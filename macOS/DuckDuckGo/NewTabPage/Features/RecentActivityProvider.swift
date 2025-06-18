@@ -169,7 +169,7 @@ extension HistoryEntry {
         guard let domain = url.host else {
             return nil
         }
-        return ContentBlocking.shared.tld.eTLDplus1(domain)?.dropping(prefix: Const.wwwPrefix)
+        return Application.appDelegate.tld.eTLDplus1(domain)?.dropping(prefix: Const.wwwPrefix)
     }
 }
 

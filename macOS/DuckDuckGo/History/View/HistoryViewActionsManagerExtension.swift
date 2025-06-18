@@ -21,12 +21,20 @@ import HistoryView
 
 extension HistoryViewActionsManager {
 
-    convenience init(historyCoordinator: HistoryDataSource) {
-        let dataProvider = HistoryViewDataProvider(historyDataSource: historyCoordinator)
+    convenience init(
+        historyCoordinator: HistoryDataSource,
+        bookmarksHandler: HistoryViewBookmarksHandling,
+        fireproofStatusProvider: DomainFireproofStatusProviding,
+        fire: @escaping () async -> Fire
+    ) {
+        let dataProvider = HistoryViewDataProvider(
+            historyDataSource: historyCoordinator,
+            historyBurner: FireHistoryBurner(fireproofDomains: fireproofStatusProvider, fire: fire)
+        )
         self.init(scriptClients: [
             DataClient(
                 dataProvider: dataProvider,
-                actionsHandler: HistoryViewActionsHandler(dataProvider: dataProvider),
+                actionsHandler: HistoryViewActionsHandler(dataProvider: dataProvider, bookmarksHandler: bookmarksHandler),
                 errorHandler: HistoryViewErrorHandler()
             )
         ])

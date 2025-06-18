@@ -143,9 +143,9 @@ protocol NewTabPageNavigator {
 final class DefaultNewTabPageNavigator: NewTabPageNavigator {
     func openNewTabPageBackgroundCustomizationSettings() {
         Task { @MainActor in
-            WindowControllersManager.shared.showTab(with: .newtab)
+            Application.appDelegate.windowControllersManager.showTab(with: .newtab)
             try? await Task.sleep(interval: 0.2)
-            if let window = WindowControllersManager.shared.lastKeyMainWindowController {
+            if let window = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
                 let newTabPageViewModel = window.mainViewController.browserTabViewController.newTabPageWebViewModel
                 NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
             }
@@ -232,12 +232,14 @@ final class AppearancePreferences: ObservableObject {
         didSet {
             persistor.currentThemeName = currentThemeName.rawValue
             updateUserInterfaceStyle()
+            pixelFiring?.fire(SettingsPixel.themeSettingChanged, frequency: .uniqueByName)
         }
     }
 
     @Published var showFullURL: Bool {
         didSet {
             persistor.showFullURL = showFullURL
+            pixelFiring?.fire(SettingsPixel.showFullURLSettingToggled, frequency: .uniqueByName)
         }
     }
 
@@ -251,7 +253,7 @@ final class AppearancePreferences: ObservableObject {
         didSet {
             persistor.isFavoriteVisible = isFavoriteVisible
             if !isFavoriteVisible {
-                PixelKit.fire(NewTabPagePixel.favoriteSectionHidden, frequency: .dailyAndStandard)
+                pixelFiring?.fire(NewTabPagePixel.favoriteSectionHidden, frequency: .dailyAndStandard)
             }
         }
     }
@@ -272,7 +274,7 @@ final class AppearancePreferences: ObservableObject {
             persistor.isContinueSetUpVisible = newValue
             // Temporary Pixel
             if !isContinueSetUpVisible {
-                PixelKit.fire(GeneralPixel.continueSetUpSectionHidden)
+                pixelFiring?.fire(GeneralPixel.continueSetUpSectionHidden)
             }
             self.objectWillChange.send()
         }
@@ -302,7 +304,7 @@ final class AppearancePreferences: ObservableObject {
         didSet {
             persistor.isProtectionsReportVisible = isProtectionsReportVisible
             if !isProtectionsReportVisible {
-                PixelKit.fire(NewTabPagePixel.protectionsSectionHidden, frequency: .dailyAndStandard)
+                pixelFiring?.fire(NewTabPagePixel.protectionsSectionHidden, frequency: .dailyAndStandard)
             }
         }
     }
@@ -352,9 +354,7 @@ final class AppearancePreferences: ObservableObject {
 
     var isContinueSetUpAvailable: Bool {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-
-        let privacyConfig = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager.privacyConfig
-        return privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) && osVersion.majorVersion >= 12
+        return privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) && osVersion.majorVersion >= 12
     }
 
     func updateUserInterfaceStyle() {
@@ -367,28 +367,32 @@ final class AppearancePreferences: ObservableObject {
 
     convenience init(
         keyValueStore: ThrowingKeyValueStoring,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
-        featureFlagger: @autoclosure @escaping () -> FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         dateTimeProvider: @escaping () -> Date = Date.init
     ) {
         self.init(
             persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
+            privacyConfigurationManager: privacyConfigurationManager,
+            pixelFiring: pixelFiring,
             newTabPageNavigator: newTabPageNavigator,
-            featureFlagger: featureFlagger(),
             dateTimeProvider: dateTimeProvider
         )
     }
 
     init(
         persistor: AppearancePreferencesPersistor,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
-        featureFlagger: @autoclosure @escaping () -> FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         dateTimeProvider: @escaping () -> Date = Date.init
     ) {
         self.persistor = persistor
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.pixelFiring = pixelFiring
         self.newTabPageNavigator = newTabPageNavigator
         self.dateTimeProvider = dateTimeProvider
-        self.featureFlagger = featureFlagger
 
         /// when adding new properties, make sure to update `reload()` to include them there.
         isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
@@ -426,8 +430,9 @@ final class AppearancePreferences: ObservableObject {
     }
 
     private var persistor: AppearancePreferencesPersistor
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private var pixelFiring: PixelFiring?
     private var newTabPageNavigator: NewTabPageNavigator
-    private let featureFlagger: () -> FeatureFlagger
     private let dateTimeProvider: () -> Date
 
     private func requestSync() {

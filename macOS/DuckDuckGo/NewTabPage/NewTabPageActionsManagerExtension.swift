@@ -17,6 +17,8 @@
 //
 
 import AppKit
+import BrowserServicesKit
+import Common
 import History
 import NewTabPage
 import Persistence
@@ -27,19 +29,22 @@ extension NewTabPageActionsManager {
     convenience init(
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
-        bookmarkManager: BookmarkManager & URLFavoriteStatusProviding = LocalBookmarkManager.shared,
+        bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
         duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
-        contentBlocking: ContentBlockingProtocol = ContentBlocking.shared,
+        contentBlocking: ContentBlockingProtocol,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryCoordinating,
+        fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
         protectionsReportModel: NewTabPageProtectionsReportModel,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
+        tld: TLD,
+        fire: @escaping () async -> Fire,
         keyValueStore: KeyValueStoring = UserDefaults.standard
     ) {
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
         let favoritesModel = NewTabPageFavoritesModel(
-            actionsHandler: DefaultFavoritesActionsHandler(),
+            actionsHandler: DefaultFavoritesActionsHandler(bookmarkManager: bookmarkManager),
             favoritesPublisher: favoritesPublisher,
             getLegacyIsViewExpandedSetting: UserDefaultsWrapper<Bool>(key: .homePageShowAllFavorites, defaultValue: true).wrappedValue
         )
@@ -50,7 +55,7 @@ extension NewTabPageActionsManager {
         let privacyStatsModel = NewTabPagePrivacyStatsModel(
             visibilityProvider: protectionsReportModel,
             privacyStats: privacyStats,
-            trackerDataProvider: PrivacyStatsTrackerDataProvider(contentBlocking: ContentBlocking.shared),
+            trackerDataProvider: PrivacyStatsTrackerDataProvider(contentBlocking: contentBlocking),
             eventMapping: NewTabPagePrivacyStatsEventHandler()
         )
 
@@ -63,7 +68,10 @@ extension NewTabPageActionsManager {
         )
         let recentActivityModel = NewTabPageRecentActivityModel(
             activityProvider: recentActivityProvider,
-            actionsHandler: DefaultRecentActivityActionsHandler()
+            actionsHandler: DefaultRecentActivityActionsHandler(
+                favoritesHandler: bookmarkManager,
+                burner: RecentActivityItemBurner(fireproofStatusProvider: fireproofDomains, tld: tld, fire: fire)
+            )
         )
 
         self.init(scriptClients: [
@@ -78,7 +86,11 @@ extension NewTabPageActionsManager {
             NewTabPageFreemiumDBPClient(provider: freemiumDBPBannerProvider),
             NewTabPageNextStepsCardsClient(
                 model: NewTabPageNextStepsCardsProvider(
-                    continueSetUpModel: HomePage.Models.ContinueSetUpModel(tabOpener: NewTabPageTabOpener()),
+                    continueSetUpModel: HomePage.Models.ContinueSetUpModel(
+                        dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager),
+                        tabOpener: NewTabPageTabOpener(),
+                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager
+                    ),
                     appearancePreferences: appearancePreferences
                 )
             ),
@@ -93,6 +105,6 @@ extension NewTabPageActionsManager {
 struct NewTabPageTabOpener: ContinueSetUpModelTabOpening {
     @MainActor
     func openTab(_ tab: Tab) {
-        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.insertOrAppend(tab: tab, selected: true)
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.insertOrAppend(tab: tab, selected: true)
     }
 }

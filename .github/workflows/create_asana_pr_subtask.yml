@@ -30,3 +30,4 @@ jobs:
             access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
             asana-task-id: ${{ steps.get-task-id.outputs.task_id }}
             github-reviewer-user: ${{ github.event.requested_reviewer.login }}
+            github-token: ${{ secrets.GH_RO_PAT }}

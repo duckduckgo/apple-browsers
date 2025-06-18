@@ -33,7 +33,7 @@ import Networking
 import Suggestions
 import Subscription
 import SwiftUI
-import NetworkProtection
+import VPN
 import Onboarding
 import os.log
 import PageRefreshMonitor
@@ -203,7 +203,9 @@ class MainViewController: UIViewController {
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
-        let manager = AIChatViewControllerManager(experimentalAIChatManager: .init(featureFlagger: featureFlagger))
+        let manager = AIChatViewControllerManager(experimentalAIChatManager: .init(featureFlagger: featureFlagger),
+                                                  featureFlagger: featureFlagger,
+                                                  aiChatSettings: aiChatSettings)
         manager.delegate = self
         return manager
     }()
@@ -216,16 +218,10 @@ class MainViewController: UIViewController {
 
     let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
+    let keyValueStore: ThrowingKeyValueStoring
 
     private var duckPlayerEntryPointVisible = false
     private var isExperimentalAppearanceEnabled: Bool { themeManager.properties.isExperimentalThemingEnabled }
-
-    private lazy var aiChatOmnibarExperimentOverlayButton: UIButton = {
-        let button = UIButton(type: .custom)
-        button.backgroundColor = .clear
-        button.addTarget(self, action: #selector(onAIChatOmnibarExperimentOverlayButtonPressed), for: .touchUpInside)
-        return button
-    }()
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -260,7 +256,8 @@ class MainViewController: UIViewController {
         aiChatSettings: AIChatSettingsProvider,
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
-        themeManager: ThemeManaging
+        themeManager: ThemeManaging,
+        keyValueStore: ThrowingKeyValueStoring
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -317,6 +314,7 @@ class MainViewController: UIViewController {
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
+        self.keyValueStore = keyValueStore
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -356,10 +354,6 @@ class MainViewController: UIViewController {
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger)
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
-
-        if experimentalAIChatManager.isExperimentalAIChatSettingsEnabled {
-            setupAIChatOmnibarExperimentOverlayButton()
-        }
 
         setUpToolbarButtonsActions()
         installSwipeTabs()
@@ -528,10 +522,8 @@ class MainViewController: UIViewController {
     func loadTabsBarIfNeeded() {
         guard isPad else { return }
 
-        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
-        let controller: TabsBarViewController = storyboard.instantiateViewController(identifier: "TabsBar") { coder in
-            TabsBarViewController(coder: coder, themingProperties: self.themeManager.properties)
-        }
+        let controller = TabsBarViewController.createFromXib(themingProperties: themeManager.properties)
+
         addChild(controller)
         controller.view.frame = viewCoordinator.tabBarContainer.bounds
         controller.delegate = self
@@ -1487,7 +1479,8 @@ class MainViewController: UIViewController {
             openSearch: openSearch,
             source: source,
             bookmarksDatabase: self.bookmarksDatabase,
-            favoritesDisplayMode: self.appSettings.favoritesDisplayMode
+            favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
+            keyValueStore: self.keyValueStore
         )
         autofillLoginListViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: autofillLoginListViewController)
@@ -1651,10 +1644,6 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         newTabPageViewController?.openedAsNewTab(allowingKeyboard: allowingKeyboard)
         themeColorManager.updateThemeColor()
-        
-        if experimentalAIChatManager.isExperimentalAIChatSettingsEnabled {
-            onAIChatOmnibarExperimentOverlayButtonPressed()
-        }
     }
     
     func updateFindInPage() {
@@ -1944,54 +1933,6 @@ class MainViewController: UIViewController {
         featureDiscovery.setWasUsedBefore(.aiChat)
         aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, on: self)
     }
-
-    private func setupAIChatOmnibarExperimentOverlayButton() {
-        guard experimentalAIChatManager.isExperimentalAIChatSettingsEnabled else { return }
-
-        viewCoordinator.omniBar.barView.addSubview(aiChatOmnibarExperimentOverlayButton)
-        aiChatOmnibarExperimentOverlayButton.translatesAutoresizingMaskIntoConstraints = false
-
-        guard let searchContainer = viewCoordinator.omniBar.barView.searchContainer else { return }
-
-        NSLayoutConstraint.activate([
-            aiChatOmnibarExperimentOverlayButton.topAnchor.constraint(equalTo: searchContainer.topAnchor),
-            aiChatOmnibarExperimentOverlayButton.leadingAnchor.constraint(equalTo: searchContainer.leadingAnchor),
-            aiChatOmnibarExperimentOverlayButton.trailingAnchor.constraint(equalTo: searchContainer.trailingAnchor),
-            aiChatOmnibarExperimentOverlayButton.bottomAnchor.constraint(equalTo: searchContainer.bottomAnchor)
-        ])
-    }
-
-    @objc private func onAIChatOmnibarExperimentOverlayButtonPressed() {
-        let viewModel = AIChatInputBoxViewModel(state: .ready, visibility: .visible)
-        let containerVC = ChatInputBoxContainerViewController(viewModel: viewModel, position: appSettings.currentAddressBarPosition)
-        containerVC.delegate = self
-        containerVC.modalPresentationStyle = .fullScreen
-        containerVC.modalTransitionStyle = .crossDissolve
-        containerVC.view.alpha = 0
-        present(containerVC, animated: false) {
-            UIView.animate(withDuration: 0.3) {
-                containerVC.view.alpha = 1
-            }
-        }
-    }
-}
-
-extension MainViewController: ChatInputBoxContainerViewControllerDelegate {
-    func chatInputBoxContainerViewControllerDidPressBack(_ viewController: ChatInputBoxContainerViewController) {
-        viewController.dismiss(animated: true)
-    }
-    
-    func chatInputBoxContainerViewController(_ viewController: ChatInputBoxContainerViewController, didSubmitQuery query: String) {
-        viewController.dismiss(animated: true) { [weak self] in
-            self?.loadQuery(query)
-        }
-    }
-    
-    func chatInputBoxContainerViewController(_ viewController: ChatInputBoxContainerViewController, didSubmitPrompt prompt: String) {
-        viewController.dismiss(animated: true) { [weak self] in
-            self?.openAIChat(prompt, autoSend: true)
-        }
-    }
 }
 
 extension MainViewController: FindInPageDelegate {
@@ -2139,6 +2080,10 @@ extension MainViewController: BrowserChromeDelegate {
 }
 
 extension MainViewController: OmniBarDelegate {
+
+    func onOmniPromptSubmitted(_ query: String) {
+        openAIChat(query, autoSend: true)
+    }
 
     func onSharePressed() {
         shareCurrentURLFromAddressBar()
@@ -2425,16 +2370,7 @@ extension MainViewController: OmniBarDelegate {
                 openAIChat(textFieldValue, autoSend: true)
             }
         } else {
-            /// Check if the current tab's URL is a DuckDuckGo search page
-            /// If it is, get the query item and open the chat with the query item's value
-            /// Do not auto-send if the user is on SERP
-            /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210024262385459?focus=true
-            if currentTab?.url?.isDuckDuckGoSearch == true {
-                let queryItem = currentTab?.url?.getQueryItems()?.filter { $0.name == "q" }.first
-                openAIChat(queryItem?.value, autoSend: false)
-            } else {
-                openAIChat()
-            }
+            openAIChat()
         }
 
         Pixel.fire(pixel: .openAIChatFromAddressBar,

@@ -29,6 +29,7 @@ protocol LoginItemsManaging {
     func restartLoginItems(_ items: Set<LoginItem>)
 
     func isAnyEnabled(_ items: Set<LoginItem>) -> Bool
+    func isAnyInstalled(_ items: Set<LoginItem>) -> Bool
 }
 
 /// Class to manage the login items for the VPN and DBP
@@ -87,6 +88,12 @@ final class LoginItemsManager: LoginItemsManaging {
     func isAnyEnabled(_ items: Set<LoginItem>) -> Bool {
         return items.contains(where: { item in
             item.status == .enabled
+        })
+    }
+
+    func isAnyInstalled(_ items: Set<LoginItem>) -> Bool {
+        return items.contains(where: { item in
+            item.status.isInstalled
         })
     }
 

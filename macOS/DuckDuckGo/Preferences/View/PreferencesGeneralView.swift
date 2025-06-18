@@ -106,7 +106,6 @@ extension Preferences {
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession")
                         }, label: {})
                         .pickerStyle(.radioGroup)
-                        .disabled(dataClearingModel.isAutoClearEnabled)
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker")
                         if dataClearingModel.isAutoClearEnabled {

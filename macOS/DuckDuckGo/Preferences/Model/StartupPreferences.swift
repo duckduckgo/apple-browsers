@@ -44,7 +44,6 @@ final class StartupPreferences: ObservableObject, PreferencesTabOpening {
     private var persistor: StartupPreferencesPersistor
     private var pinnedViewsNotificationCancellable: AnyCancellable?
     private var dataClearingPreferences: DataClearingPreferences
-    private var dataClearingPreferencesNotificationCancellable: AnyCancellable?
 
     init(pinningManager: LocalPinningManager = .shared,
          persistor: StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
@@ -59,8 +58,6 @@ final class StartupPreferences: ObservableObject, PreferencesTabOpening {
         customHomePageURL = persistor.customHomePageURL
         updateHomeButtonState()
         listenToPinningManagerNotifications()
-        listenToDataClearingPreferencesNotifications()
-        checkDataClearingStatus()
     }
 
     @Published var restorePreviousSession: Bool {
@@ -131,21 +128,6 @@ final class StartupPreferences: ObservableObject, PreferencesTabOpening {
                 return
             }
             self.updateHomeButtonState()
-        }
-    }
-
-    private func checkDataClearingStatus() {
-        if dataClearingPreferences.isAutoClearEnabled {
-            restorePreviousSession = false
-        }
-    }
-
-    private func listenToDataClearingPreferencesNotifications() {
-        dataClearingPreferencesNotificationCancellable = NotificationCenter.default.publisher(for: .autoClearDidChange).sink { [weak self] _ in
-            guard let self = self else {
-                return
-            }
-            self.checkDataClearingStatus()
         }
     }
 

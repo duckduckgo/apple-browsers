@@ -23,7 +23,7 @@ import WebKit
 final class WKDownloadMock: NSObject, WebKitDownload, ProgressReporting {
     var originatingWebView: WKWebView?
     var targetWebView: WKWebView?
-    
+
     var originalRequest: URLRequest?
 
     var progress = Progress()

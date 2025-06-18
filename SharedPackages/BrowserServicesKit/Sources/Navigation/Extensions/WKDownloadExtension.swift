@@ -19,17 +19,17 @@
 import WebKit
 
 extension WKDownload {
-    
+
     private struct WebViewRef {
         weak var webView: WKWebView?
     }
-    
+
     private static let targetWebViewKey = UnsafeRawPointer(bitPattern: "targetWebView".hashValue)!
-    
+
     /// The WebView that is loading this download
     @objc public var targetWebView: WKWebView? {
         get { (objc_getAssociatedObject(self, Self.targetWebViewKey) as? WebViewRef)?.webView }
         set { objc_setAssociatedObject(self, Self.targetWebViewKey, WebViewRef(webView: newValue), .OBJC_ASSOCIATION_RETAIN) }
     }
-    
-} 
+
+}

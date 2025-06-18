@@ -921,9 +921,9 @@ class TabViewController: UIViewController {
             // to propagate to the webView.url property accessor and might not
             // be immediately available in the observer
             let previousURL = self.url
-            let newURL = self.webView.url
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                self?.webViewUrlHasChanged(previousURL: previousURL, newURL: newURL)
+                guard let self else { return }
+                self.webViewUrlHasChanged(previousURL: previousURL, newURL: self.webView.url)
             }
 
         case #keyPath(WKWebView.canGoBack):

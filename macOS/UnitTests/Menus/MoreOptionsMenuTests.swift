@@ -46,7 +46,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     private var mockFreemiumDBPPresenter = MockFreemiumDBPPresenter()
     private var mockFreemiumDBPFeature: MockFreemiumDBPFeature!
     private var mockNotificationCenter: MockNotificationCenter!
-    private var mockPixelHandler: MockFreemiumDBPExperimentPixelHandler!
+    private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
     private var mockFeatureFlagger: MockFeatureFlagger!
 
@@ -81,7 +81,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         mockFreemiumDBPFeature = MockFreemiumDBPFeature()
 
         mockNotificationCenter = MockNotificationCenter()
-        mockPixelHandler = MockFreemiumDBPExperimentPixelHandler()
+        mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
     }
 
@@ -114,7 +114,7 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
                                           notificationCenter: mockNotificationCenter,
                                           featureFlagger: mockFeatureFlagger,
-                                          freemiumDBPExperimentPixelHandler: mockPixelHandler)
+                                          dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }
@@ -259,7 +259,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(mockFreemiumDBPPresenter.didCallShowFreemium)
         XCTAssertTrue(mockNotificationCenter.didCallPostNotification)
         XCTAssertEqual(mockNotificationCenter.lastPostedNotification, .freemiumDBPEntryPointActivated)
-        XCTAssertEqual(mockPixelHandler.lastFiredEvent, FreemiumDBPExperimentPixel.overFlowScan)
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.overFlowScan)
     }
 
     @MainActor
@@ -280,7 +280,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(mockFreemiumDBPPresenter.didCallShowFreemium)
         XCTAssertTrue(mockNotificationCenter.didCallPostNotification)
         XCTAssertEqual(mockNotificationCenter.lastPostedNotification, .freemiumDBPEntryPointActivated)
-        XCTAssertEqual(mockPixelHandler.lastFiredEvent, FreemiumDBPExperimentPixel.overFlowResults)
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.overFlowResults)
     }
 
     // MARK: - Paid AI Chat

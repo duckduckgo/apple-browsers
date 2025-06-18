@@ -99,7 +99,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     var accountManager: AccountManager!
     var subscriptionManager: SubscriptionManager!
-    private var mockPixelHandler: MockFreemiumDBPExperimentPixelHandler!
+    private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
 
     var feature: SubscriptionPagesUseSubscriptionFeature!
@@ -180,7 +180,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                          subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
                                                          subscriptionEnvironment: subscriptionEnvironment)
 
-        mockPixelHandler = MockFreemiumDBPExperimentPixelHandler()
+        mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
 
         feature = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
@@ -189,7 +189,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                           uiHandler: uiHandler,
                                                           subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                           freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
-                                                          freemiumDBPExperimentPixelHandler: mockPixelHandler,
+                                                          dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
                                                           featureFlagger: mockFeatureFlagger)
         feature.with(broker: broker)
     }

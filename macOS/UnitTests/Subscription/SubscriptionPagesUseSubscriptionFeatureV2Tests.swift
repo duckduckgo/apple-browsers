@@ -36,7 +36,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     private var mockUIHandler: SubscriptionUIHandlerMock!
     private var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
-    private var mockPixelHandler: MockFreemiumDBPExperimentPixelHandler!
+    private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockNotificationCenter: NotificationCenter!
 
@@ -84,7 +84,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true,
                                                                                   usesUnifiedFeedbackForm: false)
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
-        mockPixelHandler = MockFreemiumDBPExperimentPixelHandler()
+        mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockFeatureFlagger = MockFeatureFlagger()
         mockNotificationCenter = NotificationCenter()
 
@@ -95,7 +95,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                         subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
                                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
                                                         notificationCenter: mockNotificationCenter,
-                                                        freemiumDBPExperimentPixelHandler: mockPixelHandler,
+                                                        dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
                                                         featureFlagger: mockFeatureFlagger)
     }
 

@@ -1,5 +1,5 @@
 //
-//  FreemiumDBPExperimentPixel.swift
+//  DataBrokerProtectionFreemiumPixels.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import PixelKit
 import Common
 
-public class FreemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> {
+public class DataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> {
 
     public init() {
         super.init { event, _, params, _ in
@@ -33,12 +33,12 @@ public class FreemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperime
         }
     }
 
-    override init(mapping: @escaping EventMapping<FreemiumDBPExperimentPixel>.Mapping) {
+    override init(mapping: @escaping EventMapping<DataBrokerProtectionFreemiumPixels>.Mapping) {
         fatalError("Use init()")
     }
 }
 
-public enum FreemiumDBPExperimentPixel: PixelKitEventV2 {
+public enum DataBrokerProtectionFreemiumPixels: PixelKitEventV2 {
 
     // Before the first scan
     case newTabScanImpression

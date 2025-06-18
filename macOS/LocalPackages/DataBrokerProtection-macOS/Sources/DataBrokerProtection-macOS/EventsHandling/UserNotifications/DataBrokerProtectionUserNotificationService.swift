@@ -58,19 +58,19 @@ public class DefaultDataBrokerProtectionUserNotificationService: NSObject, DataB
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let areNotificationsEnabled = true
 
-    /// The `FreemiumDBPExperimentPixelHandler` instance used to fire pixels
-    private let freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel>
+    /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
+    private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
 
     public init(pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>,
                 userDefaults: UserDefaults = .standard,
                 userNotificationCenter: DBPUserNotificationCenter,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
-                freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler()) {
+                dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler()) {
         self.pixelHandler = pixelHandler
         self.userDefaults = userDefaults
         self.userNotificationCenter = userNotificationCenter
         self.authenticationManager = authenticationManager
-        self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
+        self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
 
         super.init()
 
@@ -133,7 +133,7 @@ public class DefaultDataBrokerProtectionUserNotificationService: NSObject, DataB
         // If the user is not authenticated, this is a Freemium scan
         if !authenticationManager.isUserAuthenticated {
             sendNotification(.firstFreemiumScanComplete)
-            freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.firstScanCompleteNotificationSent)
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.firstScanCompleteNotificationSent)
         } else {
             sendNotification(.firstScanComplete)
             pixelHandler.fire(.dataBrokerProtectionNotificationSentFirstScanComplete)
@@ -199,7 +199,7 @@ extension DefaultDataBrokerProtectionUserNotificationService: UNUserNotification
         case .firstFreemiumScanComplete:
             NSWorkspace.shared.open(DataBrokerProtectionNotificationCommand.showDashboard.url)
 
-            freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.firstScanCompleteNotificationClicked)
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.firstScanCompleteNotificationClicked)
         }
     }
 }

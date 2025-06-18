@@ -86,7 +86,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                 freemiumDBPFeature: MockFreemiumDBPFeature(),
                 freemiumDBPPresenter: MockFreemiumDBPPresenter(),
                 notificationCenter: notificationCenter,
-                freemiumDBPExperimentPixelHandler: MockFreemiumDBPExperimentPixelHandler()
+                dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler()
             ),
             tld: Application.appDelegate.tld,
             fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),

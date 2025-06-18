@@ -57,8 +57,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     private let notificationCenter: NotificationCenter
 
-    /// The `FreemiumDBPExperimentPixelHandler` instance used to fire pixels
-    private let freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel>
+    /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
+    private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
 
     private let featureFlagger: FeatureFlagger
 
@@ -69,7 +69,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
                 freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
                 notificationCenter: NotificationCenter = .default,
-                freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler(),
+                dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
@@ -78,7 +78,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.notificationCenter = notificationCenter
-        self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
+        self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
         self.featureFlagger = featureFlagger
     }
 
@@ -293,6 +293,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 case .success(let purchaseUpdate):
                     Logger.subscription.info("[Purchase] Purchase complete")
                     PixelKit.fire(PrivacyProPixel.privacyProPurchaseSuccess, frequency: .legacyDailyAndCount)
+                    sendFreemiumSubscriptionPixelIfFreemiumActivated()
                     saveSubscriptionUpgradeTimestampIfFreemiumActivated()
                     PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActivated, frequency: .uniqueByName)
                     subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
@@ -395,6 +396,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         await uiHandler.dismissProgressViewController()
 
         PixelKit.fire(PrivacyProPixel.privacyProPurchaseStripeSuccess, frequency: .legacyDailyAndCount)
+        sendFreemiumSubscriptionPixelIfFreemiumActivated()
         saveSubscriptionUpgradeTimestampIfFreemiumActivated()
         subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
         sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
@@ -568,6 +570,16 @@ private extension SubscriptionPagesUseSubscriptionFeature {
             freemiumDBPUserStateManager.upgradeToSubscriptionTimestamp = Date()
         }
     }
+    
+    /// Sends a freemium subscription pixel event if the freemium feature has been activated.
+       ///
+       /// This function checks whether the user has activated the freemium feature by querying the `freemiumDBPUserStateManager`.
+       /// If the feature is activated (`didActivate` returns `true`), it fires a unique subscription-related pixel event using `PixelKit`.
+       func sendFreemiumSubscriptionPixelIfFreemiumActivated() {
+           if freemiumDBPUserStateManager.didActivate {
+               dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.subscription)
+           }
+       }
 
     /// Sets the origin for attribution if the user has started their first Freemium PIR scan
     ///

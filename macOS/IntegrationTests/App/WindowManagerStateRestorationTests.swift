@@ -90,7 +90,7 @@ final class WindowManagerStateRestorationTests: XCTestCase {
         let windowController1 = MainWindowController(mainViewController: mainViewController1, popUp: false, fireViewModel: FireViewModel(tld: Application.appDelegate.tld))
         let windowController2 = MainWindowController(mainViewController: mainViewController2, popUp: false, fireViewModel: FireViewModel(tld: Application.appDelegate.tld))
 
-        let state = WindowManagerStateRestoration(mainWindowControllers: [windowController1, windowController2], lastKeyMainWindowController: windowController2, applicationPinnedTabs: pinnedTabManager.tabCollection, aiChatSidebarModel: AIChatSidebarProviderModel())
+        let state = WindowManagerStateRestoration(mainWindowControllers: [windowController1, windowController2], lastKeyMainWindowController: windowController2, applicationPinnedTabs: pinnedTabManager.tabCollection, aiChatSidebarsByTab: AIChatSidebarsByTab())
 
         for (idx, window) in state.windows.enumerated() {
             XCTAssertTrue(areTabCollectionViewModelsEqual(window.model, state.windows[idx].model))

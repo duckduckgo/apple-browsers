@@ -196,8 +196,15 @@ final class VideoPlayerCoordinatorTests {
         #expect(mockAudioSessionManager.didCallSetPlaybackSessionInactive)
     }
 
-    @Test("Check Picture In Picture Is Active Event Is Published when Picture In Picture Starts")
-    func whenPictureInPictureStartsThenPictureInPictureIsActiveEventIsPublished() {
+    @Test(
+        "Check Picture In Picture Is Active Event Is Published when Picture In Picture Starts",
+        arguments: [
+            (PictureInPictureEvent.didStartPictureInPicture, true),
+            (.didStopPictureInPicture, false),
+            (.failedToStartPictureInPicture, false)
+        ]
+    )
+    func whenPictureInPictureStartsThenPictureInPictureIsActiveEventIsPublished(context: (event: PictureInPictureEvent, expectedResult: Bool)) {
         // GIVEN
         let sut = makeSUT(url: fakeURL, configuration: .init(loopVideo: false, allowsPictureInPicturePlayback: true))
         var capturedIsActive: Bool = false
@@ -207,10 +214,10 @@ final class VideoPlayerCoordinatorTests {
             }
 
         // WHEN
-        mockPictureInPictureController.send(.didStartPictureInPicture)
+        mockPictureInPictureController.send(context.event)
 
         // THEN
         withExtendedLifetime(c){}
-        #expect(capturedIsActive)
+        #expect(capturedIsActive == context.expectedResult)
     }
 }

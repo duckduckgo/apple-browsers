@@ -21,11 +21,12 @@ import Foundation
 import Core
 @testable import DuckDuckGo
 
-final class OnboardingManagerMock: OnboardingSetAsDefaultExperimentManaging, OnboardingSettingsURLProvider, OnboardingStepsProvider {
+final class OnboardingManagerMock: OnboardingIntroExperimentManaging, OnboardingSettingsURLProvider, OnboardingStepsProvider {
     private(set) var didCallSettingsURLPath = false
+    var cohortToReturn: OnboardingSetAsDefaultBrowserPiPVideoCohort?
 
     var onboardingSteps: [DuckDuckGo.OnboardingIntroStep] = OnboardingIntroStep.newUserSteps(isIphone: true)
-    var isEnrolledInSetAsDefaultBrowserExperiment: Bool = false
+    var isEnrolledInSetAsDefaultBrowserPipVideoExperiment: Bool = false
 
     var settingsURLPathToReturn: String = "www.example.com"
     var settingsURLPath: String {
@@ -38,7 +39,7 @@ final class OnboardingManagerMock: OnboardingSetAsDefaultExperimentManaging, Onb
         }
     }
 
-    func resolveSetAsDefaultBrowserExperimentCohort() -> OnboardingSetAsDefaultBrowserCohort? {
-        nil
+    func resolveSetAsDefaultBrowserPipVideoExperimentCohort(isPictureInPictureSupported: Bool) -> OnboardingSetAsDefaultBrowserPiPVideoCohort? {
+        cohortToReturn
     }
 }

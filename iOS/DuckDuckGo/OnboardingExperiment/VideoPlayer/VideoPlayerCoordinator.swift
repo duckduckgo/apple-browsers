@@ -46,8 +46,6 @@ final class VideoPlayerCoordinator: ObservableObject {
 
     @Published private var pictureInPictureController: PictureInPictureControlling
     private var pictureInPictureActiveCancellable: AnyCancellable?
-    private var lifecycleCancellable: AnyCancellable?
-
 
     let url: URL
     private let audioSessionManager: AudioSessionManaging
@@ -124,7 +122,18 @@ private extension VideoPlayerCoordinator {
             .handleEvents(receiveOutput: { event in
                 Logger.videoPlayer.debug("[Video Player] - Received Picture In Picture Event: \(event.debugDescription)")
             })
-            .compactMap { $0 == .didStartPictureInPicture }
+            .compactMap { event in
+                switch event {
+                case .willStartPictureInPicture:
+                    nil
+                case .didStartPictureInPicture:
+                    true
+                case .willStopPictureInPicture:
+                    nil
+                case.didStopPictureInPicture, .failedToStartPictureInPicture:
+                    false
+                }
+            }
             .assign(to: \.isPictureInPictureActive, onWeaklyHeld: self)
     }
 

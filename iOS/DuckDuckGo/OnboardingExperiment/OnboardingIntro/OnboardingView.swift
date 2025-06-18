@@ -42,10 +42,7 @@ struct OnboardingView: View {
         ZStack(alignment: .topTrailing) {
             // Position the 'Set Default Browser' video tutorial behind the onboarding background.
             // When we want to show the PiP video to the user we will start playing and then deeplink into the settings.
-            if model.state.intro?.type == .browsersComparisonDialog {
-                setAsDefaultTutorialVideoView
-                    .frame(width: 300, height: 100) // Fixed size prevents stretching in ZStack and smooths PiP transition. PiP size is auto-determined by OS.
-            }
+            setDefaultBrowserTutorialView
 
             OnboardingBackground()
 
@@ -164,8 +161,13 @@ struct OnboardingView: View {
             showContent: $model.browserComparisonState.showComparisonButton,
             isSkipped: $model.isSkipped,
             setAsDefaultBrowserAction: {
-                // Check if should play video or not depending on experiment
-                isPlayingSetAsDefaultVideo = true
+                if model.enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial() {
+                    // Play video first and then deeplink to the settings.
+                    // Once the video starts playing sending the app to the background will start PiP automatically.
+                    isPlayingSetAsDefaultVideo = true
+                } else {
+                    model.setDefaultBrowserAction()
+                }
             },
             cancelAction: {
                 model.cancelSetDefaultBrowserAction()
@@ -213,10 +215,23 @@ struct OnboardingView: View {
             model.setDefaultBrowserAction()
         })
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-            Logger.videoPlayer.debug("[Video Player] - Will Enter Foreground - Is Playing Video:  \(isPlayingSetAsDefaultVideo)")
+            Logger.onboarding.debug("[Onboarding] - Will Enter Foreground. Is Playing Set Default Tutorial Video:  \(isPlayingSetAsDefaultVideo)")
             if isPlayingSetAsDefaultVideo {
                 model.completedSetDefaultBrowserAction()
             }
+        }
+    }
+
+    @ViewBuilder
+    private var setDefaultBrowserTutorialView: some View {
+        // Position the 'Set Default Browser' video tutorial behind the onboarding background.
+        // When we want to show the PiP video to the user we will start playing and then deeplink into the settings.
+        // We explicitly not call the associated function associated with `.browsersComparisonDialog` because it will enrol the user in the experiment. We want to enrol the user in the experiment when they tap the CTA button.
+        if case .browsersComparisonDialog = model.state.intro?.type {
+            setAsDefaultTutorialVideoView
+                .frame(width: 300, height: 100) // Fixed size prevents stretching in ZStack and smooths PiP transition. PiP size is auto-determined by OS.
+        } else {
+            EmptyView()
         }
     }
 
@@ -245,6 +260,7 @@ struct OnboardingView: View {
             }
         }
     }
+
 }
 
 // MARK: - View State

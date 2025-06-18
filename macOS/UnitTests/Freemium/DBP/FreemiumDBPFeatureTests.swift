@@ -28,7 +28,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     private var sut: FreemiumDBPFeature!
     private var mockPrivacyConfigurationManager: MockPrivacyConfigurationManaging!
-    private var mockFreemiumDBPExperimentManager: MockFreemiumDBPExperimentManager!
     private var mockAccountManager: MockAccountManager!
     private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockFreemiumDBPUserStateManagerManager: MockFreemiumDBPUserStateManager!
@@ -39,7 +38,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     override func setUpWithError() throws {
 
         mockPrivacyConfigurationManager = MockPrivacyConfigurationManaging()
-        mockFreemiumDBPExperimentManager = MockFreemiumDBPExperimentManager()
         mockAccountManager = MockAccountManager()
         let mockSubscriptionService = SubscriptionEndpointServiceMock()
         let mockAuthService = AuthEndpointServiceMock()
@@ -62,48 +60,12 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     }
 
-    func testWhenFeatureFlagDisabled_thenFreemiumDBPIsNotAvailable() throws {
-        // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
-        mockSubscriptionManager.canPurchase = true
-        mockAccountManager.accessToken = nil
-        sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
-                                        subscriptionManager: mockSubscriptionManager,
-                                        freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
-        // When
-        let result = sut.isAvailable
-
-        // Then
-        XCTAssertFalse(result)
-    }
-
-    func testWhenFeatureFlagEnabled_thenFreemiumDBPIsAvailable() throws {
-        // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
-        mockAccountManager.accessToken = nil
-        mockFreemiumDBPExperimentManager.isTreatment = true
-        sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
-                                        subscriptionManager: mockSubscriptionManager,
-                                        freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
-        // When
-        let result = sut.isAvailable
-
-        // Then
-        XCTAssertTrue(result)
-    }
-
     func testWhenPrivacyProNotAvailable_thenFreemiumDBPIsNotAvailable() throws {
         // Given
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
         mockSubscriptionManager.canPurchase = false
         mockAccountManager.accessToken = nil
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
@@ -120,7 +82,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         mockSubscriptionManager.canPurchase = false
         mockAccountManager.accessToken = "some_token"
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
@@ -137,43 +98,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         mockSubscriptionManager.canPurchase = true
         mockAccountManager.accessToken = "some_token"
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
-                                        subscriptionManager: mockSubscriptionManager,
-                                        freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
-        // When
-        let result = sut.isAvailable
-
-        // Then
-        XCTAssertFalse(result)
-    }
-
-    func testWhenUserIsInTreatmentCohort_thenFreemiumDBPIsAvailable() throws {
-        // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
-        mockAccountManager.accessToken = nil
-        mockFreemiumDBPExperimentManager.isTreatment = true
-        sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
-                                        subscriptionManager: mockSubscriptionManager,
-                                        freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
-        // When
-        let result = sut.isAvailable
-
-        // Then
-        XCTAssertTrue(result)
-    }
-
-    func testWhenUserIsNotInTreatmentCohort_thenFreemiumDBPIsNotAvailable() throws {
-        // Given
-        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
-        mockSubscriptionManager.canPurchase = true
-        mockAccountManager.accessToken = nil
-        mockFreemiumDBPExperimentManager.isTreatment = false
-        sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
@@ -193,7 +117,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
         // When
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
@@ -210,7 +133,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         mockAccountManager.accessToken = nil
 
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
@@ -232,7 +154,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         mockAccountManager.accessToken = "some_token"
 
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
@@ -255,7 +176,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
         // When
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
@@ -274,7 +194,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
         // When
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
@@ -290,11 +209,9 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
         mockSubscriptionManager.canPurchase = true
         mockAccountManager.accessToken = nil
-        mockFreemiumDBPExperimentManager.isTreatment = true
         let expectation = XCTestExpectation(description: "isAvailablePublisher emits values")
 
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
@@ -325,11 +242,9 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
         mockSubscriptionManager.canPurchase = true
         mockAccountManager.accessToken = nil
-        mockFreemiumDBPExperimentManager.isTreatment = true
         let expectation = XCTestExpectation(description: "isAvailablePublisher emits values")
 
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
@@ -360,11 +275,9 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
         mockSubscriptionManager.canPurchase = true
         mockAccountManager.accessToken = nil
-        mockFreemiumDBPExperimentManager.isTreatment = true
         let expectation = XCTestExpectation(description: "isAvailablePublisher emits values")
 
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
@@ -395,11 +308,9 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
         mockSubscriptionManager.canPurchase = true
         mockAccountManager.accessToken = "some_token"
-        mockFreemiumDBPExperimentManager.isTreatment = true
         let expectation = XCTestExpectation(description: "isAvailablePublisher emits values")
 
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
-                                        experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
@@ -435,12 +346,4 @@ final class MockFeatureDisabler: DataBrokerProtectionFeatureDisabling {
     func reset() {
         disableAndDeleteWasCalled = false
     }
-}
-
-final class MockFreemiumDBPExperimentManager: FreemiumDBPPixelExperimentManaging {
-    var isTreatment = false
-
-    var pixelParameters: [String: String]?
-
-    func assignUserToCohort() {}
 }

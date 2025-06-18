@@ -68,7 +68,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     let uiHandler: SubscriptionUIHandling
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
-    private let freemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManaging
     private let notificationCenter: NotificationCenter
     /// The `FreemiumDBPExperimentPixelHandler` instance used to fire pixels
     private let freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel>
@@ -81,7 +80,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 uiHandler: SubscriptionUIHandling,
                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
                 freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
-                freemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManaging,
                 notificationCenter: NotificationCenter = .default,
                 freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler(),
                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
@@ -91,7 +89,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         self.uiHandler = uiHandler
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
-        self.freemiumDBPPixelExperimentManager = freemiumDBPPixelExperimentManager
         self.notificationCenter = notificationCenter
         self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
         self.featureFlagger = featureFlagger
@@ -306,7 +303,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 case .success(let purchaseUpdate):
                     Logger.subscription.log("[Purchase] Purchase completed")
                     PixelKit.fire(PrivacyProPixel.privacyProPurchaseSuccess, frequency: .legacyDailyAndCount)
-                    sendFreemiumSubscriptionPixelIfFreemiumActivated()
                     saveSubscriptionUpgradeTimestampIfFreemiumActivated()
                     PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActivated, frequency: .uniqueByName)
                     subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
@@ -411,7 +407,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         await uiHandler.dismissProgressViewController()
 
         PixelKit.fire(PrivacyProPixel.privacyProPurchaseStripeSuccess, frequency: .legacyDailyAndCount)
-        sendFreemiumSubscriptionPixelIfFreemiumActivated()
         saveSubscriptionUpgradeTimestampIfFreemiumActivated()
         subscriptionSuccessPixelHandler.fireSuccessfulSubscriptionAttributionPixel()
         sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
@@ -575,16 +570,6 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
     func sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated() {
         if freemiumDBPUserStateManager.didActivate {
             notificationCenter.post(name: .subscriptionUpgradeFromFreemium, object: nil)
-        }
-    }
-
-    /// Sends a freemium subscription pixel event if the freemium feature has been activated.
-    ///
-    /// This function checks whether the user has activated the freemium feature by querying the `freemiumDBPUserStateManager`.
-    /// If the feature is activated (`didActivate` returns `true`), it fires a unique subscription-related pixel event using `PixelKit`.
-    func sendFreemiumSubscriptionPixelIfFreemiumActivated() {
-        if freemiumDBPUserStateManager.didActivate {
-            freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.subscription, parameters: freemiumDBPPixelExperimentManager.pixelParameters)
         }
     }
 

@@ -36,7 +36,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     private var mockUIHandler: SubscriptionUIHandlerMock!
     private var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
-    private var mockFreemiumDBPExperimentManager: MockFreemiumDBPExperimentManager!
     private var mockPixelHandler: MockFreemiumDBPExperimentPixelHandler!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockNotificationCenter: NotificationCenter!
@@ -85,7 +84,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true,
                                                                                   usesUnifiedFeedbackForm: false)
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
-        mockFreemiumDBPExperimentManager = MockFreemiumDBPExperimentManager()
         mockPixelHandler = MockFreemiumDBPExperimentPixelHandler()
         mockFeatureFlagger = MockFeatureFlagger()
         mockNotificationCenter = NotificationCenter()
@@ -96,7 +94,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                         uiHandler: mockUIHandler,
                                                         subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
                                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
-                                                        freemiumDBPPixelExperimentManager: mockFreemiumDBPExperimentManager,
                                                         notificationCenter: mockNotificationCenter,
                                                         freemiumDBPExperimentPixelHandler: mockPixelHandler,
                                                         featureFlagger: mockFeatureFlagger)

@@ -99,7 +99,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     var accountManager: AccountManager!
     var subscriptionManager: SubscriptionManager!
-    var mockFreemiumDBPExperimentManager: MockFreemiumDBPExperimentManager!
     private var mockPixelHandler: MockFreemiumDBPExperimentPixelHandler!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
 
@@ -181,7 +180,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                          subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
                                                          subscriptionEnvironment: subscriptionEnvironment)
 
-        mockFreemiumDBPExperimentManager = MockFreemiumDBPExperimentManager()
         mockPixelHandler = MockFreemiumDBPExperimentPixelHandler()
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
 
@@ -191,7 +189,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                           uiHandler: uiHandler,
                                                           subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                           freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
-                                                          freemiumDBPPixelExperimentManager: mockFreemiumDBPExperimentManager,
                                                           freemiumDBPExperimentPixelHandler: mockPixelHandler,
                                                           featureFlagger: mockFeatureFlagger)
         feature.with(broker: broker)
@@ -455,7 +452,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     func testSubscriptionSelectedSuccessWhenPurchasingFirstTimeAndUserIsFreemium() async throws {
         // Given
         mockFreemiumDBPUserStateManager.didActivate = true
-        mockFreemiumDBPExperimentManager.pixelParameters = ["daysEnrolled": "1"]
         ensureUserUnauthenticatedState()
         XCTAssertEqual(subscriptionEnvironment.purchasePlatform, .appStore)
         XCTAssertFalse(accountManager.isUserAuthenticated)
@@ -494,8 +490,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseSuccess.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseSuccess.name + "_c",
                                      PrivacyProPixel.privacyProSubscriptionActivated.name])
-        XCTAssertEqual(mockPixelHandler.lastFiredEvent, FreemiumDBPExperimentPixel.subscription)
-        XCTAssertEqual(mockPixelHandler.lastPassedParameters?["daysEnrolled"], "1")
     }
 
     func testSubscriptionSelectedSuccessWhenRepurchasingForExpiredAppleSubscription() async throws {

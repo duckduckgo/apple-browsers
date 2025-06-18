@@ -55,7 +55,6 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     /// 3. The user is a potential privacy pro subscriber.
     var isAvailable: Bool {
         privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(DBPSubfeature.freemium)
-        && experimentManager.isTreatment
         && subscriptionManager.isPotentialPrivacyProSubscriber
     }
 
@@ -68,7 +67,6 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
 
     // MARK: - Private Properties
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let experimentManager: FreemiumDBPPixelExperimentManaging
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     private let notificationCenter: NotificationCenter
@@ -88,14 +86,12 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     ///   - notificationCenter: Observes notifications, defaulting to `.default`.
     ///   - featureDisabler: Optional feature disabler. If not provided, the default `DataBrokerProtectionFeatureDisabler` is used.
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
-         experimentManager: FreemiumDBPPixelExperimentManaging,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
          notificationCenter: NotificationCenter = .default,
          featureDisabler: DataBrokerProtectionFeatureDisabling? = nil) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
-        self.experimentManager = experimentManager
         self.subscriptionManager = subscriptionManager
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.notificationCenter = notificationCenter

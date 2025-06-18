@@ -491,8 +491,8 @@ class TabViewController: UIViewController {
             guard let self else { return }
             if self.tabModel.link?.title == nil {
                 self.closeTab()
-            } else if url != webView.url {
-                url = webView.url
+            } else if self.url != self.webView.url {
+                self.url = self.webView.url
             }
         }
     }

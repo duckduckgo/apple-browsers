@@ -2603,6 +2603,9 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automatically Clear Data";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Complete Your Setup";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Cookie Pop-Up Protection";
 
@@ -2665,6 +2668,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "App Icon";
+
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Import Passwords";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Keyboard";
@@ -2731,6 +2737,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Automatically send crash reports to DuckDuckGo.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Set As Default Browser";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Set Your Address Bar Position";

@@ -19,7 +19,7 @@
 import AppKit
 import Combine
 import Foundation
-import NetworkProtection
+import VPN
 import PixelKit
 import VPNPixels
 

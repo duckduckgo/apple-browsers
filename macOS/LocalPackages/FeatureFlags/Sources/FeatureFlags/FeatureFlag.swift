@@ -106,6 +106,15 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210410403692636?focus=true
     case aiChatSidebar
 
+    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    case osSupportForceUnsupportedMessage
+
+    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    case osSupportForceWillSoonDropSupportMessage
+
+    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    case willSoonDropBigSurSupport
+
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210493210455717?focus=true
     case shortHistoryMenu
 }
@@ -155,6 +164,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .canScanUrlBasedSyncSetupBarcodes,
 				.privacyProFreeTrial,
                 .removeWWWInCanonicalizationInThreatProtection,
+                .osSupportForceUnsupportedMessage,
+                .osSupportForceWillSoonDropSupportMessage,
+                .willSoonDropBigSurSupport,
 				.aiChatSidebar,
                 .shortHistoryMenu:
             return true
@@ -244,6 +256,12 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
+            return .internalOnly()
+        case .osSupportForceUnsupportedMessage:
+            return .disabled
+        case .osSupportForceWillSoonDropSupportMessage:
+            return .disabled
+        case .willSoonDropBigSurSupport:
             return .internalOnly()
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))

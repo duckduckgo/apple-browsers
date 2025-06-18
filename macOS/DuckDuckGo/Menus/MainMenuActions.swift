@@ -40,9 +40,11 @@ extension AppDelegate {
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
 #if SPARKLE
-        if !SupportedOSChecker.isCurrentOSReceivingUpdates {
+        if let warning = SupportedOSChecker().supportWarning,
+           case .unsupported = warning {
+
             // Show not supported info
-            if NSAlert.osNotSupported().runModal() != .cancel {
+            if NSAlert.osNotSupported(warning).runModal() != .cancel {
                 let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
                 NSWorkspace.shared.open(url)
             }

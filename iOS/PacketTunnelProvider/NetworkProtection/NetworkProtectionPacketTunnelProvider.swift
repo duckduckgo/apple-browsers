@@ -24,7 +24,7 @@ import Combine
 import Core
 import Networking
 import NetworkExtension
-import NetworkProtection
+import VPN
 import os.log
 import Subscription
 import WidgetKit

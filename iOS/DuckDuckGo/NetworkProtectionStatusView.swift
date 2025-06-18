@@ -18,7 +18,7 @@
 //
 
 import SwiftUI
-import NetworkProtection
+import VPN
 import TipKit
 import Networking
 import DesignResourcesKit

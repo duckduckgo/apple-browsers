@@ -127,7 +127,7 @@ extension AutofillUsageStore: AutofillUsageStoreUpdating {
 
 extension AutofillUsageStore: AutofillUsageProvider {
     public var fillDate: Date? {
-        userDefaults.object(forKey: Keys.autofillFillDateKey) as? Date
+        userDefaults.object(forKey: Keys.autofillFillDateKey) as? Date ?? .distantPast
     }
 
     public var searchDauDate: Date? {
@@ -135,7 +135,7 @@ extension AutofillUsageStore: AutofillUsageProvider {
     }
 
     public var lastActiveDate: Date? {
-        userDefaults.object(forKey: Keys.autofillLastActiveKey) as? Date
+        userDefaults.object(forKey: Keys.autofillLastActiveKey) as? Date ?? .distantPast
     }
 
     public var isOnboarded: Bool {

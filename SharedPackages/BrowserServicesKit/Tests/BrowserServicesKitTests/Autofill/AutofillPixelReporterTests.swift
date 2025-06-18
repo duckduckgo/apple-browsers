@@ -593,6 +593,30 @@ final class AutofillPixelReporterTests: XCTestCase {
         XCTAssertEqual(MockEventMapping.lastUsedParam, AutofillUsageStore.yyyyMMddFormatter.string(from: testDate))
     }
 
+    func testStoredDatesDefaultToDistantPast() {
+        let autofillPixelReporter = createAutofillPixelReporter()
+        let usageStore = AutofillUsageStore(standardUserDefaults: standardDefaults, appGroupUserDefaults: nil)
+        
+        standardDefaults.removeObject(forKey: AutofillUsageStore.Keys.autofillFillDateKey)
+        standardDefaults.removeObject(forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey)
+        standardDefaults.removeObject(forKey: AutofillUsageStore.Keys.autofillLastActiveKey)
+
+        XCTAssertEqual(usageStore.fillDate, .distantPast)
+        XCTAssertEqual(usageStore.searchDauDate, .distantPast)
+        XCTAssertEqual(usageStore.lastActiveDate, .distantPast)
+    }
+
+    func testDidReceiveFillEventFiresOnNewInstall() {
+        let autofillPixelReporter = createAutofillPixelReporter()
+        XCTAssertNotNil(autofillPixelReporter) // silence warning
+        standardDefaults.removeObject(forKey: AutofillUsageStore.Keys.autofillLastActiveKey)
+        setAutofillSearchDauDate(daysAgo: 0)
+        // fillDate is not set, should be .distantPast
+        NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
+        // Should fire autofillActiveUser event (and others)
+        XCTAssertTrue(MockEventMapping.events.contains(.autofillActiveUser))
+    }
+
     private func createAutofillPixelReporter(appGroupUserDefaults: UserDefaults? = nil, installDate: Date? = Date(), autofillEnabled: Bool = true) -> AutofillPixelReporter {
         let usageStore = AutofillUsageStore(standardUserDefaults: standardDefaults, appGroupUserDefaults: appGroupUserDefaults)
         return AutofillPixelReporter(usageStore: usageStore,

@@ -86,15 +86,16 @@ class SubscriptionManagerV2Tests: XCTestCase {
             productId: "testProduct",
             name: "Test Subscription",
             billingPeriod: .monthly,
-            startedAt: Date(),
-            expiresOrRenewsAt: Date().addingTimeInterval(30 * 24 * 60 * 60), // 30 days from now
+            startedAt: Date().addingTimeInterval(.minutes(-5)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(30)),
             platform: .stripe,
             status: .autoRenewable,
             activeOffers: []
         )
         mockSubscriptionEndpointService.getSubscriptionResult = .success(activeSubscription)
-        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
-        mockOAuthClient.isUserAuthenticated = true
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
 
         let subscription = try! await subscriptionManager.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
         XCTAssertTrue(subscription.isActive)
@@ -123,8 +124,9 @@ class SubscriptionManagerV2Tests: XCTestCase {
     // MARK: - URL Generation Tests
 
     func testURLGeneration_ForCustomerPortal() async throws {
-        mockOAuthClient.isUserAuthenticated = true
-        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
         let customerPortalURLString = "https://example.com/customer-portal"
         mockSubscriptionEndpointService.getCustomerPortalURLResult = .success(GetCustomerPortalURLResponse(customerPortalUrl: customerPortalURLString))
 

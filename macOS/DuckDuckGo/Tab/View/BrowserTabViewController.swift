@@ -349,6 +349,7 @@ final class BrowserTabViewController: NSViewController {
 
     private func subscribeToTabs() {
         tabCollectionViewModel.tabCollection.$tabs
+            .dropFirst()
             .sink {  [weak self] tabs in
                 guard let self else { return }
                 setDelegate(for: tabs)

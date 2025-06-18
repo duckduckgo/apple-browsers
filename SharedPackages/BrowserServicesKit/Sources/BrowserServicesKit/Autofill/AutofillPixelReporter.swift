@@ -143,11 +143,13 @@ extension AutofillUsageStore: AutofillUsageProvider {
     }
 
     public var formattedFillDate: String? {
-        fillDate.flatMap(Self.yyyyMMddFormatter.string(from:))
+        guard let date = fillDate, date != .distantPast else { return nil }
+        return Self.yyyyMMddFormatter.string(from: date)
     }
 
     public var formattedLastActiveDate: String? {
-        lastActiveDate.flatMap(Self.yyyyMMddFormatter.string(from:))
+        guard let date = lastActiveDate, date != .distantPast else { return nil }
+        return Self.yyyyMMddFormatter.string(from: date)
     }
 }
 

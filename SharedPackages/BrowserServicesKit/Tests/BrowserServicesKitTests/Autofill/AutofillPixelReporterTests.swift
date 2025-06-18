@@ -594,7 +594,6 @@ final class AutofillPixelReporterTests: XCTestCase {
     }
 
     func testStoredDatesDefaultToDistantPast() {
-        let autofillPixelReporter = createAutofillPixelReporter()
         let usageStore = AutofillUsageStore(standardUserDefaults: standardDefaults, appGroupUserDefaults: nil)
         
         standardDefaults.removeObject(forKey: AutofillUsageStore.Keys.autofillFillDateKey)
@@ -615,6 +614,23 @@ final class AutofillPixelReporterTests: XCTestCase {
         NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
         // Should fire autofillActiveUser event (and others)
         XCTAssertTrue(MockEventMapping.events.contains(.autofillActiveUser))
+    }
+
+    func testFormattedDatesReturnNilWhenDistantPast() {
+        let usageStore = AutofillUsageStore(standardUserDefaults: standardDefaults, appGroupUserDefaults: nil)
+        standardDefaults.set(Date.distantPast, forKey: AutofillUsageStore.Keys.autofillFillDateKey)
+        standardDefaults.set(Date.distantPast, forKey: AutofillUsageStore.Keys.autofillLastActiveKey)
+        XCTAssertNil(usageStore.formattedFillDate)
+        XCTAssertNil(usageStore.formattedLastActiveDate)
+    }
+
+    func testFormattedDatesReturnStringWhenNotDistantPast() {
+        let usageStore = AutofillUsageStore(standardUserDefaults: standardDefaults, appGroupUserDefaults: nil)
+        let testDate = Date(timeIntervalSince1970: 123456789)
+        standardDefaults.set(testDate, forKey: AutofillUsageStore.Keys.autofillFillDateKey)
+        standardDefaults.set(testDate, forKey: AutofillUsageStore.Keys.autofillLastActiveKey)
+        XCTAssertEqual(usageStore.formattedFillDate, AutofillUsageStore.yyyyMMddFormatter.string(from: testDate))
+        XCTAssertEqual(usageStore.formattedLastActiveDate, AutofillUsageStore.yyyyMMddFormatter.string(from: testDate))
     }
 
     private func createAutofillPixelReporter(appGroupUserDefaults: UserDefaults? = nil, installDate: Date? = Date(), autofillEnabled: Bool = true) -> AutofillPixelReporter {

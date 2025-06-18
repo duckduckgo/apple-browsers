@@ -2275,6 +2275,8 @@
 		845B43372DB69F2E00D46001 /* SwiftObjectRetainCycleBreakerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845B43332DB69F2C00D46001 /* SwiftObjectRetainCycleBreakerTests.swift */; };
 		845B43402DB7689F00D46001 /* OnboardingNavigatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A054402C22438C007D8FAB /* OnboardingNavigatingTests.swift */; };
 		845B43412DB7689F00D46001 /* OnboardingNavigatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A054402C22438C007D8FAB /* OnboardingNavigatingTests.swift */; };
+		847873DE2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
+		847873DF2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
 		848648A12C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
 		848648A22C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
 		84A03D2B2DBBE06B00A3685B /* DraggingDestinationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A03D2A2DBBE06700A3685B /* DraggingDestinationView.swift */; };
@@ -13838,6 +13840,7 @@
 				560C6ED92CCA5CE700D411E2 /* FindInView.swift in Sources */,
 				B60C6F8B29B1CAC0007BFAA8 /* FileManagerTempDirReplacement.swift in Sources */,
 				3706FEA4293F662100E42796 /* CoreDataTestUtilities.swift in Sources */,
+				847873DF2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */,
 				8434E6BD2DB01633008FFA3D /* MockBookmarkManager.swift in Sources */,
 				84524C092D79E6EF00F723D6 /* WebsiteDataStoreMock.swift in Sources */,
 				B62A234129C41D4400D22475 /* HistoryIntegrationTests.swift in Sources */,
@@ -13914,6 +13917,7 @@
 				845063512DB76F9E00A60B56 /* WindowManagerStateRestorationTests.swift in Sources */,
 				560C6ED82CCA5CE700D411E2 /* FindInView.swift in Sources */,
 				B60C6F8A29B1CABF007BFAA8 /* FileManagerTempDirReplacement.swift in Sources */,
+				847873DE2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */,
 				8434E6BC2DB01633008FFA3D /* MockBookmarkManager.swift in Sources */,
 				84524C082D79E6EF00F723D6 /* WebsiteDataStoreMock.swift in Sources */,
 				4B1AD92125FC474E00261379 /* CoreDataEncryptionTesting.xcdatamodeld in Sources */,

@@ -166,7 +166,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         if isPasswordManagementPopoverShown && button.window == autofillPopoverPresenter.popoverPresentingWindow {
             autofillPopoverPresenter.dismiss()
         } else if isSaveCredentialsPopoverShown {
-            saveCredentialsPopover?.viewController.onNotNowClicked(sender: self)
+            saveCredentialsPopover?.viewController.onNotNowClicked(sender: button)
         } else if isSaveIdentityPopoverShown {
             saveIdentityPopover?.viewController.onNotNowClicked(sender: button)
         } else if isSavePaymentMethodPopoverShown {

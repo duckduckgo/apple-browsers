@@ -19,7 +19,7 @@
 import AppKit
 import Foundation
 import Combine
-import NetworkProtection
+import VPN
 
 public protocol IconProvider {
     var onIcon: NetworkProtectionAsset { get }

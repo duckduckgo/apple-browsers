@@ -24,7 +24,7 @@ import DDGSync
 import Bookmarks
 import Subscription
 import Common
-import NetworkProtection
+import VPN
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 import RemoteMessaging

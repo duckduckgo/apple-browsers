@@ -372,7 +372,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     // MARK: - User
     public var isUserAuthenticated: Bool {
-        userDefaults.isUserAuthenticated
+        do {
+            let tokenContainer = try oAuthClient.currentTokenContainer()
+            return tokenContainer != nil
+        } catch {
+            return userDefaults.isUserAuthenticated
+        }
     }
 
     public var userEmail: String? {

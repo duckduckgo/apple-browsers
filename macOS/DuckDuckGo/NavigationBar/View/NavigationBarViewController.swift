@@ -23,7 +23,7 @@ import Combine
 import Common
 import Freemium
 import History
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
 import os.log

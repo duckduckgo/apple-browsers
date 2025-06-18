@@ -22,7 +22,7 @@ import Common
 import BrowserServicesKit
 import History
 import PixelKit
-import NetworkProtection
+import VPN
 import Subscription
 import os.log
 import Freemium
@@ -465,7 +465,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         burnerWindowItem.image = moreOptionsMenuIconsProvider.newFireWindowIcon
         addItem(burnerWindowItem)
 
-        // New AI Chat
+        // New Duck.ai Chat
         if aiChatMenuConfiguration.shouldDisplayApplicationMenuShortcut {
             let aiChatItem = NSMenuItem(title: UserText.newAIChatMenuItem,
                                         action: #selector(newAiChat(_:)),

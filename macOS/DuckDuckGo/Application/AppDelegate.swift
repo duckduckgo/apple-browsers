@@ -36,7 +36,7 @@ import HistoryView
 import Lottie
 import MetricKit
 import Networking
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NewTabPage
 import os.log

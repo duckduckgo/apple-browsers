@@ -26,7 +26,7 @@ import OSLog
 import SwiftUI
 import WebKit
 import Configuration
-import NetworkProtection
+import VPN
 import Subscription
 import SubscriptionUI
 

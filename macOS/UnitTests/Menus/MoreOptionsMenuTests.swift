@@ -17,7 +17,7 @@
 //
 
 import Combine
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 import XCTest
 import Subscription

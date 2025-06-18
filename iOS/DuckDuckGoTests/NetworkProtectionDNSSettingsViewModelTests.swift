@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import NetworkProtection
+import VPN
 @testable import DuckDuckGo
 
 final class NetworkProtectionDNSSettingsViewModelTests: XCTestCase {
@@ -231,7 +231,7 @@ private final class MockTunnelController: TunnelController {
     func stop() async {
     }
 
-    func command(_ command: NetworkProtection.VPNCommand) async throws {
+    func command(_ command: VPN.VPNCommand) async throws {
     }
 
     var isConnected: Bool = false

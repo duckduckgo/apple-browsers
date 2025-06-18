@@ -1184,7 +1184,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setUpAutoClearHandler() {
-        let autoClearHandler = AutoClearHandler(preferences: dataClearingPreferences,
+        let autoClearHandler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
+                                                startupPreferences: startupPreferences,
                                                 fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager)
         self.autoClearHandler = autoClearHandler

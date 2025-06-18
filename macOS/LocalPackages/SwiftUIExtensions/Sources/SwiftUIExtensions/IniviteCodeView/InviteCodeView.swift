@@ -97,7 +97,7 @@ public struct InviteCodeSuccessView<ViewModel>: View where ViewModel: InviteCode
     public var body: some View {
         Dialog {
             VStack(spacing: 20) {
-                Image(.intiveLockSucces96)
+                Image(.inviteLockSuccess96)
                 Text(viewModel.titleText)
                     .font(.system(size: 17, weight: .semibold))
                     .fixedSize(horizontal: false, vertical: true)

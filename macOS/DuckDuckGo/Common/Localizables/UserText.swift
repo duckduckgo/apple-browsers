@@ -440,13 +440,13 @@ struct UserText {
 
     static let aiChatShowInAddressBarToggle = NSLocalizedString("duckai.show-in-address-bar.toggle", value: "Show Duck.ai shortcut in the address bar", comment: "Show AI Chat in the address bar")
 
-    static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show “New AI Chat” in File and application menus", comment: "Show Duck.ai in application menus")
+    static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show “New Duck.ai Chat” in File and application menus", comment: "Show Duck.ai in application menus")
 
     static let aiChatPreferencesCaption = NSLocalizedString("duckai.preferences.caption", value: "Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-party AI chat models. Your chats are not used to train AI.", comment: "Ai Chat preferences explanation")
 
     static let aiChatPreferencesLearnMoreButton = NSLocalizedString("ai-chat.preferences.learn-more", value: "Learn More", comment: "AI Chat preferences button to learn more about it")
 
-    static let newAIChatMenuItem = NSLocalizedString("duckai.menu.new", value: "New AI Chat", comment: "Menu item to launch AI Chat")
+    static let newAIChatMenuItem = NSLocalizedString("duckai.menu.new", value: "New Duck.ai Chat", comment: "Menu item to launch AI Chat")
 
     static let aiChatAddressBarShortcutTooltip = NSLocalizedString("tooltip.aichat.address-bar-shortcut", value: "Duck.ai ⇧↵", comment: "Tooltip With Shortcut for the AI Chat address bar button")
 
@@ -727,6 +727,7 @@ struct UserText {
 
     static let vpn = NSLocalizedString("preferences.vpn", value: "VPN", comment: "Title of the option to show the VPN preferences")
     static let personalInformationRemoval = NSLocalizedString("preferences.personalInformationRemoval", value: "Personal Information Removal", comment: "Title of the option to show the Personal Information Removal preferences")
+    static let paidAIChat = NSLocalizedString("preferences.paidAIChat", value: "Duck.ai", comment: "Title of the option to show the Duck.ai Pro preferences")
     static let identityTheftRestoration = NSLocalizedString("preferences.identityTheftRestoration", value: "Identity Theft Restoration", comment: "Title of the option to show the Identity Theft Restoration preferences")
     static let subscriptionSettings = NSLocalizedString("preferences.subscriptionSettings", value: "Subscription Settings", comment: "Title of the option to show the Subscription Settings preferences")
     static let duckPlayer = NSLocalizedString("preferences.duck-player", value: "Duck Player", comment: "Title of the option to show the Duck Player browser preferences")
@@ -819,18 +820,26 @@ struct UserText {
     static let aboutDuckDuckGo = NSLocalizedString("preferences.about.about-duckduckgo", value: "About DuckDuckGo", comment: "About screen")
     static let duckduckgoTagline = NSLocalizedString("preferences.about.duckduckgo-tagline-new", value: "Protection. Privacy. Peace of Mind.", comment: "About screen")
     static let setAsDefaultBrowser = NSLocalizedString("preferences.set-as-default", value: "Set DuckDuckGo As Default Browser", comment: "Menu option to set the browser as default")
+
+    // MARK: - macOS Version is unsupported
+
     static let aboutUnsupportedDeviceInfo1 = NSLocalizedString("preferences.about.unsupported-device-info1", value: "DuckDuckGo is no longer providing browser updates for your version of macOS.", comment: "This string represents a message informing the user that DuckDuckGo is no longer providing browser updates for their version of macOS")
     static func aboutUnsupportedDeviceInfo2(version: String) -> String {
         let localized = NSLocalizedString("preferences.about.unsupported-device-info2", value: "Please update to macOS %@ or later to use the most recent version of DuckDuckGo. You can also keep using your current version of the browser, but it will not receive further updates.", comment: "Copy in section that tells the user to update their macOS version since their current version is unsupported")
         return String(format: localized, version)
     }
-    static let aboutUnsupportedDeviceInfo2Part1 = "Please"
-    static func aboutUnsupportedDeviceInfo2Part2(version: String) -> String {
-        return String(format: "update to macOS %@", version)
-    }
-    static let aboutUnsupportedDeviceInfo2Part3 = "or later to use the most recent version"
-    static let aboutUnsupportedDeviceInfo2Part4 = "of DuckDuckGo. You can also keep using your current version of the browser, but it will not receive further updates."
+
     static let unsupportedDeviceInfoAlertHeader = NSLocalizedString("unsupported.device.info.alert.header", value: "Your version of macOS is no longer supported.", comment: "his string represents the header for an alert informing the user that their version of macOS is no longer supported")
+
+    // MARK: - macOS Version will soon be unsupported
+
+    static let aboutWillSoonBeUnsupportedDeviceInfo1 = NSLocalizedString("preferences.about.will-soon-be-unsupported-device-info1", value: "DuckDuckGo will soon stop providing browser updates for your version of macOS.", comment: "This string informs the user that DuckDuckGo will soon discontinue browser updates for their version of macOS")
+    static func aboutWillSoonBeUnsupportedDeviceInfo2(version: String) -> String {
+        let localized = NSLocalizedString("preferences.about.will-soon-be-unsupported-device-info2", value: "Please update to macOS %@ or later to continue receiving DuckDuckGo browser updates. You can still use your current browser version, but updates will be discontinued soon.", comment: "This string informs the user to update their macOS version to continue receiving DuckDuckGo browser updates, as their current version of macOS will soon be unsupported")
+        return String(format: localized, version)
+    }
+
+    static let aboutWillSoonBeUnsupportedDeviceInfoAlertHeader = NSLocalizedString("preferences.about.will-soon-be-unsupported-device-info-alert-header", value: "Your version of macOS will soon be unsupported.", comment: "This string represents the header for an alert informing the user that their version of macOS will soon be unsupported")
 
     static func moreAt(url: String) -> String {
         let localized = NSLocalizedString("preferences.about.more-at", value: "More at %@", comment: "Link to the about page")
@@ -1079,8 +1088,8 @@ struct UserText {
     static let bitwardenError = NSLocalizedString("bitwarden.error", value: "Unable to find or connect to Bitwarden", comment: "This message appears when the application is unable to find or connect to Bitwarden, indicating a connection issue.")
     static let bitwardenNotInstalled = NSLocalizedString("bitwarden.not.installed", value: "Bitwarden app is not installed", comment: "")
     static let bitwardenOldVersion = NSLocalizedString("bitwarden.old.version", value: "Please update Bitwarden to the latest version", comment: "Message that warns user they need to update their password manager Bitwarden app vesion")
-    static let bitwardenIncompatible = NSLocalizedString("bitwarden.incompatible", value: "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:", comment: "Message that warns user that specific Bitwarden app vesions are not compatible with this app")
-    static let bitwardenIncompatibleStep1 = NSLocalizedString("bitwarden.incompatible.step.1", value: "Download v2024.9.0", comment: "First step to downgrade Bitwarden")
+    static let bitwardenIncompatible = NSLocalizedString("bitwarden.incompatible", value: "The following Bitwarden versions are incompatible with DuckDuckGo: v2025.5.0, v2025.5.1. Please downgrade to an older version by following these steps:", comment: "Message that warns user that specific Bitwarden app vesions are not compatible with this app")
+    static let bitwardenIncompatibleStep1 = NSLocalizedString("bitwarden.incompatible.step.1", value: "Download v2025.4.2", comment: "First step to downgrade Bitwarden")
     static let bitwardenIncompatibleStep2 = NSLocalizedString("bitwarden.incompatible.step.2", value: "2. Open the downloaded DMG file and drag the Bitwarden application to\nthe /Applications folder.", comment: "Second step to downgrade Bitwarden")
     static let bitwardenIntegrationNotApproved = NSLocalizedString("bitwarden.integration.not.approved", value: "Integration with DuckDuckGo is not approved in Bitwarden app", comment: "While the user tries to connect the DuckDuckGo Browser to password manager Bitwarden This message indicates that the integration with DuckDuckGo has not been approved in the Bitwarden app.")
     static let bitwardenMissingHandshake = NSLocalizedString("bitwarden.missing.handshake", value: "Missing handshake", comment: "While the user tries to connect the DuckDuckGo Browser to password manager Bitwarden This message indicates a missing handshake (a way for two devices or systems to say hello to each other and agree to communicate or exchange information).")
@@ -1487,6 +1496,7 @@ struct UserText {
     // Key: "subscription.menu.item"
     // Comment: "Title for Subscription item in the options menu"
     static let subscriptionOptionsMenuItem = "Privacy Pro"
+    static let subscriptionOptionsMenuItemFreeTrialBadge = NSLocalizedString("subscription.free-trial.settings.menu.item", value:"TRY FOR FREE", comment: "Title for Subscription Free Trial promotion item in the options menu")
 
     static let identityTheftRestorationOptionsMenuItem = "Identity Theft Restoration"
 

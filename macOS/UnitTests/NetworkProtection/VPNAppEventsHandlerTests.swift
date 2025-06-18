@@ -21,7 +21,7 @@ import FeatureFlags
 import Foundation
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-@testable import NetworkProtection
+@testable import VPN
 
 final class VPNAppEventsHandlerTests: XCTestCase {
 

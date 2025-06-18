@@ -18,7 +18,7 @@
 
 import AppKit
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 import SwiftUI
 

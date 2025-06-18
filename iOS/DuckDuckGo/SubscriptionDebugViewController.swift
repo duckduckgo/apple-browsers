@@ -21,7 +21,7 @@ import UIKit
 
 import Subscription
 import Core
-import NetworkProtection
+import VPN
 import StoreKit
 import BrowserServicesKit
 import Networking

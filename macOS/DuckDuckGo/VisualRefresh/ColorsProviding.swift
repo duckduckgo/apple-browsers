@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 protocol ColorsProviding {
     var navigationBackgroundColor: NSColor { get }
     var baseBackgroundColor: NSColor { get }
@@ -36,6 +38,7 @@ protocol ColorsProviding {
     var activeAddressBarBackgroundColor: NSColor { get }
     var inactiveAddressBarBackgroundColor: NSColor { get }
     var suggestionsBackgroundColor: NSColor { get }
+    var bannerBackgroundColor: NSColor { get }
 
     /// New Tab Page
     var ntpLightBackgroundColor: String { get }
@@ -62,6 +65,7 @@ final class LegacyColorsProviding: ColorsProviding {
     var activeAddressBarBackgroundColor: NSColor { .addressBarBackground }
     var inactiveAddressBarBackgroundColor: NSColor { .inactiveSearchBarBackground }
     var suggestionsBackgroundColor: NSColor { .addressBarBackground }
+    var bannerBackgroundColor: NSColor { .bannerBackground }
     var ntpLightBackgroundColor: String { "#FAFAFA" }
     var ntpDarkBackgroundColor: String { "#333333" }
 
@@ -89,6 +93,7 @@ final class NewColorsProviding: ColorsProviding {
     var activeAddressBarBackgroundColor: NSColor { palette.surfaceTertiary }
     var inactiveAddressBarBackgroundColor: NSColor { palette.surfaceTertiary }
     var suggestionsBackgroundColor: NSColor { palette.surfaceTertiary }
+    var bannerBackgroundColor: NSColor { palette.surfacePrimary }
     var ntpLightBackgroundColor: String { "#F2F2F2" }
     var ntpDarkBackgroundColor: String { "#262626" }
 

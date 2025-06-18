@@ -122,6 +122,6 @@ final class SubscriptionOptionsV2Tests: XCTestCase {
 
         XCTAssertEqual(empty.platform, platform)
         XCTAssertTrue(empty.options.isEmpty)
-        XCTAssertEqual(empty.features.count, 3)
+        XCTAssertEqual(empty.features.count, 4)
     }
 }

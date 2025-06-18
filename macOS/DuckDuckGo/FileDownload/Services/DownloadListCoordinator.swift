@@ -20,8 +20,9 @@ import Combine
 import Common
 import Foundation
 import Navigation
-import PixelKit
 import os.log
+import PixelKit
+import WebKit
 
 @MainActor
 private func getFirstAvailableWebView() -> WKWebView? {

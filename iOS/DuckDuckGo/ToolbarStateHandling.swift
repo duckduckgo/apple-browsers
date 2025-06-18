@@ -19,7 +19,7 @@
 
 import UIKit
 import BrowserServicesKit
-import SwiftUICore
+import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 

@@ -19,7 +19,7 @@
 import Foundation
 import Combine
 import Common
-import NetworkProtection
+import VPN
 import NetworkExtension
 import Networking
 import PixelKit
@@ -465,6 +465,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                                  baseURL: subscriptionEnvironment.serviceEnvironment.url)
         let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
         let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
+                                                               userDefaults: subscriptionUserDefaults,
                                                                subscriptionEndpointService: subscriptionEndpointServiceV2,
                                                                subscriptionEnvironment: subscriptionEnvironment,
                                                                pixelHandler: pixelHandler,

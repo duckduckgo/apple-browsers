@@ -23,12 +23,23 @@ import PrivacyDashboard
 final class UpdatedOmniBarViewController: OmniBarViewController {
 
     private lazy var omniBarView = UpdatedOmniBarView.create()
+    private let experimentalManager = ExperimentalAIChatManager()
+    private weak var editingStateViewController: OmniBarEditingStateViewController?
 
     override func loadView() {
         view = omniBarView
     }
 
     // MARK: - Initialization
+
+    override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        if experimentalManager.isExperimentalTransitionEnabled {
+            presentExperimentalEditingState(for: textField)
+            return false
+        }
+
+        return super.textFieldShouldBeginEditing(textField)
+    }
 
     override func animateDismissButtonTransition(from oldView: UIView, to newView: UIView) {
         dismissButtonAnimator?.stopAnimation(true)
@@ -50,7 +61,6 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
                 oldView.isHidden = true
             }
         }
-
         dismissButtonAnimator?.startAnimation()
     }
 
@@ -82,7 +92,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     override func textFieldDidBeginEditing(_ textField: UITextField) {
         super.textFieldDidBeginEditing(textField)
-        
+
         omniBarView.layoutIfNeeded()
         UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
             self.omniBarView.isActiveState = true
@@ -114,5 +124,65 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     override func preventShadowsOnBottom() {
         omniBarView.updateMaskLayer(maskTop: false)
+    }
+
+    // MARK: - Private Helper Methods
+
+    private func presentExperimentalEditingState(for textField: UITextField) {
+        let switchBarHandler = createSwitchBarHandler(for: textField)
+        let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
+
+        let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
+        editingStateViewController.delegate = self
+        editingStateViewController.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
+        editingStateViewController.modalPresentationStyle = .overFullScreen
+
+        present(editingStateViewController, animated: false)
+        self.editingStateViewController = editingStateViewController
+
+        if shouldAutoSelectText {
+            DispatchQueue.main.async {
+                editingStateViewController.selectAllText()
+            }
+        }
+    }
+
+    private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
+        let switchBarHandler = SwitchBarHandler()
+
+        guard let currentText = omniBarView.text else {
+            return switchBarHandler
+        }
+
+        if let textFieldText = textField.text,
+           let url = URL(trimmedAddressBarString: textFieldText.trimmingWhitespace()) {
+            let urlText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: true)
+            switchBarHandler.updateCurrentText(urlText.string)
+        } else {
+            switchBarHandler.updateCurrentText(currentText)
+        }
+
+        return switchBarHandler
+    }
+
+    private func shouldAutoSelectTextForUrl(_ textField: UITextField) -> Bool {
+        guard let textFieldText = textField.text else { return false }
+        return URL(trimmedAddressBarString: textFieldText.trimmingWhitespace()) != nil
+    }
+}
+
+extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
+    func onQueryUpdated(_ query: String) {
+    }
+
+    func onQuerySubmitted(_ query: String) {
+        editingStateViewController?.dismissAnimated()
+        omniDelegate?.onOmniQuerySubmitted(query)
+    }
+
+    func onPromptSubmitted(_ query: String) {
+        editingStateViewController?.dismissAnimated {
+            self.omniDelegate?.onOmniPromptSubmitted(query)
+        }
     }
 }

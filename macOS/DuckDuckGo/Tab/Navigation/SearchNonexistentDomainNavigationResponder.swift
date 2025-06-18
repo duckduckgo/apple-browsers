@@ -20,6 +20,7 @@ import Combine
 import Common
 import Foundation
 import Navigation
+import WebKit
 
 final class SearchNonexistentDomainNavigationResponder {
 

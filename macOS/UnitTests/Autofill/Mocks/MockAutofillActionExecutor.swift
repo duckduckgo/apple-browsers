@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
+import AppKit
 import BrowserServicesKit
 import DDGSync
 import Foundation
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockAutofillActionBuilder: AutofillActionBuilder {

@@ -46,7 +46,7 @@ final class FireViewController: NSViewController {
     private var fireAnimationViewLoadingTask: Task<(), Never>?
     private(set) lazy var fireIndicatorVisibilityManager = FireIndicatorVisibilityManager { [weak self] in self?.view.superview }
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel? = nil) -> FireViewController {
+    static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel) -> FireViewController {
         NSStoryboard(name: "Fire", bundle: nil).instantiateInitialController { coder in
             self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireViewModel)
         }!
@@ -56,9 +56,9 @@ final class FireViewController: NSViewController {
         fatalError("TabBarViewController: Bad initializer")
     }
 
-    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel? = nil) {
+    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel) {
         self.tabCollectionViewModel = tabCollectionViewModel
-        self.fireViewModel = fireViewModel ?? FireCoordinator.fireViewModel
+        self.fireViewModel = fireViewModel
 
         super.init(coder: coder)
     }

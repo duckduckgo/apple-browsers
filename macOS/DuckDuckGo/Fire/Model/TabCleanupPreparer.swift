@@ -18,6 +18,7 @@
 
 import Foundation
 import PixelKit
+import WebKit
 
 protocol TabDataClearing {
     @MainActor func prepareForDataClearing(caller: TabCleanupPreparer)

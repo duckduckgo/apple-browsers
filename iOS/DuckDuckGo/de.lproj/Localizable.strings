@@ -2674,6 +2674,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Daten automatisch löschen";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Einrichtung abschließen";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Cookie-Pop-up-Schutz";
 
@@ -2737,6 +2740,9 @@
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "App-Symbol";
 
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Passwörter importieren";
+
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
 
@@ -2796,6 +2802,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Senden Sie Absturzberichte automatisch an DuckDuckGo.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Als Standard-Browser festlegen";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Position deiner Adressleiste festlegen";

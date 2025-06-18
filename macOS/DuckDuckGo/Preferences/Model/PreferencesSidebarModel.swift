@@ -59,9 +59,13 @@ final class PreferencesSidebarModel: ObservableObject {
     private let identityTheftRestorationSubject = PassthroughSubject<StatusIndicator, Never>()
     public let identityTheftRestorationUpdates: AnyPublisher<StatusIndicator, Never>
 
+    private let paidAIChatSubject = PassthroughSubject<StatusIndicator, Never>()
+    public let paidAIChatUpdates: AnyPublisher<StatusIndicator, Never>
+
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
     private var isInitialSelectedPanePixelFired = false
+    private let featureFlagger: FeatureFlagger
 
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()
@@ -77,7 +81,8 @@ final class PreferencesSidebarModel: ObservableObject {
         vpnTunnelIPCClient: VPNControllerXPCClient = .shared,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         notificationCenter: NotificationCenter = .default,
-        settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.visualStyleManager.style.iconsProvider.settingsIconProvider,
+        featureFlagger: FeatureFlagger,
+        settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.visualStyle.iconsProvider.settingsIconProvider,
         pixelFiring: PixelFiring?
     ) {
         self.loadSections = loadSections
@@ -87,9 +92,11 @@ final class PreferencesSidebarModel: ObservableObject {
         self.notificationCenter = notificationCenter
         self.settingsIconProvider = settingsIconProvider
         self.pixelFiring = pixelFiring
+        self.featureFlagger = featureFlagger
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
         self.identityTheftRestorationUpdates = identityTheftRestorationSubject.eraseToAnyPublisher()
+        self.paidAIChatUpdates = paidAIChatSubject.eraseToAnyPublisher()
 
         resetTabSelectionIfNeeded()
 
@@ -106,6 +113,7 @@ final class PreferencesSidebarModel: ObservableObject {
     convenience init(
         tabSwitcherTabs: [Tab.TabContent] = Tab.TabContent.displayableTabTypes,
         privacyConfigurationManager: PrivacyConfigurationManaging,
+        featureFlagger: FeatureFlagger,
         syncService: DDGSyncing,
         vpnGatekeeper: VPNFeatureGatekeeper,
         includeDuckPlayer: Bool,
@@ -127,6 +135,7 @@ final class PreferencesSidebarModel: ObservableObject {
                   privacyConfigurationManager: privacyConfigurationManager,
                   syncService: syncService,
                   subscriptionManager: subscriptionManager,
+                  featureFlagger: featureFlagger,
                   pixelFiring: PixelKit.shared
         )
     }
@@ -177,6 +186,8 @@ final class PreferencesSidebarModel: ObservableObject {
             currentSubscriptionState.userEntitlements.contains(.networkProtection)
         case .personalInformationRemoval:
             currentSubscriptionState.userEntitlements.contains(.dataBrokerProtection)
+        case .paidAIChat:
+            currentSubscriptionState.userEntitlements.contains(.paidAIChat)
         case .identityTheftRestoration:
             currentSubscriptionState.userEntitlements.contains(.identityTheftRestoration) ||
             currentSubscriptionState.userEntitlements.contains(.identityTheftRestorationGlobal)
@@ -213,6 +224,8 @@ final class PreferencesSidebarModel: ObservableObject {
             return vpnProtectionStatus()
         case .personalInformationRemoval:
             return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.personalInformationRemovalStatus)
+        case .paidAIChat:
+            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.paidAIChatStatus)
         case .identityTheftRestoration:
             return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.identityTheftRestorationStatus)
         default:
@@ -281,6 +294,10 @@ final class PreferencesSidebarModel: ObservableObject {
                     personalInformationRemovalSubject.send(updatedState.personalInformationRemovalStatus)
                 }
 
+                if self.currentSubscriptionState.paidAIChatStatus != updatedState.paidAIChatStatus {
+                    paidAIChatSubject.send(updatedState.paidAIChatStatus)
+                }
+
                 if self.currentSubscriptionState.identityTheftRestorationStatus != updatedState.identityTheftRestorationStatus {
                     identityTheftRestorationSubject.send(updatedState.identityTheftRestorationStatus)
                 }
@@ -298,7 +315,7 @@ final class PreferencesSidebarModel: ObservableObject {
         if subscriptionManager.isUserAuthenticated {
             // Calculate current user entitlements
             var currentUserEntitlements: [SubscriptionEntitlement] = []
-            let entitlements: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal]
+            let entitlements: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
             if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2,
                let tokenContainer = try? await subscriptionManagerV2.getTokenContainer(policy: .localValid) {
@@ -322,19 +339,26 @@ final class PreferencesSidebarModel: ObservableObject {
             let isIdentityTheftRestorationActive = currentUserEntitlements.contains(.identityTheftRestoration) || currentUserEntitlements.contains(.identityTheftRestorationGlobal)
             let currentIdentityTheftRestorationStatus = isIdentityTheftRestorationActive ? StatusIndicator.on : StatusIndicator.off
 
+            // Calculate DAP protection status
+            let currentPaidAIChatStatus = currentUserEntitlements.contains(.paidAIChat) ? StatusIndicator.on : StatusIndicator.off
+
             return PreferencesSidebarSubscriptionState(hasSubscription: true,
                                                        subscriptionFeatures: currentSubscriptionFeatures,
                                                        userEntitlements: currentUserEntitlements,
                                                        shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
                                                        personalInformationRemovalStatus: currentPersonalInformationRemovalStatus,
-                                                       identityTheftRestorationStatus: currentIdentityTheftRestorationStatus)
+                                                       identityTheftRestorationStatus: currentIdentityTheftRestorationStatus,
+                                                       paidAIChatStatus: currentPaidAIChatStatus,
+                                                       isPaidAIChatEnabled: featureFlagger.isFeatureOn(.paidAIChat))
         } else {
             return PreferencesSidebarSubscriptionState(hasSubscription: false,
                                                        subscriptionFeatures: currentSubscriptionFeatures,
                                                        userEntitlements: [],
                                                        shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
                                                        personalInformationRemovalStatus: .off,
-                                                       identityTheftRestorationStatus: .off)
+                                                       identityTheftRestorationStatus: .off,
+                                                       paidAIChatStatus: .off,
+                                                       isPaidAIChatEnabled: featureFlagger.isFeatureOn(.paidAIChat))
         }
     }
 

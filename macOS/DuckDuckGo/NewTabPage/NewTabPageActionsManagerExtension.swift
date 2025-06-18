@@ -39,6 +39,7 @@ extension NewTabPageActionsManager {
         protectionsReportModel: NewTabPageProtectionsReportModel,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
         tld: TLD,
+        fire: @escaping () async -> Fire,
         keyValueStore: KeyValueStoring = UserDefaults.standard
     ) {
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -69,7 +70,7 @@ extension NewTabPageActionsManager {
             activityProvider: recentActivityProvider,
             actionsHandler: DefaultRecentActivityActionsHandler(
                 favoritesHandler: bookmarkManager,
-                burner: RecentActivityItemBurner(fireproofStatusProvider: fireproofDomains, tld: tld)
+                burner: RecentActivityItemBurner(fireproofStatusProvider: fireproofDomains, tld: tld, fire: fire)
             )
         )
 

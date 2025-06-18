@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+import SwiftUI
 import Persistence
 import PixelKit
 

@@ -66,6 +66,7 @@ struct SettingsState {
     var showsFullURL: Bool
     var isExperimentalThemingEnabled: Bool
     var isExperimentalAIChatEnabled: Bool
+    var isExperimentalAIChatTransitionEnabled: Bool
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -124,6 +125,7 @@ struct SettingsState {
             showsFullURL: false,
             isExperimentalThemingEnabled: false,
             isExperimentalAIChatEnabled: false,
+            isExperimentalAIChatTransitionEnabled: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoclearDataEnabled: false,

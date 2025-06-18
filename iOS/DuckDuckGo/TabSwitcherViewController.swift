@@ -170,6 +170,19 @@ class TabSwitcherViewController: UIViewController {
             }
         }
         
+        // Configure toolbar appearance based on address bar position
+        let toolbarAppearance = UIToolbarAppearance()
+        if addressBarPosition.isBottom {
+            // Hide top separator when navigation bar is stacked on top
+            toolbarAppearance.configureWithTransparentBackground()
+            toolbarAppearance.shadowColor = .clear
+        } else {
+            // Default appearance with separator
+            toolbarAppearance.configureWithDefaultBackground()
+        }
+        toolbar.standardAppearance = toolbarAppearance
+        toolbar.compactAppearance = toolbarAppearance
+        
         if addressBarPosition.isBottom {
             // Stack navigation bar on top of toolbar at bottom
             NSLayoutConstraint.activate([

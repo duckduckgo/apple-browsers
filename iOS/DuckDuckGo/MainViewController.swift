@@ -2152,6 +2152,10 @@ extension MainViewController: OmniBarDelegate {
         openAIChat(query, autoSend: true)
     }
 
+    func didRequestCurrentURL() -> URL? {
+        return currentTab?.url
+    }
+    
     func onSharePressed() {
         shareCurrentURLFromAddressBar()
     }

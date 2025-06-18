@@ -62,17 +62,17 @@ final class AdClickExternalOpenDetector {
     // Events handlers
 
     @objc private func appDidEnterBackground() {
-        Logger.adClickExternalOpenDetector.log("\(self.tabID, privacy: .public) - App entered background")
+        Logger.adClickExternalOpenDetector.debug("\(self.tabID) - App entered background")
         changeState(.leaveApp)
     }
 
     public func startNavigation() {
-        Logger.adClickExternalOpenDetector.log("\(self.tabID, privacy: .public) App started navigation")
+        Logger.adClickExternalOpenDetector.debug("\(self.tabID) App started navigation")
         changeState(.startNavigation)
     }
 
     public func failNavigation() {
-        Logger.adClickExternalOpenDetector.log("\(self.tabID, privacy: .public) App failed navigation")
+        Logger.adClickExternalOpenDetector.debug("\(self.tabID) App failed navigation")
         changeState(.failNavigation)
     }
 
@@ -87,10 +87,10 @@ final class AdClickExternalOpenDetector {
         if let operationStartDate = operationStartDate {
             timeDifference = Date().timeIntervalSince(operationStartDate).description
         }
-        Logger.adClickExternalOpenDetector.log("\(self.tabID, privacy: .public) State changed from \(self.state.rawValue, privacy: .public) to \(newState.rawValue, privacy: .public) - Timer: \(timeDifference)")
+        Logger.adClickExternalOpenDetector.debug("\(self.tabID) State changed from \(self.state.rawValue) to \(newState.rawValue) - Timer: \(timeDifference)")
 
         guard !isTimeoutExpired() else {
-            Logger.adClickExternalOpenDetector.log("\(self.tabID, privacy: .public) Timeout expired")
+            Logger.adClickExternalOpenDetector.debug("\(self.tabID) Timeout expired")
             reset()
             return
         }
@@ -138,13 +138,13 @@ final class AdClickExternalOpenDetector {
     }
 
     private func reset() {
-        Logger.adClickExternalOpenDetector.log("\(self.tabID, privacy: .public) Resetting state")
+        Logger.adClickExternalOpenDetector.debug("\(self.tabID) Resetting state")
         operationStartDate = nil
         state = .unknown
     }
 
     private func mitigate() {
-        Logger.adClickExternalOpenDetector.log("\(self.tabID, privacy: .public) Mitigating")
+        Logger.adClickExternalOpenDetector.debug("\(self.tabID) Mitigating")
         reset()
         mitigationHandler?()
     }

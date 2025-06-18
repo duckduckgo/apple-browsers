@@ -135,10 +135,6 @@ final class MockOmniBarDelegate: OmniBarDelegate {
 
     }
 
-    func onSelectSuggestion(_ suggestion: Suggestion) {
-
-    }
-
     func onOmniPromptSubmitted(_ query: String) {
     }
 

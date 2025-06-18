@@ -2148,10 +2148,6 @@ extension MainViewController: OmniBarDelegate {
         handleFavoriteSelected(favorite)
     }
 
-    func onSelectSuggestion(_ suggestion: Suggestion) {
-        handleSuggestionSelected(suggestion)
-    }
-
     func onOmniPromptSubmitted(_ query: String) {
         openAIChat(query, autoSend: true)
     }

@@ -195,7 +195,7 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 
     func onSelectSuggestion(_ suggestion: Suggestion) {
-        omniDelegate?.onSelectSuggestion(suggestion)
+        omniDelegate?.onOmniSuggestionSelected(suggestion)
         editingStateViewController?.dismissAnimated()
     }
 }

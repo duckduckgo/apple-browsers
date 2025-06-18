@@ -83,8 +83,6 @@ protocol OmniBarDelegate: AnyObject {
     func onOmniPromptSubmitted(_ query: String)
 
     func onSelectFavorite(_ favorite: BookmarkEntity)
-
-    func onSelectSuggestion(_ suggestion: Suggestion)
 }
 
 extension OmniBarDelegate {

@@ -466,7 +466,7 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
 
     @MainActor
     private func willStartDownload(with navigationAction: NavigationAction, in webView: WKWebView) {
-        Logger.navigation.log("willStartDownload \(navigationAction.debugDescription) in \(webView.description)")
+        Logger.navigation.debug("willStartDownload \(navigationAction.debugDescription) in \(webView.description)")
 
         let responders = (navigationAction.isForMainFrame ? navigationAction.mainFrameNavigation?.navigationResponders : nil) ?? responders
         for responder in responders {
@@ -946,7 +946,7 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
 
     @MainActor
     private func willStartDownload(with navigationResponse: NavigationResponse, in webView: WKWebView) {
-        Logger.navigation.log("willStartDownload \(navigationResponse.debugDescription) in \(webView.description)")
+        Logger.navigation.debug("willStartDownload \(navigationResponse.debugDescription) in \(webView.description)")
 
         let responders = (navigationResponse.isForMainFrame ? navigationResponse.mainFrameNavigation?.navigationResponders : nil) ?? responders
         for responder in responders {

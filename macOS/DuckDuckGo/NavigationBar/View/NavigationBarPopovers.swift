@@ -165,11 +165,11 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     func passwordManagementButtonPressed(_ button: MouseOverButton, withDelegate delegate: NSPopoverDelegate) {
         if isPasswordManagementPopoverShown && button.window == autofillPopoverPresenter.popoverPresentingWindow {
             autofillPopoverPresenter.dismiss()
-        } else if isSaveCredentialsPopoverShown {
+        } else if isSaveCredentialsPopoverShown && button.window == saveCredentialsPopover?.mainWindow {
             saveCredentialsPopover?.viewController.onNotNowClicked(sender: button)
-        } else if isSaveIdentityPopoverShown {
+        } else if isSaveIdentityPopoverShown && button.window == saveIdentityPopover?.mainWindow {
             saveIdentityPopover?.viewController.onNotNowClicked(sender: button)
-        } else if isSavePaymentMethodPopoverShown {
+        } else if isSavePaymentMethodPopoverShown && button.window == savePaymentMethodPopover?.mainWindow {
             savePaymentMethodPopover?.viewController.onNotNowClicked(sender: button)
         } else {
             showPasswordManagementPopover(selectedCategory: nil, from: button, withDelegate: delegate, source: .shortcut)

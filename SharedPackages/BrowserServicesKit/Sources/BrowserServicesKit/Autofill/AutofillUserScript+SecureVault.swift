@@ -637,58 +637,6 @@ extension AutofillUserScript {
         }
     }
 
-    // MARK: - Reply Coordination
-
-    private func registerReplyCallback(for messageType: String, reply: @escaping MessageReplyHandler) {
-        Self.pendingRepliesLock.lock()
-        defer { Self.pendingRepliesLock.unlock() }
-
-        var replies = Self.pendingReplies[messageType] ?? []
-
-        if !replies.isEmpty {
-            let toCancel = replies
-            replies.removeAll()
-
-            DispatchQueue.main.async {
-                for previousReply in toCancel {
-                    previousReply(NoActionResponse.successJSONString)
-                }
-            }
-        }
-
-        replies.append(reply)
-        Self.pendingReplies[messageType] = replies
-    }
-
-    private func sendReply(for messageType: String, withResponse response: String?) {
-        Self.pendingRepliesLock.lock()
-        defer { Self.pendingRepliesLock.unlock() }
-
-        guard var replies = Self.pendingReplies[messageType], let reply = replies.first else {
-            return
-        }
-
-        replies.removeFirst()
-        Self.pendingReplies[messageType] = replies
-
-        DispatchQueue.main.async {
-            reply(response)
-        }
-    }
-
-    public func cancelAllPendingReplies() {
-        Self.pendingRepliesLock.lock()
-        let allReplies = Self.pendingReplies.flatMap(\.value)
-        Self.pendingReplies.removeAll()
-        Self.pendingRepliesLock.unlock()
-
-        DispatchQueue.main.async {
-            for reply in allReplies {
-                reply(NoActionResponse.successJSONString)
-            }
-        }
-    }
-
     func pmGetAutoFillInitData(_ message: UserScriptMessage, _ replyHandler: @escaping MessageReplyHandler) {
         let domain = hostForMessage(message)
         vaultDelegate?.autofillUserScript(self, didRequestAutoFillInitDataForDomain: domain) { credentials, identities, cards, credentialsProvider, _ in
@@ -1166,12 +1114,36 @@ extension AutofillUserScript.AskToUnlockProviderResponse {
 }
 
 extension AutofillUserScript.NoActionResponse {
-    static var successJSONString: String {
+    private static let _successJSONString: String = {
         let response = Self(success: .init(action: .none))
         if let data = try? JSONEncoder().encode(response),
            let string = String(data: data, encoding: .utf8) {
             return string
         }
         return "{}"
+    }()
+
+    static var successJSONString: String {
+        _successJSONString
+    }
+}
+
+extension AutofillUserScript {
+    private func registerReplyCallback(for messageType: String, reply: @escaping MessageReplyHandler) {
+        Task {
+            await replyQueue.register(reply, for: messageType)
+        }
+    }
+
+    private func sendReply(for messageType: String, withResponse response: String?) {
+        Task {
+            await replyQueue.send(response: response, for: messageType)
+        }
+    }
+
+    public func cancelAllPendingReplies() {
+        Task {
+            await replyQueue.cancelAll()
+        }
     }
 }

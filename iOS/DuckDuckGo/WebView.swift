@@ -38,19 +38,14 @@ final class WebView: WKWebView {
 
     func setAccessoryContentView(_ contentView: UIView) {
         customAccesoryView = contentView
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.reloadContentViewInputViews()
-        }
+        reloadContentViewInputViews()
     }
 
     func removeAccessoryContentViewIfNecessary() {
         guard customAccesoryView != nil else { return }
 
         customAccesoryView = nil
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.reloadContentViewInputViews()
-        }
+        reloadContentViewInputViews()
     }
 
     private func reloadContentViewInputViews() {

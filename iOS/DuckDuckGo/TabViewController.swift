@@ -2264,7 +2264,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func registerForKeyboardNotifications() {
-        guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
+        guard isCreditCardAutofillEnabled() else {
             return
         }
         NotificationCenter.default.addObserver(self,
@@ -2274,7 +2274,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     private func unregisterFromKeyboardNotifications() {
-        guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
+        guard isCreditCardAutofillEnabled() else {
             return
         }
 
@@ -2991,13 +2991,17 @@ extension TabViewController: SecureVaultManagerDelegate {
         SecureVaultReporter().secureVaultKeyStoreEvent(event)
     }
 
+    private func isCreditCardAutofillEnabled() -> Bool {
+        return AutofillSettingStatus.isCreditCardAutofillEnabledInSettings &&
+        featureFlagger.isFeatureOn(.autofillCreditCards) &&
+        !isLinkPreview
+    }
+    
     func secureVaultManagerIsEnabledStatus(_ manager: SecureVaultManager, forType type: AutofillType?) -> Bool {
         let isCredentialsEnabled = AutofillSettingStatus.isAutofillEnabledInSettings &&
                         featureFlagger.isFeatureOn(.autofillCredentialInjecting) &&
                         !isLinkPreview
-        let isCreditCardsEnabled = AutofillSettingStatus.isCreditCardAutofillEnabledInSettings &&
-                featureFlagger.isFeatureOn(.autofillCreditCards) &&
-                !isLinkPreview
+        let isCreditCardsEnabled = isCreditCardAutofillEnabled()
 
         let isDataProtected = !UIApplication.shared.isProtectedDataAvailable
         if (isCredentialsEnabled || isCreditCardsEnabled) && isDataProtected {
@@ -3036,9 +3040,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.presentSavePasswordModal(with: vault, credentials: credentials, backfilled: data.backfilled)
             }
-        } else if let creditCard = data.creditCard,
-                  AutofillSettingStatus.isCreditCardAutofillEnabledInSettings,
-                  featureFlagger.isFeatureOn(.autofillCreditCards) {
+        } else if let creditCard = data.creditCard, isCreditCardAutofillEnabled() {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.presentSaveCreditCardModal(with: vault, creditCard: creditCard)
             }
@@ -3089,12 +3091,7 @@ extension TabViewController: SecureVaultManagerDelegate {
                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
                             withTrigger trigger: AutofillUserScript.GetTriggerType,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
-        guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
-            completionHandler(nil)
-            return
-        }
-
-        if !AutofillSettingStatus.isCreditCardAutofillEnabledInSettings || !featureFlagger.isFeatureOn(.autofillCreditCards) {
+        guard isCreditCardAutofillEnabled() else {
             completionHandler(nil)
             return
         }
@@ -3114,12 +3111,7 @@ extension TabViewController: SecureVaultManagerDelegate {
                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
-        guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings else {
-            completionHandler(nil)
-            return
-        }
-
-        guard mainType == .creditCards else {
+        guard isCreditCardAutofillEnabled(), mainType == .creditCards else {
             completionHandler(nil)
             cleanupInputAccessoryView()
             return
@@ -3196,13 +3188,16 @@ extension TabViewController: SecureVaultManagerDelegate {
             completionHandler(card)
             if card == nil {
                 self?.dismissKeyboardIfPresent()
+            } else {
+                NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
             }
+
             self?.cleanupInputAccessoryView()
         }
     }
 
     private func cleanupInputAccessoryView() {
-        guard featureFlagger.isFeatureOn(.autofillCreditCards), AutofillSettingStatus.isCreditCardAutofillEnabledInSettings, let webView = webView as? WebView else {
+        guard isCreditCardAutofillEnabled(), let webView = webView as? WebView else {
             return
         }
 

@@ -122,6 +122,7 @@ class TabSwitcherViewController: UIViewController {
 
     let barsHandler = TabSwitcherBarsStateHandler()
     private var tabObserverCancellable: AnyCancellable?
+    private let appSettings: AppSettings
 
     required init?(coder: NSCoder,
                    bookmarksDatabase: CoreDataDatabase,
@@ -129,13 +130,15 @@ class TabSwitcherViewController: UIViewController {
                    featureFlagger: FeatureFlagger,
                    favicons: Favicons = Favicons.shared,
                    tabManager: TabManager,
-                   aiChatSettings: AIChatSettingsProvider) {
+                   aiChatSettings: AIChatSettingsProvider,
+                   appSettings: AppSettings) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
         self.favicons = favicons
         self.tabManager = tabManager
         self.aiChatSettings = aiChatSettings
+        self.appSettings = appSettings
         super.init(coder: coder)
     }
 
@@ -149,11 +152,70 @@ class TabSwitcherViewController: UIViewController {
         topBarView.standardAppearance = appearance
         topBarView.scrollEdgeAppearance = appearance
     }
+    
+    private func setupBarsLayout() {
+        let addressBarPosition = appSettings.currentAddressBarPosition
+        
+        // Remove existing constraints to avoid conflicts
+        topBarView.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Clear existing constraints for these views
+        view.constraints.forEach { constraint in
+            if constraint.firstItem === topBarView || constraint.secondItem === topBarView ||
+               constraint.firstItem === toolbar || constraint.secondItem === toolbar ||
+               constraint.firstItem === collectionView || constraint.secondItem === collectionView {
+                constraint.isActive = false
+            }
+        }
+        
+        if addressBarPosition.isBottom {
+            // Stack navigation bar on top of toolbar at bottom
+            NSLayoutConstraint.activate([
+                // Collection view takes up top area
+                collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+                collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                collectionView.bottomAnchor.constraint(equalTo: topBarView.topAnchor),
+                
+                // Navigation bar stacked on top of toolbar
+                topBarView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                topBarView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                topBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
+                
+                // Toolbar at bottom
+                toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            ])
+        } else {
+            // Default: navigation bar at top, toolbar at bottom
+            NSLayoutConstraint.activate([
+                // Navigation bar at top
+                topBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+                topBarView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                topBarView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                
+                // Collection view in middle
+                collectionView.topAnchor.constraint(equalTo: topBarView.bottomAnchor),
+                collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                collectionView.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
+                
+                // Toolbar at bottom
+                toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            ])
+        }
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         createTopBar()
+        setupBarsLayout()
 
         refreshTitle()
         setupBackgroundView()
@@ -178,6 +240,7 @@ class TabSwitcherViewController: UIViewController {
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
+        setupBarsLayout()
         updateUIForSelectionMode()
     }
 

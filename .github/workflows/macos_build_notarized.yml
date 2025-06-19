@@ -185,7 +185,7 @@ jobs:
     - name: Upload XIP artifact
       uses: actions/upload-artifact@v4
       with:
-        name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app
+        name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.xip
         path: ${{ github.workspace }}/macOS/release/DuckDuckGo-${{ env.app-version }}.xip
 
     - name: Upload dSYMs artifact
@@ -311,7 +311,7 @@ jobs:
     - name: Fetch app bundle
       uses: actions/download-artifact@v4
       with:
-        name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app
+        name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.xip
         path: ${{ github.workspace }}/macOS/dmg
 
     - name: Extract app bundle

@@ -48,7 +48,7 @@ struct SubscriptionEmailView: View {
         NavigationLink(destination: LazyView(SubscriptionITPView().navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
-        NavigationLink(destination: LazyView(SubscriptionPIRView().navigationViewStyle(.stack)),
+        NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView().navigationViewStyle(.stack)),
                        isActive: $isShowingDBP,
                        label: { EmptyView() })
                         

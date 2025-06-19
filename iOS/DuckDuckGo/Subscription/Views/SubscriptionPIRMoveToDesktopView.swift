@@ -22,8 +22,8 @@ import Foundation
 import DesignResourcesKit
 import DuckUI
 
-struct SubscriptionPIRView: View {
-        
+struct SubscriptionPIRMoveToDesktopView: View {
+
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
     @StateObject var viewModel = SubscriptionPIRViewModel()
@@ -80,7 +80,7 @@ struct SubscriptionPIRView: View {
         
     private var baseView: some View {
         VStack(alignment: .center, spacing: Constants.generalSpacing) {
-            Image(.personalInformationHero)
+            Image("PersonalInformationHero")
                 .aspectRatio(contentMode: .fill)
                 .padding(.top, Constants.generalSpacing)
             VStack {

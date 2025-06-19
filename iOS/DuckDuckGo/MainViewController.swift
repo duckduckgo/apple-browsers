@@ -2740,7 +2740,15 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController,
              didRequestSettingsToLogins account: SecureVaultModels.WebsiteAccount,
              source: AutofillSettingsSource) {
-        segueToSettingsLoginsWithAccount(account, source: source)
+        segueToSettingsAutofillWith(account: account, card: nil, source: source)
+    }
+
+    func tab(_ tab: TabViewController, didRequestSettingsToCreditCards card: SecureVaultModels.CreditCard, source: AutofillSettingsSource) {
+        segueToSettingsAutofillWith(account: nil, card: card, source: source)
+    }
+
+    func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController, source: AutofillSettingsSource) {
+        segueToSettingsAutofillWith(account: nil, card: nil, showCardManagement: true, source: source)
     }
 
     func tabContentProcessDidTerminate(tab: TabViewController) {

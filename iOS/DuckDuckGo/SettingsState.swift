@@ -82,7 +82,9 @@ struct SettingsState {
 
     // Logins properties
     var activeWebsiteAccount: SecureVaultModels.WebsiteAccount?
+    var activeWebsiteCreditCard: SecureVaultModels.CreditCard?
     var autofillSource: AutofillSettingsSource?
+    var showCreditCardManagement: Bool
 
     // About properties
     var version: String
@@ -135,7 +137,9 @@ struct SettingsState {
             longPressPreviews: true,
             allowUniversalLinks: true,
             activeWebsiteAccount: nil,
+            activeWebsiteCreditCard: nil,
             autofillSource: nil,
+            showCreditCardManagement: false,
             version: "0.0.0.0",
             crashCollectionOptInStatus: .undetermined,
             debugModeEnabled: false,

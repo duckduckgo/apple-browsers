@@ -343,15 +343,15 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         } else if pixel.isCredentialsImportPromotionPixel {
             PixelKit.fire(NonStandardEvent(GeneralPixel.jsPixel(pixel)))
         } else {
-            if pixel.isIdentityPixel {
-                NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
-            }
             var existingParameters = pixel.pixelParameters ?? [:]
             var parameters = usageProvider.formattedFillDate.flatMap {
                 existingParameters[AutofillPixelKitEvent.Parameter.lastUsed] = $0
                 return existingParameters
             } ?? existingParameters
             PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: parameters)
+            if pixel.isIdentityPixel {
+                NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
+            }
         }
     }
 

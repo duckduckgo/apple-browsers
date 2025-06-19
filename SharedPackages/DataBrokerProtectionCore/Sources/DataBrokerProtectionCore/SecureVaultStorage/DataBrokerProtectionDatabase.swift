@@ -446,7 +446,7 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository,
         let vault = try requireVault(context: "DataBrokerProtectionDatabase.fetchAllDataBrokers")
 
         do {
-            try vault.fetchAllBrokers()
+            return try vault.fetchAllBrokers()
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchAllDataBrokers")
             throw error

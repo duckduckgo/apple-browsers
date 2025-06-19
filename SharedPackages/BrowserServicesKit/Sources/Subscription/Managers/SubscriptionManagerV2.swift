@@ -278,24 +278,40 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     @discardableResult
     public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
 
+        // NOTE: This is ugly, the subscription cache will be moved from the endpoint service to here and handled properly https://app.asana.com/0/0/1209015691872191
+
         guard isUserAuthenticated else {
             throw SubscriptionEndpointServiceError.noData
         }
 
-        var tokenContainer: TokenContainer
-        do {
-            tokenContainer = try await getTokenContainer(policy: .localValid)
-        } catch SubscriptionManagerError.noTokenAvailable {
-            throw SubscriptionEndpointServiceError.noData
-        } catch {
-            if let subscription = subscriptionEndpointService.getCachedSubscription() {
-                return subscription
-            } else {
-                throw SubscriptionEndpointServiceError.noData
+        var subscription: PrivacyProSubscription
+
+        switch cachePolicy {
+
+        case .remoteFirst, .cacheFirst:
+
+            if cachePolicy == .cacheFirst {
+                // We skip ahead and try to get the cached subscription, useful with slow/no connections where we don't want to wait for a get token timeout
+                do {
+                    subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: cachePolicy)
+                    break
+                } catch {}
             }
+
+            var tokenContainer: TokenContainer
+            do {
+                tokenContainer = try await getTokenContainer(policy: .localValid)
+            } catch SubscriptionManagerError.noTokenAvailable {
+                throw SubscriptionEndpointServiceError.noData
+            } catch {
+                // Failed to get a valid token, fall back on cache
+                subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: .cacheOnly)
+                break
+            }
+            subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken, cachePolicy: cachePolicy)
+        case .cacheOnly:
+            subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: cachePolicy)
         }
-        let subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken,
-                                                                                 cachePolicy: cachePolicy)
 
         if subscription.isActive {
             pixelHandler.handle(pixelType: .subscriptionIsActive)

@@ -70,7 +70,14 @@ protocol TabDelegate: AnyObject {
     func tab(_ tab: TabViewController,
              didRequestSettingsToLogins account: SecureVaultModels.WebsiteAccount,
              source: AutofillSettingsSource)
-    
+
+    func tab(_ tab: TabViewController,
+             didRequestSettingsToCreditCards card: SecureVaultModels.CreditCard,
+             source: AutofillSettingsSource)
+
+    func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController,
+                                                     source: AutofillSettingsSource)
+
     func tabDidRequestFindInPage(tab: TabViewController)
     func closeFindInPage(tab: TabViewController)
 

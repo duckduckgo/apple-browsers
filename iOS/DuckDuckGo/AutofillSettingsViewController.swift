@@ -38,6 +38,8 @@ enum AutofillSettingsSource: String {
     case saveCreditCardDisablePrompt = "save_credit_card_disable_prompt"
     case viewSavedLoginPrompt = "view_saved_login_prompt"
     case newTabPageToolbar = "new_tab_page_toolbar"
+    case viewSavedCreditCardPrompt = "view_saved_credit_card_prompt"
+    case creditCardKeyboardShortcut = "credit_card_keyboard_shortcut"
 }
 
 protocol AutofillSettingsViewControllerDelegate: AnyObject {
@@ -55,6 +57,7 @@ final class AutofillSettingsViewController: UIViewController {
     private let selectedAccount: SecureVaultModels.WebsiteAccount?
     private let selectedCard: SecureVaultModels.CreditCard?
     private let showPasswordManagement: Bool
+    private let showCardManagement: Bool
     private let source: AutofillSettingsSource
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesDisplayMode: FavoritesDisplayMode
@@ -66,6 +69,7 @@ final class AutofillSettingsViewController: UIViewController {
          selectedAccount: SecureVaultModels.WebsiteAccount?,
          selectedCard: SecureVaultModels.CreditCard?,
          showPasswordManagement: Bool,
+         showCardManagement: Bool = false,
          source: AutofillSettingsSource,
          bookmarksDatabase: CoreDataDatabase,
          favoritesDisplayMode: FavoritesDisplayMode,
@@ -77,6 +81,7 @@ final class AutofillSettingsViewController: UIViewController {
         self.selectedAccount = selectedAccount
         self.selectedCard = selectedCard
         self.showPasswordManagement = showPasswordManagement
+        self.showCardManagement = showCardManagement
         self.source = source
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
@@ -99,7 +104,7 @@ final class AutofillSettingsViewController: UIViewController {
         
         if selectedAccount != nil || showPasswordManagement {
             segueToPasswords()
-        } else if selectedCard != nil {
+        } else if selectedCard != nil || showCardManagement {
             segueToCreditCards()
         }
         

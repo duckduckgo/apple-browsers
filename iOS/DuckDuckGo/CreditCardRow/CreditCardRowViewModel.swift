@@ -42,27 +42,43 @@ struct CreditCardRowViewModel: Identifiable, Hashable {
         return creditCard.title.isEmpty ? type.displayName : creditCard.title
     }
     
-    var icon: Image {
+    var compactDisplayTitle: String {
+        if displayTitle.count > 30 {
+            let ellipsis = "..."
+            return String(displayTitle.prefix(30)) + ellipsis
+        }
+        return displayTitle
+    }
+
+    private var iconAssetName: String {
         switch type {
         case .amex:
-            return Image(.creditCardBankAmexColor32)
+            "Credit-Card-Bank-Amex-Color-32"
         case .dinersClub:
-            return Image(.creditCardBankDinersClubColor32)
+            "Credit-Card-Bank-Diners-Club-Color-32"
         case .discover:
-            return Image(.creditCardBankDiscoverColor32)
+            "Credit-Card-Bank-Discover-Color-32"
         case .mastercard:
-            return Image(.creditCardBankMastercardColor32)
+            "Credit-Card-Bank-Mastercard-Color-32"
         case .jcb:
-            return Image(.creditCardBankJCBColor32)
+            "Credit-Card-Bank-JCB-Color-32"
         case .unionPay:
-            return Image(.creditCardBankUnionpayColor32)
+            "Credit-Card-Bank-Unionpay-Color-32"
         case .visa:
-            return Image(.creditCardBankVisaColor32)
+            "Credit-Card-Bank-Visa-Color-32"
         case .unknown:
-            return Image(.creditCardColor32)
+            "Credit-Card-Color-32"
         }
     }
+
+    var icon: Image {
+        Image(iconAssetName)
+    }
     
+    var uiImageIcon: UIImage? {
+        UIImage(named: iconAssetName)
+    }
+
     var lastFourDigits: String {
         return creditCard.cardSuffix
     }
@@ -76,6 +92,15 @@ struct CreditCardRowViewModel: Identifiable, Hashable {
         return "  \(UserText.autofillCreditCardItemExpiry) \(Self.dateFormatter.string(from: date))"
     }
     
+    var compactExpirationDate: String {
+        guard let month = creditCard.expirationMonth,
+              let year = creditCard.expirationYear,
+              let date = DateComponents(calendar: Calendar.current, year: year, month: month).date else {
+            return ""
+        }
+        return "\(Self.dateFormatter.string(from: date))"
+    }
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }

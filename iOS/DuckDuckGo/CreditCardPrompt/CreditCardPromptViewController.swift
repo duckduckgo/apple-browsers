@@ -72,7 +72,7 @@ extension CreditCardPromptViewController: CreditCardPromptViewModelDelegate {
         }
         
         authenticator.authenticate { [weak self] error in
-            if let _ = error {
+            if error != nil {
                 AppDependencyProvider.shared.autofillLoginSession.endSession()
                 self?.dismiss(animated: true) {
                     self?.completion?(nil)
@@ -88,7 +88,9 @@ extension CreditCardPromptViewController: CreditCardPromptViewModelDelegate {
     }
     
     func creditCardPromptViewModelCancel(_ viewModel: CreditCardPromptViewModel) {
-        dismiss(animated: true)
+        dismiss(animated: true) { [weak self] in
+            self?.completion?(nil)
+        }
     }
     
     func creditCardPromptViewModelDidResizeContent(_ viewModel: CreditCardPromptViewModel, contentHeight: CGFloat) {

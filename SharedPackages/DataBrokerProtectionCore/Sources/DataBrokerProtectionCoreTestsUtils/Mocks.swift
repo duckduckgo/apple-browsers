@@ -288,7 +288,8 @@ public extension ContentScopeFeatureToggles {
             thirdPartyCredentialsProvider: false,
             unknownUsernameCategorization: false,
             partialFormSaves: false,
-            passwordVariantCategorization: false
+            passwordVariantCategorization: false,
+            inputFocusApi: false
         )
     }
 }

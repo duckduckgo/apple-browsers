@@ -2719,9 +2719,13 @@ extension MainViewController: TabDelegate {
              source: AutofillSettingsSource) {
         segueToSettingsAutofillWith(account: account, card: nil, source: source)
     }
-    
-    func tab(_ tab: TabViewController, didRequestSettingsToCreditCards card: SecureVaultModels.CreditCard) {
-        segueToSettingsAutofillWith(account: nil, card: card, source: nil)
+
+    func tab(_ tab: TabViewController, didRequestSettingsToCreditCards card: SecureVaultModels.CreditCard, source: AutofillSettingsSource) {
+        segueToSettingsAutofillWith(account: nil, card: card, source: source)
+    }
+
+    func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController, source: AutofillSettingsSource) {
+        segueToSettingsAutofillWith(account: nil, card: nil, showCardManagement: true, source: source)
     }
 
     func tabContentProcessDidTerminate(tab: TabViewController) {

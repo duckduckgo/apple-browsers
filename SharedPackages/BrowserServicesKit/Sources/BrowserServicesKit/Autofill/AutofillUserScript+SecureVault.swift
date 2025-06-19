@@ -77,6 +77,10 @@ public protocol AutofillSecureVaultDelegate: AnyObject {
                                                      password: String,
                                                      completionHandler: @escaping (Bool) -> Void)
 
+    func autofillUserScriptDidFocus(_: AutofillUserScript,
+                                    mainType: AutofillUserScript.GetAutofillDataMainType,
+                                    completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void)
+
     func autofillUserScript(_: AutofillUserScript, didSendPixel pixel: AutofillUserScript.JSPixel)
 
 }
@@ -388,6 +392,8 @@ extension AutofillUserScript {
         let cardSecurityCode: String
         let expirationMonth: String
         let expirationYear: String
+        let title: String
+        let displayNumber: String
 
     }
 
@@ -467,13 +473,34 @@ extension AutofillUserScript {
                 let month = creditCard.expirationMonth.map { String($0) } ?? ""
                 let year = creditCard.expirationYear.map { String($0) } ?? ""
 
-                creditCardResponse = CreditCardResponse(id: String(id), cardNumber: creditCard.cardNumber, cardName: creditCard.cardholderName ?? "", cardSecurityCode: creditCard.cardSecurityCode ?? "", expirationMonth: month, expirationYear: year)
+                creditCardResponse = CreditCardResponse(id: String(id),
+                                                        cardNumber: creditCard.cardNumber,
+                                                        cardName: creditCard.cardholderName ?? "",
+                                                        cardSecurityCode: creditCard.cardSecurityCode ?? "",
+                                                        expirationMonth: month,
+                                                        expirationYear: year,
+                                                        title: creditCard.title,
+                                                        displayNumber: creditCard.cardSuffix)
             } else {
                 creditCardResponse = nil
             }
 
             return RequestVaultCreditCardResponse(success: RequestVaultCreditCardResponseContents(creditCards: creditCardResponse, action: action))
         }
+    }
+
+    struct NoActionResponse: Codable {
+
+        enum NoActionType: String, Codable {
+            case none
+        }
+
+        struct NoActionResponseContents: Codable {
+            let action: NoActionType
+        }
+
+        let success: NoActionResponseContents
+
     }
 
     // MARK: - Message Handlers
@@ -516,11 +543,16 @@ extension AutofillUserScript {
         let generatedPassword: GetGeneratedPasswordValue?
     }
 
+    struct GetAutofillDataFocus: Codable {
+        let mainType: GetAutofillDataMainType
+    }
+
     // https://github.com/duckduckgo/duckduckgo-autofill/blob/main/src/deviceApiCalls/schemas/getAutofillData.params.json
     public enum GetAutofillDataMainType: String, Codable {
         case credentials
         case identities
         case creditCards
+        case unknown
     }
 
     // https://github.com/duckduckgo/duckduckgo-autofill/blob/main/src/deviceApiCalls/schemas/getAutofillData.params.json
@@ -582,13 +614,32 @@ extension AutofillUserScript {
                 }
             }
         } else if request.mainType == .creditCards {
-            vaultDelegate?.autofillUserScriptDidRequestCreditCard(self, trigger: request.trigger) { creditCard, action in
+            let messageType = request.mainType.rawValue
+            registerReplyCallback(for: messageType, reply: replyHandler)
 
+            vaultDelegate?.autofillUserScriptDidRequestCreditCard(self, trigger: request.trigger) { [weak self] creditCard, action in
                 let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
 
                 if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
-                    replyHandler(jsonString)
+                    self?.sendReply(for: messageType, withResponse: jsonString)
                 }
+            }
+        }
+    }
+
+    func getAutofillDataFocus(_ message: UserScriptMessage, _ replyHandler: @escaping MessageReplyHandler) {
+        guard let request: GetAutofillDataFocus = DecodableHelper.decode(from: message.messageBody) else {
+            return
+        }
+
+        let messageType = request.mainType.rawValue
+        registerReplyCallback(for: messageType, reply: replyHandler)
+
+        vaultDelegate?.autofillUserScriptDidFocus(self, mainType: request.mainType) { [weak self] creditCard, action in
+            let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
+
+            if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
+                self?.sendReply(for: messageType, withResponse: jsonString)
             }
         }
     }
@@ -1067,4 +1118,39 @@ extension AutofillUserScript.AskToUnlockProviderResponse {
         self.init(success: success)
     }
 
+}
+
+extension AutofillUserScript.NoActionResponse {
+    private static let _successJSONString: String = {
+        let response = Self(success: .init(action: .none))
+        if let data = try? JSONEncoder().encode(response),
+           let string = String(data: data, encoding: .utf8) {
+            return string
+        }
+        return "{}"
+    }()
+
+    static var successJSONString: String {
+        _successJSONString
+    }
+}
+
+extension AutofillUserScript {
+    private func registerReplyCallback(for messageType: String, reply: @escaping MessageReplyHandler) {
+        Task {
+            await replyQueue.register(reply, for: messageType)
+        }
+    }
+
+    private func sendReply(for messageType: String, withResponse response: String?) {
+        Task {
+            await replyQueue.send(response: response, for: messageType)
+        }
+    }
+
+    public func cancelAllPendingReplies() {
+        Task {
+            await replyQueue.cancelAll()
+        }
+    }
 }

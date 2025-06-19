@@ -389,10 +389,17 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
         // no-op
     }
     
-    func secureVaultManagerShouldPromptUserToAutofillCreditCard(_: SecureVaultManager,
-                                                                withCreditCards creditCards: [SecureVaultModels.CreditCard],
-                                                                withTrigger trigger: AutofillUserScript.GetTriggerType,
-                                                                completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    func secureVaultManager(_: SecureVaultManager,
+                            promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
+                            withTrigger trigger: AutofillUserScript.GetTriggerType,
+                            completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        // no-op
+    }
+    
+    func secureVaultManager(_: SecureVaultManager,
+                            didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
+                            withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                            completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op
     }
 
@@ -442,7 +449,7 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
         
         completionHandler(runtimeConfig)
     }
-
+  
     func secureVaultManager(_: SecureVaultManager, didReceivePixel pixel: AutofillUserScript.JSPixel) {
         guard !pixel.isEmailPixel else {
             // The iOS app uses a native email autofill UI, and sends its pixels separately. Ignore pixels sent from the JS layer.

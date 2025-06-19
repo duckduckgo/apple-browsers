@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "branch" : "dbajpeyi/fix/ios-prompt-cc-once-and-icons",
-        "revision" : "7738fcbfd61aa045d9200b5c617506bcbda34caa"
+        "revision" : "c504edade04adc0535ecf1b4636cbb17e81b78ad",
+        "version" : "18.0.0"
       }
     },
     {

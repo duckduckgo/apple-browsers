@@ -147,6 +147,7 @@ class SettingsLegacyViewProvider: ObservableObject {
                        selectedAccount: SecureVaultModels.WebsiteAccount?,
                        selectedCard: SecureVaultModels.CreditCard?,
                        showPasswordManagement: Bool,
+                       showCreditCardManagement: Bool,
                        source: AutofillSettingsSource?) -> AutofillSettingsViewController {
         return AutofillSettingsViewController(appSettings: self.appSettings,
                                               syncService: self.syncService,
@@ -154,6 +155,7 @@ class SettingsLegacyViewProvider: ObservableObject {
                                               selectedAccount: selectedAccount,
                                               selectedCard: selectedCard,
                                               showPasswordManagement: showPasswordManagement,
+                                              showCardManagement: showCreditCardManagement,
                                               source: source ?? .settings,
                                               bookmarksDatabase: self.bookmarksDatabase,
                                               favoritesDisplayMode: self.appSettings.favoritesDisplayMode,

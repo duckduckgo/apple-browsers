@@ -76,8 +76,10 @@ final class MockTabDelegate: TabDelegate {
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestSettingsToLogins account: BrowserServicesKit.SecureVaultModels.WebsiteAccount, source: DuckDuckGo.AutofillSettingsSource) {}
     
-    func tab(_ tab: TabViewController,
-             didRequestSettingsToCreditCards card: SecureVaultModels.CreditCard) {}
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestSettingsToCreditCards card: BrowserServicesKit.SecureVaultModels.CreditCard, source: DuckDuckGo.AutofillSettingsSource) {}
+
+    func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController,
+                                                     source: AutofillSettingsSource) {}
 
     func tabDidRequestFindInPage(tab: DuckDuckGo.TabViewController) {}
 

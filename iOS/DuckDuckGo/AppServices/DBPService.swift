@@ -44,9 +44,9 @@ final class DBPService: NSObject {
                 featureFlagger: featureFlagger,
                 pixelKit: pixelKit,
                 quickLinkOpenURLHandler: { url in
-                guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(url.absoluteString)) else { return }
-                UIApplication.shared.open(quickLinkURL)
-            })
+                    guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(url.absoluteString)) else { return }
+                    UIApplication.shared.open(quickLinkURL)
+                })
 
             DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
         } else {

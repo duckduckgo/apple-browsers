@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import CoreData
+import Foundation
 
 extension BookmarkManagedObject {
 
@@ -100,8 +101,8 @@ extension BookmarkManagedObject {
                 throw BookmarkError.folderStructureHasCycle
             }
 
-            if let folderID = current.id {
-                parentUUIDs.insert(folderID)
+            if let currentId = current.id {
+                parentUUIDs.insert(currentId)
             }
 
             currentFolder = currentFolder?.parentFolder

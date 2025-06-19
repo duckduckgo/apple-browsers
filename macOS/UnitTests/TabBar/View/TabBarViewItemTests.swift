@@ -17,21 +17,26 @@
 //
 
 import Combine
+import WebKit
 import XCTest
-@testable import Subscription
+
 @testable import DuckDuckGo_Privacy_Browser
+@testable import Subscription
 
 final class TabBarViewItemTests: XCTestCase {
 
     var delegate: MockTabViewItemDelegate!
     var menu: NSMenu!
+    var fireproofDomains: MockFireproofDomains!
     var tabBarViewItem: TabBarViewItem!
 
     @MainActor
     override func setUp() {
         delegate = MockTabViewItemDelegate()
         menu = NSMenu()
+        fireproofDomains = MockFireproofDomains(domains: [])
         tabBarViewItem = TabBarViewItem()
+        tabBarViewItem.fireproofDomains = fireproofDomains
         tabBarViewItem.delegate = delegate
     }
 

@@ -18,11 +18,12 @@
 
 #if DEBUG
 import Common
+import Combine
+import Foundation
 import History
 
 final class FaviconManagerMock: FaviconManagement {
 
-    func loadFavicons() {}
     @Published var isCacheLoaded = true
     var faviconsLoadedPublisher: Published<Bool>.Publisher { $isCacheLoaded }
 

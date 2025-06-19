@@ -19,7 +19,7 @@
 import SwiftUI
 import SwiftUIExtensions
 import Combine
-import NetworkProtection
+import VPN
 
 extension View {
     func applyMenuAttributes() -> some View {

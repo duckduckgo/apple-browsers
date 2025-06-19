@@ -422,7 +422,7 @@ struct PinnedTabInnerView: View {
                 accessoryButton
             }
         } else if let domain = model.content.userEditableUrl?.host,
-                  let eTLDplus1 = ContentBlocking.shared.tld.eTLDplus1(domain),
+                  let eTLDplus1 = NSApp.delegateTyped.tld.eTLDplus1(domain),
                   let firstLetter = eTLDplus1.capitalized.first.flatMap(String.init) {
             ZStack {
                 Rectangle()

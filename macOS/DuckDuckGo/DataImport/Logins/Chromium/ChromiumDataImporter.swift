@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
+import AppKit
+import BrowserServicesKit
 import Foundation
 import PixelKit
-import BrowserServicesKit
 
 internal class ChromiumDataImporter: DataImporter {
 

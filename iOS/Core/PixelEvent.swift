@@ -856,11 +856,17 @@ extension Pixel {
 
         case syncSetupBarcodeScreenShown
         case syncSetupBarcodeScannerSuccess
-        case syncSetupBarcodeScannedSuccess
+        case syncSetupBarcodeScannerFailed
         case syncSetupBarcodeCodeCopied
         case syncSetupManualCodeEntryScreenShown
-        case syncSetupManualCodeEntered
-        case syncSetupAbandoned
+        case syncSetupManualCodeEnteredSuccess
+        case syncSetupManualCodeEnteredFailed
+        case syncSetupEndedAbandoned
+        case syncSetupEndedSuccessful
+        case syncSetupDeepLinkFlowStarted
+        case syncSetupDeepLinkFlowSuccess
+        case syncSetupDeepLinkFlowAbandoned
+        case syncSetupDeepLinkFlowTimeout
 
         case swipeTabsUsedDaily
         case swipeToOpenNewTab
@@ -1179,6 +1185,13 @@ extension Pixel {
         case aiChatSettingsDisplayed
         case aiChatSettingsEnabled
         case aiChatSettingsDisabled
+
+        case aiChatOpen
+        case aiChatMetricStartNewConversation
+        case aiChatMetricStartNewConversationButtonClicked
+        case aiChatMetricOpenHistory
+        case aiChatMetricOpenMostRecentHistoryChat
+        case aiChatMetricSentPromptOngoingChat
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1994,11 +2007,17 @@ extension Pixel.Event {
 
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
         case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"
-        case .syncSetupBarcodeScannedSuccess: return "sync_setup_barcode_scanned_success"
+        case .syncSetupBarcodeScannerFailed: return "sync_setup_barcode_scanner_failed"
         case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
         case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown"
-        case .syncSetupManualCodeEntered: return "sync_setup_manual_code_entered"
-        case .syncSetupAbandoned: return "sync_setup_abandoned"
+        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success"
+        case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed"
+        case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned"
+        case .syncSetupEndedSuccessful: return "sync_setup_ended_successful"
+        case .syncSetupDeepLinkFlowStarted: return "sync_setup_deep_link_flow_started"
+        case .syncSetupDeepLinkFlowSuccess: return "sync_setup_deep_link_flow_success"
+        case .syncSetupDeepLinkFlowAbandoned: return "sync_setup_deep_link_flow_abandoned"
+        case .syncSetupDeepLinkFlowTimeout: return "sync_setup_deep_link_timeout"
 
         case .swipeTabsUsedDaily: return "m_swipe-tabs-used-daily"
         case .swipeToOpenNewTab: return "m_addressbar_swipe_new_tab"
@@ -2309,6 +2328,13 @@ extension Pixel.Event {
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
         case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
+
+        case .aiChatOpen: return "m_aichat_open"
+        case .aiChatMetricStartNewConversation: return "m_aichat_start_new_conversation"
+        case .aiChatMetricStartNewConversationButtonClicked: return "m_aichat_start_new_conversation_button_clicked"
+        case .aiChatMetricOpenHistory: return "m_aichat_open_history"
+        case .aiChatMetricOpenMostRecentHistoryChat: return "m_aichat_open_most_recent_history_chat"
+        case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

@@ -46,7 +46,7 @@ final class PermissionModel {
     private var cancellables = Set<AnyCancellable>()
 
     init(webView: WKWebView? = nil,
-         permissionManager: PermissionManagerProtocol = PermissionManager.shared,
+         permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol = GeolocationService.shared) {
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService

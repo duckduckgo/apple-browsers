@@ -50,9 +50,9 @@ final class DownloadsViewController: NSViewController {
     private var errorBannerHostingView: NSHostingView<DownloadsErrorBannerView>?
 
     init(viewModel: DownloadListViewModel,
-         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.viewModel = viewModel
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
         super.init(nibName: nil, bundle: nil)
     }
 

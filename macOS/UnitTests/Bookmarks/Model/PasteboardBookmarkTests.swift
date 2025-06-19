@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class PasteboardBookmarkTests: XCTestCase {

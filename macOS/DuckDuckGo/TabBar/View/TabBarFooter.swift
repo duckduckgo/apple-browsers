@@ -22,7 +22,7 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
 
     static let identifier = NSUserInterfaceItemIdentifier(rawValue: "TabBarFooter")
 
-    private let visualStyle = NSApp.delegateTyped.visualStyleManager.style
+    private let visualStyle = NSApp.delegateTyped.visualStyle
 
     let addButton = MouseOverButton(image: .add, target: nil, action: #selector(TabBarViewController.addButtonAction))
 
@@ -54,13 +54,13 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
         addButton.translatesAutoresizingMaskIntoConstraints = false
         addButton.isBordered = false
         addButton.bezelStyle = .shadowlessSquare
-        addButton.cornerRadius = visualStyle.addressBarStyleProvider.addressBarButtonsCornerRadius
         addButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         addButton.mouseDownColor = .buttonMouseDown
         addButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         addButton.imagePosition = .imageOnly
         addButton.imageScaling = .scaleNone
         addButton.registerForDraggedTypes([.string])
+        addButton.cornerRadius = visualStyle.toolbarButtonsCornerRadius
         toolTip = UserText.newTabTooltip
 
         addSubview(addButton)

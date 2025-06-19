@@ -56,6 +56,7 @@ final class WindowsManager {
 
     @discardableResult
     class func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel? = nil,
+                             aiChatSidebarProvider: AIChatSidebarProviding = Application.appDelegate.aiChatSidebarProvider,
                              burnerMode: BurnerMode = .regular,
                              droppingPoint: NSPoint? = nil,
                              contentSize: NSSize? = nil,
@@ -68,7 +69,8 @@ final class WindowsManager {
         let mainWindowController = makeNewWindow(tabCollectionViewModel: tabCollectionViewModel,
                                                  popUp: popUp,
                                                  burnerMode: burnerMode,
-                                                 autofillPopoverPresenter: autofillPopoverPresenter)
+                                                 autofillPopoverPresenter: autofillPopoverPresenter,
+                                                 aiChatSidebarProvider: aiChatSidebarProvider)
 
         if let contentSize {
             mainWindowController.window?.setContentSize(contentSize)
@@ -185,15 +187,28 @@ final class WindowsManager {
     private class func makeNewWindow(tabCollectionViewModel: TabCollectionViewModel? = nil,
                                      popUp: Bool = false,
                                      burnerMode: BurnerMode,
-                                     autofillPopoverPresenter: AutofillPopoverPresenter) -> MainWindowController {
-        let mainViewController = MainViewController(tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode), autofillPopoverPresenter: autofillPopoverPresenter)
+                                     autofillPopoverPresenter: AutofillPopoverPresenter,
+                                     fireCoordinator: FireCoordinator? = nil,
+                                     aiChatSidebarProvider: AIChatSidebarProviding) -> MainWindowController {
+        let fireCoordinator = fireCoordinator ?? NSApp.delegateTyped.fireCoordinator
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode),
+            autofillPopoverPresenter: autofillPopoverPresenter,
+            aiChatSidebarProvider: aiChatSidebarProvider,
+            fireCoordinator: fireCoordinator
+        )
 
         let fireWindowSession = if case .burner = burnerMode {
             Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: {
                 $0.mainViewController.tabCollectionViewModel.burnerMode == burnerMode
             })?.fireWindowSession ?? FireWindowSession()
         } else { FireWindowSession?.none }
-        return MainWindowController(mainViewController: mainViewController, popUp: popUp, fireWindowSession: fireWindowSession)
+        return MainWindowController(
+            mainViewController: mainViewController,
+            popUp: popUp,
+            fireWindowSession: fireWindowSession,
+            fireViewModel: fireCoordinator.fireViewModel
+        )
     }
 
 }

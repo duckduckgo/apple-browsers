@@ -335,7 +335,7 @@ public struct LoginImporterError: DataImportError {
                  .databaseError(let error):
                 return error
 
-            case .keystoreError(let status), .keystoreReadError(let status), .keystoreUpdateError(let status):
+            case .keystoreError(let status), .keystoreReadError(_, _, let status), .keystoreUpdateError(let status):
                 return NSError(domain: "KeyStoreError", code: Int(status))
 
             case .secError(let status):

@@ -71,8 +71,19 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         var fireWindowSession: FireWindowSessionRef?
         if isBurner {
-            let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
-            let mainWindowController = MainWindowController(mainViewController: mainViewController, popUp: false, fireWindowSession: .init())
+            let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+            let mainViewController = MainViewController(
+                tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)),
+                autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+                aiChatSidebarProvider: AIChatSidebarProvider(),
+                fireCoordinator: fireCoordinator
+            )
+            let mainWindowController = MainWindowController(
+                mainViewController: mainViewController,
+                popUp: false,
+                fireWindowSession: .init(),
+                fireViewModel: fireCoordinator.fireViewModel
+            )
             fireWindowSession = FireWindowSessionRef(window: mainWindowController.window)
         }
         let task = WebKitDownloadTask(download: download, destination: .resume(destination: destFile, tempFile: tempFile), fireWindowSession: fireWindowSession)
@@ -311,7 +322,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
         let resumeCalled = expectation(description: "resume called")
         webView.resumeDownloadBlock = { [testFile, tempURL] data in
             resumeCalled.fulfill()
-            let resumeData = try? data.map(DownloadResumeData.init(resumeData:))
+            let resumeData = try? DownloadResumeData(resumeData: data)
             XCTAssertEqual(resumeData?.localPath, tempURL!.path)
             XCTAssertEqual(resumeData?.tempFileName, testFile!.dropping(suffix: "." + testFile!.pathExtension).appendingPathExtension("duckload"))
             return WKDownloadMock(url: .duckDuckGo)
@@ -369,7 +380,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
         let resumeCalled = expectation(description: "resume called")
         webView.resumeDownloadBlock = { [testFile, tempURL] data in
             resumeCalled.fulfill()
-            let resumeData = try? data.map(DownloadResumeData.init(resumeData:))
+            let resumeData = try? DownloadResumeData(resumeData: data)
             XCTAssertEqual(resumeData?.localPath, tempURL!.path)
             XCTAssertEqual(resumeData?.tempFileName, testFile!.dropping(suffix: "." + testFile!.pathExtension).appendingPathExtension("duckload"))
             return WKDownloadMock(url: .duckDuckGo)
@@ -435,7 +446,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
         }
         webView.startDownloadBlock = { request in
             startCalled.fulfill()
-            XCTAssertEqual(request?.url, item.downloadURL)
+            XCTAssertEqual(request.url, item.downloadURL)
             return WKDownloadMock(url: .duckDuckGo)
         }
 

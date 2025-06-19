@@ -33,17 +33,6 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
         static let newFireproofDomainKey = "newFireproofDomainKey"
     }
 
-    static let shared: FireproofDomains = {
-#if DEBUG
-        if AppVersion.runType.requiresEnvironment {
-            return FireproofDomains(tld: ContentBlocking.shared.tld)
-        } else {
-            return FireproofDomains(store: FireproofDomainsStore(context: nil), tld: ContentBlocking.shared.tld)
-        }
-#else
-        return FireproofDomains(tld: ContentBlocking.shared.tld)
-#endif
-    }()
     private let store: FireproofDomainsStore
 
     let tld: TLD
@@ -64,7 +53,7 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
         container.domains
     }
 
-    init(store: FireproofDomainsStore = FireproofDomainsStore(database: Application.appDelegate.database.db, tableName: "FireproofDomains"), tld: TLD = ContentBlocking.shared.tld) {
+    init(store: FireproofDomainsStore, tld: TLD) {
         self.store = store
         self.tld = tld
 

@@ -21,7 +21,7 @@ import FeatureFlags
 import Foundation
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-@testable import NetworkProtection
+@testable import VPN
 
 final class VPNAppEventsHandlerTests: XCTestCase {
 
@@ -42,9 +42,11 @@ final class VPNAppEventsHandlerTests: XCTestCase {
             loginItemsDisabledExpectation.fulfill()
         }, restartLoginItemsCallback: { _ in
             loginItemsRestartedExpectation.fulfill()
-        }) { _ in
+        }, isAnyEnabledCallback: { _ in
             true
-        }
+        }, isAnyInstalledCallback: { _ in
+            true
+        })
 
         let appEventsHandler = VPNAppEventsHandler(
             featureGatekeeper: mockFeatureGatekeeper,
@@ -74,9 +76,11 @@ final class VPNAppEventsHandlerTests: XCTestCase {
             loginItemsDisabledExpectation.fulfill()
         }, restartLoginItemsCallback: { _ in
             loginItemsRestartedExpectation.fulfill()
-        }) { _ in
+        }, isAnyEnabledCallback: { _ in
             true
-        }
+        }, isAnyInstalledCallback: { _ in
+            true
+        })
 
         let appEventsHandler = VPNAppEventsHandler(
             featureGatekeeper: mockFeatureGatekeeper,

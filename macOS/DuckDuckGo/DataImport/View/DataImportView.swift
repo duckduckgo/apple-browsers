@@ -45,6 +45,8 @@ struct DataImportView: ModalView {
     @State private var debugViewDisabled: Bool = false
 #endif
 
+    @State private var isDataTypePickerExpanded = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             viewHeader()
@@ -136,9 +138,15 @@ struct DataImportView: ModalView {
                     .padding(.bottom, 24)
                 }
 
-                // Bookmarks/Passwords checkboxes
-                DataImportTypePicker(viewModel: $model)
-                    .disabled(model.isImportSourcePickerDisabled)
+                // Collapsible section for data type selection
+                ExpandableSection(
+                    title: "Select data to import",
+                    isExpanded: $isDataTypePickerExpanded
+                ) {
+                    DataImportTypePicker(viewModel: $model)
+                        .disabled(model.isImportSourcePickerDisabled)
+                }
+                .padding(.bottom, 16)
 
                 passwordsExplainerView().padding(.top, 20)
 
@@ -597,3 +605,28 @@ extension DataImportViewModel {
     .frame(minHeight: 666)
 }
 #endif
+
+private struct ExpandableSection<Content: View>: View {
+    let title: String
+    @Binding var isExpanded: Bool
+    let content: () -> Content
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if !isExpanded {
+                Button(action: { isExpanded = true }) {
+                    HStack {
+                        Text(title)
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            
+            if isExpanded {
+                content()
+            }
+        }
+    }
+}

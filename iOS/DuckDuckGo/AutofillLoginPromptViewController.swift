@@ -117,8 +117,6 @@ extension AutofillLoginPromptViewController: AutofillLoginPromptViewModelDelegat
             Pixel.fire(pixel: .autofillLoginsFillLoginInlineManualConfirmed, withAdditionalParameters: parameters)
         }
 
-        NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
-
         onAccountSelected(account)
 
         if AppDependencyProvider.shared.autofillLoginSession.isSessionValid {

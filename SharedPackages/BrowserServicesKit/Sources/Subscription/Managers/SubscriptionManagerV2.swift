@@ -277,12 +277,24 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     @discardableResult
     public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
+
         guard isUserAuthenticated else {
             throw SubscriptionEndpointServiceError.noData
         }
 
-        let tokenContainer = try? await getTokenContainer(policy: .localValid)
-        let subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer?.accessToken,
+        var tokenContainer: TokenContainer
+        do {
+            tokenContainer = try await getTokenContainer(policy: .localValid)
+        } catch SubscriptionManagerError.noTokenAvailable {
+            throw SubscriptionEndpointServiceError.noData
+        } catch {
+            if let subscription = subscriptionEndpointService.getCachedSubscription() {
+                return subscription
+            } else {
+                throw SubscriptionEndpointServiceError.noData
+            }
+        }
+        let subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken,
                                                                                  cachePolicy: cachePolicy)
 
         if subscription.isActive {

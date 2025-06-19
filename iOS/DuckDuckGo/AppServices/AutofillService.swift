@@ -70,6 +70,8 @@ final class AutofillService {
                     }
                 case .autofillLoginsStacked:
                     Pixel.fire(pixel: .autofillLoginsStacked, withAdditionalParameters: params ?? [:])
+                case .autofillCreditCardsStacked:
+                    Pixel.fire(pixel: .autofillCreditCardsStacked, withAdditionalParameters: params ?? [:])
                 default:
                     break
                 }

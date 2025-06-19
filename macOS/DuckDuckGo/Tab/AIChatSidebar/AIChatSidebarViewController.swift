@@ -17,12 +17,15 @@
 //
 
 import AppKit
+import BrowserServicesKit
+import AIChat
+import Combine
 
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
 protocol AIChatSidebarViewControllerDelegate: AnyObject {
     /// Called when the user clicks the "Expand" button
-    func didClickOpenInNewTabButton()
+    func didClickOpenInNewTabButton(currentAIChatURL: URL)
     /// Called when the user clicks the "Close" button
     func didClickCloseButton()
 }
@@ -47,6 +50,8 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     weak var delegate: AIChatSidebarViewControllerDelegate?
+    public var aiChatPayload: AIChatPayload?
+    private(set) var currentAIChatURL: URL
 
     private var openInNewTabButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -54,11 +59,12 @@ final class AIChatSidebarViewController: NSViewController {
     private var separator: NSView!
     private var topBar: NSView!
 
-    var aiTab = Tab(content: .url(AIChatRemoteSettings().aiChatURL, source: .ui))
+    private lazy var aiTab: Tab = Tab(content: .url(currentAIChatURL, source: .ui), isLoadedInSidebar: true)
 
-    private var buttonTrackingArea: NSTrackingArea?
+    private var cancellables = Set<AnyCancellable>()
 
-    init() {
+    init(currentAIChatURL: URL) {
+        self.currentAIChatURL = currentAIChatURL
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -70,6 +76,10 @@ final class AIChatSidebarViewController: NSViewController {
         let container = NSView()
         container.wantsLayer = true
         container.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor
+
+        if let aiChatPayload {
+            aiTab.aiChat?.setAIChatNativeHandoffData(payload: aiChatPayload)
+        }
 
         createAndSetupSeparator(in: container)
         createAndSetupTopBar(in: container)
@@ -91,6 +101,7 @@ final class AIChatSidebarViewController: NSViewController {
 
         // Initial mask update
         updateWebViewMask()
+        subscribeToURLChanges()
     }
 
     private func createAndSetupSeparator(in container: NSView) {
@@ -168,6 +179,8 @@ final class AIChatSidebarViewController: NSViewController {
         webViewContainer.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor
         container.addSubview(webViewContainer)
 
+        aiTab.setDelegate(self)
+
         // Observe bounds changes to update the mask
         webViewContainer.postsFrameChangedNotifications = true
         NotificationCenter.default.addObserver(self,
@@ -224,12 +237,48 @@ final class AIChatSidebarViewController: NSViewController {
         webViewContainer.layer?.mask = shape
     }
 
+    private func subscribeToURLChanges() {
+        aiTab.$content
+            .dropFirst()
+            .sink { [weak self] content in
+            if let currentURL = content.urlForWebView {
+                self?.currentAIChatURL = currentURL
+            }
+        }
+        .store(in: &cancellables)
+    }
+
     @objc private func openInNewTabButtonClicked() {
-        delegate?.didClickOpenInNewTabButton()
+        delegate?.didClickOpenInNewTabButton(currentAIChatURL: currentAIChatURL.removingPlacementParameter())
     }
 
     @objc private func closeButtonClicked() {
         delegate?.didClickCloseButton()
     }
 
+}
+
+extension AIChatSidebarViewController: TabDelegate {
+
+    func tab(_ tab: Tab, createdChild childTab: Tab, of kind: NewWindowPolicy) {
+        switch kind {
+        case .popup(origin: let origin, size: let contentSize):
+            WindowsManager.openPopUpWindow(with: childTab, origin: origin, contentSize: contentSize)
+        case .window(active: let active, let isBurner):
+            assert(isBurner == childTab.burnerMode.isBurner)
+            WindowsManager.openNewWindow(with: childTab, showWindow: active)
+        case .tab(selected: let selected, _, _):
+            if let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
+                let tabCollectionViewModel = parentWindowController.mainViewController.tabCollectionViewModel
+                tabCollectionViewModel.insertOrAppend(tab: childTab, selected: selected)
+            }
+        }
+    }
+
+    func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool) {}
+    func tabDidStartNavigation(_ tab: Tab) {}
+    func tabPageDOMLoaded(_ tab: Tab) {}
+    func closeTab(_ tab: Tab) {}
+    func websiteAutofillUserScriptCloseOverlay(_ websiteAutofillUserScript: BrowserServicesKit.WebsiteAutofillUserScript?) {}
+    func websiteAutofillUserScript(_ websiteAutofillUserScript: BrowserServicesKit.WebsiteAutofillUserScript, willDisplayOverlayAtClick: CGPoint?, serializedInputContext: String, inputPosition: CGRect) {}
 }

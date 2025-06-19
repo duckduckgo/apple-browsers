@@ -19,10 +19,10 @@
 import Foundation
 import Combine
 import SwiftUI
-import NetworkProtection
+import VPN
 import XCTest
 @testable import NetworkProtectionUI
-import NetworkProtectionTestUtils
+import VPNTestUtils
 
 final class StatusBarMenuTests: XCTestCase {
 

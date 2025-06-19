@@ -40,9 +40,11 @@ extension AppDelegate {
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
 #if SPARKLE
-        if !SupportedOSChecker.isCurrentOSReceivingUpdates {
+        if let warning = SupportedOSChecker().supportWarning,
+           case .unsupported = warning {
+
             // Show not supported info
-            if NSAlert.osNotSupported().runModal() != .cancel {
+            if NSAlert.osNotSupported(warning).runModal() != .cancel {
                 let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
                 NSWorkspace.shared.open(url)
             }
@@ -68,7 +70,7 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
-            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
+            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: true))
             PixelKit.fire(AIChatPixel.aichatApplicationMenuFileClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
     }
@@ -195,7 +197,12 @@ extension AppDelegate {
     }
 
     @objc func openReportBrokenSite(_ sender: Any?) {
-        let privacyDashboardViewController = PrivacyDashboardViewController(privacyInfo: nil, entryPoint: .report)
+        let privacyDashboardViewController = PrivacyDashboardViewController(
+            privacyInfo: nil,
+            entryPoint: .report,
+            contentBlocking: privacyFeatures.contentBlocking,
+            permissionManager: permissionManager
+        )
         privacyDashboardViewController.sizeDelegate = self
 
         let window = NSWindow(contentViewController: privacyDashboardViewController)
@@ -226,7 +233,7 @@ extension AppDelegate {
         NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
     }
 
-    #endif
+#endif
 
     @objc func navigateToBookmark(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem else {
@@ -338,7 +345,7 @@ extension AppDelegate {
 
     @objc func fireButtonAction(_ sender: NSButton) {
         DispatchQueue.main.async {
-            FireCoordinator.fireButtonAction()
+            self.fireCoordinator.fireButtonAction()
             let pixelReporter = OnboardingPixelReporter()
             pixelReporter.measureFireButtonPressed()
         }
@@ -577,7 +584,11 @@ extension AppDelegate {
     }
 
     private func setConfigurationUrl(_ configurationUrl: URL?) {
-        var configurationProvider = AppConfigurationURLProvider(customPrivacyConfiguration: configurationUrl)
+        var configurationProvider = AppConfigurationURLProvider(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger,
+            customPrivacyConfiguration: configurationUrl
+        )
         if configurationUrl == nil {
             configurationProvider.resetToDefaultConfigurationUrl()
         }
@@ -591,7 +602,10 @@ extension AppDelegate {
     }
 
     @objc func setCustomConfigurationURL(_ sender: Any?) {
-        let currentConfigurationURL = AppConfigurationURLProvider().url(for: .privacyConfiguration).absoluteString
+        let currentConfigurationURL = AppConfigurationURLProvider(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        ).url(for: .privacyConfiguration).absoluteString
         let alert = NSAlert.customConfigurationAlert(configurationUrl: currentConfigurationURL)
         if alert.runModal() != .cancel {
             guard let textField = alert.accessoryView as? NSTextField,
@@ -811,14 +825,17 @@ extension MainViewController {
     @objc func clearAllHistory(_ sender: NSMenuItem) {
         if featureFlagger.isFeatureOn(.historyView) {
             Task {
-                let historyViewDataProvider = HistoryViewDataProvider(historyDataSource: historyCoordinator)
+                let historyViewDataProvider = HistoryViewDataProvider(
+                    historyDataSource: historyCoordinator,
+                    historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in self.fireCoordinator.fireViewModel.fire })
+                )
                 await historyViewDataProvider.refreshData()
                 let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
 
                 let presenter = DefaultHistoryViewDialogPresenter()
                 switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all, in: nil) {
                 case .burn:
-                    FireCoordinator.fireViewModel.fire.burnAll()
+                    self.fireCoordinator.fireViewModel.fire.burnAll()
                 case .delete:
                     historyCoordinator.burnAll {}
                 default:
@@ -835,7 +852,7 @@ extension MainViewController {
                 guard case .alertFirstButtonReturn = response else {
                     return
                 }
-                FireCoordinator.fireViewModel.fire.burnAll()
+                self.fireCoordinator.fireViewModel.fire.burnAll()
             })
         }
     }
@@ -856,9 +873,7 @@ extension MainViewController {
                 let presenter = DefaultHistoryViewDialogPresenter()
                 switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode, in: nil) {
                 case .burn:
-                    FireCoordinator.fireViewModel.fire.burnVisits(visits,
-                                                                  except: FireproofDomains.shared,
-                                                                  isToday: isToday)
+                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: isToday)
                 case .delete:
                     historyCoordinator.burnVisits(visits) {}
                 default:
@@ -877,9 +892,7 @@ extension MainViewController {
                 guard case .alertFirstButtonReturn = response else {
                     return
                 }
-                FireCoordinator.fireViewModel.fire.burnVisits(visits,
-                                                              except: FireproofDomains.shared,
-                                                              isToday: isToday)
+                self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: isToday)
             })
         }
     }
@@ -1319,9 +1332,10 @@ extension AppDelegate: NSMenuItemValidation {
         case #selector(AppDelegate.openExportLogins(_:)):
             return areTherePasswords
 
+#if FEEDBACK
         case #selector(AppDelegate.openReportBrokenSite(_:)):
             return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
-
+#endif
         default:
             return true
         }

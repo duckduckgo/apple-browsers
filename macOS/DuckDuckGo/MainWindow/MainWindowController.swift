@@ -46,7 +46,7 @@ final class MainWindowController: NSWindowController {
          mainViewController: MainViewController,
          popUp: Bool,
          fireWindowSession: FireWindowSession? = nil,
-         fireViewModel: FireViewModel? = nil) {
+         fireViewModel: FireViewModel) {
 
         // Compute initial window frame
         let frame = InitialWindowFrameProvider.initialFrame()
@@ -58,7 +58,7 @@ final class MainWindowController: NSWindowController {
             : MainWindow(frame: frame))
         window.contentViewController = mainViewController
         window.setContentSize(frame.size)
-        self.fireViewModel = fireViewModel ?? FireCoordinator.fireViewModel
+        self.fireViewModel = fireViewModel
 
         assert(!mainViewController.isBurner || fireWindowSession != nil)
         self.fireWindowSession = fireWindowSession

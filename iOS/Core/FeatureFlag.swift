@@ -39,13 +39,13 @@ public enum FeatureFlag: String {
     case autoconsentOnByDefault
     case history
     case newTabPageSections
-        
+
     // Duckplayer 'Web based' UI
     case duckPlayer
 
     // Open Duckplayer in a new tab for 'Web based' UI
     case duckPlayerOpenInNewTab
-    
+
     // Duckplayer 'Native' UI
     // https://app.asana.com/0/1204099484721401/1209255140870410/f
     case duckPlayerNativeUI
@@ -103,6 +103,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210055762484807?focus=true
     case experimentalAIChat
 
+    /// https://app.asana.com/1/137249556945/task/1210496258241813
+    case experimentalSwitcherBarTransition
+
     /// https://app.asana.com/1/137249556945/task/1210139454006070
     case privacyProOnboardingPromotion
 
@@ -118,6 +121,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1198964220583541/task/1210272333893232?focus=true
     case autofillPasswordVariantCategorization
 
+    /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
+    case paidAIChat
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
     case canInterceptSyncSetupUrls
 
@@ -126,6 +132,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210422840951066?focus=true
     case aiChatKeepSession
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210410396636449?focus=true
+    case showSettingsCompleteSetupSection
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -137,7 +146,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             false
         }
     }
-    
+
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
         case .privacyProFreeTrialJan25:
@@ -168,9 +177,17 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillPasswordVariantCategorization,
              .syncSetupBarcodeIsUrlBased,
              .canScanUrlBasedSyncSetupBarcodes,
+             .paidAIChat,
              .canInterceptSyncSetupUrls,
-             .exchangeKeysToSyncWithAnotherDevice:
+             .exchangeKeysToSyncWithAnotherDevice,
+             .experimentalSwitcherBarTransition:
             return true
+        case .showSettingsCompleteSetupSection:
+            if #available(iOS 18.2, *) {
+                return true
+            } else {
+                return false
+            }
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
                 return true
@@ -272,6 +289,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .experimentalAIChat:
             return .internalOnly()
+        case .experimentalSwitcherBarTransition:
+            return .internalOnly()
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
         case .syncSetupBarcodeIsUrlBased:
@@ -284,12 +303,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .autofillPasswordVariantCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
+        case .paidAIChat:
+            return .disabled
         case .canInterceptSyncSetupUrls:
             return .remoteReleasable(.subfeature(SyncSubfeature.canInterceptSyncSetupUrls))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .aiChatKeepSession:
             return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
+        case .showSettingsCompleteSetupSection:
+            return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
         }
     }
 }

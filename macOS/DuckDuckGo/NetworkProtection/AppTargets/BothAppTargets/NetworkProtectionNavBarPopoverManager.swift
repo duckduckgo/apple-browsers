@@ -24,7 +24,7 @@ import Common
 import FeatureFlags
 import Foundation
 import LoginItems
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
@@ -46,10 +46,10 @@ protocol NetworkProtectionIPCClient {
 }
 
 extension VPNControllerXPCClient: NetworkProtectionIPCClient {
-    public var ipcStatusObserver: any NetworkProtection.ConnectionStatusObserver { connectionStatusObserver }
-    public var ipcServerInfoObserver: any NetworkProtection.ConnectionServerInfoObserver { serverInfoObserver }
-    public var ipcConnectionErrorObserver: any NetworkProtection.ConnectionErrorObserver { connectionErrorObserver }
-    public var ipcDataVolumeObserver: any NetworkProtection.DataVolumeObserver { dataVolumeObserver }
+    public var ipcStatusObserver: any VPN.ConnectionStatusObserver { connectionStatusObserver }
+    public var ipcServerInfoObserver: any VPN.ConnectionServerInfoObserver { serverInfoObserver }
+    public var ipcConnectionErrorObserver: any VPN.ConnectionErrorObserver { connectionErrorObserver }
+    public var ipcDataVolumeObserver: any VPN.DataVolumeObserver { dataVolumeObserver }
 }
 
 @MainActor

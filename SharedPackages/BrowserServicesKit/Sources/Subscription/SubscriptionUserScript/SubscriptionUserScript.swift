@@ -104,11 +104,6 @@ extension SubscriptionUserScript {
         struct HandshakeResponse: Codable, Equatable {
             let availableMessages: [SubscriptionUserScript.MessageName]
             let platform: Platform
-
-            init(availableMessages: [SubscriptionUserScript.MessageName], platform: Platform) {
-                self.availableMessages = availableMessages
-                self.platform = platform
-            }
         }
 
         /// This struct is returned in response to the `subscriptionDetails` message

@@ -322,6 +322,9 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Когато DuckDuckGo открие изскачащи прозорци за съгласие за използване на бисквитки в сайтовете, които посещавате, можем да опитаме автоматично да настроим предпочитанията Ви за бисквитки, така че бисквитките да са сведени до минимум, а поверителността да е максимална, след което да затворим изскачащите прозорци. Някои сайтове не предоставят възможност за управление на предпочитанията за бисквитки, затова можем само да скрием техните изскачащи прозорци.";
 
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Картата е запазена";
+
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Картата е изтрита";
 
@@ -409,6 +412,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Защитете устройството, за да можете да запазвате кредитни карти";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Не записвай";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Запазване на картата";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Кредитните карти се съхраняват сигурно на Вашето устройство.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Искате ли DuckDuckGo да запази информацията за картата?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Удостоверете се, за да бъде попълнена информацията за кредитната карта";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Използване на запазена карта?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Можете да изключите запазването на кредитни карти по всяко време.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -469,8 +493,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Синхронизиране с браузъра на работния плот";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Как се импортират пароли";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Как да синхронизирате паролите от работния плот";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Забрани";
@@ -2674,6 +2698,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Автоматично изчистване на данните";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Завършете настройките";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Защита от изскачащи прозорци за бисквитки";
 
@@ -2737,6 +2764,9 @@
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Икона на приложението";
 
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Импортиране на пароли";
+
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";
 
@@ -2796,6 +2826,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Автоматично изпращане на доклади за сривове до DuckDuckGo.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Задаване като браузър по подразбиране";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Задайте позицията на адресната лента";

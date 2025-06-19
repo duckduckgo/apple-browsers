@@ -163,11 +163,7 @@ final class DuckPlayer {
     static let shared = DuckPlayer()
 
     var isAvailable: Bool {
-        if SupportedOSChecker.isCurrentOSReceivingUpdates {
-            return isFeatureEnabled
-        } else {
-            return false
-        }
+        isFeatureEnabled
     }
 
     @Published var mode: DuckPlayerMode
@@ -182,7 +178,7 @@ final class DuckPlayer {
 
     init(
         preferences: DuckPlayerPreferences = .shared,
-        privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+        privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
         onboardingDecider: DuckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider()
     ) {
         self.preferences = preferences

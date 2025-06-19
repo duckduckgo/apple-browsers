@@ -17,6 +17,7 @@
 //
 
 import DDGSync
+import Foundation
 
 extension PairingInfo {
     var url: URL {

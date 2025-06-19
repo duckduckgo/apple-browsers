@@ -354,9 +354,7 @@ final class AppearancePreferences: ObservableObject {
 
     var isContinueSetUpAvailable: Bool {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersion
-
-        let privacyConfig = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager.privacyConfig
-        return privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) && osVersion.majorVersion >= 12
+        return privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .newTabContinueSetUp) && osVersion.majorVersion >= 12
     }
 
     func updateUserInterfaceStyle() {
@@ -369,32 +367,32 @@ final class AppearancePreferences: ObservableObject {
 
     convenience init(
         keyValueStore: ThrowingKeyValueStoring,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
-        featureFlagger: @autoclosure @escaping () -> FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         dateTimeProvider: @escaping () -> Date = Date.init
     ) {
         self.init(
             persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
+            privacyConfigurationManager: privacyConfigurationManager,
             pixelFiring: pixelFiring,
             newTabPageNavigator: newTabPageNavigator,
-            featureFlagger: featureFlagger(),
             dateTimeProvider: dateTimeProvider
         )
     }
 
     init(
         persistor: AppearancePreferencesPersistor,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
-        featureFlagger: @autoclosure @escaping () -> FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         dateTimeProvider: @escaping () -> Date = Date.init
     ) {
         self.persistor = persistor
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.pixelFiring = pixelFiring
         self.newTabPageNavigator = newTabPageNavigator
         self.dateTimeProvider = dateTimeProvider
-        self.featureFlagger = featureFlagger
 
         /// when adding new properties, make sure to update `reload()` to include them there.
         isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
@@ -432,9 +430,9 @@ final class AppearancePreferences: ObservableObject {
     }
 
     private var persistor: AppearancePreferencesPersistor
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private var pixelFiring: PixelFiring?
     private var newTabPageNavigator: NewTabPageNavigator
-    private let featureFlagger: () -> FeatureFlagger
     private let dateTimeProvider: () -> Date
 
     private func requestSync() {

@@ -53,7 +53,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func createSubscriptionResponseData() -> Data {
+    private func createSubscriptionResponseData() throws -> Data {
         let date = Date(timeIntervalSince1970: 123456789)
         let subscription = PrivacyProSubscription(
             productId: "prod123",
@@ -65,7 +65,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
             status: .autoRenewable,
             activeOffers: []
         )
-        return try! encoder.encode(subscription)
+        return try encoder.encode(subscription)
     }
 
     private func createAPIResponse(statusCode: Int, data: Data?) -> APIResponseV2 {
@@ -100,7 +100,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
     func testGetSubscriptionFetchesRemoteSubscriptionWhenNoCache() async throws {
         // mock subscription response
-        let subscriptionData = createSubscriptionResponseData()
+        let subscriptionData = try createSubscriptionResponseData()
         let apiResponse = createAPIResponse(statusCode: 200, data: subscriptionData)
         let request = SubscriptionRequest.getSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
 

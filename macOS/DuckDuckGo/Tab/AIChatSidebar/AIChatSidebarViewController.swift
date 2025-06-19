@@ -52,6 +52,7 @@ final class AIChatSidebarViewController: NSViewController {
     weak var delegate: AIChatSidebarViewControllerDelegate?
     public var aiChatPayload: AIChatPayload?
     private(set) var currentAIChatURL: URL
+    private let visualStyle: VisualStyleProviding
 
     private var openInNewTabButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -63,8 +64,10 @@ final class AIChatSidebarViewController: NSViewController {
 
     private var cancellables = Set<AnyCancellable>()
 
-    init(currentAIChatURL: URL) {
+    init(currentAIChatURL: URL,
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.currentAIChatURL = currentAIChatURL
+        self.visualStyle = visualStyle
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -73,9 +76,7 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     override func loadView() {
-        let container = NSView()
-        container.wantsLayer = true
-        container.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor
+        let container = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.navigationBackgroundColor)
 
         if let aiChatPayload {
             aiTab.aiChat?.setAIChatNativeHandoffData(payload: aiChatPayload)
@@ -121,8 +122,6 @@ final class AIChatSidebarViewController: NSViewController {
 
     private func createAndSetupTopBar(in container: NSView) {
         topBar = NSView()
-        topBar.wantsLayer = true
-        topBar.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor
         topBar.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(topBar)
 

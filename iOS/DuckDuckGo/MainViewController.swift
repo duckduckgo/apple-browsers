@@ -1930,7 +1930,6 @@ class MainViewController: UIViewController {
     }
 
     func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil) {
-        featureDiscovery.setWasUsedBefore(.aiChat)
         aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, on: self)
     }
 }
@@ -2373,8 +2372,12 @@ extension MainViewController: OmniBarDelegate {
             openAIChat()
         }
 
-        Pixel.fire(pixel: .openAIChatFromAddressBar,
-                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromAddressBar)
+    }
+
+    private func fireAIChatUsagePixelAndSetFeatureUsed(_ pixel: Pixel.Event) {
+        Pixel.fire(pixel: pixel, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        featureDiscovery.setWasUsedBefore(.aiChat)
     }
 
     func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
@@ -2686,7 +2689,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChat(tab: TabViewController) {
-        // Pixel fired at point where this is triggered to avoid over firing
+        fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
         openAIChat()
     }
 
@@ -2921,8 +2924,7 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
-        Pixel.fire(pixel: .openAIChatFromTabManager,
-                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
     }
 }

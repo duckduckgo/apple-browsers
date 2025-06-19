@@ -144,8 +144,8 @@ extension Pixel {
         case browsingMenuReportBrokenSite
         case browsingMenuFireproof
         case browsingMenuAutofill
-        case browsingMenuAIChat
-        case browsingMenuListAIChat
+        case browsingMenuAIChatNewTabPage
+        case browsingMenuAIChatWebPage
 
         case addressBarShare
         case addressBarSettings
@@ -2313,8 +2313,8 @@ extension Pixel.Event {
         case .openAIChatFromWidgetQuickAction: return "m_aichat-widget-quickaction"
         case .openAIChatFromWidgetControlCenter: return "m_aichat-widget-control-center"
         case .openAIChatFromWidgetLockScreenComplication: return "m_aichat-widget-lock-screen-complication"
-        case .browsingMenuAIChat: return "m_aichat_menu_tab_icon"
-        case .browsingMenuListAIChat: return "m_browsing_menu_list_aichat"
+        case .browsingMenuAIChatNewTabPage: return "m_aichat_menu_newtabpage"
+        case .browsingMenuAIChatWebPage: return "m_aichat_menu_webpage"
         case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
         case .openAIChatFromTabManager: return "m_aichat_tabmanager_icon"
         case .aiChatSettingsVoiceTurnedOff: return "m_aichat_settings_voice_turned_off"

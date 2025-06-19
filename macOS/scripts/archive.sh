@@ -279,25 +279,8 @@ staple_notarized_app() {
 compress_app_and_dsym() {
 	echo "Creating XIP archive and compressing dSYMs ..."
 
-	# Create XIP with renamed app for review builds
-	if [[ "${release_type}" == "review" ]]; then
-		# Temporarily rename the app for XIP creation
-		local app_dir=$(dirname "${app_path}")
-		local review_app_path="${app_dir}/DuckDuckGo Review.app"
-		
-		echo "Temporarily renaming app for XIP creation..."
-		mv "${app_path}" "${review_app_path}"
-		
-		# Create XIP from renamed app
-		xar -cf "${output_app_xip_path}" --compression lzma "${review_app_path}"
-		
-		# Rename back to original name
-		mv "${review_app_path}" "${app_path}"
-		echo "Restored original app name"
-	else
-		# For non-review builds, use original app name
-		xar -cf "${output_app_xip_path}" --compression lzma "${app_path}"
-	fi
+	# Create XIP archive using the app as it is (already correctly named)
+	xar -cf "${output_app_xip_path}" --compression lzma "${app_path}"
 	
 	ditto -c -k --keepParent "${dsym_path}" "${output_dsym_zip_path}"
 }

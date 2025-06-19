@@ -21,35 +21,6 @@ import DataBrokerProtectionCoreTestsUtils
 import XCTest
 
 final class BrokerProfileQueryDataTests: XCTestCase {
-    lazy var mockOptOutQueryData: [BrokerProfileQueryData] = {
-        let brokerId: Int64 = 1
-
-        let mockNilPreferredRunDateQueryData = Array(1...10).map {
-            BrokerProfileQueryData.mock(preferredRunDate: nil, optOutJobData: [BrokerProfileQueryData.createOptOutJobData(extractedProfileId: Int64($0), brokerId: brokerId, profileQueryId: Int64($0), preferredRunDate: nil)])
-        }
-        let mockPastQueryData = Array(1...10).map {
-            BrokerProfileQueryData.mock(preferredRunDate: .nowMinus(hours: $0), optOutJobData: [BrokerProfileQueryData.createOptOutJobData(extractedProfileId: Int64($0), brokerId: brokerId, profileQueryId: Int64($0), preferredRunDate: .nowMinus(hours: $0))])
-        }
-        let mockFutureQueryData = Array(1...10).map {
-            BrokerProfileQueryData.mock(preferredRunDate: .nowPlus(hours: $0), optOutJobData: [BrokerProfileQueryData.createOptOutJobData(extractedProfileId: Int64($0), brokerId: brokerId, profileQueryId: Int64($0), preferredRunDate: .nowPlus(hours: $0))])
-        }
-
-        return mockNilPreferredRunDateQueryData + mockPastQueryData + mockFutureQueryData
-    }()
-
-    lazy var mockScanQueryData: [BrokerProfileQueryData] = {
-        let mockNilPreferredRunDateQueryData = Array(1...10).map { _ in
-            BrokerProfileQueryData.mock(preferredRunDate: nil)
-        }
-        let mockPastQueryData = Array(1...10).map {
-            BrokerProfileQueryData.mock(preferredRunDate: .nowMinus(hours: $0))
-        }
-        let mockFutureQueryData = Array(1...10).map {
-            BrokerProfileQueryData.mock(preferredRunDate: .nowPlus(hours: $0))
-        }
-
-        return mockNilPreferredRunDateQueryData + mockPastQueryData + mockFutureQueryData
-    }()
 
     // namesOfBrokersScannedIncludingMirrorSites tests
 

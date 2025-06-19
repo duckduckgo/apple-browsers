@@ -111,10 +111,12 @@ class TabSwitcherBarsStateHandler {
                 fireButton,
 
                 .flexibleSpace(),
-                showAIChatButton ? duckChatButton : .fixedSpace(regularItemWidth),
+
+                plusButton,
+
                 .flexibleSpace(),
 
-                plusButton
+                canShowEditButton ? editButton : nil,
             ].compactMap { $0 }
 
             isBottomBarHidden = false
@@ -148,8 +150,8 @@ class TabSwitcherBarsStateHandler {
 
         case .regularSize:
             topBarLeftButtonItems = [
-                canShowEditButton ? editButton : nil,
-            ].compactMap { $0 }
+                doneButton,
+            ]
 
         case .largeSize:
             topBarLeftButtonItems = [
@@ -184,8 +186,8 @@ class TabSwitcherBarsStateHandler {
 
         case .regularSize:
             topBarRightButtonItems = [
-                doneButton
-            ]
+                showAIChatButton ? duckChatButton : nil,
+            ].compactMap { $0 }
 
         case .editingRegularSize:
             topBarRightButtonItems = [

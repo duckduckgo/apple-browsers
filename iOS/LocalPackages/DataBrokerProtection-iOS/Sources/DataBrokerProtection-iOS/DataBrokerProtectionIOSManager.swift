@@ -73,7 +73,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                   featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
                                   pixelKit: PixelKit,
-                                  quickLinkOpenURLHandler: @escaping (URL) -> Void) -> DataBrokerProtectionIOSManager? {
+                                  quickLinkOpenURLHandler: @escaping (URL) -> Void) -> DataBrokerProtectionIOSManager {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 

@@ -213,6 +213,8 @@ New: \(subscription.debugDescription, privacy: .public)
             do {
                 let subscription = try await getRemoteSubscription(accessToken: accessToken)
                 return subscription
+            } catch SubscriptionEndpointServiceError.noData {
+                throw SubscriptionEndpointServiceError.noData
             } catch {
                 return try await getSubscription(accessToken: accessToken, cachePolicy: .cacheOnly)
             }

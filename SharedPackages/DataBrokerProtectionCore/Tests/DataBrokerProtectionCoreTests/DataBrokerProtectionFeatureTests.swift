@@ -305,7 +305,6 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         await fulfillment(of: [timeoutExpectation], timeout: 0.3)
     }
 
-
     @MainActor
     func testWhenGetCaptchaInfoActionTimesOut_thenDelegateReceivesTimeoutError() async {
         let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)

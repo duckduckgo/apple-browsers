@@ -115,57 +115,46 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenExpectationActionTimesOut_thenDelegateReceivesTimeoutError() async {
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
+    private func performTimeoutTest(
+        action: Action,
+        actionID: String,
+        stepType: StepType,
+        timeout: TimeInterval = 0.1
+    ) async {
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: timeout)
         sut.with(broker: mockBroker)
-        let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
 
         let timeoutExpectation = expectation(description: "Timeout error received")
 
         mockCSSDelegate.onErrorCallback = { error in
             if let error = error as? DataBrokerProtectionError,
-               case .actionFailed(let actionID, let message) = error,
-               actionID == "expectation-1" && message == "Request timed out" {
+               case .actionFailed(let errorActionID, let message) = error,
+               errorActionID == actionID && message == "Request timed out" {
                 timeoutExpectation.fulfill()
             }
         }
 
-        let canTimeOut = action.canTimeOut(while: StepType.scan)
+        let canTimeOut = action.canTimeOut(while: stepType)
         XCTAssertTrue(canTimeOut)
 
         sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: canTimeOut)
 
-        await fulfillment(of: [timeoutExpectation], timeout: 0.3)
+        await fulfillment(of: [timeoutExpectation], timeout: timeout + 0.2)
 
-        XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, DataBrokerProtectionError.actionFailed(actionID: "expectation-1", message: "Request timed out"))
+        XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, DataBrokerProtectionError.actionFailed(actionID: actionID, message: "Request timed out"))
+    }
+
+    @MainActor
+    func testWhenExpectationActionTimesOut_thenDelegateReceivesTimeoutError() async {
+        let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
+        await performTimeoutTest(action: action, actionID: "expectation-1", stepType: .scan)
     }
 
     @MainActor
     func testWhenNavigateActionTimesOut_thenDelegateReceivesTimeoutError() async {
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
-        sut.with(broker: mockBroker)
         let action = NavigateAction(id: "navigate-1", actionType: .navigate, url: "", ageRange: nil, dataSource: nil)
-        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
-
-        let timeoutExpectation = expectation(description: "Timeout error received")
-
-        mockCSSDelegate.onErrorCallback = { error in
-            if let error = error as? DataBrokerProtectionError,
-               case .actionFailed(let actionID, let message) = error,
-               actionID == "navigate-1" && message == "Request timed out" {
-                timeoutExpectation.fulfill()
-            }
-        }
-
-        let canTimeOut = action.canTimeOut(while: StepType.scan)
-        XCTAssertTrue(canTimeOut)
-
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: canTimeOut)
-
-        await fulfillment(of: [timeoutExpectation], timeout: 0.3)
-
-        XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, DataBrokerProtectionError.actionFailed(actionID: "navigate-1", message: "Request timed out"))
+        await performTimeoutTest(action: action, actionID: "navigate-1", stepType: .scan)
     }
 
     @MainActor
@@ -231,128 +220,33 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     @MainActor
     func testWhenClickActionTimesOut_thenDelegateReceivesTimeoutError() async {
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
-        sut.with(broker: mockBroker)
         let action = ClickAction(id: "click-1", actionType: .click, elements: [], dataSource: nil, choices: nil, default: nil)
-        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
-
-        let timeoutExpectation = expectation(description: "Timeout error received")
-
-        mockCSSDelegate.onErrorCallback = { error in
-            if let error = error as? DataBrokerProtectionError,
-               case .actionFailed(let actionID, let message) = error,
-               actionID == "click-1" && message == "Request timed out" {
-                timeoutExpectation.fulfill()
-            }
-        }
-
-        let canTimeOut = action.canTimeOut(while: StepType.optOut)
-        XCTAssertTrue(canTimeOut)
-
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: canTimeOut)
-
-        await fulfillment(of: [timeoutExpectation], timeout: 0.3)
+        await performTimeoutTest(action: action, actionID: "click-1", stepType: .optOut)
     }
 
     @MainActor
     func testWhenFillFormActionTimesOut_thenDelegateReceivesTimeoutError() async {
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
-        sut.with(broker: mockBroker)
         let action = FillFormAction(id: "form-1", actionType: .fillForm, selector: "form", elements: [], dataSource: nil)
-        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
-
-        let timeoutExpectation = expectation(description: "Timeout error received")
-
-        mockCSSDelegate.onErrorCallback = { error in
-            if let error = error as? DataBrokerProtectionError,
-               case .actionFailed(let actionID, let message) = error,
-               actionID == "form-1" && message == "Request timed out" {
-                timeoutExpectation.fulfill()
-            }
-        }
-
-        let canTimeOut = action.canTimeOut(while: StepType.optOut)
-        XCTAssertTrue(canTimeOut)
-
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: canTimeOut)
-
-        await fulfillment(of: [timeoutExpectation], timeout: 0.3)
+        await performTimeoutTest(action: action, actionID: "form-1", stepType: .optOut)
     }
 
     @MainActor
     func testWhenExtractActionTimesOut_thenDelegateReceivesTimeoutError() async {
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
-        sut.with(broker: mockBroker)
         let profile = ExtractProfileSelectors(name: nil, alternativeNamesList: nil, addressFull: nil, addressCityStateList: nil, addressCityState: nil, phone: nil, phoneList: nil, relativesList: nil, profileUrl: nil, reportId: nil, age: nil)
         let action = ExtractAction(id: "extract-1", actionType: .extract, selector: "div", noResultsSelector: nil, profile: profile, dataSource: nil)
-        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
-
-        let timeoutExpectation = expectation(description: "Timeout error received")
-
-        mockCSSDelegate.onErrorCallback = { error in
-            if let error = error as? DataBrokerProtectionError,
-               case .actionFailed(let actionID, let message) = error,
-               actionID == "extract-1" && message == "Request timed out" {
-                timeoutExpectation.fulfill()
-            }
-        }
-
-        let canTimeOut = action.canTimeOut(while: StepType.scan)
-        XCTAssertTrue(canTimeOut)
-
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: canTimeOut)
-
-        await fulfillment(of: [timeoutExpectation], timeout: 0.3)
+        await performTimeoutTest(action: action, actionID: "extract-1", stepType: .scan)
     }
 
     @MainActor
     func testWhenGetCaptchaInfoActionTimesOut_thenDelegateReceivesTimeoutError() async {
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
-        sut.with(broker: mockBroker)
         let action = GetCaptchaInfoAction(id: "captcha-1", actionType: .getCaptchaInfo, selector: "div", dataSource: nil, captchaType: nil)
-        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
-
-        let timeoutExpectation = expectation(description: "Timeout error received")
-
-        mockCSSDelegate.onErrorCallback = { error in
-            if let error = error as? DataBrokerProtectionError,
-               case .actionFailed(let actionID, let message) = error,
-               actionID == "captcha-1" && message == "Request timed out" {
-                timeoutExpectation.fulfill()
-            }
-        }
-
-        let canTimeOut = action.canTimeOut(while: StepType.optOut)
-        XCTAssertTrue(canTimeOut)
-
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: canTimeOut)
-
-        await fulfillment(of: [timeoutExpectation], timeout: 0.3)
+        await performTimeoutTest(action: action, actionID: "captcha-1", stepType: .optOut)
     }
 
     @MainActor
     func testWhenSolveCaptchaActionTimesOut_thenDelegateReceivesTimeoutError() async {
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
-        sut.with(broker: mockBroker)
         let action = SolveCaptchaAction(id: "solve-1", actionType: .solveCaptcha, selector: "div", dataSource: nil, captchaType: nil)
-        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
-
-        let timeoutExpectation = expectation(description: "Timeout error received")
-
-        mockCSSDelegate.onErrorCallback = { error in
-            if let error = error as? DataBrokerProtectionError,
-               case .actionFailed(let actionID, let message) = error,
-               actionID == "solve-1" && message == "Request timed out" {
-                timeoutExpectation.fulfill()
-            }
-        }
-
-        let canTimeOut = action.canTimeOut(while: StepType.optOut)
-        XCTAssertTrue(canTimeOut)
-
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: canTimeOut)
-
-        await fulfillment(of: [timeoutExpectation], timeout: 0.3)
+        await performTimeoutTest(action: action, actionID: "solve-1", stepType: .optOut)
     }
 }
 

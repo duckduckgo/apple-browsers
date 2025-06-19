@@ -37,12 +37,14 @@ protocol SwitchBarHandling: AnyObject {
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
+    var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { get }
 
     // MARK: - Methods
     func updateCurrentText(_ text: String)
     func submitText(_ text: String)
     func setToggleState(_ state: TextEntryMode)
     func clearText()
+    func microphoneButtonTapped()
 }
 
 // MARK: - SwitchBarHandler Implementation
@@ -71,7 +73,12 @@ final class SwitchBarHandler: SwitchBarHandling {
         textSubmissionSubject.eraseToAnyPublisher()
     }
 
+    var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> {
+        microphoneButtonTappedSubject.eraseToAnyPublisher()
+    }
+
     private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
+    private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol) {
         self.voiceSearchHelper = voiceSearchHelper
@@ -93,5 +100,9 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     func clearText() {
         updateCurrentText("")
+    }
+
+    func microphoneButtonTapped() {
+        microphoneButtonTappedSubject.send(())
     }
 }

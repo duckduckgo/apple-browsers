@@ -184,7 +184,8 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 
     func onPromptSubmitted(_ query: String) {
-        editingStateViewController?.dismissAnimated {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
             self.omniDelegate?.onOmniPromptSubmitted(query)
         }
     }
@@ -197,5 +198,14 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     func onSelectSuggestion(_ suggestion: Suggestion) {
         omniDelegate?.onOmniSuggestionSelected(suggestion)
         editingStateViewController?.dismissAnimated()
+    }
+
+    func onVoiceSearchRequested(from mode: TextEntryMode) {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
+
+            let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
+            self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
+        }
     }
 }

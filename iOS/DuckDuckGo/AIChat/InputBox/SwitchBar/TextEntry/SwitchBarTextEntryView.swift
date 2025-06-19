@@ -150,7 +150,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     @objc private func microphoneButtonTapped() {
-        print("potato")
+        handler.microphoneButtonTapped()
     }
 
     // MARK: - UI Updates

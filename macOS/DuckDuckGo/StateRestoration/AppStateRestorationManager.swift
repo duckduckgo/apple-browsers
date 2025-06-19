@@ -31,23 +31,27 @@ final class AppStateRestorationManager: NSObject {
     private var appWillRelaunchCancellable: AnyCancellable?
     private var stateChangedCancellable: AnyCancellable?
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
+    private let startupPreferences: StartupPreferences
 
     @UserDefaultsWrapper(key: .appIsRelaunchingAutomatically, defaultValue: false)
     private var appIsRelaunchingAutomatically: Bool
     private var shouldRestoreRegularTabs: Bool {
-        return StartupPreferences().restorePreviousSession
+        startupPreferences.restorePreviousSession
     }
 
-    convenience init(fileStore: FileStore) {
+    convenience init(fileStore: FileStore, startupPreferences: StartupPreferences) {
         let service = StatePersistenceService(fileStore: fileStore, fileName: AppStateRestorationManager.fileName)
-        self.init(fileStore: fileStore, service: service)
+        self.init(fileStore: fileStore, service: service, startupPreferences: startupPreferences)
     }
 
     init(
         fileStore: FileStore,
-        service: StatePersistenceService) {
+        service: StatePersistenceService,
+        startupPreferences: StartupPreferences
+    ) {
         self.service = service
         self.tabSnapshotCleanupService = TabSnapshotCleanupService(fileStore: fileStore)
+        self.startupPreferences = startupPreferences
     }
 
     func subscribeToAutomaticAppRelaunching(using relaunchPublisher: AnyPublisher<Void, Never>) {
@@ -103,7 +107,7 @@ final class AppStateRestorationManager: NSObject {
         readLastSessionState(restoreWindows: !service.isAppStateFileStale || isRelaunchingAutomatically, restoreRegularTabs: shouldRestoreRegularTabs)
 
         stateChangedCancellable = Publishers.Merge(
-                WindowControllersManager.shared.stateChanged,
+                Application.appDelegate.windowControllersManager.stateChanged,
                 pinnedTabsManagerProvider.settingChangedPublisher
             )
             .debounce(for: .seconds(1), scheduler: RunLoop.main)
@@ -116,7 +120,7 @@ final class AppStateRestorationManager: NSObject {
 
     func applicationWillTerminate() {
         stateChangedCancellable?.cancel()
-        if WindowControllersManager.shared.isInInitialState {
+        if Application.appDelegate.windowControllersManager.isInInitialState {
             service.clearState(sync: true)
         } else {
             persistAppState(sync: true)
@@ -133,7 +137,7 @@ final class AppStateRestorationManager: NSObject {
             restorePinnedTabs()
             cleanTabSnapshots()
         }
-        WindowControllersManager.shared.updateIsInInitialState()
+        Application.appDelegate.windowControllersManager.updateIsInInitialState()
     }
 
     @MainActor
@@ -152,7 +156,7 @@ final class AppStateRestorationManager: NSObject {
 
     @MainActor
     private func persistAppState(sync: Bool = false) {
-        service.persistState(using: WindowControllersManager.shared.encodeState(with:), sync: sync)
+        service.persistState(using: Application.appDelegate.windowControllersManager.encodeState(with:), sync: sync)
     }
 
     private func migratePinnedTabsSettingIfNecessary() {

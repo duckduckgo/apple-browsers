@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import NetworkProtection
+import VPN
 
 // Base protocol for any IPC server we implement.
 //

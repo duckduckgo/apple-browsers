@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import Core
 
@@ -34,7 +35,7 @@ struct DataImportView: View {
                 switch viewModel.state.importScreen {
                 case .bookmarks:
                     BookmarksInstructions(viewModel: viewModel)
-                case .passwords:
+                case .passwords, .settings:
                     PasswordFooterView()
                     PasswordsInstructions(viewModel: viewModel)
                 }
@@ -101,7 +102,7 @@ struct DataImportView: View {
 
     private struct PasswordFooterView: View {
         var body: some View {
-            (Text(Image(.lockSolid16)).baselineOffset(-1.0) + Text(verbatim: " ") + Text(UserText.autofillLoginListSettingsFooter))
+            (Text(Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)).baselineOffset(-1.0) + Text(verbatim: " ") + Text(UserText.autofillLoginListSettingsFooter))
                 .daxFootnoteRegular()
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .padding(.trailing)

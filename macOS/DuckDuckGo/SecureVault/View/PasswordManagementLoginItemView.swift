@@ -550,6 +550,7 @@ private struct HeaderView: View {
 
                 TextField(model.domain, text: $model.title)
                     .font(.title)
+                    .accessibility(identifier: "Title TextField")
 
             } else {
 

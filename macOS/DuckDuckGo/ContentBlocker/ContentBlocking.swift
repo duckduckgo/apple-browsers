@@ -21,6 +21,7 @@ import WebKit
 import Combine
 import BrowserServicesKit
 import Common
+import Persistence
 import PixelKit
 import PixelExperimentKit
 
@@ -35,14 +36,9 @@ protocol ContentBlockingProtocol {
 
 }
 
-typealias AnyContentBlocking = any ContentBlockingProtocol & AdClickAttributionDependencies
-
-// refactor: ContentBlocking.shared to be removed, ContentBlockingProtocol to be renamed to ContentBlocking
+// refactor: AnyContentBlocking to be removed, ContentBlockingProtocol to be renamed to ContentBlocking
 // ContentBlocking to be passed to init methods as `some ContentBlocking`
-typealias ContentBlocking = AppContentBlocking
-extension ContentBlocking {
-    static var shared: AnyContentBlocking { PrivacyFeatures.contentBlocking }
-}
+typealias AnyContentBlocking = any ContentBlockingProtocol & AdClickAttributionDependencies
 
 final class AppContentBlocking {
     let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -50,7 +46,7 @@ final class AppContentBlocking {
     let contentBlockingManager: ContentBlockerRulesManagerProtocol
     let userContentUpdating: UserContentUpdating
 
-    let tld = TLD()
+    let tld: TLD
 
     let adClickAttribution: AdClickAttributing
     let adClickAttributionRulesProvider: AdClickAttributionRulesProviding
@@ -67,13 +63,59 @@ final class AppContentBlocking {
 
     // keeping whole ContentBlocking state initialization in one place to avoid races between updates publishing and rules storing
     @MainActor
-    init(internalUserDecider: InternalUserDecider, configurationStore: ConfigurationStore) {
-        privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
-                                                                  fetchedData: configurationStore.loadData(for: .privacyConfiguration),
-                                                                  embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
-                                                                  localProtection: LocalUnprotectedDomains.shared,
-                                                                  errorReporting: Self.debugEvents,
-                                                                  internalUserDecider: internalUserDecider)
+    convenience init(
+        database: CoreDataDatabase,
+        internalUserDecider: InternalUserDecider,
+        configurationStore: ConfigurationStore,
+        contentScopeExperimentsManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
+        onboardingNavigationDelegate: OnboardingNavigating,
+        appearancePreferences: AppearancePreferences,
+        startupPreferences: StartupPreferences,
+        bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+        historyCoordinator: HistoryDataSource,
+        fireproofDomains: DomainFireproofStatusProviding,
+        fireCoordinator: FireCoordinator,
+        tld: TLD
+    ) {
+        let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
+                                                                      fetchedData: configurationStore.loadData(for: .privacyConfiguration),
+                                                                      embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
+                                                                      localProtection: LocalUnprotectedDomains(database: database),
+                                                                      errorReporting: Self.debugEvents,
+                                                                      internalUserDecider: internalUserDecider)
+        self.init(
+            privacyConfigurationManager: privacyConfigurationManager,
+            internalUserDecider: internalUserDecider,
+            configurationStore: configurationStore,
+            contentScopeExperimentsManager: contentScopeExperimentsManager(),
+            onboardingNavigationDelegate: onboardingNavigationDelegate,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            bookmarkManager: bookmarkManager,
+            historyCoordinator: historyCoordinator,
+            fireproofDomains: fireproofDomains,
+            fireCoordinator: fireCoordinator,
+            tld: tld
+        )
+    }
+
+    @MainActor
+    init(
+        privacyConfigurationManager: PrivacyConfigurationManager,
+        internalUserDecider: InternalUserDecider,
+        configurationStore: ConfigurationStore,
+        contentScopeExperimentsManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
+        onboardingNavigationDelegate: OnboardingNavigating,
+        appearancePreferences: AppearancePreferences,
+        startupPreferences: StartupPreferences,
+        bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+        historyCoordinator: HistoryDataSource,
+        fireproofDomains: DomainFireproofStatusProviding,
+        fireCoordinator: FireCoordinator,
+        tld: TLD
+    ) {
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.tld = tld
 
         trackerDataManager = TrackerDataManager(etag: configurationStore.loadEtag(for: .trackerDataSet),
                                                 data: configurationStore.loadData(for: .trackerDataSet),
@@ -94,7 +136,15 @@ final class AppContentBlocking {
                                                   trackerDataManager: trackerDataManager,
                                                   configStorage: configurationStore,
                                                   webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
-                                                  tld: tld)
+                                                  experimentManager: contentScopeExperimentsManager(),
+                                                  tld: tld,
+                                                  onboardingNavigationDelegate: onboardingNavigationDelegate,
+                                                  appearancePreferences: appearancePreferences,
+                                                  startupPreferences: startupPreferences,
+                                                  bookmarkManager: bookmarkManager,
+                                                  historyCoordinator: historyCoordinator,
+                                                  fireproofDomains: fireproofDomains,
+                                                  fireCoordinator: fireCoordinator)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,
@@ -103,7 +153,7 @@ final class AppContentBlocking {
                                                                           compilationErrorReporting: Self.debugEvents)
     }
 
-    private static let debugEvents = EventMapping<ContentBlockerDebugEvents> { event, error, parameters, onComplete in
+    static let debugEvents = EventMapping<ContentBlockerDebugEvents> { event, error, parameters, onComplete in
         guard AppVersion.runType.requiresEnvironment else { return }
 
         let domainEvent: GeneralPixel
@@ -113,7 +163,7 @@ final class AppContentBlocking {
             domainEvent = .trackerDataParseFailed
             if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[Constants.ParameterName.experimentName] = experimentName
-                finalParameters[Constants.ParameterName.etag] = ContentBlocking.shared.trackerDataManager.fetchedData?.etag ?? ""
+                finalParameters[Constants.ParameterName.etag] = Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.fetchedData?.etag ?? ""
             }
 
         case .trackerDataReloadFailed:
@@ -168,7 +218,7 @@ final class AppContentBlocking {
                                                                      timeBucketAggregation: timeBucket)
             if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[Constants.ParameterName.experimentName] = experimentName
-                finalParameters[Constants.ParameterName.etag] = ContentBlocking.shared.trackerDataManager.fetchedData?.etag ?? ""
+                finalParameters[Constants.ParameterName.etag] = Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.fetchedData?.etag ?? ""
             }
         }
 

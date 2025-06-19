@@ -26,7 +26,7 @@ public protocol ProductFetching {
     /// - Parameter identifiers: An array of product identifiers to fetch.
     /// - Returns: An array of subscription products.
     /// - Throws: An error if the fetch operation fails.
-    func products(for identifiers: [String]) async throws -> [any SubscriptionProduct]
+    func products(for identifiers: [String]) async throws -> [StoreProduct]
 }
 
 /// A default implementation of ProductFetching that uses StoreKit's standard product fetching.
@@ -39,7 +39,7 @@ public final class DefaultProductFetcher: ProductFetching {
     /// - Parameter identifiers: An array of product identifiers to fetch.
     /// - Returns: An array of subscription products.
     /// - Throws: An error if the fetch operation fails.
-    public func products(for identifiers: [String]) async throws -> [any SubscriptionProduct] {
+    public func products(for identifiers: [String]) async throws -> [StoreProduct] {
         return try await Product.products(for: identifiers)
     }
 }

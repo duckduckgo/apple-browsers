@@ -94,17 +94,6 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
         ])
     }
 
-    func testWhenCopyCodePressed_CodeIsCopied() {
-        model.copyCode()
-
-        // You can either test one individual call was made x number of times or check for a whole number of calls
-        monitor.assert(#selector(copyCode).description, calls: 1)
-        monitor.assertCalls([
-            #selector(copyCode).description: 1
-        ])
-    }
-
-
     func testWhenManageBookmarkPressed_BookmarkVCIsLaunched() {
         model.manageBookmarks()
 

@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
+import CommonObjCExtensions
 import Foundation
 import WebKit
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @objc protocol WebViewPermissionsDelegate: WKUIDelegate {

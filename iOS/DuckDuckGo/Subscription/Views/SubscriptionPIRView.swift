@@ -80,7 +80,7 @@ struct SubscriptionPIRView: View {
         
     private var baseView: some View {
         VStack(alignment: .center, spacing: Constants.generalSpacing) {
-            Image("PersonalInformationHero")
+            Image(.personalInformationHero)
                 .aspectRatio(contentMode: .fill)
                 .padding(.top, Constants.generalSpacing)
             VStack {

@@ -39,7 +39,6 @@ struct StartupPreferencesUserDefaultsPersistor: StartupPreferencesPersistor {
 
 final class StartupPreferences: ObservableObject, PreferencesTabOpening {
 
-    static let shared = StartupPreferences()
     private let pinningManager: LocalPinningManager
     private var appearancePreferences: AppearancePreferences
     private var persistor: StartupPreferencesPersistor
@@ -48,9 +47,9 @@ final class StartupPreferences: ObservableObject, PreferencesTabOpening {
     private var dataClearingPreferencesNotificationCancellable: AnyCancellable?
 
     init(pinningManager: LocalPinningManager = .shared,
-         appearancePreferences: AppearancePreferences = .shared,
          persistor: StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
-         dataClearingPreferences: DataClearingPreferences = .shared) {
+         appearancePreferences: AppearancePreferences,
+         dataClearingPreferences: DataClearingPreferences) {
         self.pinningManager = pinningManager
         self.appearancePreferences = appearancePreferences
         self.persistor = persistor

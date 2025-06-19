@@ -75,6 +75,7 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsOpeningSettings: Bool
     public let supportsNativePrompt: Bool
     public let supportsNativeChatInput: Bool
+    public let supportsURLChatIDRestoration: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -82,7 +83,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsClosingAIChat: true,
                                         supportsOpeningSettings: true,
                                         supportsNativePrompt: false,
-                                        supportsNativeChatInput: false)
+                                        supportsNativeChatInput: false,
+                                        supportsURLChatIDRestoration: false)
 #endif
 
 #if os(macOS)
@@ -90,7 +92,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsClosingAIChat: true,
                                         supportsOpeningSettings: true,
                                         supportsNativePrompt: true,
-                                        supportsNativeChatInput: false)
+                                        supportsNativeChatInput: false,
+                                        supportsURLChatIDRestoration: false)
 #endif
     }
 
@@ -98,18 +101,20 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsClosingAIChat: Bool,
                 supportsOpeningSettings: Bool,
                 supportsNativePrompt: Bool,
-                supportsNativeChatInput: Bool) {
+                supportsNativeChatInput: Bool,
+                supportsURLChatIDRestoration: Bool) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
         self.supportsOpeningSettings = supportsOpeningSettings
         self.supportsNativePrompt = supportsNativePrompt
         self.supportsNativeChatInput = supportsNativeChatInput
+        self.supportsURLChatIDRestoration = supportsURLChatIDRestoration
     }
 }
 
-public struct AIChatNativePrompt: Codable {
-    public struct Query: Codable {
+public struct AIChatNativePrompt: Codable, Equatable {
+    public struct Query: Codable, Equatable {
         public let prompt: String
         public let autoSubmit: Bool
     }

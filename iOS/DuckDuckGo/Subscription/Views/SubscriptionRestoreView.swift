@@ -20,6 +20,7 @@
 import Foundation
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import Core
 
 struct SubscriptionRestoreView: View {
@@ -37,8 +38,6 @@ struct SubscriptionRestoreView: View {
     
     private enum Constants {
         static let heroImage = "Privacy-Pro-Add-Device-128"
-        static let appleIcon = "ActivateViaApple-16"
-        static let emailIcon = "ActivateViaEmail-16"
 
         static let viewPadding = EdgeInsets(top: 10, leading: 30, bottom: 0, trailing: 30)
         static let sectionSpacing: CGFloat = 16
@@ -138,7 +137,7 @@ struct SubscriptionRestoreView: View {
     private var addViaEmailView: some View {
         RoundedCardView(title: UserText.subscriptionActivateViaEmailTitle,
                         description: UserText.subscriptionActivateViaEmailDescription,
-                        imageName: Constants.emailIcon,
+                        image: Image(uiImage: DesignSystemImages.Glyphs.Size16.email),
                         buttonTitle: UserText.subscriptionActivateViaEmailButton,
                         buttonAction: {
             DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseEmailStart,
@@ -150,7 +149,7 @@ struct SubscriptionRestoreView: View {
     private var addViaAppleIDView: some View {
         RoundedCardView(title: UserText.subscriptionActivateViaAppleAccountTitle,
                         description: UserText.subscriptionActivateViaAppleAccountDescription,
-                        imageName: Constants.appleIcon,
+                        image: Image(uiImage: DesignSystemImages.Glyphs.Size16.platformApple),
                         buttonTitle: UserText.subscriptionActivateViaAppleAccountButton,
                         buttonAction: {
             viewModel.restoreAppstoreTransaction()
@@ -242,25 +241,25 @@ private struct RoundedCardView: View {
 
     let title: String
     let description: String
-    let imageName: String
+    let image: Image
     let buttonTitle: String
     let buttonAction: () -> Void
 
     init(title: String,
          description: String,
-         imageName: String,
+         image: Image,
          buttonTitle: String,
          buttonAction: @escaping () -> Void) {
         self.title = title
         self.description = description
-        self.imageName = imageName
+        self.image = image
         self.buttonTitle = buttonTitle
         self.buttonAction = buttonAction
     }
 
     var body: some View {
         HStack(alignment: .top, spacing: Constants.cardHorizontalItemSpacing) {
-            Image(imageName)
+            image
                 .frame(width: Constants.imageWidth, height: Constants.imageHeight)
                 .background(Color(designSystemColor: .lines))
                 .clipShape(Circle())

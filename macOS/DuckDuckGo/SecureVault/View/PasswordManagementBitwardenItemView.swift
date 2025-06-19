@@ -31,7 +31,7 @@ struct PasswordManagementBitwardenItemView: View {
                 HStack(spacing: 3) {
                     Text(UserText.passwordManagerPopoverChangeInSettingsLabel)
                     Button {
-                        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .autofill)
+                        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .autofill)
                         didFinish()
                     } label: {
                         Text(UserText.passwordManagerPopoverSettingsButton)

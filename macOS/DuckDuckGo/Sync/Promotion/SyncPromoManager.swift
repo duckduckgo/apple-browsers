@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
 import DDGSync
+import Foundation
 
 protocol SyncPromoManaging {
     func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint) -> Bool
@@ -56,7 +57,7 @@ final class SyncPromoManager: SyncPromoManaging {
     private var syncPromoPasswordsDismissed: Date?
 
     init(syncService: DDGSyncing? = NSApp.delegateTyped.syncService,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
+         privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager) {
         self.syncService = syncService
         self.privacyConfigurationManager = privacyConfigurationManager
     }
@@ -88,7 +89,7 @@ final class SyncPromoManager: SyncPromoManaging {
     }
 
     @MainActor func goToSyncSettings(for touchpoint: Touchpoint) {
-        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .sync)
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .sync)
 
         var source: String
         switch touchpoint {

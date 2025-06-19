@@ -59,11 +59,11 @@ enum Preferences {
         init(model: PreferencesSidebarModel,
              subscriptionManager: SubscriptionManager,
              subscriptionUIHandler: SubscriptionUIHandling,
-             visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
-            self.visualStyle = visualStyleManager.style
+            self.visualStyle = visualStyle
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
@@ -99,31 +99,35 @@ enum Preferences {
                     PrivateSearchView(model: SearchPreferences.shared)
                 case .webTrackingProtection:
                     WebTrackingProtectionView(model: WebTrackingProtectionPreferences.shared)
+                case .threatProtection:
+                    ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
                     CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
                 case .emailProtection:
                     EmailProtectionView(emailManager: EmailManager(),
                                         protectionStatus: model.protectionStatus(for: .emailProtection))
                 case .general:
-                    GeneralView(startupModel: StartupPreferences.shared,
+                    GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
                                 downloadsModel: DownloadsPreferences.shared,
                                 searchModel: SearchPreferences.shared,
                                 tabsModel: TabsPreferences.shared,
-                                dataClearingModel: DataClearingPreferences.shared,
+                                dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 dockCustomizer: DockCustomizer())
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: .shared)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
                 case .dataClearing:
-                    DataClearingView(model: DataClearingPreferences.shared)
+                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences)
                 case .privacyPro:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
                     VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
                 case .personalInformationRemoval:
                     SubscriptionUI.PreferencesPersonalInformationRemovalView(model: personalInformationRemovalModel!)
+                case .paidAIChat:
+                    EmptyView()
                 case .identityTheftRestoration:
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
@@ -163,7 +167,7 @@ enum Preferences {
             let sheetActionHandler = SubscriptionAccessActionHandlers(
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
-                    WindowControllersManager.shared.showTab(with: .subscription(url))
+                    Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
                     PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
@@ -184,6 +188,7 @@ enum Preferences {
                 })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
+                                                        featureFlagger: NSApp.delegateTyped.featureFlagger,
                                                         userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler)
         }
@@ -194,7 +199,7 @@ enum Preferences {
                     switch event {
                     case .openPIR:
                         PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
-                        WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
+                        Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
@@ -214,7 +219,7 @@ enum Preferences {
                     case .openITR:
                         PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
                         let url = subscriptionManager.url(for: .identityTheftRestoration)
-                        WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
+                        Application.appDelegate.windowControllersManager.showTab(with: .identityTheftRestoration(url))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
@@ -240,7 +245,7 @@ enum Preferences {
                     case .openManageSubscriptionsInAppStore:
                         NSWorkspace.shared.open(subscriptionManager.url(for: .manageSubscriptionsInAppStore))
                     case .openCustomerPortalURL(let url):
-                        WindowControllersManager.shared.showTab(with: .url(url, source: .ui))
+                        Application.appDelegate.windowControllersManager.showTab(with: .url(url, source: .ui))
                     case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didOpenSubscriptionSettings:
@@ -263,7 +268,7 @@ enum Preferences {
                 let url = subscriptionManager.url(for: subscriptionURL)
                     .appendingParameter(name: AttributionParameter.origin,
                                         value: SubscriptionFunnelOrigin.appSettings.rawValue)
-                WindowControllersManager.shared.showTab(with: .subscription(url))
+                Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
             }
         }
     }
@@ -274,24 +279,29 @@ enum Preferences {
 
         var purchaseSubscriptionModel: PreferencesPurchaseSubscriptionModel?
         var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
+        var paidAIChatModel: PreferencesPaidAIChatModel?
         var identityTheftRestorationModel: PreferencesIdentityTheftRestorationModel?
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModelV2?
         let subscriptionManager: SubscriptionManagerV2
         let subscriptionUIHandler: SubscriptionUIHandling
         let visualStyle: VisualStyleProviding
+        let showTab: @MainActor (Tab.TabContent) -> Void
 
         init(
             model: PreferencesSidebarModel,
             subscriptionManager: SubscriptionManagerV2,
             subscriptionUIHandler: SubscriptionUIHandling,
-            visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+            showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
+            visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
         ) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
-            self.visualStyle = visualStyleManager.style
+            self.showTab = showTab
+            self.visualStyle = visualStyle
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
+            self.paidAIChatModel = makePaidAIChatViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
             self.subscriptionSettingsModel = makeSubscriptionSettingsViewModel()
         }
@@ -325,31 +335,35 @@ enum Preferences {
                     PrivateSearchView(model: SearchPreferences.shared)
                 case .webTrackingProtection:
                     WebTrackingProtectionView(model: WebTrackingProtectionPreferences.shared)
+                case .threatProtection:
+                    ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
                     CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
                 case .emailProtection:
                     EmailProtectionView(emailManager: EmailManager(),
                                         protectionStatus: model.protectionStatus(for: .emailProtection))
                 case .general:
-                    GeneralView(startupModel: StartupPreferences.shared,
+                    GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
                                 downloadsModel: DownloadsPreferences.shared,
                                 searchModel: SearchPreferences.shared,
                                 tabsModel: TabsPreferences.shared,
-                                dataClearingModel: DataClearingPreferences.shared,
+                                dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 dockCustomizer: DockCustomizer())
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: .shared)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
                 case .dataClearing:
-                    DataClearingView(model: DataClearingPreferences.shared)
+                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences)
                 case .privacyPro:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
                     VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
                 case .personalInformationRemoval:
                     SubscriptionUI.PreferencesPersonalInformationRemovalView(model: personalInformationRemovalModel!)
+                case .paidAIChat:
+                    SubscriptionUI.PreferencesPaidAIChatView(model: paidAIChatModel!)
                 case .identityTheftRestoration:
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
@@ -389,7 +403,7 @@ enum Preferences {
             let sheetActionHandler = SubscriptionAccessActionHandlers(
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
-                    WindowControllersManager.shared.showTab(with: .subscription(url))
+                    showTab(.subscription(url))
                     PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
@@ -407,6 +421,7 @@ enum Preferences {
                 })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
+                                                        featureFlagger: NSApp.delegateTyped.featureFlagger,
                                                         userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler)
         }
@@ -417,7 +432,7 @@ enum Preferences {
                     switch event {
                     case .openPIR:
                         PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
-                        WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
+                        showTab(.dataBrokerProtection)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
@@ -430,6 +445,26 @@ enum Preferences {
                                                               statusUpdates: model.personalInformationRemovalUpdates)
         }
 
+        private func makePaidAIChatViewModel() -> PreferencesPaidAIChatModel {
+             let userEventHandler: (PreferencesPaidAIChatModel.UserEvent) -> Void = { event in
+                 DispatchQueue.main.async {
+                     switch event {
+                     case .openAIC:
+                         PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettings)
+                         let aiChatURL = URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!
+                         showTab(.url(aiChatURL, source: .ui))
+                     case .openURL(let url):
+                         openURL(subscriptionURL: url)
+                     case .didOpenAICPreferencePane:
+                         PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettingsImpression)
+                     }
+                 }
+             }
+
+             return PreferencesPaidAIChatModel(userEventHandler: userEventHandler,
+                                                             statusUpdates: model.paidAIChatUpdates)
+         }
+
         private func makeIdentityTheftRestorationViewModel() -> PreferencesIdentityTheftRestorationModel {
             let userEventHandler: (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void = { event in
                 DispatchQueue.main.async {
@@ -437,7 +472,7 @@ enum Preferences {
                     case .openITR:
                         PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
                         let url = subscriptionManager.url(for: .identityTheftRestoration)
-                        WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
+                        showTab(.identityTheftRestoration(url))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
@@ -463,7 +498,7 @@ enum Preferences {
                     case .openManageSubscriptionsInAppStore:
                         NSWorkspace.shared.open(subscriptionManager.url(for: .manageSubscriptionsInAppStore))
                     case .openCustomerPortalURL(let url):
-                        WindowControllersManager.shared.showTab(with: .url(url, source: .ui))
+                        showTab(.url(url, source: .ui))
                     case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didOpenSubscriptionSettings:
@@ -486,7 +521,7 @@ enum Preferences {
                 let url = subscriptionManager.url(for: subscriptionURL)
                     .appendingParameter(name: AttributionParameter.origin,
                                         value: SubscriptionFunnelOrigin.appSettings.rawValue)
-                WindowControllersManager.shared.showTab(with: .subscription(url))
+                showTab(.subscription(url))
             }
         }
     }

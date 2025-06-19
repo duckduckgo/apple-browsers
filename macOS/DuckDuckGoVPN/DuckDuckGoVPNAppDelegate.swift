@@ -26,14 +26,14 @@ import FeatureFlags
 import LoginItems
 import Networking
 import NetworkExtension
-import NetworkProtection
+import VPN
 import NetworkProtectionProxy
 import NetworkProtectionUI
 import os.log
 import PixelKit
 import ServiceManagement
 import Subscription
-import SwiftUICore
+import SwiftUI
 import VPNAppLauncher
 import VPNAppState
 import VPNExtensionManagement

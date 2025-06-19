@@ -16,14 +16,16 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Bookmarks
 import Combine
 import Common
 import DDGSync
-import Persistence
-import SyncDataProviders
-import PixelKit
+import Foundation
 import os.log
+import Persistence
+import PixelKit
+import SyncDataProviders
 
 public class BookmarksFaviconsFetcherErrorHandler: EventMapping<BookmarksFaviconsFetcherError> {
 
@@ -65,8 +67,8 @@ final class SyncBookmarksAdapter {
 
     init(
         database: CoreDataDatabase,
-        bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
-        appearancePreferences: AppearancePreferences = .shared,
+        bookmarkManager: BookmarkManager,
+        appearancePreferences: AppearancePreferences,
         syncErrorHandler: SyncErrorHandling
     ) {
         self.database = database

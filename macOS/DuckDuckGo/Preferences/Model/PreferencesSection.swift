@@ -32,14 +32,14 @@ struct PreferencesSection: Hashable, Identifiable {
                                 includingAIChat: Bool,
                                 subscriptionState: PreferencesSidebarSubscriptionState) -> [PreferencesSection] {
         let privacyPanes: [PreferencePaneIdentifier] = [
-            .defaultBrowser, .privateSearch, .webTrackingProtection, .cookiePopupProtection, .emailProtection
+            .defaultBrowser, .privateSearch, .webTrackingProtection, .threatProtection, .cookiePopupProtection, .emailProtection
         ]
 
         let regularPanes: [PreferencePaneIdentifier] = {
-            var panes: [PreferencePaneIdentifier] = [.general, .appearance, .autofill, .accessibility, .dataClearing]
+            var panes: [PreferencePaneIdentifier] = [.appearance, .autofill, .accessibility, .dataClearing]
 
             if includingSync {
-                panes.insert(.sync, at: 1)
+                panes.append(.sync)
             }
 
             if includingDuckPlayer {
@@ -50,7 +50,7 @@ struct PreferencesSection: Hashable, Identifiable {
                 panes.append(.aiChat)
             }
 
-            return panes
+            return [.general] + panes.sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
         }()
 
 #if APPSTORE
@@ -83,6 +83,9 @@ struct PreferencesSection: Hashable, Identifiable {
                 }
                 if currentSubscriptionFeatures.contains(.dataBrokerProtection) {
                     subscriptionPanes.append(.personalInformationRemoval)
+                }
+                if currentSubscriptionFeatures.contains(.paidAIChat) && subscriptionState.isPaidAIChatEnabled {
+                    subscriptionPanes.append(.paidAIChat)
                 }
                 if currentSubscriptionFeatures.contains(.identityTheftRestoration) || currentSubscriptionFeatures.contains(.identityTheftRestorationGlobal) {
                     subscriptionPanes.append(.identityTheftRestoration)
@@ -129,6 +132,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case defaultBrowser
     case privateSearch
     case webTrackingProtection
+    case threatProtection
     case cookiePopupProtection
     case emailProtection
 
@@ -139,6 +143,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case privacyPro
     case vpn
     case personalInformationRemoval
+    case paidAIChat
     case identityTheftRestoration
     case subscriptionSettings
     case autofill
@@ -174,6 +179,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.privateSearch
         case .webTrackingProtection:
             return UserText.webTrackingProtection
+        case .threatProtection:
+            return UserText.threatProtection
         case .cookiePopupProtection:
             return UserText.cookiePopUpProtection
         case .emailProtection:
@@ -200,6 +207,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.vpn
         case .personalInformationRemoval:
             return UserText.personalInformationRemoval
+        case .paidAIChat:
+            return UserText.paidAIChat
         case .identityTheftRestoration:
             return UserText.identityTheftRestoration
         case .subscriptionSettings:
@@ -211,7 +220,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .duckPlayer:
             return UserText.duckPlayer
         case .aiChat:
-            return UserText.aiChat
+            return UserText.aiFeatures
         case .about:
             return UserText.about
         case .otherPlatforms:
@@ -227,6 +236,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.privateSearchIcon
         case .webTrackingProtection:
             return settingsIconProvider.webTrackingProtectionIcon
+        case .threatProtection:
+            return settingsIconProvider.threatProtectionIcon
         case .cookiePopupProtection:
             return settingsIconProvider.cookiePopUpProtectionIcon
         case .emailProtection:
@@ -245,6 +256,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.vpnIcon
         case .personalInformationRemoval:
             return settingsIconProvider.personalInformationRemovalIcon
+        case .paidAIChat:
+            return settingsIconProvider.duckAIIcon
         case .identityTheftRestoration:
             return settingsIconProvider.identityTheftRestorationIcon
         case .subscriptionSettings:

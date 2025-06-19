@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Common
 import BrowserServicesKit
+import Common
+import PersistenceTestingUtils
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ScriptSourceProviderTests: XCTestCase {
@@ -44,7 +45,39 @@ final class ScriptSourceProviderTests: XCTestCase {
         let experimentManager = MockContentScopeExperimentManager()
 
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        let sourceProvider = ScriptSourceProvider(configStorage: MockConfigurationStore(), privacyConfigurationManager: MockPrivacyConfigurationManaging(), webTrackingProtectionPreferences: WebTrackingProtectionPreferences(), contentBlockingManager: MockContentBlockerRulesManagerProtocol(), trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()), experimentManager: experimentManager, tld: TLD())
+
+        let appearancePreferences = AppearancePreferences(
+            keyValueStore: try MockKeyValueFileStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
+        let dataClearingPreferences = DataClearingPreferences(
+            persistor: MockFireButtonPreferencesPersistor(),
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock()
+        )
+        let startupPreferences = StartupPreferences(
+            persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
+            appearancePreferences: appearancePreferences,
+            dataClearingPreferences: dataClearingPreferences
+        )
+
+        let sourceProvider = ScriptSourceProvider(
+            configStorage: MockConfigurationStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(),
+            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
+            trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
+            experimentManager: experimentManager,
+            tld: Application.appDelegate.tld,
+            onboardingNavigationDelegate: CapturingOnboardingNavigation(),
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
+            fireproofDomains: MockFireproofDomains(domains: []),
+            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld)
+        )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
         XCTAssertFalse(cohorts.isEmpty)

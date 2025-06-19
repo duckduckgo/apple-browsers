@@ -123,7 +123,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     }
 
     public func executeNextStep() async {
-        retriesCountOnError = 0 // We reset the retries on error when it is successful
+        resetRetriesCount()
         Logger.action.debug("OPTOUT Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 

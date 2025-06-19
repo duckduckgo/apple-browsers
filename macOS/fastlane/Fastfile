@@ -43,7 +43,7 @@ platform :mac do
   #
   desc 'Fetches and updates certificates and provisioning profiles for DMG distribution'
   lane :sync_signing_dmg_release do |options|
-    do_sync_signing(options)
+    do_sync_signing(options.merge({readonly: true}))
   end
 
   # Fetches and updates certificates and provisioning profiles for DMG Review builds
@@ -53,7 +53,7 @@ platform :mac do
   #
   desc 'Fetches and updates certificates and provisioning profiles for DMG Review builds'
   lane :sync_signing_dmg_review do |options|
-    do_sync_signing(options)
+    do_sync_signing(options.merge({readonly: true}))
   end
 
   # Fetches and updates certificates and provisioning profiles for CI builds
@@ -63,7 +63,7 @@ platform :mac do
   #
   desc 'Fetches and updates certificates and provisioning profiles for CI builds'
   lane :sync_signing_ci do |options|
-    do_sync_signing(options)
+    do_sync_signing(options.merge({readonly: true}))
   end
 
   # Makes App Store release build and uploads it to TestFlight without managing App Store listing.
@@ -221,7 +221,9 @@ platform :mac do
     sync_code_signing(
       api_key: get_api_key,
       username: get_username(options),
-      readonly: !is_ci
+      # TODO: remove readonly once we have a way to manage certificates in CI
+      # https://github.com/fastlane/fastlane/issues/29587
+      readonly: options[:readonly] || !is_ci
     )
   end
 

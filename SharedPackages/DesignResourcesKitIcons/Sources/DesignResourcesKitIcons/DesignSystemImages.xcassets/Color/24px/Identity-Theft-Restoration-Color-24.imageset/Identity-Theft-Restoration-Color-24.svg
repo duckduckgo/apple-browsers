@@ -5,8 +5,8 @@
   <path fill="#ADC2FC" d="M14 20.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"/>
   <defs>
     <linearGradient id="Identity-Theft-Restoration-Color-24_svg__a" x1="12" x2="12" y1="2.875" y2="21.25" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#C18010"/>
-      <stop offset="1" stop-color="#92540C"/>
+      <stop stop-color="#E2A412"/>
+      <stop offset="1" stop-color="#C18010"/>
     </linearGradient>
   </defs>
 </svg>

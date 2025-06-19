@@ -17,7 +17,9 @@
 //
 
 import Combine
+import Foundation
 import Testing
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class URLExtensionTests {

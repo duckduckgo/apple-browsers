@@ -17,55 +17,52 @@
 //
 
 import SwiftUI
-import CoreImage
+import CoreImage.CIFilterBuiltins
 
 struct QRCode: View {
     let string: String
-    let size: CGSize
-
-    init(string: String, size: CGSize) {
-        self.string = string
-        self.size = size
-    }
+    let desiredSize: Int
 
     var body: some View {
-        Image(nsImage: generateQRCode(from: string, size: size))
-            .frame(width: size.width, height: size.height)
+        Image(nsImage: generateQRCode(from: string, renderSize: 2 * desiredSize))
+            .resizable()
+            .interpolation(.none)
+            .padding(4)
+            .background(Color.white)
+            .frame(width: CGFloat(desiredSize), height: CGFloat(desiredSize))
     }
 
-    func generateQRCode(from text: String, size: CGSize) -> NSImage {
-        var qrImage: NSImage = {
+    func generateQRCode(from text: String, renderSize: Int) -> NSImage {
+        let context = CIContext()
+        let filter = CIFilter.qrCodeGenerator()
+        filter.setValue(Data(text.utf8), forKey: "inputMessage")
+        filter.setValue("M", forKey: "inputCorrectionLevel")
+
+        guard let outputImage = filter.outputImage else {
             return NSImage(systemSymbolName: "xmark.circle", accessibilityDescription: nil) ?? NSImage()
-        }()
-        let data = Data(text.utf8)
-        let qrCodeFilter: CIFilter = CIFilter(name: "CIQRCodeGenerator")!
-        qrCodeFilter.setValue(data, forKey: "inputMessage")
-        qrCodeFilter.setValue("H", forKey: "inputCorrectionLevel")
-
-        guard let naturalSize = qrCodeFilter.outputImage?.extent.width else {
-            assertionFailure("Failed to generate qr code")
-            return qrImage
         }
 
-        let scale = size.width / naturalSize
+        let baseSize = outputImage.extent.size.width
+        let scaleFactor = floor(CGFloat(renderSize) / baseSize)
 
-        let transform = CGAffineTransform(scaleX: scale, y: scale)
-        guard let outputImage = qrCodeFilter.outputImage?.transformed(by: transform) else {
-            assertionFailure("transformation failed")
-            return qrImage
+        guard scaleFactor >= 1 else {
+            return NSImage(systemSymbolName: "xmark.circle", accessibilityDescription: nil) ?? NSImage()
         }
 
-        let colorParameters: [String: Any] = [
-            "inputColor0": CIColor(color: NSColor.black)!,
-            "inputColor1": CIColor(color: NSColor.white)!
-        ]
-        let coloredImage = outputImage.applyingFilter("CIFalseColor", parameters: colorParameters)
+        let scaledImage = outputImage.transformed(by: .init(scaleX: scaleFactor, y: scaleFactor))
 
-        if let image = CIContext().createCGImage(coloredImage, from: outputImage.extent) {
-            qrImage = NSImage(cgImage: image, size: size)
+        let colored = scaledImage.applyingFilter("CIFalseColor", parameters: [
+            "inputColor0": CIColor(color: .black) as Any,
+            "inputColor1": CIColor(color: .white) as Any
+        ])
+
+        guard let cgImage = context.createCGImage(colored, from: colored.extent) else {
+            return NSImage(systemSymbolName: "xmark.circle", accessibilityDescription: nil) ?? NSImage()
         }
 
-        return qrImage
+        let size = NSSize(width: cgImage.width, height: cgImage.height)
+        let nsImage = NSImage(cgImage: cgImage, size: size)
+        return nsImage
     }
 
 }

@@ -86,7 +86,7 @@ struct Launching: LaunchingHandling {
                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                             configurationStore: AppDependencyProvider.shared.configurationStore,
                                                             privacyConfigurationManager: privacyConfigurationManager)
-        let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager)
+        let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
 
         // MARK: - Main Coordinator Setup
@@ -106,7 +106,8 @@ struct Launching: LaunchingHandling {
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
-                                              didFinishLaunchingStartTime: didFinishLaunchingStartTime)
+                                              didFinishLaunchingStartTime: didFinishLaunchingStartTime,
+                                              keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

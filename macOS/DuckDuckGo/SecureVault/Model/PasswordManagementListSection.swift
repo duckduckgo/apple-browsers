@@ -47,7 +47,7 @@ struct PasswordManagementListSection {
     let title: String
     let items: [SecureVaultItem]
 
-    static let tld: TLD = ContentBlocking.shared.tld
+    static let tld: TLD = Application.appDelegate.tld
     static let autofillUrlSort: AutofillUrlSort = AutofillDomainNameUrlSort()
     static let autofillDefaultKey = "#"
 

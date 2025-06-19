@@ -29,6 +29,7 @@ protocol LoginItemsManaging {
     func restartLoginItems(_ items: Set<LoginItem>)
 
     func isAnyEnabled(_ items: Set<LoginItem>) -> Bool
+    func isAnyInstalled(_ items: Set<LoginItem>) -> Bool
 }
 
 /// Class to manage the login items for the VPN and DBP
@@ -90,9 +91,15 @@ final class LoginItemsManager: LoginItemsManaging {
         })
     }
 
+    func isAnyInstalled(_ items: Set<LoginItem>) -> Bool {
+        return items.contains(where: { item in
+            item.status.isInstalled
+        })
+    }
+
     private func handleError(for item: LoginItem, action: Action, error: NSError) {
         let event = GeneralPixel.loginItemUpdateError(loginItemBundleID: item.agentBundleID,
-                                                      action: "enable",
+                                                      action: action.rawValue,
                                                       buildType: AppVersion.shared.buildType,
                                                       osVersion: AppVersion.shared.osVersion)
         PixelKit.fire(DebugEvent(event, error: error), frequency: .legacyDailyAndCount)

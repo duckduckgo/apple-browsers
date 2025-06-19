@@ -231,7 +231,7 @@ final class TabViewModelTests: XCTestCase {
 
         tabViewModel.$favicon.debounce(for: 0.1, scheduler: RunLoop.main).sink { favicon in
             guard favicon != nil else { return }
-            if favicon == TabViewModel.Favicon.home,
+            if favicon == .homeFavicon,
                 !fulfilled {
                 faviconExpectation.fulfill()
                 fulfilled = true

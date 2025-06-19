@@ -1490,6 +1490,30 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     // MARK: - Edge Cases and Error Conditions
     
     @MainActor
+    func testPresentPill_WhenNativeUIYoutubeModeIsNever_DoesNotShowPill() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = 30
+        mockDuckPlayerSettings.nativeUIYoutubeMode = .never
+        
+        // When
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        
+        // Then
+        XCTAssertNil(sut.containerViewModel, "Container view model should not be created when mode is never")
+        XCTAssertNil(sut.containerViewController, "Container view controller should not be created when mode is never")
+        
+        // Verify no notifications were posted
+        let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
+            notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
+        }
+        XCTAssertTrue(postedNotifications.isEmpty, "Should not post pill visibility notifications when mode is never")
+        
+        // Verify no constraint updates
+        XCTAssertTrue(constraintUpdates.isEmpty, "Should not receive constraint updates when mode is never")
+    }
+    
+    @MainActor
     func testPresentPill_WithNilWebView_HandlesGracefully() {
         // Given
         mockHostViewController.webView = nil

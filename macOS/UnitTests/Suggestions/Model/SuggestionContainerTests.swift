@@ -406,6 +406,9 @@ extension SuggestionContainerTests {
             nil
         }
 
+        func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
+        func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
+
         init(pinnedTabsManagerProvider: PinnedTabsManagerProviding, tabCollectionViewModels: [TabCollectionViewModel] = [], selectedWindow: Int = 0) {
             self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
             self.allTabCollectionViewModels = tabCollectionViewModels

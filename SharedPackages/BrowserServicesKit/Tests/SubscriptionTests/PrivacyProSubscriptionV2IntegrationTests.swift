@@ -55,7 +55,7 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
         subscriptionFeatureFlagger = FeatureFlaggerMapping<SubscriptionFeatureFlags>(mapping: { $0.defaultState })
-        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.PrivacyProSubscriptionV2IntegrationTests")!
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                            oAuthClient: authClient,
                                                            userDefaults: userDefaults,

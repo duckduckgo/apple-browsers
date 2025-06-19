@@ -36,6 +36,8 @@ public final class DataBrokerProtectionManager {
     private let fakeBrokerFlag: DataBrokerDebugFlag = DataBrokerDebugFlagFakeBroker()
     private let vpnBypassService: VPNBypassFeatureProvider
 
+    private var vaultInitializationFailureReported = false
+
     private lazy var freemiumDBPFirstProfileSavedNotifier: FreemiumDBPFirstProfileSavedNotifier = {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let freemiumDBPFirstProfileSavedNotifier = FreemiumDBPFirstProfileSavedNotifier(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
@@ -52,31 +54,13 @@ public final class DataBrokerProtectionManager {
         return sharedPixelsHandler
     }()
 
-    private lazy var vault: (any DataBrokerProtectionSecureVault)? = {
-        guard let sharedPixelsHandler else { return nil }
-
-        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
-        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
-
-        let vault: DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>
-        do {
-            vault = try vaultFactory.makeVault(reporter: reporter)
-        } catch let error {
-            pixelHandler.fire(.mainAppSetUpFailedSecureVaultInitFailed(error: error))
-            return nil
-        }
-
-        return vault
-    }()
-
     lazy var dataManager: DataBrokerProtectionDataManager? = {
-        guard let vault, let sharedPixelsHandler, let brokerUpdater else { return nil }
+        guard let sharedPixelsHandler, let brokerUpdater else { return nil }
 
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker,
                                                     pixelHandler: sharedPixelsHandler,
-                                                    vault: vault,
+                                                    vaultMaker: makeSecureVault(),
                                                     localBrokerService: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database,
                                                           profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier)
@@ -86,13 +70,14 @@ public final class DataBrokerProtectionManager {
     }()
 
     lazy var brokerUpdater: BrokerJSONServiceProvider? = {
-        guard let vault, let sharedPixelsHandler else { return nil }
+        guard let sharedPixelsHandler else { return nil }
 
         let featureFlagger = DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger)
-        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+        let localBrokerService = LocalBrokerJSONService(vaultMaker: makeSecureVault(),
+                                                        pixelHandler: sharedPixelsHandler)
         let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                                     settings: DataBrokerProtectionSettings(defaults: .dbp),
-                                                    vault: vault,
+                                                    vaultMaker: makeSecureVault(),
                                                     authenticationManager: authenticationManager,
                                                     pixelHandler: sharedPixelsHandler,
                                                     localBrokerProvider: localBrokerService)
@@ -109,6 +94,29 @@ public final class DataBrokerProtectionManager {
     lazy var loginItemInterface: DataBrokerProtectionLoginItemInterface = {
         return DefaultDataBrokerProtectionLoginItemInterface(ipcClient: ipcClient, pixelHandler: pixelHandler)
     }()
+
+    private func makeSecureVault() -> () -> (any DataBrokerProtectionSecureVault)? {
+        return { [weak self] in
+            guard let self, let sharedPixelsHandler = self.sharedPixelsHandler else { return nil }
+
+            let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+            let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+            let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+
+            do {
+                let vault = try vaultFactory.makeVault(reporter: reporter)
+                if vaultInitializationFailureReported {
+                    pixelHandler.fire(.mainAppSetUpSecureVaultInitSucceeded)
+                    vaultInitializationFailureReported = false
+                }
+                return vault
+            } catch let error {
+                pixelHandler.fire(.mainAppSetUpFailedSecureVaultInitFailed(error: error))
+                vaultInitializationFailureReported = true
+                return nil
+            }
+        }
+    }
 
     private init() {
         self.authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(

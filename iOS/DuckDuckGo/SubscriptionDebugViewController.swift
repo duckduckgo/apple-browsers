@@ -349,7 +349,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                     """
         let alertController = UIAlertController(title: "⚠️ App restart required! The changes are persistent",
                                                 message: message,
-                                                preferredStyle: .actionSheet)
+                                                preferredStyle: UIDevice.current.userInterfaceIdiom == .pad ? .alert : .actionSheet)
         alertController.addAction(UIAlertAction(title: "Yes", style: .destructive) { [weak self] _ in
             Task {
                 switch envRows {
@@ -720,7 +720,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                     """
         let alertController = UIAlertController(title: "⚠️ App restart required! The changes are persistent",
                                                 message: message,
-                                                preferredStyle: .actionSheet)
+                                                preferredStyle: UIDevice.current.userInterfaceIdiom == .pad ? .alert : .actionSheet)
         alertController.addAction(UIAlertAction(title: "Yes", style: .destructive) { [weak self] _ in
             self?.setCustomBaseSubscriptionURL(url)
             // Close the app

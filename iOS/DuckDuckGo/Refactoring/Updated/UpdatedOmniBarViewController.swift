@@ -19,6 +19,8 @@
 
 import UIKit
 import PrivacyDashboard
+import Suggestions
+import Bookmarks
 
 final class UpdatedOmniBarViewController: OmniBarViewController {
 
@@ -129,6 +131,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     // MARK: - Private Helper Methods
 
     private func presentExperimentalEditingState(for textField: UITextField) {
+        guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
         let switchBarHandler = createSwitchBarHandler(for: textField)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
@@ -136,7 +139,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         editingStateViewController.delegate = self
         editingStateViewController.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
         editingStateViewController.modalPresentationStyle = .overFullScreen
-
+        editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
         present(editingStateViewController, animated: false)
         self.editingStateViewController = editingStateViewController
 
@@ -184,5 +187,15 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         editingStateViewController?.dismissAnimated {
             self.omniDelegate?.onOmniPromptSubmitted(query)
         }
+    }
+
+    func onSelectFavorite(_ favorite: BookmarkEntity) {
+        editingStateViewController?.dismissAnimated()
+        omniDelegate?.onSelectFavorite(favorite)
+    }
+
+    func onSelectSuggestion(_ suggestion: Suggestion) {
+        omniDelegate?.onOmniSuggestionSelected(suggestion)
+        editingStateViewController?.dismissAnimated()
     }
 }

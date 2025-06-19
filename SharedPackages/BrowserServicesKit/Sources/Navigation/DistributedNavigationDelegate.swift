@@ -1,7 +1,7 @@
 //
 //  DistributedNavigationDelegate.swift
 //
-//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -466,6 +466,8 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
 
     @MainActor
     private func willStartDownload(with navigationAction: NavigationAction, in webView: WKWebView) {
+        Logger.navigation.debug("willStartDownload \(navigationAction.debugDescription) in \(webView.description)")
+
         let responders = (navigationAction.isForMainFrame ? navigationAction.mainFrameNavigation?.navigationResponders : nil) ?? responders
         for responder in responders {
             responder.navigationAction(navigationAction, willBecomeDownloadIn: webView)
@@ -944,6 +946,8 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
 
     @MainActor
     private func willStartDownload(with navigationResponse: NavigationResponse, in webView: WKWebView) {
+        Logger.navigation.debug("willStartDownload \(navigationResponse.debugDescription) in \(webView.description)")
+
         let responders = (navigationResponse.isForMainFrame ? navigationResponse.mainFrameNavigation?.navigationResponders : nil) ?? responders
         for responder in responders {
             responder.navigationResponse(navigationResponse, willBecomeDownloadIn: webView)
@@ -976,6 +980,8 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
         }()
         Logger.navigation.log("navigationActionDidBecomeDownload: \(navigationAction.debugDescription)")
 
+        download.targetWebView = webView
+
         let responders = (navigationAction.isForMainFrame ? navigationAction.mainFrameNavigation?.navigationResponders : nil) ?? responders
         for responder in responders {
             responder.navigationAction(navigationAction, didBecome: download)
@@ -1002,6 +1008,8 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             return NavigationResponse(navigationResponse: wkNavigationResponse, mainFrameNavigation: startedNavigation)
         }()
         Logger.navigation.log("navigationResponseDidBecomeDownload: \(navigationResponse.debugDescription)")
+
+        download.targetWebView = webView
 
         let responders = (navigationResponse.isForMainFrame ? navigationResponse.mainFrameNavigation?.navigationResponders : nil) ?? responders
         for responder in responders {

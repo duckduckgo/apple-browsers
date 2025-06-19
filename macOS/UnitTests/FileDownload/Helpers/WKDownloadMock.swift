@@ -21,8 +21,11 @@ import WebKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class WKDownloadMock: NSObject, WebKitDownload, ProgressReporting {
+    var originatingWebView: WKWebView?
+    var targetWebView: WKWebView?
+
     var originalRequest: URLRequest?
-    var webView: WKWebView?
+
     var progress = Progress()
     weak var delegate: WKDownloadDelegate?
 

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Foundation
 import AIChat
 
 protocol AIChatTabOpening {
@@ -24,6 +25,9 @@ protocol AIChatTabOpening {
 
     @MainActor
     func openAIChatTab(_ value: AddressBarTextField.Value, with linkOpenBehavior: LinkOpenBehavior)
+
+    @MainActor
+    func openNewAIChatTab(_ aiChatURL: URL, with linkOpenBehavior: LinkOpenBehavior)
 
     @MainActor
     func openNewAIChatTab(withPayload payload: AIChatPayload)
@@ -39,13 +43,18 @@ extension AIChatTabOpening {
 struct AIChatTabOpener: AIChatTabOpening {
     private let promptHandler: AIChatPromptHandler
     private let addressBarQueryExtractor: AIChatAddressBarPromptExtractor
+    private let windowControllersManager: WindowControllersManagerProtocol
 
     let aiChatRemoteSettings = AIChatRemoteSettings()
 
-    init(promptHandler: AIChatPromptHandler,
-         addressBarQueryExtractor: AIChatAddressBarPromptExtractor) {
+    init(
+        promptHandler: AIChatPromptHandler,
+        addressBarQueryExtractor: AIChatAddressBarPromptExtractor,
+        windowControllersManager: WindowControllersManagerProtocol
+    ) {
         self.promptHandler = promptHandler
         self.addressBarQueryExtractor = addressBarQueryExtractor
+        self.windowControllersManager = windowControllersManager
     }
 
     @MainActor
@@ -69,16 +78,21 @@ struct AIChatTabOpener: AIChatTabOpening {
     }
 
     @MainActor
+    func openNewAIChatTab(_ aiChatURL: URL, with linkOpenBehavior: LinkOpenBehavior) {
+        windowControllersManager.openAIChat(aiChatURL, with: linkOpenBehavior)
+    }
+
+    @MainActor
     private func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) {
         if let query = query {
             promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
         }
-        Application.appDelegate.windowControllersManager.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
+        windowControllersManager.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
     }
 
     @MainActor
     func openNewAIChatTab(withPayload payload: AIChatPayload) {
-        guard let tabCollectionViewModel = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+        guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
 
         let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
         newAIChatTab.aiChat?.setAIChatNativeHandoffData(payload: payload)

@@ -222,8 +222,11 @@ extension DownloadsTabExtension: NavigationResponder {
 
     @MainActor
     func enqueueDownload(_ download: WebKitDownload, withNavigationAction navigationAction: NavigationAction?) {
-        let task = downloadManager.add(download, fireWindowSession: FireWindowSessionRef(window: download.webView?.window), delegate: self, destination: .auto)
-        guard let webView = download.webView else { return }
+        let task = downloadManager.add(download,
+                                       fireWindowSession: FireWindowSessionRef(window: (download.originatingWebView ?? download.targetWebView)?.window),
+                                       delegate: self,
+                                       destination: .auto)
+        guard let webView = download.targetWebView else { return }
 
         var shouldCloseTabOnDownloadStart: Bool {
             guard let navigationAction else {

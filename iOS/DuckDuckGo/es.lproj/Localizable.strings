@@ -322,6 +322,9 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Cuando DuckDuckGo detecta ventanas emergentes de consentimiento de cookies en los sitios que visitas, podemos configurar automáticamente tus preferencias de cookies para minimizar las cookies y maximizar la privacidad y, a continuación, cerrar las ventanas emergentes. Algunos sitios no ofrecen la opción de administrar las preferencias de cookies, por lo que solo podemos ocultar ventanas emergentes de este tipo.";
 
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Se ha guardado la tarjeta";
+
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Tarjeta borrada";
 
@@ -409,6 +412,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Protege tu dispositivo para guardar tarjetas de crédito";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "No guardar";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Guardar tarjeta";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Las tarjetas de crédito se almacenan de forma segura en tu dispositivo.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "¿Quieres que DuckDuckGo guarde la información de tu tarjeta?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Autentícate para rellenar la información de la tarjeta de crédito";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "¿Usar una tarjeta guardada?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Puedes desactivar el guardado de tarjetas de crédito en cualquier momento.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -469,8 +493,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Sincronizar con el escritorio";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Cómo importar contraseñas";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Cómo sincronizar las contraseñas de escritorio";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Deshabilitar";
@@ -2674,6 +2698,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Borrar datos automáticamente";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Completa tu configuración";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Protección contra ventanas emergentes de cookies";
 
@@ -2737,6 +2764,9 @@
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Icono de la aplicación";
 
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Importar contraseñas";
+
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Teclado";
 
@@ -2796,6 +2826,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Envía automáticamente informes de fallos a DuckDuckGo.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Definir como navegador predeterminado";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Establece la posición de la barra de direcciones";

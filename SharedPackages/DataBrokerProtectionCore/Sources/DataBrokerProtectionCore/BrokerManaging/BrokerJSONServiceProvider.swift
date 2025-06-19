@@ -51,10 +51,7 @@ public protocol LocalBrokerJSONServiceProvider {
 }
 
 /// Protocol that defines methods for storing broker JSON data
-public protocol BrokerStoring {
-
-    /// Secure storage for persisting broker data
-    var vault: any DataBrokerProtectionSecureVault { get }
+public protocol BrokerStoring: AnyObject, SecureVaultRequiring {
 
     /// Inserts a new broker or updates an existing one with the same identifier (`id`)
     ///
@@ -73,7 +70,16 @@ public protocol BrokerStoring {
 }
 
 public extension BrokerStoring {
+    func requireVault() throws -> (any DataBrokerProtectionSecureVault) {
+        guard let vault = makeSecureVault() else {
+            throw RemoteBrokerJSONService.Error.vaultNotAvailable
+        }
+        return vault
+    }
+
     func upsertBroker(_ broker: DataBroker) throws {
+        let vault = try requireVault()
+
         guard let savedBroker = try vault.fetchBroker(with: broker.url) else {
             try addBroker(broker)
             return
@@ -93,6 +99,8 @@ public extension BrokerStoring {
     }
 
     private func addBroker(_ broker: DataBroker) throws {
+        let vault = try requireVault()
+
         Logger.dataBrokerProtection.log("🧩 New broker found: \(broker.url, privacy: .public)")
 
         /// 1. We save the broker into the database
@@ -110,6 +118,8 @@ public extension BrokerStoring {
 
     /// Reset attempt count to 0 when broker JSON is updated
     func updateAttemptCount(_ broker: DataBroker) throws {
+        let vault = try requireVault()
+
         guard let brokerId = broker.id else { return }
 
         let optOutJobs = try vault.fetchOptOuts(brokerId: brokerId)

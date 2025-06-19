@@ -322,6 +322,9 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Kada DuckDuckGo otkrije skočne prozore pristanka na kolačiće na web lokacijama koje posjećuješ, mi možemo pokušati automatski odrediti tvoje postavke kolačića kako bismo minimizirali kolačiće i maksimizirali privatnost, a zatim zatvorili skočne prozore. Neke web lokacije ne nude opciju upravljanja postavkama kolačića, tako da možemo sakriti samo ovakve skočne prozore.";
 
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Kartica je spremljena";
+
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Kartica je izbrisana";
 
@@ -409,6 +412,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Osiguraj svoj uređaj za spremanje kreditnih kartica";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Nemoj spremiti";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Spremi karticu";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Kreditne kartice sigurno su pohranjene na tvom uređaju.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Želiš li da DuckDuckGo spremi tvoje kartične podatke?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Prijavi se za unos kartičnih podataka";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Koristiti spremljenu karticu?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Spremanje kreditne kartice možeš isključiti u svakom trenutku.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -469,8 +493,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Sinkronizacija s preglednikom na PC-u";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Kako uvesti lozinke";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Kako sinkronizirati lozinke za računalo";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Onemogući";
@@ -2674,6 +2698,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automatsko brisanje podataka";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Dovrši postavljanje";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Zaštita od kolačića i skočnih prozora";
 
@@ -2737,6 +2764,9 @@
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Ikona aplikacije";
 
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Uvezi lozinke";
+
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tipkovnica";
 
@@ -2796,6 +2826,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Automatski šalji izvješća o padu DuckDuckGou.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Postavi kao zadani preglednik";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Postavi položaj adresne trake";

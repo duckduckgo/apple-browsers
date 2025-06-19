@@ -322,6 +322,9 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Keď DuckDuckGo zistí na vami navštívených lokalitách kontextové okná týkajúce sa súhlasu so súbormi cookie, môžeme sa pokúsiť automaticky nastaviť vaše možnosti súborov cookie tak, aby sa využívanie súborov cookie minimalizovali a aby sa maximalizovala ochrana súkromia, a potom môžeme kontextové automaticky okná zavrieť. Niektoré lokality neponúkajú možnosť spravovať preferencie súborov cookie, takže takéto kontextové okná môžeme iba skryť.";
 
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Karta bola uložená";
+
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Karta bola odstránená";
 
@@ -409,6 +412,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Zabezpeč svoje zariadenie na uloženie kreditných kariet";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Neukladať";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Uložiť kartu";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Kreditné karty sú bezpečne uložené vo tvojom zariadení.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Chceš, aby DuckDuckGo uložil informácie o tvojej karte?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Prihlás sa, aby si vyplnil/-a informácie o kreditnej karte";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Použiť uloženú kartu?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Ukladanie kreditnej karty môžeš kedykoľvek vypnúť.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -469,8 +493,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Synchronizácia s počítačom";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Ako importovať heslá";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Ako synchronizovať heslá pracovnej plochy";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Zakázať";
@@ -2674,6 +2698,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automaticky vymazať údaje";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Dokonči svoje nastavenie";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Ochrana proti automatickému otváraniu okien o súboroch cookie";
 
@@ -2737,6 +2764,9 @@
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Ikona aplikácie";
 
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Importovať heslá";
+
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klávesnica";
 
@@ -2796,6 +2826,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Automaticky odosielať správy o zlyhaní pre DuckDuckGo.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Nastaviť ako predvolený prehliadač";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Nastavenie polohy panela s adresou";

@@ -1664,7 +1664,8 @@ class MainViewController: UIViewController {
     }
 
     private func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
-        SpeechRecognizer.requestMicAccess { permission in
+        SpeechRecognizer.requestMicAccess { [weak self] permission in
+            guard let self = self else { return }
             if permission {
                 if let target = preferredTarget {
                     self.showVoiceSearch(preferredTarget: target)
@@ -1676,6 +1677,7 @@ class MainViewController: UIViewController {
             }
         }
     }
+
     private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
         // https://app.asana.com/0/0/1201408131067987
         UIMenuController.shared.hideMenu()

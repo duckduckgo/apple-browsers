@@ -43,16 +43,13 @@ final class StartupPreferences: ObservableObject, PreferencesTabOpening {
     private var appearancePreferences: AppearancePreferences
     private var persistor: StartupPreferencesPersistor
     private var pinnedViewsNotificationCancellable: AnyCancellable?
-    private var dataClearingPreferences: DataClearingPreferences
 
     init(pinningManager: LocalPinningManager = .shared,
          persistor: StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
-         appearancePreferences: AppearancePreferences,
-         dataClearingPreferences: DataClearingPreferences) {
+         appearancePreferences: AppearancePreferences) {
         self.pinningManager = pinningManager
         self.appearancePreferences = appearancePreferences
         self.persistor = persistor
-        self.dataClearingPreferences = dataClearingPreferences
         restorePreviousSession = persistor.restorePreviousSession
         launchToCustomHomePage = persistor.launchToCustomHomePage
         customHomePageURL = persistor.customHomePageURL

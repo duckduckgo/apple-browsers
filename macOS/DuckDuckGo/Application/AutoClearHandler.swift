@@ -105,19 +105,4 @@ final class AutoClearHandler {
         return true
     }
 
-    // MARK: - Burn without Clearing Data
-
-    @MainActor
-    @discardableResult
-    func restoreTabsIfNeeded() -> Bool {
-        let isAutoClearEnabled = dataClearingPreferences.isAutoClearEnabled
-        let isSessionRestorationEnabled = startupPreferences.restorePreviousSession
-        if isAutoClearEnabled && isSessionRestorationEnabled {
-            stateRestorationManager.restoreLastSessionState(interactive: false, includeRegularTabs: true)
-            return true
-        }
-
-        return false
-    }
-
 }

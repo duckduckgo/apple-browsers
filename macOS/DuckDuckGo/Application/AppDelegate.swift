@@ -494,7 +494,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager,
             pixelFiring: PixelKit.shared
         )
-        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
+        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld)
@@ -1198,7 +1198,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSApplication.shared.reply(toApplicationShouldTerminate: true)
             }
         }
-        self.autoClearHandler.restoreTabsIfNeeded()
     }
 
     private func setUpAutofillPixelReporter() {

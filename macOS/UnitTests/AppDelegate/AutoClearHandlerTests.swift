@@ -44,8 +44,7 @@ class AutoClearHandlerTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
         startupPreferences = StartupPreferences(persistor: persistor2,
-                                                appearancePreferences: appearancePreferences,
-                                                dataClearingPreferences: dataClearingPreferences)
+                                                appearancePreferences: appearancePreferences)
 
         fireViewModel = FireViewModel(tld: Application.appDelegate.tld)
         let fileName = "AutoClearHandlerTests"

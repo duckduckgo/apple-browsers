@@ -46,8 +46,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
-            appearancePreferences: appearancePreferences,
-            dataClearingPreferences: dataClearingPreferences
+            appearancePreferences: appearancePreferences
         )
 
         updating = UserContentUpdating(contentBlockerRulesManager: rulesManager,

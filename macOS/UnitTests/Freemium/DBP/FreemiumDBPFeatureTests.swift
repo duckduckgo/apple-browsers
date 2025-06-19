@@ -334,6 +334,75 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         wait(for: [expectation], timeout: 2.0)
         XCTAssertTrue(isAvailableResult)
     }
+
+    func testIsAvailablePublisherEmitsWhenCanPurchaseChangesOnAppStore() {
+        // Given
+        mockFreemiumDBPUserStateManagerManager.didActivate = false
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
+        mockSubscriptionManager.canPurchase = false
+        mockAccountManager.accessToken = nil
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler
+        )
+
+        let expectation = XCTestExpectation(description: "isAvailablePublisher emits when canPurchase changes")
+        var results: [Bool] = []
+        sut.isAvailablePublisher
+            .sink { isAvailable in
+                results.append(isAvailable)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.subscribeToDependencyUpdates()
+
+        // When
+        mockSubscriptionManager.canPurchase = true
+        mockSubscriptionManager.canPurchaseSubject.send(true)
+
+        // Then
+        wait(for: [expectation], timeout: 2.0)
+        XCTAssertEqual(results, [true])
+    }
+
+    func testIsAvailablePublisherDoesNotEmitWhenCanPurchaseChangesOnNonAppStore() {
+        // Given
+        let nonAppStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        mockSubscriptionManager.currentEnvironment = nonAppStoreEnvironment
+        mockFreemiumDBPUserStateManagerManager.didActivate = false
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
+        mockSubscriptionManager.canPurchase = false
+        mockAccountManager.accessToken = nil
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler
+        )
+
+        let expectation = XCTestExpectation(description: "isAvailablePublisher does not emit on canPurchase change for non-appStore")
+        expectation.isInverted = true
+
+        sut.isAvailablePublisher
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        sut.subscribeToDependencyUpdates()
+
+        // When
+        mockSubscriptionManager.canPurchase = true
+        mockSubscriptionManager.canPurchaseSubject.send(true)
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+    }
 }
 
 final class MockFeatureDisabler: DataBrokerProtectionFeatureDisabling {

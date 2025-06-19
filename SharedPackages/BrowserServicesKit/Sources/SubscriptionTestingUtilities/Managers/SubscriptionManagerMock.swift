@@ -19,6 +19,7 @@
 import Foundation
 import Common
 @testable import Subscription
+import Combine
 
 public final class SubscriptionManagerMock: SubscriptionManager {
     public var email: String?
@@ -120,7 +121,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         accountManager.isUserAuthenticated
     }
 
-    public func isFeatureEnabledForUser(feature: Subscription.Entitlement.ProductName) async -> Bool {
+    public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async -> Bool {
         guard let hasEntitlement = try? await isFeatureAvailableAndEnabled(feature: feature, cachePolicy: .returnCacheDataElseLoad) else {
             return false
         }
@@ -161,5 +162,10 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func isUserEligibleForFreeTrial() -> Bool {
         isEligibleForFreeTrialResult
+    }
+
+    public let canPurchaseSubject = PassthroughSubject<Bool, Never>()
+    public var canPurchasePublisher: AnyPublisher<Bool, Never> {
+        canPurchaseSubject.eraseToAnyPublisher()
     }
 }

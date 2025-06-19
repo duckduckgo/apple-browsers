@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Combine
 import Common
 
 public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionAuthV1toV2Bridge {
@@ -32,6 +33,8 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     var currentEnvironment: SubscriptionEnvironment { get }
 
     var canPurchase: Bool { get }
+    /// Publisher that emits a boolean value indicating whether the user can purchase.
+    var canPurchasePublisher: AnyPublisher<Bool, Never> { get }
     @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
     func loadInitialData() async
     func refreshCachedSubscriptionAndEntitlements(completion: @escaping (_ isSubscriptionActive: Bool) -> Void)
@@ -54,6 +57,8 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public let subscriptionFeatureMappingCache: SubscriptionFeatureMappingCache
     public let currentEnvironment: SubscriptionEnvironment
     private let isInternalUserEnabled: () -> Bool
+    private let canPurchaseSubject = PassthroughSubject<Bool, Never>()
+    private var cancellables = Set<AnyCancellable>()
 
     public init(storePurchaseManager: StorePurchaseManager? = nil,
                 accountManager: AccountManager,
@@ -88,6 +93,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         return storePurchaseManager.areProductsAvailable
     }
 
+    /// Publisher that emits a boolean value indicating whether the user can purchase.
+    /// The value is updated whenever the `areProductsAvailablePublisher` of the underlying StorePurchaseManager emits a new value.
+    public var canPurchasePublisher: AnyPublisher<Bool, Never> { canPurchaseSubject.eraseToAnyPublisher() }
+
     @available(macOS 12.0, iOS 15.0, *)
     public func storePurchaseManager() -> StorePurchaseManager {
         return _storePurchaseManager!
@@ -116,6 +125,12 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     // MARK: - Environment, ex SubscriptionPurchaseEnvironment
 
     @available(macOS 12.0, iOS 15.0, *) private func setupForAppStore() {
+        storePurchaseManager().areProductsAvailablePublisher
+            .sink { [weak self] value in
+                self?.canPurchaseSubject.send(value)
+            }
+            .store(in: &cancellables)
+
         Task {
             await storePurchaseManager().updateAvailableProducts()
         }

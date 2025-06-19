@@ -51,10 +51,9 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     ///
     /// The feature is considered available if:
     /// 1. It is enabled in the privacy configuration (`DBPSubfeature.freemium`), and
-    /// 2. User is in the experiement treatment cohort
     /// 3. The user is a potential privacy pro subscriber.
     var isAvailable: Bool {
-        privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(DBPSubfeature.freemium)
+        privacyConfigurationManager.freemiumIsEnabled
         && subscriptionManager.isPotentialPrivacyProSubscriber
     }
 
@@ -116,10 +115,8 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
             .sink { [weak self] in
                 guard let self = self else { return }
 
-                let featureAvailable = self.isAvailable
-                Logger.freemiumDBP.debug("[Freemium DBP] Privacy Config Updated. Feature Availability = \(featureAvailable)")
-
-                self.isAvailableSubject.send(featureAvailable)
+                Logger.freemiumDBP.debug("[Freemium DBP] Privacy Config Updated. Feature Availability = \(self.isAvailable)")
+                self.isAvailableSubject.send(self.isAvailable)
 
                 self.offBoardIfNecessary()
             }
@@ -130,12 +127,34 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
             .sink { [weak self] _ in
                 guard let self = self else { return }
 
-                let featureAvailable = self.isAvailable
-                Logger.freemiumDBP.debug("[Freemium DBP] Subscription Updated. Feature Availability = \(featureAvailable)")
-
-                self.isAvailableSubject.send(featureAvailable)
+                Logger.freemiumDBP.debug("[Freemium DBP] Subscription Updated. Feature Availability = \(self.isAvailable)")
+                self.isAvailableSubject.send(self.isAvailable)
             }
             .store(in: &cancellables)
+
+        // Subscribe to available product updates for App Store Environment
+        if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
+            subscriptionManager.canPurchasePublisher
+                .sink { [weak self] canPurchase in
+                    guard let self = self else { return }
+                    let featureEnabled = self.privacyConfigurationManager.freemiumIsEnabled
+                    let notSubscribed = !self.subscriptionManager.isUserAuthenticated
+                    let available = featureEnabled && notSubscribed && canPurchase
+                    Logger.freemiumDBP.debug("[Freemium DBP] Subscription Updated. Feature Availability = \(available)")
+                    
+                    self.isAvailableSubject.send(available)
+                }
+                .store(in: &cancellables)
+        }
+    }
+}
+
+/// Extension to provide a computed property for checking if the Freemium DBP subfeature
+/// is enabled in the current privacy configuration.
+private extension PrivacyConfigurationManaging {
+    /// Indicates whether the Freemium DBP subfeature is enabled according to the privacy configuration.
+    var freemiumIsEnabled: Bool {
+        privacyConfig.isSubfeatureEnabled(DBPSubfeature.freemium)
     }
 }
 
@@ -149,7 +168,7 @@ private extension DefaultFreemiumDBPFeature {
     var shouldDisableAndDelete: Bool {
         guard freemiumDBPUserStateManager.didActivate else { return false }
 
-        return !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(DBPSubfeature.freemium)
+        return !privacyConfigurationManager.freemiumIsEnabled
         && subscriptionManager.isPotentialPrivacyProSubscriber
     }
 

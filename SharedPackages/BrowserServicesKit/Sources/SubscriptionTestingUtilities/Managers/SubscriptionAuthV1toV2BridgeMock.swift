@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import Common
 @testable import Subscription
@@ -26,16 +27,16 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
 
     public init() {}
 
-    public var enabledFeatures: [Subscription.Entitlement.ProductName] = []
-    public func isFeatureAvailableAndEnabled(feature: Subscription.Entitlement.ProductName, cachePolicy: Subscription.APICachePolicy) async throws -> Bool {
+    public var enabledFeatures: [Entitlement.ProductName] = []
+    public func isFeatureAvailableAndEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
         enabledFeatures.contains(feature)
     }
-    public func isFeatureEnabledForUser(feature: Subscription.Entitlement.ProductName) async -> Bool {
+    public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async -> Bool {
         enabledFeatures.contains(feature)
     }
 
-    public var subscriptionFeatures: [Subscription.Entitlement.ProductName] = []
-    public func currentSubscriptionFeatures() async -> [Subscription.Entitlement.ProductName] {
+    public var subscriptionFeatures: [Entitlement.ProductName] = []
+    public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
         subscriptionFeatures
     }
 
@@ -44,9 +45,9 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
     }
 
     public var canPurchase: Bool = true
-
-    public var returnSubscription: Result<Subscription.PrivacyProSubscription, Error>!
-    public func getSubscription(cachePolicy: Subscription.SubscriptionCachePolicy) async throws -> Subscription.PrivacyProSubscription {
+    public var canPurchasePublisher: AnyPublisher<Bool, Never> = .init(Empty())
+    public var returnSubscription: Result<PrivacyProSubscription, Error>!
+    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
         switch returnSubscription! {
         case .success(let subscription):
             return subscription
@@ -55,14 +56,14 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
         }
     }
 
-    public var urls: [Subscription.SubscriptionURL: URL] = [:]
-    public func url(for type: Subscription.SubscriptionURL) -> URL {
+    public var urls: [SubscriptionURL: URL] = [:]
+    public func url(for type: SubscriptionURL) -> URL {
         urls[type]!
     }
 
     public var email: String?
 
-    public var currentEnvironment: Subscription.SubscriptionEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
+    public var currentEnvironment: SubscriptionEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
 
     public var urlForPurchaseFromRedirectResult: URL!
     public func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: Common.TLD) -> URL {

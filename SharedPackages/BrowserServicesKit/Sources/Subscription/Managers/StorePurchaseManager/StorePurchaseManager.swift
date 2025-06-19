@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import StoreKit
 import os.log
@@ -36,6 +37,9 @@ public protocol StorePurchaseManager {
     var purchasedProductIDs: [String] { get }
     var purchaseQueue: [String] { get }
     var areProductsAvailable: Bool { get }
+    /// Publisher that emits a boolean value indicating whether products are available.
+    /// The value is updated whenever the `availableProducts` array changes.
+    var areProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
     var currentStorefrontRegion: SubscriptionRegion { get }
 
     @MainActor func syncAppleIDAccount() async throws
@@ -62,6 +66,16 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     @Published public private(set) var purchaseQueue: [String] = []
 
     public var areProductsAvailable: Bool { !availableProducts.isEmpty }
+
+    /// Publisher that emits a boolean value indicating whether products are available.
+    /// The value is updated whenever the `availableProducts` array changes.
+    public var areProductsAvailablePublisher: AnyPublisher<Bool, Never> {
+        $availableProducts
+            .map { !$0.isEmpty }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     public private(set) var currentStorefrontRegion: SubscriptionRegion = .usa
     private var transactionUpdates: Task<Void, Never>?
     private var storefrontChanges: Task<Void, Never>?

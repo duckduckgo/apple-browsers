@@ -152,6 +152,7 @@ public extension DesignSystemImages {
             public static var findSearch: DesignSystemImage { .init(resource: .findSearch16) }
             public static var fire: DesignSystemImage { .init(resource: .fire16) }
             public static var fireSolid: DesignSystemImage { .init(resource: .fireSolid16) }
+            public static var fireTab: DesignSystemImage { .init(resource: .fireTab16) }
             public static var fireproof: DesignSystemImage { .init(resource: .fireproof16) }
             public static var fireproofSolid: DesignSystemImage { .init(resource: .fireproofSolid16) }
             public static var fireWindow: DesignSystemImage { .init(resource: .fireWindow16) }
@@ -372,8 +373,7 @@ public extension DesignSystemImages {
             public static var findSearchSmall: DesignSystemImage { .init(resource: .findSearchSmall24) }
             public static var fire: DesignSystemImage { .init(resource: .fire24) }
             public static var fireSolid: DesignSystemImage { .init(resource: .fireSolid24) }
-            public static var fireproof: DesignSystemImage { .init(resource: .fireproof24) }
-            public static var fireproof1: DesignSystemImage { .init(resource: .fireproof241) }
+            public static var fireproofSolid: DesignSystemImage { .init(resource: .fireproofSolid24) }
             public static var folder: DesignSystemImage { .init(resource: .folder24) }
             public static var folderAdd: DesignSystemImage { .init(resource: .folderAdd24) }
             public static var folderGoTo: DesignSystemImage { .init(resource: .folderGoTo24) }

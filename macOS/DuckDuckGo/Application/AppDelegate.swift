@@ -145,8 +145,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
         promptHandler: AIChatPromptHandler.shared,
-        addressBarQueryExtractor: AIChatAddressBarPromptExtractor()
+        addressBarQueryExtractor: AIChatAddressBarPromptExtractor(),
+        windowControllersManager: windowControllersManager
     )
+    let aiChatSidebarProvider: AIChatSidebarProviding
 
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
@@ -254,6 +256,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         bookmarkDatabase = BookmarkDatabase()
+        aiChatSidebarProvider = AIChatSidebarProvider()
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)

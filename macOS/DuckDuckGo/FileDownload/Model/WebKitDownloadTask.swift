@@ -123,8 +123,8 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
     var originalRequest: URLRequest? {
         download.originalRequest
     }
-    var originalWebView: WKWebView? {
-        download.webView
+    var targetWebView: WKWebView? {
+        download.targetWebView
     }
     @MainActor var shouldPromptForLocation: Bool {
         return if case .initial(.prompt) = state { true } else { false }
@@ -597,7 +597,7 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
 extension WebKitDownloadTask: WKDownloadDelegate {
 
     @MainActor
-    func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
+    func download(_: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
         Logger.fileDownload.debug("decide destination \(self)")
 
         guard let delegate = delegate else {
@@ -649,7 +649,7 @@ extension WebKitDownloadTask: WKDownloadDelegate {
     }
 
     @MainActor
-    func download(_ download: WKDownload,
+    func download(_: WKDownload,
                   willPerformHTTPRedirection response: HTTPURLResponse,
                   newRequest request: URLRequest,
                   decisionHandler: @escaping (WKDownload.RedirectPolicy) -> Void) {
@@ -658,11 +658,11 @@ extension WebKitDownloadTask: WKDownloadDelegate {
     }
 
     @MainActor
-    func download(_ download: WKDownload,
+    func download(_: WKDownload,
                   didReceive challenge: URLAuthenticationChallenge,
                   completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         Logger.fileDownload.debug("did receive challenge \(self): \(challenge)")
-        download.webView?.navigationDelegate?.webView?(download.webView!, didReceive: challenge, completionHandler: completionHandler) ?? {
+        download.targetWebView?.navigationDelegate?.webView?(download.targetWebView!, didReceive: challenge, completionHandler: completionHandler) ?? {
             completionHandler(.performDefaultHandling, nil)
         }()
     }

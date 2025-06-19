@@ -413,6 +413,7 @@ extension Pixel {
         case autofillExtensionToggledOn
         case autofillExtensionToggledOff
         case autofillLoginsStacked
+        case autofillCreditCardsStacked
         
         case autofillDeviceCapabilityDeviceAuthDisabled
         
@@ -431,6 +432,22 @@ extension Pixel {
         case autofillLoginsReportConfirmationPromptDisplayed
         case autofillLoginsReportConfirmationPromptConfirmed
         case autofillLoginsReportConfirmationPromptDismissed
+
+        case autofillCardsSaveCardInlineDisplayed
+        case autofillCardsSaveCardInlineConfirmed
+        case autofillCardsSaveCardInlineDismissed
+        case autofillCardsFillCardManualInlineDisplayed
+        case autofillCardsFillCardManualInlineConfirmed
+        case autofillCardsFillCardManualInlineDismissed
+        case autofillCardsSaveDisableSnackbarShown
+        case autofillCardsSaveDisableSnackbarOpenSettings
+        case autofillCardsSettingsEnabled
+        case autofillCardsSettingsDisabled
+        case autofillCardsManagementOpened
+        case autofillCardsManagementCopyCardNumber
+        case autofillCardsManagementDeleteCard
+        case autofillCardsManagementSaveCard
+        case autofillCardsManagementUpdateCard
 
         case autofillManagementScreenVisitSurveyAvailable
 
@@ -1588,6 +1605,7 @@ extension Pixel.Event {
         case .autofillExtensionToggledOff: return "m_autofill_extension_toggled_off"
 
         case .autofillLoginsStacked: return "m_autofill_logins_stacked"
+        case .autofillCreditCardsStacked: return "m_autofill_creditcards_stacked"
             
         case .autofillDeviceCapabilityDeviceAuthDisabled: return "m_autofill_device_capability_device_auth_disabled"
 
@@ -1613,6 +1631,22 @@ extension Pixel.Event {
         case .autofillLoginsReportConfirmationPromptDisplayed: return "autofill_logins_report_confirmation_displayed"
         case .autofillLoginsReportConfirmationPromptConfirmed: return "autofill_logins_report_confirmation_confirmed"
         case .autofillLoginsReportConfirmationPromptDismissed: return "autofill_logins_report_confirmation_dismissed"
+
+        case .autofillCardsSaveCardInlineDisplayed: return "autofill_cards_save_card_inline_displayed"
+        case .autofillCardsSaveCardInlineConfirmed: return "autofill_cards_save_card_inline_confirmed"
+        case .autofillCardsSaveCardInlineDismissed: return "autofill_cards_save_card_inline_dismissed"
+        case .autofillCardsFillCardManualInlineDisplayed: return "autofill_cards_fill_card_inline_manual_displayed"
+        case .autofillCardsFillCardManualInlineConfirmed: return "autofill_cards_fill_card_inline_manual_confirmed"
+        case .autofillCardsFillCardManualInlineDismissed: return "autofill_cards_fill_card_inline_manual_dismissed"
+        case .autofillCardsSaveDisableSnackbarShown: return "autofill_cards_save_disable_snackbar_shown"
+        case .autofillCardsSaveDisableSnackbarOpenSettings: return "autofill_cards_save_disable_snackbar_open_settings"
+        case .autofillCardsSettingsEnabled: return "autofill_cards_settings_enabled"
+        case .autofillCardsSettingsDisabled: return "autofill_cards_settings_disabled"
+        case .autofillCardsManagementOpened: return "autofill_cards_management_opened"
+        case .autofillCardsManagementCopyCardNumber: return "autofill_cards_management_copy_card_number"
+        case .autofillCardsManagementDeleteCard: return "autofill_cards_management_delete_card"
+        case .autofillCardsManagementSaveCard: return "autofill_cards_management_save_card"
+        case .autofillCardsManagementUpdateCard: return "autofill_cards_management_update_card"
 
         case .autofillManagementScreenVisitSurveyAvailable: return "m_autofill_management_screen_visit_survey_available"
 

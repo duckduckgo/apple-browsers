@@ -157,15 +157,17 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
     }
 
     func testSaveNewProfileQuery_thenSaveProfileQueryIsCalled() async throws {
-        let vault: DataBrokerProtectionSecureVaultMock = try DataBrokerProtectionSecureVaultMock(providers:
-                                                            SecureStorageProviders(
-                                                                crypto: EmptySecureStorageCryptoProviderMock(),
-                                                                database: SecureStorageDatabaseProviderMock(),
-                                                                keystore: EmptySecureStorageKeyStoreProviderMock()))
+        let vaultMaker: () -> DataBrokerProtectionSecureVaultMock? = {
+            try? DataBrokerProtectionSecureVaultMock(providers:
+                                                        SecureStorageProviders(
+                                                            crypto: EmptySecureStorageCryptoProviderMock(),
+                                                            database: SecureStorageDatabaseProviderMock(),
+                                                            keystore: EmptySecureStorageKeyStoreProviderMock()))
+        }
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
                                                     pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                                                    vault: vault,
+                                                    vaultMaker: vaultMaker,
                                                     localBrokerService: MockLocalBrokerJSONService())
 
         let profile = DataBrokerProtectionProfile(
@@ -180,23 +182,27 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
         )
 
         _ = try! await database.save(profile)
+        let vault = database.vault as! DataBrokerProtectionSecureVaultMock
         XCTAssertTrue(vault.wasSaveProfileQueryCalled)
         XCTAssertFalse(vault.wasUpdateProfileQueryCalled)
         XCTAssertFalse(vault.wasDeleteProfileQueryCalled)
     }
 
     func testSaveNewProfileWithSavedQueriesWithOptOut_thenSaveNewProfileQueryAndUpdateProfileQueryIsCalled() async throws {
-        let vault: DataBrokerProtectionSecureVaultMock = try DataBrokerProtectionSecureVaultMock(providers:
-                                                            SecureStorageProviders(
-                                                                crypto: EmptySecureStorageCryptoProviderMock(),
-                                                                database: SecureStorageDatabaseProviderMock(),
-                                                                keystore: EmptySecureStorageKeyStoreProviderMock()))
+        let vaultMaker: () -> DataBrokerProtectionSecureVaultMock? = {
+            try? DataBrokerProtectionSecureVaultMock(providers:
+                                                        SecureStorageProviders(
+                                                            crypto: EmptySecureStorageCryptoProviderMock(),
+                                                            database: SecureStorageDatabaseProviderMock(),
+                                                            keystore: EmptySecureStorageKeyStoreProviderMock()))
+        }
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
                                                     pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                                                    vault: vault,
+                                                    vaultMaker: vaultMaker,
                                                     localBrokerService: MockLocalBrokerJSONService())
 
+        let vault = database.vault as! DataBrokerProtectionSecureVaultMock
         vault.brokers = [DataBroker.mock]
         vault.profileQueries = [ProfileQuery.mock]
         vault.scanJobData = [ScanJobData.mock]
@@ -232,17 +238,20 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
     }
 
     func testSaveNewProfileWithoutSavedQueriesWithOptOut_thenSaveNewProfileQueryAndDeleteProfileQueryIsCalled() async throws {
-        let vault: DataBrokerProtectionSecureVaultMock = try DataBrokerProtectionSecureVaultMock(providers:
-                                                            SecureStorageProviders(
-                                                                crypto: EmptySecureStorageCryptoProviderMock(),
-                                                                database: SecureStorageDatabaseProviderMock(),
-                                                                keystore: EmptySecureStorageKeyStoreProviderMock()))
+        let vaultMaker: () -> DataBrokerProtectionSecureVaultMock? = {
+            try? DataBrokerProtectionSecureVaultMock(providers:
+                                                        SecureStorageProviders(
+                                                            crypto: EmptySecureStorageCryptoProviderMock(),
+                                                            database: SecureStorageDatabaseProviderMock(),
+                                                            keystore: EmptySecureStorageKeyStoreProviderMock()))
+        }
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
                                                     pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                                                    vault: vault,
+                                                    vaultMaker: vaultMaker,
                                                     localBrokerService: MockLocalBrokerJSONService())
 
+        let vault = database.vault as! DataBrokerProtectionSecureVaultMock
         vault.brokers = [DataBroker.mock]
         vault.profileQueries = [ProfileQuery.mock]
         vault.scanJobData = [ScanJobData.mock]

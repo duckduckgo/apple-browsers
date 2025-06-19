@@ -288,7 +288,8 @@ public extension ContentScopeFeatureToggles {
             thirdPartyCredentialsProvider: false,
             unknownUsernameCategorization: false,
             partialFormSaves: false,
-            passwordVariantCategorization: false
+            passwordVariantCategorization: false,
+            inputFocusApi: false
         )
     }
 }
@@ -1531,17 +1532,20 @@ public final class MockMismatchCalculator: MismatchCalculator {
 }
 
 public final class MockBrokerJSONService: BrokerJSONServiceProvider {
-    public var vault: any DataBrokerProtectionCore.DataBrokerProtectionSecureVault
+    public var vault: (any DataBrokerProtectionCore.DataBrokerProtectionSecureVault)?
+    public var vaultMaker: () -> (any DataBrokerProtectionCore.DataBrokerProtectionSecureVault)?
 
     public private(set) var didCallUpdateBrokers = false
     public private(set) var didCallCheckForUpdates = false
 
     public init() {
-        self.vault = try! DataBrokerProtectionSecureVaultMock(providers:
-                                                                SecureStorageProviders(
-                                                                    crypto: EmptySecureStorageCryptoProviderMock(),
-                                                                    database: SecureStorageDatabaseProviderMock(),
-                                                                    keystore: EmptySecureStorageKeyStoreProviderMock()))
+        self.vaultMaker = {
+            try? DataBrokerProtectionSecureVaultMock(providers:
+                                                        SecureStorageProviders(
+                                                            crypto: EmptySecureStorageCryptoProviderMock(),
+                                                            database: SecureStorageDatabaseProviderMock(),
+                                                            keystore: EmptySecureStorageKeyStoreProviderMock()))
+        }
     }
 
     public func checkForUpdates(skipsLimiter: Bool) async throws {

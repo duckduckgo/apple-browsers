@@ -57,7 +57,11 @@ protocol WindowControllersManagerProtocol {
                        isMaximized: Bool,
                        isFullscreen: Bool) -> MainWindow?
     func showTab(with content: Tab.TabContent)
+
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior)
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool)
 }
+
 extension WindowControllersManagerProtocol {
     @discardableResult
     func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel? = nil,
@@ -189,14 +193,18 @@ extension WindowControllersManager {
         showTab(with: .bookmarks)
     }
 
-    /// Opens an AI chat URL in the application, either in a new or existing tab.
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab) {
+        openAIChat(url, with: linkOpenBehavior, hasPrompt: false)
+    }
+
+    /// Opens an AI chat URL in the application.
     ///
     /// - Parameters:
     ///   - url: The AI chat URL to open.
     ///   - linkOpenBehavior: Specifies where to open the URL. Defaults to `.currentTab`.
     ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `target` is `.newTabSelected`
-    ///                or `.newTabUnselected`. Defaults to `false`.
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool = false) {
+    ///                or `.newTabUnselected`.
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) {
 
         let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
 

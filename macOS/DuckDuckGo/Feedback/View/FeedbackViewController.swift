@@ -86,6 +86,8 @@ final class FeedbackViewController: NSViewController {
     @IBOutlet weak var requestFeatureItem: NSMenuItem!
     @IBOutlet weak var reportProblemITem: NSMenuItem!
 
+    private let supportedOSChecker = SupportedOSChecker()
+
     var currentTab: Tab?
     var currentTabUrl: URL? {
         guard let url = currentTab?.content.urlForWebView else {
@@ -216,7 +218,7 @@ final class FeedbackViewController: NSViewController {
         browserFeedbackView.isHidden = false
 
         showUnsupportedOsViewIfNeeded()
-        let unsupportedOSWarningHeight = isOsUnsupported ? Constants.unsupportedOSWarningHeight : 0
+        let unsupportedOSWarningHeight = supportedOSChecker.showsSupportWarning ? Constants.unsupportedOSWarningHeight : 0
 
         let contentHeight: CGFloat
         switch selectedFormOption {
@@ -303,14 +305,12 @@ final class FeedbackViewController: NSViewController {
         thankYouView.isHidden = false
     }
 
-    var isOsUnsupported: Bool {
-        return !SupportedOSChecker.isCurrentOSReceivingUpdates
-    }
-
     private weak var unsupportedOsChildView: NSView?
     private func showUnsupportedOsViewIfNeeded() {
-        if isOsUnsupported && unsupportedOsChildView == nil {
-            let view = NSHostingView(rootView: Preferences.UnsupportedDeviceInfoBox(wide: false))
+        if let warning = supportedOSChecker.supportWarning,
+           unsupportedOsChildView == nil {
+
+            let view = NSHostingView(rootView: Preferences.UnsupportedDeviceInfoBox(warning: warning).padding(.horizontal, 20))
             unsupportedOsView.addAndLayout(view)
             unsupportedOsView.isHidden = false
             unsupportedOsChildView = view

@@ -322,6 +322,9 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Amikor a DuckDuckGo a meglátogatott webhelyeken sütik elfogadására szolgáló felugró ablakokat észlel, a sütik minimalizálása és az adatvédelem maximalizálása érdekében automatikusan megpróbálhatjuk megadni a sütikre vonatkozó beállításaidat, és bezárhatjuk a felugró ablakokat. Egyes webhelyek nem adnak lehetőséget a sütikre vonatkozó beállítások kezelésére, így csak az ilyen felugró ablakokat tudjuk elrejteni.";
 
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Kártya mentve";
+
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Kártya törölve";
 
@@ -409,6 +412,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Tedd biztonságossá az eszközödet a hitelkártyák mentéséhez";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Ne mentse";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Kártya mentése";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "A hitelkártyaadatok biztonságosan kerülnek eltárolásra az eszközödön.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "A DuckDuckGo mentse a kártyaadatokat?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Jelentkezz be a bankkártyaadatok kitöltéséhez";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Mentett kártyát használsz?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "A bankkártya mentése bármikor kikapcsolható.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -469,8 +493,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Szinkronizálás asztali böngészővel";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Jelszavak importálásának módja";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Asztali jelszavak szinkronizálásának módja";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Letilt";
@@ -2674,6 +2698,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Adatok automatikus törlése";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Beállítás végrehajtása";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Felugró sütiablak elleni védelem";
 
@@ -2737,6 +2764,9 @@
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Alkalmazásikon";
 
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Jelszavak importálása";
+
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Billentyűzet";
 
@@ -2796,6 +2826,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Hibajelentések automatikus küldése a DuckDuckGo részére.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Beállítás alapértelmezett böngészőként";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Állítsd be a címsor elhelyezkedését";

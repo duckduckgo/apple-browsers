@@ -346,7 +346,12 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
             if pixel.isIdentityPixel {
                 NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
             }
-            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: pixel.pixelParameters)
+            var existingParameters = pixel.pixelParameters ?? [:]
+            var parameters = usageProvider.formattedFillDate.flatMap {
+                existingParameters[AutofillPixelKitEvent.Parameter.lastUsed] = $0
+                return existingParameters
+            } ?? existingParameters
+            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: parameters)
         }
     }
 

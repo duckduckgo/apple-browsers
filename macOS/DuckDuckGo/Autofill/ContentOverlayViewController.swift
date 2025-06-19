@@ -157,7 +157,8 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         self.topAutofillUserScript = OverlayAutofillUserScript(scriptSourceProvider: scriptSourceProvider, overlay: self)
         guard let topAutofillUserScript = topAutofillUserScript else { return }
         let configuration = WKWebViewConfiguration()
-        configuration.preferences.setValue(AutofillPreferences().debugScriptEnabled, forKey: "developerExtrasEnabled")
+        let debugScriptEnabled = AutofillPreferences().debugScriptEnabled
+        configuration.preferences.setValue(debugScriptEnabled, forKey: "developerExtrasEnabled")
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.allowsLinkPreview = false
@@ -166,7 +167,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         webView.configuration.userContentController.addHandler(topAutofillUserScript)
         webView.configuration.userContentController.addUserScript(topAutofillUserScript.makeWKUserScriptSync())
         if #available(macOS 13.3, *) {
-            webView.isInspectable = AutofillPreferences().debugScriptEnabled
+            webView.isInspectable = debugScriptEnabled
         }
         self.webView = webView
         view.addAndLayout(webView)

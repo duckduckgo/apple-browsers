@@ -100,6 +100,10 @@ class FromWebViewTransition: WebViewTransition {
         solidBackground.frame = webViewFrame
         
         imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
+        if mainViewController.appSettings.currentAddressBarPosition == .bottom {
+            let frame = CGRect(x: imageContainer.frame.minX, y: imageContainer.frame.minY, width: imageContainer.frame.width, height: imageContainer.frame.height - mainViewController.viewCoordinator.omniBar.barView.expectedHeight)
+            imageContainer.frame = frame
+        }
         imageView.frame = imageContainer.bounds
         imageView.image = preview
 

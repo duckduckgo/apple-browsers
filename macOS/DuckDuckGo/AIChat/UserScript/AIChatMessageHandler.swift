@@ -65,7 +65,8 @@ extension AIChatMessageHandler {
                                             supportsClosingAIChat: true,
                                             supportsOpeningSettings: true,
                                             supportsNativePrompt: true,
-                                            supportsNativeChatInput: false)
+                                            supportsNativeChatInput: false,
+                                            supportsURLChatIDRestoration: true)
         } else {
             return AIChatNativeConfigValues.defaultValues
         }

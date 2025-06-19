@@ -58,16 +58,13 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private lazy var brokerUpdater: BrokerJSONServiceProvider = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-        guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
-            fatalError("Failed to make secure storage vault")
-        }
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
             subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
         let featureFlagger = DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger)
 
         return RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                        settings: DataBrokerProtectionSettings(defaults: .dbp),
-                                       vault: vault,
+                                       vaultMaker: { try? vaultFactory.makeVault(reporter: nil) },
                                        authenticationManager: authenticationManager,
                                        localBrokerProvider: nil)
     }()
@@ -222,13 +219,11 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
             if removeBrokers {
                 let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
-                let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler)
                 let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
                 let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-                let vault = try! vaultFactory.makeVault(reporter: reporter)
                 let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
                                                             pixelHandler: pixelHandler,
-                                                            vault: vault,
+                                                            vaultMaker: { try? vaultFactory.makeVault(reporter: nil) },
                                                             localBrokerService: self.brokerUpdater)
                 let dataManager = DataBrokerProtectionDataManager(database: database)
                 try! dataManager.removeAllData()

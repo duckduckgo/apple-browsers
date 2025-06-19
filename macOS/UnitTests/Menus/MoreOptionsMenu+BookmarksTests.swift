@@ -91,6 +91,7 @@ final class MockMoreOpationsMenuIconProvider: MoreOptionsMenuIconsProviding {
     var settingsIcon: NSImage = .logo
     var browserFeedbackIcon: NSImage = .logo
     var reportBrokenSiteIcon: NSImage = .logo
+    var paidAIChat: NSImage = .logo
     var sendPrivacyProFeedbackIcon: NSImage = .logo
     var passwordsSubMenuIcon: NSImage = .logo
     var identitiesIcon: NSImage = .logo

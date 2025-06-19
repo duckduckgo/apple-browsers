@@ -19,6 +19,7 @@
 import Foundation
 
 typealias TabIdentifier = String
+typealias AIChatSidebarsByTab = [TabIdentifier: AIChatSidebar]
 
 /// A protocol that defines the interface for managing AI chat sidebars in tabs.
 /// This provider handles the lifecycle and state of chat sidebars across multiple browser tabs.
@@ -43,6 +44,15 @@ protocol AIChatSidebarProviding: AnyObject {
     /// Removes sidebars for tabs that are no longer active.
     /// - Parameter currentTabIDs: Array of tab IDs that are currently open
     func cleanUp(for currentTabIDs: [TabIdentifier])
+
+    /// The underlying model containing all active chat sidebars mapped by their tab identifiers.
+    /// This dictionary maintains the state of all chat sidebars across different browser tabs.
+    var sidebarsByTab: AIChatSidebarsByTab { get }
+
+    /// Restores the sidebar provider's state from a previously saved model.
+    /// This method cleans up all existing sidebars and replaces the current model with the provided one.
+    /// - Parameter model: The sidebar model to restore, containing tab IDs mapped to their chat sidebars
+    func restoreState(_ sidebarsByTab: AIChatSidebarsByTab)
 }
 
 final class AIChatSidebarProvider: AIChatSidebarProviding {
@@ -51,36 +61,45 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         static let sidebarWidth: CGFloat = 450
     }
 
-    private var sidebarsByTabIDs: [TabIdentifier: AIChatSidebar] = [:]
-
     var sidebarWidth: CGFloat { Constants.sidebarWidth }
 
+    private(set) var sidebarsByTab: AIChatSidebarsByTab
+
+    init(sidebarsByTab: AIChatSidebarsByTab? = nil) {
+        self.sidebarsByTab = sidebarsByTab ?? [:]
+    }
+
     func sidebar(for tabID: TabIdentifier) -> AIChatSidebar {
-        guard let sidebar = sidebarsByTabIDs[tabID] else {
+        guard let sidebar = sidebarsByTab[tabID] else {
             let sidebar = AIChatSidebar()
-            sidebarsByTabIDs[tabID] = sidebar
+            sidebarsByTab[tabID] = sidebar
             return sidebar
         }
         return sidebar
     }
 
     func isShowingSidebar(for tabID: TabIdentifier) -> Bool {
-        return sidebarsByTabIDs[tabID] != nil
+        return sidebarsByTab[tabID] != nil
     }
 
     func handleSidebarDidClose(for tabID: TabIdentifier) {
-        guard let tabSidebar = sidebarsByTabIDs[tabID] else {
+        guard let tabSidebar = sidebarsByTab[tabID] else {
             return
         }
         tabSidebar.sidebarViewController.removeCompletely()
-        sidebarsByTabIDs.removeValue(forKey: tabID)
+        sidebarsByTab.removeValue(forKey: tabID)
     }
 
     func cleanUp(for currentTabIDs: [TabIdentifier]) {
-        let tabIDsForRemoval = Set(sidebarsByTabIDs.keys).subtracting(currentTabIDs)
+        let tabIDsForRemoval = Set(sidebarsByTab.keys).subtracting(currentTabIDs)
 
         for tabID in tabIDsForRemoval {
             handleSidebarDidClose(for: tabID)
         }
+    }
+
+    func restoreState(_ sidebarsByTab: AIChatSidebarsByTab) {
+        cleanUp(for: [])
+        self.sidebarsByTab = sidebarsByTab
     }
 }

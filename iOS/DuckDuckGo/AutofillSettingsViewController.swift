@@ -35,8 +35,11 @@ enum AutofillSettingsSource: String {
     case lockScreenWidget = "lock_screen_widget"
     case newTabPageShortcut = "new_tab_page_shortcut"
     case saveLoginDisablePrompt = "save_login_disable_prompt"
+    case saveCreditCardDisablePrompt = "save_credit_card_disable_prompt"
     case viewSavedLoginPrompt = "view_saved_login_prompt"
     case newTabPageToolbar = "new_tab_page_toolbar"
+    case viewSavedCreditCardPrompt = "view_saved_credit_card_prompt"
+    case creditCardKeyboardShortcut = "credit_card_keyboard_shortcut"
 }
 
 protocol AutofillSettingsViewControllerDelegate: AnyObject {
@@ -52,25 +55,37 @@ final class AutofillSettingsViewController: UIViewController {
     private let syncService: DDGSyncing
     private let syncDataProviders: SyncDataProviders
     private let selectedAccount: SecureVaultModels.WebsiteAccount?
+    private let selectedCard: SecureVaultModels.CreditCard?
+    private let showPasswordManagement: Bool
+    private let showCardManagement: Bool
     private let source: AutofillSettingsSource
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesDisplayMode: FavoritesDisplayMode
-    
+    private let keyValueStore: ThrowingKeyValueStoring
+
     init(appSettings: AppSettings,
          syncService: DDGSyncing,
          syncDataProviders: SyncDataProviders,
          selectedAccount: SecureVaultModels.WebsiteAccount?,
+         selectedCard: SecureVaultModels.CreditCard?,
+         showPasswordManagement: Bool,
+         showCardManagement: Bool = false,
          source: AutofillSettingsSource,
          bookmarksDatabase: CoreDataDatabase,
-         favoritesDisplayMode: FavoritesDisplayMode
+         favoritesDisplayMode: FavoritesDisplayMode,
+         keyValueStore: ThrowingKeyValueStoring
     ) {
         self.appSettings = appSettings
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.selectedAccount = selectedAccount
+        self.selectedCard = selectedCard
+        self.showPasswordManagement = showPasswordManagement
+        self.showCardManagement = showCardManagement
         self.source = source
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
+        self.keyValueStore = keyValueStore
         self.viewModel = AutofillSettingsViewModel(appSettings: appSettings, source: source)
         
         super.init(nibName: nil, bundle: nil)
@@ -87,8 +102,10 @@ final class AutofillSettingsViewController: UIViewController {
         
         title = UserText.settingsLogins
         
-        if selectedAccount != nil {
+        if selectedAccount != nil || showPasswordManagement {
             segueToPasswords()
+        } else if selectedCard != nil || showCardManagement {
+            segueToCreditCards()
         }
         
         Pixel.fire(pixel: .autofillSettingsOpened)
@@ -113,14 +130,17 @@ final class AutofillSettingsViewController: UIViewController {
             openSearch: false,
             source: source,
             bookmarksDatabase: bookmarksDatabase,
-            favoritesDisplayMode: favoritesDisplayMode
+            favoritesDisplayMode: favoritesDisplayMode,
+            keyValueStore: keyValueStore
         )
         navigationController?.pushViewController(autofillLoginListViewController, animated: true)
     }
     
     private func segueToCreditCards() {
         let autofillCreditCardsViewController = AutofillCreditCardListViewController(
-            secureVault: viewModel.secureVault)
+            secureVault: viewModel.secureVault,
+            selectedCard: selectedCard,
+            source: source)
         navigationController?.pushViewController(autofillCreditCardsViewController, animated: true)
     }
     
@@ -131,7 +151,8 @@ final class AutofillSettingsViewController: UIViewController {
                                                   tld: AppDependencyProvider.shared.storageCache.tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
                                                                 importScreen: DataImportViewModel.ImportScreen.passwords,
-                                                                syncService: syncService)
+                                                                syncService: syncService,
+                                                                keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
         navigationController?.pushViewController(dataImportViewController, animated: true)
         Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped, withAdditionalParameters: [PixelParameters.source: "settings"])

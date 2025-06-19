@@ -294,6 +294,7 @@ public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }
 
     case setAsDefaultBrowserExperiment
+    case showSettingsCompleteSetupSection
 }
 
 public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {

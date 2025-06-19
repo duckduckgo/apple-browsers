@@ -111,7 +111,9 @@ final class PreferencesSectionTests: XCTestCase {
                                                                     userEntitlements: [],
                                                                     shouldHideSubscriptionPurchase: true,
                                                                     personalInformationRemovalStatus: .off,
-                                                                    identityTheftRestorationStatus: .off)
+                                                                    identityTheftRestorationStatus: .off,
+                                                                    paidAIChatStatus: .off,
+                                                                    isPaidAIChatEnabled: false)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
@@ -131,7 +133,9 @@ final class PreferencesSectionTests: XCTestCase {
                                                                     userEntitlements: [],
                                                                     shouldHideSubscriptionPurchase: false,
                                                                     personalInformationRemovalStatus: .off,
-                                                                    identityTheftRestorationStatus: .off)
+                                                                    identityTheftRestorationStatus: .off,
+                                                                    paidAIChatStatus: .off,
+                                                                    isPaidAIChatEnabled: false)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
@@ -149,13 +153,41 @@ final class PreferencesSectionTests: XCTestCase {
 
     func testPrivacyProSectionIsPresentWhenHasSubscription() throws {
         // Given
-        let features: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration]
+        let features: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
         let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: true,
                                                                     subscriptionFeatures: features,
                                                                     userEntitlements: [],
                                                                     shouldHideSubscriptionPurchase: false,
                                                                     personalInformationRemovalStatus: .off,
-                                                                    identityTheftRestorationStatus: .off)
+                                                                    identityTheftRestorationStatus: .off,
+                                                                    paidAIChatStatus: .off,
+                                                                    isPaidAIChatEnabled: true)
+
+        // When
+        let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
+                                                          includingSync: false,
+                                                          includingAIChat: false,
+                                                          subscriptionState: subscriptionState)
+
+        // Then
+        XCTAssertFalse(sections.contains { $0.id ==  .purchasePrivacyPro })
+        XCTAssertTrue(sections.contains { $0.id ==  .privacyPro })
+
+        let purchasePrivacyProSection = sections.first { $0.id ==  .privacyPro }!
+        XCTAssertEqual(purchasePrivacyProSection.panes, [.vpn, .personalInformationRemoval, .paidAIChat, .identityTheftRestoration, .subscriptionSettings])
+    }
+
+    func testPrivacyPaidAIChatIsNotPresentWhenHasSubscriptionButFeatureFlagIsOff() throws {
+        // Given
+        let features: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
+        let subscriptionState = PreferencesSidebarSubscriptionState(hasSubscription: true,
+                                                                    subscriptionFeatures: features,
+                                                                    userEntitlements: [],
+                                                                    shouldHideSubscriptionPurchase: false,
+                                                                    personalInformationRemovalStatus: .off,
+                                                                    identityTheftRestorationStatus: .off,
+                                                                    paidAIChatStatus: .off,
+                                                                    isPaidAIChatEnabled: false)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
@@ -179,7 +211,9 @@ final class PreferencesSectionTests: XCTestCase {
                                                                     userEntitlements: [],
                                                                     shouldHideSubscriptionPurchase: false,
                                                                     personalInformationRemovalStatus: .off,
-                                                                    identityTheftRestorationStatus: .off)
+                                                                    identityTheftRestorationStatus: .off,
+                                                                    paidAIChatStatus: .off,
+                                                                    isPaidAIChatEnabled: false)
 
         // When
         let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,

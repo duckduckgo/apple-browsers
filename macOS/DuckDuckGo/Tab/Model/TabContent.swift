@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import Navigation
 import Subscription
@@ -35,6 +36,7 @@ extension Tab {
         case identityTheftRestoration(URL)
         case releaseNotes
         case webExtensionUrl(URL)
+        case aiChat(URL)
     }
     typealias TabContent = Tab.Content
 
@@ -126,7 +128,7 @@ extension TabContent {
         case URL.releaseNotes:
             return .releaseNotes
         case URL.Invalid.aboutHome:
-            guard let customURL = URL(string: StartupPreferences.shared.formattedCustomHomePageURL) else {
+            guard let customURL = URL(string: NSApp.delegateTyped.startupPreferences.formattedCustomHomePageURL) else {
                 return .newtab
             }
             return .url(customURL, source: source)
@@ -138,6 +140,10 @@ extension TabContent {
         if let url {
             if url.isWebExtensionUrl {
                 return .webExtensionUrl(url)
+            }
+            if url.isDuckAIURL,
+               NSApp.delegateTyped.featureFlagger.isFeatureOn(.aiChatSidebar) {
+                    return .aiChat(url)
             }
 
             let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
@@ -184,7 +190,7 @@ extension TabContent {
 
     var isDisplayable: Bool {
         switch self {
-        case .settings, .bookmarks, .history, .dataBrokerProtection, .subscription, .identityTheftRestoration, .releaseNotes:
+        case .settings, .bookmarks, .history, .dataBrokerProtection, .subscription, .identityTheftRestoration, .releaseNotes, .aiChat:
             return true
         default:
             return false
@@ -221,6 +227,7 @@ extension TabContent {
         case .dataBrokerProtection: return UserText.tabDataBrokerProtectionTitle
         case .releaseNotes: return UserText.releaseNotesTitle
         case .subscription, .identityTheftRestoration: return nil
+        case .aiChat: return nil
         }
     }
 
@@ -260,6 +267,8 @@ extension TabContent {
             return .releaseNotes
         case .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url):
             return url
+        case .aiChat(let url):
+            return url
         case .none:
             return nil
         }
@@ -270,14 +279,14 @@ extension TabContent {
         case .url(_, _, source: let source):
             return source
         case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .dataBrokerProtection,
-                .subscription, .identityTheftRestoration, .webExtensionUrl, .none:
+                .subscription, .identityTheftRestoration, .webExtensionUrl, .none, .aiChat:
             return .ui
         }
     }
 
     var isUrl: Bool {
         switch self {
-        case .url, .subscription, .identityTheftRestoration, .releaseNotes, .history:
+        case .url, .subscription, .identityTheftRestoration, .releaseNotes, .history, .aiChat:
             return true
         default:
             return false
@@ -340,7 +349,7 @@ extension TabContent {
         switch self {
         case .history, .newtab, .onboarding, .bookmarks, .settings, .none:
             return false
-        case .url, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl:
+        case .url, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl, .aiChat:
             return true
         }
     }

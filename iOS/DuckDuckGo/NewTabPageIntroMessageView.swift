@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct NewTabPageIntroMessageView: View {
 
@@ -46,7 +47,7 @@ struct NewTabPageIntroMessageView: View {
                 Button {
                     onClose?()
                 } label: {
-                    Image(.close24)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                 }
                 .frame(alignment: .topTrailing)
                 .foregroundStyle(Color(designSystemColor: .icons))

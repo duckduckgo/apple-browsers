@@ -28,7 +28,7 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        stateHandler = TabSwitcherBarsStateHandler()
+        stateHandler = TabSwitcherBarsStateHandler(themingProperties: ExperimentalThemingProperties(isExperimentalThemingEnabled: false, isRoundedCornersTreatmentEnabled: false))
     }
 
     override func tearDown() {

@@ -24,7 +24,7 @@ import DDGSync
 import Bookmarks
 import Subscription
 import Common
-import NetworkProtection
+import VPN
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 import RemoteMessaging
@@ -236,6 +236,7 @@ final class AppDependencyProvider: DependencyProvider {
             let pixelHandler = AuthV2PixelHandler(source: .mainApp)
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                                    oAuthClient: authClient,
+                                                                   userDefaults: subscriptionUserDefaults,
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,
@@ -246,14 +247,7 @@ final class AppDependencyProvider: DependencyProvider {
 
             let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: storePurchaseManager)
             subscriptionManager.tokenRecoveryHandler = {
-                do {
-                    try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
-                    DailyPixel.fire(pixel: .privacyProInvalidRefreshTokenRecovered)
-                    Pixel.fire(pixel: .privacyProInvalidRefreshTokenRecovered)
-                } catch {
-                    DailyPixel.fire(pixel: .privacyProInvalidRefreshTokenSignedOut)
-                    Pixel.fire(pixel: .privacyProInvalidRefreshTokenSignedOut)
-                }
+                try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
             }
 
             self.subscriptionManagerV2 = subscriptionManager

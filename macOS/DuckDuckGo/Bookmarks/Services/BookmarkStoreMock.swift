@@ -19,8 +19,9 @@
 #if DEBUG
 
 import Bookmarks
-import Foundation
 import BrowserServicesKit
+import CoreData
+import Foundation
 
 final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
 

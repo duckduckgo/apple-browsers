@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Common
 import Foundation
 
 @objc(Application)
@@ -27,15 +28,33 @@ final class Application: NSApplication {
     override init() {
         super.init()
 
+        // swizzle `startAccessingSecurityScopedResource` and `stopAccessingSecurityScopedResource`
+        // methods to accurately reflect the current number of start and stop calls
+        // stored in the associated `NSURL.sandboxExtensionRetainCount` value.
+        //
+        // See SecurityScopedFileURLController.swift
+        NSURL.swizzleStartStopAccessingSecurityScopedResourceOnce()
+
+#if DEBUG
+        if [.unitTests, .integrationTests].contains(AppVersion.runType) {
+            (NSClassFromString("TestRunHelper") as? NSObject.Type)!.perform(NSSelectorFromString("sharedInstance"))
+        }
+#endif
+
         let delegate = AppDelegate()
         self.delegate = delegate
         Application.appDelegate = delegate
 
-        let mainMenu = MainMenu(featureFlagger: delegate.featureFlagger,
-                                bookmarkManager: delegate.bookmarksManager,
-                                faviconManager: delegate.faviconManager,
-                                aiChatMenuConfig: AIChatMenuConfiguration(),
-                                internalUserDecider: delegate.internalUserDecider)
+        let mainMenu = MainMenu(
+            featureFlagger: delegate.featureFlagger,
+            bookmarkManager: delegate.bookmarkManager,
+            historyCoordinator: delegate.historyCoordinator,
+            faviconManager: delegate.faviconManager,
+            aiChatMenuConfig: AIChatMenuConfiguration(),
+            internalUserDecider: delegate.internalUserDecider,
+            appearancePreferences: delegate.appearancePreferences,
+            privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager
+        )
         self.mainMenu = mainMenu
 
         // Makes sure Spotlight search is part of Help menu

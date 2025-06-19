@@ -82,9 +82,9 @@ class FeedbackFormViewController: UIViewController {
         
         loadViewIfNeeded()
         hideWebsiteField()
-        
-        headerImage.image = UIImage(named: "happyFace")
-        
+
+        headerImage.image = UIImage(resource: .happyFace)
+
         headerText.setAttributedTextString(UserText.feedbackPositiveFormHeader)
         supplementaryText.setAttributedTextString(UserText.feedbackPositiveFormSupplementary)
         messagePlaceholderText.setAttributedTextString(UserText.feedbackPositiveFormPlaceholder)
@@ -101,7 +101,7 @@ class FeedbackFormViewController: UIViewController {
 
         loadViewIfNeeded()
         
-        headerImage.image = UIImage(named: "sadFace")
+        headerImage.image = UIImage(resource: .sadFace)
         self.headerText.text = FeedbackPresenter.title(for: category)
         
         switch type {

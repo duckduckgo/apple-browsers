@@ -1,0 +1,51 @@
+name: 'Measure Duration'
+description: 'Measure job duration with start and stop modes'
+inputs:
+  mode:
+    description: 'Mode: start or stop'
+    required: true
+  start-timestamp:
+    description: 'Start timestamp (required for stop mode)'
+    required: false
+  pixel-name:
+    description: 'Pixel name to send duration data (required for stop mode)'
+    required: false
+  pixel-params:
+    description: 'Additional query parameters as YAML key-value pairs'
+    required: false
+outputs:
+  start-timestamp:
+    description: 'Start timestamp (returned in start mode)'
+    value: ${{ steps.start.outputs.timestamp }}
+  duration:
+    description: 'Duration in seconds (returned in stop mode)'
+    value: ${{ steps.stop.outputs.duration }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Start measuring
+      id: start
+      if: inputs.mode == 'start'
+      shell: bash
+      run: |
+        START_TIME=$(date +%s)
+        echo "timestamp=${START_TIME}" >> $GITHUB_OUTPUT
+
+    - name: Stop measuring and report duration
+      id: stop
+      if: inputs.mode == 'stop'
+      shell: bash
+      run: |
+        END_TIME=$(date +%s)
+        DURATION=$((END_TIME - ${{ inputs.start-timestamp }}))
+        echo "duration=${DURATION}" >> $GITHUB_OUTPUT
+        echo "::notice::Duration measured: ${DURATION} seconds"
+
+    - name: Send duration pixel
+      if: inputs.mode == 'stop' && inputs.pixel-name != ''
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: ${{ inputs.pixel-name }}
+        query-params: |
+          seconds: ${{ steps.stop.outputs.duration }}
+          ${{ inputs.pixel-params }}

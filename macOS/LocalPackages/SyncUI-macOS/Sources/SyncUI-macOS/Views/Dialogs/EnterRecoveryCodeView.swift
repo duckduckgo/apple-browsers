@@ -22,11 +22,7 @@ import SwiftUIExtensions
 public struct EnterRecoveryCodeView: View {
     @EnvironmentObject var model: ManagementDialogModel
     @EnvironmentObject var recoveryCodeModel: RecoveryCodeViewModel
-    let code: String
-
-    public init(code: String) {
-        self.code = code
-    }
+    let stringForQRCode: String
 
     public var body: some View {
         SyncDialog(spacing: 20.0) {
@@ -62,10 +58,10 @@ public struct EnterRecoveryCodeView: View {
                     .foregroundColor(Color(.blackWhite60))
                 line()
             }
-            QRCode(string: code, size: CGSize(width: 192, height: 192))
+            QRCode(string: stringForQRCode, desiredSize: 192)
         } buttons: {
             Button(UserText.cancel) {
-                model.endFlow()
+                model.cancelPressed()
             }
             .buttonStyle(DismissActionButtonStyle())
         }

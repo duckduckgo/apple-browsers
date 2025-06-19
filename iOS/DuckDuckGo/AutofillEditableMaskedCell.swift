@@ -18,6 +18,7 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 
 struct AutofillEditableMaskedCell: View {
@@ -32,11 +33,11 @@ struct AutofillEditableMaskedCell: View {
     var keyboardType: UIKeyboardType = .default
     var characterLimit: Int?
     @Binding var selectedCell: UUID?
-    
+
     @FocusState private var isFieldFocused: Bool
     @State private var shouldBeMonospaced: Bool
     @State private var closeButtonVisible = false
-    
+
     init(title: String,
          placeholderText: String,
          unmaskedString: Binding<String>,
@@ -47,7 +48,7 @@ struct AutofillEditableMaskedCell: View {
          keyboardType: UIKeyboardType = .default,
          characterLimit: Int? = nil,
          selectedCell: Binding<UUID?>) {
-        
+
         self.title = title
         self.placeholderText = placeholderText
         self._unmaskedString = unmaskedString
@@ -58,11 +59,11 @@ struct AutofillEditableMaskedCell: View {
         self.keyboardType = keyboardType
         self.characterLimit = characterLimit
         self._selectedCell = selectedCell
-        
+
         // Initialize shouldBeMonospaced based on the initial unmaskedString value
         self._shouldBeMonospaced = State(initialValue: unmaskedString.wrappedValue.count > 0)
     }
-    
+
     var body: some View {
         
         VStack(alignment: .leading, spacing: 4) {
@@ -87,7 +88,7 @@ struct AutofillEditableMaskedCell: View {
                 
                 if unmaskedString.count > 0 {
                     if closeButtonVisible {
-                        Image("Clear-16")
+                        Image(uiImage: DesignSystemImages.Glyphs.Size16.clear)
                             .onTapGesture {
                                 self.unmaskedString = ""
                             }

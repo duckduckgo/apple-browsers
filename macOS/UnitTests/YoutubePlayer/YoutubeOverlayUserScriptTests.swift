@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import DuckDuckGo_Privacy_Browser
 import BrowserServicesKit
 import UserScript
+import WebKit
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
 
 final class YoutubeOverlayUserScriptTests: XCTestCase {
 

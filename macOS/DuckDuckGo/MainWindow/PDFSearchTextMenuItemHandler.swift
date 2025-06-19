@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 
 @MainActor
@@ -52,7 +53,7 @@ final class PDFSearchTextMenuItemHandler: NSObject {
               let url = URL.makeURL(from: selectedText)
         else { return }
 
-        WindowControllersManager.shared.show(url: url, source: .link, newTab: true)
+        Application.appDelegate.windowControllersManager.show(url: url, source: .link, newTab: true)
     }
 
 }

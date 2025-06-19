@@ -16,31 +16,35 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import BrowserServicesKit
 import FeatureFlags
 import NetworkProtectionUI
 import DesignResourcesKit
+import PixelKit
 
 protocol VisualStyleProviding {
     var toolbarButtonsCornerRadius: CGFloat { get }
     var fireWindowGraphic: NSImage { get }
     var areNavigationBarCornersRound: Bool { get }
+    var fireButtonSize: CGFloat { get }
+    var navigationToolbarButtonsSpacing: CGFloat { get }
+    var tabBarButtonSize: CGFloat { get }
+    var addToolbarShadow: Bool { get }
 
     var addressBarStyleProvider: AddressBarStyleProviding { get }
     var tabStyleProvider: TabStyleProviding { get }
     var colorsProvider: ColorsProviding { get }
     var iconsProvider: IconsProviding { get }
-    var fireButtonSize: CGFloat { get }
 
-    var addressBarActiveBackgroundViewRadius: CGFloat { get }
-    var addressBarInactiveBackgroundViewRadius: CGFloat { get }
-    var addressBarInnerBorderViewRadius: CGFloat { get }
-    var addressBarActiveOuterBorderViewRadius: CGFloat { get }
+    var isNewStyle: Bool { get }
 }
 
-protocol VisualStyleManagerProviding {
+protocol VisualStyleDecider {
     var style: any VisualStyleProviding { get }
+
+    func shouldFirePixel(style: VisualStyleProviding) -> Bool
 }
 
 enum AddressBarSizeClass {
@@ -73,10 +77,10 @@ struct VisualStyle: VisualStyleProviding {
     let colorsProvider: ColorsProviding
     let iconsProvider: IconsProviding
     let fireButtonSize: CGFloat
-    let addressBarActiveBackgroundViewRadius: CGFloat
-    let addressBarInactiveBackgroundViewRadius: CGFloat
-    let addressBarInnerBorderViewRadius: CGFloat
-    let addressBarActiveOuterBorderViewRadius: CGFloat
+    let navigationToolbarButtonsSpacing: CGFloat
+    let tabBarButtonSize: CGFloat
+    let addToolbarShadow: Bool
+    let isNewStyle: Bool
 
     static var legacy: VisualStyleProviding {
         return VisualStyle(toolbarButtonsCornerRadius: 4,
@@ -87,10 +91,10 @@ struct VisualStyle: VisualStyleProviding {
                            colorsProvider: LegacyColorsProviding(),
                            iconsProvider: LegacyIconsProvider(),
                            fireButtonSize: 28,
-                           addressBarActiveBackgroundViewRadius: 8,
-                           addressBarInactiveBackgroundViewRadius: 6,
-                           addressBarInnerBorderViewRadius: 8,
-                           addressBarActiveOuterBorderViewRadius: 10)
+                           navigationToolbarButtonsSpacing: 0,
+                           tabBarButtonSize: 28,
+                           addToolbarShadow: false,
+                           isNewStyle: false)
     }
 
     static var current: VisualStyleProviding {
@@ -103,39 +107,57 @@ struct VisualStyle: VisualStyleProviding {
                            colorsProvider: NewColorsProviding(palette: palette),
                            iconsProvider: CurrentIconsProvider(),
                            fireButtonSize: 32,
-                           addressBarActiveBackgroundViewRadius: 11,
-                           addressBarInactiveBackgroundViewRadius: 11,
-                           addressBarInnerBorderViewRadius: 11,
-                           addressBarActiveOuterBorderViewRadius: 13)
+                           navigationToolbarButtonsSpacing: 2,
+                           tabBarButtonSize: 28,
+                           addToolbarShadow: true,
+                           isNewStyle: true)
     }
 }
 
-final class VisualStyleManager: VisualStyleManagerProviding {
+final class DefaultVisualStyleDecider: VisualStyleDecider {
     private let featureFlagger: FeatureFlagger
+    private let internalUserDecider: InternalUserDecider
 
-    private var cancellables: Set<AnyCancellable> = []
-
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger, internalUserDecider: InternalUserDecider) {
         self.featureFlagger = featureFlagger
-
-        subscribeToLocalOverride()
+        self.internalUserDecider = internalUserDecider
     }
 
     var style: any VisualStyleProviding {
-        return featureFlagger.isFeatureOn(.visualRefresh) ? VisualStyle.current : VisualStyle.legacy
-    }
+        var isVisualRefreshEnabled: Bool = featureFlagger.isFeatureOn(.visualUpdates)
 
-    private func subscribeToLocalOverride() {
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
+        if internalUserDecider.isInternalUser {
+            isVisualRefreshEnabled = featureFlagger.isFeatureOn(.visualUpdatesInternalOnly)
         }
 
-        overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .visualRefresh }
-            .sink { (_, enabled) in
-                /// Here I need to apply the visual changes. The easier way should be to restart the app.
-                print("Visual refresh feature flag changed to \(enabled ? "enabled" : "disabled")")
-            }
-            .store(in: &cancellables)
+        return isVisualRefreshEnabled ? VisualStyle.current : VisualStyle.legacy
+    }
+
+    func shouldFirePixel(style: any VisualStyleProviding) -> Bool {
+        return !internalUserDecider.isInternalUser && style.isNewStyle
+    }
+}
+
+/// This enum keeps pixels related to the Visual Refresh
+/// > Related links:
+/// [Pixel Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210516955340232)
+enum VisualStylePixel: PixelKitEventV2 {
+
+    /// This pixel will be fired once time per user. The logic will be fired at app launch if the user has the new UI enabled and it is not an internal user.
+    case visualUpdatesEnabled
+
+    var name: String {
+        switch self {
+        case .visualUpdatesEnabled:
+            return "visual_update_enabled_u"
+        }
+    }
+
+    var parameters: [String: String]? {
+        nil
+    }
+
+    var error: (any Error)? {
+        nil
     }
 }

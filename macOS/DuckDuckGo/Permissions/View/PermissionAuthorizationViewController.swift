@@ -141,6 +141,6 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     @IBAction func learnMoreAction(_ sender: NSButton) {
-        WindowControllersManager.shared.show(url: "https://help.duckduckgo.com/privacy/device-location-services".url, source: .ui, newTab: true)
+        Application.appDelegate.windowControllersManager.show(url: "https://help.duckduckgo.com/privacy/device-location-services".url, source: .ui, newTab: true)
     }
 }

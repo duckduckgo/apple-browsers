@@ -39,10 +39,33 @@ public protocol RemoteBrokerDeliveryFeatureFlagging {
 }
 
 public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
-    enum Error: Swift.Error {
-        case missingAccessToken
+    enum Error: Swift.Error, CustomNSError {
         case serverError(httpCode: Int?)
         case clientError
+        case vaultNotAvailable
+
+        static var errorDomain: String { "RemoteBrokerJSONService" }
+
+        var errorCode: Int {
+            switch self {
+            case .serverError:
+                return 101
+            case .clientError:
+                return 102
+            case .vaultNotAvailable:
+                return 103
+            }
+        }
+
+        var errorUserInfo: [String: Any] {
+            switch self {
+            case .clientError, .vaultNotAvailable:
+                return [:]
+            case .serverError(httpCode: let code):
+                guard let code else { return [:] }
+                return [NSUnderlyingErrorKey: NSError(domain: "HTTPError", code: code)]
+            }
+        }
     }
 
     enum Endpoint {
@@ -105,7 +128,10 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
     private let settings: DataBrokerProtectionSettings
-    public let vault: any DataBrokerProtectionSecureVault
+
+    public var vault: (any DataBrokerProtectionSecureVault)?
+    public let vaultMaker: () -> (any DataBrokerProtectionSecureVault)?
+
     private let fileManager: ZipArchiveHandling
     private let urlSession: URLSession
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
@@ -114,7 +140,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     public init(featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
                 settings: DataBrokerProtectionSettings,
-                vault: any DataBrokerProtectionSecureVault,
+                vaultMaker: @escaping () -> (any DataBrokerProtectionSecureVault)?,
                 fileManager: ZipArchiveHandling = FileManager.default,
                 urlSession: URLSession = .shared,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
@@ -122,12 +148,14 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 localBrokerProvider: BrokerJSONFallbackProvider?) {
         self.featureFlagger = featureFlagger
         self.settings = settings
-        self.vault = vault
+        self.vaultMaker = vaultMaker
         self.fileManager = fileManager
         self.urlSession = urlSession
         self.authenticationManager = authenticationManager
         self.pixelHandler = pixelHandler
         self.localBrokerProvider = localBrokerProvider
+
+        self.vault = makeSecureVault()
     }
 
     // MARK: - Local fallback
@@ -162,7 +190,10 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             try? await localBrokerProvider?.checkForUpdates()
 
             /// 3. Hit main_config.json endpoint for ETag and active broker changes
-            guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
+            guard let accessToken = await authenticationManager.accessToken() else {
+                Logger.dataBrokerProtection.log("🧩 Skipping broker JSON update check due to absence of access token")
+                return
+            }
 
             let request = try Endpoint.request(for: .mainConfig,
                                                endpointURL: settings.endpointURL,
@@ -195,6 +226,8 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     func checkForBrokerJSONUpdatesFromMainConfig(_ mainConfig: MainConfig, eTag: String) async throws {
+        let vault = try requireVault()
+
         let eTagMapping = mainConfig.jsonETags.current
         let incomingBrokerJSONs = BrokerJSON.from(payload: eTagMapping)
         let savedBrokerJSONs = try vault.fetchAllBrokers().map { BrokerJSON(fileName: $0.url.appendingPathExtension("json"), eTag: $0.eTag) }
@@ -232,7 +265,10 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         /// 2. Download all.zip if not exists
         do {
             if !fileManager.fileExists(atPath: brokerArchiveURL.path) {
-                guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
+                guard let accessToken = await authenticationManager.accessToken() else {
+                    Logger.dataBrokerProtection.log("🧩 Skipping broker JSON update check due to absence of access token")
+                    return
+                }
 
                 let request = try Endpoint.request(for: .allBrokers,
                                                    endpointURL: settings.endpointURL,

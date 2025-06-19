@@ -23,8 +23,9 @@ import Common
 import NetworkingTestingUtils
 
 public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
-
     public var email: String?
+
+    public var isEligibleForFreeTrialResult: Bool = false
 
     public init() {}
 
@@ -60,7 +61,9 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
     }
 
     public var resultURL: URL!
+    public var subscriptionURL: SubscriptionURL?
     public func url(for type: Subscription.SubscriptionURL) -> URL {
+        subscriptionURL = type
         return resultURL
     }
 
@@ -169,15 +172,23 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         resultFeatures
     }
 
-    public func isFeatureAvailableForUser(_ entitlement: Networking.SubscriptionEntitlement) async -> Bool {
+    public func isSubscriptionFeatureEnabled(_ entitlement: Networking.SubscriptionEntitlement) async throws -> Bool {
         resultFeatures.contains { $0.entitlement == entitlement }
+    }
+
+    public func isFeatureAvailableAndEnabled(feature: Subscription.Entitlement.ProductName, cachePolicy: Subscription.APICachePolicy) async throws -> Bool {
+        resultFeatures.contains { $0.entitlement == feature.subscriptionEntitlement }
+    }
+
+    public func isFeatureEnabledForUser(feature: Subscription.Entitlement.ProductName) async -> Bool {
+        resultFeatures.contains { $0.entitlement == feature.subscriptionEntitlement }
     }
 
     // MARK: - Subscription Token Provider
 
     public func getAccessToken() async throws -> String {
         guard let accessToken = resultTokenContainer?.accessToken else {
-            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+            throw SubscriptionManagerError.noTokenAvailable
         }
         return accessToken
     }
@@ -189,13 +200,15 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
     public func isEnabled(feature: Subscription.Entitlement.ProductName, cachePolicy: Subscription.APICachePolicy) async throws -> Bool {
         switch feature {
         case .networkProtection:
-            return await isFeatureAvailableForUser(.networkProtection)
+            return await isFeatureEnabledForUser(feature: .networkProtection)
         case .dataBrokerProtection:
-            return await isFeatureAvailableForUser(.dataBrokerProtection)
+            return await isFeatureEnabledForUser(feature: .dataBrokerProtection)
         case .identityTheftRestoration:
-            return await isFeatureAvailableForUser(.identityTheftRestoration)
+            return await isFeatureEnabledForUser(feature: .identityTheftRestoration)
         case .identityTheftRestorationGlobal:
-            return await isFeatureAvailableForUser(.identityTheftRestorationGlobal)
+            return await isFeatureEnabledForUser(feature: .identityTheftRestorationGlobal)
+        case .paidAIChat:
+            return await isFeatureEnabledForUser(feature: .paidAIChat)
         case .unknown:
             return false
         }
@@ -212,6 +225,8 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
                 return .identityTheftRestoration
             case .identityTheftRestorationGlobal:
                 return .identityTheftRestorationGlobal
+            case .paidAIChat:
+                return .paidAIChat
             case .unknown:
                 return nil
             }
@@ -230,5 +245,9 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
     public func isSubscriptionPresent() -> Bool {
         resultSubscription != nil
+    }
+
+    public func isUserEligibleForFreeTrial() -> Bool {
+        isEligibleForFreeTrialResult
     }
 }

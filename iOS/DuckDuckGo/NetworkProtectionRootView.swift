@@ -18,7 +18,7 @@
 //
 
 import SwiftUI
-import NetworkProtection
+import VPN
 import Subscription
 import Core
 import Networking

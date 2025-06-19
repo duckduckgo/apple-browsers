@@ -16,7 +16,10 @@
 //  limitations under the License.
 //
 
+import Common
+import WebKit
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class WebCacheManagerTests: XCTestCase {
@@ -216,7 +219,7 @@ final class WebCacheManagerTests: XCTestCase {
     class MockPreservedLogins: FireproofDomains {
 
         init(domains: [String]) {
-            super.init(store: FireproofDomainsStoreMock())
+            super.init(store: FireproofDomainsStoreMock(), tld: TLD())
 
             for domain in domains {
                 super.add(domain: domain)

@@ -208,6 +208,11 @@ public struct SecureVaultModels {
             return "\(type.displayName) (\(cardSuffix))"
         }
 
+        public var displayCardType: String {
+            let type = CreditCardValidation.type(for: cardNumber)
+            return type.displayCardType
+        }
+
         static func suffix(from cardNumber: String) -> String {
             let trimmedCardNumber = cardNumber.trimmingCharacters(in: .whitespacesAndNewlines)
             return String(trimmedCardNumber.suffix(4))
@@ -219,10 +224,11 @@ public struct SecureVaultModels {
                     cardholderName: String?,
                     cardSecurityCode: String?,
                     expirationMonth: Int?,
-                    expirationYear: Int?) {
+                    expirationYear: Int?,
+                    created: Date? = nil) {
             self.id = id
             self.title = title ?? ""
-            self.created = Date()
+            self.created = created ?? Date()
             self.lastUpdated = self.created
 
             self.cardNumberData = cardNumber.data(using: .utf8)!

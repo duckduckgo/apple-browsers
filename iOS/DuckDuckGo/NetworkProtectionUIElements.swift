@@ -33,7 +33,6 @@ struct NetworkProtectionUIElements {
                 label: {
                     HStack(spacing: 12) {
                         label()
-                        Spacer()
                         Image(systemName: "checkmark")
                             .tint(.init(designSystemColor: .accent))
                             .if(!isSelected) {

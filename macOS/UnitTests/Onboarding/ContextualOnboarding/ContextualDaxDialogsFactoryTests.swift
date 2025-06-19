@@ -25,9 +25,11 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     private var delegate: CapturingOnboardingNavigationDelegate!
     private var reporter: CapturingOnboardingPixelReporter!
 
+    @MainActor
     override func setUpWithError() throws {
         reporter = CapturingOnboardingPixelReporter()
-        factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter)
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
     }
 
@@ -35,7 +37,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         factory = nil
         delegate = nil
         reporter = nil
-        WindowControllersManager.shared.lastKeyMainWindowController = nil
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
     }
 
     func testWhenMakeViewForTryASearchThenOnboardingTrySearchDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
@@ -236,11 +238,22 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let onFireButtonPressed = { onFireButtonRun = true }
         let onDismiss = { onDismissRun = true }
 
-        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            aiChatSidebarProvider: AIChatSidebarProvider(),
+            fireCoordinator: fireCoordinator
+        )
         let window = MockWindow(isVisible: false)
-        let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
+        let mainWindowController = MainWindowController(
+            window: window,
+            mainViewController: mainViewController,
+            popUp: false,
+            fireViewModel: fireCoordinator.fireViewModel
+        )
         mainWindowController.window = window
-        WindowControllersManager.shared.lastKeyMainWindowController = mainWindowController
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
 
         // WHEN
         let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: {}, onFireButtonPressed: onFireButtonPressed)

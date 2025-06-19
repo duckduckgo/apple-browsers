@@ -116,7 +116,7 @@ final class MainView: NSView {
             bannerContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             bannerTopConstraint,
-            bannerContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor).priority(900),
+            bannerContainerView.topAnchor.constraint(equalTo: divider.bottomAnchor).priority(900),
 
             webContainerTopConstraint,
             webContainerTopConstraintToNavigation,

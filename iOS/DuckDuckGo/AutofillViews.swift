@@ -20,6 +20,7 @@
 import Foundation
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct AutofillViews {
 
@@ -94,11 +95,9 @@ struct AutofillViews {
         let text: String
 
         var body: some View {
-            (
-                Text("\(Image(.lockSolid16)) ").baselineOffset(-1.0)
+            (Text("\(Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)) ").baselineOffset(-1.0)
                 +
-                Text(text)
-            )
+                Text(text))
             .daxFootnoteRegular()
             .foregroundColor(Color(designSystemColor: .textSecondary))
             .multilineTextAlignment(.center)
@@ -255,6 +254,6 @@ private enum Const {
 }
 
 private extension Image {
-    static let close = Image("Close-24")
-    static let appIcon = Image("WaitlistShareSheetLogo")
+    static let close = Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+    static let appIcon = Image(.waitlistShareSheetLogo)
 }

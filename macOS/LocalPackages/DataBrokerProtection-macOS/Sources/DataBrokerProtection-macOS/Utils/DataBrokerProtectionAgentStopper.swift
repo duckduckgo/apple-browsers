@@ -32,6 +32,12 @@ protocol DataBrokerProtectionAgentStopper {
 }
 
 struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper {
+    enum StopReason: String {
+        case profileNotFound
+        case freemiumPrerequisitesNotMet
+        case invalidEntitlement
+    }
+
     private let dataManager: DataBrokerProtectionDataManaging
     private let entitlementMonitor: DataBrokerProtectionEntitlementMonitoring
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
@@ -67,7 +73,7 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
 
             if !hasProfile || (!isAuthenticated && !didActivateFreemium) {
                 Logger.dataBrokerProtection.log("Prerequisites are invalid")
-                stopAgent()
+                stopAgent((!isAuthenticated && !didActivateFreemium) ? .freemiumPrerequisitesNotMet : .profileNotFound)
                 return
             }
 
@@ -100,8 +106,9 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
         return !isAuthenticated && didActivateFreemium
     }
 
-    private func stopAgent() {
+    private func stopAgent(_ reason: StopReason) {
         stopAction.stopAgent()
+        pixelHandler.fire(.backgroundAgentStopped(reason: reason.rawValue))
     }
 
     private func stopAgentBasedOnEntitlementCheckResult(_ result: DataBrokerProtectionEntitlementMonitorResult) {
@@ -112,7 +119,7 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
         case .disabled:
             Logger.dataBrokerProtection.log("Invalid entitlement")
             pixelHandler.fire(.entitlementCheckInvalid)
-            stopAgent()
+            stopAgent(.invalidEntitlement)
         case .error:
             Logger.dataBrokerProtection.log("Error when checking entitlement")
             /// We don't want to disable the agent in case of an error while checking for entitlements.

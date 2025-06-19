@@ -20,7 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import NetworkExtension
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 import LoginItems
 import PixelKit
@@ -59,7 +59,7 @@ struct DefaultVPNFeatureGatekeeper: VPNFeatureGatekeeper {
     /// For subscription users this means they have entitlements.
     ///
     func canStartVPN() async throws -> Bool {
-        try await subscriptionManager.isEnabled(feature: .networkProtection)
+        return await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
     }
 
     /// Whether the user can see the VPN entry points in the UI.

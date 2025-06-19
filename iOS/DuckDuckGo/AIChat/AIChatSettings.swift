@@ -25,6 +25,13 @@ import Core
 /// This struct serves as a wrapper for PrivacyConfigurationManaging, enabling the retrieval of data relevant to AIChat.
 /// It also fire pixels when necessary data is missing.
 struct AIChatSettings: AIChatSettingsProvider {
+
+    // Settings for KeepSession subfeature
+    struct KeepSessionSettings: Codable {
+        let sessionTimeoutMinutes: Int
+        static let defaultSessionTimeoutInMinutes: Int = 60
+    }
+
     enum SettingsValue: String {
         case aiChatURL
 
@@ -58,6 +65,25 @@ struct AIChatSettings: AIChatSettingsProvider {
             return URL(string: SettingsValue.aiChatURL.defaultValue)!
         }
         return url
+    }
+
+    private var keepSessionSettings: KeepSessionSettings? {
+        let decoder = JSONDecoder()
+
+        if let settingsJSON = privacyConfigurationManager.privacyConfig.settings(for: AIChatSubfeature.keepSession),
+           let jsonData = settingsJSON.data(using: .utf8) {
+            do {
+                let settings = try decoder.decode(KeepSessionSettings.self, from: jsonData)
+                return settings
+            } catch {
+                return nil
+            }
+        }
+        return nil
+    }
+
+    var sessionTimerInMinutes: Int {
+        keepSessionSettings?.sessionTimeoutMinutes ?? KeepSessionSettings.defaultSessionTimeoutInMinutes
     }
 
     var isAIChatEnabled: Bool {

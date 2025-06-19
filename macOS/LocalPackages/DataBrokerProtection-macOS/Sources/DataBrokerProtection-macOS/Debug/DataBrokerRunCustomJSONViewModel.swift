@@ -171,7 +171,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                                   thirdPartyCredentialsProvider: false,
                                                   unknownUsernameCategorization: false,
                                                   partialFormSaves: false,
-                                                  passwordVariantCategorization: false)
+                                                  passwordVariantCategorization: false,
+                                                  inputFocusApi: false)
 
         let sessionKey = UUID().uuidString
         let messageSecret = UUID().uuidString
@@ -529,6 +530,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 final class FakeStageDurationCalculator: StageDurationCalculator {
     var attemptId: UUID = UUID()
     var isImmediateOperation: Bool = false
+    var tries = 1
 
     func durationSinceLastStage() -> Double {
         0.0
@@ -590,6 +592,12 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     }
 
     func setLastActionId(_ actionID: String) {
+    }
+
+    func resetTries() {
+    }
+
+    func incrementTries() {
     }
 }
 

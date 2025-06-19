@@ -23,19 +23,17 @@ import PixelExperimentKit
 extension PageRefreshMonitor {
 
     static let onDidDetectRefreshPattern: (Int) -> Void = { refreshCount in
-        let tdsEtag = ContentBlocking.shared.trackerDataManager.fetchedData?.etag ?? ""
+        let tdsEtag = Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.fetchedData?.etag ?? ""
         switch refreshCount {
         case 2:
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh2X, etag: tdsEtag, fireDebugExperiment: { parameters in
                 PixelKit.fire(GeneralPixel.debugBreakageExperiment, frequency: .uniqueByName, withAdditionalParameters: parameters)
             })
-            SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .refresh2X)
         case 3:
             PixelKit.fire(GeneralPixel.pageRefreshThreeTimesWithin20Seconds)
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh3X, etag: tdsEtag, fireDebugExperiment: { parameters in
                 PixelKit.fire(GeneralPixel.debugBreakageExperiment, frequency: .uniqueByName, withAdditionalParameters: parameters)
             })
-            SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .refresh3X)
         default:
             return
         }

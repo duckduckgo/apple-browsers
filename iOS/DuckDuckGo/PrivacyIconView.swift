@@ -20,6 +20,8 @@
 import Foundation
 import UIKit
 import Lottie
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 enum PrivacyIcon {
     case daxLogo, shield, shieldWithDot, alert
@@ -27,7 +29,7 @@ enum PrivacyIcon {
     fileprivate var staticImage: UIImage? {
         switch self {
         case .daxLogo: return UIImage(resource: .logoIcon)
-        case .alert: return UIImage(resource: .alertColor24)
+        case .alert: return DesignSystemImages.Glyphs.Size24.alertRecolorable
         default: return nil
         }
     }
@@ -50,13 +52,8 @@ class PrivacyIconView: UIView {
 
     public required init?(coder aDecoder: NSCoder) {
         icon = .shield
-        
         super.init(coder: aDecoder)
-        
-        
-        if #available(iOS 13.4, *) {
-            addInteraction(UIPointerInteraction(delegate: self))
-        }
+        addInteraction(UIPointerInteraction(delegate: self))
     }
     
     override func awakeFromNib() {
@@ -189,7 +186,10 @@ class PrivacyIconView: UIView {
 extension PrivacyIconView: UIPointerInteractionDelegate {
     
     public func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
-        return .init(effect: .lift(.init(view: self)))
+
+        // If the static image is visible then don't treat it like a button
+        return !staticImageView.isHidden ? nil :
+            UIPointerStyle(effect: .automatic(.init(view: self)), shape: .roundedRect(frame, radius: 12))
     }
     
 }

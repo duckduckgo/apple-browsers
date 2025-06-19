@@ -33,15 +33,17 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../DuckUI"),
+        .package(path: "../../../SharedPackages/DesignResourcesKitIcons"),
         .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "5.0.0"),
-        .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.1.3"),
+        .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.1.4"),
     ],
     targets: [
         .target(
             name: "SyncUI-iOS",
             dependencies: [
                 .product(name: "DuckUI", package: "DuckUI"),
-                "DesignResourcesKit"
+                "DesignResourcesKit",
+                .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

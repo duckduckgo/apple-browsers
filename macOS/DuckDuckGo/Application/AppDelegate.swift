@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Bookmarks
+import BrokenSitePrompt
 import BrowserServicesKit
 import Cocoa
 import Combine
@@ -24,31 +26,31 @@ import Common
 import Configuration
 import CoreData
 import Crashes
-import DDGSync
-import FeatureFlags
-import History
-import HistoryView
-import MetricKit
-import Networking
-import NewTabPage
-import Persistence
-import PixelKit
-import PixelExperimentKit
-import ServiceManagement
-import SyncDataProviders
-import UserNotifications
-import Lottie
-import NetworkProtection
-import PrivacyStats
-import Subscription
-import NetworkProtectionIPC
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
-import RemoteMessaging
-import os.log
+import DDGSync
+import FeatureFlags
 import Freemium
+import History
+import HistoryView
+import Lottie
+import MetricKit
+import Networking
+import VPN
+import NetworkProtectionIPC
+import NewTabPage
+import os.log
+import Persistence
+import PixelExperimentKit
+import PixelKit
+import PrivacyStats
+import RemoteMessaging
+import ServiceManagement
+import Subscription
+import SyncDataProviders
+import UserNotifications
 import VPNAppState
-import AIChat
+import WebKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -103,24 +105,50 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var syncFeatureFlagsCancellable: AnyCancellable?
     private var screenLockedCancellable: AnyCancellable?
     private var emailCancellables = Set<AnyCancellable>()
-    let bookmarksManager = LocalBookmarkManager.shared
     var privacyDashboardWindow: NSWindow?
+
+    let windowControllersManager: WindowControllersManager
+
+    let appearancePreferences: AppearancePreferences
+    let dataClearingPreferences: DataClearingPreferences
+    let startupPreferences: StartupPreferences
+
+    let database: Database!
+    let bookmarkDatabase: BookmarkDatabase
+    let bookmarkManager: LocalBookmarkManager
+    let bookmarkDragDropManager: BookmarkDragDropManager
+    let historyCoordinator: HistoryCoordinator
+    let fireproofDomains: FireproofDomains
+    let webCacheManager: WebCacheManager
+    let tld = TLD()
+    let privacyFeatures: AnyPrivacyFeatures
+    let brokenSitePromptLimiter: BrokenSitePromptLimiter
+    let fireCoordinator: FireCoordinator
+    let permissionManager: PermissionManager
 
     private var updateProgressCancellable: AnyCancellable?
 
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
-        appearancePreferences: .shared,
+        appearancePreferences: appearancePreferences,
         customizationModel: newTabPageCustomizationModel,
+        bookmarkManager: bookmarkManager,
         activeRemoteMessageModel: activeRemoteMessageModel,
-        historyCoordinator: HistoryCoordinator.shared,
+        historyCoordinator: historyCoordinator,
+        contentBlocking: privacyFeatures.contentBlocking,
+        fireproofDomains: fireproofDomains,
         privacyStats: privacyStats,
-        freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator
+        freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
+        tld: tld,
+        fireCoordinator: fireCoordinator,
+        keyValueStore: keyValueStore
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
         promptHandler: AIChatPromptHandler.shared,
-        addressBarQueryExtractor: AIChatAddressBarPromptExtractor()
+        addressBarQueryExtractor: AIChatAddressBarPromptExtractor(),
+        windowControllersManager: windowControllersManager
     )
+    let aiChatSidebarProvider: AIChatSidebarProviding
 
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
@@ -128,7 +156,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
-    let visualStyleManager: VisualStyleManagerProviding
+    let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
+    let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
+    let visualStyle: VisualStyleProviding
+    private let visualStyleDecider: VisualStyleDecider
 
     let isAuthV2Enabled: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -153,7 +184,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private lazy var vpnAppEventsHandler = VPNAppEventsHandler(
         featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge),
-        featureFlagOverridesPublishingHandler: featureFlagOverridesPublishingHandler,
+        featureFlagOverridesPublisher: featureFlagOverridesPublishingHandler.flagDidChangePublisher,
+        loginItemsManager: LoginItemsManager(),
         defaults: .netP)
     private var networkProtectionSubscriptionEventHandler: NetworkProtectionSubscriptionEventHandler?
 
@@ -207,6 +239,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         do {
             keyValueStore = try KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "AppKeyValueStore")
+            // perform a dummy read to ensure that KVS is accessible
+            _ = try keyValueStore.object(forKey: AppearancePreferencesUserDefaultsPersistor.Key.newTabPageIsProtectionsReportVisible.rawValue)
         } catch {
             PixelKit.fire(DebugEvent(GeneralPixel.keyValueFileStoreInitError, error: error))
             Thread.sleep(forTimeInterval: 1)
@@ -221,13 +255,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fileStore = EncryptedFileStore()
         }
 
+        bookmarkDatabase = BookmarkDatabase()
+        aiChatSidebarProvider = AIChatSidebarProvider()
+
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
         if AppVersion.runType.requiresEnvironment {
             Self.configurePixelKit()
+            let commonDatabase = Database()
+            database = commonDatabase
 
-            Database.shared.loadStore { _, error in
+            database.db.loadStore { _, error in
                 guard let error = error else { return }
 
                 switch error {
@@ -246,66 +285,131 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let formFactorFavMigration = BookmarkFormFactorFavoritesMigration()
                 let favoritesOrder = try formFactorFavMigration.getFavoritesOrderFromPreV4Model(dbContainerLocation: BookmarkDatabase.defaultDBLocation,
                                                                                                 dbFileURL: BookmarkDatabase.defaultDBFileURL)
-                BookmarkDatabase.shared.preFormFactorSpecificFavoritesFolderOrder = favoritesOrder
+                bookmarkDatabase.preFormFactorSpecificFavoritesFolderOrder = favoritesOrder
             } catch {
                 PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))
                 Thread.sleep(forTimeInterval: 1)
                 fatalError("Could not create Bookmarks database stack: \(error.localizedDescription)")
             }
 
-            BookmarkDatabase.shared.db.loadStore { context, error in
+            bookmarkDatabase.db.loadStore { context, error in
                 guard let context = context else {
                     PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))
                     Thread.sleep(forTimeInterval: 1)
                     fatalError("Could not create Bookmarks database stack: \(error?.localizedDescription ?? "err")")
                 }
 
-                let legacyDB = Database.shared.makeContext(concurrencyType: .privateQueueConcurrencyType)
+                let legacyDB = commonDatabase.db.makeContext(concurrencyType: .privateQueueConcurrencyType)
                 legacyDB.performAndWait {
-                    LegacyBookmarksStoreMigration.setupAndMigrate(from: legacyDB,
-                                                                  to: context)
+                    LegacyBookmarksStoreMigration.setupAndMigrate(from: legacyDB, to: context)
                 }
             }
+        } else {
+            database = nil
         }
 
+        let privacyConfigurationManager: PrivacyConfigurationManager
+
 #if DEBUG
-        AppPrivacyFeatures.shared = AppVersion.runType.requiresEnvironment
-        // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
-        ? AppPrivacyFeatures(contentBlocking: AppContentBlocking(internalUserDecider: internalUserDecider, configurationStore: configurationStore), database: Database.shared)
-        : AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
+        if AppVersion.runType.requiresEnvironment {
+            privacyConfigurationManager = PrivacyConfigurationManager(
+                fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
+                fetchedData: configurationStore.loadData(for: .privacyConfiguration),
+                embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
+                localProtection: LocalUnprotectedDomains(database: database.db),
+                errorReporting: AppContentBlocking.debugEvents,
+                internalUserDecider: internalUserDecider
+            )
+        } else {
+            privacyConfigurationManager = PrivacyConfigurationManager(
+                fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
+                fetchedData: configurationStore.loadData(for: .privacyConfiguration),
+                embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
+                localProtection: LocalUnprotectedDomains(database: nil),
+                errorReporting: AppContentBlocking.debugEvents,
+                internalUserDecider: internalUserDecider
+            )
+        }
 #else
-        AppPrivacyFeatures.shared = AppPrivacyFeatures(contentBlocking: AppContentBlocking(internalUserDecider: internalUserDecider, configurationStore: configurationStore), database: Database.shared)
+        privacyConfigurationManager = PrivacyConfigurationManager(
+            fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
+            fetchedData: configurationStore.loadData(for: .privacyConfiguration),
+            embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
+            localProtection: LocalUnprotectedDomains(database: database.db),
+            errorReporting: AppContentBlocking.debugEvents,
+            internalUserDecider: internalUserDecider
+        )
 #endif
 
-        pinnedTabsManagerProvider = PinnedTabsManagerProvider()
+        appearancePreferences = AppearancePreferences(
+            keyValueStore: keyValueStore,
+            privacyConfigurationManager: privacyConfigurationManager,
+            pixelFiring: PixelKit.shared
+        )
 
-        configurationManager = ConfigurationManager(store: configurationStore)
+#if DEBUG
+        if AppVersion.runType.requiresEnvironment {
+            bookmarkManager = LocalBookmarkManager(
+                bookmarkStore: LocalBookmarkStore(
+                    bookmarkDatabase: bookmarkDatabase,
+                    favoritesDisplayMode: appearancePreferences.favoritesDisplayMode
+                ),
+                appearancePreferences: appearancePreferences
+            )
+            historyCoordinator = HistoryCoordinator(
+                historyStoring: EncryptedHistoryStore(
+                    context: self.database.db.makeContext(concurrencyType: .privateQueueConcurrencyType, name: "History")
+                )
+            )
+        } else {
+            bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(), appearancePreferences: appearancePreferences)
+            historyCoordinator = HistoryCoordinator(historyStoring: MockHistoryStore())
+        }
+#else
+        bookmarkManager = LocalBookmarkManager(
+            bookmarkStore: LocalBookmarkStore(
+                bookmarkDatabase: bookmarkDatabase,
+                favoritesDisplayMode: appearancePreferences.favoritesDisplayMode
+            ),
+            appearancePreferences: appearancePreferences
+        )
+        historyCoordinator = HistoryCoordinator(
+            historyStoring: EncryptedHistoryStore(
+                context: self.database.db.makeContext(concurrencyType: .privateQueueConcurrencyType, name: "History")
+            )
+        )
+#endif
+        bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
         let featureFlagger = DefaultFeatureFlagger(
             internalUserDecider: internalUserDecider,
-            privacyConfigManager: AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager,
+            privacyConfigManager: privacyConfigurationManager,
             localOverrides: FeatureFlagLocalOverrides(
                 keyValueStore: UserDefaults.appConfiguration,
                 actionHandler: featureFlagOverridesPublishingHandler
             ),
-            experimentManager: ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)),
+            experimentManager: ExperimentCohortsManager(
+                store: ExperimentsDataStore(),
+                fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
+            ),
             for: FeatureFlag.self
         )
         self.featureFlagger = featureFlagger
         self.contentScopeExperimentsManager = featureFlagger
 
-        let coordinator =  DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlagger)
-        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider()
 
-        visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
-        newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager)
-
-        onboardingContextualDialogsManager = ContextualDialogsManager()
+#if DEBUG || REVIEW
+        let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
+        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
+#else
+        let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
+#endif
 
         // MARK: - Subscription configuration
 
         subscriptionUIHandler = SubscriptionUIHandler(windowControllersManagerProvider: {
-            return WindowControllersManager.shared
+            return Application.appDelegate.windowControllersManager
         })
 
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
@@ -336,17 +440,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if #available(iOS 15.0, macOS 12.0, *) {
                 let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: subscriptionManager.storePurchaseManager())
                 subscriptionManager.tokenRecoveryHandler = {
-                    do {
                         try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
-                        PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenRecovered, frequency: .dailyAndCount)
-                    } catch {
-                        PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
-                    }
                 }
             } else {
                 subscriptionManager.tokenRecoveryHandler = {
                     try await DeadTokenRecoverer.reportDeadRefreshToken()
-                    PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
                 }
             }
 
@@ -359,22 +457,151 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         VPNAppState(defaults: .netP).isAuthV2Enabled = isAuthV2Enabled
 
+        let windowControllersManager = WindowControllersManager(
+            pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+            subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(
+                privacyConfigurationManager: privacyConfigurationManager,
+                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform, paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) }
+            ),
+            internalUserDecider: internalUserDecider
+        )
+        self.windowControllersManager = windowControllersManager
+
+        self.visualStyleDecider = DefaultVisualStyleDecider(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
+        visualStyle = visualStyleDecider.style
+
+#if DEBUG
+        if AppVersion.runType.requiresEnvironment {
+            fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
+            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db))
+        } else {
+            fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
+            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil))
+        }
+#else
+        fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
+        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db))
+#endif
+
+        webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
+
+        dataClearingPreferences = DataClearingPreferences(
+            fireproofDomains: fireproofDomains,
+            faviconManager: faviconManager,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: PixelKit.shared
+        )
+        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
+        newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
+
+        fireCoordinator = FireCoordinator(tld: tld)
+
+#if DEBUG
+        if AppVersion.runType.requiresEnvironment {
+            privacyFeatures = AppPrivacyFeatures(
+                contentBlocking: AppContentBlocking(
+                    privacyConfigurationManager: privacyConfigurationManager,
+                    internalUserDecider: internalUserDecider,
+                    configurationStore: configurationStore,
+                    contentScopeExperimentsManager: self.contentScopeExperimentsManager,
+                    onboardingNavigationDelegate: windowControllersManager,
+                    appearancePreferences: appearancePreferences,
+                    startupPreferences: startupPreferences,
+                    bookmarkManager: bookmarkManager,
+                    historyCoordinator: historyCoordinator,
+                    fireproofDomains: fireproofDomains,
+                    fireCoordinator: fireCoordinator,
+                    tld: tld
+                ),
+                database: database.db
+            )
+        } else {
+            // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
+            privacyFeatures = AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
+        }
+#else
+        privacyFeatures = AppPrivacyFeatures(
+            contentBlocking: AppContentBlocking(
+                privacyConfigurationManager: privacyConfigurationManager,
+                internalUserDecider: internalUserDecider,
+                configurationStore: configurationStore,
+                contentScopeExperimentsManager: self.contentScopeExperimentsManager,
+                onboardingNavigationDelegate: windowControllersManager,
+                appearancePreferences: appearancePreferences,
+                startupPreferences: startupPreferences,
+                bookmarkManager: bookmarkManager,
+                historyCoordinator: historyCoordinator,
+                fireproofDomains: fireproofDomains,
+                fireCoordinator: fireCoordinator,
+                tld: tld
+            ),
+            database: database.db
+        )
+#endif
+
+        configurationManager = ConfigurationManager(
+            store: configurationStore,
+            trackerDataManager: privacyFeatures.contentBlocking.trackerDataManager,
+            privacyConfigurationManager: privacyConfigurationManager,
+            contentBlockingManager: privacyFeatures.contentBlocking.contentBlockingManager,
+            httpsUpgrade: privacyFeatures.httpsUpgrade
+        )
+
+        onboardingContextualDialogsManager = ContextualDialogsManager(
+            trackerMessageProvider: TrackerMessageProvider(
+                entityProviding: privacyFeatures.contentBlocking.contentBlockingManager
+            )
+        )
+
+        defaultBrowserAndDockPromptKeyValueStore = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStore)
+        DefaultBrowserAndDockPromptStoreMigrator(
+            oldStore: DefaultBrowserAndDockPromptLegacyStore(),
+            newStore: defaultBrowserAndDockPromptKeyValueStore
+        ).migrateIfNeeded()
+
+        defaultBrowserAndDockPromptFeatureFlagger = DefaultBrowserAndDockPromptFeatureFlag(
+            privacyConfigManager: privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
+
+        let defaultBrowserAndDockPromptDecider = DefaultBrowserAndDockPromptTypeDecider(
+            featureFlagger: defaultBrowserAndDockPromptFeatureFlagger,
+            store: defaultBrowserAndDockPromptKeyValueStore,
+            installDateProvider: { LocalStatisticsStore().installDate },
+            dateProvider: defaultBrowserAndDockPromptDateProvider
+        )
+        let coordinator = DefaultBrowserAndDockPromptCoordinator(
+            promptTypeDecider: defaultBrowserAndDockPromptDecider,
+            store: defaultBrowserAndDockPromptKeyValueStore,
+            isOnboardingCompleted: onboardingContextualDialogsManager.state == .onboardingCompleted,
+            dateProvider: defaultBrowserAndDockPromptDateProvider
+        )
+        let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
+        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
+
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
-                database: RemoteMessagingDatabase().db,
-                bookmarksDatabase: BookmarkDatabase.shared.db,
-                appearancePreferences: .shared,
+                remoteMessagingDatabase: RemoteMessagingDatabase().db,
+                bookmarksDatabase: bookmarkDatabase.db,
+                database: database.db,
+                appearancePreferences: appearancePreferences,
                 pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                 internalUserDecider: internalUserDecider,
                 configurationStore: configurationStore,
                 remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
-                    privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager
+                    privacyConfigurationManager: privacyConfigurationManager
                 ),
                 subscriptionManager: subscriptionAuthV1toV2Bridge,
-                featureFlagger: self.featureFlagger
+                featureFlagger: self.featureFlagger,
+                visualStyle: self.visualStyle
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
-                WindowControllersManager.shared.showTab(with: .contentFromURL(url, source: .appOpenUrl))
+                windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
+            }, navigateToFeedbackHandler: {
+                windowControllersManager.showFeedbackModal(preselectedFormOption: .feedback(feedbackCategory: .other))
             })
         } else {
             // As long as remoteMessagingClient is private to App Delegate and activeRemoteMessageModel
@@ -384,7 +611,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             activeRemoteMessageModel = ActiveRemoteMessageModel(
                 remoteMessagingStore: nil,
                 remoteMessagingAvailabilityProvider: nil,
-                openURLHandler: { _ in }
+                openURLHandler: { _ in },
+                navigateToFeedbackHandler: { }
             )
         }
 
@@ -405,13 +633,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let experimentManager = FreemiumDBPPixelExperimentManager(subscriptionManager: subscriptionAuthV1toV2Bridge)
         experimentManager.assignUserToCohort()
 
-        freemiumDBPFeature = DefaultFreemiumDBPFeature(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+        freemiumDBPFeature = DefaultFreemiumDBPFeature(privacyConfigurationManager: privacyConfigurationManager,
                                                        experimentManager: experimentManager,
                                                        subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                                                   freemiumDBPFeature: freemiumDBPFeature)
 
+        brokenSitePromptLimiter = BrokenSitePromptLimiter(privacyConfigManager: privacyConfigurationManager, store: BrokenSitePromptLimiterStore())
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase(), errorEvents: PrivacyStatsErrorHandler())
@@ -422,12 +651,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
-
-#if DEBUG
-        faviconManager = FaviconManager(cacheType: AppVersion.runType.requiresEnvironment ? .standard : .inMemory)
-#else
-        faviconManager = FaviconManager(cacheType: .standard)
-#endif
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
@@ -441,9 +664,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
-        Configuration.setURLProvider(AppConfigurationURLProvider())
+        Configuration.setURLProvider(AppConfigurationURLProvider(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        ))
 
-        stateRestorationManager = AppStateRestorationManager(fileStore: fileStore)
+        stateRestorationManager = AppStateRestorationManager(fileStore: fileStore, startupPreferences: startupPreferences)
 
 #if SPARKLE
         if AppVersion.runType != .uiTests {
@@ -487,12 +713,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             vpnAppEventsHandler.applicationDidFinishLaunching()
         }
 
-        HistoryCoordinator.shared.loadHistory {
-            HistoryCoordinator.shared.migrateModelV5toV6IfNeeded()
+        historyCoordinator.loadHistory {
+            self.historyCoordinator.migrateModelV5toV6IfNeeded()
         }
 
-        PrivacyFeatures.httpsUpgrade.loadDataAsync()
-        bookmarksManager.loadBookmarks()
+        privacyFeatures.httpsUpgrade.loadDataAsync()
+        bookmarkManager.loadBookmarks()
 
         // Force use of .mainThread to prevent high WindowServer Usage
         // Pending Fix with newer Lottie versions
@@ -520,7 +746,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         startupSync()
 
-        let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
+        let privacyConfigurationManager = privacyFeatures.contentBlocking.privacyConfigurationManager
 
         // Enable subscriptionCookieManager if feature flag is present
         if privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.setAccessTokenCookieForSubscriptionDomains) {
@@ -564,7 +790,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         crashCollection.startAttachingCrashLogMessages { pixelParameters, payloads, completion in
             pixelParameters.forEach { parameters in
                 PixelKit.fire(GeneralPixel.crash, withAdditionalParameters: parameters, includeAppVersionParameter: false)
-                PixelKit.fire(GeneralPixel.crashDaily, frequency: .legacyDaily)
+                PixelKit.fire(GeneralPixel.crashDaily, frequency: .legacyDailyNoSuffix)
             }
 
             guard let lastPayload = payloads.last else {
@@ -577,6 +803,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         crashReporter.checkForNewReports()
 #endif
+
+        if visualStyleDecider.shouldFirePixel(style: visualStyle) {
+            PixelKit.fire(VisualStylePixel.visualUpdatesEnabled, frequency: .uniqueByName)
+        }
 
         urlEventHandler.applicationDidFinishLaunching()
 
@@ -596,8 +826,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         dataBrokerProtectionSubscriptionEventHandler.registerForSubscriptionAccountManagerEvents()
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
-        let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge,
-                                                                         freemiumDBPUserStateManager: freemiumDBPUserStateManager)
+        let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager
+        )
 
         DataBrokerProtectionAppEvents(featureGatekeeper: pirGatekeeper).applicationDidFinishLaunching()
 
@@ -624,7 +857,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let store = FailedCompilationsStore()
         if store.hasAnyFailures {
             PixelKit.fire(DebugEvent(GeneralPixel.compilationFailed),
-                          frequency: .daily,
+                          frequency: .legacyDaily,
                           withAdditionalParameters: store.summary,
                           includeAppVersionParameter: true) { didFire, _ in
                 if !didFire {
@@ -642,16 +875,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         initializeSync()
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
-        let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge,
-                                                                         freemiumDBPUserStateManager: freemiumDBPUserStateManager)
+        let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            freemiumDBPUserStateManager: freemiumDBPUserStateManager
+        )
 
         DataBrokerProtectionAppEvents(featureGatekeeper: pirGatekeeper).applicationDidBecomeActive()
 
         subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in
             if isSubscriptionActive {
-                PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive, frequency: .daily)
+                PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive, frequency: .legacyDaily)
             }
         }
+
+        vpnAppEventsHandler.applicationDidBecomeActive()
 
         Task { @MainActor in
             await subscriptionCookieManager.refreshSubscriptionCookie()
@@ -660,9 +898,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func fireAppLaunchPixel() {
 #if SPARKLE
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .daily)
+        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .legacyDaily)
 #else
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: nil)), frequency: .daily)
+        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: nil)), frequency: .legacyDaily)
 #endif
     }
 
@@ -714,7 +952,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if WindowControllersManager.shared.mainWindowControllers.isEmpty,
+        if Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty,
            case .normal = AppVersion.runType {
             WindowsManager.openNewWindow()
             return true
@@ -771,7 +1009,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Theme
 
     private func applyPreferredTheme() {
-        let appearancePreferences = AppearancePreferences()
         appearancePreferences.updateUserInterfaceStyle()
     }
 
@@ -792,11 +1029,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let environment = defaultEnvironment
 #endif
         let syncErrorHandler = SyncErrorHandler()
-        let syncDataProviders = SyncDataProviders(bookmarksDatabase: BookmarkDatabase.shared.db, syncErrorHandler: syncErrorHandler)
+        let syncDataProviders = SyncDataProviders(
+            bookmarksDatabase: bookmarkDatabase.db,
+            bookmarkManager: bookmarkManager,
+            appearancePreferences: appearancePreferences,
+            syncErrorHandler: syncErrorHandler
+        )
         let syncService = DDGSync(
             dataProvidersSource: syncDataProviders,
             errorEvents: SyncErrorHandler(),
-            privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             keyValueStore: keyValueStore,
             environment: environment
         )
@@ -817,7 +1059,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .filter { $0 }
             .asVoid()
             .sink { [weak syncService] in
-                PixelKit.fire(GeneralPixel.syncDaily, frequency: .legacyDaily)
+                PixelKit.fire(GeneralPixel.syncDaily, frequency: .legacyDailyNoSuffix)
                 syncService?.syncDailyStats.sendStatsIfNeeded(handler: { params in
                     PixelKit.fire(GeneralPixel.syncSuccessRateDaily, withAdditionalParameters: params)
                 })
@@ -848,7 +1090,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     case .alertSecondButtonReturn:
                         alert.window.sheetParent?.endSheet(alert.window)
                         DispatchQueue.main.async {
-                            WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .sync)
+                            Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .sync)
                         }
                     default:
                         break
@@ -945,8 +1187,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setUpAutoClearHandler() {
-        let autoClearHandler = AutoClearHandler(preferences: .shared,
-                                                fireViewModel: FireCoordinator.fireViewModel,
+        let autoClearHandler = AutoClearHandler(preferences: dataClearingPreferences,
+                                                fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {

@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Sinhronizacija je bila začasno zaustavljena. Če želite še naprej sinhronizirati to napravo, znova vzpostavite povezavo z uporabo druge naprave ali obnovitvene kode.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Sinhroniziraj zdaj";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "Naprava »%@« bo lahko dostopala do vaših sinhroniziranih podatkov DuckDuckGo.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Želite sinhronizirati novo napravo?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Več";
 
@@ -262,6 +271,12 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Ali ste prepričani, da želite izbrisati vse zaznamke? Tega dejanja ni mogoče razveljaviti.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Ste prepričani, da želite izbrisati ta klepet? Tega ni mogoče razveljaviti.";
+
+/* No comment provided by engineer. */
+"Ask anything..." = "Vprašajte kar koli …";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Prijavite se";
 
@@ -306,6 +321,9 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "DuckDuckGo na spletnih mestih, ki jih obiščete, zazna pojavna okna s soglasjem za piškotke, zato lahko samodejno nastavimo vaše nastavitve piškotkov, da zmanjšamo uporabo piškotkov in povečamo zasebnost, nato pa pojavna okna zapremo. Nekatera spletna mesta pa ne omogočajo upravljanja nastavitev piškotkov, zato lahko takšna pojavna okna le skrijemo.";
+
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Kartica je shranjena";
 
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Kartica je izbrisana";
@@ -394,6 +412,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Zavarujte svojo napravo, če želite shraniti kreditne kartice";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Ne shrani";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Shrani kartico";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Kreditne kartice so varno shranjene v vaši napravi.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Ali želite, da DuckDuckGo shrani podatke vaše kartice?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Preverite pristnost za izpolnjevanje podatkov o kreditni kartici";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Želite uporabiti shranjeno kartico?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Shranjevanje kreditnih kartic lahko kadar koli izklopite.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -454,8 +493,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Sinhronizacija z namizjem";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Kako uvoziti gesla";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Kako sinhronizirati gesla za namizje";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Onemogoči";
@@ -918,6 +957,9 @@
 
 /* Close All Tabs */
 "close.all.tabs" = "Zapri vse zavihke";
+
+/* No comment provided by engineer. */
+"Cohort: %@" = "Kohorta: %@";
 
 /* No comment provided by engineer. */
 "Confirm" = "Potrdi";
@@ -1475,6 +1517,9 @@
 "empty.search" = "Ni zadetkov";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Včlanjenih: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1527,6 +1572,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Priljubljene samo iz mobilne naprave";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funkcija: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokiranje oglasov in pojavnih oken";
@@ -2276,7 +2324,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blokirajte pojavna okna za piškotke";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokiraj oglase, ki sledijo";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokiranje ciljnih oglasov";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Izbriši podatke o brskanju z enim gumbom";
@@ -2430,6 +2478,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Pošljite povratne informacije";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Preprečevanje prevar";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Če omogočite to funkcijo, lahko ogrozite varnost svojih osebnih podatkov.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Prikaži opozorilo na spletnih mestih, označenih zaradi prevar, lažnega predstavljanja ali zlonamerne programske opreme. [Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Samodejno nadgradi povezave na HTTPS, kadar je to mogoče. [Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Vedno vklopljeno";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Zaščita pred grožnjami";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Izboljšana zaščita DuckDuckGo prestreže pogoste grožnje in obenem skrbi za varnost vaše povezave.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Nekateri zaznamki ali gesla so napačno oblikovani ali predolgi in niso bili sinhronizirani.";
@@ -2626,6 +2698,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Samodejno počisti podatke";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Dokončanje nastavitve";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Zaščita pred pojavnimi okni piškotkov";
 
@@ -2689,6 +2764,9 @@
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Ikona aplikacije";
 
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Uvozi gesla";
+
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tipkovnica";
 
@@ -2748,6 +2826,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Poročila o zrušitvi samodejno pošljite DuckDuckGo.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Nastavite za privzeti brskalnik";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Nastavitev položaja naslovne vrstice";
@@ -2864,7 +2945,13 @@
 "siteFeedback.urlPlaceholder" = "Katera spletna stran je poškodovana?";
 
 /* No comment provided by engineer. */
+"Stop generating..." = "Ustavi ustvarjanje …";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Shranjeno ime gostitelja: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Podfunkcija: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Dodajte v napravo";
@@ -3389,10 +3476,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Z blokirnim seznamom na ravni DNS blokirajte več kot 150.000 domen, ki so označene kot gostiteljice zlonamerne programske opreme, napadov z lažnim predstavljanjem in spletnih prevar. [Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blokiranje in filtriranje vsebine";
+"vpn.settings.dns.server.content.blocking.header" = "Blokiranje zlonamerne vsebine";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Blokiranje tveganih domen";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Preprečevanje prevar";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

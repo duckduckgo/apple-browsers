@@ -33,7 +33,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     @MainActor
     override func setUp() async throws {
 
-        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor())
+        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager())
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
         openFilePanelCalls = 0

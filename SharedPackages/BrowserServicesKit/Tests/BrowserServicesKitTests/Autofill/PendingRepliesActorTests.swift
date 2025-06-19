@@ -20,6 +20,7 @@ import XCTest
 @testable import BrowserServicesKit
 
 final class PendingRepliesActorTests: XCTestCase {
+
     var actor: PendingRepliesActor!
 
     override func setUp() {
@@ -32,94 +33,116 @@ final class PendingRepliesActorTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenRegisteringAndSendingReply_ThenHandlerReceivesResponse() {
-        let expected = "hello"
-        let exp = expectation(description: #function)
-
-        Task {
-            await actor.register({ response in
-                XCTAssertEqual(response, expected)
-                exp.fulfill()
-            }, for: "msg")
-            await actor.send(response: expected, for: "msg")
-        }
-
-        waitForExpectations(timeout: 1.0)
+    @MainActor
+    func testWhenRegisteringAndSendingReply_ThenHandlerReceivesResponse() async {
+        var captured: String?
+        await actor.register({ captured = $0 }, for: "msg")
+        await actor.send(response: "hello", for: "msg")
+        // Because both register/send schedule their callbacks via `await MainActor.run`,
+        // and our test is already on MainActor, by this point `captured` is set.
+        XCTAssertEqual(captured, "hello")
     }
 
-    func testWhenRegisteringMultipleTimes_ThenOnlyFirstHandlerIsCalledOnce() {
-        let exp = expectation(description: #function)
-        exp.expectedFulfillmentCount = 1
-
-        Task {
-            await actor.register({ _ in exp.fulfill() }, for: "once")
-            await actor.send(response: "first", for: "once")
-            // second send should not fire again
-            await actor.send(response: "second", for: "once")
-        }
-
-        waitForExpectations(timeout: 1.0)
+    /// Sending to a key with no handlers should do nothing.
+    @MainActor
+    func testWhenSendingWithoutRegistering_ThenNothingHappens() async {
+        // nothing should throw or change state
+        await actor.send(response: "ignored", for: "no-msg")
+        // no assertion needed—if it crashes, the test fails
     }
 
-    func testWhenRegisteringSecondHandlerForSameType_ThenFirstIsCancelled() {
-        let cancelExp = expectation(description: #function)
-
-        Task {
-            // first handler should be cancelled when registering again
-            await actor.register({ response in
-                // decode NoActionResponse to verify .none action
-                let data = response?.data(using: .utf8)
-                let result = try? JSONDecoder().decode(AutofillUserScript.NoActionResponse.self,
-                                                       from: data!)
-                XCTAssertEqual(result?.success.action, AutofillUserScript.NoActionResponse.NoActionType.none)
-                cancelExp.fulfill()
-            }, for: "dup")
-
-            await actor.register({ _ in
-                XCTFail("Second handler should not run in this test")
-            }, for: "dup")
-        }
-
-        waitForExpectations(timeout: 1.0)
+    /// If you send twice after a single register, only the first should fire.
+    @MainActor
+    func testWhenRegisteringMultipleTimes_ThenOnlyFirstHandlerIsCalledOnce() async {
+        var count = 0
+        await actor.register({ _ in count += 1 }, for: "once")
+        await actor.send(response: "first", for: "once")
+        await actor.send(response: "second", for: "once")
+        XCTAssertEqual(count, 1)
     }
 
-    func testWhenRegisteringTwoHandlersForSameType_ThenFirstIsCancelledAndSecondReceivesResponse() {
-        let cancelExp = expectation(description: #function + "_cancel")
-        let realExp   = expectation(description: #function + "_real")
+    @MainActor
+    func testWhenRegisteringSecondHandlerForSameType_ThenFirstIsCancelled() async {
+        var cancelledAction: AutofillUserScript.NoActionResponse.NoActionType?
+        // first handler
+        await actor.register({ response in
+            let data = response!.data(using: .utf8)!
+            let noAction = try! JSONDecoder().decode(AutofillUserScript.NoActionResponse.self, from: data)
+            cancelledAction = noAction.success.action
+        }, for: "dup")
 
-        Task {
-            // 1) First handler: should be cancelled by the next register call.
-            await actor.register({ response in
-                // decode NoActionResponse to verify .none action
-                let data = response?.data(using: .utf8)
-                let result = try? JSONDecoder().decode(AutofillUserScript.NoActionResponse.self, from: data!)
-                XCTAssertEqual(result?.success.action, AutofillUserScript.NoActionResponse.NoActionType.none)
-                cancelExp.fulfill()
-            }, for: "dupType")
+        // register second handler (cancels the first now)
+        await actor.register({ _ in
+            XCTFail("Second handler shouldn’t run here")
+        }, for: "dup")
 
-            // 2) Second handler: the one that should receive the real payload
-            await actor.register({ response in
-                XCTAssertEqual(response, "real")
-                realExp.fulfill()
-            }, for: "dupType")
-
-            // 3) Send: only the second handler fires with “real”
-            await actor.send(response: "real", for: "dupType")
-        }
-
-        wait(for: [cancelExp, realExp], timeout: 1.0)
+        XCTAssertEqual(cancelledAction, AutofillUserScript.NoActionResponse.NoActionType.none)
     }
 
-    func testWhenCancelAll_ThenAllHandlersAreCancelled() {
-        let exp1 = expectation(description: #function + "_1")
-        let exp2 = expectation(description: #function + "_2")
+    @MainActor
+    func testWhenRegisteringTwoHandlersForSameType_ThenSecondReceivesRealResponse() async {
+        var cancelledAction: AutofillUserScript.NoActionResponse.NoActionType?
+        var realResponse: String?
 
-        Task {
-            await actor.register({ _ in exp1.fulfill() }, for: "a")
-            await actor.register({ _ in exp2.fulfill() }, for: "b")
-            await actor.cancelAll()
-        }
+        // first handler (canceled)
+        await actor.register({ response in
+            let data = response!.data(using: .utf8)!
+            let noAction = try! JSONDecoder()
+                    .decode(AutofillUserScript.NoActionResponse.self, from: data)
+            cancelledAction = noAction.success.action
+        }, for: "dupType")
 
-        waitForExpectations(timeout: 1.0)
+        // second handler (should get “real”)
+        await actor.register({ realResponse = $0 }, for: "dupType")
+
+        // now send real
+        await actor.send(response: "real", for: "dupType")
+
+        XCTAssertEqual(cancelledAction, AutofillUserScript.NoActionResponse.NoActionType.none)
+        XCTAssertEqual(realResponse, "real")
+    }
+
+    @MainActor
+    func testWhenCancelAll_ThenAllHandlersAreCancelled() async {
+        var aCancelled = false
+        var bCancelled = false
+
+        await actor.register({ _ in aCancelled = true }, for: "a")
+        await actor.register({ _ in bCancelled = true }, for: "b")
+
+        await actor.cancelAll()
+
+        XCTAssertTrue(aCancelled)
+        XCTAssertTrue(bCancelled)
+    }
+
+    @MainActor
+    func testWhenReusingActor_ThenSupportsMultipleCycles() async {
+        var first: String?
+        var second: String?
+
+        // first cycle
+        await actor.register({ first = $0 }, for: "cycle")
+        await actor.send(response: "one", for: "cycle")
+        XCTAssertEqual(first, "one")
+
+        // second cycle
+        await actor.register({ second = $0 }, for: "cycle")
+        await actor.send(response: "two", for: "cycle")
+        XCTAssertEqual(second, "two")
+    }
+
+    @MainActor
+    func testWhenUsingDifferentTypes_ThenTheyDoNotInterfere() async {
+        var foo: String?
+        var bar: String?
+
+        await actor.register({ foo = $0 }, for: "foo")
+        await actor.register({ bar = $0 }, for: "bar")
+        await actor.send(response: "F", for: "foo")
+        await actor.send(response: "B", for: "bar")
+
+        XCTAssertEqual(foo, "F")
+        XCTAssertEqual(bar, "B")
     }
 }

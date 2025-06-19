@@ -125,7 +125,7 @@ set_up_environment() {
 	build_number=$(get_build_number "${scheme}")
 	version_identifier="${app_version}.${build_number}"
 
-	app_path="${workdir}/DuckDuckGo-${release_type}-${version_identifier}.app"
+	app_path="${workdir}/${app_name}.app"
 	dsym_path="${archive}/dSYMs"
 
 	output_app_xip_path="${workdir}/DuckDuckGo-${version_identifier}.xip"
@@ -231,7 +231,7 @@ archive_and_export() {
 		-skipPackagePluginValidation -skipMacroValidation \
 		MARKETING_VERSION="${app_version}" \
 		CURRENT_PROJECT_VERSION="${build_number}" \
-		RELEASE_PRODUCT_NAME_OVERRIDE=DuckDuckGo-${release_type}-${version_identifier} \
+		RELEASE_PRODUCT_NAME_OVERRIDE=DuckDuckGo \
 		2>&1 \
 		| ${log_formatter}
 

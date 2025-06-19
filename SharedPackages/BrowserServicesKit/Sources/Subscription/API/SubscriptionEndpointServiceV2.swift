@@ -48,7 +48,7 @@ public enum SubscriptionEndpointServiceError: Error, Equatable {
     case invalidResponseCode(HTTPStatusCode)
 }
 
-/// Defines the caching strategy used when retrieving a `Subscription`.
+/// Defines the caching strategy used when retrieving a `PrivacyProSubscription`.
 public enum SubscriptionCachePolicy {
 
     /// Always attempts to fetch the subscription from the remote source.

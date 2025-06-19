@@ -333,7 +333,7 @@ jobs:
         create-dmg --volname "${{ env.app-name }}" \
             --volicon "scripts/assets/dmg-${{ env.release-type }}.icns" \
             --filesystem APFS \
-            --icon "DuckDuckGo.app" 140 160 \
+            --icon "${{ env.app-name }}.app" 140 160 \
             --background "scripts/assets/dmg-background.png" \
             --window-size 600 400 \
             --icon-size 120 \

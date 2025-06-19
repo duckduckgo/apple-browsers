@@ -96,6 +96,10 @@ class TabSwitcherViewController: UIViewController {
         collectionView.indexPathsForSelectedItems ?? []
     }
 
+    var isExperimentalThemingEnabled: Bool {
+        featureFlagger.isFeatureOn(.visualUpdates)
+    }
+
     private(set) var bookmarksDatabase: CoreDataDatabase
     let syncService: DDGSyncing
 
@@ -152,7 +156,26 @@ class TabSwitcherViewController: UIViewController {
         topBarView.standardAppearance = appearance
         topBarView.scrollEdgeAppearance = appearance
     }
-    
+
+    private func activateLayoutConstraintsBasedOnBarPosition(_ navHPadding: CGFloat, _ isBottomBar: Bool) {
+        NSLayoutConstraint.activate([
+            topBarView.leadingAnchor.constraint(equalTo: toolbar.leadingAnchor, constant: navHPadding),
+            topBarView.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor, constant: -navHPadding),
+            isBottomBar ? topBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor) : nil,
+            !isBottomBar ? topBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor) : nil,
+
+            collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : topBarView.bottomAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: isBottomBar ? topBarView.topAnchor : toolbar.topAnchor),
+
+            // Always at the bottom
+            toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ].compactMap { $0 })
+    }
+
     private func setupBarsLayout() {
         let addressBarPosition = appSettings.currentAddressBarPosition
         
@@ -171,57 +194,24 @@ class TabSwitcherViewController: UIViewController {
         }
         
         // Configure toolbar appearance based on address bar position
+        let navigationBarHorizontalPadding: CGFloat
         let toolbarAppearance = UIToolbarAppearance()
-        if addressBarPosition.isBottom {
+        if isExperimentalThemingEnabled {
             // Hide top separator when navigation bar is stacked on top
             toolbarAppearance.configureWithTransparentBackground()
             toolbarAppearance.shadowColor = .clear
+            navigationBarHorizontalPadding = 8.0
         } else {
             // Default appearance with separator
             toolbarAppearance.configureWithDefaultBackground()
+            navigationBarHorizontalPadding = 0.0
         }
         toolbar.standardAppearance = toolbarAppearance
         toolbar.compactAppearance = toolbarAppearance
-        
-        if addressBarPosition.isBottom {
-            // Stack navigation bar on top of toolbar at bottom
-            NSLayoutConstraint.activate([
-                // Collection view takes up top area
-                collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-                collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                collectionView.bottomAnchor.constraint(equalTo: topBarView.topAnchor),
-                
-                // Navigation bar stacked on top of toolbar
-                topBarView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                topBarView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                topBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
-                
-                // Toolbar at bottom
-                toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-            ])
-        } else {
-            // Default: navigation bar at top, toolbar at bottom
-            NSLayoutConstraint.activate([
-                // Navigation bar at top
-                topBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-                topBarView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                topBarView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                
-                // Collection view in middle
-                collectionView.topAnchor.constraint(equalTo: topBarView.bottomAnchor),
-                collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                collectionView.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
-                
-                // Toolbar at bottom
-                toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-            ])
-        }
+
+        topBarView.backgroundColor = toolbar.backgroundColor
+
+        activateLayoutConstraintsBasedOnBarPosition(navigationBarHorizontalPadding, addressBarPosition.isBottom)
     }
 
     override func viewDidLoad() {

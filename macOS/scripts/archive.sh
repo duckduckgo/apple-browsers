@@ -291,7 +291,7 @@ compress_app_and_dsym() {
 	
 	# Create XIP archive using the app as it is (already correctly named)
 	echo "Creating XIP archive..."
-	xar -cf "${output_app_xip_path}" --compression lzma "${app_path}"
+	xar -cf "${output_app_xip_path}" --compression gzip "${app_path}"
 	
 	# Verify XIP was created
 	if [[ -f "${output_app_xip_path}" ]]; then

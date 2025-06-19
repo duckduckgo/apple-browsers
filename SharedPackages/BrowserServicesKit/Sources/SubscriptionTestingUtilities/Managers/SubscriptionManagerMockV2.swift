@@ -25,7 +25,7 @@ import NetworkingTestingUtils
 
 public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
     public var canPurchasePublisher: AnyPublisher<Bool, Never> = .init(Just(false))
-    
+
     public var email: String?
 
     public var isEligibleForFreeTrialResult: Bool = false

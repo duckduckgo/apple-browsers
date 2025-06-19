@@ -141,7 +141,7 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
                     let notSubscribed = !self.subscriptionManager.isUserAuthenticated
                     let available = featureEnabled && notSubscribed && canPurchase
                     Logger.freemiumDBP.debug("[Freemium DBP] Subscription Updated. Feature Availability = \(available)")
-                    
+
                     self.isAvailableSubject.send(available)
                 }
                 .store(in: &cancellables)

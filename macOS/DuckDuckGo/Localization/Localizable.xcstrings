@@ -17546,6 +17546,18 @@
         }
       }
     },
+    "delete.browsing.data.menu.item" : {
+      "comment" : "Menu item title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete Browsing Data…"
+          }
+        }
+      }
+    },
     "details" : {
       "comment" : "details button",
       "extractionState" : "extracted_with_value",

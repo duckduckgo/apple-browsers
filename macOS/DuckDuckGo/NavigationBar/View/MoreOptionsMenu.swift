@@ -362,6 +362,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         actionDelegate?.optionsButtonMenuRequestedLoginsPopover(self, selectedCategory: .cards)
     }
 
+    @MainActor
+    @objc func deleteBrowsingData(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.deleteBrowsingDataActionClicked, frequency: .daily)
+        Application.appDelegate.fireCoordinator.fireButtonAction()
+    }
+
     @objc func openPreferences(_ sender: NSMenuItem) {
         PixelKit.fire(MoreOptionsMenuPixel.settingsActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedPreferences(self)
@@ -515,6 +521,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .withImage(moreOptionsMenuIconsProvider.passwordsIcon)
             .withSubmenu(loginsSubMenu)
             .withAccessibilityIdentifier("MoreOptionsMenu.autofill")
+
+        addItem(withTitle: UserText.deleteBrowsingDataMenuItem, action: #selector(deleteBrowsingData(_:)), keyEquivalent: "")
+            .targetting(self)
+            .withImage(moreOptionsMenuIconsProvider.deleteBrowsingDataIcon)
 
         addItem(NSMenuItem.separator())
     }

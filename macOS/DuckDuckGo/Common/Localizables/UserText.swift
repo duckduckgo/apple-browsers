@@ -376,6 +376,7 @@ struct UserText {
     static let printMenuItem = NSLocalizedString("print.menu.item", value: "Print…", comment: "Menu item title")
     static let newWindowMenuItem = NSLocalizedString("new.window.menu.item", value: "New Window", comment: "Menu item title")
     static let newBurnerWindowMenuItem = NSLocalizedString("new.burner.window.menu.item", value: "New Fire Window", comment: "Menu item title")
+    static let deleteBrowsingDataMenuItem = NSLocalizedString("delete.browsing.data.menu.item", value: "Delete Browsing Data…", comment: "Menu item title")
 
     static let fireDialogFireproofSites = NSLocalizedString("fire.dialog.fireproof.sites", value: "Fireproof sites won't be cleared", comment: "Category of domains in fire button dialog")
     static let fireDialogClearSites = NSLocalizedString("fire.dialog.clear.sites", value: "Selected sites will be cleared", comment: "Category of domains in fire button dialog")

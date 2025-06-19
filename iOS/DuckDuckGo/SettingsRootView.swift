@@ -166,8 +166,7 @@ struct SettingsRootView: View {
         switch target {
         case .dbp:
             if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
-                // TODO
-                SubscriptionPIRMoveToDesktopView()
+                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!)
             } else {
                 SubscriptionPIRMoveToDesktopView()
             }

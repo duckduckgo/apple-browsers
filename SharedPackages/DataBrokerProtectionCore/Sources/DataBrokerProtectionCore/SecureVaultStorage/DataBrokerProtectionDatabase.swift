@@ -443,7 +443,14 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository,
     }
 
     public func fetchAllDataBrokers() throws -> [DataBroker] {
-        try vault.fetchAllBrokers()
+        let vault = try requireVault(context: "DataBrokerProtectionDatabase.fetchAllDataBrokers")
+
+        do {
+            try vault.fetchAllBrokers()
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchAllDataBrokers")
+            throw error
+        }
     }
 
     public func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws {

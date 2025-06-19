@@ -125,10 +125,10 @@ set_up_environment() {
 	build_number=$(get_build_number "${scheme}")
 	version_identifier="${app_version}.${build_number}"
 
-	app_path="${workdir}/${app_name}.app"
+	app_path="${workdir}/DuckDuckGo-${release_type}-${version_identifier}.app"
 	dsym_path="${archive}/dSYMs"
 
-	output_app_xip_path="${workdir}/DuckDuckGo-${version_identifier}.app.xip"
+	output_app_xip_path="${workdir}/DuckDuckGo-${version_identifier}.xip"
 	output_dsym_zip_path="${workdir}/DuckDuckGo-${version_identifier}-dSYM.zip"
 }
 
@@ -231,7 +231,7 @@ archive_and_export() {
 		-skipPackagePluginValidation -skipMacroValidation \
 		MARKETING_VERSION="${app_version}" \
 		CURRENT_PROJECT_VERSION="${build_number}" \
-		RELEASE_PRODUCT_NAME_OVERRIDE=DuckDuckGo \
+		RELEASE_PRODUCT_NAME_OVERRIDE=DuckDuckGo-${release_type}-${version_identifier} \
 		2>&1 \
 		| ${log_formatter}
 
@@ -279,7 +279,7 @@ staple_notarized_app() {
 compress_app_and_dsym() {
 	echo "Creating XIP archive and compressing dSYMs ..."
 
-	xar -cf "${output_app_xip_path}" --compression lzma -C "${workdir}" "${app_name}.app"
+	xar -cf "${output_app_xip_path}" --compression lzma "${app_path}"
 	ditto -c -k --keepParent "${dsym_path}" "${output_dsym_zip_path}"
 }
 

@@ -482,7 +482,7 @@ final class DBPUICommunicationViewModelScanStateExtensionsTests: XCTestCase {
         XCTAssertEqual(childProfile?.dataBroker.optOutUrl, "parent.com/optout")
 
         let parentProfile = state.inProgressOptOuts.first { $0.dataBroker.name == "ParentBroker" }
-        XCTAssertEqual(childProfile?.dataBroker.optOutUrl, "parent.com/optout")
+        XCTAssertEqual(parentProfile?.dataBroker.optOutUrl, "parent.com/optout")
     }
 }
 

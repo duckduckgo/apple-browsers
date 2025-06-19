@@ -19,6 +19,7 @@
 
 import XCTest
 import Suggestions
+import Bookmarks
 
 @testable import DuckDuckGo
 
@@ -130,6 +131,9 @@ final class MockOmniBarDelegate: OmniBarDelegate {
     }
 
     // MARK: - Unused methods
+    func onSelectFavorite(_ favorite: BookmarkEntity) {
+
+    }
 
     func onOmniPromptSubmitted(_ query: String) {
     }

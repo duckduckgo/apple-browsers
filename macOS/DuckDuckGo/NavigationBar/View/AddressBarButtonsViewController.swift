@@ -381,9 +381,10 @@ final class AddressBarButtonsViewController: NSViewController {
         )
 
         if featureFlagger.isFeatureOn(.aiChatSidebar),
-           case .url = tabViewModel?.tabContent,
+           let tab = tabViewModel?.tab,
+           case .url = tab.content,
            !isTextFieldEditorFirstResponder,
-           behavior == .currentTab || aiChatSidebarPresenter.isSidebarOpen {
+           behavior == .currentTab || aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) {
 
             aiChatSidebarPresenter.toggleSidebar()
         } else if let value = textFieldValue {
@@ -497,8 +498,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatButtonState() {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
-        let isShowingSidebar = aiChatSidebarPresenter.isSidebarOpen
+        guard let tab = tabViewModel?.tab, featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+        let isShowingSidebar = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
         updateAIChatButtonForSidebar(isShowingSidebar)
     }
 
@@ -943,7 +944,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private func subscribeToAIChatSidebarPresenter() {
         aiChatSidebarPresenter.sidebarPresenceWillChangePublisher
             .sink { [weak self] change in
-                guard let self, change.tabID == tabViewModel?.tab.id else {
+                guard let self, change.tabID == tabViewModel?.tab.uuid else {
                     return
                 }
                 updateAIChatButtonForSidebar(change.isShown)

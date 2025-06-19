@@ -24,6 +24,7 @@ import FeatureFlags
 import MaliciousSiteProtection
 import PrivacyDashboard
 import WebKit
+import DesignResourcesKitIcons
 
 final class TabViewModel {
 
@@ -487,7 +488,7 @@ final class TabViewModel {
         case .dataBrokerProtection:
             Favicon.dataBrokerProtection
         case .newtab where tab.burnerMode.isBurner:
-            Favicon.burnerHome
+            NSApp.delegateTyped.visualStyle.isNewStyle ? DesignSystemImages.Glyphs.Size16.fireTab : Favicon.burnerHome
         case .newtab:
             Favicon.home
         case .settings:

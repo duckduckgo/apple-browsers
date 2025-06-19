@@ -5743,6 +5743,16 @@
 			path = OpenAction;
 			sourceTree = "<group>";
 		};
+		856C5F2D2E0467EB00D64AF1 /* Transitions */ = {
+			isa = PBXGroup;
+			children = (
+				985AAE4424899369007A43EC /* HomeScreenTransition.swift */,
+				855D914C2063EF6A00C4B448 /* TabSwitcherTransition.swift */,
+				986DA94924884B18004A7E39 /* WebViewTransition.swift */,
+			);
+			path = Transitions;
+			sourceTree = "<group>";
+		};
 		858479C72B8792C900D156C1 /* History */ = {
 			isa = PBXGroup;
 			children = (
@@ -7670,7 +7680,7 @@
 		F1386BA21E6846320062FC3C /* TabSwitcher */ = {
 			isa = PBXGroup;
 			children = (
-				985AAE4424899369007A43EC /* HomeScreenTransition.swift */,
+				856C5F2D2E0467EB00D64AF1 /* Transitions */,
 				9872D204247DCAC100CEF398 /* TabPreviewsSource.swift */,
 				85DFEDF824CF3D0E00973FE7 /* TabsBarCell.swift */,
 				8586A10F24CCCD040049720E /* TabsBarViewController.swift */,
@@ -7683,7 +7693,6 @@
 				85F2FFCE2211F8E5006BB258 /* TabSwitcherViewController+KeyCommands.swift */,
 				856F28D62D3EC5FA00A88211 /* TabSwitcherViewController+MultiSelect.swift */,
 				984D035924ACCC7D0066CFB8 /* TabViewCell.swift */,
-				986DA94924884B18004A7E39 /* WebViewTransition.swift */,
 			);
 			name = TabSwitcher;
 			sourceTree = "<group>";
@@ -8211,7 +8220,6 @@
 				F143C32B1E4A9A4800CFDE3A /* RoundedRectangleView.swift */,
 				F143C3451E4AA32D00CFDE3A /* SearchBarExtension.swift */,
 				8524CC95246D620B00E59D45 /* String+Markdown.swift */,
-				855D914C2063EF6A00C4B448 /* TabSwitcherTransition.swift */,
 				F197EA3B1E6885F20029BDC1 /* TextFieldWithInsets.swift */,
 				98F78B8D22419093007CACF4 /* ThemableNavigationController.swift */,
 				83004E832193E14C00DA013C /* UIAlertControllerExtension.swift */,

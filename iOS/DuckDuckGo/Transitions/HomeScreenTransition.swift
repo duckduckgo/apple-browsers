@@ -170,7 +170,10 @@ class ToHomeScreenTransition: HomeScreenTransition {
         let theme = ThemeManager.shared.currentTheme
         imageContainer.frame = tabSwitcherCellFrame(for: layoutAttr)
         if mainViewController.appSettings.currentAddressBarPosition == .bottom {
-            let frame = CGRect(x: imageContainer.frame.minX, y: imageContainer.frame.minY - mainViewController.viewCoordinator.omniBar.barView.expectedHeight, width: imageContainer.frame.width, height: imageContainer.frame.height)
+            let frame = CGRect(x: imageContainer.frame.minX,
+                               y: imageContainer.frame.minY,
+                               width: imageContainer.frame.width,
+                               height: imageContainer.frame.height)
             imageContainer.frame = frame
         }
 
@@ -195,6 +198,10 @@ class ToHomeScreenTransition: HomeScreenTransition {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 self.imageContainer.frame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
+                self.imageContainer.frame = self.adjustFrame(self.imageContainer.frame,
+                                                             forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
+                                                             byHeight: -mainViewController.omniBar.barView.expectedHeight)
+                
                 self.imageContainer.layer.cornerRadius = 0
                 self.imageContainer.backgroundColor = theme.backgroundColor
                 self.imageView.frame = CGRect(origin: .zero,

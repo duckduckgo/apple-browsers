@@ -32,9 +32,13 @@ class HomeScreenTransition: TabSwitcherTransition {
     fileprivate let tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
     
     fileprivate func prepareSnapshots(with transitionSource: HomeScreenTransitionSource,
-                                      transitionContext: UIViewControllerContextTransitioning) {
+                                      transitionContext: UIViewControllerContextTransitioning,
+                                      addressBarPosition: AddressBarPosition,
+                                      addressBarHeight: CGFloat) {
+
         let viewToSnapshot = transitionSource.snapshotView
-        let frameToSnapshot = transitionSource.rootContainerView.convert(transitionSource.rootContainerView.bounds, to: viewToSnapshot)
+        let sourceBounds = adjustFrame(transitionSource.rootContainerView.bounds, forAddressBarPosition: addressBarPosition, byHeight: -addressBarHeight)
+        let frameToSnapshot = transitionSource.rootContainerView.convert(sourceBounds, to: viewToSnapshot)
 
         if let snapshot = viewToSnapshot.resizableSnapshotView(from: frameToSnapshot,
                                                                afterScreenUpdates: false,
@@ -77,7 +81,6 @@ class FromHomeScreenTransition: HomeScreenTransition {
 
     override func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
         prepareSubviews(using: transitionContext)
-        
         tabSwitcherViewController.view.alpha = 0
         transitionContext.containerView.insertSubview(tabSwitcherViewController.view, belowSubview: imageContainer)
         tabSwitcherViewController.view.frame = transitionContext.finalFrame(for: tabSwitcherViewController)
@@ -95,14 +98,16 @@ class FromHomeScreenTransition: HomeScreenTransition {
 
         let theme = ThemeManager.shared.currentTheme
         
-        solidBackground.frame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
+        solidBackground.frame = adjustFrame(homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil),
+                                            forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
+                                            byHeight: -mainViewController.omniBar.barView.expectedHeight)
         solidBackground.backgroundColor = theme.backgroundColor
-        
+
         imageContainer.frame = solidBackground.frame
         imageContainer.backgroundColor = theme.backgroundColor
         
-        prepareSnapshots(with: homeScreen, transitionContext: transitionContext)
-        
+        prepareSnapshots(with: homeScreen, transitionContext: transitionContext, addressBarPosition: mainViewController.appSettings.currentAddressBarPosition, addressBarHeight: mainViewController.omniBar.barView.expectedHeight)
+
         imageView.alpha = 0
         imageView.frame = imageContainer.bounds
         imageView.contentMode = .center
@@ -169,18 +174,11 @@ class ToHomeScreenTransition: HomeScreenTransition {
         
         let theme = ThemeManager.shared.currentTheme
         imageContainer.frame = tabSwitcherCellFrame(for: layoutAttr)
-        if mainViewController.appSettings.currentAddressBarPosition == .bottom {
-            let frame = CGRect(x: imageContainer.frame.minX,
-                               y: imageContainer.frame.minY,
-                               width: imageContainer.frame.width,
-                               height: imageContainer.frame.height)
-            imageContainer.frame = frame
-        }
 
         imageContainer.backgroundColor = theme.tabSwitcherCellBackgroundColor
         imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
         
-        prepareSnapshots(with: homeScreen, transitionContext: transitionContext)
+        prepareSnapshots(with: homeScreen, transitionContext: transitionContext, addressBarPosition: mainViewController.appSettings.currentAddressBarPosition, addressBarHeight: mainViewController.omniBar.barView.expectedHeight)
         homeScreenSnapshot?.alpha = 0
         settingsButtonSnapshot?.alpha = 0
         
@@ -191,17 +189,16 @@ class ToHomeScreenTransition: HomeScreenTransition {
             imageView.alpha = tab.viewed ? 1 : 0
         }
         imageView.backgroundColor = .clear
-        
+
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
         
         UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
-                self.imageContainer.frame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
+                self.imageContainer.frame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)                
                 self.imageContainer.frame = self.adjustFrame(self.imageContainer.frame,
                                                              forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
                                                              byHeight: -mainViewController.omniBar.barView.expectedHeight)
-                
                 self.imageContainer.layer.cornerRadius = 0
                 self.imageContainer.backgroundColor = theme.backgroundColor
                 self.imageView.frame = CGRect(origin: .zero,

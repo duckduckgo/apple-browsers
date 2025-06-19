@@ -158,15 +158,16 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func activateLayoutConstraintsBasedOnBarPosition(_ navHPadding: CGFloat, _ isBottomBar: Bool) {
+        // The constants here are to force the ai button to align between the tab switcher and this view
         NSLayoutConstraint.activate([
-            topBarView.leadingAnchor.constraint(equalTo: toolbar.leadingAnchor, constant: navHPadding),
-            topBarView.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor, constant: -navHPadding),
+            topBarView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: navHPadding),
+            topBarView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -navHPadding),
             isBottomBar ? topBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: -6) : nil,
             !isBottomBar ? topBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8) : nil,
 
             collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : topBarView.bottomAnchor),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: isBottomBar ? topBarView.topAnchor : toolbar.topAnchor),
 
             // Always at the bottom

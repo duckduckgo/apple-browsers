@@ -156,6 +156,12 @@ public extension BrokerProfileQueryData {
     }
 }
 
+public extension HistoryEvent {
+    static func mockScanEvent(with date: Date) -> HistoryEvent {
+        HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: date)
+    }
+}
+
 public extension DataBrokerScheduleConfig {
     static var mock: DataBrokerScheduleConfig {
         DataBrokerScheduleConfig(retryError: 1, confirmOptOutScan: 2, maintenanceScan: 3, maxAttempts: -1)
@@ -1236,27 +1242,6 @@ public extension OptOutJobData {
     }
 }
 
-public extension DataBroker {
-
-    static func mock(withId id: Int64) -> DataBroker {
-        DataBroker(
-            id: id,
-            name: "Test broker",
-            url: "testbroker.com",
-            steps: [Step](),
-            version: "1.0",
-            schedulingConfig: DataBrokerScheduleConfig(
-                retryError: 0,
-                confirmOptOutScan: 0,
-                maintenanceScan: 0,
-                maxAttempts: -1
-            ),
-            optOutUrl: "",
-            eTag: ""
-        )
-    }
-}
-
 public final class MockBrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
     public var delegate: BrokerProfileJobQueueManagerDelegate?
 
@@ -2096,6 +2081,41 @@ public extension DataBroker {
 
     static var mockWithoutId: DataBroker {
         DataBroker(
+            name: "Test broker",
+            url: "testbroker.com",
+            steps: [Step](),
+            version: "1.0",
+            schedulingConfig: DataBrokerScheduleConfig(
+                retryError: 0,
+                confirmOptOutScan: 0,
+                maintenanceScan: 0,
+                maxAttempts: -1
+            ),
+            optOutUrl: "",
+            eTag: ""
+        )
+    }
+
+    static func mockWithDefaults(id: Int64? = 1,
+                                 name: String = "TestBroker",
+                                 url: String = "testbroker.com",
+                                 steps: [Step] = [],
+                                 version: String = "1.0",
+                                 schedulingConfig: DataBrokerScheduleConfig = DataBrokerScheduleConfig(
+                                    retryError: 0,
+                                    confirmOptOutScan: 0,
+                                    maintenanceScan: 0,
+                                    maxAttempts: -1),
+                                 parent: String? = nil,
+                                 mirrorSites: [MirrorSite] = [MirrorSite](),
+                                 optOutUrl: String = "testbroker.com/optout",
+                                 eTag: String = "") -> DataBroker {
+        return DataBroker(id: id, name: name, url: url, steps: steps, version: version, schedulingConfig: schedulingConfig, parent: parent, mirrorSites: mirrorSites, optOutUrl: optOutUrl, eTag: eTag)
+    }
+
+    static func mock(withId id: Int64) -> DataBroker {
+        DataBroker(
+            id: id,
             name: "Test broker",
             url: "testbroker.com",
             steps: [Step](),

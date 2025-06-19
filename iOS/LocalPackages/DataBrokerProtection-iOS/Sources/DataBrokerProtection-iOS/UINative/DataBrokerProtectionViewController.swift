@@ -38,7 +38,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
 
     private lazy var webView: WKWebView = {
         let configuration = webUIViewModel.setupCommunicationLayer()
-        webView = WKWebView(frame: .zero, configuration: configuration)
+        let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.uiDelegate = self
         webView.navigationDelegate = self

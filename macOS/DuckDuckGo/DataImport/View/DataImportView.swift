@@ -85,123 +85,155 @@ struct DataImportView: ModalView {
         .fixedSize()
     }
 
+    @ViewBuilder
     private func viewHeader() -> some View {
-        return VStack(alignment: .leading, spacing: 0) {
-            // If there are no errors show summary success header
-            if case .summary = model.screen, !model.hasAnySummaryError {
-                VStack(alignment: .leading) {
-                    Image(.success96)
-                    Text(UserText.importDataSuccessTitle)
-                        .foregroundColor(.primary)
-                        .font(.system(size: 17, weight: .bold))
-                }
+        switch model.screen {
+        case .summary where !model.hasAnySummaryError:
+            summarySuccessHeader
+        case .shortcuts:
+            shortcutsHeader
+        default:
+            defaultHeader
+        }
+    }
+
+    @ViewBuilder
+    private var summarySuccessHeader: some View {
+        VStack(alignment: .leading) {
+            Image(.success96)
+            Text(UserText.importDataSuccessTitle)
+                .foregroundColor(.primary)
+                .font(.system(size: 17, weight: .bold))
+        }
+        .padding(.bottom, 16)
+    }
+
+    private var shortcutsHeader: some View {
+        Text(UserText.importDataShortcutsTitle)
+            .font(.title2.weight(.semibold))
+            .padding(.bottom, 24)
+    }
+
+    @ViewBuilder
+    private var defaultHeader: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // If screen is not the first screen where the user choose the type of import they want to do show the generic title.
+            // Otherwise show the injected title.
+            let title = model.screen == .profileAndDataTypesPicker ? self.title : UserText.importDataTitle
+            
+            Text(title)
+                .font(.title2.weight(.semibold))
+                .padding(.bottom, 24)
+
+            Text(UserText.importDataSourceTitle)
                 .padding(.bottom, 16)
-            } else if case .shortcuts = model.screen {
-                Text(UserText.importDataShortcutsTitle)
-                    .font(.title2.weight(.semibold))
-                    .padding(.bottom, 24)
 
-            } else {
-                // If screen is not the first screen where the user choose the type of import they want to do show the generic title.
-                // Otherwise show the injected title.
-                let title = model.screen == .profileAndDataTypesPicker ? self.title : UserText.importDataTitle
-
-                Text(title)
-                    .font(.title2.weight(.semibold))
-                    .padding(.bottom, 24)
-
-                Text(UserText.importDataSourceTitle)
-                    .padding(.bottom, 16)
-
-                // browser to import data from picker popup
-                if case .feedback = model.screen {} else {
-                    DataImportSourcePicker(importSources: model.availableImportSources, selectedSource: model.importSource) { importSource in
-                        model.update(with: importSource)
-                    }
-                    .disabled(model.isImportSourcePickerDisabled)
-                    .padding(.bottom, 16)
+            // browser to import data from picker popup
+            if case .feedback = model.screen {} else {
+                DataImportSourcePicker(importSources: model.availableImportSources, selectedSource: model.importSource) { importSource in
+                    model.update(with: importSource)
                 }
+                .disabled(model.isImportSourcePickerDisabled)
+                .padding(.bottom, 16)
             }
         }
     }
 
+    @ViewBuilder
     private func viewBody() -> some View {
         VStack(alignment: .leading, spacing: 0) {
             // body
             switch model.screen {
             case .profileAndDataTypesPicker:
-                // Browser Profile picker
-                if model.browserProfiles?.validImportableProfiles.count ?? 0 > 1 {
-                    DataImportProfilePicker(profileList: model.browserProfiles,
-                                            selectedProfile: $model.selectedProfile)
-                    .disabled(model.isImportSourcePickerDisabled)
-                    .padding(.bottom, 24)
-                }
-
-                // Collapsible section for data type selection
-                ExpandableSection(
-                    title: "Select data to import",
-                    isExpanded: $isDataTypePickerExpanded
-                ) {
-                    DataImportTypePicker(viewModel: $model)
-                        .disabled(model.isImportSourcePickerDisabled)
-                }
-                .padding(.bottom, 16)
-
-                passwordsExplainerView().padding(.top, 20)
-
+                profileAndDataTypesPickerBody
             case .moreInfo:
                 // you will be asked for your keychain password blah blah...
                 BrowserImportMoreInfoView(source: model.importSource)
 
             case .getReadPermission(let url):
                 // give request to Safari folder, select Bookmarks.plist using open panel
-                RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
-
-                    model.initiateImport()
-                }
-
-            case .fileImport(let dataType, summary: let summaryTypes):
-                if !summaryTypes.isEmpty {
-                    DataImportSummaryView(model, dataTypes: summaryTypes)
-                        .padding(.bottom, 24)
-                }
-
-                // if no data to import
-                if model.summary(for: dataType)?.isEmpty == true
-                    || model.error(for: dataType)?.errorType == .noData {
-
-                    DataImportNoDataView(source: model.importSource, dataType: dataType)
-                        .padding(.bottom, 24)
-
-                // if browser importer failed - display error message
-                } else if model.error(for: dataType) != nil {
-                    DataImportErrorView(source: model.importSource, dataType: dataType)
-                        .padding(.bottom, 24)
-                }
-
-                // manual file import instructions for CSV/HTML
-                FileImportView(source: model.importSource, dataType: dataType, isButtonDisabled: model.isSelectFileButtonDisabled) {
-                    model.selectFile()
-                } onFileDrop: { url in
-                    model.initiateImport(fileURL: url)
-                }
-
-                if dataType == .passwords {
-                    passwordsExplainerView().padding(.top, 20)
-                }
-
+                getReadPermissionBody(url: url)
+            case .fileImport(let dataType, let summaryTypes):
+                fileImportBody(dataType: dataType, summaryTypes: summaryTypes)
             case .summary(let dataTypes, let isFileImport):
                 DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: isFileImport)
-
             case .feedback:
-                DataImportSummaryView(model)
-                .padding(.bottom, 20)
-
-                ReportFeedbackView(model: $model.reportModel)
-
+                feedbackBody
             case .shortcuts(let dataTypes):
                 DataImportShortcutsView(dataTypes: dataTypes)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var profileAndDataTypesPickerBody: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Browser Profile picker
+            if model.browserProfiles?.validImportableProfiles.count ?? 0 > 1 {
+                DataImportProfilePicker(profileList: model.browserProfiles,
+                                        selectedProfile: $model.selectedProfile)
+                .disabled(model.isImportSourcePickerDisabled)
+                .padding(.bottom, 24)
+            }
+
+            // Collapsible section for data type selection
+            ExpandableSection(
+                title: "Select data to import",
+                isExpanded: $isDataTypePickerExpanded
+            ) {
+                DataImportTypePicker(viewModel: $model)
+                    .disabled(model.isImportSourcePickerDisabled)
+            }
+            .padding(.bottom, 16)
+
+            passwordsExplainerView().padding(.top, 20)
+        }
+    }
+
+    @ViewBuilder
+    private var feedbackBody: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            DataImportSummaryView(model)
+                .padding(.bottom, 20)
+            ReportFeedbackView(model: $model.reportModel)
+        }
+    }
+
+    @ViewBuilder
+    private func getReadPermissionBody(url: URL) -> some View {
+        RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
+            model.initiateImport()
+        }
+    }
+
+    @ViewBuilder
+    private func fileImportBody(dataType: DataImport.DataType, summaryTypes: Set<DataImport.DataType>) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if !summaryTypes.isEmpty {
+                DataImportSummaryView(model, dataTypes: summaryTypes)
+                    .padding(.bottom, 24)
+            }
+
+            // if no data to import
+            if model.summary(for: dataType)?.isEmpty == true
+                || model.error(for: dataType)?.errorType == .noData {
+                DataImportNoDataView(source: model.importSource, dataType: dataType)
+                    .padding(.bottom, 24)
+            // if browser importer failed - display error message
+            } else if model.error(for: dataType) != nil {
+                DataImportErrorView(source: model.importSource, dataType: dataType)
+                    .padding(.bottom, 24)
+            }
+
+            // manual file import instructions for CSV/HTML
+            FileImportView(source: model.importSource, dataType: dataType, isButtonDisabled: model.isSelectFileButtonDisabled) {
+                model.selectFile()
+            } onFileDrop: { url in
+                model.initiateImport(fileURL: url)
+            }
+
+            if dataType == .passwords {
+                passwordsExplainerView().padding(.top, 20)
             }
         }
     }

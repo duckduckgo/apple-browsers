@@ -128,7 +128,7 @@ set_up_environment() {
 	app_path="${workdir}/${app_name}.app"
 	dsym_path="${archive}/dSYMs"
 
-	output_app_zip_path="${workdir}/DuckDuckGo-${version_identifier}.zip"
+	output_app_xip_path="${workdir}/DuckDuckGo-${version_identifier}.app.xip"
 	output_dsym_zip_path="${workdir}/DuckDuckGo-${version_identifier}-dSYM.zip"
 }
 
@@ -277,9 +277,9 @@ staple_notarized_app() {
 }
 
 compress_app_and_dsym() {
-	echo "Compressing app and dSYMs ..."
+	echo "Creating XIP archive and compressing dSYMs ..."
 
-	ditto -c -k --keepParent "${app_path}" "${output_app_zip_path}"
+	xar -cf "${output_app_xip_path}" --compression lzma -C "${workdir}" "${app_name}.app"
 	ditto -c -k --keepParent "${dsym_path}" "${output_dsym_zip_path}"
 }
 
@@ -352,7 +352,7 @@ main() {
 	if [[ ${create_dmg} ]]; then
 		echo "App DMG image ready at ${dmg_output_path}"
 	fi
-	echo "Compressed app ready at ${output_app_zip_path}"
+	echo "XIP archive ready at ${output_app_xip_path}"
 	echo "Compressed debug symbols ready at ${output_dsym_zip_path}"
 
 	if [[ -n $CI ]]; then

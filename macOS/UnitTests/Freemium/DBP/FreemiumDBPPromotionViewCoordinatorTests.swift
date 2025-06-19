@@ -169,7 +169,6 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
     }
 
     func testCloseAction_dismissesNoResults_andFiresPixel() async throws {
-        throw XCTSkip("Flaky")
         // Given
         try await waitForViewModelUpdate {
             mockUserStateManager.firstScanResults = FreemiumDBPMatchResults(matchesCount: 0, brokerCount: 0)

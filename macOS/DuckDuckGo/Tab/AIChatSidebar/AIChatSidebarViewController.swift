@@ -126,6 +126,7 @@ final class AIChatSidebarViewController: NSViewController {
         container.addSubview(topBar)
 
         openInNewTabButton = MouseOverButton(image: .expand, target: self, action: #selector(openInNewTabButtonClicked))
+        openInNewTabButton.toolTip = UserText.aiChatSidebarExpandButtonTooltip
         openInNewTabButton.translatesAutoresizingMaskIntoConstraints = false
         openInNewTabButton.bezelStyle = .shadowlessSquare
         openInNewTabButton.cornerRadius = 9
@@ -135,14 +136,15 @@ final class AIChatSidebarViewController: NSViewController {
         openInNewTabButton.isBordered = false
         topBar.addSubview(openInNewTabButton)
 
-        let titleLabel = NSTextField(labelWithString: "Duck.ai")
+        let titleLabel = NSTextField(labelWithString: UserText.aiChatSidebarTitle)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.alignment = .center
         titleLabel.font = .systemFont(ofSize: 13, weight: .medium)
         titleLabel.textColor = .labelColor
         topBar.addSubview(titleLabel)
 
-        closeButton = MouseOverButton(image: .close, target: self, action: #selector(closeButtonClicked))
+        closeButton = MouseOverButton(image: .closeLarge, target: self, action: #selector(closeButtonClicked))
+        closeButton.toolTip = UserText.aiChatSidebarCloseButtonTooltip
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.bezelStyle = .shadowlessSquare
         closeButton.cornerRadius = 9

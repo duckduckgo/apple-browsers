@@ -473,7 +473,14 @@ extension AutofillUserScript {
                 let month = creditCard.expirationMonth.map { String($0) } ?? ""
                 let year = creditCard.expirationYear.map { String($0) } ?? ""
 
-                creditCardResponse = CreditCardResponse(id: String(id), cardNumber: creditCard.cardNumber, cardName: creditCard.cardholderName ?? "", cardSecurityCode: creditCard.cardSecurityCode ?? "", expirationMonth: month, expirationYear: year, title: "", displayNumber: creditCard.cardSuffix)
+                creditCardResponse = CreditCardResponse(id: String(id),
+                                                        cardNumber: creditCard.cardNumber,
+                                                        cardName: creditCard.cardholderName ?? "",
+                                                        cardSecurityCode: creditCard.cardSecurityCode ?? "",
+                                                        expirationMonth: month,
+                                                        expirationYear: year,
+                                                        title: creditCard.title,
+                                                        displayNumber: creditCard.cardSuffix)
             } else {
                 creditCardResponse = nil
             }

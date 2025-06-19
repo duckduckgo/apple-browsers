@@ -325,10 +325,12 @@ final class OmniBarEditingStateViewController: UIViewController {
         addChild(hostingController)
         view.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-        
+
+        /// Offset so the logo is displayed on the same height as the NTP logo
+        let logoOffset: CGFloat = 18
         NSLayoutConstraint.activate([
             hostingController.view.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            hostingController.view.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 18),
+            hostingController.view.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: logoOffset),
         ])
         
         hostingController.didMove(toParent: self)

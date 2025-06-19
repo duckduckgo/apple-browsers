@@ -279,10 +279,39 @@ staple_notarized_app() {
 compress_app_and_dsym() {
 	echo "Creating XIP archive and compressing dSYMs ..."
 
+	echo "App path: ${app_path}"
+	echo "XIP output path: ${output_app_xip_path}"
+	
+	# Verify app exists before creating XIP
+	if [[ ! -d "${app_path}" ]]; then
+		echo "ERROR: App bundle not found at ${app_path}"
+		ls -la "$(dirname "${app_path}")"
+		exit 1
+	fi
+	
 	# Create XIP archive using the app as it is (already correctly named)
+	echo "Creating XIP archive..."
 	xar -cf "${output_app_xip_path}" --compression lzma "${app_path}"
 	
+	# Verify XIP was created
+	if [[ -f "${output_app_xip_path}" ]]; then
+		echo "✅ XIP archive created successfully: ${output_app_xip_path}"
+		ls -lh "${output_app_xip_path}"
+	else
+		echo "❌ ERROR: XIP archive was not created"
+		exit 1
+	fi
+	
+	echo "Compressing dSYMs..."
 	ditto -c -k --keepParent "${dsym_path}" "${output_dsym_zip_path}"
+	
+	if [[ -f "${output_dsym_zip_path}" ]]; then
+		echo "✅ dSYM archive created successfully: ${output_dsym_zip_path}"
+		ls -lh "${output_dsym_zip_path}"
+	else
+		echo "❌ ERROR: dSYM archive was not created"
+		exit 1
+	fi
 }
 
 create_dmg() {

@@ -42,10 +42,12 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         XCTAssertEqual(stateHandler.bottomBarItems, [
             stateHandler.tabSwitcherStyleButton,
             UIBarButtonItem.flexibleSpace(),
+            UIBarButtonItem.fixedSpace(11),
+            UIBarButtonItem.flexibleSpace(),
             stateHandler.fireButton,
             UIBarButtonItem.flexibleSpace(),
             stateHandler.plusButton,
-            UIBarButtonItem.fixedSpace(8),
+            UIBarButtonItem.flexibleSpace(),
             stateHandler.editButton
         ])
         XCTAssertFalse(stateHandler.isBottomBarHidden)

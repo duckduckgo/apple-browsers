@@ -161,8 +161,8 @@ class TabSwitcherViewController: UIViewController {
         NSLayoutConstraint.activate([
             topBarView.leadingAnchor.constraint(equalTo: toolbar.leadingAnchor, constant: navHPadding),
             topBarView.trailingAnchor.constraint(equalTo: toolbar.trailingAnchor, constant: -navHPadding),
-            isBottomBar ? topBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor) : nil,
-            !isBottomBar ? topBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor) : nil,
+            isBottomBar ? topBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: -6) : nil,
+            !isBottomBar ? topBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8) : nil,
 
             collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : topBarView.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -193,24 +193,18 @@ class TabSwitcherViewController: UIViewController {
             }
         }
         
-        // Configure toolbar appearance based on address bar position
         let navigationBarHorizontalPadding: CGFloat
         let toolbarAppearance = UIToolbarAppearance()
         if isExperimentalThemingEnabled {
-            // Hide top separator when navigation bar is stacked on top
             toolbarAppearance.configureWithTransparentBackground()
             toolbarAppearance.shadowColor = .clear
-            navigationBarHorizontalPadding = 8.0
+            navigationBarHorizontalPadding = 10.0
         } else {
-            // Default appearance with separator
             toolbarAppearance.configureWithDefaultBackground()
             navigationBarHorizontalPadding = 0.0
         }
         toolbar.standardAppearance = toolbarAppearance
         toolbar.compactAppearance = toolbarAppearance
-
-        topBarView.backgroundColor = toolbar.backgroundColor
-
         activateLayoutConstraintsBasedOnBarPosition(navigationBarHorizontalPadding, addressBarPosition.isBottom)
     }
 

@@ -95,7 +95,6 @@ class TabSwitcherBarsStateHandler {
     func updateBottomBar() {
         var newItems: [UIBarButtonItem]
 
-        let regularItemWidth: CGFloat = 34
         let leadingSideWidthDifference: CGFloat = isExperimentalThemingEnabled ? 6 : 11
 
         switch interfaceMode {

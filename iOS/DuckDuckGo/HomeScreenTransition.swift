@@ -169,6 +169,11 @@ class ToHomeScreenTransition: HomeScreenTransition {
         
         let theme = ThemeManager.shared.currentTheme
         imageContainer.frame = tabSwitcherCellFrame(for: layoutAttr)
+        if mainViewController.appSettings.currentAddressBarPosition == .bottom {
+            let frame = CGRect(x: imageContainer.frame.minX, y: imageContainer.frame.minY - mainViewController.viewCoordinator.omniBar.barView.expectedHeight, width: imageContainer.frame.width, height: imageContainer.frame.height)
+            imageContainer.frame = frame
+        }
+
         imageContainer.backgroundColor = theme.tabSwitcherCellBackgroundColor
         imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
         

@@ -49,6 +49,7 @@ class SwitchBarTextEntryView: UIView {
     private let textView = UITextView()
     private let placeholderLabel = UILabel()
     private let clearButton = UIButton(type: .system)
+    private let microphoneButton = UIButton(type: .system)
 
     private var currentMode: TextEntryMode {
         handler.currentToggleState
@@ -56,7 +57,6 @@ class SwitchBarTextEntryView: UIView {
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
-    private var textViewTrailingConstraint: NSLayoutConstraint?
     private var textViewTrailingConstraintWithButton: NSLayoutConstraint?
 
     // MARK: - Initialization
@@ -92,19 +92,26 @@ class SwitchBarTextEntryView: UIView {
         clearButton.isHidden = true
         clearButton.addTarget(self, action: #selector(clearButtonTapped), for: .touchUpInside)
 
+        // Setup microphone button
+        microphoneButton.setImage(UIImage(systemName: "mic.fill"), for: .normal)
+        microphoneButton.tintColor = UIColor.systemGray
+        microphoneButton.isHidden = false  // Initially visible when no text
+        microphoneButton.addTarget(self, action: #selector(microphoneButtonTapped), for: .touchUpInside)
+
         addSubview(textView)
         addSubview(placeholderLabel)
         addSubview(clearButton)
+        addSubview(microphoneButton)
 
         textView.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         clearButton.translatesAutoresizingMaskIntoConstraints = false
+        microphoneButton.translatesAutoresizingMaskIntoConstraints = false
 
         heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight)
         heightConstraint?.isActive = true
 
-        // Create both trailing constraints for textView
-        textViewTrailingConstraint = textView.trailingAnchor.constraint(equalTo: trailingAnchor)
+        // Create trailing constraint for textView with button space (since we always have one button visible)
         textViewTrailingConstraintWithButton = textView.trailingAnchor.constraint(equalTo: clearButton.leadingAnchor, constant: Constants.clearButtonSpacing)
 
         NSLayoutConstraint.activate([
@@ -119,20 +126,33 @@ class SwitchBarTextEntryView: UIView {
             clearButton.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
             clearButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.clearButtonTrailingOffset),
             clearButton.widthAnchor.constraint(equalToConstant: Constants.clearButtonSize),
-            clearButton.heightAnchor.constraint(equalToConstant: Constants.clearButtonSize)
+            clearButton.heightAnchor.constraint(equalToConstant: Constants.clearButtonSize),
+
+            microphoneButton.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
+            microphoneButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.clearButtonTrailingOffset),
+            microphoneButton.widthAnchor.constraint(equalToConstant: Constants.clearButtonSize),
+            microphoneButton.heightAnchor.constraint(equalToConstant: Constants.clearButtonSize)
         ])
 
-        // Initially activate the constraint without button
-        textViewTrailingConstraint?.isActive = true
+        // Activate the text view constraint (always accounts for button space)
+        textViewTrailingConstraintWithButton?.isActive = true
 
         updateForCurrentMode()
         updateTextViewHeight()
     }
 
+    // MARK: - Button Actions
+    
     @objc private func clearButtonTapped() {
         handler.clearText()
     }
 
+    @objc private func microphoneButtonTapped() {
+        print("potato")
+    }
+
+    // MARK: - UI Updates
+    
     private func updateForCurrentMode() {
         switch currentMode {
         case .search:
@@ -147,7 +167,7 @@ class SwitchBarTextEntryView: UIView {
         }
         textView.reloadInputViews()
         updatePlaceholderVisibility()
-        updateClearButtonVisibility()
+        updateActionButtonsVisibility()
         updateTextViewHeight()
     }
 
@@ -155,21 +175,19 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.isHidden = !textView.text.isEmpty
     }
 
-    private func updateClearButtonVisibility() {
-        let shouldShowClearButton = !textView.text.isEmpty
-
+    /// Updates visibility of action buttons (clear/microphone) - they are mutually exclusive
+    /// - Clear button shows when there's text
+    /// - Microphone button shows when there's no text
+    private func updateActionButtonsVisibility() {
+        let hasText = !textView.text.isEmpty
+        
         UIView.animate(withDuration: Constants.animationDuration) {
-            self.clearButton.isHidden = !shouldShowClearButton
+            self.clearButton.isHidden = !hasText
+            self.microphoneButton.isHidden = hasText
         }
-
-        // Update text view constraints based on clear button visibility
-        if shouldShowClearButton {
-            textViewTrailingConstraint?.isActive = false
-            textViewTrailingConstraintWithButton?.isActive = true
-        } else {
-            textViewTrailingConstraintWithButton?.isActive = false
-            textViewTrailingConstraint?.isActive = true
-        }
+        
+        // Note: No need to update constraints since we always have one button visible
+        // and the text view is already constrained to account for button space
     }
 
     private func updateTextViewHeight() {
@@ -204,7 +222,7 @@ class SwitchBarTextEntryView: UIView {
                 if self.textView.text != text {
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
-                    self.updateClearButtonVisibility()
+                    self.updateActionButtonsVisibility()
                     self.updateTextViewHeight()
                 }
             }
@@ -230,7 +248,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textViewDidChange(_ textView: UITextView) {
         updatePlaceholderVisibility()
-        updateClearButtonVisibility()
+        updateActionButtonsVisibility()
         updateTextViewHeight()
         handler.updateCurrentText(textView.text ?? "")
     }

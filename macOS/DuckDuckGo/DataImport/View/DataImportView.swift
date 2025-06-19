@@ -124,19 +124,16 @@ struct DataImportView: ModalView {
             Text(title)
                 .font(.title2.weight(.semibold))
                 .padding(.bottom, 24)
-
-            Text(UserText.importDataSourceTitle)
-                .padding(.bottom, 16)
-
-            // browser to import data from picker popup
-            if case .feedback = model.screen {} else {
-                DataImportSourcePicker(importSources: model.availableImportSources, selectedSource: model.importSource) { importSource in
-                    model.update(with: importSource)
-                }
-                .disabled(model.isImportSourcePickerDisabled)
-                .padding(.bottom, 16)
-            }
         }
+    }
+
+    @ViewBuilder var importSourcePicker: some View {
+        // browser to import data from picker popup
+        DataImportSourcePicker(importSources: model.availableImportSources, selectedSource: model.importSource) { importSource in
+            model.update(with: importSource)
+        }
+        .disabled(model.isImportSourcePickerDisabled)
+        .padding(.bottom, 16)
     }
 
     @ViewBuilder
@@ -148,8 +145,7 @@ struct DataImportView: ModalView {
                 profileAndDataTypesPickerBody
             case .moreInfo:
                 // you will be asked for your keychain password blah blah...
-                BrowserImportMoreInfoView(source: model.importSource)
-
+                moreInfoBody
             case .getReadPermission(let url):
                 // give request to Safari folder, select Bookmarks.plist using open panel
                 getReadPermissionBody(url: url)
@@ -166,7 +162,15 @@ struct DataImportView: ModalView {
     }
 
     @ViewBuilder
+    private var importSourceDataTitle: some View {
+        Text(UserText.importDataSourceTitle)
+            .padding(.bottom, 16)
+    }
+
+    @ViewBuilder
     private var profileAndDataTypesPickerBody: some View {
+        importSourceDataTitle
+        importSourcePicker
         VStack(alignment: .leading, spacing: 0) {
             // Browser Profile picker
             if model.browserProfiles?.validImportableProfiles.count ?? 0 > 1 {
@@ -191,7 +195,15 @@ struct DataImportView: ModalView {
     }
 
     @ViewBuilder
+    private var moreInfoBody: some View {
+        importSourceDataTitle
+        importSourcePicker
+        BrowserImportMoreInfoView(source: model.importSource)
+    }
+
+    @ViewBuilder
     private var feedbackBody: some View {
+        importSourceDataTitle
         VStack(alignment: .leading, spacing: 0) {
             DataImportSummaryView(model)
                 .padding(.bottom, 20)
@@ -201,6 +213,8 @@ struct DataImportView: ModalView {
 
     @ViewBuilder
     private func getReadPermissionBody(url: URL) -> some View {
+        importSourceDataTitle
+        importSourcePicker
         RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
             model.initiateImport()
         }
@@ -208,6 +222,8 @@ struct DataImportView: ModalView {
 
     @ViewBuilder
     private func fileImportBody(dataType: DataImport.DataType, summaryTypes: Set<DataImport.DataType>) -> some View {
+        importSourceDataTitle
+        importSourcePicker
         VStack(alignment: .leading, spacing: 0) {
             if !summaryTypes.isEmpty {
                 DataImportSummaryView(model, dataTypes: summaryTypes)

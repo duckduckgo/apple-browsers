@@ -1,5 +1,5 @@
 //
-//  DBPUIViewModelHelper.swift
+//  DBPUICommunicationModelScanStateExtensions.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -41,7 +41,7 @@ public extension DBPUIInitialScanState {
             brokerQueryGroup.fullyAndPartiallyScannedBrokersForFirstElement
         }
 
-        //currentScans is the number that have been fully or partially scanned
+        // currentScans is the number that have been fully or partially scanned
         self.scanProgress = DBPUIScanProgress(currentScans: partiallyScannedBrokers.completeBrokerScansCount,
                                               totalScans: totalScans,
                                               scannedBrokers: partiallyScannedBrokers)
@@ -122,8 +122,8 @@ public extension DBPUIScanAndOptOutMaintenanceState {
     }
 
     private static func getLastScansInformation(brokerProfileQueryData: [BrokerProfileQueryData],
-                                         currentDate: Date = Date(),
-                                         format: String = "dd/MM/yyyy") -> DBPUIScanDate {
+                                                currentDate: Date = Date(),
+                                                format: String = "dd/MM/yyyy") -> DBPUIScanDate {
         let eightDaysBeforeToday = currentDate.addingTimeInterval(-8 * 24 * 60 * 60)
         let brokers = brokerProfileQueryData.uiBrokersSortedByScanLastRunDateWhereScansRanBetween(earlierDate: eightDaysBeforeToday,
                                                                                                   laterDate: currentDate)
@@ -292,4 +292,3 @@ extension Array where Element == DBPUIScanProgress.ScannedBroker {
         }
     }
 }
-

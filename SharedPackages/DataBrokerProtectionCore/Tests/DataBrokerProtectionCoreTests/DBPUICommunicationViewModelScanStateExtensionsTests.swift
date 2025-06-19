@@ -21,7 +21,7 @@ import DataBrokerProtectionCoreTestsUtils
 import XCTest
 
 final class DBPUICommunicationViewModelScanStateExtensionsTests: XCTestCase {
-    
+
     func testWhenNoScansRanYet_thenCurrentScansAndMatchesAreEmpty() {
         let brokerProfileQueryData: [BrokerProfileQueryData] = [.mock(), .mock(), .mock()]
 

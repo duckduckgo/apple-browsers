@@ -166,7 +166,7 @@ public class DataBrokerProtectionFeature: Subfeature {
         removeTimer()
         Task {
             await delegate?.onError(error: DataBrokerProtectionError.actionFailed(actionID: action.id,
-                                                                                  message: "Request timed out"))
+                                                                                  message: "Action timed out"))
         }
     }
 

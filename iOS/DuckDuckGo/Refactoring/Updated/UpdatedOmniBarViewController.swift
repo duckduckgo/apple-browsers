@@ -151,7 +151,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     }
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
-        let switchBarHandler = SwitchBarHandler()
+        let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper)
 
         guard let currentText = omniBarView.text else {
             return switchBarHandler

@@ -57,6 +57,7 @@ class SwitchBarTextEntryView: UIView {
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
+    private var textViewTrailingConstraint: NSLayoutConstraint?
     private var textViewTrailingConstraintWithButton: NSLayoutConstraint?
 
     // MARK: - Initialization
@@ -95,7 +96,7 @@ class SwitchBarTextEntryView: UIView {
         // Setup microphone button
         microphoneButton.setImage(UIImage(systemName: "mic.fill"), for: .normal)
         microphoneButton.tintColor = UIColor.systemGray
-        microphoneButton.isHidden = false  // Initially visible when no text
+        microphoneButton.isHidden = !handler.isVoiceSearchEnabled  // Initially visible when no text and voice search is enabled
         microphoneButton.addTarget(self, action: #selector(microphoneButtonTapped), for: .touchUpInside)
 
         addSubview(textView)
@@ -111,7 +112,8 @@ class SwitchBarTextEntryView: UIView {
         heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight)
         heightConstraint?.isActive = true
 
-        // Create trailing constraint for textView with button space (since we always have one button visible)
+        // Create both trailing constraints for textView
+        textViewTrailingConstraint = textView.trailingAnchor.constraint(equalTo: trailingAnchor)
         textViewTrailingConstraintWithButton = textView.trailingAnchor.constraint(equalTo: clearButton.leadingAnchor, constant: Constants.clearButtonSpacing)
 
         NSLayoutConstraint.activate([
@@ -134,8 +136,8 @@ class SwitchBarTextEntryView: UIView {
             microphoneButton.heightAnchor.constraint(equalToConstant: Constants.clearButtonSize)
         ])
 
-        // Activate the text view constraint (always accounts for button space)
-        textViewTrailingConstraintWithButton?.isActive = true
+        // Initially determine which constraint to activate based on initial state
+        updateConstraintsForButtonVisibility()
 
         updateForCurrentMode()
         updateTextViewHeight()
@@ -177,17 +179,31 @@ class SwitchBarTextEntryView: UIView {
 
     /// Updates visibility of action buttons (clear/microphone) - they are mutually exclusive
     /// - Clear button shows when there's text
-    /// - Microphone button shows when there's no text
+    /// - Microphone button shows when there's no text and voice search is enabled
     private func updateActionButtonsVisibility() {
         let hasText = !textView.text.isEmpty
+        let shouldShowMicrophoneButton = !hasText && handler.isVoiceSearchEnabled
         
         UIView.animate(withDuration: Constants.animationDuration) {
             self.clearButton.isHidden = !hasText
-            self.microphoneButton.isHidden = hasText
+            self.microphoneButton.isHidden = !shouldShowMicrophoneButton
         }
         
-        // Note: No need to update constraints since we always have one button visible
-        // and the text view is already constrained to account for button space
+        updateConstraintsForButtonVisibility()
+    }
+
+    private func updateConstraintsForButtonVisibility() {
+        let hasText = !textView.text.isEmpty
+        let shouldShowMicrophoneButton = !hasText && handler.isVoiceSearchEnabled
+        let anyButtonVisible = hasText || shouldShowMicrophoneButton
+        
+        if anyButtonVisible {
+            textViewTrailingConstraint?.isActive = false
+            textViewTrailingConstraintWithButton?.isActive = true
+        } else {
+            textViewTrailingConstraintWithButton?.isActive = false
+            textViewTrailingConstraint?.isActive = true
+        }
     }
 
     private func updateTextViewHeight() {

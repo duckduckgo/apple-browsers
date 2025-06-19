@@ -32,6 +32,7 @@ protocol SwitchBarHandling: AnyObject {
     // MARK: - Published Properties
     var currentText: String { get }
     var currentToggleState: TextEntryMode { get }
+    var isVoiceSearchEnabled: Bool { get }
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
@@ -47,9 +48,16 @@ protocol SwitchBarHandling: AnyObject {
 // MARK: - SwitchBarHandler Implementation
 final class SwitchBarHandler: SwitchBarHandling {
 
+    // MARK: - Dependencies
+    private let voiceSearchHelper: VoiceSearchHelperProtocol
+
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
     @Published private(set) var currentToggleState: TextEntryMode = .search
+
+    var isVoiceSearchEnabled: Bool {
+        voiceSearchHelper.isVoiceSearchEnabled
+    }
 
     var currentTextPublisher: AnyPublisher<String, Never> {
         $currentText.eraseToAnyPublisher()
@@ -65,7 +73,9 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
 
-    init() { }
+    init(voiceSearchHelper: VoiceSearchHelperProtocol) {
+        self.voiceSearchHelper = voiceSearchHelper
+    }
 
     // MARK: - SwitchBarHandling Implementation
     func updateCurrentText(_ text: String) {

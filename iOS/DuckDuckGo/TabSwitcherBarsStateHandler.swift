@@ -99,6 +99,7 @@ class TabSwitcherBarsStateHandler {
 
         switch interfaceMode {
         case .regularSize:
+            editButton.isEnabled = canShowEditButton
 
             newItems = [
                 tabSwitcherStyleButton,
@@ -115,7 +116,8 @@ class TabSwitcherBarsStateHandler {
 
                 .flexibleSpace(),
 
-                canShowEditButton ? editButton : nil,
+                // canShowEditButton ? editButton : nil,
+                editButton
             ].compactMap { $0 }
 
             isBottomBarHidden = false

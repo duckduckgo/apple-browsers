@@ -457,7 +457,7 @@ extension TabSwitcherViewController {
         }
         barsHandler.doneButton.accessibilityLabel = UserText.navigationTitleDone
 
-        barsHandler.editButton.image = DesignSystemImages.Glyphs.Size24.moreApple
+        barsHandler.editButton.image = DesignSystemImages.Glyphs.Size24.menuDotsVertical
         barsHandler.editButton.title = nil
         barsHandler.editButton.accessibilityLabel = UserText.actionGenericEdit
         barsHandler.editButton.menu = createEditMenu()

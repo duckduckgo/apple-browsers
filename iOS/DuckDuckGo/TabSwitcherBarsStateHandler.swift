@@ -99,6 +99,7 @@ class TabSwitcherBarsStateHandler {
 
         switch interfaceMode {
         case .regularSize:
+            // TODO update tests for this
             editButton.isEnabled = canShowEditButton
 
             newItems = [

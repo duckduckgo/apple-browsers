@@ -178,7 +178,9 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
     public func getDataBrokers() async -> [DBPUIDataBroker] {
         do {
             let brokers = try delegate?.getAllDataBrokers() ?? []
-            let result = brokers.map { DBPUIDataBroker(fromDataBroker: $0) }
+            let result = brokers.flatMap {
+                return DBPUIDataBroker.brokerWithMirrorSites(from: $0)
+            }
             return result
         } catch {
             assertionFailure("Failed to fetch data brokers")

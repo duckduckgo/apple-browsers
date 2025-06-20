@@ -210,9 +210,9 @@ private extension Array where Element == BrokerProfileQueryData {
                 $0.wasExtant(on: lastRunDate)
             }
 
-            let uiDataBroker = DBPUIDataBroker(fromDataBroker: dataBroker, withDate: lastRunDate)
+            let uiDataBroker = DBPUIDataBroker(from: dataBroker, withDate: lastRunDate)
             let uiMirrorSites = mirrorSitesAddedBeforeLastRunDate.map {
-                DBPUIDataBroker(fromMirrorSite: $0, parentBroker: dataBroker, withDate: lastRunDate)
+                DBPUIDataBroker(from: $0, parentBroker: dataBroker, withDate: lastRunDate)
             }
 
             return [uiDataBroker] + uiMirrorSites
@@ -235,9 +235,9 @@ private extension Array where Element == BrokerProfileQueryData {
                 $0.wasExtant(on: preferredRunDate)
             }
 
-            let uiDataBroker = DBPUIDataBroker(fromDataBroker: dataBroker, withDate: preferredRunDate)
+            let uiDataBroker = DBPUIDataBroker(from: dataBroker, withDate: preferredRunDate)
             let uiMirrorSites = mirrorSitesStillExtantByPreferredRunDate.map {
-                DBPUIDataBroker(fromMirrorSite: $0, parentBroker: dataBroker, withDate: preferredRunDate)
+                DBPUIDataBroker(from: $0, parentBroker: dataBroker, withDate: preferredRunDate)
             }
 
             return [uiDataBroker] + uiMirrorSites

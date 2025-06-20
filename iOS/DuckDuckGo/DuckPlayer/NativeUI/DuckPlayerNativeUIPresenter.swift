@@ -509,7 +509,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Fire pill impression pixels
         firePillImpressionPixels(for: pillType)
 
-        // If no specific timestamp is provided, use the current stave value
+        // If no specific timestamp is provided, use the current state value
         let timestamp = timestamp ?? state.timestamp ?? 0
 
         // If we already have a container view model, just update the content and show it again
@@ -726,8 +726,8 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         hostViewController.present(roundedSheetController, animated: true, completion: nil)
 
-        // Dismiss the Pill (but don't reset state as we may need to show it again)
-        dismissPill(reset: false)
+        // Dismiss the Pill immediately (but don't reset state as we may need to show it again)
+        dismissPill(reset: false, animated: false)
 
         return (navigationRequest, settingsRequest)
     }

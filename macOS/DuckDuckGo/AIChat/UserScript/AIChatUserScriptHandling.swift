@@ -46,6 +46,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     enum AIChatKeys {
         static let aiChatPayload = "aiChatPayload"
+        static let serializedChatData = "serializedChatData"
     }
 
     @MainActor public func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -85,7 +86,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     public func recordChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
         guard let params = params as? [String: String],
-              let data = params["serializedChatData"]
+              let data = params[AIChatKeys.serializedChatData]
         else { return nil }
 
         messageHandling.setData(data, forMessageType: .chatRestorationData)
@@ -96,7 +97,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         guard let data = messageHandling.getDataForMessageType(.chatRestorationData) as? String
         else { return nil }
 
-        return ["serializedChatData": data]
+        return [AIChatKeys.serializedChatData: data]
     }
 
     public func removeChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {

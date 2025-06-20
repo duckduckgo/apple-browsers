@@ -24,11 +24,11 @@ import SetDefaultBrowserTestSupport
 
 @Suite("Set Default Browser - Prompt Feature Flag")
 struct DefaultBrowserPromptFeatureFlaggerTests {
-    let mockFeatureFlagSettingsProvider = MockDefaultBrowserPromptFeatureFlagsSettingsProvider()
+    let mockFeatureFlagSettingsProvider = MockDefaultBrowserPromptFeatureFlagSettingsProvider()
     let mockFeatureFlagProvider = MockDefaultBrowserPromptFeatureFlagProvider()
 
     @Test("Check Feature Flag Returns The Correct Value", arguments: [true, false])
-    func isDefaultBrowserAndDockPromptFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
+    func isDefaultBrowserPromptFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
         // GIVEN
         mockFeatureFlagProvider.isDefaultBrowserPromptsFeatureEnabled = isEnabled
         let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider, featureFlagProvider: mockFeatureFlagProvider)

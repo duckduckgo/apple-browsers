@@ -264,8 +264,8 @@ extension TabSwitcherViewController {
                            containsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
                            showAIChatButton: aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled)
 
-        topBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
-        topBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
+        titleBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
+        titleBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
         toolbar.items = barsHandler.bottomBarItems
         toolbar.isHidden = barsHandler.isBottomBarHidden
         collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : toolbar.frame.height

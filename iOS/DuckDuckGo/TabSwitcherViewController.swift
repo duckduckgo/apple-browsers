@@ -85,7 +85,7 @@ class TabSwitcherViewController: UIViewController {
 
     }
 
-    @IBOutlet weak var topBarView: UINavigationBar!
+    @IBOutlet weak var titleBarView: UINavigationBar!
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var toolbar: UIToolbar!
 
@@ -153,22 +153,22 @@ class TabSwitcherViewController: UIViewController {
     fileprivate func createTopBar() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithTransparentBackground()
-        topBarView.standardAppearance = appearance
-        topBarView.scrollEdgeAppearance = appearance
+        titleBarView.standardAppearance = appearance
+        titleBarView.scrollEdgeAppearance = appearance
     }
 
     private func activateLayoutConstraintsBasedOnBarPosition(_ navHPadding: CGFloat, _ isBottomBar: Bool) {
         // The constants here are to force the ai button to align between the tab switcher and this view
         NSLayoutConstraint.activate([
-            topBarView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: navHPadding),
-            topBarView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -navHPadding),
-            isBottomBar ? topBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: -6) : nil,
-            !isBottomBar ? topBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8) : nil,
+            titleBarView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: navHPadding),
+            titleBarView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -navHPadding),
+            isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: -6) : nil,
+            !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8) : nil,
 
-            collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : topBarView.bottomAnchor),
+            collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: isBottomBar ? topBarView.topAnchor : toolbar.topAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
 
             // Always at the bottom
             toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -181,13 +181,13 @@ class TabSwitcherViewController: UIViewController {
         let addressBarPosition = appSettings.currentAddressBarPosition
         
         // Remove existing constraints to avoid conflicts
-        topBarView.translatesAutoresizingMaskIntoConstraints = false
+        titleBarView.translatesAutoresizingMaskIntoConstraints = false
         toolbar.translatesAutoresizingMaskIntoConstraints = false
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         
         // Clear existing constraints for these views
         view.constraints.forEach { constraint in
-            if constraint.firstItem === topBarView || constraint.secondItem === topBarView ||
+            if constraint.firstItem === titleBarView || constraint.secondItem === titleBarView ||
                constraint.firstItem === toolbar || constraint.secondItem === toolbar ||
                constraint.firstItem === collectionView || constraint.secondItem === collectionView {
                 constraint.isActive = false
@@ -290,9 +290,9 @@ class TabSwitcherViewController: UIViewController {
     }
 
     func refreshTitle() {
-        topBarView.topItem?.title = UserText.numberOfTabs(tabsModel.count)
+        titleBarView.topItem?.title = UserText.numberOfTabs(tabsModel.count)
         if !selectedTabs.isEmpty {
-            topBarView.topItem?.title = UserText.numberOfSelectedTabs(withCount: selectedTabs.count)
+            titleBarView.topItem?.title = UserText.numberOfSelectedTabs(withCount: selectedTabs.count)
         }
     }
 
@@ -587,7 +587,7 @@ extension TabSwitcherViewController {
         
         refreshDisplayModeButton()
         
-        topBarView.tintColor = theme.barTintColor
+        titleBarView.tintColor = theme.barTintColor
 
         toolbar.barTintColor = theme.barBackgroundColor
         toolbar.tintColor = theme.barTintColor

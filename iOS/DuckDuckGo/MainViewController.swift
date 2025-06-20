@@ -33,7 +33,7 @@ import Networking
 import Suggestions
 import Subscription
 import SwiftUI
-import NetworkProtection
+import VPN
 import Onboarding
 import os.log
 import PageRefreshMonitor
@@ -218,6 +218,7 @@ class MainViewController: UIViewController {
 
     let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
+    let keyValueStore: ThrowingKeyValueStoring
 
     private var duckPlayerEntryPointVisible = false
     private var isExperimentalAppearanceEnabled: Bool { themeManager.properties.isExperimentalThemingEnabled }
@@ -255,7 +256,8 @@ class MainViewController: UIViewController {
         aiChatSettings: AIChatSettingsProvider,
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
-        themeManager: ThemeManaging
+        themeManager: ThemeManaging,
+        keyValueStore: ThrowingKeyValueStoring
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -312,6 +314,7 @@ class MainViewController: UIViewController {
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
+        self.keyValueStore = keyValueStore
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -346,10 +349,20 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
+                                                                    bookmarksDatabase: bookmarksDatabase,
+                                                                    historyManager: historyManager,
+                                                                    tabsModel: tabManager.model,
+                                                                    featureFlagger: featureFlagger,
+                                                                    appSettings: appSettings)
+
+
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
-                                                              featureFlagger: featureFlagger)
+                                                              featureFlagger: featureFlagger,
+                                                              suggestionTrayDependencies: suggestionTrayDependencies)
+
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
         setUpToolbarButtonsActions()
@@ -1476,7 +1489,8 @@ class MainViewController: UIViewController {
             openSearch: openSearch,
             source: source,
             bookmarksDatabase: self.bookmarksDatabase,
-            favoritesDisplayMode: self.appSettings.favoritesDisplayMode
+            favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
+            keyValueStore: self.keyValueStore
         )
         autofillLoginListViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: autofillLoginListViewController)
@@ -2073,9 +2087,66 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.constraints.navigationBarContainerTop.constant = browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
     }
 
+    private func handleFavoriteSelected(_ favorite: BookmarkEntity) {
+        guard let url = favorite.urlObject else { return }
+        Pixel.fire(pixel: .favoriteLaunchedWebsite)
+        newTabPageViewController?.chromeDelegate = nil
+        dismissOmniBar()
+        Favicons.shared.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
+        if url.isBookmarklet() {
+            executeBookmarklet(url)
+        } else {
+            loadUrl(url)
+        }
+        showHomeRowReminder()
+    }
+
+
+    private func handleSuggestionSelected(_ suggestion: Suggestion) {
+        newTabPageViewController?.chromeDelegate = nil
+        dismissOmniBar()
+        viewCoordinator.omniBar.cancel()
+        switch suggestion {
+        case .phrase(phrase: let phrase):
+            if let url = URL.makeSearchURL(text: phrase) {
+                loadUrl(url)
+            } else {
+                Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
+            }
+
+        case .website(url: let url):
+            if url.isBookmarklet() {
+                executeBookmarklet(url)
+            } else {
+                loadUrl(url)
+            }
+
+        case .bookmark(_, url: let url, _, _):
+            loadUrl(url)
+
+        case .historyEntry(_, url: let url, _):
+            loadUrl(url)
+
+        case .openTab(title: _, url: let url, tabId: let tabId, _):
+            if newTabPageViewController != nil, let tab = tabManager.model.currentTab {
+                self.closeTab(tab)
+            }
+            loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
+
+        case .unknown(value: let value), .internalPage(title: let value, url: _, _):
+            assertionFailure("Unknown suggestion: \(value)")
+        }
+
+        showHomeRowReminder()
+    }
 }
 
+// MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
+
+    func onSelectFavorite(_ favorite: BookmarkEntity) {
+        handleFavoriteSelected(favorite)
+    }
 
     func onOmniPromptSubmitted(_ query: String) {
         openAIChat(query, autoSend: true)
@@ -2403,23 +2474,13 @@ extension MainViewController: OmniBarDelegate {
 }
 
 extension MainViewController: FavoritesOverlayDelegate {
-    
-    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
-        guard let url = favorite.urlObject else { return }
-        Pixel.fire(pixel: .favoriteLaunchedWebsite)
-        newTabPageViewController?.chromeDelegate = nil
-        dismissOmniBar()
-        Favicons.shared.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
-        if url.isBookmarklet() {
-            executeBookmarklet(url)
-        } else {
-            loadUrl(url)
-        }
-        showHomeRowReminder()
-    }
 
+    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
+        handleFavoriteSelected(favorite)
+    }
 }
 
+// MARK: - AutocompleteViewControllerDelegate Methods
 extension MainViewController: AutocompleteViewControllerDelegate {
 
     func autocompleteDidEndWithUserQuery() {
@@ -2430,41 +2491,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
     }
 
     func autocomplete(selectedSuggestion suggestion: Suggestion) {
-        newTabPageViewController?.chromeDelegate = nil
-        dismissOmniBar()
-        viewCoordinator.omniBar.cancel()
-        switch suggestion {
-        case .phrase(phrase: let phrase):
-            if let url = URL.makeSearchURL(text: phrase) {
-                loadUrl(url)
-            } else {
-                Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
-            }
-
-        case .website(url: let url):
-            if url.isBookmarklet() {
-                executeBookmarklet(url)
-            } else {
-                loadUrl(url)
-            }
-
-        case .bookmark(_, url: let url, _, _):
-            loadUrl(url)
-
-        case .historyEntry(_, url: let url, _):
-            loadUrl(url)
-
-        case .openTab(title: _, url: let url, tabId: let tabId, _):
-            if newTabPageViewController != nil, let tab = tabManager.model.currentTab {
-                self.closeTab(tab)
-            }
-            loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
-
-        case .unknown(value: let value), .internalPage(title: let value, url: _, _):
-            assertionFailure("Unknown suggestion: \(value)")
-        }
-
-        showHomeRowReminder()
+        handleSuggestionSelected(suggestion)
     }
 
     func autocomplete(pressedPlusButtonForSuggestion suggestion: Suggestion) {
@@ -2713,7 +2740,15 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController,
              didRequestSettingsToLogins account: SecureVaultModels.WebsiteAccount,
              source: AutofillSettingsSource) {
-        segueToSettingsLoginsWithAccount(account, source: source)
+        segueToSettingsAutofillWith(account: account, card: nil, source: source)
+    }
+
+    func tab(_ tab: TabViewController, didRequestSettingsToCreditCards card: SecureVaultModels.CreditCard, source: AutofillSettingsSource) {
+        segueToSettingsAutofillWith(account: nil, card: card, source: source)
+    }
+
+    func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController, source: AutofillSettingsSource) {
+        segueToSettingsAutofillWith(account: nil, card: nil, showCardManagement: true, source: source)
     }
 
     func tabContentProcessDidTerminate(tab: TabViewController) {

@@ -17,10 +17,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Core
-import Onboarding
 import class UIKit.UIApplication
+import Common
+import Core
+import Foundation
+import Onboarding
 
 @MainActor
 final class OnboardingIntroViewModel: ObservableObject {
@@ -145,14 +146,27 @@ final class OnboardingIntroViewModel: ObservableObject {
         onCompletingOnboardingIntro?()
     }
 
+    func enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial() -> Bool {
+        pixelReporter.measureChooseBrowserCTAAction()
+
+        return shouldShowSetDefaultBrowserTutorialVideo()
+    }
+
     func setDefaultBrowserAction() {
         let urlPath = onboardingManager.settingsURLPath
 
         if let url = URL(string: urlPath) {
             urlOpener.open(url)
         }
-        pixelReporter.measureChooseBrowserCTAAction()
 
+        // If the user is in the treatment group do not transition to the next step as it will interrupt PiP.
+        // Manually stopping PiP on willEnterForeground event doesn't seem to work fine. Stopping it on didBecomeActive shows a UI glitch as the player tries to go back in place first.
+        guard !shouldShowSetDefaultBrowserTutorialVideo() else { return }
+
+        makeNextViewState()
+    }
+
+    func completedSetDefaultBrowserAction() {
         makeNextViewState()
     }
 
@@ -259,7 +273,7 @@ private extension OnboardingIntroViewModel {
     }
 
     func measureDDGDefaultBrowserIfNeeded() {
-        guard onboardingManager.isEnrolledInSetAsDefaultBrowserExperiment else { return }
+        guard onboardingManager.isEnrolledInSetAsDefaultBrowserPipVideoExperiment else { return }
 
         defaultBrowserManager.defaultBrowserInfo()
             .onNewValue { newInfo in
@@ -285,6 +299,10 @@ private extension OnboardingIntroViewModel {
         case .chooseAddressBarPositionDialog:
             pixelReporter.measureAddressBarPositionSelectionImpression()
         }
+    }
+
+    func shouldShowSetDefaultBrowserTutorialVideo() -> Bool {
+        onboardingManager.resolveSetAsDefaultBrowserPipVideoExperimentCohort() == .treatment ? true : false
     }
 
 }

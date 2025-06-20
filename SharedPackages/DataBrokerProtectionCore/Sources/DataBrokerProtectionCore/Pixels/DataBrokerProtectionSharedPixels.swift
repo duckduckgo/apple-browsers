@@ -85,6 +85,8 @@ public enum DataBrokerProtectionSharedPixels {
         public static let childParentRecordDifference = "child-parent-record-difference"
         public static let calculatedOrphanedRecords = "calculated-orphaned-records"
         public static let actionTypeKey = "action_type"
+        public static let keystoreField = "keystore_field"
+        public static let stopReason = "reason"
 
 // This should never ever go to production and only exists for internal testing
 #if os(iOS)
@@ -100,9 +102,11 @@ public enum DataBrokerProtectionSharedPixels {
     case cocoaError(error: Error, functionOccurredIn: String)
     case miscError(error: Error, functionOccurredIn: String)
     case secureVaultInitError(error: Error)
-    case secureVaultKeyStoreReadError(error: Error)
+    case secureVaultKeyStoreReadError(error: Error, field: String, serviceName: String)
     case secureVaultKeyStoreUpdateError(error: Error)
     case secureVaultError(error: Error)
+    case secureVaultDatabaseRecreated
+    case failedToOpenDatabase(error: Error)
     case parentChildMatches(parent: String, child: String, value: Int)
 
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
@@ -235,6 +239,8 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .secureVaultKeyStoreReadError: return "dbp_secure_vault_keystore_read_error"
         case .secureVaultKeyStoreUpdateError: return "dbp_secure_vault_keystore_update_error"
         case .secureVaultError: return "dbp_secure_vault_error"
+        case .secureVaultDatabaseRecreated: return "dbp_secure_vault_database_recreated"
+        case .failedToOpenDatabase: return "dbp_failed-to-open-database_error"
 
             // KPIs - engagement
         case .dailyActiveUser: return "dbp_engagement_dau"
@@ -414,10 +420,13 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .scanningEventNewMatch,
                 .scanningEventReAppearance,
                 .secureVaultInitError,
-                .secureVaultKeyStoreReadError,
                 .secureVaultKeyStoreUpdateError,
-                .secureVaultError:
+                .secureVaultError,
+                .secureVaultDatabaseRecreated,
+                .failedToOpenDatabase:
             return [:]
+        case .secureVaultKeyStoreReadError(_, let field, _):
+            return [Consts.keystoreField: field]
         case .generateEmailHTTPErrorDaily(let statusCode, let environment, let wasOnWaitlist):
             return [Consts.environmentKey: environment,
                     Consts.httpCode: String(statusCode),
@@ -503,6 +512,8 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
             case .emptyAccessTokenDaily:
                 self.pixelKit.fire(event, frequency: .legacyDaily, withNamePrefix: platform.pixelNamePrefix)
+            case .secureVaultDatabaseRecreated:
+                self.pixelKit.fire(event, frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .httpError(let error, _, _, _),
                     .actionFailedError(let error, _, _, _, _),
                     .otherError(let error, _, _):
@@ -513,9 +524,10 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),
-                    .secureVaultKeyStoreReadError(let error),
-                    .secureVaultKeyStoreUpdateError(let error):
-                self.pixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
+                    .secureVaultKeyStoreReadError(let error, _, _),
+                    .secureVaultKeyStoreUpdateError(let error),
+                    .failedToOpenDatabase(let error):
+                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndStandard, withNamePrefix: platform.pixelNamePrefix)
             case .parentChildMatches,
                     .optOutStart,
                     .optOutEmailGenerate,

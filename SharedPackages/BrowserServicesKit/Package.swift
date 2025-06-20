@@ -32,8 +32,6 @@ let package = Package(
         .library(name: "RemoteMessagingTestsUtils", targets: ["RemoteMessagingTestsUtils"]),
         .library(name: "Navigation", targets: ["Navigation"]),
         .library(name: "SyncDataProviders", targets: ["SyncDataProviders"]),
-        .library(name: "NetworkProtection", targets: ["NetworkProtection"]),
-        .library(name: "NetworkProtectionTestUtils", targets: ["NetworkProtectionTestUtils"]),
         .library(name: "SecureStorage", targets: ["SecureStorage"]),
         .library(name: "Subscription", targets: ["Subscription"]),
         .library(name: "SubscriptionTestingUtilities", targets: ["SubscriptionTestingUtilities"]),
@@ -50,13 +48,13 @@ let package = Package(
         .library(name: "PrivacyStats", targets: ["PrivacyStats"])
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "17.2.0"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.0.0"),
         .package(url: "https://github.com/duckduckgo/GRDB.swift.git", exact: "2.4.2"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.5.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts", exact: "9.3.0"),
-        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.1.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts", exact: "9.9.0"),
+        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.4.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/duckduckgo/bloom_cpp.git", exact: "3.0.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
@@ -336,17 +334,6 @@ let package = Package(
             ]
         ),
         .target(
-            name: "NetworkProtection",
-            dependencies: [
-                .target(name: "WireGuardC"),
-                "Common",
-                "Networking"
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
             name: "SecureStorage",
             dependencies: [
                 "Common",
@@ -360,13 +347,7 @@ let package = Package(
             name: "SecureStorageTestsUtils",
             dependencies: [
                 "SecureStorage",
-            ]
-        ),
-        .target(name: "WireGuardC"),
-        .target(
-            name: "NetworkProtectionTestUtils",
-            dependencies: [
-                "NetworkProtection",
+                "PixelKit"
             ]
         ),
         .target(
@@ -633,19 +614,6 @@ let package = Package(
                 "BookmarksTestsUtils",
                 "SecureStorageTestsUtils",
                 "SyncDataProviders",
-            ]
-        ),
-        .testTarget(
-            name: "NetworkProtectionTests",
-            dependencies: [
-                "NetworkProtection",
-                "NetworkProtectionTestUtils",
-                "NetworkingTestingUtils",
-            ],
-            resources: [
-                .copy("Resources/servers-original-endpoint.json"),
-                .copy("Resources/servers-updated-endpoint.json"),
-                .copy("Resources/locations-endpoint.json")
             ]
         ),
         .testTarget(

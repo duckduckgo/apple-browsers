@@ -560,7 +560,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         
         // When
         playerSettings.nativeUIYoutubeMode = .ask
-        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk)
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk)
         sut.handleGoBack(webView: mockWebView)
                         
         XCTAssertNil(sut.lastHandledVideoID)
@@ -573,7 +573,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         
         // When
         playerSettings.nativeUIYoutubeMode = .ask
-        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk)
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk)
         sut.handleGoForward(webView: mockWebView)
                         
         XCTAssertNil(sut.lastHandledVideoID)
@@ -604,5 +604,58 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         let differentVideoURL = URL(string: "https://www.youtube.com/watch?v=\(differentVideoID)#settings")!
         let result4 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURLWithHashtag, newURL: differentVideoURL)
         XCTAssertNotEqual(result4, .notHandled(.isYoutubeInternalNavigation))
+    }
+
+    func testHandleURLChange_WhenAskOrAutoMode_EmitsURLChangedEvent() {
+        // Given
+        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        let youtubeURL = URL(string: "https://www.youtube.com/watch?v=testVideoID")!
+        var receivedURL: URL?
+        let expectation = self.expectation(description: "URLChangedPublisher should emit")
+        expectation.assertForOverFulfill = false // Allow fulfilling multiple times if needed, though we reset
+
+        let cancellable = mockDuckPlayer.urlChangedPublisher
+            .sink { url in
+                receivedURL = url
+                expectation.fulfill()
+            }
+        cancellables.insert(cancellable) // Store cancellable
+
+        // Test for .ask mode
+        playerSettings.nativeUIYoutubeMode = .ask
+        sut.lastHandledVideoID = nil // Reset last handled ID
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL)
+
+        waitForExpectations(timeout: 1.0) { error in
+            XCTAssertNil(error, "Expectation should not error for .ask mode")
+            XCTAssertEqual(receivedURL, youtubeURL, "urlChangedPublisher should emit the correct URL for .ask mode")
+        }
+        XCTAssertTrue(sut.isDuckPlayerPillPresented, "Pill should be presented in .ask mode")
+        XCTAssertFalse(sut.isDuckPlayerPresented, "Player should NOT be presented in .ask mode")
+        XCTAssertEqual(sut.lastHandledVideoID, "testVideoID", "lastHandledVideoID should be updated in .ask mode")
+
+        // Reset for .auto mode test
+        receivedURL = nil
+        sut.lastHandledVideoID = nil // Reset last handled ID
+        mockDuckPlayer.presentPillCalled = false // Reset mock calls
+        mockDuckPlayer.loadNativeDuckPlayerVideoCalled = false // Reset mock calls
+        let newExpectation = self.expectation(description: "URLChangedPublisher should emit for .auto mode")
+        let newCancellable = mockDuckPlayer.urlChangedPublisher
+            .sink { url in
+                receivedURL = url
+                newExpectation.fulfill()
+            }
+        cancellables.insert(newCancellable)
+        
+        playerSettings.nativeUIYoutubeMode = .auto
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL)
+
+        waitForExpectations(timeout: 1.0) { error in
+            XCTAssertNil(error, "Expectation should not error for .auto mode")
+            XCTAssertEqual(receivedURL, youtubeURL, "urlChangedPublisher should emit the correct URL for .auto mode")
+        }
+        XCTAssertTrue(sut.isDuckPlayerPillPresented, "Pill should be presented in .auto mode")
+        XCTAssertTrue(sut.isDuckPlayerPresented, "Player should be presented in .auto mode")
+        XCTAssertEqual(sut.lastHandledVideoID, "testVideoID", "lastHandledVideoID should be updated in .auto mode")
     }
 }

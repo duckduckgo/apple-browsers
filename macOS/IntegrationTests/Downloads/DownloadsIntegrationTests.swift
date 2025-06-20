@@ -18,7 +18,9 @@
 
 import Combine
 import Common
+import os.log
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 12.0, *)
@@ -66,6 +68,10 @@ class DownloadsIntegrationTests: XCTestCase {
     override func tearDown() async throws {
         window?.close()
         window = nil
+
+        tabCollectionViewModel = nil
+        contentBlockingMock = nil
+        privacyFeaturesMock = nil
     }
 
     // MARK: - Tests
@@ -219,29 +225,33 @@ class DownloadsIntegrationTests: XCTestCase {
             </body>
             </html>
             """.utf8data)
-        let tab = tabViewModel.tab
-        _=await tab.setUrl(pageUrl, source: .link)?.result
+        let tab1 = tabViewModel.tab
+        _=await tab1.setUrl(pageUrl, source: .link)?.result
 
         NSApp.activate(ignoringOtherApps: true)
-        let downloadTaskFuture = FileDownloadManager.shared.downloadsPublisher.timeout(5).first().promise()
+        let downloadTaskFuture = FileDownloadManager.shared.downloadsPublisher.timeout(10).first().promise()
 
         let e1 = expectation(description: "new tab opened")
         var e2: XCTestExpectation!
-        let c = tabCollectionViewModel.$selectedTabViewModel.dropFirst()
-            .receive(on: DispatchQueue.main)
-            .sink { [unowned self] tabViewModel in
-                guard let tabViewModel else { return }
-                print("tabViewModel", tabViewModel.tab, tab)
-                if tabViewModel.tab !== tab {
-                    e1.fulfill()
-                    e2 = expectation(description: "new tab closed")
-                } else {
-                    e2.fulfill()
-                }
+
+        var c: AnyCancellable! = tabCollectionViewModel.tabCollection.$tabs.sink { [unowned self] tabs in
+            Logger.tests.debug("tabs: \(tabs.map { "\($0) (\($0.url?.absoluteString ??? "<nil>"))" }); tab 1: \(tab1) (\(tab1.url?.absoluteString ??? "<nil>"))")
+
+            XCTAssertLessThanOrEqual(tabs.count, 2)
+            XCTAssert(tabs.first === tab1, "tabs: \(tabs.map { "\($0) (\($0.url?.absoluteString ??? "<nil>"))" }); tab1: \(tab1) (\(tab1.url?.absoluteString ??? "<nil>"))")
+            if tabs.count > 1 {
+                e1.fulfill() // download tab opened
+
+                e2 = expectation(description: "download tab closed")
+
+            } else if let e2 {
+                // download tab closed
+                e2.fulfill()
             }
+        }
 
         // click to open a new (download) tab and instantly deactivate it
-        click(tab.webView)
+        click(tab1.webView)
 
         // download should start in the background tab
         _=try await downloadTaskFuture.get()
@@ -249,6 +259,7 @@ class DownloadsIntegrationTests: XCTestCase {
         // expect for the download tab to close
         await fulfillment(of: [e1, e2], timeout: 10)
         withExtendedLifetime(c, {})
+        c = nil
     }
 
     @MainActor
@@ -274,7 +285,7 @@ class DownloadsIntegrationTests: XCTestCase {
             .receive(on: DispatchQueue.main)
             .sink { [unowned self] tabViewModel in
                 guard let tabViewModel else { return }
-                print("tabViewModel", tabViewModel.tab, tab)
+                Logger.tests.debug("selected tabViewModel \(tabViewModel.tab) (\(tabViewModel.tab.url?.absoluteString ??? "<nil>")); tab 1: \(tab) (\(tab.url?.absoluteString ??? "<nil>"))")
                 if tabViewModel.tab !== tab {
                     e1.fulfill()
                     e2 = expectation(description: "new tab closed")
@@ -333,7 +344,7 @@ class DownloadsIntegrationTests: XCTestCase {
         _=await tab.setUrl(pageUrl, source: .link)?.result
 
         NSApp.activate(ignoringOtherApps: true)
-        let downloadTaskFuture = FileDownloadManager.shared.downloadsPublisher.timeout(5).first().promise()
+        let downloadTaskFuture = FileDownloadManager.shared.downloadsPublisher.timeout(10).first().promise()
 
         let e1 = expectation(description: "new tab opened")
         var e2: XCTestExpectation!
@@ -341,7 +352,7 @@ class DownloadsIntegrationTests: XCTestCase {
             .receive(on: DispatchQueue.main)
             .sink { [unowned self] tabViewModel in
                 guard let tabViewModel else { return }
-                print("tabViewModel", tabViewModel.tab, tab)
+                Logger.tests.debug("selected tabViewModel \(tabViewModel.tab) (\(tabViewModel.tab.url?.absoluteString ??? "<nil>")); tab 1: \(tab) (\(tab.url?.absoluteString ??? "<nil>"))")
                 if tabViewModel.tab !== tab {
                     e1.fulfill()
                     e2 = expectation(description: "new tab closed")
@@ -452,7 +463,7 @@ class DownloadsIntegrationTests: XCTestCase {
                 _=await tab.setUrl(pageUrl, source: .link)?.result
                 ePageLoaded.fulfill()
             }
-            waitForExpectations(timeout: 5)
+            waitForExpectations(timeout: 10)
 
             NSApp.activate(ignoringOtherApps: true)
             let downloadTaskFuture = FileDownloadManager.shared.downloadsPublisher.timeout(5).first().promise()

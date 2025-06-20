@@ -123,6 +123,8 @@ enum SettingsPixel: PixelKitEventV2 {
             case .subscriptionSettings: return "settings_subscription_opened"
             case .about: return "settings_about_opened"
             case .otherPlatforms: return "settings_other_platforms_clicked"
+            case .paidAIChat:
+                return "settings_paid_ai_chat_opened"
             }
         case .showFullURLSettingToggled: return "settings_full_url_toggled_u"
         case .themeSettingChanged: return "settings_theme_changed_u"

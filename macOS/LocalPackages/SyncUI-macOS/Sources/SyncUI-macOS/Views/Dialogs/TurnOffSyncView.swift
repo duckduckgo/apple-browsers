@@ -32,7 +32,7 @@ struct TurnOffSyncView: View {
             }
         } buttons: {
             Button(UserText.cancel) {
-                model.endFlow()
+                model.cancelPressed()
             }
             .buttonStyle(DismissActionButtonStyle())
             Button(UserText.turnOff) {

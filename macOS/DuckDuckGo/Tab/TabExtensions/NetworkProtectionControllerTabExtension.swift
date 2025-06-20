@@ -18,7 +18,7 @@
 
 import Foundation
 import Navigation
-import NetworkProtection
+import VPN
 import PixelKit
 
 final class NetworkProtectionControllerTabExtension {

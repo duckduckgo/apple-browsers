@@ -42,11 +42,11 @@ final class AutofillSettingsViewModel: ObservableObject {
     private let keyValueStore: KeyValueStoringDictionaryRepresentable
     private let source: AutofillSettingsSource
     private let featureFlagger: FeatureFlagger
-    
+
     enum AutofillType {
         case passwords
         case creditCards
-        
+
         var icon: Image {
             switch self {
             case .passwords:
@@ -55,7 +55,7 @@ final class AutofillSettingsViewModel: ObservableObject {
                 return Image(uiImage: DesignSystemImages.Glyphs.Size24.creditCard)
             }
         }
-        
+
         var title: String {
             switch self {
             case .passwords:
@@ -83,10 +83,23 @@ final class AutofillSettingsViewModel: ObservableObject {
     @Published var showingResetConfirmation = false
     @Published var showCreditCards = false
     @Published var creditCardsCount: Int?
-    @Published var saveCreditCardsEnabled: Bool = false {
-        didSet {
-            appSettings.autofillCreditCardsEnabled = saveCreditCardsEnabled
-        }
+    var saveCreditCardsEnabled: Binding<Bool> {
+        Binding(
+            get: { self.showCreditCards ? self.appSettings.autofillCreditCardsEnabled : false },
+            set: { [weak self] newValue in
+                guard let self = self, self.showCreditCards else { return }
+                
+                self.appSettings.autofillCreditCardsEnabled = newValue
+                self.keyValueStore.set(false, forKey: UserDefaultsWrapper<Bool>.Key.autofillCreditCardsFirstTimeUser.rawValue)
+                NotificationCenter.default.post(name: AppUserDefaults.Notifications.autofillEnabledChange, object: self)
+
+                if newValue {
+                    Pixel.fire(pixel: .autofillCardsSettingsEnabled)
+                } else {
+                    Pixel.fire(pixel: .autofillCardsSettingsDisabled, withAdditionalParameters: ["source": source.rawValue])
+                }
+            }
+        )
     }
 
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
@@ -107,7 +120,6 @@ final class AutofillSettingsViewModel: ObservableObject {
 
         showCreditCards = featureFlagger.isFeatureOn(.autofillCreditCards)
         if showCreditCards {
-            saveCreditCardsEnabled = appSettings.autofillCreditCardsEnabled
             updateCreditCardsCount()
         }
     }
@@ -131,7 +143,7 @@ final class AutofillSettingsViewModel: ObservableObject {
 
     func updatePasswordsCount() {
         initSecureVaultIfRequired()
-        
+
         guard let vault = secureVault else {
             passwordsCount = nil
             return

@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import Combine
+import Foundation
 
 final class AutoClearHandler {
 

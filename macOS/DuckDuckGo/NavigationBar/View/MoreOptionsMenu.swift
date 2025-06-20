@@ -22,7 +22,7 @@ import Common
 import BrowserServicesKit
 import History
 import PixelKit
-import NetworkProtection
+import VPN
 import Subscription
 import os.log
 import Freemium
@@ -50,6 +50,7 @@ protocol OptionsButtonMenuDelegate: AnyObject {
     func optionsButtonMenuRequestedSubscriptionPurchasePage(_ menu: NSMenu)
     func optionsButtonMenuRequestedSubscriptionPreferences(_ menu: NSMenu)
     func optionsButtonMenuRequestedIdentityTheftRestoration(_ menu: NSMenu)
+    func optionsButtonMenuRequestedPaidAIChat(_ menu: NSMenu)
 }
 
 final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
@@ -112,7 +113,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
-         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -134,7 +135,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.featureFlagger = featureFlagger
-        self.moreOptionsMenuIconsProvider = visualStyleManager.style.iconsProvider.moreOptionsMenuIconsProvider
+        self.moreOptionsMenuIconsProvider = visualStyle.iconsProvider.moreOptionsMenuIconsProvider
 
         super.init(title: "")
 
@@ -291,7 +292,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func newAiChat(_ sender: NSMenuItem) {
-        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: true))
         PixelKit.fire(AIChatPixel.aichatApplicationMenuAppClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
@@ -383,6 +384,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         actionDelegate?.optionsButtonMenuRequestedSubscriptionPreferences(self)
     }
 
+    @objc func openPaidAIChat(_ sender: NSMenuItem) {
+        actionDelegate?.optionsButtonMenuRequestedPaidAIChat(self)
+    }
+
     @objc func openIdentityTheftRestoration(_ sender: NSMenuItem) {
         actionDelegate?.optionsButtonMenuRequestedIdentityTheftRestoration(self)
     }
@@ -465,7 +470,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         burnerWindowItem.image = moreOptionsMenuIconsProvider.newFireWindowIcon
         addItem(burnerWindowItem)
 
-        // New AI Chat
+        // New Duck.ai Chat
         if aiChatMenuConfiguration.shouldDisplayApplicationMenuShortcut {
             let aiChatItem = NSMenuItem(title: UserText.newAIChatMenuItem,
                                         action: #selector(newAiChat(_:)),
@@ -560,7 +565,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             privacyProItem.submenu = SubscriptionSubMenu(targeting: self,
                                                          subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(),
                                                          subscriptionManager: subscriptionManager,
-                                                         moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
+                                                         moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider,
+                                                         featureFlagger: featureFlagger)
             addItem(privacyProItem)
         }
     }
@@ -775,6 +781,7 @@ final class FeedbackSubMenu: NSMenu {
                                  moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         removeAllItems()
 
+#if FEEDBACK
         let browserFeedbackItem = NSMenuItem(title: UserText.browserFeedback,
                                              action: #selector(sendFeedback(_:)),
                                              keyEquivalent: "")
@@ -803,8 +810,10 @@ final class FeedbackSubMenu: NSMenu {
             addItem(.separator())
             addItem(withTitle: "Copy Version", action: #selector(AppDelegate.copyVersion(_:)), keyEquivalent: "")
         }
+#endif
     }
 
+#if FEEDBACK
     @MainActor
     @objc private func sendFeedback(_ sender: Any?) {
         PixelKit.fire(MoreOptionsMenuPixel.feedbackActionClicked, frequency: .daily)
@@ -816,6 +825,7 @@ final class FeedbackSubMenu: NSMenu {
         PixelKit.fire(MoreOptionsMenuPixel.feedbackActionClicked, frequency: .daily)
         Application.appDelegate.openPProFeedback(sender)
     }
+#endif
 }
 
 final class ZoomSubMenu: NSMenu {
@@ -1099,24 +1109,29 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
 
     var networkProtectionItem: NSMenuItem!
     var dataBrokerProtectionItem: NSMenuItem!
+    var paidAIChatItem: NSMenuItem!
     var identityTheftRestorationItem: NSMenuItem!
     var subscriptionSettingsItem: NSMenuItem!
 
     private let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
+    private let featureFlagger: FeatureFlagger
 
     init(targeting target: AnyObject,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
+         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding,
+         featureFlagger: FeatureFlagger) {
 
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.subscriptionManager = subscriptionManager
         self.moreOptionsMenuIconsProvider = moreOptionsMenuIconsProvider
+        self.featureFlagger = featureFlagger
 
         super.init(title: "")
 
         self.networkProtectionItem = makeNetworkProtectionItem(target: target)
         self.dataBrokerProtectionItem = makeDataBrokerProtectionItem(target: target)
+        self.paidAIChatItem = makePaidAIChatItem(target: target)
         self.identityTheftRestorationItem = makeIdentityTheftRestorationItem(target: target)
         self.subscriptionSettingsItem = makeSubscriptionSettingsItem(target: target)
 
@@ -1140,6 +1155,9 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         if features.contains(.dataBrokerProtection) {
             addItem(dataBrokerProtectionItem)
         }
+        if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) {
+            addItem(paidAIChatItem)
+        }
         if features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal) {
             addItem(identityTheftRestorationItem)
         }
@@ -1161,6 +1179,14 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
                    keyEquivalent: "")
         .targetting(target)
         .withImage(moreOptionsMenuIconsProvider.personalInformationRemovalIcon)
+    }
+
+    private func makePaidAIChatItem(target: AnyObject) -> NSMenuItem {
+        return NSMenuItem(title: UserText.paidAIChat,
+                          action: #selector(MoreOptionsMenu.openPaidAIChat),
+                          keyEquivalent: "")
+        .targetting(target)
+        .withImage(moreOptionsMenuIconsProvider.paidAIChat)
     }
 
     private func makeIdentityTheftRestorationItem(target: AnyObject) -> NSMenuItem {

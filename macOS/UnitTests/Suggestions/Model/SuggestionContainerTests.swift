@@ -19,10 +19,11 @@
 import Combine
 import Common
 import History
+import InlineSnapshotTesting
 import NetworkingTestingUtils
 import os.log
-import InlineSnapshotTesting
 import Suggestions
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -97,7 +98,7 @@ final class SuggestionContainerTests: XCTestCase {
 
         XCTAssertNil(suggestionContainer.suggestionDataCache)
         let e = expectation(description: "Suggestions updated")
-        suggestionContainer.suggestionLoading(suggestionLoadingMock, suggestionDataFromUrl: URL.testsServer, withParameters: [:]) { data, error in
+        suggestionContainer.suggestionLoading(suggestionLoadingMock, suggestionDataFromUrl: URL.duckDuckGo, withParameters: [:]) { data, error in
             XCTAssertNotNil(suggestionContainer.suggestionDataCache)
             e.fulfill()
 
@@ -404,6 +405,9 @@ extension SuggestionContainerTests {
         func openNewWindow(with tabCollectionViewModel: DuckDuckGo_Privacy_Browser.TabCollectionViewModel?, burnerMode: DuckDuckGo_Privacy_Browser.BurnerMode, droppingPoint: NSPoint?, contentSize: NSSize?, showWindow: Bool, popUp: Bool, lazyLoadTabs: Bool, isMiniaturized: Bool, isMaximized: Bool, isFullscreen: Bool) -> DuckDuckGo_Privacy_Browser.MainWindow? {
             nil
         }
+
+        func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
+        func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
 
         init(pinnedTabsManagerProvider: PinnedTabsManagerProviding, tabCollectionViewModels: [TabCollectionViewModel] = [], selectedWindow: Int = 0) {
             self.pinnedTabsManagerProvider = pinnedTabsManagerProvider

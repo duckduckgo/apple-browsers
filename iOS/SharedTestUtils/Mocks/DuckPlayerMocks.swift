@@ -256,11 +256,20 @@ final class MockDuckPlayerHosting: UIViewController, DuckPlayerHosting {
 
 final class MockDuckPlayer: DuckPlayerControlling {
 
+
   // MARK: - Required Properties
     var settings: DuckPlayerSettings
     var hostView: DuckPlayerHosting?
     var youtubeNavigationRequest: PassthroughSubject<URL, Never>
     var playerDismissedPublisher: PassthroughSubject<Void, Never>
+    var presentDuckPlayerRequest: PassthroughSubject<Void, Never>
+
+    // Media Control Publishers
+    var muteAudioPublisher: PassthroughSubject<Bool, Never>
+    var mediaControlPublisher: PassthroughSubject<Bool, Never>
+    var currentTimeStampPublisher: PassthroughSubject<TimeInterval, Never>
+    var serpNotificationPublisher: PassthroughSubject<Bool, Never>
+    var urlChangedPublisher: PassthroughSubject<URL, Never>
 
     // MARK: - Testing Properties
     var presentPillCalled = false
@@ -281,7 +290,17 @@ final class MockDuckPlayer: DuckPlayerControlling {
         self.featureFlagger = featureFlagger
         self.nativeUIPresenter = nativeUIPresenter
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
+        
+        // Presentation logic emitters
         self.playerDismissedPublisher = PassthroughSubject<Void, Never>()
+        self.presentDuckPlayerRequest = PassthroughSubject<Void, Never>()
+
+        // Media Control Publishers
+        self.muteAudioPublisher = PassthroughSubject<Bool, Never>()
+        self.mediaControlPublisher = PassthroughSubject<Bool, Never>()
+        self.currentTimeStampPublisher = PassthroughSubject<TimeInterval, Never>()
+        self.serpNotificationPublisher = PassthroughSubject<Bool, Never>()
+        self.urlChangedPublisher = PassthroughSubject<URL, Never>()
     }
 
     // MARK: - User Values Methods
@@ -440,8 +459,9 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     var dismissPillCalled = false
     var presentDuckPlayerCalled = false
     var lastTimestampValue: TimeInterval?
-    var pixelHandler: any DuckDuckGo.DuckPlayerPixelFiring.Type  =  DuckPlayerPixelHandler.self
-
+    var presentDuckPlayerRequest: PassthroughSubject<Void, Never>
+    var duckPlayerTimestampUpdate: PassthroughSubject<TimeInterval?, Never>
+    var pixelHandler: any DuckDuckGo.DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self
 
     @MainActor
     func presentPill(for videoID: String, in hostViewController: any DuckDuckGo.DuckPlayerHosting, timestamp: TimeInterval?) {
@@ -458,10 +478,12 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
         return (PassthroughSubject<URL, Never>(), PassthroughSubject<Void, Never>())
     }
 
-    var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>
+    var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?, pillType: DuckPlayerNativeUIPresenter.PillType), Never>
 
     init() {
-        self.videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
+        self.videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?, pillType: DuckPlayerNativeUIPresenter.PillType), Never>()
+        self.presentDuckPlayerRequest = PassthroughSubject<Void, Never>()
+        self.duckPlayerTimestampUpdate = PassthroughSubject<TimeInterval?, Never>()
     }
 
     @MainActor
@@ -483,20 +505,6 @@ class MockDelayHandler: DuckPlayerDelayHandling {
         delaySubject.send()
     }
 }
-
-// Testable Coordinator subclass for timestamp testing
-@MainActor
-class TestableDuckPlayerWebViewCoordinator: DuckPlayerWebView.Coordinator {
-    var mockTimestamp: TimeInterval = 0.0
-    var getCurrentTimestampCallCount = 0
-
-    override func getCurrentTimestamp(_ webView: WKWebView) async -> TimeInterval {
-        getCurrentTimestampCallCount += 1
-        return mockTimestamp
-    }
-}
-
-// MARK: - TabViewController Test Protocol
 
 // MARK: - DuckPlayerTabViewControllerMock
 
@@ -610,4 +618,29 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
     )
 
     var tabBarContainer: UIView = UIView()
+}
+
+// MARK: - Mock Classes
+
+class MockScriptMessage: WKScriptMessage {
+    var mockFrame: WKFrameInfo?
+    var mockName: String = ""
+    var mockBody: Any = ""
+    var mockWebView: WKWebView?
+    
+    override var frameInfo: WKFrameInfo {
+        return mockFrame ?? MockFrameInfo(isMainFrame: true)
+    }
+    
+    override var name: String {
+        return mockName
+    }
+    
+    override var body: Any {
+        return mockBody
+    }
+    
+    override var webView: WKWebView? {
+        return mockWebView
+    }
 }

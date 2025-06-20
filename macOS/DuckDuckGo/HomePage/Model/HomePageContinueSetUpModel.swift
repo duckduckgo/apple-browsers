@@ -25,7 +25,7 @@ import PixelKit
 import Subscription
 import FeatureFlags
 
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 
 protocol ContinueSetUpModelTabOpening {

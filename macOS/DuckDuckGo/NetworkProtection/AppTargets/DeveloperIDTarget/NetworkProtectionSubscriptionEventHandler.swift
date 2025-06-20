@@ -20,7 +20,7 @@ import Combine
 import Common
 import Foundation
 import Subscription
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 import os.log
 

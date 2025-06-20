@@ -27,143 +27,132 @@ final class LocalBrokerJSONServiceTests: XCTestCase {
     let repository = BrokerUpdaterRepositoryMock()
     let resources = ResourcesRepositoryMock()
     let pixelHandler = MockDataBrokerProtectionPixelsHandler()
-    let vault: DataBrokerProtectionSecureVaultMock? = try? DataBrokerProtectionSecureVaultMock(providers:
-                                                        SecureStorageProviders(
-                                                            crypto: EmptySecureStorageCryptoProviderMock(),
-                                                            database: SecureStorageDatabaseProviderMock(),
-                                                            keystore: EmptySecureStorageKeyStoreProviderMock()))
+    let vaultMaker: () -> DataBrokerProtectionSecureVaultMock? = {
+        try? DataBrokerProtectionSecureVaultMock(providers:
+                                                    SecureStorageProviders(
+                                                        crypto: EmptySecureStorageCryptoProviderMock(),
+                                                        database: SecureStorageDatabaseProviderMock(),
+                                                        keystore: EmptySecureStorageKeyStoreProviderMock()))
+    }
 
     override func tearDown() {
         repository.reset()
         resources.reset()
-        vault?.reset()
     }
 
     func testWhenNoVersionIsStored_thenWeTryToUpdateBrokers() async throws {
-        if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
-            repository.lastCheckedVersion = nil
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vaultMaker: vaultMaker, pixelHandler: pixelHandler)
+        repository.lastCheckedVersion = nil
 
-            try await sut.checkForUpdates()
+        try await sut.checkForUpdates()
 
-            XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
-            XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
-        } else {
-            XCTFail("Mock vault issue")
-        }
+        XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
+        XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
     }
 
     func testWhenVersionIsStoredAndPatchIsLessThanCurrentOne_thenWeTryToUpdateBrokers() async throws {
-        if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.1"), pixelHandler: pixelHandler)
-            repository.lastCheckedVersion = "1.74.0"
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, appVersion: MockAppVersion(versionNumber: "1.74.1"), vaultMaker: vaultMaker, pixelHandler: pixelHandler)
+        repository.lastCheckedVersion = "1.74.0"
 
-            try await sut.checkForUpdates()
+        try await sut.checkForUpdates()
 
-            XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
-            XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
-        } else {
-            XCTFail("Mock vault issue")
-        }
+        XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
+        XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
+
+        (sut.vault as! DataBrokerProtectionSecureVaultMock).reset()
     }
 
     func testWhenVersionIsStoredAndMinorIsLessThanCurrentOne_thenWeTryToUpdateBrokers() async throws {
-        if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler)
-            repository.lastCheckedVersion = "1.73.0"
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, appVersion: MockAppVersion(versionNumber: "1.74.0"), vaultMaker: vaultMaker, pixelHandler: pixelHandler)
+        repository.lastCheckedVersion = "1.73.0"
 
-            try await sut.checkForUpdates()
+        try await sut.checkForUpdates()
 
-            XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
-            XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
-        } else {
-            XCTFail("Mock vault issue")
-        }
+        XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
+        XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
+
+        (sut.vault as! DataBrokerProtectionSecureVaultMock).reset()
     }
 
     func testWhenVersionIsStoredAndMajorIsLessThanCurrentOne_thenWeTryToUpdateBrokers() async throws {
-        if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler)
-            repository.lastCheckedVersion = "0.74.0"
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, appVersion: MockAppVersion(versionNumber: "1.74.0"), vaultMaker: vaultMaker, pixelHandler: pixelHandler)
+        repository.lastCheckedVersion = "0.74.0"
 
-            try await sut.checkForUpdates()
+        try await sut.checkForUpdates()
 
-            XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
-            XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
-        } else {
-            XCTFail("Mock vault issue")
-        }
+        XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
+        XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
+
+        (sut.vault as! DataBrokerProtectionSecureVaultMock).reset()
     }
 
     func testWhenVersionIsStoredAndIsEqualOrGreaterThanCurrentOne_thenCheckingUpdatesIsSkipped() async throws {
-        if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler)
-            repository.lastCheckedVersion = "1.74.0"
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, appVersion: MockAppVersion(versionNumber: "1.74.0"), vaultMaker: vaultMaker, pixelHandler: pixelHandler)
+        repository.lastCheckedVersion = "1.74.0"
 
-            try await sut.checkForUpdates()
+        try await sut.checkForUpdates()
 
-            XCTAssertFalse(repository.wasSaveLatestAppVersionCheckCalled)
-            XCTAssertFalse(resources.wasFetchBrokerFromResourcesFilesCalled)
-        } else {
-            XCTFail("Mock vault issue")
-        }
+        XCTAssertFalse(repository.wasSaveLatestAppVersionCheckCalled)
+        XCTAssertFalse(resources.wasFetchBrokerFromResourcesFilesCalled)
+
+        (sut.vault as! DataBrokerProtectionSecureVaultMock).reset()
     }
 
     func testWhenSavedBrokerIsOnAnOldVersion_thenWeUpdateIt() async throws {
-        if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
-            repository.lastCheckedVersion = nil
-            resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
-            vault.shouldReturnOldVersionBroker = true
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vaultMaker: vaultMaker, pixelHandler: pixelHandler)
+        repository.lastCheckedVersion = nil
+        resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
+        let vault = sut.vault as! DataBrokerProtectionSecureVaultMock
 
-            try await sut.checkForUpdates()
+        vault.shouldReturnOldVersionBroker = true
 
-            XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
-            XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
-            XCTAssertTrue(vault.wasBrokerUpdateCalled)
-            XCTAssertFalse(vault.wasBrokerSavedCalled)
-        } else {
-            XCTFail("Mock vault issue")
-        }
+        try await sut.checkForUpdates()
+
+        XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
+        XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
+        XCTAssertTrue(vault.wasBrokerUpdateCalled)
+        XCTAssertFalse(vault.wasBrokerSavedCalled)
+
+        vault.reset()
     }
 
     func testWhenSavedBrokerIsOnTheCurrentVersion_thenWeDoNotUpdateIt() async throws {
-        if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
-            repository.lastCheckedVersion = nil
-            resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
-            vault.shouldReturnNewVersionBroker = true
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vaultMaker: vaultMaker, pixelHandler: pixelHandler)
+        repository.lastCheckedVersion = nil
+        resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
+        let vault = sut.vault as! DataBrokerProtectionSecureVaultMock
 
-            try await sut.checkForUpdates()
+        vault.shouldReturnNewVersionBroker = true
 
-            XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
-            XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
-            XCTAssertFalse(vault.wasBrokerUpdateCalled)
-        } else {
-            XCTFail("Mock vault issue")
-        }
+        try await sut.checkForUpdates()
+
+        XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
+        XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
+        XCTAssertFalse(vault.wasBrokerUpdateCalled)
+
+        vault.reset()
     }
 
     func testWhenFileBrokerIsNotStored_thenWeAddTheBrokerAndScanOperations() async throws {
-        if let vault = self.vault {
-            let sut = LocalBrokerJSONService(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
-            repository.lastCheckedVersion = nil
-            resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
-            vault.profileQueries = [.mock]
+        let sut = LocalBrokerJSONService(repository: repository, resources: resources, vaultMaker: vaultMaker, pixelHandler: pixelHandler)
+        repository.lastCheckedVersion = nil
+        resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
+        let vault = sut.vault as! DataBrokerProtectionSecureVaultMock
 
-            try await sut.checkForUpdates()
+        vault.profileQueries = [.mock]
 
-            XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
-            XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
-            XCTAssertFalse(vault.wasBrokerUpdateCalled)
-            XCTAssertTrue(vault.wasBrokerSavedCalled)
-            XCTAssertTrue(areDatesEqualIgnoringSeconds(
-                date1: Date(),
-                date2: vault.lastPreferredRunDateOnScan)
-            )
-        } else {
-            XCTFail("Mock vault issue")
-        }
+        try await sut.checkForUpdates()
+
+        XCTAssertTrue(repository.wasSaveLatestAppVersionCheckCalled)
+        XCTAssertTrue(resources.wasFetchBrokerFromResourcesFilesCalled)
+        XCTAssertFalse(vault.wasBrokerUpdateCalled)
+        XCTAssertTrue(vault.wasBrokerSavedCalled)
+        XCTAssertTrue(areDatesEqualIgnoringSeconds(
+            date1: Date(),
+            date2: vault.lastPreferredRunDateOnScan)
+        )
+
+        vault.reset()
     }
 
 }

@@ -23,7 +23,7 @@ import os.log
 ///
 /// This class was designed to be easy to modify to eventually handle more than two snapshots over time.
 ///
-final class NetworkProtectionConnectionBandwidthAnalyzer {
+final actor NetworkProtectionConnectionBandwidthAnalyzer {
     struct Snapshot {
         let rxBytes: UInt64
         let txBytes: UInt64

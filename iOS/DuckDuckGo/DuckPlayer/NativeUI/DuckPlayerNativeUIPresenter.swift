@@ -88,7 +88,7 @@ final class DuckPlayerNativeUIPresenter {
     private(set) var containerViewController: UIHostingController<DuckPlayerContainer.Container<AnyView>>?
 
     /// References to the host view and source
-    private(set) weak var hostView: DuckPlayerHosting?
+    internal weak var hostView: DuckPlayerHosting?
     private(set) var source: DuckPlayer.VideoNavigationSource?
     internal var state: DuckPlayerState
 
@@ -711,16 +711,18 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         viewModel.dismissPublisher
             .sink { [weak self, videoID] timestamp in
                 guard let self = self else { return }
-                
-                self.state.timestamp = timestamp
-                self.duckPlayerSettings.welcomeMessageShown = true
-                
-                // Notify DuckPlayer to store this timestamp for re-entry pills
-                self.duckPlayerTimestampUpdate.send(timestamp)
-                
+
                 // Schedule pill presentation after a short delay to ensure view is dismissed
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                     guard let self = self, let hostView = self.hostView else { return }
+
+                    // Only update state if we can actually present the pill
+                    self.state.timestamp = timestamp
+                    self.duckPlayerSettings.welcomeMessageShown = true
+
+                    // Notify DuckPlayer to store this timestamp for re-entry pills
+                    self.duckPlayerTimestampUpdate.send(timestamp)
+
                     self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
                     self.containerViewModel?.show()
                 }

@@ -709,21 +709,23 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // General Dismiss Publisher
         viewModel.dismissPublisher
-            .sink { [weak self, videoID] timestamp in
+            .sink { [weak self] timestamp in
                 guard let self = self else { return }
 
                 // Schedule pill presentation after a short delay to ensure view is dismissed
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                    guard let self = self, let hostView = self.hostView else { return }
+                    guard let self = self, 
+                          let hostView = self.hostView,
+                          let currentVideoID = self.state.videoID else { return }
 
-                    // Only update state if we can actually present the pill
+                    // Update state only after we confirm we can present the pill
                     self.state.timestamp = timestamp
                     self.duckPlayerSettings.welcomeMessageShown = true
 
                     // Notify DuckPlayer to store this timestamp for re-entry pills
                     self.duckPlayerTimestampUpdate.send(timestamp)
 
-                    self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
+                    self.presentPill(for: currentVideoID, in: hostView, timestamp: timestamp)
                     self.containerViewModel?.show()
                 }
             }

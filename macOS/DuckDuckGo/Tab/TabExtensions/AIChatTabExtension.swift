@@ -46,6 +46,12 @@ final class AIChatTabExtension {
                     self?.aiChatUserScript?.handler.messageHandling.payloadHandler.setData(payload)
                     self?.temporaryAIChatNativeHandoffData = nil
                 }
+                
+                if let data = self?.temporaryAIChatRestorationData {
+                    self?.aiChatUserScript?.handler.messageHandling.setData(data, forMessageType: .chatRestorationData)
+                    self?.temporaryAIChatRestorationData = nil
+                }
+
             }
         }.store(in: &cancellables)
     }
@@ -59,6 +65,17 @@ final class AIChatTabExtension {
         }
 
         aiChatUserScript.handler.messageHandling.payloadHandler.setData(payload)
+    }
+
+    private var temporaryAIChatRestorationData: AIChatRestorationData?
+    func setAIChatRestorationData(data: AIChatRestorationData) {
+        guard let aiChatUserScript else {
+            // User script not yet loaded, store the payload and set when ready
+            temporaryAIChatRestorationData = data
+            return
+        }
+
+        aiChatUserScript.handler.messageHandling.setData(data, forMessageType: .chatRestorationData)
     }
 }
 
@@ -82,6 +99,7 @@ extension AIChatTabExtension: NavigationResponder {
 protocol AIChatProtocol: AnyObject, NavigationResponder {
     var aiChatUserScript: AIChatUserScript? { get }
     func setAIChatNativeHandoffData(payload: AIChatPayload)
+    func setAIChatRestorationData(data: AIChatRestorationData)
 }
 
 extension AIChatTabExtension: AIChatProtocol, TabExtension {

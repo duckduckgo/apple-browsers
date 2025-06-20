@@ -25,7 +25,7 @@ import Combine
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
 protocol AIChatSidebarViewControllerDelegate: AnyObject {
     /// Called when the user clicks the "Expand" button
-    func didClickOpenInNewTabButton(currentAIChatURL: URL)
+    func didClickOpenInNewTabButton(currentAIChatURL: URL, aiChatRestorationData: AIChatRestorationData?)
     /// Called when the user clicks the "Close" button
     func didClickCloseButton()
 }
@@ -249,7 +249,9 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     @objc private func openInNewTabButtonClicked() {
-        delegate?.didClickOpenInNewTabButton(currentAIChatURL: currentAIChatURL.removingPlacementParameter())
+        let aiChatRestorationData = aiTab.aiChat?.aiChatUserScript?.handler.messageHandling.getDataForMessageType(.chatRestorationData) as? AIChatRestorationData
+
+        delegate?.didClickOpenInNewTabButton(currentAIChatURL: currentAIChatURL.removingPlacementParameter(), aiChatRestorationData: aiChatRestorationData)
     }
 
     @objc private func closeButtonClicked() {

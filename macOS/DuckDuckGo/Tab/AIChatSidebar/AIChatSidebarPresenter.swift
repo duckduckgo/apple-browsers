@@ -172,9 +172,13 @@ extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
 
 extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
 
-    func didClickOpenInNewTabButton(currentAIChatURL: URL) {
+    func didClickOpenInNewTabButton(currentAIChatURL: URL, aiChatRestorationData: AIChatRestorationData?) {
         Task { @MainActor in
-            aiChatTabOpener.openNewAIChatTab(currentAIChatURL, with: .newTab(selected: true))
+            if let data = aiChatRestorationData {
+                aiChatTabOpener.openNewAIChatTab(withChatRestorationData: data)
+            } else {
+                aiChatTabOpener.openNewAIChatTab(currentAIChatURL, with: .newTab(selected: true))
+            }
         }
     }
 

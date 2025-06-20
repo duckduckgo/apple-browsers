@@ -27,6 +27,9 @@ protocol AIChatUserScriptHandling {
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
+    func recordChat(params: Any, message: UserScriptMessage) -> Encodable?
+    func restoreChat(params: Any, message: UserScriptMessage) -> Encodable?
+    func removeChat(params: Any, message: UserScriptMessage) -> Encodable?
 
     var messageHandling: AIChatMessageHandling { get }
 }
@@ -78,6 +81,27 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
         messageHandling.getDataForMessageType(.nativeHandoffData)
+    }
+
+    public func recordChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        guard let params = params as? [String: String],
+              let data = params["serializedChatData"]
+        else { return nil }
+
+        messageHandling.setData(data, forMessageType: .chatRestorationData)
+        return nil
+    }
+
+    public func restoreChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        guard let data = messageHandling.getDataForMessageType(.chatRestorationData) as? String
+        else { return nil }
+
+        return ["serializedChatData": data]
+    }
+
+    public func removeChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        messageHandling.setData(nil, forMessageType: .chatRestorationData)
+        return nil
     }
 }
 

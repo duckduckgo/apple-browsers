@@ -20,8 +20,12 @@
 import Foundation
 import Subscription
 import Core
+import Common
+import Networking
+import Combine
+import os.log
 
-public struct AuthV2PixelHandler: SubscriptionPixelHandler {
+public class AuthV2PixelHandler: SubscriptionPixelHandler {
 
     public enum Source {
         case mainApp
@@ -37,16 +41,48 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
         }
     }
 
-    let source: Source
-
     struct Defaults {
         static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
+        static let entitlementsKey = "entitlements"
     }
 
-    public func handle(pixelType: Subscription.SubscriptionPixelType) {
-        let sourceParam = [Defaults.sourceKey: source.description]
+    private let source: Source
+    private var sourceParam: [String: String] {
+        [Defaults.sourceKey: source.description]
+    }
+    private let notificationCenter: NotificationCenter = NotificationCenter.default
+    private var cancellables = Set<AnyCancellable>()
+
+    init(source: Source) {
+        self.source = source
+
+        notificationCenter.publisher(for: .subscriptionDidChange).sink { param in
+
+            guard let userInfo = param.userInfo as? [AnyHashable: PrivacyProSubscription],
+                  let subscription = userInfo[UserDefaultsCacheKey.subscription] else {
+                DailyPixel.fireDailyAndCount(pixel: .privacyProSubscriptionMissing)
+                return
+            }
+
+            if !subscription.isActive {
+                DailyPixel.fireDaily(.privacyProSubscriptionExpired, withAdditionalParameters: [Defaults.sourceKey: source.description])
+            }
+        }.store(in: &cancellables)
+
+        notificationCenter.publisher(for: .entitlementsDidChange).sink { param in
+            let userInfo = param.userInfo as? [AnyHashable: [Entitlement]]
+            let entitlements = userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] ?? []
+            let entitlementsDescriptions = entitlements.map(\.product.rawValue).sorted().joined(separator: ", ")
+            let params = [Defaults.sourceKey: source.description,
+                          Defaults.entitlementsKey: entitlementsDescriptions] as? [String: String]
+            DailyPixel.fireDailyAndCount(pixel: .privacyProEntitlementsDidChange, withAdditionalParameters: params ?? [:])
+
+        }.store(in: &cancellables)
+    }
+
+    public func handle(pixelType: SubscriptionPixelType) {
         switch pixelType {
         case .invalidRefreshToken:
             DailyPixel.fireDailyAndCount(pixel: .privacyProInvalidRefreshTokenDetected, withAdditionalParameters: sourceParam)

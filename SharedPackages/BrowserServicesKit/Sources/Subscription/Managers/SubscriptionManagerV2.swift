@@ -289,7 +289,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         switch cachePolicy {
 
         case .remoteFirst, .cacheFirst:
-
             if cachePolicy == .cacheFirst {
                 // We skip ahead and try to get the cached subscription, useful with slow/no connections where we don't want to wait for a get token timeout
                 do {
@@ -309,6 +308,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 break
             }
             subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken, cachePolicy: cachePolicy)
+
         case .cacheOnly:
             subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: cachePolicy)
         }
@@ -316,6 +316,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         if subscription.isActive {
             pixelHandler.handle(pixelType: .subscriptionIsActive)
         }
+
         return subscription
     }
 

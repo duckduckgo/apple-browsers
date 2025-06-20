@@ -170,7 +170,7 @@ New: \(subscription.debugDescription, privacy: .public)
         cacheSerialQueue.sync {
             let expiryDate = subscription.expiresOrRenewsAt
 #if DEBUG
-            // In DEBUG the subscription duration is just a a couple of minutes, we want to avoid the cache to be immediately invalidated
+            // In DEBUG the subscription duration is just a few minutes, we want to avoid the cache to be immediately invalidated
             let isInTheFuture = false
 #else
             let isInTheFuture = expiryDate.isInTheFuture()
@@ -247,7 +247,6 @@ New: \(subscription.debugDescription, privacy: .public)
         cacheSerialQueue.sync {
             subscriptionCache.reset()
         }
-// TBD check if needed: NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: nil)
     }
 
     // MARK: -

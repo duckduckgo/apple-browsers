@@ -19,8 +19,11 @@
 import Foundation
 import Subscription
 import PixelKit
+import os.log
+import Common
+import Combine
 
-public struct AuthV2PixelHandler: SubscriptionPixelHandler {
+public class AuthV2PixelHandler: SubscriptionPixelHandler {
 
     public enum Source {
         case mainApp
@@ -43,8 +46,35 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
     }
 
     let source: Source
+    private let notificationCenter: NotificationCenter = NotificationCenter.default
+    private var cancellables = Set<AnyCancellable>()
 
-    public func handle(pixelType: Subscription.SubscriptionPixelType) {
+    init(source: Source) {
+        self.source = source
+
+        notificationCenter.publisher(for: .subscriptionDidChange).sink { param in
+
+            guard let userInfo = param.userInfo as? [AnyHashable: PrivacyProSubscription],
+                  let subscription = userInfo[UserDefaultsCacheKey.subscription] else {
+                PixelKit.fire(PrivacyProPixel.privacyProSubscriptionMissing(source), frequency: .dailyAndCount)
+                return
+            }
+
+            if !subscription.isActive {
+                PixelKit.fire(PrivacyProPixel.privacyProSubscriptionExpired(source), frequency: .daily)
+            }
+        }.store(in: &cancellables)
+
+        notificationCenter.publisher(for: .entitlementsDidChange).sink { param in
+            let userInfo = param.userInfo as? [AnyHashable: [Entitlement]]
+            let entitlements = userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] ?? []
+            let entitlementsDescriptions = entitlements.map(\.product.rawValue).sorted().joined(separator: ", ")
+            PixelKit.fire(PrivacyProPixel.privacyProEntitlementsDidChange(source, entitlementsDescriptions), frequency: .dailyAndCount)
+
+        }.store(in: &cancellables)
+    }
+
+    public func handle(pixelType: SubscriptionPixelType) {
         switch pixelType {
         case .invalidRefreshToken:
             PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenDetected(source), frequency: .dailyAndCount)

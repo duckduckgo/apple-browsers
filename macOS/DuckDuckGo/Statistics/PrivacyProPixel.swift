@@ -79,6 +79,9 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProAuthV2MigrationFailed(AuthV2PixelHandler.Source, Error)
     case privacyProAuthV2MigrationSucceeded(AuthV2PixelHandler.Source)
     case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, AuthV2PixelHandler.Source, Error)
+    case privacyProSubscriptionExpired(AuthV2PixelHandler.Source)
+    case privacyProEntitlementsDidChange(AuthV2PixelHandler.Source, String)
+    case privacyProSubscriptionMissing(AuthV2PixelHandler.Source)
 
     var name: String {
         switch self {
@@ -130,6 +133,9 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
+        case .privacyProSubscriptionExpired: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_expired"
+        case .privacyProEntitlementsDidChange: return "m_mac_\(appDistribution)_privacy-pro_app_entitlements_did_change"
+        case .privacyProSubscriptionMissing: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_missing"
         }
     }
 
@@ -141,6 +147,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
         static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
+        static let entitlementsKey = "entitlements"
     }
 
     var parameters: [String: String]? {
@@ -155,6 +162,13 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProAuthV2MigrationFailed(let source, let error):
             return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
                     PrivacyProPixelsDefaults.sourceKey: source.description]
+        case .privacyProSubscriptionExpired(let source):
+            return [PrivacyProPixelsDefaults.sourceKey: source.description]
+        case .privacyProEntitlementsDidChange(let source, let entitlements):
+            return [PrivacyProPixelsDefaults.sourceKey: source.description,
+                    PrivacyProPixelsDefaults.entitlementsKey: entitlements]
+        case .privacyProSubscriptionMissing(let source):
+            return [PrivacyProPixelsDefaults.sourceKey: source.description]
         default:
             return nil
         }

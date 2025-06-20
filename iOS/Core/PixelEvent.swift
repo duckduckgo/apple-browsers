@@ -973,6 +973,9 @@ extension Pixel {
         case privacyProAuthV2MigrationFailed
         case privacyProAuthV2MigrationSucceeded
         case privacyProAuthV2GetTokensError
+        case privacyProSubscriptionExpired
+        case privacyProEntitlementsDidChange
+        case privacyProSubscriptionMissing
 
         case settingsPrivacyProAccountWithNoSubscriptionFound
 
@@ -2117,6 +2120,9 @@ extension Pixel.Event {
         case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
+        case .privacyProSubscriptionExpired: return "m_privacy-pro_app_subscription_expired"
+        case .privacyProEntitlementsDidChange: return "m_privacy-pro_app_entitlements_did_change"
+        case .privacyProSubscriptionMissing: return "m_privacy-pro_app_subscription_missing"
 
         case .settingsPrivacyProAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 

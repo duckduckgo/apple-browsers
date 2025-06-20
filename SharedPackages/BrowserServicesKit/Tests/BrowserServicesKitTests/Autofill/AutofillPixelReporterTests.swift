@@ -595,7 +595,7 @@ final class AutofillPixelReporterTests: XCTestCase {
 
     func testStoredDatesDefaultToDistantPast() {
         let usageStore = AutofillUsageStore(standardUserDefaults: standardDefaults, appGroupUserDefaults: nil)
-        
+
         standardDefaults.removeObject(forKey: AutofillUsageStore.Keys.autofillFillDateKey)
         standardDefaults.removeObject(forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey)
         standardDefaults.removeObject(forKey: AutofillUsageStore.Keys.autofillLastActiveKey)

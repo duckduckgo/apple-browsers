@@ -452,10 +452,16 @@ extension TabSwitcherViewController {
             self?.burn(sender: self!.barsHandler.fireButton)
         }
 
-        barsHandler.doneButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.arrowLeft) { [weak self] in
-            self?.onDonePressed(self!.barsHandler.doneButton)
+        if interfaceMode == .largeSize {
+            barsHandler.doneButton.primaryAction = action(UserText.navigationTitleDone) { [weak self] in
+                self?.onDonePressed(self!.barsHandler.doneButton)
+            }
+        } else {
+            barsHandler.doneButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.arrowLeft) { [weak self] in
+                self?.onDonePressed(self!.barsHandler.doneButton)
+            }
+            barsHandler.doneButton.accessibilityLabel = UserText.navigationTitleDone
         }
-        barsHandler.doneButton.accessibilityLabel = UserText.navigationTitleDone
 
         barsHandler.editButton.image = DesignSystemImages.Glyphs.Size24.menuDotsVertical
         barsHandler.editButton.title = nil

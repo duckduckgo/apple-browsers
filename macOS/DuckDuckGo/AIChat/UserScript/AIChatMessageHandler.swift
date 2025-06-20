@@ -30,14 +30,12 @@ enum AIChatMessageType {
 protocol AIChatMessageHandling {
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable?
     func setData(_ data: Any?, forMessageType type: AIChatMessageType)
-
-    var payloadHandler: AIChatPayloadHandler { get }
 }
 
 final class AIChatMessageHandler: AIChatMessageHandling {
     private let featureFlagger: FeatureFlagger
     private let promptHandler: any AIChatConsumableDataHandling
-    public let payloadHandler: AIChatPayloadHandler
+    private let payloadHandler: AIChatPayloadHandler
     private let chatRestorationDataHandler: AIChatRestorationDataHandler
 
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
@@ -65,6 +63,8 @@ final class AIChatMessageHandler: AIChatMessageHandling {
 
     func setData(_ data: Any?, forMessageType type: AIChatMessageType) {
         switch type {
+        case .nativeHandoffData:
+            setNativeHandoffData(data as? AIChatPayload)
         case .chatRestorationData:
             setAIChatRestorationData(data as? AIChatRestorationData)
         default:
@@ -91,6 +91,15 @@ extension AIChatMessageHandler {
     private func getNativeHandoffData() -> Encodable? {
         guard let payload = payloadHandler.consumeData() else { return nil }
         return AIChatNativeHandoffData.defaultValuesWithPayload(payload)
+    }
+
+    private func setNativeHandoffData(_ payload: AIChatPayload?) {
+        guard let payload else {
+            payloadHandler.reset()
+            return
+        }
+
+        payloadHandler.setData(payload)
     }
 
     private func getAIChatNativePrompt() -> Encodable? {

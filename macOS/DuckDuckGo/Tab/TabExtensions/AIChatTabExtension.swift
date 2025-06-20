@@ -43,7 +43,7 @@ final class AIChatTabExtension {
 
                 // Pass the handoff payload in case it was provided before the user script was loaded
                 if let payload = self?.temporaryAIChatNativeHandoffData {
-                    self?.aiChatUserScript?.handler.messageHandling.payloadHandler.setData(payload)
+                    self?.aiChatUserScript?.handler.messageHandling.setData(payload, forMessageType: .nativeHandoffData)
                     self?.temporaryAIChatNativeHandoffData = nil
                 }
                 
@@ -64,7 +64,7 @@ final class AIChatTabExtension {
             return
         }
 
-        aiChatUserScript.handler.messageHandling.payloadHandler.setData(payload)
+        aiChatUserScript.handler.messageHandling.setData(payload, forMessageType: .nativeHandoffData)
     }
 
     private var temporaryAIChatRestorationData: AIChatRestorationData?

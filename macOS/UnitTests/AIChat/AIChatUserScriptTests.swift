@@ -158,12 +158,6 @@ private final class AIChatMockDebugSettings: AIChatDebugURLSettingsRepresentable
 }
 
 private final class MockAIChatMessageHandling: AIChatMessageHandling {
-    var payloadHandler: AIChat.AIChatPayloadHandler
-
-    init(payloadHandler: AIChat.AIChatPayloadHandler = AIChatPayloadHandler()) {
-        self.payloadHandler = payloadHandler
-    }
-
     func getDataForMessageType(_ type: DuckDuckGo_Privacy_Browser.AIChatMessageType) -> (any Encodable)? {
         nil
     }

@@ -190,14 +190,16 @@ class TabSwitcherViewController: UIViewController {
         toolbar.translatesAutoresizingMaskIntoConstraints = false
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         
-        // Clear existing constraints for these views
-        view.constraints.forEach { constraint in
-            if constraint.firstItem === titleBarView || constraint.secondItem === titleBarView ||
-               constraint.firstItem === toolbar || constraint.secondItem === toolbar ||
-               constraint.firstItem === collectionView || constraint.secondItem === collectionView {
-                constraint.isActive = false
-            }
+        // Clear existing constraints for these views comprehensively
+        let viewsToRemoveConstraintsFor = [titleBarView, toolbar, collectionView]
+        viewsToRemoveConstraintsFor.forEach { targetView in
+            targetView?.removeFromSuperview()
         }
+        
+        // Re-add the views to the hierarchy
+        view.addSubview(titleBarView)
+        view.addSubview(toolbar)
+        view.addSubview(collectionView)
         
         let toolbarAppearance = UIToolbarAppearance()
         if isExperimentalThemingEnabled {

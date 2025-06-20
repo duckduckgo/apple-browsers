@@ -241,7 +241,21 @@ public protocol UserActionDelegate: AnyObject {
 }
 
 public final class DBPUICommunicator {
-    var profile: DataBrokerProtectionProfile?
+
+    var profile: DataBrokerProtectionProfile? {
+        get {
+            DataBrokerProtectionProfile(from: editablePartialProfile)
+        }
+        set {
+            if let newValue = newValue {
+                editablePartialProfile = DBPUIEditablePartialProfile(from: newValue)
+            } else {
+                editablePartialProfile = DBPUIEditablePartialProfile()
+            }
+        }
+    }
+    private var editablePartialProfile = DBPUIEditablePartialProfile()
+
     var brokerProfileQueryData = [BrokerProfileQueryData]()
     private let debugMetaDataMapper = UIDebugMetadataMapper()
 
@@ -270,37 +284,10 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
         try await delegate?.saveCachedProfileToDatabase(profile)
     }
 
-    private func indexForName(matching name: DBPUIUserProfileName, in profile: DataBrokerProtectionProfile) -> Int? {
-        if let idx = profile.names.firstIndex(where: { $0.firstName == name.first && $0.lastName == name.last && $0.middleName == name.middle && $0.suffix == name.suffix }) {
-            return idx
-        }
-
-        return nil
-    }
-
-    private func indexForAddress(matching address: DBPUIUserProfileAddress, in profile: DataBrokerProtectionProfile) -> Int? {
-        if let idx = profile.addresses.firstIndex(where: { $0.street == address.street && $0.state == address.state && $0.city == address.city && $0.zipCode == address.zipCode}) {
-            return idx
-        }
-
-        return nil
-    }
-
-    private func isNameEmpty(_ name: DBPUIUserProfileName) -> Bool {
-        return name.first.isBlank || name.last.isBlank
-    }
-
-    private func addressIsEmpty(_ address: DBPUIUserProfileAddress) -> Bool {
-        return address.city.isBlank || address.state.isBlank
-    }
-
     public func getUserProfile() -> DBPUIUserProfile? {
         let profile = profile ?? emptyProfile
 
-        let names = profile.names.map { DBPUIUserProfileName(first: $0.firstName, middle: $0.middleName, last: $0.lastName, suffix: $0.suffix) }
-        let addresses = profile.addresses.map { DBPUIUserProfileAddress(street: $0.street, city: $0.city, state: $0.state, zipCode: $0.zipCode) }
-
-        return DBPUIUserProfile(names: names, birthYear: profile.birthYear, addresses: addresses)
+        return DBPUIUserProfile(from: profile)
     }
 
     public func deleteProfileData() throws {
@@ -309,96 +296,38 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
     }
 
     public func addNameToCurrentUserProfile(_ name: DBPUIUserProfileName) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        guard !isNameEmpty(name) else { return false }
-
-        // No duplicates
-        guard indexForName(matching: name, in: profile) == nil else { return false }
-
-        var names = profile.names
-        names.append(DataBrokerProtectionProfile.Name(firstName: name.first, lastName: name.last, middleName: name.middle, suffix: name.suffix))
-
-        self.profile = DataBrokerProtectionProfile(names: names, addresses: profile.addresses, phones: profile.phones, birthYear: profile.birthYear)
-
-        return true
+        let success = editablePartialProfile.addName(name)
+        return success
     }
 
     public func setNameAtIndexInCurrentUserProfile(_ payload: DBPUINameAtIndex) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        var names = profile.names
-        if payload.index < names.count {
-            names[payload.index] = DataBrokerProtectionProfile.Name(firstName: payload.name.first, lastName: payload.name.last, middleName: payload.name.middle, suffix: payload.name.suffix)
-            self.profile = DataBrokerProtectionProfile(names: names, addresses: profile.addresses, phones: profile.phones, birthYear: profile.birthYear)
-            return true
-        }
-
-        return false
+        let success = editablePartialProfile.setNameAtIndex(payload)
+        return success
     }
 
     public func removeNameAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        var names = profile.names
-        if index.index < names.count {
-            names.remove(at: index.index)
-            self.profile = DataBrokerProtectionProfile(names: names, addresses: profile.addresses, phones: profile.phones, birthYear: profile.birthYear)
-            return true
-        }
-
-        return false
+        let success = editablePartialProfile.removeNameAtIndex(index.index)
+        return success
     }
 
     public func setBirthYearForCurrentUserProfile(_ year: DBPUIBirthYear) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        self.profile = DataBrokerProtectionProfile(names: profile.names, addresses: profile.addresses, phones: profile.phones, birthYear: year.year)
-
+        editablePartialProfile.birthYear = year
         return true
     }
 
     public func addAddressToCurrentUserProfile(_ address: DBPUIUserProfileAddress) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        guard !addressIsEmpty(address) else { return false }
-
-        // No duplicates
-        guard indexForAddress(matching: address, in: profile) == nil else { return false }
-
-        var addresses = profile.addresses
-        addresses.append(DataBrokerProtectionProfile.Address(city: address.city, state: address.state, street: address.street, zipCode: address.zipCode))
-
-        self.profile = DataBrokerProtectionProfile(names: profile.names, addresses: addresses, phones: profile.phones, birthYear: profile.birthYear)
-
-        return true
+        let success = editablePartialProfile.addAddress(address)
+        return success
     }
 
     public func setAddressAtIndexInCurrentUserProfile(_ payload: DBPUIAddressAtIndex) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        var addresses = profile.addresses
-        if payload.index < addresses.count {
-            addresses[payload.index] = DataBrokerProtectionProfile.Address(city: payload.address.city, state: payload.address.state,
-                                                                           street: payload.address.street, zipCode: payload.address.zipCode)
-            self.profile = DataBrokerProtectionProfile(names: profile.names, addresses: addresses, phones: profile.phones, birthYear: profile.birthYear)
-            return true
-        }
-
-        return false
+        let success = editablePartialProfile.setAddressAtIndex(payload)
+        return success
     }
 
     public func removeAddressAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        var addresses = profile.addresses
-        if index.index < addresses.count {
-            addresses.remove(at: index.index)
-            self.profile = DataBrokerProtectionProfile(names: profile.names, addresses: addresses, phones: profile.phones, birthYear: profile.birthYear)
-            return true
-        }
-
-        return false
+        let success = editablePartialProfile.removeAddressAtIndex(index.index)
+        return success
     }
 
     public func startScanAndOptOut() -> Bool {

@@ -150,20 +150,27 @@ class TabSwitcherViewController: UIViewController {
         fatalError("Not implemented")
     }
 
-    fileprivate func createTopBar() {
+    fileprivate func createTitleBar() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithTransparentBackground()
         titleBarView.standardAppearance = appearance
         titleBarView.scrollEdgeAppearance = appearance
     }
 
-    private func activateLayoutConstraintsBasedOnBarPosition(_ navHPadding: CGFloat, _ isBottomBar: Bool) {
+    private func activateLayoutConstraintsBasedOnBarPosition() {
+        let isBottomBar = appSettings.currentAddressBarPosition.isBottom
+
+        // Potentially for these 3 we could do thing better for 'normal' on iPad
+        let topOffset = -6.0
+        let bottomOffset = 8.0
+        let navHPadding = isExperimentalThemingEnabled ? 10.0 : 0.0
+
         // The constants here are to force the ai button to align between the tab switcher and this view
         NSLayoutConstraint.activate([
             titleBarView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: navHPadding),
             titleBarView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -navHPadding),
-            isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: -6) : nil,
-            !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8) : nil,
+            isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: topOffset) : nil,
+            !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: bottomOffset) : nil,
 
             collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
@@ -178,8 +185,6 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func setupBarsLayout() {
-        let addressBarPosition = appSettings.currentAddressBarPosition
-        
         // Remove existing constraints to avoid conflicts
         titleBarView.translatesAutoresizingMaskIntoConstraints = false
         toolbar.translatesAutoresizingMaskIntoConstraints = false
@@ -194,25 +199,22 @@ class TabSwitcherViewController: UIViewController {
             }
         }
         
-        let navigationBarHorizontalPadding: CGFloat
         let toolbarAppearance = UIToolbarAppearance()
         if isExperimentalThemingEnabled {
             toolbarAppearance.configureWithTransparentBackground()
             toolbarAppearance.shadowColor = .clear
-            navigationBarHorizontalPadding = 10.0
         } else {
             toolbarAppearance.configureWithDefaultBackground()
-            navigationBarHorizontalPadding = 0.0
         }
         toolbar.standardAppearance = toolbarAppearance
         toolbar.compactAppearance = toolbarAppearance
-        activateLayoutConstraintsBasedOnBarPosition(navigationBarHorizontalPadding, addressBarPosition.isBottom)
+        activateLayoutConstraintsBasedOnBarPosition()
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        createTopBar()
+        createTitleBar()
         setupBarsLayout()
 
         refreshTitle()

@@ -20,6 +20,7 @@ import AppKit
 import Combine
 import Foundation
 import WebKitExtensions
+import BrowserServicesKit
 
 enum NavigationDecision {
     case allow(NewWindowPolicy)
@@ -36,7 +37,8 @@ final class ContextMenuManager: NSObject {
     private var linkURL: String?
 
     private var tabsPreferences: TabsPreferences
-    private var isLoadedInSidebar: Bool
+    private let isLoadedInSidebar: Bool
+    private let internalUserDecider: InternalUserDecider
 
     private var isEmailAddress: Bool {
         guard let linkURL, let url = URL(string: linkURL) else {
@@ -57,9 +59,11 @@ final class ContextMenuManager: NSObject {
     @MainActor
     init(contextMenuScriptPublisher: some Publisher<ContextMenuUserScript?, Never>,
          tabsPreferences: TabsPreferences = TabsPreferences.shared,
-         isLoadedInSidebar: Bool = false) {
+         isLoadedInSidebar: Bool = false,
+         internalUserDecider: InternalUserDecider) {
         self.tabsPreferences = tabsPreferences
         self.isLoadedInSidebar = isLoadedInSidebar
+        self.internalUserDecider = internalUserDecider
         super.init()
 
         userScriptCancellable = contextMenuScriptPublisher.sink { [weak self] contextMenuScript in
@@ -207,7 +211,7 @@ extension ContextMenuManager {
     }
 
     private func handleInspectElementItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
-        guard isLoadedInSidebar else { return }
+        guard isLoadedInSidebar, !internalUserDecider.isInternalUser else { return }
         menu.removeItem(at: index)
     }
 }

@@ -411,13 +411,13 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
     public func getInitialScanState() async -> DBPUIInitialScanState {
         await scanDelegate?.updateCacheWithCurrentScans()
 
-        return mapper.initialScanState(brokerProfileQueryData)
+        return DBPUIInitialScanState(from: brokerProfileQueryData)
     }
 
     public func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         await scanDelegate?.updateCacheWithCurrentScans()
 
-        return mapper.maintenanceScanState(brokerProfileQueryData)
+        return DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
     }
 
     public func getDataBrokers() async -> [DBPUIDataBroker] {

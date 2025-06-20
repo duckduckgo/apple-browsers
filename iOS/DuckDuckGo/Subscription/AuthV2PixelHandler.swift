@@ -87,7 +87,7 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
                 case removed
             }
 
-            let state: State
+            let state: State // Assumption: The array of entitlements is always complete or empty, we don't have known cases of partial set of entitlements
             switch (self.previousEntitlements.isEmpty, entitlements.isEmpty) {
                 case (true, false): state = .added
                 case (false, true): state = .removed

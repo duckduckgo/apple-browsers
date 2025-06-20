@@ -103,7 +103,6 @@ public extension DBPUIEditablePartialProfile {
 public extension DataBrokerProtectionProfile {
     init?(from profile: DBPUIEditablePartialProfile) {
         guard let birthYear = profile.birthYear else {
-            assertionFailure("No birth year specified")
             return nil
         }
 

@@ -262,10 +262,6 @@ public final class DBPUICommunicator {
     weak var delegate: DBPUICommunicatorDelegate?
     weak var scanDelegate: DBPUIScanOps?
 
-    private let emptyProfile: DataBrokerProtectionProfile = {
-        DataBrokerProtectionProfile(names: [], addresses: [], phones: [], birthYear: -1)
-    }()
-
     public func invalidateCache() {
         profile = nil
         brokerProfileQueryData.removeAll()
@@ -285,13 +281,13 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
     }
 
     public func getUserProfile() -> DBPUIUserProfile? {
-        let profile = profile ?? emptyProfile
+        guard let profile = profile else { return nil }
 
         return DBPUIUserProfile(from: profile)
     }
 
     public func deleteProfileData() throws {
-        profile = emptyProfile
+        profile = nil
         try delegate?.removeAllData()
     }
 

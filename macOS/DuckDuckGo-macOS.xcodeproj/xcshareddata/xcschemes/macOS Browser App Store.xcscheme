@@ -142,6 +142,9 @@
                   Identifier = "SyncPreferencesTests/test_recoverDevice_accountAlreadyExists_twoOrMoreDevices_showsAccountSwitchingMessage()">
                </Test>
                <Test
+                  Identifier = "SyncPreferencesTests/test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_usesRecoveryCode()">
+               </Test>
+               <Test
                   Identifier = "TabSnapshotExtensionTests/testWhenSnapshotIsRestored_ThenRenderingIsSkippedAfterLoading()">
                </Test>
                <Test

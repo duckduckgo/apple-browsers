@@ -1,5 +1,5 @@
 //
-//  MockDefaultBrowserPromptFeatureFlagProvider.swift
+//  MockDefaultBrowserPromptFeatureFlag.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -39,7 +39,7 @@ package final class MockDefaultBrowserPromptFeatureFlagProvider: DefaultBrowserP
 }
 
 package final class MockDefaultBrowserPromptFeatureFlagsSettingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider {
-    package var featureSettings: [String : Any] = [:]
+    package var featureSettings: [String: Any] = [:]
 
     package init() {}
 }

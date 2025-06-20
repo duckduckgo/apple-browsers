@@ -20,6 +20,8 @@ import Foundation
 import SecureStorage
 import PixelKit
 import BrowserServicesKit
+import os.log
+import Common
 
 internal class FirefoxDataImporter: DataImporter {
 

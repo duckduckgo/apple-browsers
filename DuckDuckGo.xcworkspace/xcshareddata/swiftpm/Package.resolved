@@ -131,8 +131,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/OpenSSL-XCFramework",
       "state" : {
-        "revision" : "71d303cbfa150e1fac99ffc7b4f67aad9c7a5002",
-        "version" : "3.1.5004"
+        "revision" : "263f0422b0b516838bc4f8cf5f4b5aac4df144c1",
+        "version" : "3.3.2000"
       }
     },
     {

@@ -48,18 +48,26 @@ public enum SubscriptionEndpointServiceError: Error, Equatable {
     case invalidResponseCode(HTTPStatusCode)
 }
 
+/// Defines the caching strategy used when retrieving a `PrivacyProSubscription`.
 public enum SubscriptionCachePolicy {
-    case reloadIgnoringLocalCacheData
-    case returnCacheDataElseLoad
-    case returnCacheDataDontLoad
+
+    /// Always attempts to fetch the subscription from the remote source.
+    /// If the remote fetch or keychain access fails, falls back to the cached subscription if available.
+    case remoteFirst
+
+    /// Returns the cached subscription if it exists; otherwise, attempts to fetch from the remote source.
+    case cacheFirst
+
+    /// Returns only the cached subscription. No remote fetch is attempted.
+    case cacheOnly
 
     public var apiCachePolicy: APICachePolicy {
         switch self {
-        case .reloadIgnoringLocalCacheData:
+        case .remoteFirst:
             return .reloadIgnoringLocalCacheData
-        case .returnCacheDataElseLoad:
+        case .cacheFirst:
             return .returnCacheDataElseLoad
-        case .returnCacheDataDontLoad:
+        case .cacheOnly:
             return .returnCacheDataDontLoad
         }
     }
@@ -67,7 +75,7 @@ public enum SubscriptionCachePolicy {
 
 public protocol SubscriptionEndpointServiceV2 {
     func ingestSubscription(_ subscription: PrivacyProSubscription) async throws
-    func getSubscription(accessToken: String, cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
+    func getSubscription(accessToken: String?, cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
     func getCachedSubscription() -> PrivacyProSubscription?
     func clearSubscription()
     func getProducts() async throws -> [GetProductsItem]
@@ -90,7 +98,7 @@ public protocol SubscriptionEndpointServiceV2 {
 extension SubscriptionEndpointServiceV2 {
 
     public func getSubscription(accessToken: String) async throws -> PrivacyProSubscription {
-        try await getSubscription(accessToken: accessToken, cachePolicy: SubscriptionCachePolicy.returnCacheDataElseLoad)
+        try await getSubscription(accessToken: accessToken, cachePolicy: SubscriptionCachePolicy.cacheFirst)
     }
 }
 
@@ -190,19 +198,35 @@ New: \(subscription.debugDescription, privacy: .public)
         try await storeAndAddFeaturesIfNeededTo(subscription: subscription)
     }
 
-    public func getSubscription(accessToken: String, cachePolicy: SubscriptionCachePolicy = .returnCacheDataElseLoad) async throws -> PrivacyProSubscription {
-        switch cachePolicy {
-        case .reloadIgnoringLocalCacheData:
-            return try await getRemoteSubscription(accessToken: accessToken)
+    public func getSubscription(accessToken: String?, cachePolicy: SubscriptionCachePolicy = .cacheFirst) async throws -> PrivacyProSubscription {
 
-        case .returnCacheDataElseLoad:
+        guard let accessToken else {
+            if let subscription = getCachedSubscription() {
+                return subscription
+            } else {
+                throw SubscriptionEndpointServiceError.noData
+            }
+        }
+
+        switch cachePolicy {
+        case .remoteFirst:
+            do {
+                let subscription = try await getRemoteSubscription(accessToken: accessToken)
+                return subscription
+            } catch SubscriptionEndpointServiceError.noData {
+                throw SubscriptionEndpointServiceError.noData
+            } catch {
+                return try await getSubscription(accessToken: accessToken, cachePolicy: .cacheOnly)
+            }
+
+        case .cacheFirst:
             if let cachedSubscription = getCachedSubscription() {
                 return cachedSubscription
             } else {
                 return try await getRemoteSubscription(accessToken: accessToken)
             }
 
-        case .returnCacheDataDontLoad:
+        case .cacheOnly:
             if let cachedSubscription = getCachedSubscription() {
                 return cachedSubscription
             } else {

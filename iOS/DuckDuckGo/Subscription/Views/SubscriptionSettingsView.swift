@@ -490,7 +490,7 @@ struct SubscriptionSettingsViewV2: View {
                     emailFlow: .manageEmailFlow,
                     onDisappear: {
                         Task {
-                            await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData)
+                            await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
                         }
                     }),
                                isActive: $isShowingManageEmailView) {
@@ -507,7 +507,7 @@ struct SubscriptionSettingsViewV2: View {
                 emailFlow: .activationFlow,
                 onDisappear: {
                     Task {
-                        await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData)
+                        await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
                     }
                 }),
                            isActive: $isShowingActivationView) {

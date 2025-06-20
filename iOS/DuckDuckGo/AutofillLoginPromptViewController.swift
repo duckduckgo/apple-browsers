@@ -31,15 +31,18 @@ class AutofillLoginPromptViewController: UIViewController {
     let onAccountSelected: (SecureVaultModels.WebsiteAccount?) -> Void
 
     private let accounts: AccountMatches
+    private let usageProvider: AutofillUsageProvider
     private let domain: String
     private let trigger: AutofillUserScript.GetTriggerType
-    
+
     internal init(accounts: AccountMatches,
+                  usageProvider: AutofillUsageProvider = AutofillUsageStore(),
                   domain: String,
                   trigger: AutofillUserScript.GetTriggerType,
                   onAccountSelected: @escaping (SecureVaultModels.WebsiteAccount?) -> Void,
                   completion: AutofillLoginPromptViewControllerCompletion? = nil) {
         self.accounts = accounts
+        self.usageProvider = usageProvider
         self.domain = domain
         self.trigger = trigger
         self.onAccountSelected = onAccountSelected
@@ -107,11 +110,11 @@ extension AutofillLoginPromptViewController: UISheetPresentationControllerDelega
 
 extension AutofillLoginPromptViewController: AutofillLoginPromptViewModelDelegate {
     func autofillLoginPromptViewModel(_ viewModel: AutofillLoginPromptViewModel, didSelectAccount account: SecureVaultModels.WebsiteAccount) {
-        
+        let parameters = usageProvider.formattedFillDate.flatMap { [PixelParameters.lastUsed: $0] } ?? [:]
         if trigger == AutofillUserScript.GetTriggerType.autoprompt {
-            Pixel.fire(pixel: .autofillLoginsFillLoginInlineAutopromptConfirmed)
+            Pixel.fire(pixel: .autofillLoginsFillLoginInlineAutopromptConfirmed, withAdditionalParameters: parameters)
         } else {
-            Pixel.fire(pixel: .autofillLoginsFillLoginInlineManualConfirmed)
+            Pixel.fire(pixel: .autofillLoginsFillLoginInlineManualConfirmed, withAdditionalParameters: parameters)
         }
 
         onAccountSelected(account)

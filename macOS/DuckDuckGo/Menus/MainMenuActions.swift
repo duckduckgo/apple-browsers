@@ -460,8 +460,7 @@ extension AppDelegate {
         }
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.homePageContinueSetUpImport.rawValue)
 
-        let autofillPixelReporter = AutofillPixelReporter(standardUserDefaults: .standard,
-                                                          appGroupUserDefaults: nil,
+        let autofillPixelReporter = AutofillPixelReporter(usageStore: AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil),
                                                           autofillEnabled: AutofillPreferences().askToSaveUsernamesAndPasswords,
                                                           eventMapping: EventMapping<AutofillPixelEvent> { _, _, _, _ in },
                                                           installDate: nil)

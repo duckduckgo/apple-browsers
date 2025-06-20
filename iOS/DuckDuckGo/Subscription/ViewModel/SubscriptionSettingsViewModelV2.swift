@@ -92,14 +92,14 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     func onFirstAppear() {
         Task {
             // Load initial state from the cache
-            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(cachePolicy: .returnCacheDataDontLoad)
-            async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .returnCacheDataDontLoad,
+            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(cachePolicy: .cacheOnly)
+            async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .cacheOnly,
                                                                                                  loadingIndicator: false)
             let (hasLoadedEmailFromCache, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
 
             // Reload remote subscription and email state
-            async let reloadedEmail = await self.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData)
-            async let reloadedSubscription = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .reloadIgnoringLocalCacheData,
+            async let reloadedEmail = await self.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
+            async let reloadedSubscription = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .remoteFirst,
                                                                                           loadingIndicator: !hasLoadedSubscriptionFromCache)
             let (hasReloadedEmail, hasReloadedSubscription) = await (reloadedEmail, reloadedSubscription)
         }
@@ -131,17 +131,17 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         }
     }
 
-    func fetchAndUpdateAccountEmail(cachePolicy: SubscriptionCachePolicy = .returnCacheDataElseLoad) async -> Bool {
+    func fetchAndUpdateAccountEmail(cachePolicy: SubscriptionCachePolicy = .cacheFirst) async -> Bool {
         Logger.subscription.log("Fetch and update account email")
         guard subscriptionManager.isUserAuthenticated else { return false }
 
         var tokensPolicy: AuthTokensCachePolicy = .local
         switch cachePolicy {
-        case .reloadIgnoringLocalCacheData:
+        case .remoteFirst:
             tokensPolicy = .localForceRefresh
-        case .returnCacheDataElseLoad:
+        case .cacheFirst:
             tokensPolicy = .localValid
-        case .returnCacheDataDontLoad:
+        case .cacheOnly:
             tokensPolicy = .local
         }
 

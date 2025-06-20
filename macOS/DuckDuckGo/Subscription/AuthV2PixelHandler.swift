@@ -90,7 +90,7 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
                 return
             }
             PixelKit.fire(PrivacyProPixel.privacyProEntitlementsDidChange(source, state.rawValue), frequency: .dailyAndCount)
-
+            self.previousEntitlements = entitlements
         }.store(in: &cancellables)
     }
 

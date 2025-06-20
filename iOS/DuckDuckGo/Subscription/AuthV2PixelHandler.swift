@@ -58,9 +58,9 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
     init(source: Source) {
         self.source = source
 
-        notificationCenter.publisher(for: .subscriptionDidChange).sink { param in
+        notificationCenter.publisher(for: .subscriptionDidChange).sink { notification in
 
-            guard let userInfo = param.userInfo as? [AnyHashable: PrivacyProSubscription],
+            guard let userInfo = notification.userInfo as? [AnyHashable: PrivacyProSubscription],
                   let subscription = userInfo[UserDefaultsCacheKey.subscription] else {
                 DailyPixel.fireDailyAndCount(pixel: .privacyProSubscriptionMissing)
                 return
@@ -71,8 +71,14 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
             }
         }.store(in: &cancellables)
 
-        notificationCenter.publisher(for: .entitlementsDidChange).sink { param in
-            let userInfo = param.userInfo as? [AnyHashable: [Entitlement]]
+        notificationCenter.publisher(for: .entitlementsDidChange).sink { notification in
+
+            guard (notification.object as? SubscriptionManagerV2) != nil else {
+                // Sending pixel only for user entitlements, ignoring the Subscription entitlements coming from DefaultSubscriptionEndpointServiceV2
+                return
+            }
+
+            let userInfo = notification.userInfo as? [AnyHashable: [Entitlement]]
             let entitlements = userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] ?? []
             let entitlementsDescriptions = entitlements.map(\.product.rawValue).sorted().joined(separator: ", ")
             let params = [Defaults.sourceKey: source.description,

@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "53BCFC96-6941-47D0-BCEB-80C9A0EE9569",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "SetDefaultBrowserTests",
+        "name" : "SetDefaultBrowserTests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -234,7 +234,7 @@ private struct EditableCreditCardNumberCell: View {
                                     self.isCardValid = CreditCardValidation.isValidCardNumber(text)
                                 }
                         } else if !isCardValid {
-                            Image(uiImage: DesignSystemImages.Color.Size16.exclamation)
+                            Image(uiImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorable)
                         }
                     }
                 }

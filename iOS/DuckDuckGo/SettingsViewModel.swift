@@ -582,6 +582,8 @@ extension SettingsViewModel {
             longPressPreviews: appSettings.longPressPreviews,
             allowUniversalLinks: appSettings.allowUniversalLinks,
             activeWebsiteAccount: nil,
+            activeWebsiteCreditCard: nil,
+            showCreditCardManagement: false,
             version: versionProvider.versionAndBuildNumber,
             crashCollectionOptInStatus: appSettings.crashCollectionOptInStatus,
             debugModeEnabled: featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild,
@@ -798,11 +800,13 @@ extension SettingsViewModel {
         updateCompleteSetupSectionVisiblity()
     }
 
-    @MainActor func shouldPresentLoginsViewWithAccount(accountDetails: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource? = nil) {
+    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, source: AutofillSettingsSource? = nil) {
         state.activeWebsiteAccount = accountDetails
+        state.activeWebsiteCreditCard = card
+        state.showCreditCardManagement = showCreditCardManagement
         state.autofillSource = source
         
-        presentLegacyView(.logins)
+        presentLegacyView(.autofill)
     }
 
     @MainActor func shouldPresentSyncViewWithSource(_ source: String? = nil) {
@@ -881,10 +885,12 @@ extension SettingsViewModel {
             
         case .feedback:
             presentViewController(legacyViewProvider.feedback, modal: false)
-        case .logins:
+        case .autofill:
             pushViewController(legacyViewProvider.loginSettings(delegate: self,
                                                                 selectedAccount: state.activeWebsiteAccount,
+                                                                selectedCard: state.activeWebsiteCreditCard,
                                                                 showPasswordManagement: false,
+                                                                showCreditCardManagement: state.showCreditCardManagement,
                                                                 source: state.autofillSource))
 
         case .gpc:
@@ -926,7 +932,9 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
         AppDependencyProvider.shared.autofillLoginSession.startSession()
         pushViewController(legacyViewProvider.loginSettings(delegate: self,
                                                             selectedAccount: nil,
+                                                            selectedCard: nil,
                                                             showPasswordManagement: true,
+                                                            showCreditCardManagement: false,
                                                             source: state.autofillSource))
     }
 }

@@ -723,7 +723,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
                 // Schedule pill presentation after a short delay to ensure view is dismissed
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                    guard let self = self, 
+                    guard let self = self,
                           let hostView = self.hostView,
                           let currentVideoID = self.state.videoID else { return }
 

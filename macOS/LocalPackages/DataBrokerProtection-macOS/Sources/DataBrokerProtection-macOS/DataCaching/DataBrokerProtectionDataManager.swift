@@ -243,7 +243,7 @@ public protocol UserActionDelegate: AnyObject {
 public final class DBPUICommunicator {
     var profile: DataBrokerProtectionProfile?
     var brokerProfileQueryData = [BrokerProfileQueryData]()
-    private let mapper = MapperToUI()
+    private let debugMetaDataMapper = UIDebugMetadataMapper()
 
     weak var delegate: DBPUICommunicatorDelegate?
     weak var scanDelegate: DBPUIScanOps?
@@ -440,7 +440,7 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
     public func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata {
         let metadata = await scanDelegate?.getBackgroundAgentMetadata()
 
-        return mapper.mapToUIDebugMetadata(metadata: metadata, brokerProfileQueryData: brokerProfileQueryData)
+        return debugMetaDataMapper.mapToUIDebugMetadata(metadata: metadata, brokerProfileQueryData: brokerProfileQueryData)
     }
 
     public func openSendFeedbackModal() async {

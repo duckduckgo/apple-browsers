@@ -1,5 +1,5 @@
 //
-//  UIMapper.swift
+//  UIDebugMetadataMapper.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import Common
 import os.log
 import DataBrokerProtectionCore
 
-struct MapperToUI {
+struct UIDebugMetadataMapper {
 
     func mapToUIDebugMetadata(metadata: DBPBackgroundAgentMetadata?, brokerProfileQueryData: [BrokerProfileQueryData]) -> DBPUIDebugMetadata {
         let currentAppVersion = Bundle.main.fullVersionNumber ?? "ERROR: Error fetching app version"
@@ -86,54 +86,10 @@ extension TimeInterval {
     }
 }
 
-extension Date {
-
-    func toFormat(_ format: String) -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = format
-        return dateFormatter.string(from: self)
-    }
-}
-
-extension String {
-
-    func toDate(using format: String) -> Date {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = format
-
-        if let date = dateFormatter.date(from: self) {
-            return date
-        } else {
-            fatalError("String should be on the correct date format")
-        }
-    }
-}
-
 fileprivate extension BrokerProfileQueryData {
 
     var closestHistoryEvent: HistoryEvent? {
         events.sorted(by: { $0.date > $1.date }).first
-    }
-
-    var sitesScanned: [String] {
-        if scanJobData.lastRunDate != nil {
-            let scanEvents = scanJobData.scanStartedEvents()
-            var sitesScanned = [dataBroker.name]
-
-            for mirrorSite in dataBroker.mirrorSites {
-                let wasMirrorSiteScanned = scanEvents.contains { event in
-                    mirrorSite.wasExtant(on: event.date)
-                }
-
-                if wasMirrorSiteScanned {
-                    sitesScanned.append(mirrorSite.name)
-                }
-            }
-
-            return sitesScanned
-        }
-
-        return [String]()
     }
 }
 
@@ -165,60 +121,7 @@ private extension Optional where Wrapped == Date {
     }
 }
 
-private extension Array where Element == [BrokerProfileQueryData] {
-
-    /// Sorts the 2-dimensional array in ascending order based on the `lastRunDate` value of the first element of each internal array
-    ///
-    /// - Returns: An array of `[BrokerProfileQueryData]` values sorted by the first `lastRunDate` of each element
-    func sortedByLastRunDate() -> Self {
-        self.sorted { lhs, rhs in
-            let lhsDate = lhs.first?.scanJobData.lastRunDate
-            let rhsDate = rhs.first?.scanJobData.lastRunDate
-
-            if lhsDate == rhsDate {
-                return lhs.first?.dataBroker.name ?? "" < rhs.first?.dataBroker.name ?? ""
-            } else {
-                return lhsDate < rhsDate
-            }
-        }
-    }
-}
-
 fileprivate extension Array where Element == BrokerProfileQueryData {
-
-    typealias ScannedBroker = DBPUIScanProgress.ScannedBroker
-
-    var totalScans: Int {
-        guard let broker = self.first?.dataBroker else { return 0 }
-        return 1 + broker.mirrorSites.filter { $0.isExtant() }.count
-    }
-
-    /// Returns an array of brokers which have been either fully or partially scanned
-    ///
-    /// A broker is considered fully scanned is all scan jobs for that broker have completed.
-    /// A broker is considered partially scanned if at least one scan job for that broker has completed
-    /// Mirror brokers will be included in the returned array when `MirrorSite.shouldWeIncludeMirrorSite` returns true
-    var scannedBrokers: [ScannedBroker] {
-        guard let broker = self.first?.dataBroker else { return [] }
-
-        var completedScans = 0
-        self.forEach {
-            completedScans += $0.scanJobData.lastRunDate == nil ? 0 : 1
-        }
-
-        guard completedScans != 0 else { return [] }
-
-        var status: ScannedBroker.Status = .inProgress
-        if completedScans == self.count {
-            status = .completed
-        }
-
-        let mirrorBrokers = broker.mirrorSites.compactMap {
-            $0.isExtant() ? $0.scannedBroker(withStatus: status) : nil
-        }
-
-        return [ScannedBroker(name: broker.name, url: broker.url, status: status)] + mirrorBrokers
-    }
 
     var lastOperation: BrokerJobData? {
         let allJobs = flatMap { $0.jobsData }
@@ -255,23 +158,6 @@ fileprivate extension Array where Element == BrokerProfileQueryData {
                 return false
             }
         }).first
-    }
-
-    /// Sorts the array in ascending order based on `lastRunDate`
-    ///
-    /// - Returns: An array of `BrokerProfileQueryData` sorted by `lastRunDate`
-    func sortedByLastRunDate() -> Self {
-        self.sorted { lhs, rhs in
-            lhs.scanJobData.lastRunDate < rhs.scanJobData.lastRunDate
-        }
-    }
-}
-
-extension Array where Element == DBPUIScanProgress.ScannedBroker {
-    var completeBrokerScansCount: Int {
-        reduce(0) { accumulator, scannedBrokers in
-            scannedBrokers.status == .completed ? accumulator + 1 : accumulator
-        }
     }
 }
 

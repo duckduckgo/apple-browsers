@@ -284,7 +284,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     private func dismissDuckPlayerPill(reset: Bool, animated: Bool, programatic: Bool) {
         isDuckPlayerPillPresented = false
         Task { @MainActor in
-            duckPlayer.dismissPill(reset: reset, animated: animated, programatic: programatic)
+            duckPlayer.dismissPill(reset: reset, animated: animated, programatic: programatic, skipTransition: true)
         }
     }
 }
@@ -423,7 +423,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
 
         lastHandledVideoID = nil
-        duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
+        duckPlayer.dismissPill(reset: true, animated: false, programatic: true, skipTransition: true)
         _ = handleURLChange(webView: webView, previousURL: nil, newURL: webView.url)
 
     }
@@ -553,7 +553,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
-        duckPlayer.dismissPill(reset: false, animated: false, programatic: true)
+        duckPlayer.dismissPill(reset: false, animated: false, programatic: true, skipTransition: true)
     }
 
 }

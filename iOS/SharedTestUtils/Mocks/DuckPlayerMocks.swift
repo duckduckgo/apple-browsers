@@ -365,7 +365,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
         lastPresentedVideoID = videoID
     }
 
-    func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {
+    func dismissPill(reset: Bool, animated: Bool, programatic: Bool, skipTransition: Bool = false) {
         dismissPillCalled = true
         lastDismissPillReset = reset
         lastDismissPillAnimated = animated
@@ -470,7 +470,7 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     }
 
     @MainActor
-    func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {}
+    func dismissPill(reset: Bool, animated: Bool, programatic: Bool, skipTransition: Bool) {}
 
     @MainActor
     func presentDuckPlayer(videoID: String, source: DuckDuckGo.DuckPlayer.VideoNavigationSource, in hostViewController: any DuckDuckGo.DuckPlayerHosting, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {

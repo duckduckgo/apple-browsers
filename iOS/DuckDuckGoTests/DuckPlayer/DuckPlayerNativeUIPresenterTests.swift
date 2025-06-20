@@ -1870,6 +1870,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let source: DuckPlayer.VideoNavigationSource = .youtube
         let timestamp: TimeInterval = 30
         mockDuckPlayerSettings.welcomeMessageShown = true
+        mockDuckPlayerSettings.primingMessagePresented = true
 
         // Present the DuckPlayer
         _ = sut.presentDuckPlayer(
@@ -1900,10 +1901,52 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         }
         wait(for: [expectation], timeout: 1.0)
 
-        // Then - Should present re-entry pill
+        // Then - Should present re-entry pill 
         XCTAssertNotNil(sut.containerViewController, "Pill container should be created after dismissal")
         XCTAssertEqual(sut.state.timestamp, timestamp, "State should preserve the timestamp")
         XCTAssertTrue(sut.duckPlayerSettings.welcomeMessageShown, "Welcome message should be marked as shown")
+    }
+
+    @MainActor
+    func testDuckPlayerDismissal_UpdatesStateAndSettings() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval = 30
+        let source: DuckPlayer.VideoNavigationSource = .youtube
+        mockDuckPlayerSettings.welcomeMessageShown = false
+        mockDuckPlayerSettings.primingMessagePresented = true
+        
+        // Present the DuckPlayer
+        _ = sut.presentDuckPlayer(
+            videoID: videoID,
+            source: source,
+            in: mockHostViewController,
+            title: nil,
+            timestamp: timestamp
+        )
+        
+        // Verify initial state
+        XCTAssertTrue(sut.state.hasBeenShown, "State should indicate DuckPlayer has been shown")
+        XCTAssertFalse(mockDuckPlayerSettings.welcomeMessageShown, "Welcome message should not be shown initially")
+        
+        // When - Simulate DuckPlayer dismissal by triggering the dismiss publisher
+        guard let playerViewModel = sut.playerViewModel else {
+            XCTFail("Player view model should exist")
+            return
+        }
+        
+        // Simulate the view disappearing and dismiss publisher firing
+        playerViewModel.dismissPublisher.send(timestamp)
+        
+        // Then - State should preserve the timestamp
+        XCTAssertEqual(sut.state.timestamp, timestamp, "State should preserve the timestamp")
+        XCTAssertTrue(mockDuckPlayerSettings.welcomeMessageShown, "Welcome message should be marked as shown")
+        
+        // Verify timestamp changed from nil to the provided value
+        XCTAssertNotEqual(sut.state.timestamp, nil, "Timestamp should have changed")
+        
+        // Verify welcome shown flag changed from false to true
+        XCTAssertNotEqual(mockDuckPlayerSettings.welcomeMessageShown, false, "Welcome shown flag should have changed")
     }
     
 }

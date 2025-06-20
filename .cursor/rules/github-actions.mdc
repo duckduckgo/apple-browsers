@@ -1,0 +1,301 @@
+---
+description: GitHub Actions workflows CI/CD automation iOS macOS builds releases testing manual automatic triggers workflow parameters monitoring troubleshooting emergency procedures notarized build make notarized DMG testflight app store adhoc alpha nightly hotfix GHA run workflow launch workflow start workflow
+globs: 
+alwaysApply: false
+---
+# GitHub Actions Quick Reference
+
+## Critical: Always Check Current Branch
+```bash
+# ALWAYS verify your current branch before triggering any workflow
+git branch --show-current
+```
+
+## Most Common Tasks
+
+### 1. Make Notarized Build (macOS)
+```bash
+# Get current branch
+CURRENT_BRANCH=$(git branch --show-current)
+
+# Trigger notarized build on current branch
+gh workflow run "macos_build_notarized.yml" \
+  --ref "$CURRENT_BRANCH" \
+  --field release-type=review \
+  --field create-dmg=true \
+  --field asana-task-url="https://app.asana.com/0/your-task-id"
+```
+
+### 2. iOS TestFlight Build
+```bash
+CURRENT_BRANCH=$(git branch --show-current)
+gh workflow run "ios_release.yml" \
+  --ref "$CURRENT_BRANCH" \
+  --field destination=testflight \
+  --field asana-task-url="https://app.asana.com/0/your-task-id"
+```
+
+### 3. Run Tests on Current Branch
+```bash
+CURRENT_BRANCH=$(git branch --show-current)
+gh workflow run "ios_end_to_end.yml" --ref "$CURRENT_BRANCH" --field branch="$CURRENT_BRANCH"
+gh workflow run "macos_ui_tests.yml" --ref "$CURRENT_BRANCH" --field branch="$CURRENT_BRANCH"
+```
+
+## Monitoring Workflows
+
+### Quick Status Check
+```bash
+# Reliable way to check recent runs (| cat prevents pager issues)
+gh run list --limit 5 | cat
+
+# Check recent runs for specific workflow
+gh run list --workflow="macos_build_notarized.yml" --limit 3 | cat
+
+# Alternative: Use API directly for more control
+gh api repos/:owner/:repo/actions/runs --jq '.workflow_runs[0:3] | .[] | {id: .id, status: .status, branch: .head_branch, workflow: .name}'
+
+# Fallback: Use web interface
+open "https://github.com/duckduckgo/apple-browsers/actions"
+```
+
+### Watch Progress
+```bash
+# Find your run ID first (| cat prevents pager issues)
+gh run list --branch "$(git branch --show-current)" --limit 3 | cat
+
+# Alternative: Use API to find runs for your branch
+gh api repos/:owner/:repo/actions/runs --jq '.workflow_runs[] | select(.head_branch == "'$(git branch --show-current)'") | {id: .id, status: .status, name: .name}' | head -1
+
+# View run details (| cat prevents pager issues)
+gh run view RUN_ID | cat
+
+# Then watch it in real-time (replace RUN_ID with actual ID)
+gh run watch RUN_ID
+```
+
+## Complete Workflow Reference
+
+### 🏗️ Build Workflows
+
+**iOS Builds:**
+- `ios_release.yml` - App Store Connect release (TestFlight/App Store)
+- `ios_adhoc.yml` - Ad-hoc builds for internal testing
+- `ios_alpha.yml` - Alpha builds
+- `ios_nightly.yml` - Nightly builds
+- `ios_build_hotfix_release.yml` - Hotfix releases
+
+**macOS Builds:**
+- `macos_build_notarized.yml` - Notarized DMG release (most common)
+- `macos_build_appstore.yml` - App Store version
+- `macos_build_hotfix_release.yml` - Hotfix releases
+- `macos_create_variant.yml` - Single build variant
+- `macos_create_variants.yml` - Multiple build variants
+
+### 🧪 Testing Workflows
+
+**iOS Testing:**
+- `ios_pr_checks.yml` - PR validation (auto-triggered)
+- `ios_end_to_end.yml` - End-to-end tests
+- `ios_sync_end_to_end.yml` - Sync functionality tests
+- `ios_shared_web_tests.yml` - Shared web functionality
+
+**macOS Testing:**
+- `macos_pr_checks.yml` - PR validation (auto-triggered)
+- `macos_ui_tests.yml` - UI automation tests
+- `macos_sync_end_to_end.yml` - Sync tests
+- `macos_sync_end_to_end_legacy_os.yml` - Legacy macOS sync tests
+- `macos_pir_end_to_end_tests.yml` - Privacy in Reports tests
+
+**Shared Testing:**
+- `bsk_pr_checks.yml` - BrowserServicesKit package checks
+- `dbp_pr_checks.yml` - Data Broker Protection checks
+
+### 🚀 Release Management
+
+**iOS Release:**
+- `ios_tag_release.yml` - Create release tags
+- `ios_tag_release_update_asana.yml` - Tag release with Asana update
+- `ios_promote_testflight.yml` - Promote TestFlight builds
+- `ios_bump_internal_release.yml` - Bump version numbers
+- `ios_code_freeze.yml` - Code freeze preparation
+
+**macOS Release:**
+- `macos_release.yml` - App Store Connect release
+- `macos_tag_release.yml` - Create release tags
+- `macos_promote_testflight.yml` - Promote TestFlight builds
+- `macos_publish_dmg_release.yml` - Publish DMG to channels
+- `macos_bump_internal_release.yml` - Bump version numbers
+- `macos_code_freeze.yml` - Code freeze preparation
+
+### 🔧 Utility & Maintenance
+
+**Hotfix Management:**
+- `ios_hotfix.yml` - Create iOS hotfix branches
+- `macos_hotfix.yml` - Create macOS hotfix branches
+
+**Automated Maintenance:**
+- `swiftlint.yml` - Code style linting (auto-triggered)
+- `danger.yml` - PR validation and comments (auto-triggered)
+- `pr_labels.yml` - Automatic PR labeling (auto-triggered)
+- `stale_pr.yml` - Stale PR management (scheduled)
+- `update_code_signing.yml` - Code signing updates (scheduled)
+
+**Tracking & Reports:**
+- `ios_pr_task_url.yml` - Asana task URL handling
+- `macos_pr_task_url.yml` - Asana task URL handling
+- `create_asana_pr_subtask.yml` - Create Asana subtasks
+- `macos_private_api_report.yml` - Private API usage reports
+
+**Security & Data:**
+- `macos_update_phishing_detection_data.yml` - Update security data
+
+## Common Command Examples
+
+### Quick Build Commands
+```bash
+# iOS TestFlight (current branch)
+gh workflow run "ios_release.yml" --ref "$(git branch --show-current)" --field destination=testflight --field asana-task-url="https://app.asana.com/0/task"
+
+# iOS Ad-hoc build
+gh workflow run "ios_adhoc.yml" --ref "$(git branch --show-current)" --field asana-task-url="https://app.asana.com/0/task"
+
+# macOS App Store build
+gh workflow run "macos_build_appstore.yml" --ref "$(git branch --show-current)" --field asana-task-url="https://app.asana.com/0/task"
+```
+
+### Testing Commands
+```bash
+# Run iOS E2E tests on current branch
+gh workflow run "ios_end_to_end.yml" --ref "$(git branch --show-current)" --field branch="$(git branch --show-current)"
+
+# Run macOS PIR tests
+gh workflow run "macos_pir_end_to_end_tests.yml" --ref "$(git branch --show-current)" --field branch="$(git branch --show-current)"
+
+# Update security data
+gh workflow run "macos_update_phishing_detection_data.yml"
+```
+
+### Release Commands
+```bash
+# Create iOS release tag (use actual release branch)
+gh workflow run "ios_tag_release.yml" --ref release/ios/1.2.3 --field asana-task-url="https://app.asana.com/0/task"
+
+# Create macOS release tag
+gh workflow run "macos_tag_release.yml" --ref release/macos/1.2.3 --field asana-task-url="https://app.asana.com/0/task"
+
+# Publish macOS DMG
+gh workflow run "macos_publish_dmg_release.yml" --field asana-task-url="https://app.asana.com/0/task"
+```
+
+## Common Parameters
+
+**Required for builds:**
+- `asana-task-url` - Always provide an Asana task URL
+- `release-type` - Use "review" for testing, "release" for production
+
+**Optional:**
+- `create-dmg` - Set to `true` for downloadable builds
+- `destination` - "testflight" or "appstore" for iOS
+- `branch` - Branch to test (for testing workflows)
+
+## Troubleshooting
+
+### GitHub CLI Issues
+```bash
+# If gh commands show weird output like "head: |: No such file or directory"
+# SOLUTION: Use | cat to prevent pager issues with ALL gh commands that show output
+gh run list --limit 5 | cat
+gh run list --workflow="workflow-name.yml" | cat
+gh run view RUN_ID | cat
+gh workflow list | cat
+
+# Root cause: Check your shell profile for conflicting aliases or functions
+grep -r "head\|gh" ~/.zshrc ~/.bash_profile ~/.bashrc
+
+# Alternative: Use GitHub web interface
+open "https://github.com/duckduckgo/apple-browsers/actions"
+```
+
+### Authentication Problems
+```bash
+gh auth status
+# If not authenticated:
+gh auth login --web
+```
+
+### Wrong Branch Issues
+```bash
+# Cancel a workflow run if triggered on wrong branch
+gh run cancel RUN_ID
+
+# Always double-check before triggering
+echo "Current branch: $(git branch --show-current)"
+echo "Are you sure you want to trigger the workflow on this branch? (y/N)"
+read confirmation
+```
+
+## Agent Guidelines
+
+### For AI Assistants
+1. **ALWAYS** check current branch with `git branch --show-current`
+2. **ALWAYS** use `--ref "$CURRENT_BRANCH"` to target the correct branch
+3. **NEVER** assume main branch unless explicitly requested
+4. **ALWAYS** use `| cat` with `gh run list`, `gh run view`, and other multi-line `gh` commands to prevent pager issues
+5. Use GitHub web interface as fallback if CLI fails
+6. Keep commands simple and direct
+7. Monitor using web interface when CLI monitoring fails
+
+### Why `| cat` is Important
+The GitHub CLI uses a pager for long outputs, which can cause issues in terminal environments or when there are shell configuration conflicts. Using `| cat` ensures:
+- Clean, readable output
+- No pager interference
+- Reliable command execution
+- Prevents "head: |: No such file or directory" errors
+
+**Commands that need `| cat`:**
+- `gh run list` (any variant)
+- `gh run view RUN_ID`
+- `gh workflow list`
+- Any `gh` command that displays multi-line output
+
+### Simplified Commands
+```bash
+# Template for any workflow
+BRANCH=$(git branch --show-current)
+gh workflow run "WORKFLOW_NAME.yml" --ref "$BRANCH" --field param=value
+
+# Check status via web
+open "https://github.com/duckduckgo/apple-browsers/actions"
+```
+
+## Emergency Actions
+
+### Cancel Workflow
+```bash
+# List in-progress runs (| cat prevents pager issues)
+gh run list --status in_progress --limit 5 | cat
+
+# Cancel specific run
+gh run cancel RUN_ID
+```
+
+### Quick Build Commands
+```bash
+# Notarized macOS build on current branch
+gh workflow run "macos_build_notarized.yml" --ref "$(git branch --show-current)" --field release-type=review --field create-dmg=true --field asana-task-url="https://app.asana.com/0/task"
+
+# iOS TestFlight on current branch  
+gh workflow run "ios_release.yml" --ref "$(git branch --show-current)" --field destination=testflight --field asana-task-url="https://app.asana.com/0/task"
+```
+
+## Web Interface Fallback
+
+When CLI fails, use GitHub web interface:
+1. Go to: https://github.com/duckduckgo/apple-browsers/actions
+2. Select workflow from left sidebar
+3. Click "Run workflow" button
+4. **IMPORTANT**: Select your branch in the dropdown
+5. Fill parameters and click "Run workflow"
+
+This approach is more reliable than CLI for complex operations.

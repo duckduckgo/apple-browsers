@@ -143,8 +143,6 @@ extension TabViewController {
         .regular(name: UserText.actionOpenAIChat,
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChat : DesignSystemImages.Glyphs.Size24.aiChat,
                  action: { [weak self] in
-            Pixel.fire(pixel: smallIcon ? .browsingMenuListAIChat : .browsingMenuAIChat,
-                       withAdditionalParameters: self?.featureDiscovery.addToParams([:], forFeature: .aiChat) ?? [:])
             self?.openAIChat()
         })
     }

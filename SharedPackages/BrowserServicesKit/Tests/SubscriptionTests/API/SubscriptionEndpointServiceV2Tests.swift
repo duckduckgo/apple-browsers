@@ -94,7 +94,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         )
         endpointService.updateCache(with: cachedSubscription)
 
-        let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .returnCacheDataDontLoad)
+        let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheOnly)
         XCTAssertEqual(subscription, cachedSubscription)
     }
 
@@ -109,7 +109,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
         apiService.set(response: apiResponse, forRequest: request)
 
-        let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .returnCacheDataElseLoad)
+        let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
         XCTAssertEqual(subscription.productId, "prod123")
         XCTAssertEqual(subscription.name, "Pro Plan")
         XCTAssertEqual(subscription.billingPeriod, .yearly)
@@ -119,7 +119,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
     func testGetSubscriptionThrowsNoDataWhenNoCacheAndFetchFails() async {
         do {
-            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .returnCacheDataDontLoad)
+            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheOnly)
             XCTFail("Expected noData error")
         } catch SubscriptionEndpointServiceError.noData {
             // Success
@@ -229,7 +229,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         )
         endpointService.updateCache(with: subscription)
 
-        let cachedSubscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .returnCacheDataDontLoad)
+        let cachedSubscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheOnly)
         XCTAssertEqual(cachedSubscription, subscription)
     }
 
@@ -249,7 +249,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
         endpointService.clearSubscription()
         do {
-            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .returnCacheDataDontLoad)
+            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheOnly)
         } catch SubscriptionEndpointServiceError.noData {
             // Success
         } catch {

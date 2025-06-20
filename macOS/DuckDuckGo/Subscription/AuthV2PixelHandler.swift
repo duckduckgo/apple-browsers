@@ -48,6 +48,7 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
     let source: Source
     private let notificationCenter: NotificationCenter = NotificationCenter.default
     private var cancellables = Set<AnyCancellable>()
+    private var previousEntitlements: [Entitlement] = []
 
     init(source: Source) {
         self.source = source
@@ -74,8 +75,21 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
 
             let userInfo = notification.userInfo as? [AnyHashable: [Entitlement]]
             let entitlements = userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] ?? []
-            let entitlementsDescriptions = entitlements.map(\.product.rawValue).sorted().joined(separator: ", ")
-            PixelKit.fire(PrivacyProPixel.privacyProEntitlementsDidChange(source, entitlementsDescriptions), frequency: .dailyAndCount)
+
+            enum State: String {
+                case added
+                case removed
+            }
+
+            let state: State
+            switch (self.previousEntitlements.isEmpty, entitlements.isEmpty) {
+            case (true, false): state = .added
+            case (false, true): state = .removed
+            default:
+                Logger.subscription.fault("Unexpected state")
+                return
+            }
+            PixelKit.fire(PrivacyProPixel.privacyProEntitlementsDidChange(source, state.rawValue), frequency: .dailyAndCount)
 
         }.store(in: &cancellables)
     }

@@ -45,7 +45,7 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
         static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
-        static let entitlementsKey = "entitlements"
+        static let entitlementsStateKey = "entitlementsState"
     }
 
     private let source: Source
@@ -54,6 +54,7 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
     }
     private let notificationCenter: NotificationCenter = NotificationCenter.default
     private var cancellables = Set<AnyCancellable>()
+    private var previousEntitlements: [Entitlement] = []
 
     init(source: Source) {
         self.source = source
@@ -62,12 +63,12 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
 
             guard let userInfo = notification.userInfo as? [AnyHashable: PrivacyProSubscription],
                   let subscription = userInfo[UserDefaultsCacheKey.subscription] else {
-                DailyPixel.fireDailyAndCount(pixel: .privacyProSubscriptionMissing)
+                DailyPixel.fireDailyAndCount(pixel: .privacyProSubscriptionMissing, withAdditionalParameters: self.sourceParam)
                 return
             }
 
             if !subscription.isActive {
-                DailyPixel.fireDaily(.privacyProSubscriptionExpired, withAdditionalParameters: [Defaults.sourceKey: source.description])
+                DailyPixel.fireDaily(.privacyProSubscriptionExpired, withAdditionalParameters: self.sourceParam)
             }
         }.store(in: &cancellables)
 
@@ -80,11 +81,24 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
 
             let userInfo = notification.userInfo as? [AnyHashable: [Entitlement]]
             let entitlements = userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] ?? []
-            let entitlementsDescriptions = entitlements.map(\.product.rawValue).sorted().joined(separator: ", ")
-            let params = [Defaults.sourceKey: source.description,
-                          Defaults.entitlementsKey: entitlementsDescriptions] as? [String: String]
-            DailyPixel.fireDailyAndCount(pixel: .privacyProEntitlementsDidChange, withAdditionalParameters: params ?? [:])
 
+            enum State: String {
+                case added
+                case removed
+            }
+
+            let state: State
+            switch (self.previousEntitlements.isEmpty, entitlements.isEmpty) {
+                case (true, false): state = .added
+                case (false, true): state = .removed
+            default:
+                Logger.subscription.fault("Unexpected state")
+                return
+            }
+
+            let params = [Defaults.entitlementsStateKey: state.rawValue].merging(self.sourceParam) { (_, new) in new } as? [String: String]
+            DailyPixel.fireDailyAndCount(pixel: .privacyProEntitlementsDidChange, withAdditionalParameters: params ?? [:])
+            self.previousEntitlements = entitlements
         }.store(in: &cancellables)
     }
 

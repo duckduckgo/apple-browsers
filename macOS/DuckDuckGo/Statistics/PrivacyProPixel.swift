@@ -147,7 +147,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
         static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
-        static let entitlementsKey = "entitlements"
+        static let entitlementsStateKey = "entitlementsState"
     }
 
     var parameters: [String: String]? {
@@ -164,9 +164,9 @@ enum PrivacyProPixel: PixelKitEventV2 {
                     PrivacyProPixelsDefaults.sourceKey: source.description]
         case .privacyProSubscriptionExpired(let source):
             return [PrivacyProPixelsDefaults.sourceKey: source.description]
-        case .privacyProEntitlementsDidChange(let source, let entitlements):
+        case .privacyProEntitlementsDidChange(let source, let state):
             return [PrivacyProPixelsDefaults.sourceKey: source.description,
-                    PrivacyProPixelsDefaults.entitlementsKey: entitlements]
+                    PrivacyProPixelsDefaults.entitlementsStateKey: state]
         case .privacyProSubscriptionMissing(let source):
             return [PrivacyProPixelsDefaults.sourceKey: source.description]
         default:

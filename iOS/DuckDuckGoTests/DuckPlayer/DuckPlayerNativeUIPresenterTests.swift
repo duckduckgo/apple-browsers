@@ -366,12 +366,18 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertEqual(playerViewModel.timestamp, timestamp, "Timestamp should be set correctly")
         XCTAssertEqual(playerViewModel.source, source, "Source should be set correctly")
 
-        // Verify hosting controller was created with correct configuration
-        guard let hostingController = mockHostViewController.presentedViewController as? UIHostingController<DuckPlayerView> else {
-            XCTFail("Hosting controller should be created with DuckPlayerView")
+        // Verify rounded sheet controller was created with correct configuration
+        guard let roundedSheetController = mockHostViewController.presentedViewController as? RoundedPageSheetContainerViewController else {
+            XCTFail("RoundedPageSheetContainerViewController should be presented")
             return
         }
-        XCTAssertFalse(hostingController.isModalInPresentation, "Should not be modal in presentation")
+        
+        // Verify the content controller is a hosting controller with DuckPlayerView
+        guard let hostingController = roundedSheetController.contentViewController as? UIHostingController<DuckPlayerView> else {
+            XCTFail("Content controller should be UIHostingController<DuckPlayerView>")
+            return
+        }
+        
 
         // Verify state was updated
         XCTAssertTrue(sut.state.hasBeenShown, "State should indicate DuckPlayer has been shown")
@@ -1677,6 +1683,227 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         // Then - Should receive constraint updates
         XCTAssertTrue(receivedUpdates.count >= 1, "Should receive at least one constraint update")
+    }
+
+    // MARK: - RoundedPageSheetContainerViewController Integration Tests
+
+    @MainActor
+    func testRoundedPageSheetIntegration_PresentsCorrectly() {
+        // Given
+        let videoID = "test123"
+        let source: DuckPlayer.VideoNavigationSource = .youtube
+        mockDuckPlayerSettings.welcomeMessageShown = true
+
+        // When
+        _ = sut.presentDuckPlayer(
+            videoID: videoID,
+            source: source,
+            in: mockHostViewController,
+            title: nil,
+            timestamp: nil
+        )
+
+        // Then
+        guard let roundedSheetController = mockHostViewController.presentedViewController as? RoundedPageSheetContainerViewController else {
+            XCTFail("Should present RoundedPageSheetContainerViewController")
+            return
+        }
+
+        // Verify modal presentation style is custom
+        XCTAssertEqual(roundedSheetController.modalPresentationStyle, .custom, "Should use custom modal presentation")
+
+        // Verify transitioning delegate is set
+        XCTAssertNotNil(roundedSheetController.transitioningDelegate, "Should have transitioning delegate")
+
+        // Verify the content view controller hierarchy
+        XCTAssertTrue(roundedSheetController.contentViewController is UIHostingController<DuckPlayerView>,
+                     "Content controller should be UIHostingController<DuckPlayerView>")
+    }
+
+    @MainActor
+    func testRoundedPageSheetDismissal_DoesNotRequireDelegate() {
+        // Given
+        let videoID = "test123"
+        let source: DuckPlayer.VideoNavigationSource = .youtube
+        mockDuckPlayerSettings.welcomeMessageShown = true
+
+        _ = sut.presentDuckPlayer(
+            videoID: videoID,
+            source: source,
+            in: mockHostViewController,
+            title: nil,
+            timestamp: nil
+        )
+
+        guard let roundedSheetController = mockHostViewController.presentedViewController as? RoundedPageSheetContainerViewController else {
+            XCTFail("Should present RoundedPageSheetContainerViewController")
+            return
+        }
+
+        // Verify delegate is nil since we don't need it
+        XCTAssertNil(roundedSheetController.delegate, "Delegate should not be set since dismissPublisher handles cleanup")
+
+        // When/Then - Dismissal should work through SwiftUI dismiss environment and dismissPublisher
+        // No additional delegate-based cleanup is needed
+        XCTAssertNotNil(sut.playerViewModel, "Player view model should exist and handle its own cleanup via dismissPublisher")
+    }
+
+    @MainActor
+    func testRoundedPageSheetStyling_AppliesCorrectAppearance() {
+        // Given
+        let videoID = "test123"
+        let source: DuckPlayer.VideoNavigationSource = .youtube
+        mockDuckPlayerSettings.welcomeMessageShown = true
+
+        // When
+        _ = sut.presentDuckPlayer(
+            videoID: videoID,
+            source: source,
+            in: mockHostViewController,
+            title: nil,
+            timestamp: nil
+        )
+
+        // Then
+        guard let roundedSheetController = mockHostViewController.presentedViewController as? RoundedPageSheetContainerViewController else {
+            XCTFail("Should present RoundedPageSheetContainerViewController")
+            return
+        }
+        
+        // Force view loading to trigger viewDidLoad and setup methods
+        _ = roundedSheetController.view
+
+        // Verify background view exists and is configured
+        XCTAssertEqual(roundedSheetController.backgroundView.backgroundColor, .black, "Background should be black")
+
+        // Verify content view controller background
+        guard let hostingController = roundedSheetController.contentViewController as? UIHostingController<DuckPlayerView> else {
+            XCTFail("Content controller should be UIHostingController<DuckPlayerView>")
+            return
+        }
+
+        XCTAssertEqual(hostingController.view.backgroundColor, .black, "Hosting controller background should be black")
+
+        // Verify the content view has rounded corners applied
+        // Note: Rounded corners are applied in the container's setupContentViewController method
+        XCTAssertEqual(hostingController.view.layer.cornerRadius, 20, "Content view should have 20pt corner radius")
+        XCTAssertEqual(hostingController.view.layer.maskedCorners, [.layerMinXMinYCorner, .layerMaxXMinYCorner], 
+                      "Should mask top corners only")
+        XCTAssertTrue(hostingController.view.clipsToBounds, "Should clip to bounds for rounded corners")
+    }
+
+    @MainActor
+    func testInteractiveDismissal_WithPanGesture() {
+        // Given
+        let videoID = "test123"
+        let source: DuckPlayer.VideoNavigationSource = .youtube
+        mockDuckPlayerSettings.welcomeMessageShown = true
+
+        _ = sut.presentDuckPlayer(
+            videoID: videoID,
+            source: source,
+            in: mockHostViewController,
+            title: nil,
+            timestamp: nil
+        )
+
+        guard let roundedSheetController = mockHostViewController.presentedViewController as? RoundedPageSheetContainerViewController else {
+            XCTFail("Should present RoundedPageSheetContainerViewController")
+            return
+        }
+
+        // Force view loading to trigger viewDidLoad and setup methods
+        _ = roundedSheetController.view
+
+        // When - Simulate pan gesture setup
+        let contentView = roundedSheetController.contentViewController.view!
+        let gestureRecognizers = contentView.gestureRecognizers ?? []
+
+        // Then - Should have pan gesture recognizer
+        let panGestures = gestureRecognizers.compactMap { $0 as? UIPanGestureRecognizer }
+        XCTAssertFalse(panGestures.isEmpty, "Content view should have pan gesture recognizer for interactive dismissal")
+
+        // Verify the pan gesture target is set correctly
+        if let panGesture = panGestures.first {
+            XCTAssertEqual(panGesture.minimumNumberOfTouches, 1, "Pan gesture should require minimum 1 touch")
+            XCTAssertEqual(panGesture.maximumNumberOfTouches, 1, "Pan gesture should allow maximum 1 touch")
+        }
+    }
+
+    @MainActor
+    func testRoundedPageSheetMemoryManagement_ProperlyCleansUp() {
+        // Given
+        let videoID = "test123"
+        let source: DuckPlayer.VideoNavigationSource = .youtube
+        mockDuckPlayerSettings.welcomeMessageShown = true
+
+        _ = sut.presentDuckPlayer(
+            videoID: videoID,
+            source: source,
+            in: mockHostViewController,
+            title: nil,
+            timestamp: nil
+        )
+
+        guard let roundedSheetController = mockHostViewController.presentedViewController as? RoundedPageSheetContainerViewController else {
+            XCTFail("Should present RoundedPageSheetContainerViewController")
+            return
+        }
+
+        // Verify no delegate is set (we don't need it)
+        XCTAssertNil(roundedSheetController.delegate, "Delegate should not be set")
+
+        // When - Simulate dismissal and cleanup
+        sut.cleanupPlayer()
+
+        // Then - Player view model should be cleaned up
+        XCTAssertNil(sut.playerViewModel, "Player view model should be nil after cleanup")
+
+        // Verify the rounded sheet controller continues to work without delegate dependency
+        XCTAssertNotNil(roundedSheetController.contentViewController, "Content controller should remain accessible")
+    }
+
+    @MainActor
+    func testRoundedPageSheetDismissal_TriggersReEntryPill() {
+        // Given
+        let videoID = "test123"
+        let source: DuckPlayer.VideoNavigationSource = .youtube
+        let timestamp: TimeInterval = 30
+        mockDuckPlayerSettings.welcomeMessageShown = true
+
+        // Present the DuckPlayer
+        _ = sut.presentDuckPlayer(
+            videoID: videoID,
+            source: source,
+            in: mockHostViewController,
+            title: nil,
+            timestamp: timestamp
+        )
+
+        // Verify initial state
+        XCTAssertTrue(sut.state.hasBeenShown, "State should indicate DuckPlayer has been shown")
+        XCTAssertNil(sut.containerViewController, "Pill container should not exist while DuckPlayer is shown")
+
+        // When - Simulate DuckPlayer dismissal by triggering the dismiss publisher
+        guard let playerViewModel = sut.playerViewModel else {
+            XCTFail("Player view model should exist")
+            return
+        }
+
+        // Simulate the view disappearing and dismiss publisher firing
+        playerViewModel.dismissPublisher.send(timestamp)
+
+        // Wait for the delayed pill presentation
+        let expectation = XCTestExpectation(description: "Pill should be presented after dismissal")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then - Should present re-entry pill
+        XCTAssertNotNil(sut.containerViewController, "Pill container should be created after dismissal")
+        XCTAssertEqual(sut.state.timestamp, timestamp, "State should preserve the timestamp")
+        XCTAssertTrue(sut.duckPlayerSettings.welcomeMessageShown, "Welcome message should be marked as shown")
     }
     
 }

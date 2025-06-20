@@ -1788,7 +1788,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Verify the content view has rounded corners applied
         // Note: Rounded corners are applied in the container's setupContentViewController method
         XCTAssertEqual(hostingController.view.layer.cornerRadius, 20, "Content view should have 20pt corner radius")
-        XCTAssertEqual(hostingController.view.layer.maskedCorners, [.layerMinXMinYCorner, .layerMaxXMinYCorner], 
+        XCTAssertEqual(hostingController.view.layer.maskedCorners, [.layerMinXMinYCorner, .layerMaxXMinYCorner],
                       "Should mask top corners only")
         XCTAssertTrue(hostingController.view.clipsToBounds, "Should clip to bounds for rounded corners")
     }
@@ -2105,9 +2105,9 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1.0)
-        
+
         // Then - Settings should not be updated because presenter was released
-        XCTAssertEqual(mockDuckPlayerSettings.welcomeMessageShown, initialWelcomeShown, 
+        XCTAssertEqual(mockDuckPlayerSettings.welcomeMessageShown, initialWelcomeShown,
                       "Settings should not be updated when presenter is released")
     }
 

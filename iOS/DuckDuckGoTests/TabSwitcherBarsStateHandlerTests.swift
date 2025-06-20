@@ -36,6 +36,24 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         super.tearDown()
     }
 
+    func testWhenNoPagesThenEditButtonVisibleButDisabled() {
+        stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 1, containsWebPages: false, showAIChatButton: true)
+
+        XCTAssertEqual(stateHandler.bottomBarItems, [
+            stateHandler.tabSwitcherStyleButton,
+            UIBarButtonItem.flexibleSpace(),
+            UIBarButtonItem.fixedSpace(11),
+            UIBarButtonItem.flexibleSpace(),
+            stateHandler.fireButton,
+            UIBarButtonItem.flexibleSpace(),
+            stateHandler.plusButton,
+            UIBarButtonItem.flexibleSpace(),
+            stateHandler.editButton
+        ])
+        XCTAssertFalse(stateHandler.isBottomBarHidden)
+        XCTAssertFalse(stateHandler.editButton.isEnabled)
+    }
+
     func testWhenDuckChatEnabledThenBottomBarItemsAreSetCorrectly() {
         stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: true, showAIChatButton: true)
 
@@ -51,6 +69,7 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
             stateHandler.editButton
         ])
         XCTAssertFalse(stateHandler.isBottomBarHidden)
+        XCTAssertTrue(stateHandler.editButton.isEnabled)
     }
 
     func testWhenInterfaceModeIsEditingRegularSizeThenBottomBarItemsAreSetCorrectly() {

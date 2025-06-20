@@ -2006,7 +2006,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         // Then - State should NOT be updated because hostView is nil
         XCTAssertEqual(sut.state.timestamp, stateBeforeDismissal, "State timestamp should not be updated when hostView is nil")
-        XCTAssertEqual(mockDuckPlayerSettings.welcomeMessageShown, settingsBeforeDismissal, 
+        XCTAssertEqual(mockDuckPlayerSettings.welcomeMessageShown, settingsBeforeDismissal,
                       "Welcome message setting should not be updated when hostView is nil")
         
         // Verify no re-entry pill is presented

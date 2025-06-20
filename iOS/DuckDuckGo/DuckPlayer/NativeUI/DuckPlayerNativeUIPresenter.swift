@@ -710,20 +710,22 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // General Dismiss Publisher
         viewModel.dismissPublisher
             .sink { [weak self] timestamp in
-                guard let self = self else { return }
+                guard let self = self,
+                      self.hostView != nil,
+                      self.state.videoID != nil else { return }
+
+                // Update state and settings only when we have a valid hostView
+                self.state.timestamp = timestamp
+                self.duckPlayerSettings.welcomeMessageShown = true
+
+                // Notify DuckPlayer to store this timestamp for re-entry pills
+                self.duckPlayerTimestampUpdate.send(timestamp)
 
                 // Schedule pill presentation after a short delay to ensure view is dismissed
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                     guard let self = self, 
                           let hostView = self.hostView,
                           let currentVideoID = self.state.videoID else { return }
-
-                    // Update state only after we confirm we can present the pill
-                    self.state.timestamp = timestamp
-                    self.duckPlayerSettings.welcomeMessageShown = true
-
-                    // Notify DuckPlayer to store this timestamp for re-entry pills
-                    self.duckPlayerTimestampUpdate.send(timestamp)
 
                     self.presentPill(for: currentVideoID, in: hostView, timestamp: timestamp)
                     self.containerViewModel?.show()

@@ -588,23 +588,24 @@ extension TabSwitcherViewController: UIScrollViewDelegate {
         view.subviews.filter { $0.layer.name == Self.bottomShadowLayerName }.forEach { $0.removeFromSuperview() }
     }
 
+    // Disable for the ship review
     func updateShadowsForScrollView(_ scrollView: UIScrollView) {
-
-        let offsetY = scrollView.contentOffset.y
-        let contentHeight = scrollView.contentSize.height
-        let containerHeight = scrollView.frame.height
-
-        if offsetY > 0 {
-            enableTopShadows()
-        } else {
-            disableTopShadows()
-        }
-
-        if contentHeight - offsetY > containerHeight {
-            enableBottomShadows()
-        } else {
-            disableBottomShadows()
-        }
+//
+//        let offsetY = scrollView.contentOffset.y
+//        let contentHeight = scrollView.contentSize.height
+//        let containerHeight = scrollView.frame.height
+//
+//        if offsetY > 0 {
+//            enableTopShadows()
+//        } else {
+//            disableTopShadows()
+//        }
+//
+//        if contentHeight - offsetY > containerHeight {
+//            enableBottomShadows()
+//        } else {
+//            disableBottomShadows()
+//        }
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {

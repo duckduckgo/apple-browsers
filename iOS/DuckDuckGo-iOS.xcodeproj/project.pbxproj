@@ -1201,7 +1201,7 @@
 		9F3C7FE22D7990E50061FA72 /* DefaultBrowserManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3C7FE12D7990DE0061FA72 /* DefaultBrowserManager.swift */; };
 		9F3DF7902D7EACAD00857D06 /* CheckDefaultBrowserServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3DF78F2D7EACAD00857D06 /* CheckDefaultBrowserServiceTests.swift */; };
 		9F454D1A2E051CC800B8CC5A /* DefaultBrowserPromptFeatureFlagAdapters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F454D192E051CBE00B8CC5A /* DefaultBrowserPromptFeatureFlagAdapters.swift */; };
-		9F454D222E0540B100B8CC5A /* SetDefaultBrowserCore in Frameworks */ = {isa = PBXBuildFile; productRef = 9F454D212E0540B100B8CC5A /* SetDefaultBrowserCore */; };
+		9F454D242E05489200B8CC5A /* SetDefaultBrowserCore in Frameworks */ = {isa = PBXBuildFile; productRef = 9F454D232E05489200B8CC5A /* SetDefaultBrowserCore */; };
 		9F465E1E2D3F5C2E00490109 /* Logger+MaliciousSiteProtection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F465E1D2D3F5C2700490109 /* Logger+MaliciousSiteProtection.swift */; };
 		9F465E2A2D41B61900490109 /* MaliciousSiteProtectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F465E292D41B61300490109 /* MaliciousSiteProtectionService.swift */; };
 		9F46BEF82CD8D7490092E0EF /* OnboardingView+AddToDockContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F46BEF72CD8D7490092E0EF /* OnboardingView+AddToDockContent.swift */; };
@@ -3999,7 +3999,6 @@
 				4BC95E7D2D7416B2002FAB32 /* Onboarding in Frameworks */,
 				853273B624FFE0BB00E3C778 /* WidgetKit.framework in Frameworks */,
 				0238E44F29C0FAA100615E30 /* FindInPageIOSJSSupport in Frameworks */,
-				9F454D222E0540B100B8CC5A /* SetDefaultBrowserCore in Frameworks */,
 				56D7792C2CFF476800B619EF /* StoreKit.framework in Frameworks */,
 				3760DFED299315EF0045A446 /* Waitlist in Frameworks */,
 				BB631D162DE0D9020099977D /* DesignResourcesKitIcons in Frameworks */,
@@ -4012,6 +4011,7 @@
 				4BC95E7F2D7416C1002FAB32 /* PrivacyDashboard in Frameworks */,
 				31E69A63280F4CB600478327 /* DuckUI in Frameworks */,
 				F42D541D29DCA40B004C4FF1 /* DesignResourcesKit in Frameworks */,
+				9F454D242E05489200B8CC5A /* SetDefaultBrowserCore in Frameworks */,
 				9FDD72052D895D8C0016246B /* CombineSchedulers in Frameworks */,
 				9F254AF12CF8D5250063B308 /* MaliciousSiteProtection in Frameworks */,
 				F4D7F634298C00C3006C3AE9 /* FindInPageIOSJSSupport in Frameworks */,
@@ -8624,7 +8624,7 @@
 				316AC7862DC28DD1003D9770 /* UIComponents */,
 				BB631D152DE0D9020099977D /* DesignResourcesKitIcons */,
 				7BC26C9F2DFC0CAC00E52480 /* VPN */,
-				9F454D212E0540B100B8CC5A /* SetDefaultBrowserCore */,
+				9F454D232E05489200B8CC5A /* SetDefaultBrowserCore */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -14554,6 +14554,10 @@
 		9F254AF02CF8D5250063B308 /* MaliciousSiteProtection */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MaliciousSiteProtection;
+		};
+		9F454D232E05489200B8CC5A /* SetDefaultBrowserCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SetDefaultBrowserCore;
 		};
 		9F8FE9482BAE50E50071E372 /* Lottie */ = {
 			isa = XCSwiftPackageProductDependency;

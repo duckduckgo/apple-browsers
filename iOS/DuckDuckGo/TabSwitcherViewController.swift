@@ -260,8 +260,13 @@ class TabSwitcherViewController: UIViewController {
         collectionView.dragInteractionEnabled = true
         collectionView.dragDelegate = self
         collectionView.dropDelegate = self
-
+        
         updateUIForSelectionMode()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        updateShadowsForScrollView(collectionView)
     }
 
     func prepareForPresentation() {
@@ -511,6 +516,100 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
         }
 
         return configuration
+    }
+
+}
+
+// UIScrollViewDelegate is included as part of the UICollectionView delegate
+extension TabSwitcherViewController: UIScrollViewDelegate {
+
+    static let topShadowLayerName = "topShadow"
+    static let bottomShadowLayerName = "bottomShadow"
+
+    func enableTopShadows(animated: Bool = true) {
+        guard !appSettings.currentAddressBarPosition.isBottom else { return }
+        guard !view.subviews.contains(where: { $0.layer.name == Self.topShadowLayerName }) else { return }
+
+        let shadowView = UIView()
+        shadowView.backgroundColor = .red
+
+        shadowView.layer.name = Self.topShadowLayerName
+        view.addSubview(shadowView)
+
+        shadowView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            shadowView.topAnchor.constraint(equalTo: titleBarView.bottomAnchor),
+            shadowView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            shadowView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            shadowView.heightAnchor.constraint(equalToConstant: 50)
+        ])
+
+        if animated {
+            shadowView.alpha = 0.0
+            UIView.animate(withDuration: 0.3) {
+                shadowView.alpha = 1.0
+            }
+        }
+    }
+
+    func disableTopShadows() {
+        view.subviews.filter { $0.layer.name == Self.topShadowLayerName }.forEach { $0.removeFromSuperview() }
+    }
+
+    func enableBottomShadows(animated: Bool = true) {
+        guard let bottomView = appSettings.currentAddressBarPosition.isBottom ? titleBarView : toolbar else {
+            assertionFailure()
+            return
+        }
+
+        let shadowView = UIView()
+        shadowView.backgroundColor = .green
+
+        shadowView.layer.name = Self.bottomShadowLayerName
+        view.addSubview(shadowView)
+
+        shadowView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            shadowView.bottomAnchor.constraint(equalTo: bottomView.topAnchor),
+            shadowView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            shadowView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            shadowView.heightAnchor.constraint(equalToConstant: 50)
+        ])
+
+        if animated {
+            shadowView.alpha = 0.0
+            UIView.animate(withDuration: 0.3) {
+                shadowView.alpha = 1.0
+            }
+        }
+    }
+
+    func disableBottomShadows() {
+        view.subviews.filter { $0.layer.name == Self.bottomShadowLayerName }.forEach { $0.removeFromSuperview() }
+    }
+
+    func updateShadowsForScrollView(_ scrollView: UIScrollView) {
+
+        let offsetY = scrollView.contentOffset.y
+        let contentHeight = scrollView.contentSize.height
+        let containerHeight = scrollView.frame.height
+
+        if offsetY > 0 {
+            enableTopShadows()
+        } else {
+            disableTopShadows()
+        }
+
+        if contentHeight - offsetY > containerHeight {
+            enableBottomShadows()
+        } else {
+            disableBottomShadows()
+        }
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        print("***", #function, scrollView.contentOffset, scrollView.contentSize)
+        updateShadowsForScrollView(scrollView)
     }
 
 }

@@ -534,6 +534,9 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatDividerVisibility() {
+        // Prevent crash if Combine subscriptions outlive view lifecycle
+        guard isViewLoaded else { return }
+
         leadingAIChatDivider.isHidden = aiChatButton.isHidden || bookmarkButton.isHidden
         trailingAIChatDivider.isHidden = aiChatButton.isHidden || cancelButton.isHidden
     }

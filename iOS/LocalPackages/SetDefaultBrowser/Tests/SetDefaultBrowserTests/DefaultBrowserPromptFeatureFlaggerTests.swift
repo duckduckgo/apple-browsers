@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserAndDockPromptFeatureFlaggerTests.swift
+//  DefaultBrowserPromptFeatureFlaggerTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -23,7 +23,7 @@ import SetDefaultBrowserTestSupport
 @testable import SetDefaultBrowserCore
 
 @Suite("Set Default Browser - Prompt Feature Flag")
-struct DefaultBrowserAndDockPromptFeatureFlaggerTests {
+struct DefaultBrowserPromptFeatureFlaggerTests {
     let mockFeatureFlagSettingsProvider = MockDefaultBrowserPromptFeatureFlagsSettingsProvider()
     let mockFeatureFlagProvider = MockDefaultBrowserPromptFeatureFlagProvider()
 

@@ -34,7 +34,7 @@ public protocol DefaultBrowserPromptFeatureFlagSettingsProvider {
 enum DefaultBrowserPromptFeatureSettings: String {
     /// The setting for the number of days to wait after app installation before showing the first modal. Default to 1 day..
     case firstModalDelayDays
-    /// The setting for the number of days to wait after the popover has been shown before displaying the banner. Default to 14 days.
+    /// The setting for the number of days to wait after the popover has been shown before displaying the banner. Default to 4 days.
     case secondModalDelayDays
     /// The settings for the number of days between subsequent displays of the banner. Default to 14 days.
     case subsequentModalRepeatIntervalDays

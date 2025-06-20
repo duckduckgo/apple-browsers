@@ -527,14 +527,30 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     private func addSubscriptionAndFreemiumDBPItems() {
-        addSubscriptionItems()
-        addFreemiumDBPItem()
+        let subscriptionItem = getSubscriptionItem()
+        let freemiumItem = getFreemiumDBPItem()
 
-        addItem(NSMenuItem.separator())
+        var itemsWereAdded = false
+        if let subscriptionItem = subscriptionItem {
+            addItem(subscriptionItem)
+            itemsWereAdded = true
+        }
+
+        if let freemiumItem = freemiumItem {
+            if itemsWereAdded {
+                addItem(NSMenuItem.separator())
+            }
+            addItem(freemiumItem)
+            itemsWereAdded = true
+        }
+
+        if itemsWereAdded {
+            addItem(NSMenuItem.separator())
+        }
     }
 
     @MainActor
-    private func addSubscriptionItems() {
+    private func getSubscriptionItem() -> NSMenuItem? {
         func shouldHideDueToNoProduct() -> Bool {
             let platform = subscriptionManager.currentEnvironment.purchasePlatform
             return platform == .appStore && subscriptionManager.canPurchase == false
@@ -562,7 +578,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
             // Do not add for App Store when purchase not available in the region
             if !shouldHideDueToNoProduct() {
-                addItem(privacyProItem)
+                return privacyProItem
             }
         } else {
             let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
@@ -573,13 +589,14 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                          subscriptionManager: subscriptionManager,
                                                          moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider,
                                                          featureFlagger: featureFlagger)
-            addItem(privacyProItem)
+            return privacyProItem
         }
+        return nil
     }
 
     @MainActor
-    private func addFreemiumDBPItem() {
-        guard freemiumDBPFeature.isAvailable else { return }
+    private func getFreemiumDBPItem() -> NSMenuItem? {
+        guard freemiumDBPFeature.isAvailable else { return nil }
 
         let freemiumDBPItem = NSMenuItem(title: UserText.freemiumDBPOptionsMenuItem)
             .withImage(moreOptionsMenuIconsProvider.personalInformationRemovalIcon)
@@ -587,7 +604,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         freemiumDBPItem.target = self
         freemiumDBPItem.action = #selector(openFreemiumDBP(_:))
 
-        addItem(freemiumDBPItem)
+        return freemiumDBPItem
     }
 
     @MainActor

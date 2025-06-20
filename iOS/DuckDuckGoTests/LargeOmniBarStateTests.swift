@@ -45,6 +45,21 @@ class LargeOmniBarStateTests: XCTestCase {
         super.tearDown()
     }
 
+    func testWhenLargeEditingAndVisualUpdatesThenDontShowSearchLoupe() {
+        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.visualUpdates])
+
+        let testee = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
+        XCTAssertFalse(testee.showSearchLoupe)
+    }
+
+    func testWhenLargeEditingAndNotVisualUpdatesThenShowSearchLoupe() {
+        let testee = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: enabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
+        XCTAssertFalse(testee.showSearchLoupe)
+
+        let testee2 = LargeOmniBarState.BrowsingTextEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
+        XCTAssertTrue(testee2.showSearchLoupe)
+    }
+
     func testWhenInHomeEmptyEditingStateWithoutVoiceSearchThenCorrectButtonsAreShown() {
         let testee = LargeOmniBarState.HomeEmptyEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
 

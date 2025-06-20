@@ -474,6 +474,11 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     ///   - timestamp: The timestamp of the video
     @MainActor
     func presentPill(for videoID: String, in hostViewController: DuckPlayerHosting, timestamp: TimeInterval?) {
+        
+        if duckPlayerSettings.nativeUIYoutubeMode == .never {
+            return
+        }
+
         // Store the videoID & Update State
         if state.videoID != videoID {
             state.hasBeenShown = false

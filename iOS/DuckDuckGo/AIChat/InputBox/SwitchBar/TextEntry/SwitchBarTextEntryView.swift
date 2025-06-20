@@ -19,6 +19,7 @@
 
 import UIKit
 import Combine
+import DesignResourcesKitIcons
 
 class SwitchBarTextEntryView: UIView {
 
@@ -88,13 +89,13 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.numberOfLines = 0
 
         // Setup clear button
-        clearButton.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        clearButton.setImage(DesignSystemImages.Glyphs.Size24.clear, for: .normal)
         clearButton.tintColor = UIColor.systemGray
         clearButton.isHidden = true
         clearButton.addTarget(self, action: #selector(clearButtonTapped), for: .touchUpInside)
 
         // Setup microphone button
-        microphoneButton.setImage(UIImage(systemName: "mic.fill"), for: .normal)
+        microphoneButton.setImage(DesignSystemImages.Glyphs.Size24.microphone, for: .normal)
         microphoneButton.tintColor = UIColor.systemGray
         microphoneButton.isHidden = !handler.isVoiceSearchEnabled  // Initially visible when no text and voice search is enabled
         microphoneButton.addTarget(self, action: #selector(microphoneButtonTapped), for: .touchUpInside)

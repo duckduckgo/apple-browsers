@@ -79,12 +79,15 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
             enum State: String {
                 case added
                 case removed
+                case changed
             }
 
-            let state: State // Assumption: The array of entitlements is always complete or empty, we don't have known cases of partial set of entitlements
+            let state: State
             switch (self.previousEntitlements.isEmpty, entitlements.isEmpty) {
             case (true, false): state = .added
             case (false, true): state = .removed
+            case (false, false) where self.previousEntitlements.count != entitlements.count:
+                state = .changed
             default:
                 Logger.subscription.fault("Unexpected state")
                 return

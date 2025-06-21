@@ -17732,7 +17732,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Your session won't be restored if data is cleared when exiting."
+            "value" : "Your session won't be restored if data is deleted when exiting."
           }
         },
         "es" : {

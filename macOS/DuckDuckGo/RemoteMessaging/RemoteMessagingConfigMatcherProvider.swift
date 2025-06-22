@@ -111,6 +111,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let activationDateStore = DefaultWaitlistActivationDateStore(source: .netP)
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1
 
+        let autofillUsageStore = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
+
         var privacyProDaysSinceSubscribed = -1
         var privacyProDaysUntilExpiry = -1
         var isPrivacyProSubscriptionActive = false
@@ -142,13 +144,15 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
                 statisticsStore: statisticsStore,
                 vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
-                subscription: subscription
+                subscription: subscription,
+                autofillUsageStore: autofillUsageStore
             )
         } catch {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
                 statisticsStore: statisticsStore,
                 vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
-                subscription: nil
+                subscription: nil,
+                autofillUsageStore: autofillUsageStore
             )
         }
 

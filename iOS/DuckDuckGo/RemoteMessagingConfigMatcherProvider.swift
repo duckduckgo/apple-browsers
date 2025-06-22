@@ -72,6 +72,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
         let activationDateStore = DefaultVPNActivationDateStore()
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1
+        let autofillUsageStore = AutofillUsageStore()
 
         var privacyProDaysSinceSubscribed: Int = -1
         var privacyProDaysUntilExpiry: Int = -1
@@ -107,11 +108,13 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: subscription)
+                                                                        subscription: subscription,
+                                                                        autofillUsageStore: autofillUsageStore)
         } else {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: nil)
+                                                                        subscription: nil,
+                                                                        autofillUsageStore: autofillUsageStore)
         }
 
         let dismissedMessageIds = store.fetchDismissedRemoteMessageIDs()

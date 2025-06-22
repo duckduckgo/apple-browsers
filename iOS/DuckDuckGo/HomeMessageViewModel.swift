@@ -141,7 +141,8 @@ struct HomeMessageViewModel {
             }
         case .survey(let value):
             return { @MainActor in
-                LaunchTabNotification.postLaunchTabNotification(urlString: value)
+                let refreshedUrl = refreshLastSearchState(in: value)
+                LaunchTabNotification.postLaunchTabNotification(urlString: refreshedUrl)
                 await onDidClose(buttonAction)
             }
         case .appStore:
@@ -163,6 +164,12 @@ struct HomeMessageViewModel {
                 await onDidClose(buttonAction)
             }
         }
+    }
+    
+    /// If `last_search_state` is present, refresh before opening URL
+    private func refreshLastSearchState(in urlString: String) -> String {
+        let lastSearchDate = AutofillUsageStore().searchDauDate
+        return DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState(in: urlString, lastSearchDate: lastSearchDate)
     }
 }
 

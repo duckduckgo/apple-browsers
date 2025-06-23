@@ -338,6 +338,8 @@ extension DataBrokerProtectionIOSManager: DBPUIViewModelDelegate {
 extension DataBrokerProtectionIOSManager {
 
     public static var isDBPStaticallyEnabled: Bool {
+        // Temporarily enable just to make a build for Ben, if this is still here more than an hour after the commit, it shouldn't be
+        return true
 #if DEBUG || ALPHA
         return true
 #else

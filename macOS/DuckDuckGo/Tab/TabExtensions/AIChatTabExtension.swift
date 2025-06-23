@@ -46,7 +46,7 @@ final class AIChatTabExtension {
                     self?.aiChatUserScript?.handler.messageHandling.setData(payload, forMessageType: .nativeHandoffData)
                     self?.temporaryAIChatNativeHandoffData = nil
                 }
-                
+
                 if let data = self?.temporaryAIChatRestorationData {
                     self?.aiChatUserScript?.handler.messageHandling.setData(data, forMessageType: .chatRestorationData)
                     self?.temporaryAIChatRestorationData = nil

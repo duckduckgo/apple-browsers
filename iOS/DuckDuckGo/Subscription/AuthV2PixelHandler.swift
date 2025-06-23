@@ -75,7 +75,9 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
         }.store(in: &cancellables)
 
         // Intercepting and sending a pixel every time a set of entitlements change. We are only interested in changes between full > empty. Any other combination is not possible
-        notificationCenter.publisher(for: .entitlementsDidChange).sink { notification in
+        notificationCenter.publisher(for: .entitlementsDidChange).sink { [weak self] notification in
+
+            guard let self else { return }
 
             guard (notification.object as? SubscriptionManagerV2) != nil else {
                 // Sending pixel only for user entitlements, ignoring the Subscription entitlements coming from DefaultSubscriptionEndpointServiceV2
@@ -104,8 +106,8 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
                 return
             }
 
-            let params = [Defaults.entitlementsStateKey: state.rawValue].merging(self.sourceParam) { (_, new) in new } as? [String: String]
-            DailyPixel.fireDailyAndCount(pixel: .privacyProEntitlementsDidChange, withAdditionalParameters: params ?? [:])
+            let params = [Defaults.entitlementsStateKey: state.rawValue].merging(self.sourceParam) { (_, new) in new }
+            DailyPixel.fireDailyAndCount(pixel: .privacyProEntitlementsDidChange, withAdditionalParameters: params)
             self.previousEntitlements = entitlements
         }.store(in: &cancellables)
     }

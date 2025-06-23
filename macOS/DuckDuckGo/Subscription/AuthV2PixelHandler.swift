@@ -53,11 +53,13 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
     public init(source: Source) {
         self.source = source
 
-        notificationCenter.publisher(for: .subscriptionDidChange).sink { param in
+        notificationCenter.publisher(for: .subscriptionDidChange).sink { [weak self] param in
+
+            guard let self else { return }
 
             guard let userInfo = param.userInfo as? [AnyHashable: PrivacyProSubscription],
                   let subscription = userInfo[UserDefaultsCacheKey.subscription] else {
-                PixelKit.fire(PrivacyProPixel.privacyProSubscriptionMissing(source), frequency: .dailyAndCount)
+                PixelKit.fire(PrivacyProPixel.privacyProSubscriptionMissing(self.source), frequency: .dailyAndCount)
                 return
             }
 

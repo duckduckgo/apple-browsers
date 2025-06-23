@@ -106,14 +106,15 @@ final class VPNAppEventsHandler {
                     restartLoginItem(using: loginItemsManager)
                 }
             case .some(false) where loginItemsManager.isAnyInstalled(LoginItemsManager.vpnLoginItems):
-                Task {
-                    ipcClient.stop { error in
-                        if let error {
-                            self.pixelKit?.fire(LoginItemsControlCheckpointPixel.cannotStopVPN(error))
-                        }
+                ipcClient.stop { error in
+                    if let error {
+                        self.pixelKit?.fire(LoginItemsControlCheckpointPixel.cannotStopVPN(error))
                     }
-                    try await Task.sleep(interval: .seconds(2))
-                    self.disableLoginItem(using: loginItemsManager)
+
+                    Task {
+                        try await Task.sleep(interval: .seconds(2))
+                        self.disableLoginItem(using: loginItemsManager)
+                    }
                 }
             default:
                 break

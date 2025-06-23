@@ -152,7 +152,7 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
         switch daysApart {
         case 0...1:
             return "day"
-        case 2...6:
+        case 2...7:
             return "week"
         default:
             return "none"

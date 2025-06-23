@@ -97,9 +97,9 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?last_search_state=none")
     }
 
-    func testAddingLastSearchStateNoneWhenLastSearchExactlySevenDaysAgo() {
-        let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
-        let builder = buildRemoteMessagingSurveyURLBuilder(lastSearchDate: sevenDaysAgo)
+    func testAddingLastSearchStateNoneWhenLastSearchExactlyEightDaysAgo() {
+        let eightDaysAgo = Calendar.current.date(byAdding: .day, value: -8, to: Date())!
+        let builder = buildRemoteMessagingSurveyURLBuilder(lastSearchDate: eightDaysAgo)
         let baseURL = URL(string: "https://duckduckgo.com")!
         let finalURL = builder.add(parameters: [.lastSearchState], to: baseURL)
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?last_search_state=none")

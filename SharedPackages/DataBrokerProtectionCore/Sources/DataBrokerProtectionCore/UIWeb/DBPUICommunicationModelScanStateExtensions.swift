@@ -199,7 +199,7 @@ private extension Array where Element == BrokerProfileQueryData {
         let sortedElements = elementsSortedByScanLastRunDateWhereScansRanBetween(earlierDate: earlierDate,
                                                                                  laterDate: laterDate)
 
-        // Filter down to brokers and relevent mirror sites
+        // Filter down to brokers and relevant mirror sites
         let brokers = sortedElements.flatMap { queryData in
             let dataBroker = queryData.dataBroker
             let lastRunDate = queryData.scanJobData.lastRunDate!

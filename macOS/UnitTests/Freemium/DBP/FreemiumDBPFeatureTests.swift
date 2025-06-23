@@ -32,6 +32,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockFreemiumDBPUserStateManagerManager: MockFreemiumDBPUserStateManager!
     private var mockFeatureDisabler: MockFeatureDisabler!
+    private var mockStorePurchaseManager: StorePurchaseManagerMock!
+    private var testUserDefaults: UserDefaults!
 
     private var cancellables: Set<AnyCancellable> = []
 
@@ -41,7 +43,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         mockAccountManager = MockAccountManager()
         let mockSubscriptionService = SubscriptionEndpointServiceMock()
         let mockAuthService = AuthEndpointServiceMock()
-        let mockStorePurchaseManager = StorePurchaseManagerMock()
+        mockStorePurchaseManager = StorePurchaseManagerMock()
         let mockSubscriptionFeatureMappingCache = SubscriptionFeatureMappingCacheMock()
 
         let currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
@@ -58,6 +60,16 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         mockFreemiumDBPUserStateManagerManager = MockFreemiumDBPUserStateManager()
         mockFeatureDisabler = MockFeatureDisabler()
 
+        // Create isolated UserDefaults for testing
+        testUserDefaults = UserDefaults(suiteName: "FreemiumDBPFeatureTests-\(UUID().uuidString)")!
+    }
+
+    override func tearDownWithError() throws {
+        // Clean up test UserDefaults by removing the specific key we use
+        testUserDefaults.removeObject(forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
+        testUserDefaults.removeObject(forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride)
+        testUserDefaults = nil
+        try super.tearDownWithError()
     }
 
     func testWhenPrivacyProNotAvailable_thenFreemiumDBPIsNotAvailable() throws {
@@ -68,7 +80,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
         // When
         let result = sut.isAvailable
 
@@ -84,7 +97,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
         // When
         let result = sut.isAvailable
 
@@ -100,7 +114,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
         // When
         let result = sut.isAvailable
 
@@ -119,7 +134,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
 
         // Then
         XCTAssertFalse(mockFeatureDisabler.disableAndDeleteWasCalled)
@@ -135,7 +151,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
 
         // When
         sut.subscribeToDependencyUpdates()
@@ -156,7 +173,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
 
         // When
         sut.subscribeToDependencyUpdates()
@@ -178,7 +196,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
 
         // Then
         XCTAssertTrue(mockFreemiumDBPUserStateManagerManager.didActivate)
@@ -196,7 +215,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
 
         // Then
         XCTAssertTrue(mockFreemiumDBPUserStateManagerManager.didActivate)
@@ -214,7 +234,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
 
         XCTAssertFalse(sut.isAvailable)
 
@@ -247,7 +268,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
 
         XCTAssertTrue(sut.isAvailable)
 
@@ -280,7 +302,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
 
         XCTAssertTrue(sut.isAvailable)
 
@@ -313,7 +336,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         subscriptionManager: mockSubscriptionManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-                                        featureDisabler: mockFeatureDisabler)
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
 
         XCTAssertFalse(sut.isAvailable)
 
@@ -346,7 +370,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             subscriptionManager: mockSubscriptionManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-            featureDisabler: mockFeatureDisabler
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
         )
 
         let expectation = XCTestExpectation(description: "isAvailablePublisher emits when canPurchase changes")
@@ -382,7 +407,8 @@ final class FreemiumDBPFeatureTests: XCTestCase {
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             subscriptionManager: mockSubscriptionManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
-            featureDisabler: mockFeatureDisabler
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
         )
 
         let expectation = XCTestExpectation(description: "isAvailablePublisher does not emit on canPurchase change for non-appStore")
@@ -402,6 +428,373 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
         // Then
         wait(for: [expectation], timeout: 1.0)
+    }
+
+    @available(macOS 12.0, *)
+    func testWhenStorefrontIsUSA_andCanPurchase_andNotSubscribed_thenIsAvailable() throws {
+        // Given
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
+        mockSubscriptionManager.canPurchase = true
+        mockAccountManager.accessToken = nil
+        mockStorePurchaseManager.currentStorefrontRegion = .usa
+        let currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        mockSubscriptionManager.currentEnvironment = currentEnvironment
+
+        sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                        subscriptionManager: mockSubscriptionManager,
+                                        freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
+        // When
+        let result = sut.isAvailable
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
+    @available(macOS 12.0, *)
+    func testWhenStorefrontIsNotUSA_andCanPurchase_andNotSubscribed_thenIsNotAvailable() throws {
+        // Given
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
+        mockSubscriptionManager.canPurchase = true
+        mockAccountManager.accessToken = nil
+        mockStorePurchaseManager.currentStorefrontRegion = .restOfWorld
+        let currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        mockSubscriptionManager.currentEnvironment = currentEnvironment
+
+        sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                        subscriptionManager: mockSubscriptionManager,
+                                        freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
+        // When
+        let result = sut.isAvailable
+
+        // Then
+        XCTAssertFalse(result)
+    }
+
+    @available(macOS 12.0, *)
+    func testWhenPlatformIsStripe_thenStorefrontIsIgnoredAndIsAvailable() throws {
+        // Given
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
+        mockSubscriptionManager.canPurchase = true
+        mockAccountManager.accessToken = nil
+        mockStorePurchaseManager.currentStorefrontRegion = .restOfWorld
+        let currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        mockSubscriptionManager.currentEnvironment = currentEnvironment
+
+        sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                        subscriptionManager: mockSubscriptionManager,
+                                        freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+                                        featureDisabler: mockFeatureDisabler,
+                                        userDefaults: testUserDefaults)
+        // When
+        let result = sut.isAvailable
+
+        // Then
+        XCTAssertTrue(result)
+    }
+
+    // MARK: - Override Functionality Tests
+
+    func testWhenFeatureFlagOverrideIsSetToTrue_thenIsAvailableIsTrue() {
+        // Given
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false } // Real value is false
+        mockSubscriptionManager.canPurchase = true
+        mockAccountManager.accessToken = nil
+        mockStorePurchaseManager.currentStorefrontRegion = .usa
+
+        // Set override to true
+        testUserDefaults.set(true, forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
+        )
+
+        // When
+        let result = sut.isAvailable
+
+        // Then
+        XCTAssertTrue(result, "Override should make feature available even when privacy config is disabled")
+    }
+
+    func testWhenFeatureFlagOverrideIsSetToFalse_thenIsAvailableIsFalse() {
+        // Given
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true } // Real value is true
+        mockSubscriptionManager.canPurchase = true
+        mockAccountManager.accessToken = nil
+        mockStorePurchaseManager.currentStorefrontRegion = .usa
+
+        // Set override to false
+        testUserDefaults.set(false, forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
+        )
+
+        // When
+        let result = sut.isAvailable
+
+        // Then
+        XCTAssertFalse(result, "Override should make feature unavailable even when privacy config is enabled")
+    }
+
+    func testWhenNoOverrideIsSet_thenRealFeatureFlagValueIsUsed() {
+        // Given
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
+        mockSubscriptionManager.canPurchase = true
+        mockAccountManager.accessToken = nil
+        mockStorePurchaseManager.currentStorefrontRegion = .usa
+
+        // No override set in UserDefaults
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
+        )
+
+        // When
+        let result = sut.isAvailable
+
+        // Then
+        XCTAssertTrue(result, "Should use real privacy config value when no override is set")
+    }
+
+    @available(macOS 12.0, *)
+    func testWhenStorefrontOverrideIsSetToTrue_thenIsAvailableIsTrue() {
+        // Given
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
+        mockSubscriptionManager.canPurchase = true
+        mockAccountManager.accessToken = nil
+        mockStorePurchaseManager.currentStorefrontRegion = .restOfWorld // Real value is non-USA
+
+        // Set override to true
+        testUserDefaults.set(true, forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride)
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
+        )
+
+        // When
+        let result = sut.isAvailable
+
+        // Then
+        XCTAssertTrue(result, "Override should make feature available even when storefront is non-USA")
+    }
+
+    @available(macOS 12.0, *)
+    func testWhenStorefrontOverrideIsSetToFalse_thenIsAvailableIsFalse() {
+        // Given
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
+        mockSubscriptionManager.canPurchase = true
+        mockAccountManager.accessToken = nil
+        mockStorePurchaseManager.currentStorefrontRegion = .usa // Real value is USA
+
+        // Set override to false
+        testUserDefaults.set(false, forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride)
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
+        )
+
+        // When
+        let result = sut.isAvailable
+
+        // Then
+        XCTAssertFalse(result, "Override should make feature unavailable even when storefront is USA")
+    }
+
+    @available(macOS 12.0, *)
+    func testWhenFeatureFlagOverrideIsTrueAndStorefrontIsNonUSA_thenIsAvailableIsFalse() {
+        // Given: Real storefront is non-USA and there's no storefront override
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
+        mockSubscriptionManager.canPurchase = true
+        mockAccountManager.accessToken = nil
+        mockStorePurchaseManager.currentStorefrontRegion = .restOfWorld
+
+        // When: Only the feature flag is overridden to true
+        testUserDefaults.set(true, forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
+        )
+
+        // Then: The feature should still be unavailable due to the storefront check
+        let result = sut.isAvailable
+        XCTAssertFalse(result, "Feature flag override should not affect storefront eligibility")
+    }
+
+    @available(macOS 12.0, *)
+    func testWhenStorefrontOverrideIsTrueAndFeatureFlagIsFalse_thenIsAvailableIsFalse() {
+        // Given: Real feature flag is false and there's no flag override
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
+        mockSubscriptionManager.canPurchase = true
+        mockAccountManager.accessToken = nil
+        mockStorePurchaseManager.currentStorefrontRegion = .restOfWorld
+
+        // When: Only the storefront is overridden to true
+        testUserDefaults.set(true, forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride)
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
+        )
+
+        // Then: The feature should still be unavailable due to the feature flag check
+        let result = sut.isAvailable
+        XCTAssertFalse(result, "Storefront override should not affect feature flag eligibility")
+    }
+
+    func testWhenFeatureFlagOverrideIsSetAndPublisherUpdates_thenOverrideTakesPrecedence() {
+        // Given
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
+        mockSubscriptionManager.canPurchase = true
+        mockAccountManager.accessToken = nil
+        mockStorePurchaseManager.currentStorefrontRegion = .usa
+
+        // Set override to true
+        testUserDefaults.set(true, forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
+        )
+
+        let expectation = XCTestExpectation(description: "Publisher emits with override value")
+        var emittedValue: Bool?
+
+        sut.isAvailablePublisher
+            .sink { isAvailable in
+                emittedValue = isAvailable
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        sut.subscribeToDependencyUpdates()
+        // Simulate a privacy config update which would normally set isAvailable to false
+        mockPrivacyConfigurationManager.updatesSubject.send()
+
+        // Then
+        wait(for: [expectation], timeout: 2.0)
+        XCTAssertEqual(emittedValue, true, "Publisher should emit override value even when real config changes")
+    }
+
+    func testWhenFeatureDisablerIsInjected_thenInjectedInstanceIsUsed() {
+        // Given
+        let injectedFeatureDisabler = MockFeatureDisabler()
+        mockFreemiumDBPUserStateManagerManager.didActivate = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
+        mockAccountManager.accessToken = nil
+        // Need to set up conditions for shouldDisableAndDelete to be true
+        mockSubscriptionManager.canPurchase = true
+        mockStorePurchaseManager.currentStorefrontRegion = .usa
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: injectedFeatureDisabler,
+            userDefaults: testUserDefaults
+        )
+
+        // When
+        sut.subscribeToDependencyUpdates()
+        mockPrivacyConfigurationManager.updatesSubject.send()
+
+        // Then
+        XCTAssertTrue(injectedFeatureDisabler.disableAndDeleteWasCalled, "Injected feature disabler should be used")
+        XCTAssertFalse(mockFeatureDisabler.disableAndDeleteWasCalled, "Default feature disabler should not be used")
+    }
+
+    func testWhenUserDefaultsIsInjected_thenInjectedInstanceIsUsed() {
+        // Given
+        let anotherUserDefaults = UserDefaults(suiteName: "AnotherTestSuite-\(UUID().uuidString)")!
+        defer {
+            anotherUserDefaults.removeObject(forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
+            anotherUserDefaults.removeObject(forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride)
+        }
+
+        // Set override in the injected UserDefaults
+        anotherUserDefaults.set(true, forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
+
+        // Don't set override in the default testUserDefaults
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
+        mockSubscriptionManager.canPurchase = true
+        mockAccountManager.accessToken = nil
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: anotherUserDefaults
+        )
+
+        // When
+        let result = sut.isAvailable
+
+        // Then
+        XCTAssertTrue(result, "Should use override from injected UserDefaults instance")
+    }
+
+    func testOffboarding_WhenConditionsMetAndNoOverride_TriggersSuccessfully() {
+        // Given
+        mockFreemiumDBPUserStateManagerManager.didActivate = true
+        mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
+        mockAccountManager.accessToken = nil
+        mockSubscriptionManager.canPurchase = true
+        mockStorePurchaseManager.currentStorefrontRegion = .usa
+
+        // Ensure no overrides are set
+        testUserDefaults.removeObject(forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
+        testUserDefaults.removeObject(forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride)
+
+        sut = DefaultFreemiumDBPFeature(
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            subscriptionManager: mockSubscriptionManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
+            featureDisabler: mockFeatureDisabler,
+            userDefaults: testUserDefaults
+        )
+
+        // When
+        sut.subscribeToDependencyUpdates()
+        mockPrivacyConfigurationManager.updatesSubject.send()
+
+        // Then
+        XCTAssertTrue(mockFreemiumDBPUserStateManagerManager.didCallResetAllState, "Should offboard when conditions are met and no override is active")
+        XCTAssertTrue(mockFeatureDisabler.disableAndDeleteWasCalled, "Should disable and delete when conditions are met and no override is active")
     }
 }
 

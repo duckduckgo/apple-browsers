@@ -1656,6 +1656,42 @@
         }
       }
     },
+    "aichat.sidebar.close-button.tooltip" : {
+      "comment" : "Tooltip for button to close the sidebar with the duck.ai chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.expand-button.tooltip" : {
+      "comment" : "Tooltip for button to open duck.ai chat from sidebar in a full tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Expand"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.title" : {
+      "comment" : "Title for the Duck.ai sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        }
+      }
+    },
     "alert.sync-bookmarks-bad-data-error-description" : {
       "comment" : "Description for alert shown when sync error occurs because of bad data",
       "extractionState" : "extracted_with_value",

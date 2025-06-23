@@ -45,7 +45,6 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
         static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
-        static let entitlementsStateKey = "entitlementsState"
     }
 
     private let source: Source
@@ -54,7 +53,6 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
     }
     private let notificationCenter: NotificationCenter = NotificationCenter.default
     private var cancellables = Set<AnyCancellable>()
-    private var previousEntitlements: [Entitlement] = []
 
     public init(source: Source) {
         self.source = source
@@ -75,7 +73,7 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
         }.store(in: &cancellables)
 
         // Intercepting and sending a pixel every time a set of entitlements change. We are only interested in changes between full > empty. Any other combination is not possible
-        notificationCenter.publisher(for: .entitlementsDidChange).sink { [weak self] notification in
+        notificationCenter.publisher(for: .entitlementsDidChange).sink {  [weak self] notification in
 
             guard let self else { return }
 
@@ -86,29 +84,16 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
 
             let userInfo = notification.userInfo as? [AnyHashable: [Entitlement]]
             let entitlements = userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] ?? []
+            let previousEntitlements = userInfo?[UserDefaultsCacheKey.subscriptionPreviousEntitlements] ?? []
 
-            enum State: String {
-                case added
-                case removed
-                case changed
-            }
-
-            let state: State
-            switch (self.previousEntitlements.isEmpty, entitlements.isEmpty) {
+            switch (previousEntitlements.isEmpty, entitlements.isEmpty) {
             case (true, false):
-                state = .added
+                DailyPixel.fireDailyAndCount(pixel: .privacyProEntitlementsAdded, withAdditionalParameters: self.sourceParam)
             case (false, true):
-                state = .removed
-            case (false, false) where self.previousEntitlements.count != entitlements.count:
-                state = .changed
+                DailyPixel.fireDailyAndCount(pixel: .privacyProEntitlementsRemoved, withAdditionalParameters: self.sourceParam)
             default:
-                Logger.subscription.fault("Unexpected state")
-                return
+                Logger.subscription.debug("We shouldn't have received this notification: \(notification.name.rawValue, privacy: .public), ignoring it...")
             }
-
-            let params = [Defaults.entitlementsStateKey: state.rawValue].merging(self.sourceParam) { (_, new) in new }
-            DailyPixel.fireDailyAndCount(pixel: .privacyProEntitlementsDidChange, withAdditionalParameters: params)
-            self.previousEntitlements = entitlements
         }.store(in: &cancellables)
     }
 

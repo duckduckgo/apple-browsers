@@ -48,7 +48,6 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
     let source: Source
     private let notificationCenter: NotificationCenter = NotificationCenter.default
     private var cancellables = Set<AnyCancellable>()
-    private var previousEntitlements: [Entitlement] = []
 
     public init(source: Source) {
         self.source = source
@@ -80,27 +79,16 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
 
             let userInfo = notification.userInfo as? [AnyHashable: [Entitlement]]
             let entitlements = userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] ?? []
+            let previousEntitlements = userInfo?[UserDefaultsCacheKey.subscriptionPreviousEntitlements] ?? []
 
-            enum State: String {
-                case added
-                case removed
-                case changed
-            }
-
-            let state: State
-            switch (self.previousEntitlements.isEmpty, entitlements.isEmpty) {
+            switch (previousEntitlements.isEmpty, entitlements.isEmpty) {
             case (true, false):
-                state = .added
+                PixelKit.fire(PrivacyProPixel.privacyProEntitlementsAdded(self.source), frequency: .dailyAndCount)
             case (false, true):
-                state = .removed
-            case (false, false) where self.previousEntitlements.count != entitlements.count:
-                state = .changed
+                PixelKit.fire(PrivacyProPixel.privacyProEntitlementsRemoved(self.source), frequency: .dailyAndCount)
             default:
-                Logger.subscription.fault("Unexpected state")
-                return
+                Logger.subscription.debug("We shouldn't have received this notification: \(notification.name.rawValue, privacy: .public), ignoring it...")
             }
-            PixelKit.fire(PrivacyProPixel.privacyProEntitlementsDidChange(source, state.rawValue), frequency: .dailyAndCount)
-            self.previousEntitlements = entitlements
         }.store(in: &cancellables)
     }
 

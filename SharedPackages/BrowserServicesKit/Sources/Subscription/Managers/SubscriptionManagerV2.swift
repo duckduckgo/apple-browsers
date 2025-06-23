@@ -434,7 +434,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
                 // TMP: Convert to Entitlement (authV1)
                 let entitlements = newEntitlements.map { $0.entitlement }
-                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
+                let previousEntitlements = currentCachedEntitlements?.map { $0.entitlement } ?? []
+
+                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [
+                    UserDefaultsCacheKey.subscriptionEntitlements: entitlements,
+                    UserDefaultsCacheKey.subscriptionPreviousEntitlements: previousEntitlements
+                ])
             }
 
             return resultTokenContainer

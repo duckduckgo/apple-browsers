@@ -86,7 +86,10 @@ public struct UserDefaultsWrapper<T> {
 
         case autofillSaveModalRejectionCount = "com.duckduckgo.ios.autofillSaveModalRejectionCount"
         case autofillSaveModalDisablePromptShown = "com.duckduckgo.ios.autofillSaveModalDisablePromptShown"
+        case autofillCreditCardsSaveModalRejectionCount = "com.duckduckgo.ios.autofillCreditCardsSaveModalRejectionCount"
+        case autofillCreditCardsSaveModalDisablePromptShown = "com.duckduckgo.ios.autofillCreditCardsSaveModalDisablePromptShown"
         case autofillFirstTimeUser = "com.duckduckgo.ios.autofillFirstTimeUser"
+        case autofillCreditCardsFirstTimeUser = "com.duckduckgo.ios.autofillCreditCardsFirstTimeUser"
         case autofillCredentialsSavePromptShowAtLeastOnce = "com.duckduckgo.ios.autofillCredentialsSavePromptShowAtLeastOnce"
         case autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary =
                 "com.duckduckgo.ios.autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary"

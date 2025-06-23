@@ -135,6 +135,10 @@ final class MockOmniBarDelegate: OmniBarDelegate {
 
     }
 
+    func didRequestCurrentURL() -> URL? {
+        return nil
+    }
+
     func onOmniPromptSubmitted(_ query: String) {
     }
 

@@ -28,6 +28,7 @@ final class AutofillCreditCardListViewController: UIViewController {
     
     private var viewModel: AutofillCreditCardListViewModel
     private let secureVault: (any AutofillSecureVault)?
+    private var selectedCard: SecureVaultModels.CreditCard?
     private var cancellables: Set<AnyCancellable> = []
     
     private lazy var addBarButtonItem: UIBarButtonItem = {
@@ -37,9 +38,10 @@ final class AutofillCreditCardListViewController: UIViewController {
                         action: #selector(addButtonPressed))
     }()
     
-    init(secureVault: (any AutofillSecureVault)? = nil) {
+    init(secureVault: (any AutofillSecureVault)? = nil, selectedCard: SecureVaultModels.CreditCard? = nil, source: AutofillSettingsSource) {
         self.secureVault = secureVault
-        self.viewModel = AutofillCreditCardListViewModel(secureVault: secureVault)
+        self.viewModel = AutofillCreditCardListViewModel(secureVault: secureVault, source: source)
+        self.selectedCard = selectedCard
         
         super.init(nibName: nil, bundle: nil)
         
@@ -124,7 +126,16 @@ final class AutofillCreditCardListViewController: UIViewController {
                 } else {
                     navigationController?.popViewController(animated: true)
                 }
+            } else {
+                showSelectedCardIfRequired()
             }
+        }
+    }
+    
+    private func showSelectedCardIfRequired() {
+        if let card = selectedCard {
+            presentCardDetails(for: card)
+            selectedCard = nil
         }
     }
     
@@ -148,6 +159,10 @@ extension AutofillCreditCardListViewController: AutofillCreditCardListViewModelD
     
     func autofillCreditCardListViewModelDidSelectCard(_ viewModel: AutofillCreditCardListViewModel, card: SecureVaultModels.CreditCard) {
         presentCardDetails(for: card)
+    }
+    
+    func autofillCreditCardListViewModelAddCard(_ viewModel: AutofillCreditCardListViewModel) {
+        addButtonPressed()
     }
     
 }

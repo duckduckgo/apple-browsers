@@ -39,14 +39,13 @@ final class AutofillService {
     }
 
     private func makeAutofillPixelReporter() -> AutofillPixelReporter {
-        AutofillPixelReporter(
-            standardUserDefaults: .standard,
-            appGroupUserDefaults: UserDefaults(suiteName: "\(Global.groupIdPrefix).autofill"),
+        return AutofillPixelReporter(
+            usageStore: AutofillUsageStore(),
             autofillEnabled: AppDependencyProvider.shared.appSettings.autofillCredentialsEnabled,
             eventMapping: EventMapping<AutofillPixelEvent> { [weak self] event, _, params, _ in
                 switch event {
                 case .autofillActiveUser:
-                    Pixel.fire(pixel: .autofillActiveUser)
+                    Pixel.fire(pixel: .autofillActiveUser, withAdditionalParameters: params ?? [:])
                 case .autofillEnabledUser:
                     Pixel.fire(pixel: .autofillEnabledUser)
                 case .autofillOnboardedUser:
@@ -71,6 +70,8 @@ final class AutofillService {
                     }
                 case .autofillLoginsStacked:
                     Pixel.fire(pixel: .autofillLoginsStacked, withAdditionalParameters: params ?? [:])
+                case .autofillCreditCardsStacked:
+                    Pixel.fire(pixel: .autofillCreditCardsStacked, withAdditionalParameters: params ?? [:])
                 default:
                     break
                 }

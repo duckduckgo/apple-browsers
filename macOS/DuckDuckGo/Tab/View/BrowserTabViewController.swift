@@ -169,19 +169,17 @@ final class BrowserTabViewController: NSViewController {
         hoverLabelContainer.trailingAnchor.constraint(equalTo: hoverLabel.trailingAnchor, constant: 8).isActive = true
         hoverLabel.topAnchor.constraint(equalTo: hoverLabelContainer.topAnchor, constant: 6).isActive = true
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            view.addSubview(sidebarContainer)
+        view.addSubview(sidebarContainer)
 
-            sidebarContainerLeadingConstraint = sidebarContainer.leadingAnchor.constraint(equalTo: browserTabView.trailingAnchor)
-            sidebarContainerWidthConstraint = sidebarContainer.widthAnchor.constraint(equalToConstant: 0)
+        sidebarContainerLeadingConstraint = sidebarContainer.leadingAnchor.constraint(equalTo: browserTabView.trailingAnchor)
+        sidebarContainerWidthConstraint = sidebarContainer.widthAnchor.constraint(equalToConstant: 0)
 
-            NSLayoutConstraint.activate([
-                sidebarContainer.topAnchor.constraint(equalTo: browserTabView.topAnchor),
-                sidebarContainer.bottomAnchor.constraint(equalTo: browserTabView.bottomAnchor),
-                sidebarContainerLeadingConstraint!,
-                sidebarContainerWidthConstraint!
-            ])
-        }
+        NSLayoutConstraint.activate([
+            sidebarContainer.topAnchor.constraint(equalTo: browserTabView.topAnchor),
+            sidebarContainer.bottomAnchor.constraint(equalTo: browserTabView.bottomAnchor),
+            sidebarContainerLeadingConstraint!,
+            sidebarContainerWidthConstraint!
+        ])
     }
 
     override func viewDidLoad() {
@@ -479,12 +477,8 @@ final class BrowserTabViewController: NSViewController {
         NSLayoutConstraint.activate([
             containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             containerStackView.topAnchor.constraint(equalTo: view.topAnchor),
-            containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        let constraint =  featureFlagger.isFeatureOn(.aiChatSidebar) ? sidebarContainer.leadingAnchor : view.trailingAnchor
-        NSLayoutConstraint.activate([
-            containerStackView.trailingAnchor.constraint(equalTo: constraint)
+            containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            containerStackView.trailingAnchor.constraint(equalTo: sidebarContainer.leadingAnchor)
         ])
 
         containerStackView.addArrangedSubview(container)

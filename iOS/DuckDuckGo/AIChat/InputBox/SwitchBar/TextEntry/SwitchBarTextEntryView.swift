@@ -19,6 +19,7 @@
 
 import UIKit
 import Combine
+import DesignResourcesKitIcons
 
 class SwitchBarTextEntryView: UIView {
 
@@ -49,6 +50,7 @@ class SwitchBarTextEntryView: UIView {
     private let textView = UITextView()
     private let placeholderLabel = UILabel()
     private let clearButton = UIButton(type: .system)
+    private let microphoneButton = UIButton(type: .system)
 
     private var currentMode: TextEntryMode {
         handler.currentToggleState
@@ -87,18 +89,26 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.numberOfLines = 0
 
         // Setup clear button
-        clearButton.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        clearButton.setImage(DesignSystemImages.Glyphs.Size24.clear, for: .normal)
         clearButton.tintColor = UIColor.systemGray
         clearButton.isHidden = true
         clearButton.addTarget(self, action: #selector(clearButtonTapped), for: .touchUpInside)
 
+        // Setup microphone button
+        microphoneButton.setImage(DesignSystemImages.Glyphs.Size24.microphone, for: .normal)
+        microphoneButton.tintColor = UIColor.systemGray
+        microphoneButton.isHidden = !handler.isVoiceSearchEnabled  // Initially visible when no text and voice search is enabled
+        microphoneButton.addTarget(self, action: #selector(microphoneButtonTapped), for: .touchUpInside)
+
         addSubview(textView)
         addSubview(placeholderLabel)
         addSubview(clearButton)
+        addSubview(microphoneButton)
 
         textView.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         clearButton.translatesAutoresizingMaskIntoConstraints = false
+        microphoneButton.translatesAutoresizingMaskIntoConstraints = false
 
         heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight)
         heightConstraint?.isActive = true
@@ -119,20 +129,33 @@ class SwitchBarTextEntryView: UIView {
             clearButton.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
             clearButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.clearButtonTrailingOffset),
             clearButton.widthAnchor.constraint(equalToConstant: Constants.clearButtonSize),
-            clearButton.heightAnchor.constraint(equalToConstant: Constants.clearButtonSize)
+            clearButton.heightAnchor.constraint(equalToConstant: Constants.clearButtonSize),
+
+            microphoneButton.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
+            microphoneButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.clearButtonTrailingOffset),
+            microphoneButton.widthAnchor.constraint(equalToConstant: Constants.clearButtonSize),
+            microphoneButton.heightAnchor.constraint(equalToConstant: Constants.clearButtonSize)
         ])
 
-        // Initially activate the constraint without button
-        textViewTrailingConstraint?.isActive = true
+        // Initially determine which constraint to activate based on initial state
+        updateConstraintsForButtonVisibility()
 
         updateForCurrentMode()
         updateTextViewHeight()
     }
 
+    // MARK: - Button Actions
+    
     @objc private func clearButtonTapped() {
         handler.clearText()
     }
 
+    @objc private func microphoneButtonTapped() {
+        handler.microphoneButtonTapped()
+    }
+
+    // MARK: - UI Updates
+    
     private func updateForCurrentMode() {
         switch currentMode {
         case .search:
@@ -147,7 +170,7 @@ class SwitchBarTextEntryView: UIView {
         }
         textView.reloadInputViews()
         updatePlaceholderVisibility()
-        updateClearButtonVisibility()
+        updateActionButtonsVisibility()
         updateTextViewHeight()
     }
 
@@ -155,15 +178,27 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.isHidden = !textView.text.isEmpty
     }
 
-    private func updateClearButtonVisibility() {
-        let shouldShowClearButton = !textView.text.isEmpty
-
+    /// Updates visibility of action buttons (clear/microphone) - they are mutually exclusive
+    /// - Clear button shows when there's text
+    /// - Microphone button shows when there's no text and voice search is enabled
+    private func updateActionButtonsVisibility() {
+        let hasText = !textView.text.isEmpty
+        let shouldShowMicrophoneButton = !hasText && handler.isVoiceSearchEnabled
+        
         UIView.animate(withDuration: Constants.animationDuration) {
-            self.clearButton.isHidden = !shouldShowClearButton
+            self.clearButton.isHidden = !hasText
+            self.microphoneButton.isHidden = !shouldShowMicrophoneButton
         }
+        
+        updateConstraintsForButtonVisibility()
+    }
 
-        // Update text view constraints based on clear button visibility
-        if shouldShowClearButton {
+    private func updateConstraintsForButtonVisibility() {
+        let hasText = !textView.text.isEmpty
+        let shouldShowMicrophoneButton = !hasText && handler.isVoiceSearchEnabled
+        let anyButtonVisible = hasText || shouldShowMicrophoneButton
+        
+        if anyButtonVisible {
             textViewTrailingConstraint?.isActive = false
             textViewTrailingConstraintWithButton?.isActive = true
         } else {
@@ -204,7 +239,7 @@ class SwitchBarTextEntryView: UIView {
                 if self.textView.text != text {
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
-                    self.updateClearButtonVisibility()
+                    self.updateActionButtonsVisibility()
                     self.updateTextViewHeight()
                 }
             }
@@ -230,7 +265,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textViewDidChange(_ textView: UITextView) {
         updatePlaceholderVisibility()
-        updateClearButtonVisibility()
+        updateActionButtonsVisibility()
         updateTextViewHeight()
         handler.updateCurrentText(textView.text ?? "")
     }

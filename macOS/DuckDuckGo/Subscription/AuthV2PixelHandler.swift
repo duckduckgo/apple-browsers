@@ -50,7 +50,7 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
     private var cancellables = Set<AnyCancellable>()
     private var previousEntitlements: [Entitlement] = []
 
-    init(source: Source) {
+    public init(source: Source) {
         self.source = source
 
         notificationCenter.publisher(for: .subscriptionDidChange).sink { param in
@@ -66,7 +66,10 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
             }
         }.store(in: &cancellables)
 
-        notificationCenter.publisher(for: .entitlementsDidChange).sink { notification in
+        // Intercepting and sending a pixel every time a set of entitlements change. We are only interested in changes between full > empty. Any other combination is not possible
+        notificationCenter.publisher(for: .entitlementsDidChange).sink { [weak self] notification in
+
+            guard let self else { return }
 
             guard (notification.object as? SubscriptionManagerV2) != nil else {
                 // Sending pixel only for user entitlements, ignoring the Subscription entitlements coming from DefaultSubscriptionEndpointServiceV2

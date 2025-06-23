@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
+import BWIntegration
 import Common
 import Foundation
-import SwiftUI
-import OpenSSL
-import PixelKit
 import os.log
+import PixelKit
+import SwiftUI
 
 final class BWManager: BWManagement, ObservableObject {
 

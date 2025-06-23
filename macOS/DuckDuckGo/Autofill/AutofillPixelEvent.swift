@@ -20,6 +20,10 @@ import Foundation
 import PixelKit
 
 enum AutofillPixelKitEvent: PixelKitEventV2 {
+    enum Parameter {
+        static let lastUsed = "last_used"
+    }
+
     case importCredentialsFlowStarted
     case importCredentialsFlowCancelled
     case importCredentialsFlowHadCredentials

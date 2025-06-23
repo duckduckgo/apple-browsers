@@ -27,4 +27,7 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case showChatInput
     case hideChatInput
     case reportMetric
+    case recordChat
+    case restoreChat
+    case removeChat
 }

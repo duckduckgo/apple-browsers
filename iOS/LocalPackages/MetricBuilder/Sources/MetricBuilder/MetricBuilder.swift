@@ -219,9 +219,15 @@ public extension MetricBuilder {
     ///   - iPad: The value for iPad portrait orientation, or nil to keep existing.
     /// - Returns: The builder instance for method chaining.
     func portrait(iPhone: T? = nil, iPhoneSmallScreen: T? = nil, iPad: T? = nil) -> Self {
-        iPhonePortraitValue = iPhone
-        iPhoneSmallScreenPortraitValue = iPhoneSmallScreen
-        iPadPortraitValue = iPad
+        if let iPhone {
+            iPhonePortraitValue = iPhone
+        }
+        if let iPhoneSmallScreen {
+            iPhoneSmallScreenPortraitValue = iPhoneSmallScreen
+        }
+        if let iPad {
+            iPadPortraitValue = iPad
+        }
         return self
     }
 
@@ -246,9 +252,15 @@ public extension MetricBuilder {
     ///   - iPad: The value for iPad landscape orientation, or nil to keep existing.
     /// - Returns: The builder instance for method chaining.
     func landscape(iPhone: T? = nil, iPhoneSmallScreen: T? = nil, iPad: T? = nil) -> Self {
-        iPhoneLandscapeValue = iPhone
-        iPhoneSmallScreenLandscapeValue = iPhoneSmallScreen
-        iPadLandscapeValue = iPad
+        if let iPhone {
+            iPhoneLandscapeValue = iPhone
+        }
+        if let iPhoneSmallScreen {
+            iPhoneSmallScreenLandscapeValue = iPhoneSmallScreen
+        }
+        if let iPad {
+            iPadLandscapeValue = iPad
+        }
         return self
     }
 

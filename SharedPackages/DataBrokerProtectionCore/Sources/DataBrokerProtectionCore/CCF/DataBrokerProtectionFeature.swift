@@ -51,11 +51,13 @@ public class DataBrokerProtectionFeature: Subfeature {
     private var actionResponseTimer: Timer?
     private let actionResponseTimeout: TimeInterval
 
-    /// Default timeout for C-S-S action responses that can hang due to page reloads or script context loss
-    public static let defaultActionResponseTimeout: TimeInterval = 60
+    public struct Constants {
+        /// Default timeout for C-S-S action responses that can hang due to page reloads or script context loss
+        public static let defaultActionResponseTimeout: TimeInterval = 60
+    }
 
     public init(delegate: CCFCommunicationDelegate,
-                actionResponseTimeout: TimeInterval = DataBrokerProtectionFeature.defaultActionResponseTimeout) {
+                actionResponseTimeout: TimeInterval = Constants.defaultActionResponseTimeout) {
         self.delegate = delegate
         self.actionResponseTimeout = actionResponseTimeout
     }

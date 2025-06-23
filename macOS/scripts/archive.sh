@@ -293,9 +293,24 @@ compress_app_and_dsym() {
 	# Change to workdir to avoid full path in tar archive
 	pushd "${workdir}" > /dev/null
 	
-	# Create tar archive of the app bundle
+	# Temporarily rename app bundle to include version for consistency in archive
+	local versioned_app_name="DuckDuckGo-${version_identifier}.app"
+	local original_app_name="${app_name}.app"
+	
+	if [[ "${original_app_name}" != "${versioned_app_name}" ]]; then
+		echo "Temporarily renaming app bundle for archive: ${versioned_app_name}"
+		mv "${original_app_name}" "${versioned_app_name}"
+	fi
+	
+	# Create tar archive of the versioned app bundle
 	echo "Creating tar archive..."
-	tar -cvf "DuckDuckGo-${version_identifier}.app.tar" "${app_name}.app"
+	tar -cvf "DuckDuckGo-${version_identifier}.app.tar" "${versioned_app_name}"
+	
+	# Rename app bundle back to original name for compatibility with other workflows
+	if [[ "${original_app_name}" != "${versioned_app_name}" ]]; then
+		echo "Renaming app bundle back to original name: ${original_app_name}"
+		mv "${versioned_app_name}" "${original_app_name}"
+	fi
 	
 	# Compress with xz using maximum compression
 	echo "Compressing with xz (maximum compression)..."

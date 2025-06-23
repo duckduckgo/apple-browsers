@@ -90,8 +90,10 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
 
             let state: State
             switch (self.previousEntitlements.isEmpty, entitlements.isEmpty) {
-                case (true, false): state = .added
-                case (false, true): state = .removed
+            case (true, false):
+                state = .added
+            case (false, true):
+                state = .removed
             case (false, false) where self.previousEntitlements.count != entitlements.count:
                 state = .changed
             default:

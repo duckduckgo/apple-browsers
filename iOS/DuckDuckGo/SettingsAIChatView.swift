@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import Core
+import DesignResourcesKitIcons
 
 struct SettingsAIChatView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -31,7 +32,7 @@ struct SettingsAIChatView: View {
                 Image(.settingsAIChatHero)
                     .padding(.top, -20)
 
-                Text(UserText.aiChatFeatureName)
+                Text(UserText.settingsAiFeatures)
                     .daxTitle3()
 
                 Text(.init(UserText.aiChatSettingsCaptionWithLinkMarkdown))
@@ -46,6 +47,8 @@ struct SettingsAIChatView: View {
 
             Section {
                 SettingsCellView(label: UserText.settingsEnableAiChat,
+                                 subtitle: UserText.settingsEnableAiChatSubtitle,
+                                 image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat),
                                  accessory: .toggle(isOn: viewModel.isAiChatEnabledBinding))
             }
 
@@ -63,23 +66,33 @@ struct SettingsAIChatView: View {
                     SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
                                      accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
                 }
+            }
 
-                if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
-                    Section {
-                        SettingsCellView(label: UserText.settingsAIChatExperimentalMainSwitch,
-                                         accessory: .toggle(isOn: viewModel.aiChatExperimentalBinding))
+            Section {
+                SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
+                                 subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
+                                 image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
+                                 action: { viewModel.openAssistSettings() },
+                                 webLinkIndicator: true,
+                                 isButton: true)
+            }
 
-                        SettingsCellView(label: UserText.settingsAIChatExperimentalTransition,
-                                         accessory: .toggle(isOn: viewModel.aiChatExperimentalTransitionBinding))
-                    } header: {
-                        Text(UserText.settingsAIChatExperimentalSection)
-                    }
+            if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
+                Section {
+                    SettingsCellView(label: UserText.settingsAIChatExperimentalMainSwitch,
+                                     accessory: .toggle(isOn: viewModel.aiChatExperimentalBinding))
+
+                    SettingsCellView(label: UserText.settingsAIChatExperimentalTransition,
+                                     accessory: .toggle(isOn: viewModel.aiChatExperimentalTransitionBinding))
+                } header: {
+                    Text(UserText.settingsAIChatExperimentalSection)
                 }
             }
 
-        }.applySettingsListModifiers(title: UserText.aiChatFeatureName,
+        }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)
+
         .onAppear {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed,
                                          withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat))

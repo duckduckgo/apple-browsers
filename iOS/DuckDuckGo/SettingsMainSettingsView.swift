@@ -81,7 +81,7 @@ struct SettingsMainSettingsView: View {
 
             // AI Chat
             NavigationLink(destination: SettingsAIChatView().environmentObject(viewModel)) {
-                SettingsCellView(label: UserText.aiChatFeatureName,
+                SettingsCellView(label: UserText.settingsAiFeatures,
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat))
             }
         }

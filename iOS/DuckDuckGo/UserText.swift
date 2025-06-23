@@ -53,7 +53,7 @@ public struct UserText {
     public static let actionShare = NSLocalizedString("action.title.share", value: "Share", comment: "Share action")
     public static let actionPrint = NSLocalizedString("action.title.print", value: "Print", comment: "Print action in the menu header")
     public static let actionPrintSite = NSLocalizedString("action.title.print.site", value: "Print", comment: "Print action in the menu list")
-    public static let actionOpenAIChat = NSLocalizedString("action.title.duckai", value: "AI Chat", comment: "Open AI Chat action in the menu list")
+    public static let actionOpenAIChat = NSLocalizedString("action.title.duckai", value: "Duck.ai", comment: "Open AI Chat action in the menu list")
 
     public static let actionOpenBookmarks = NSLocalizedString("action.title.bookmarks", value: "Bookmarks", comment: "Button: Open bookmarks list")
     public static let actionOpenPasswords = NSLocalizedString("action.title.passwords", value: "Passwords", comment: "Button: Open passwords list")
@@ -531,7 +531,6 @@ public struct UserText {
     public static let autofillDisablePromptAction = NSLocalizedString("autofill.disable.prompt.action.open-settings", value: "Open Settings", comment: "Open Settings action for disabling autofill in Settings")
 
     public static let actionAutofillLogins = NSLocalizedString("action.title.autofill.logins", value: "Passwords", comment: "Autofill Logins menu item opening the login list")
-    public static let actionAIChatNew = NSLocalizedString("action.title.duckai.new", value: "New AI Chat", comment: "Duck.ai menu item opening a new chat")
     public static let actionTabNew = NSLocalizedString("action.title.tab.new", value: "New Tab", comment: "New tab menu item opening a new tab")
 
     // MARK: - Control Center Widget Education
@@ -1638,17 +1637,26 @@ Take back control of your personal information with the browser designed for dat
 
     public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Enable Duck.ai", comment: "Settings screen cell text for enabling AI chat")
 
-    public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")
+    public static let settingsEnableAiChatSubtitle = NSLocalizedString("settings.enable.aichat.subtitle", value: "Chat anonymously with popular 3rd-aparty AI chat models", comment: "A description of what the AI Chat toggle does")
+
+    public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
+
+    public static let settingsAiFeaturesSearchAssistSubtitle = NSLocalizedString("settings.features.assist.subtitle", value: "Choose how often you want AI-Assisted answers to appear in your searches", comment: "A description of what the AI Chat toggle does")
+
+    public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Duck.ai Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")
 
     public static let voiceSearchToggleSearch = NSLocalizedString("voice-search-toggle-serp-option", value: "Search", comment: "Voice search toggle option for searching on the web")
     public static let voiceSearchToggleAIChat = NotLocalizedString("voice-search-toggle-aichat-option", value: "Duck.ai", comment: "Voice search toggle option for searching on the AI Chat. Feature name. Not translated")
 
-    public static let aiChatFeatureName = NSLocalizedString("duckai.settings.title", value: "Duck.ai", comment: "Settings screen cell text for AI Chat settings")
+    // This is used for accessibility labels so leaving in place to avoid confusing translation memory.
+    public static let aiChatFeatureAccessibilityLabel = NSLocalizedString("duckai.settings.title", value: "Duck.ai", comment: "Accessibility label for Duck.ai")
+
+    public static let settingsAiFeatures = NSLocalizedString("ai-features.settings.title", value: "AI Features", comment: "Settings screen title for AI features")
 
     static let aiChatSettingsCaptionWithLinkMarkdown = NSLocalizedString("duckai.preferences.text.markdown", value: """
-Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-party Al chat models. Your chats are not used to train AI.
+DuckDuckGo AI features are private and optional. Your data is not used to train AI.
 [Learn More](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)
-""", comment: "Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and ()")
+""", comment: "AI features settings explanation with a markdown link. Please do not translate what's inside [] and () or change spacing or formatting.")
     public static let aiChatSettingsEnableBrowsingMenuToggle = NSLocalizedString("duckai.settings.enable.browsing-menu-toggle", value: "Browser Menu", comment: "Toggle text to enable/disable AI Chat in the browsing menu")
 
     public static let aiChatSettingsEnableAddressBarToggle = NSLocalizedString("duckai.settings.enable.address-bar-toggle", value: "Address Bar", comment: "Toggle text to enable/disable Duck.ai in the address bar")
@@ -1669,7 +1677,7 @@ Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-p
 
     // MARK: Shortcuts
     public static let newTabPageShortcutBookmarks = NSLocalizedString("new.tab.page.shortcut.bookmarks", value: "Bookmarks", comment: "Shortcut title leading to Bookmarks")
-    public static let newTabPageShortcutAIChat = NSLocalizedString("new.tab.page.shortcut.ai.chat", value: "AI Chat", comment: "Shortcut title leading to AI Chat")
+    public static let newTabPageShortcutAIChat = NSLocalizedString("new.tab.page.shortcut.ai.chat", value: "Duck.ai", comment: "Shortcut title leading to AI Chat")
     public static let newTabPageShortcutPasswords = NSLocalizedString("new.tab.page.shortcut.passwords", value: "Passwords", comment: "Shortcut title leading to Passwords")
 
     public static let newTabPageShortcutDownloads = NSLocalizedString("new.tab.page.shortcut.downloads", value: "Downloads", comment: "Shortcut title leading to Downloads")

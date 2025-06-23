@@ -52,7 +52,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             switch accessoryType {
             case .chat:
                 searchAreaView.accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
-                searchAreaView.accessoryButton.accessibilityLabel = UserText.aiChatFeatureName
+                searchAreaView.accessoryButton.accessibilityLabel = UserText.aiChatFeatureAccessibilityLabel
             }
             updateAccessoryAccessibility()
         }
@@ -508,7 +508,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private func updateAccessoryAccessibility() {
         switch accessoryType {
         case .chat:
-            accessoryButton.accessibilityLabel = UserText.aiChatFeatureName
+            accessoryButton.accessibilityLabel = UserText.aiChatFeatureAccessibilityLabel
             accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
         }
         accessoryButton.accessibilityTraits = .button

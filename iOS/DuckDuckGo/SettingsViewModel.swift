@@ -835,6 +835,11 @@ extension SettingsViewModel {
         urlOpener.open(URL.searchSettings)
     }
 
+    func openAssistSettings() {
+        Pixel.fire(pixel: .settingsOpenAssistSettings)
+        urlOpener.open(URL.assistSettings)
+    }
+
     func openAIChat() {
         urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
     }

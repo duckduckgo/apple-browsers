@@ -58,7 +58,7 @@ public final class SetDefaultBrowserModalPresenter: SetDefaultBrowserModalPresen
 private extension SetDefaultBrowserModalPresenter {
 
     private func configurePresentationStyle(hostingController: UIHostingController<SetDefaultBrowserModalView>, presentingController: UIViewController) {
-        guard let presentationController = hostingController.presentationController as? UISheetPresentationController else { return }
+        guard let presentationController = hostingController.sheetPresentationController else { return }
 
         if #available(iOS 16.0, *) {
             presentationController.detents = [

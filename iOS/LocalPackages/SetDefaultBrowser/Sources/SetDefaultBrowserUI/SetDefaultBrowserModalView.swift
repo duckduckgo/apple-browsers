@@ -35,6 +35,9 @@ struct SetDefaultBrowserModalView: View {
 
         VStack(spacing: Metrics.Container.itemsVerticalSpacing) {
             Header(action: closeAction)
+                .padding(.top, Metrics.Header.verticalPadding.build(v: verticalSizeClass, h: horizontalSizeClass))
+                .padding(.horizontal, Metrics.Header.horizontalPadding.build(v: verticalSizeClass, h: horizontalSizeClass))
+                .ignoresSafeArea(edges: .horizontal)
 
             Spacer(minLength: Metrics.Container.spacerMinLength)
 
@@ -48,6 +51,7 @@ struct SetDefaultBrowserModalView: View {
         }
         .padding(.top, Metrics.Container.topPadding)
         .padding(.bottom)
+        .background(Color(designSystemColor: .surface))
     }
 }
 
@@ -56,16 +60,19 @@ struct SetDefaultBrowserModalView: View {
 private extension SetDefaultBrowserModalView {
 
     struct Header: View {
+        @Environment(\.verticalSizeClass) private var verticalSizeClass
+        @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
         let action: () -> Void
 
         var body: some View {
             HStack {
-                Button(UserText.ModalSheet.cancelCTA, action: action)
+                Button(UserText.closeCTA, action: action)
                     .font(.system(size: Metrics.Header.cancelButtonFontSize))
                     .foregroundStyle(Color.primary)
+                    .opacity(0.84)
                 Spacer()
             }
-            .padding(.horizontal, Metrics.Header.horizontalPadding)
         }
     }
 
@@ -83,13 +90,15 @@ private extension SetDefaultBrowserModalView {
                     .frame(width: imageSize.width, height: imageSize.height)
 
                 Group {
-                    Text(UserText.ModalSheet.title)
+                    Text(UserText.title)
                         .font(.system(size: Metrics.Content.titleFontSize, weight: .bold))
+                        .kerningIfAvailable(Metrics.Content.kerning)
 
-                    Text(UserText.ModalSheet.message)
+                    Text(UserText.message)
                         .font(.system(size: Metrics.Content.messageFontSize))
                 }
                 .foregroundStyle(Color.primary)
+                .opacity(0.84)
                 .multilineTextAlignment(.center)
             }
         }
@@ -106,10 +115,10 @@ private extension SetDefaultBrowserModalView {
         var body: some View {
             VStack(spacing: Metrics.Footer.itemsVerticalSpacing.build(v: verticalSizeClass, h: horizontalSizeClass)) {
                 Group {
-                    Button(UserText.CTA.primary, action: setDefaultBrowserAction)
+                    Button(UserText.setDefaultBrowserCTA, action: setDefaultBrowserAction)
                         .buttonStyle(PrimaryButtonStyle(compact: Metrics.Footer.buttonsCompact.build(v: verticalSizeClass, h: horizontalSizeClass)))
 
-                    Button(UserText.CTA.secondary, action: doNotAskAgainAction)
+                    Button(UserText.doNotAskAgainCTA, action: doNotAskAgainAction)
                         .buttonStyle(GhostButtonStyle(compact: Metrics.Footer.buttonsCompact.build(v: verticalSizeClass, h: horizontalSizeClass)))
                 }
                 .frame(maxWidth: Metrics.Footer.buttonMaxWidth.build(v: verticalSizeClass, h: horizontalSizeClass))
@@ -127,29 +136,26 @@ private enum Metrics {
         static let itemsVerticalSpacing: CGFloat = 0
         static let spacerMinLength: CGFloat = 0
         static let topPadding: CGFloat = 16
-        @MainActor
         static let horizontalPadding = MetricBuilder<CGFloat>(iPhone: 24, iPad: 92)
     }
 
     enum Header {
         static let cancelButtonFontSize: CGFloat = 17
-        static let horizontalPadding: CGFloat = 10
+        static let verticalPadding = MetricBuilder<CGFloat>(default: 0).landscape(10)
+        static let horizontalPadding = MetricBuilder<CGFloat>(default: 16).iPad(portrait: 20).landscape(iPhone: 40)
     }
 
     enum Content {
         static let itemsVerticalSpacing: CGFloat = 24
         static let titleFontSize: CGFloat = 28
+        static let kerning: CGFloat = 0.38
         static let messageFontSize: CGFloat = 16
-        @MainActor
         static let imageSize = MetricBuilder<CGSize>(default: CGSize(width: 128, height: 96)).iPhone(landscape: .init(width: 96, height: 72))
     }
 
     enum Footer {
-        @MainActor
         static let itemsVerticalSpacing = MetricBuilder<CGFloat>(default: 8).iPhone(landscape: 4)
-        @MainActor
         static let buttonsCompact = MetricBuilder<Bool>(default: false).landscape(true)
-        @MainActor
         static let buttonMaxWidth = MetricBuilder<CGFloat?>(default: nil).landscape(295)
     }
 

@@ -1,5 +1,5 @@
 //
-//  SetDefaultBrowserModalPresenter.swift
+//  DefaultBrowserPromptPresenter.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -22,17 +22,17 @@ import SwiftUI
 import MetricBuilder
 
 @MainActor
-public protocol SetDefaultBrowserModalPresenting: AnyObject {
+public protocol DefaultBrowserPromptPresenting: AnyObject {
     func presentSetDefaultModal(from viewController: UIViewController)
 }
 
 @MainActor
-public final class SetDefaultBrowserModalPresenter: SetDefaultBrowserModalPresenting {
+public final class DefaultBrowserPromptPresenter: DefaultBrowserPromptPresenting {
 
     public init() {}
 
     public func presentSetDefaultModal(from viewController: UIViewController) {
-        let rootView = SetDefaultBrowserModalView(
+        let rootView = DefaultBrowserPromptModalView(
             closeAction: { [weak viewController] in
 
                 viewController?.dismiss(animated: true)
@@ -55,9 +55,9 @@ public final class SetDefaultBrowserModalPresenter: SetDefaultBrowserModalPresen
 
 // MARK: - Private
 
-private extension SetDefaultBrowserModalPresenter {
+private extension DefaultBrowserPromptPresenter {
 
-    private func configurePresentationStyle(hostingController: UIHostingController<SetDefaultBrowserModalView>, presentingController: UIViewController) {
+    private func configurePresentationStyle(hostingController: UIHostingController<DefaultBrowserPromptModalView>, presentingController: UIViewController) {
         guard let presentationController = hostingController.sheetPresentationController else { return }
 
         if #available(iOS 16.0, *) {

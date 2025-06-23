@@ -1,5 +1,5 @@
 //
-//  SetDefaultBrowserModalView.swift
+//  DefaultBrowserPromptModalView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -22,7 +22,7 @@ import DesignResourcesKit
 import DuckUI
 import MetricBuilder
 
-struct SetDefaultBrowserModalView: View {
+struct DefaultBrowserPromptModalView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -57,7 +57,7 @@ struct SetDefaultBrowserModalView: View {
 
 // MARK: - Inner Views
 
-private extension SetDefaultBrowserModalView {
+private extension DefaultBrowserPromptModalView {
 
     struct Header: View {
         @Environment(\.verticalSizeClass) private var verticalSizeClass

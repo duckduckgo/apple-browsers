@@ -41,7 +41,7 @@
 		1DEAADF22BA4716C00E25A97 /* StatusIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAADF12BA4716C00E25A97 /* StatusIndicator.swift */; };
 		1DEAADF42BA47B5300E25A97 /* WebTrackingProtectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAADF32BA47B5300E25A97 /* WebTrackingProtectionView.swift */; };
 		1DEAADF62BA4809400E25A97 /* CookiePopUpProtectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAADF52BA4809400E25A97 /* CookiePopUpProtectionView.swift */; };
-		1DEAADFB2BA71E9A00E25A97 /* SettingsPreferencesDescriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAADFA2BA71E9A00E25A97 /* SettingsPreferencesDescriptionView.swift */; };
+		1DEAADFB2BA71E9A00E25A97 /* SettingsDescriptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAADFA2BA71E9A00E25A97 /* SettingsDescriptionView.swift */; };
 		1DEAADFF2BA7832F00E25A97 /* EmailProtectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DEAADFE2BA7832F00E25A97 /* EmailProtectionView.swift */; };
 		1E016AB42949FEB500F21625 /* OmniBarNotificationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E016AB32949FEB500F21625 /* OmniBarNotificationViewModel.swift */; };
 		1E05D1D629C46EBB00BF9A1F /* DailyPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E05D1D529C46EBB00BF9A1F /* DailyPixel.swift */; };
@@ -1952,7 +1952,7 @@
 		1DEAADF12BA4716C00E25A97 /* StatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusIndicator.swift; sourceTree = "<group>"; };
 		1DEAADF32BA47B5300E25A97 /* WebTrackingProtectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebTrackingProtectionView.swift; sourceTree = "<group>"; };
 		1DEAADF52BA4809400E25A97 /* CookiePopUpProtectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CookiePopUpProtectionView.swift; sourceTree = "<group>"; };
-		1DEAADFA2BA71E9A00E25A97 /* SettingsPreferencesDescriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPreferencesDescriptionView.swift; sourceTree = "<group>"; };
+		1DEAADFA2BA71E9A00E25A97 /* SettingsDescriptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDescriptionView.swift; sourceTree = "<group>"; };
 		1DEAADFE2BA7832F00E25A97 /* EmailProtectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EmailProtectionView.swift; sourceTree = "<group>"; };
 		1E016AB32949FEB500F21625 /* OmniBarNotificationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarNotificationViewModel.swift; sourceTree = "<group>"; };
 		1E05D1D529C46EBB00BF9A1F /* DailyPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyPixel.swift; sourceTree = "<group>"; };
@@ -3533,7 +3533,6 @@
 		C1AD33302DBAD1DD003B80A4 /* SaveCreditCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCreditCardView.swift; sourceTree = "<group>"; };
 		C1AD33312DBAD1DD003B80A4 /* SaveCreditCardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCreditCardViewController.swift; sourceTree = "<group>"; };
 		C1AD33322DBAD1DD003B80A4 /* SaveCreditCardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCreditCardViewModel.swift; sourceTree = "<group>"; };
-		C1B0F6412AB08BE9001EAF05 /* MockPrivacyConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPrivacyConfiguration.swift; sourceTree = "<group>"; };
 		C1B3BF432D8D99DA00EE1D43 /* AutofillCreditCardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCreditCardListView.swift; sourceTree = "<group>"; };
 		C1B3BF442D8D99DA00EE1D43 /* AutofillCreditCardListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCreditCardListViewModel.swift; sourceTree = "<group>"; };
 		C1B3BF4E2D91805F00EE1D43 /* AutofillCreditCardListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCreditCardListViewController.swift; sourceTree = "<group>"; };
@@ -7486,7 +7485,7 @@
 		D6E83C3B2B1F27BA006C8AFB /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				1DEAADFA2BA71E9A00E25A97 /* SettingsPreferencesDescriptionView.swift */,
+				1DEAADFA2BA71E9A00E25A97 /* SettingsDescriptionView.swift */,
 				D6E83C472B20C812006C8AFB /* SettingsHostingController.swift */,
 				1DDF401F2BA049FA006850D9 /* SettingsRootView.swift */,
 				D6E83C302B1EA309006C8AFB /* SettingsCell.swift */,
@@ -10308,7 +10307,7 @@
 				CBD4F13F279EBFAF00B20FD7 /* HomeMessageViewModel.swift in Sources */,
 				CBF259792D3FC36C00AC63E4 /* AutofillService.swift in Sources */,
 				1E4DCF4A27B6A38000961E25 /* DownloadListRepresentable.swift in Sources */,
-				1DEAADFB2BA71E9A00E25A97 /* SettingsPreferencesDescriptionView.swift in Sources */,
+				1DEAADFB2BA71E9A00E25A97 /* SettingsDescriptionView.swift in Sources */,
 				6F3537A02C4AAFD2009F8717 /* NewTabPageSettingsSectionItemView.swift in Sources */,
 				2DC3FC65C6D9DA634426672D /* AutofillNoAuthAvailableView.swift in Sources */,
 				9F03113D2DF7DD4200AC4DB5 /* SetAsDefaultTutorialView.swift in Sources */,

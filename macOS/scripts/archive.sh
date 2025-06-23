@@ -279,44 +279,22 @@ staple_notarized_app() {
 compress_app_and_dsym() {
 	echo "Creating XIP archive and compressing dSYMs ..."
 
-	echo "App path: ${app_path}"
-	echo "XIP output path: ${output_app_xip_path}"
-	
-	# Verify app exists before creating XIP
-	if [[ ! -d "${app_path}" ]]; then
-		echo "ERROR: App bundle not found at ${app_path}"
-		ls -la "$(dirname "${app_path}")"
-		exit 1
-	fi
-	
-	# Create XIP archive using Apple's native xip command with installer certificate
-	echo "Creating XIP archive using native xip command..."
-	
-	# Look for Mac Installer Distribution certificate
-	local installer_identity=$(security find-identity -v -p basic | grep "Mac Installer Distribution" | head -1 | awk '{print $2}')
-	
-	if [[ -n "${installer_identity}" ]]; then
-		# Extract the certificate name for the xip command
-		local cert_name=$(security find-certificate -c "${installer_identity}" | grep "alis" | awk 'NF { print $NF }' | tr -d \(\)\")
-		echo "Using installer identity: ${cert_name}"
-		xip --sign "${cert_name}" "${app_path}" "${output_app_xip_path}"
+	# Check if we can use Apple's native xip command (requires installer certificate)
+	if cert_name=$(security find-identity -v -p basic | grep "Mac Installer Distribution" | head -1 | sed 's/.*") \(.*\)$/\1/'); then
+		echo "Creating XIP with native xip command using certificate: ${cert_name}"
+		output_app_xip_path="${workdir}/DuckDuckGo-${version_identifier}.xip"
+		# Change to workdir to avoid full path in XIP
+		pushd "${workdir}" > /dev/null
+		xip --sign "${cert_name}" "${app_name}.app" "$(basename "${output_app_xip_path}")"
+		popd > /dev/null
 	else
-		echo "No Mac Installer Distribution certificate found, falling back to xar method..."
+		echo "Mac Installer Distribution certificate not found, creating ZIP instead of XIP"
 		echo "Available identities:"
-		security find-identity -v -p basic
-		xar -cf "${output_app_xip_path}" --compression bzip2 "${app_path}"
-	fi
-		
-	# Verify XIP was created
-	if [[ -f "${output_app_xip_path}" ]]; then
-		echo "✅ XIP archive created successfully: ${output_app_xip_path}"
-		ls -lh "${output_app_xip_path}"
-	else
-		echo "❌ ERROR: XIP archive was not created"
-		exit 1
+		security find-identity -v -p basic | cat
 	fi
 	
-	echo "Compressing dSYMs..."
+	# Create traditional ZIP 
+	ditto -c -k --keepParent "${app_path}" "${output_app_zip_path}"
 	ditto -c -k --keepParent "${dsym_path}" "${output_dsym_zip_path}"
 	
 	if [[ -f "${output_dsym_zip_path}" ]]; then
@@ -397,7 +375,10 @@ main() {
 	if [[ ${create_dmg} ]]; then
 		echo "App DMG image ready at ${dmg_output_path}"
 	fi
-	echo "XIP archive ready at ${output_app_xip_path}"
+	echo "Compressed app (ZIP) ready at ${output_app_zip_path}"
+	if [[ -n "${output_app_xip_path}" && -f "${output_app_xip_path}" ]]; then
+		echo "Compressed app (XIP) ready at ${output_app_xip_path}"
+	fi
 	echo "Compressed debug symbols ready at ${output_dsym_zip_path}"
 
 	if [[ -n $CI ]]; then

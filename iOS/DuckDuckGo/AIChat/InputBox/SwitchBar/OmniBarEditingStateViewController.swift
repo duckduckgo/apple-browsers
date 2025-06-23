@@ -49,6 +49,10 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
 /// Later: Inject auto suggestions here.
 final class OmniBarEditingStateViewController: UIViewController {
 
+    private enum Constants {
+        static let logoOffset: CGFloat = 18
+    }
+
     private enum ViewVisibility {
         case visible
         case hidden
@@ -63,6 +67,7 @@ final class OmniBarEditingStateViewController: UIViewController {
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     private var suggestionTrayViewController: SuggestionTrayViewController?
     private var daxLogoHostingController: UIHostingController<NewTabPageDaxLogoView>?
+    private var logoCenterYConstraint: NSLayoutConstraint?
     var expectedStartFrame: CGRect?
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
@@ -77,12 +82,17 @@ final class OmniBarEditingStateViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
         installSwitchBarVC()
         installSuggestionsTray()
         installDaxLogoView()
+        setupKeyboardNotifications()
 
         self.view.backgroundColor = .clear
     }
@@ -339,10 +349,12 @@ final class OmniBarEditingStateViewController: UIViewController {
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
         /// Offset so the logo is displayed on the same height as the NTP logo
-        let logoOffset: CGFloat = 18
+        logoCenterYConstraint = hostingController.view.centerYAnchor.constraint(equalTo: view.centerYAnchor,
+                                                                                constant: Constants.logoOffset)
+
         NSLayoutConstraint.activate([
             hostingController.view.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            hostingController.view.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: logoOffset),
+            logoCenterYConstraint!,
         ])
         
         hostingController.didMove(toParent: self)
@@ -447,4 +459,67 @@ extension OmniBarEditingStateViewController {
 
         view.bringSubviewToFront(switchBarVC.view)
     }
+}
+
+// MARK: - Keyboard handling
+extension OmniBarEditingStateViewController {
+
+    private func setupKeyboardNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow(_:)),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide(_:)),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+              let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+              let curve = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else {
+            return
+        }
+
+        let keyboardHeight = keyboardFrame.height
+        let safeAreaInsets = view.safeAreaInsets
+        let adjustedKeyboardHeight = keyboardHeight - safeAreaInsets.bottom
+
+        let keyboardAdjustment = adjustedKeyboardHeight / 2
+        logoCenterYConstraint?.constant = Constants.logoOffset - keyboardAdjustment
+
+        UIView.animate(
+            withDuration: duration,
+            delay: 0,
+            options: UIView.AnimationOptions(rawValue: curve),
+            animations: {
+                self.view.layoutIfNeeded()
+            }
+        )
+    }
+
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        guard let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+              let curve = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else {
+            return
+        }
+
+        logoCenterYConstraint?.constant = Constants.logoOffset
+
+        UIView.animate(
+            withDuration: duration,
+            delay: 0,
+            options: UIView.AnimationOptions(rawValue: curve),
+            animations: {
+                self.view.layoutIfNeeded()
+            }
+        )
+    }
+
 }

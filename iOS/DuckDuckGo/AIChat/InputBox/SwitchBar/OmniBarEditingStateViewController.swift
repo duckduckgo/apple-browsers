@@ -324,8 +324,9 @@ final class OmniBarEditingStateViewController: UIViewController {
         delegate?.onVoiceSearchRequested(from: switchBarHandler.currentToggleState)
     }
 
-    func selectAllText() {
+    func setUpForInitialSelectedState() {
         switchBarVC.textEntryViewController.selectAllText()
+        showSuggestionTray(.favorites)
     }
 
     private func installDaxLogoView() {

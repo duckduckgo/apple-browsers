@@ -170,10 +170,10 @@ final class BrowserTabViewController: NSViewController {
         hoverLabel.topAnchor.constraint(equalTo: hoverLabelContainer.topAnchor, constant: 6).isActive = true
 
         view.addSubview(sidebarContainer)
-        
+
         sidebarContainerLeadingConstraint = sidebarContainer.leadingAnchor.constraint(equalTo: browserTabView.trailingAnchor)
         sidebarContainerWidthConstraint = sidebarContainer.widthAnchor.constraint(equalToConstant: 0)
-        
+
         NSLayoutConstraint.activate([
             sidebarContainer.topAnchor.constraint(equalTo: browserTabView.topAnchor),
             sidebarContainer.bottomAnchor.constraint(equalTo: browserTabView.bottomAnchor),

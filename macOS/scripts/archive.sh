@@ -368,28 +368,7 @@ export_app_version_to_environment() {
 	fi
 }
 
-rename_extracted_app_for_dmg() {
-	# After extracting the tar.xz archive, find the versioned app bundle and rename it
-	# to match the expected app_name for DMG creation
-	echo "Looking for extracted app bundle to rename for DMG creation..."
-	
-	# Find any .app bundle in the workdir
-	local extracted_app=$(find "${workdir}" -maxdepth 1 -name "*.app" -type d | head -1)
-	
-	if [[ -n "${extracted_app}" ]]; then
-		local extracted_app_basename=$(basename "${extracted_app}")
-		local expected_app_name="${app_name}.app"
-		
-		if [[ "${extracted_app_basename}" != "${expected_app_name}" ]]; then
-			echo "Renaming extracted app from '${extracted_app_basename}' to '${expected_app_name}' for DMG creation"
-			mv "${extracted_app}" "${workdir}/${expected_app_name}"
-		else
-			echo "Extracted app already has the correct name: ${expected_app_name}"
-		fi
-	else
-		echo "⚠️  Warning: No .app bundle found after extraction"
-	fi
-}
+
 
 main() {
 	# Load keychain-related functions first, because `clear-keychain`
@@ -421,11 +400,6 @@ main() {
 	compress_app_and_dsym
 
 	if [[ ${create_dmg} ]]; then
-		# In CI, the app bundle might need renaming after extraction from tar.xz
-		if [[ -n $CI ]]; then
-			rename_extracted_app_for_dmg
-		fi
-		
 		create_dmg
 
 		if [[ ${asana_task_id} ]]; then

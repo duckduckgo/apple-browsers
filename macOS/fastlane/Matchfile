@@ -31,7 +31,7 @@ for_lane :sync_signing_dmg_release do
         "com.duckduckgo.macos.vpn",
         "com.duckduckgo.macos.DBP.backgroundAgent"
     ]
-    additional_cert_types ["mac_installer_distribution"]
+    additional_cert_types []
 end
 
 for_lane :sync_signing_dmg_review do
@@ -43,7 +43,7 @@ for_lane :sync_signing_dmg_review do
         "com.duckduckgo.macos.vpn.review",
         "com.duckduckgo.macos.DBP.backgroundAgent.review"
     ]
-    additional_cert_types ["mac_installer_distribution"]
+    additional_cert_types []
 end
 
 

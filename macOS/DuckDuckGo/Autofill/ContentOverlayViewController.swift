@@ -81,6 +81,8 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     private let featureFlagger: FeatureFlagger
     private let tld: TLD
 
+    lazy var usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
+
     public override func viewDidLoad() {
         initWebView()
         addTrackingArea()
@@ -328,7 +330,8 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
     }
 
     public func secureVaultManager(_: SecureVaultManager, didAutofill type: AutofillType, withObjectId objectId: String) {
-        PixelKit.fire(GeneralPixel.formAutofilled(kind: type.formAutofillKind))
+        let parameters = usageProvider.formattedFillDate.flatMap { [AutofillPixelKitEvent.Parameter.lastUsed: $0] } ?? [:]
+        PixelKit.fire(GeneralPixel.formAutofilled(kind: type.formAutofillKind), withAdditionalParameters: parameters)
         NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
 
         if type.formAutofillKind == .password &&
@@ -364,10 +367,15 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         } else if pixel.isCredentialsImportPromotionPixel {
             PixelKit.fire(NonStandardEvent(GeneralPixel.jsPixel(pixel)))
         } else {
+            var existingParameters = pixel.pixelParameters ?? [:]
+            var parameters = usageProvider.formattedFillDate.flatMap {
+                existingParameters[AutofillPixelKitEvent.Parameter.lastUsed] = $0
+                return existingParameters
+            } ?? existingParameters
+            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: parameters)
             if pixel.isIdentityPixel {
                 NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
             }
-            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: pixel.pixelParameters)
         }
     }
 

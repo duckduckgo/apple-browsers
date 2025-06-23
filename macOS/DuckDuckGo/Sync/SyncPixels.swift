@@ -19,6 +19,35 @@
 import PixelKit
 import DDGSync
 
+enum SyncFeatureUsagePixels: PixelKitEventV2 {
+    private enum ParameterKeys {
+        static let connectedDevices = "connected_devices"
+    }
+
+    case syncDisabled
+    case syncDisabledAndDeleted(connectedDevices: Int)
+
+    var name: String {
+        switch self {
+        case .syncDisabled: return "sync_disabled"
+        case .syncDisabledAndDeleted: return "sync_disabledanddeleted"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .syncDisabledAndDeleted(let connectedDevices):
+            return [ParameterKeys.connectedDevices: String(connectedDevices)]
+        case .syncDisabled:
+            return nil
+        }
+    }
+
+    var error: (any Error)? {
+        nil
+    }
+}
+
 enum SyncSwitchAccountPixelKitEvent: PixelKitEventV2 {
     case syncAskUserToSwitchAccount
     case syncUserAcceptedSwitchingAccount

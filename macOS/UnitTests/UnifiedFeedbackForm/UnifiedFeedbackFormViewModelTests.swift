@@ -35,7 +35,8 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender)
+                                                     feedbackSender: sender,
+                                                     featureFlagger: MockFeatureFlagger())
 
         XCTAssertEqual(viewModel.viewState, .feedbackPending)
     }
@@ -47,7 +48,8 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender)
+                                                     feedbackSender: sender,
+                                                     featureFlagger: MockFeatureFlagger())
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         let text = "Some feedback report text"
         viewModel.feedbackFormText = text
@@ -67,7 +69,8 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
                                                      apiService: MockAPIService(apiResponse: .success(response)),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender)
+                                                     feedbackSender: sender,
+                                                     featureFlagger: MockFeatureFlagger())
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.userEmail = "hello@example.com"
         let text = "Some feedback report text"
@@ -86,7 +89,8 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender)
+                                                     feedbackSender: sender,
+                                                     featureFlagger: MockFeatureFlagger())
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         let text = "Some feedback report text"
         viewModel.feedbackFormText = text
@@ -105,7 +109,8 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender)
+                                                     feedbackSender: sender,
+                                                     featureFlagger: MockFeatureFlagger())
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.userEmail = "invalid-email"
         let text = "Some feedback report text"
@@ -125,7 +130,8 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender)
+                                                     feedbackSender: sender,
+                                                     featureFlagger: MockFeatureFlagger())
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.userEmail = "hello@example.com"
         let text = "Some feedback report text"
@@ -146,7 +152,8 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
-                                                     feedbackSender: sender)
+                                                     feedbackSender: sender,
+                                                     featureFlagger: MockFeatureFlagger())
         viewModel.delegate = delegate
 
         XCTAssertFalse(delegate.receivedDismissedViewCallback)

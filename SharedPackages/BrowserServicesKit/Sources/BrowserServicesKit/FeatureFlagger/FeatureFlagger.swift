@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Common
 
 /// This protocol defines a common interface for feature flags managed by FeatureFlagger.
 ///
@@ -287,6 +288,12 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         privacyConfigManager: PrivacyConfigurationManaging,
         experimentManager: ExperimentCohortsManaging?
     ) {
+#if DEBUG
+        assert(![.unitTests, .xcPreviews].contains(AppVersion.runType), {
+            "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
+        }())
+#endif
+
         self.internalUserDecider = internalUserDecider
         self.privacyConfigManager = privacyConfigManager
         self.experimentManager = experimentManager
@@ -300,6 +307,12 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         experimentManager: ExperimentCohortsManaging?,
         for: Flag.Type
     ) {
+#if DEBUG
+        assert(![.unitTests, .xcPreviews].contains(AppVersion.runType), {
+            "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
+        }())
+#endif
+        
         self.internalUserDecider = internalUserDecider
         self.privacyConfigManager = privacyConfigManager
         self.localOverrides = localOverrides

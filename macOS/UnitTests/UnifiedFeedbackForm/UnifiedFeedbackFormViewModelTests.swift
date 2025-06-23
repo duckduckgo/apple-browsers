@@ -160,6 +160,111 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         await viewModel.process(action: .cancel)
         XCTAssertTrue(delegate.receivedDismissedViewCallback)
     }
+
+    func testWhenDuckAiFeatureIsEnabledAndSubscriptionIncludesPaidAIChat_ThenDuckAiCategoryIsAvailable() async throws {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.isFeatureOn = { _ in true }
+
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
+                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
+                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
+                                                     feedbackSender: MockVPNFeedbackSender(),
+                                                     featureFlagger: featureFlagger)
+
+        try await Task.sleep(nanoseconds: 500_000_000)
+        XCTAssertTrue(viewModel.availableCategories.contains(.duckAi))
+    }
+
+    func testWhenDuckAiFeatureIsDisabled_ThenDuckAiCategoryIsNotAvailable() async throws {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.subscriptionFeatures = [.paidAIChat]
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.isFeatureOn = { _ in false }
+
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
+                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
+                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
+                                                     feedbackSender: MockVPNFeedbackSender(),
+                                                     featureFlagger: featureFlagger)
+
+        try await Task.sleep(nanoseconds: 500_000_000)
+        XCTAssertFalse(viewModel.availableCategories.contains(.duckAi))
+    }
+
+    func testWhenSubscriptionDoesNotIncludePaidAIChat_ThenDuckAiCategoryIsNotAvailable() async throws {
+        let subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.subscriptionFeatures = []
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.isFeatureOn = { _ in true }
+
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
+                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
+                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
+                                                     feedbackSender: MockVPNFeedbackSender(),
+                                                     featureFlagger: featureFlagger)
+
+        try await Task.sleep(nanoseconds: 500_000_000)
+        XCTAssertFalse(viewModel.availableCategories.contains(.duckAi))
+    }
+
+    func testWhenSourceIsDuckAi_ThenDefaultCategoryIsDuckAi() throws {
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
+                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
+                                                     feedbackSender: MockVPNFeedbackSender(),
+                                                     featureFlagger: MockFeatureFlagger(),
+                                                     source: .duckAi)
+
+        viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
+
+        XCTAssertEqual(viewModel.selectedCategory, UnifiedFeedbackCategory.duckAi.rawValue)
+    }
+
+    func testWhenDuckAiCategoryIsSelected_ThenSubcategoryIsSetToPaidAIChatPrompt() throws {
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+                                                     apiService: MockAPIService(apiResponse: .failure(Error.generic)),
+                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
+                                                     feedbackSender: MockVPNFeedbackSender(),
+                                                     featureFlagger: MockFeatureFlagger())
+
+        viewModel.selectedCategory = UnifiedFeedbackCategory.duckAi.rawValue
+
+        XCTAssertEqual(viewModel.selectedSubcategory, PaidAIChatFeedbackSubcategory.prompt.rawValue)
+    }
+
+    func testGivenDuckAiCategorWhenSendingFeedbackSucceeds_ThenCorrectFeedbackIsSent() async throws {
+        let sender = MockVPNFeedbackSender()
+        let payload = UnifiedFeedbackFormViewModel.Response(message: "success", error: nil)
+        let response = APIResponseV2(data: try! JSONEncoder().encode(payload), httpResponse: HTTPURLResponse())
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+                                                     apiService: MockAPIService(apiResponse: .success(response)),
+                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
+                                                     defaultMetadataCollector: MockDBPMetadataCollector(),
+                                                     feedbackSender: sender,
+                                                     featureFlagger: MockFeatureFlagger(),
+                                                     source: .ppro)
+
+        viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
+        viewModel.selectedCategory = UnifiedFeedbackCategory.duckAi.rawValue
+        viewModel.selectedSubcategory = PaidAIChatFeedbackSubcategory.accessSubscriptionModels.rawValue
+        viewModel.userEmail = "test@example.com"
+        let text = "Duck.ai feedback text"
+        viewModel.feedbackFormText = text
+
+        await viewModel.process(action: .submit)
+        XCTAssertEqual(sender.capturedSource, .ppro)
+        XCTAssertEqual(sender.capturedCategory, "duckAi")
+        XCTAssertEqual(sender.capturedSubcategory, "accessSubscriptionModels")
+    }
+
 }
 
 // MARK: - Mocks
@@ -243,6 +348,9 @@ private class MockVPNMetadataCollector: UnifiedMetadataCollector {
 private class MockVPNFeedbackSender: UnifiedFeedbackSender {
     var throwErrorWhenSending: Bool = false
     var sentMetadata: Bool = false
+    var capturedSource: UnifiedFeedbackSource?
+    var capturedCategory: String?
+    var capturedSubcategory: String?
 
     var receivedData: (VPNMetadata?, UnifiedFeedbackSource, String?, String?, String?)?
 
@@ -272,7 +380,9 @@ private class MockVPNFeedbackSender: UnifiedFeedbackSender {
         if throwErrorWhenSending {
             throw SomeError.error
         }
-
+        capturedSource = source
+        capturedCategory = category
+        capturedSubcategory = subcategory
         self.sentMetadata = true
         self.receivedData = (metadata as? VPNMetadata, source, category, subcategory, description)
     }

@@ -80,7 +80,7 @@ final class SubscriptionManagerTests: XCTestCase {
         userDefaults.removePersistentDomain(forName: Constants.userDefaultsSuiteName)
 
         var loadedEnvironment = DefaultSubscriptionManager.loadEnvironmentFrom(userDefaults: userDefaults)
-        XCTAssertNil(loadedEnvironment) l
+        XCTAssertNil(loadedEnvironment)
 
         // When
         DefaultSubscriptionManager.save(subscriptionEnvironment: subscriptionEnvironment,

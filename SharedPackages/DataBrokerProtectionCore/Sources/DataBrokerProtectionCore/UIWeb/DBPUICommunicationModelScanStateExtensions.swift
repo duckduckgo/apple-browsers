@@ -122,8 +122,7 @@ public extension DBPUIScanAndOptOutMaintenanceState {
     }
 
     private static func getLastScansInformation(brokerProfileQueryData: [BrokerProfileQueryData],
-                                                currentDate: Date = Date(),
-                                                format: String = "dd/MM/yyyy") -> DBPUIScanDate {
+                                                currentDate: Date = Date()) -> DBPUIScanDate {
         let eightDaysBeforeToday = currentDate.addingTimeInterval(-8 * 24 * 60 * 60)
         let brokers = brokerProfileQueryData.uiBrokersSortedByScanLastRunDateWhereScansRanBetween(earlierDate: eightDaysBeforeToday,
                                                                                                   laterDate: currentDate)
@@ -134,8 +133,7 @@ public extension DBPUIScanAndOptOutMaintenanceState {
     }
 
     private static func getNextScansInformation(brokerProfileQueryData: [BrokerProfileQueryData],
-                                                currentDate: Date = Date(),
-                                                format: String = "dd/MM/yyyy") -> DBPUIScanDate {
+                                                currentDate: Date = Date()) -> DBPUIScanDate {
         let eightDaysAfterToday = currentDate.addingTimeInterval(8 * 24 * 60 * 60)
         let brokers = brokerProfileQueryData.uiBrokersSortedByScanPreferredRunDateWhereDateIsBetween(earlierDate: currentDate,
                                                                                                      laterDate: eightDaysAfterToday)

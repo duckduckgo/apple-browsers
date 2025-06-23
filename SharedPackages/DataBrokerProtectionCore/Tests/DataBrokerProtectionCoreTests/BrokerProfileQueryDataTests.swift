@@ -110,27 +110,4 @@ final class BrokerProfileQueryDataTests: XCTestCase {
         let result = array.elementsSortedByScanPreferredRunDateWhereDateIsBetween(earlierDate: Date(timeIntervalSince1970: 400), laterDate: Date(timeIntervalSince1970: 20000))
         XCTAssertEqual(result.map { $0.dataBroker.name }, ["3", "2"])
     }
-
-    /*
-
-
-     func elementsSortedByScanPreferredRunDateWhereDateIsBetween(earlierDate: Date, laterDate: Date) -> [BrokerProfileQueryData] {
-         guard earlierDate < laterDate else {
-             assertionFailure()
-             return []
-         }
-
-         let unsortedElementsBetweenDates = self.filter {
-             $0.scanJobData.preferredRunDate != nil &&
-             $0.scanJobData.preferredRunDate! >= earlierDate &&
-             $0.scanJobData.preferredRunDate! <= laterDate
-         }
-
-         let sortedElements = unsortedElementsBetweenDates.sorted {
-             $0.scanJobData.preferredRunDate! < $1.scanJobData.preferredRunDate!
-         }
-
-         return sortedElements
-     }
-     */
 }

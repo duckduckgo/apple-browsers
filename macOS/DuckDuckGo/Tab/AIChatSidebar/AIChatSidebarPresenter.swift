@@ -119,6 +119,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
                 guard let self else { return }
 
                 context.duration = 0.25
+                context.allowsImplicitAnimation = true
                 context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
                 sidebarHost.sidebarContainerLeadingConstraint?.animator().constant = newConstraintValue
             } completionHandler: { [weak self, tabID = sidebarHost.currentTabID] in

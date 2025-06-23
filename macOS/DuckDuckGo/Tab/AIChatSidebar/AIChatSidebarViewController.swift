@@ -257,6 +257,13 @@ final class AIChatSidebarViewController: NSViewController {
         delegate?.didClickCloseButton()
     }
 
+    func stopLoading() {
+        aiTab.webView.navigationDelegate = nil
+        aiTab.webView.uiDelegate = nil
+
+        aiTab.webView.stopLoading()
+        aiTab.webView.loadHTMLString("", baseURL: nil)
+    }
 }
 
 extension AIChatSidebarViewController: TabDelegate {

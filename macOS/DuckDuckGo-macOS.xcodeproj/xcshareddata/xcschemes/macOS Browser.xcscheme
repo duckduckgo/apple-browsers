@@ -133,6 +133,9 @@
                   Identifier = "CBRCompileTimeReporterTests">
                </Test>
                <Test
+                  Identifier = "MoreOptionsMenuTests/testWhenUserIsAuthenticatedWithPaidAIChatFeatureAndFeatureFlagEnabledThenPaidAIChatItemAppearsInSubscriptionSubmenu()">
+               </Test>
+               <Test
                   Identifier = "PixelExperimentTests">
                </Test>
                <Test

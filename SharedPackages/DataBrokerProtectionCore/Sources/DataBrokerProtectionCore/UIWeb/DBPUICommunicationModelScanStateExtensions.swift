@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Algorithms
 
 public extension DBPUIInitialScanState {
 
@@ -218,7 +219,8 @@ private extension Array where Element == BrokerProfileQueryData {
             return [uiDataBroker] + uiMirrorSites
         }
 
-        return brokers.uniqued()
+        let uniqued = brokers.uniqued()
+        return uniqued.map { $0 }
     }
 
     func uiBrokersSortedByScanPreferredRunDateWhereDateIsBetween(earlierDate: Date, laterDate: Date) -> [DBPUIDataBroker] {
@@ -243,7 +245,8 @@ private extension Array where Element == BrokerProfileQueryData {
             return [uiDataBroker] + uiMirrorSites
         }
 
-        return brokers.uniqued()
+        let uniqued = brokers.uniqued()
+        return uniqued.map { $0 }
     }
 
     typealias ScannedBroker = DBPUIScanProgress.ScannedBroker

@@ -26,6 +26,7 @@ import VPN
 import NetworkProtectionUI
 import NetworkProtectionIPC
 import NetworkExtension
+import PixelKit
 import Subscription
 
 /// Implements the sequence of steps that the VPN needs to execute when the App starts up.
@@ -39,18 +40,24 @@ final class VPNAppEventsHandler {
     private var cancellables = Set<AnyCancellable>()
     private let defaults: UserDefaults
     private let featureGatekeeper: VPNFeatureGatekeeper
+    private let ipcClient: VPNControllerXPCClient
     private let loginItemsManager: LoginItemsManaging
+    private let pixelKit: PixelKit?
 
     // MARK: - Initializers
 
     init(featureGatekeeper: VPNFeatureGatekeeper,
          featureFlagOverridesPublisher: FeatureFlagOverridesPublisher,
          loginItemsManager: LoginItemsManaging,
-         defaults: UserDefaults = .netP) {
+         ipcClient: VPNControllerXPCClient = .shared,
+         defaults: UserDefaults = .netP,
+         pixelKit: PixelKit? = .shared) {
 
         self.defaults = defaults
         self.featureGatekeeper = featureGatekeeper
+        self.ipcClient = ipcClient
         self.loginItemsManager = loginItemsManager
+        self.pixelKit = pixelKit
 
         subscribeToFeatureFlagOverrideChanges(featureFlagOverridesPublisher)
     }
@@ -67,6 +74,28 @@ final class VPNAppEventsHandler {
 
     // MARK: - Login Item Control Checkpoints
 
+    private enum LoginItemsControlCheckpointPixel: PixelKitEventV2 {
+        case cannotStopVPN(_ error: Error)
+
+        var name: String {
+            switch self {
+            case .cannotStopVPN:
+                return "vpn_browser_login_items_control_checkpoint_cannot_stop_vpn"
+            }
+        }
+
+        var error: (any Error)? {
+            switch self {
+            case .cannotStopVPN(let error):
+                return error
+            }
+        }
+
+        var parameters: [String : String]? {
+            nil
+        }
+    }
+
     /// Checks whether the VNP login items need to be disabled
     ///
     private func loginItemsControlCheckpoint(canRestart: Bool) {
@@ -77,7 +106,15 @@ final class VPNAppEventsHandler {
                     restartLoginItem(using: loginItemsManager)
                 }
             case .some(false) where loginItemsManager.isAnyInstalled(LoginItemsManager.vpnLoginItems):
-                disableLoginItem(using: loginItemsManager)
+                Task {
+                    ipcClient.stop { error in
+                        if let error {
+                            self.pixelKit?.fire(LoginItemsControlCheckpointPixel.cannotStopVPN(error))
+                        }
+                    }
+                    try await Task.sleep(interval: .seconds(2))
+                    self.disableLoginItem(using: loginItemsManager)
+                }
             default:
                 break
             }

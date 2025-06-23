@@ -1662,14 +1662,29 @@ class MainViewController: UIViewController {
         // hide toolbar on iPhone
         viewCoordinator.toolbar.accessibilityElementsHidden = !AppWidthObserver.shared.isLargeWidth
     }
-    
-    private func showVoiceSearch() {
+
+    private func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
+        SpeechRecognizer.requestMicAccess { [weak self] permission in
+            guard let self = self else { return }
+            if permission {
+                if let target = preferredTarget {
+                    self.showVoiceSearch(preferredTarget: target)
+                } else {
+                    self.showVoiceSearch()
+                }
+            } else {
+                self.showNoMicrophonePermissionAlert()
+            }
+        }
+    }
+
+    private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
         // https://app.asana.com/0/0/1201408131067987
         UIMenuController.shared.hideMenu()
         viewCoordinator.omniBar.removeTextSelection()
         
         Pixel.fire(pixel: .openVoiceSearch)
-        let voiceSearchController = VoiceSearchViewController()
+        let voiceSearchController = VoiceSearchViewController(preferredTarget: preferredTarget)
         voiceSearchController.delegate = self
         voiceSearchController.modalTransitionStyle = .crossDissolve
         voiceSearchController.modalPresentationStyle = .overFullScreen
@@ -1940,7 +1955,6 @@ class MainViewController: UIViewController {
     }
 
     func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil) {
-        featureDiscovery.setWasUsedBefore(.aiChat)
         aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, on: self)
     }
 }
@@ -2143,7 +2157,6 @@ extension MainViewController: BrowserChromeDelegate {
 
 // MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
-
     func onSelectFavorite(_ favorite: BookmarkEntity) {
         handleFavoriteSelected(favorite)
     }
@@ -2152,6 +2165,10 @@ extension MainViewController: OmniBarDelegate {
         openAIChat(query, autoSend: true)
     }
 
+    func didRequestCurrentURL() -> URL? {
+        return currentTab?.url
+    }
+    
     func onSharePressed() {
         shareCurrentURLFromAddressBar()
     }
@@ -2440,8 +2457,12 @@ extension MainViewController: OmniBarDelegate {
             openAIChat()
         }
 
-        Pixel.fire(pixel: .openAIChatFromAddressBar,
-                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromAddressBar)
+    }
+
+    private func fireAIChatUsagePixelAndSetFeatureUsed(_ pixel: Pixel.Event) {
+        Pixel.fire(pixel: pixel, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        featureDiscovery.setWasUsedBefore(.aiChat)
     }
 
     func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
@@ -2453,13 +2474,11 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onVoiceSearchPressed() {
-        SpeechRecognizer.requestMicAccess { permission in
-            if permission {
-                self.showVoiceSearch()
-            } else {
-                self.showNoMicrophonePermissionAlert()
-            }
-        }
+        handleVoiceSearchOpenRequest()
+    }
+
+    func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget) {
+        handleVoiceSearchOpenRequest(preferredTarget: preferredTarget)
     }
 
     /// We always want to show the AI Chat button if the keyboard is on focus
@@ -2709,7 +2728,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChat(tab: TabViewController) {
-        // Pixel fired at point where this is triggered to avoid over firing
+        fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
         openAIChat()
     }
 
@@ -2952,8 +2971,7 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
-        Pixel.fire(pixel: .openAIChatFromTabManager,
-                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
     }
 }

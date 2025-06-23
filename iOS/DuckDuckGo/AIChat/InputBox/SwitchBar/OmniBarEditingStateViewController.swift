@@ -483,13 +483,14 @@ extension OmniBarEditingStateViewController {
     @objc private func keyboardWillShow(_ notification: Notification) {
         guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
               let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
-              let curve = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else {
+              let animationCurveRawNSN = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber else {
             return
         }
 
         let keyboardHeight = keyboardFrame.height
         let safeAreaInsets = view.safeAreaInsets
         let adjustedKeyboardHeight = keyboardHeight - safeAreaInsets.bottom
+        let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRawNSN.uintValue)
 
         let keyboardAdjustment = adjustedKeyboardHeight / 2
         logoCenterYConstraint?.constant = Constants.logoOffset - keyboardAdjustment
@@ -497,7 +498,7 @@ extension OmniBarEditingStateViewController {
         UIView.animate(
             withDuration: duration,
             delay: 0,
-            options: UIView.AnimationOptions(rawValue: curve),
+            options: animationCurve,
             animations: {
                 self.view.layoutIfNeeded()
             }
@@ -506,20 +507,20 @@ extension OmniBarEditingStateViewController {
 
     @objc private func keyboardWillHide(_ notification: Notification) {
         guard let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
-              let curve = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else {
+        let animationCurveRawNSN = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber else {
             return
         }
 
+        let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRawNSN.uintValue)
         logoCenterYConstraint?.constant = Constants.logoOffset
 
         UIView.animate(
             withDuration: duration,
             delay: 0,
-            options: UIView.AnimationOptions(rawValue: curve),
+            options: animationCurve,
             animations: {
                 self.view.layoutIfNeeded()
             }
         )
     }
-
 }

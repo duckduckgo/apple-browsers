@@ -289,10 +289,24 @@ compress_app_and_dsym() {
 		exit 1
 	fi
 	
-	# Create XIP archive using the app as it is (already correctly named)
-	echo "Creating XIP archive..."
-	xar -cf "${output_app_xip_path}" --compression gzip "${app_path}"
+	# Create XIP archive using Apple's native xip command with installer certificate
+	echo "Creating XIP archive using native xip command..."
 	
+	# Look for Mac Installer Distribution certificate
+	local installer_identity=$(security find-identity -v -p basic | grep "Mac Installer Distribution" | head -1 | awk '{print $2}')
+	
+	if [[ -n "${installer_identity}" ]]; then
+		# Extract the certificate name for the xip command
+		local cert_name=$(security find-certificate -c "${installer_identity}" | grep "alis" | awk 'NF { print $NF }' | tr -d \(\)\")
+		echo "Using installer identity: ${cert_name}"
+		xip --sign "${cert_name}" "${app_path}" "${output_app_xip_path}"
+	else
+		echo "No Mac Installer Distribution certificate found, falling back to xar method..."
+		echo "Available identities:"
+		security find-identity -v -p basic
+		xar -cf "${output_app_xip_path}" --compression bzip2 "${app_path}"
+	fi
+		
 	# Verify XIP was created
 	if [[ -f "${output_app_xip_path}" ]]; then
 		echo "✅ XIP archive created successfully: ${output_app_xip_path}"

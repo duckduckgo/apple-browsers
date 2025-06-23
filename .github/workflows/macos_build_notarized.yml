@@ -318,6 +318,21 @@ jobs:
       run: |
         tar -xf DuckDuckGo-${{ env.app-version }}.app.tar.xz
         rm -f DuckDuckGo-${{ env.app-version }}.app.tar.xz
+        
+        # Rename extracted app to match expected name for DMG creation
+        extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
+        if [[ -n "${extracted_app}" ]]; then
+          extracted_app_name=$(basename "${extracted_app}")
+          expected_app_name="${{ env.app-name }}.app"
+          if [[ "${extracted_app_name}" != "${expected_app_name}" ]]; then
+            echo "Renaming extracted app from '${extracted_app_name}' to '${expected_app_name}'"
+            mv "${extracted_app}" "${expected_app_name}"
+          else
+            echo "Extracted app already has the correct name: ${expected_app_name}"
+          fi
+        else
+          echo "⚠️  Warning: No .app bundle found after extraction"
+        fi
       working-directory: ${{ github.workspace }}/macOS/dmg
 
     - name: Install create-dmg

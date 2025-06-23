@@ -134,7 +134,7 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let downloadsIcon: NSImage = DesignSystemImages.Glyphs.Size16.downloads
     let historyIcon: NSImage = DesignSystemImages.Glyphs.Size16.history
     let passwordsIcon: NSImage = DesignSystemImages.Glyphs.Size16.keyLogin
-    let deleteBrowsingDataIcon: NSImage = DesignSystemImages.Glyphs.Size16.fire
+    let deleteBrowsingDataIcon: NSImage = DesignSystemImages.Glyphs.Size16.fireSolid
     let emailProtectionIcon: NSImage = DesignSystemImages.Glyphs.Size16.email
     let privacyProIcon: NSImage = DesignSystemImages.Glyphs.Size16.privacyPro
     let fireproofSiteIcon: NSImage = DesignSystemImages.Glyphs.Size16.fireproof

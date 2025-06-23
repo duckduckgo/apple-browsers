@@ -522,10 +522,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .withSubmenu(loginsSubMenu)
             .withAccessibilityIdentifier("MoreOptionsMenu.autofill")
 
-        addItem(withTitle: UserText.deleteBrowsingDataMenuItem, action: #selector(deleteBrowsingData(_:)), keyEquivalent: "")
-            .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.deleteBrowsingDataIcon)
-
         addItem(NSMenuItem.separator())
     }
 
@@ -612,6 +608,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             addItem(withTitle: UserText.fireproofSite, action: nil, keyEquivalent: "")
                 .withImage(moreOptionsMenuIconsProvider.fireproofSiteIcon)
         }
+
+        addItem(withTitle: UserText.deleteBrowsingDataMenuItem, action: #selector(deleteBrowsingData(_:)), keyEquivalent: "")
+            .targetting(self)
+            .withImage(moreOptionsMenuIconsProvider.deleteBrowsingDataIcon)
+
+        addItem(NSMenuItem.separator())
 
         addItem(withTitle: UserText.findInPageMenuItem, action: tabViewModel.canFindInPage ? #selector(findInPage(_:)) : nil, keyEquivalent: "f")
             .targetting(self)

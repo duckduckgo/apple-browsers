@@ -32,7 +32,4 @@
    <FileRef
       location = "group:macOS/DuckDuckGo-macOS.xcodeproj">
    </FileRef>
-   <FileRef
-      location = "group:iOS/LocalPackages/SetDefaultBrowser/Tests/SetDefaultBrowserCore.xctestplan">
-   </FileRef>
 </Workspace>

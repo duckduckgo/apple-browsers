@@ -3338,9 +3338,9 @@
 		9F3C7FDF2D7990710061FA72 /* DefaultBrowserInfoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserInfoStore.swift; sourceTree = "<group>"; };
 		9F3C7FE12D7990DE0061FA72 /* DefaultBrowserManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserManager.swift; sourceTree = "<group>"; };
 		9F3DF78F2D7EACAD00857D06 /* CheckDefaultBrowserServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckDefaultBrowserServiceTests.swift; sourceTree = "<group>"; };
+		9F454D162E050B8B00B8CC5A /* MetricBuilder */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MetricBuilder; sourceTree = "<group>"; };
 		9F454D192E051CBE00B8CC5A /* DefaultBrowserPromptFeatureFlagAdapters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptFeatureFlagAdapters.swift; sourceTree = "<group>"; };
 		9F454D202E052D1E00B8CC5A /* SetDefaultBrowser */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SetDefaultBrowser; sourceTree = "<group>"; };
-		9F454D162E050B8B00B8CC5A /* MetricBuilder */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MetricBuilder; sourceTree = "<group>"; };
 		9F465E1D2D3F5C2700490109 /* Logger+MaliciousSiteProtection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+MaliciousSiteProtection.swift"; sourceTree = "<group>"; };
 		9F465E292D41B61300490109 /* MaliciousSiteProtectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionService.swift; sourceTree = "<group>"; };
 		9F46BEF72CD8D7490092E0EF /* OnboardingView+AddToDockContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingView+AddToDockContent.swift"; sourceTree = "<group>"; };

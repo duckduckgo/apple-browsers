@@ -467,7 +467,7 @@ final class StorePurchaseManagerTests: XCTestCase {
     }
 
     // MARK: - Publisher Tests
-    
+
     func testAreProductsAvailablePublisherEmitsTrueWhenProductsBecomeAvailable() async {
         // Given
         let expectation = expectation(description: "Publisher should emit true")
@@ -494,7 +494,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         // Set initial state to have products
         mockProductFetcher.mockProducts = [createMonthlyProduct()]
         await sut.updateAvailableProducts()
-        
+
         let expectation = expectation(description: "Publisher should emit false")
         var receivedValue: Bool?
         let cancellable = sut.areProductsAvailablePublisher
@@ -513,29 +513,29 @@ final class StorePurchaseManagerTests: XCTestCase {
         XCTAssertEqual(receivedValue, false)
         cancellable.cancel()
     }
-    
+
     func testAreProductsAvailablePublisherEmitsCorrectSequenceOnChanges() async {
         // Given
         var receivedValues: [Bool] = []
         let expectation = expectation(description: "Publisher should emit two values")
         expectation.expectedFulfillmentCount = 2
-        
+
         let cancellable = sut.areProductsAvailablePublisher
             .dropFirst() // Drop initial `false` value
             .sink { value in
                 receivedValues.append(value)
                 expectation.fulfill()
             }
-        
+
         // When
         // 1. Products become available
         mockProductFetcher.mockProducts = [createMonthlyProduct()]
         await sut.updateAvailableProducts()
-        
+
         // 2. Products become unavailable
         mockProductFetcher.mockProducts = []
         await sut.updateAvailableProducts()
-        
+
         // Then
         await fulfillment(of: [expectation], timeout: 1)
         XCTAssertEqual(receivedValues, [true, false])

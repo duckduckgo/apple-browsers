@@ -318,7 +318,7 @@ final class SubscriptionManagerTests: XCTestCase {
         // Clean up
         cancellable.cancel()
     }
-    
+
     func testCanPurchasePublisherEmitsMultipleValues() async throws {
         // Given
         let expectation1 = expectation(description: "Publisher should emit first value")

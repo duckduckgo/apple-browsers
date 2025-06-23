@@ -191,7 +191,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         )
 
         // Then
-        XCTAssertTrue(viewModel.saveCreditCardsEnabled)
+        XCTAssertTrue(viewModel.saveCreditCardsEnabled.wrappedValue)
     }
 
     func testTogglingCreditCardsEnabledUpdatesAppSettings() {
@@ -207,7 +207,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         )
 
         // When
-        viewModel.saveCreditCardsEnabled = true
+        viewModel.saveCreditCardsEnabled.wrappedValue = true
 
         // Then
         XCTAssertTrue(appSettings.autofillCreditCardsEnabled)

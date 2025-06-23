@@ -22,7 +22,7 @@ import SwiftUI
 import SwiftUIExtensions
 import Combine
 import DDGSync
-import NetworkProtection
+import VPN
 import AIChat
 import Subscription
 

@@ -40,9 +40,11 @@ extension AppDelegate {
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
 #if SPARKLE
-        if !SupportedOSChecker.isCurrentOSReceivingUpdates {
+        if let warning = SupportedOSChecker().supportWarning,
+           case .unsupported = warning {
+
             // Show not supported info
-            if NSAlert.osNotSupported().runModal() != .cancel {
+            if NSAlert.osNotSupported(warning).runModal() != .cancel {
                 let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
                 NSWorkspace.shared.open(url)
             }
@@ -458,8 +460,7 @@ extension AppDelegate {
         }
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.homePageContinueSetUpImport.rawValue)
 
-        let autofillPixelReporter = AutofillPixelReporter(standardUserDefaults: .standard,
-                                                          appGroupUserDefaults: nil,
+        let autofillPixelReporter = AutofillPixelReporter(usageStore: AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil),
                                                           autofillEnabled: AutofillPreferences().askToSaveUsernamesAndPasswords,
                                                           eventMapping: EventMapping<AutofillPixelEvent> { _, _, _, _ in },
                                                           installDate: nil)

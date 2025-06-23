@@ -36,8 +36,6 @@ let extensionsInputFiles: [InputFile] = [
 ]
 
 let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
-    .init("BWEncryption.swift", .source),
-    .init("BWEncryptionOutput.swift", .source),
     .init("InfoPlist.xcstrings", .resource),
     .init("DeveloperID.xcstrings", .resource),
     .init("BWManager.swift", .source),
@@ -75,7 +73,8 @@ let extraInputFiles: [TargetName: Set<InputFile>] = [
         .init("WKWebViewPrivateMethodsAvailabilityTests.swift", .source),
         .init("WebExtensionManagerTests.swift", .source),
         .init("WebExtensionPathsCacheMock.swift", .source),
-        .init("WebExtensionLoaderMock.swift", .source)
+        .init("WebExtensionLoaderMock.swift", .source),
+        .init("SupportedOSCheckerTests.swift", .source)
     ],
 
     "Integration Tests": []

@@ -19,6 +19,8 @@
 
 import UIKit
 import PrivacyDashboard
+import Suggestions
+import Bookmarks
 
 final class UpdatedOmniBarViewController: OmniBarViewController {
 
@@ -129,6 +131,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     // MARK: - Private Helper Methods
 
     private func presentExperimentalEditingState(for textField: UITextField) {
+        guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
         let switchBarHandler = createSwitchBarHandler(for: textField)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
@@ -136,7 +139,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         editingStateViewController.delegate = self
         editingStateViewController.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
         editingStateViewController.modalPresentationStyle = .overFullScreen
-
+        editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
         present(editingStateViewController, animated: false)
         self.editingStateViewController = editingStateViewController
 
@@ -148,14 +151,17 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     }
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
-        let switchBarHandler = SwitchBarHandler()
+        let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper)
 
-        guard let currentText = omniBarView.text else {
+        guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty else {
             return switchBarHandler
         }
 
-        if let textFieldText = textField.text,
-           let url = URL(trimmedAddressBarString: textFieldText.trimmingWhitespace()) {
+        /// Determine whether the current text in the omnibar is a search query or a URL.
+        /// - If the text is a URL, retrieve the full URL from the delegate and update the text with the full URL for display.
+        /// - If the text is a search query, simply update the text with the query itself.
+        if URL(trimmedAddressBarString: currentText) != nil,
+           let url = omniDelegate?.didRequestCurrentURL() {
             let urlText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: true)
             switchBarHandler.updateCurrentText(urlText.string)
         } else {
@@ -181,8 +187,28 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 
     func onPromptSubmitted(_ query: String) {
-        editingStateViewController?.dismissAnimated {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
             self.omniDelegate?.onOmniPromptSubmitted(query)
+        }
+    }
+
+    func onSelectFavorite(_ favorite: BookmarkEntity) {
+        editingStateViewController?.dismissAnimated()
+        omniDelegate?.onSelectFavorite(favorite)
+    }
+
+    func onSelectSuggestion(_ suggestion: Suggestion) {
+        omniDelegate?.onOmniSuggestionSelected(suggestion)
+        editingStateViewController?.dismissAnimated()
+    }
+
+    func onVoiceSearchRequested(from mode: TextEntryMode) {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
+
+            let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
+            self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
         }
     }
 }

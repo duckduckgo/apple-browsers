@@ -124,7 +124,6 @@ class SubscriptionManagerV2Tests: XCTestCase {
     // MARK: - URL Generation Tests
 
     func testURLGeneration_ForCustomerPortal() async throws {
-
         let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         mockOAuthClient.internalCurrentTokenContainer = tokenContainer
         mockOAuthClient.getTokensResponse = .success(tokenContainer)

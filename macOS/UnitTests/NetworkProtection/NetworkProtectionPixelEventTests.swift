@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import NetworkProtection
+import VPN
 import PixelKit
 import PixelKitTestingUtilities
 import XCTest

@@ -20,7 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import NetworkExtension
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 import LoginItems
 import PixelKit

@@ -21,7 +21,7 @@ import BrowserServicesKit
 import Persistence
 import Bookmarks
 import RemoteMessaging
-import NetworkProtection
+import VPN
 import Subscription
 import Freemium
 import FeatureFlags

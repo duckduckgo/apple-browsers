@@ -25,10 +25,11 @@ import Core
 
 protocol AutofillCreditCardListViewModelDelegate: AnyObject {
     func autofillCreditCardListViewModelDidSelectCard(_ viewModel: AutofillCreditCardListViewModel, card: SecureVaultModels.CreditCard)
+    func autofillCreditCardListViewModelAddCard(_ viewModel: AutofillCreditCardListViewModel)
 }
 
 protocol CreditCardListViewModelProtocol: ObservableObject {
-    func cardSelected(_ cardViewModel: CreditCardViewModel)
+    func cardSelected(_ creditCardRow: CreditCardRowViewModel)
     func refreshData()
     func deleteCard(_ creditCard: SecureVaultModels.CreditCard)
     func lockUI()
@@ -44,7 +45,7 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
         case showItems
     }
     
-    @Published var cards: [CreditCardViewModel] = []
+    @Published var cards: [CreditCardRowViewModel] = []
     @Published var showingModal: Bool = false
     @Published private(set) var viewState: AutofillCreditCardListViewModel.ViewState = .authLocked
     
@@ -65,24 +66,27 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
     private var cachedDeletedCreditCard: SecureVaultModels.CreditCard?
     private var cancellables: Set<AnyCancellable> = []
     
-    static fileprivate let dateFormatter: DateFormatter = {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MM/yy"
-        return dateFormatter
-    }()
-    
-    init(secureVault: (any AutofillSecureVault)? = nil) {
+    init(secureVault: (any AutofillSecureVault)? = nil, source: AutofillSettingsSource) {
         self.secureVault = secureVault
         
         if let count = try? secureVault?.creditCardsCount() {
             authenticationNotRequired = count == 0
+            Pixel.fire(pixel: .autofillCardsManagementOpened,
+                       withAdditionalParameters: [
+                        PixelParameters.source: source.rawValue,
+                        "has_cards_saved": "\(count > 0 ? 1 : 0)"
+                       ])
         }
         refreshData()
         setupCancellables()
     }
     
-    func cardSelected(_ cardViewModel: CreditCardViewModel) {
-        delegate?.autofillCreditCardListViewModelDidSelectCard(self, card: cardViewModel.card)
+    func addCard() {
+        delegate?.autofillCreditCardListViewModelAddCard(self)
+    }
+    
+    func cardSelected(_ card: CreditCardRowViewModel) {
+        delegate?.autofillCreditCardListViewModelDidSelectCard(self, card: card.creditCard)
     }
     
     func refreshData() {
@@ -155,7 +159,7 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
     private func fetchCreditCards() {
         do {
             let creditCards = try self.secureVault?.creditCards() ?? []
-            cards = creditCards.asCardViewModels
+            cards = creditCards.sorted(by: { $0.created > $1.created }).asCardRowViewModels
             updateViewState()
         } catch {
             Logger.autofill.error("Failed to fetch credit cards from vault: \(error)")
@@ -182,7 +186,8 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
                 cardholderName: oldCard.cardholderName,
                 cardSecurityCode: oldCard.cardSecurityCode,
                 expirationMonth: oldCard.expirationMonth,
-                expirationYear: oldCard.expirationYear)
+                expirationYear: oldCard.expirationYear,
+                created: oldCard.created)
             cachedDeletedCreditCard = newCard
             try secureVault.storeCreditCard(cachedDeletedCreditCard)
             clearUndoCache()
@@ -204,72 +209,7 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
             self.undoLastDelete()
         }, onDidDismiss: {
             self.clearUndoCache()
+            Pixel.fire(pixel: .autofillCardsManagementDeleteCard)
         })
-    }
-}
-
-struct CreditCardViewModel: Identifiable, Hashable {
-    
-    let card: SecureVaultModels.CreditCard
-    
-    var id: String {
-        return String(describing: self)
-    }
-    
-    var type: CreditCardValidation.CardType {
-        return CreditCardValidation.type(for: card.cardNumber)
-    }
-    
-    var displayTitle: String {
-        return card.title.isEmpty ? type.displayName : card.title
-    }
-    
-    var icon: Image {
-        switch type {
-        case .amex:
-            return Image(.creditCardBankAmexColor32)
-        case .dinersClub:
-            return Image(.creditCardBankDinersClubColor32)
-        case .discover:
-            return Image(.creditCardBankDiscoverColor32)
-        case .mastercard:
-            return Image(.creditCardBankMastercardColor32)
-        case .jcb:
-            return Image(.creditCardBankJCBColor32)
-        case .unionPay:
-            return Image(.creditCardBankUnionpayColor32)
-        case .visa:
-            return Image(.creditCardBankVisaColor32)
-        case .unknown:
-            return Image(.creditCardColor32)
-        }
-    }
-    
-    var lastFourDigits: String {
-        return card.cardSuffix
-    }
-    
-    var expirationDate: String {
-        guard let month = card.expirationMonth,
-              let year = card.expirationYear,
-              let date = DateComponents(calendar: Calendar.current, year: year, month: month).date else {
-            return ""
-        }
-        return "  \(UserText.autofillCreditCardItemExpiry) \(AutofillCreditCardListViewModel.dateFormatter.string(from: date))"
-    }
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
-    static func == (lhs: CreditCardViewModel, rhs: CreditCardViewModel) -> Bool {
-        return lhs.id == rhs.id
-    }
-    
-}
-
-private extension Array where Element == SecureVaultModels.CreditCard {
-    var asCardViewModels: [CreditCardViewModel] {
-        self.map { CreditCardViewModel(card: $0) }
     }
 }

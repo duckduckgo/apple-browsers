@@ -24,7 +24,7 @@ import BrowserServicesKit
 import Persistence
 import Bookmarks
 import RemoteMessaging
-import NetworkProtection
+import VPN
 import Subscription
 
 extension DefaultVPNActivationDateStore: VPNActivationDateProviding {}

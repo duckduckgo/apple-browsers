@@ -19,7 +19,7 @@
 import AppLauncher
 import Foundation
 import UserNotifications
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 import VPNAppLauncher
 

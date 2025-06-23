@@ -36,7 +36,7 @@ import HistoryView
 import Lottie
 import MetricKit
 import Networking
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NewTabPage
 import os.log
@@ -145,8 +145,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
         promptHandler: AIChatPromptHandler.shared,
-        addressBarQueryExtractor: AIChatAddressBarPromptExtractor()
+        addressBarQueryExtractor: AIChatAddressBarPromptExtractor(),
+        windowControllersManager: windowControllersManager
     )
+    let aiChatSidebarProvider: AIChatSidebarProviding
 
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
@@ -254,6 +256,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         bookmarkDatabase = BookmarkDatabase()
+        aiChatSidebarProvider = AIChatSidebarProvider()
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
@@ -1199,13 +1202,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setUpAutofillPixelReporter() {
         autofillPixelReporter = AutofillPixelReporter(
-            standardUserDefaults: .standard,
-            appGroupUserDefaults: nil,
+            usageStore: AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil),
             autofillEnabled: AutofillPreferences().askToSaveUsernamesAndPasswords,
             eventMapping: EventMapping<AutofillPixelEvent> {event, _, params, _ in
                 switch event {
                 case .autofillActiveUser:
-                    PixelKit.fire(GeneralPixel.autofillActiveUser)
+                    PixelKit.fire(GeneralPixel.autofillActiveUser, withAdditionalParameters: params)
                 case .autofillEnabledUser:
                     PixelKit.fire(GeneralPixel.autofillEnabledUser)
                 case .autofillOnboardedUser:

@@ -138,6 +138,7 @@ public extension DesignSystemImages {
             public static var emailLocked: DesignSystemImage { .init(resource: .emailLocked16) }
             public static var emailUnlocked: DesignSystemImage { .init(resource: .emailUnlocked16) }
             public static var exclamation: DesignSystemImage { .init(resource: .exclamation16) }
+            public static var exclamationRecolorable: DesignSystemImage { .init(resource: .exclamationRecolorable16) }
             public static var expand: DesignSystemImage { .init(resource: .expand16) }
             public static var export: DesignSystemImage { .init(resource: .export16) }
             public static var exportRight: DesignSystemImage { .init(resource: .exportRight16) }
@@ -367,6 +368,7 @@ public extension DesignSystemImages {
             public static var eyeClosed: DesignSystemImage { .init(resource: .eyeClosed24) }
             public static var exclamation: DesignSystemImage { .init(resource: .exclamation24) }
             public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid24) }
+            public static var expand: DesignSystemImage { .init(resource: .expand24) }
             public static var favorite: DesignSystemImage { .init(resource: .favorite24) }
             public static var favoriteRemove: DesignSystemImage { .init(resource: .favoriteRemove24) }
             public static var favoriteSolid: DesignSystemImage { .init(resource: .favoriteSolid24) }

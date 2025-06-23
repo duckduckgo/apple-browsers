@@ -381,9 +381,10 @@ final class AddressBarButtonsViewController: NSViewController {
         )
 
         if featureFlagger.isFeatureOn(.aiChatSidebar),
-           case .url = tabViewModel?.tabContent,
+           let tab = tabViewModel?.tab,
+           case .url = tab.content,
            !isTextFieldEditorFirstResponder,
-           behavior == .currentTab || aiChatSidebarPresenter.isSidebarOpen {
+           behavior == .currentTab || aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) {
 
             aiChatSidebarPresenter.toggleSidebar()
         } else if let value = textFieldValue {
@@ -497,8 +498,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatButtonState() {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
-        let isShowingSidebar = aiChatSidebarPresenter.isSidebarOpen
+        guard let tab = tabViewModel?.tab, featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+        let isShowingSidebar = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
         updateAIChatButtonForSidebar(isShowingSidebar)
     }
 
@@ -533,6 +534,9 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatDividerVisibility() {
+        // Prevent crash if Combine subscriptions outlive view lifecycle: https://app.asana.com/1/137249556945/project/1199230911884351/task/1210593147082728
+        guard isViewLoaded else { return }
+
         leadingAIChatDivider.isHidden = aiChatButton.isHidden || bookmarkButton.isHidden
         trailingAIChatDivider.isHidden = aiChatButton.isHidden || cancelButton.isHidden
     }
@@ -943,7 +947,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private func subscribeToAIChatSidebarPresenter() {
         aiChatSidebarPresenter.sidebarPresenceWillChangePublisher
             .sink { [weak self] change in
-                guard let self, change.tabID == tabViewModel?.tab.id else {
+                guard let self, change.tabID == tabViewModel?.tab.uuid else {
                     return
                 }
                 updateAIChatButtonForSidebar(change.isShown)

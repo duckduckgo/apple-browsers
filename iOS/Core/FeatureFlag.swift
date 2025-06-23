@@ -39,13 +39,13 @@ public enum FeatureFlag: String {
     case autoconsentOnByDefault
     case history
     case newTabPageSections
-        
+
     // Duckplayer 'Web based' UI
     case duckPlayer
 
     // Open Duckplayer in a new tab for 'Web based' UI
     case duckPlayerOpenInNewTab
-    
+
     // Duckplayer 'Native' UI
     // https://app.asana.com/0/1204099484721401/1209255140870410/f
     case duckPlayerNativeUI
@@ -93,8 +93,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
 
-    /// https://app.asana.com/0/1206329551987282/1209130794450271
-    case onboardingSetAsDefaultBrowser
+    /// https://app.asana.com/1/137249556945/project/1108686900785972/task/1209304767941984?focus=true
+    case onboardingSetAsDefaultBrowserPiPVideo
 
     // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
     case failsafeExampleCrossPlatformFeature
@@ -146,13 +146,13 @@ extension FeatureFlag: FeatureFlagDescribing {
             false
         }
     }
-    
+
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
         case .privacyProFreeTrialJan25:
             PrivacyProFreeTrialExperimentCohort.self
-        case .onboardingSetAsDefaultBrowser:
-            OnboardingSetAsDefaultBrowserCohort.self
+        case .onboardingSetAsDefaultBrowserPiPVideo:
+            OnboardingSetAsDefaultBrowserPiPVideoCohort.self
         default:
             nil
         }
@@ -188,8 +188,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             } else {
                 return false
             }
-        case .onboardingSetAsDefaultBrowser:
-            if #available(iOS 18.3, *) {
+        case .onboardingSetAsDefaultBrowserPiPVideo:
+            if #available(iOS 18.2, *) {
                 return true
             } else {
                 return false
@@ -281,8 +281,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
-        case .onboardingSetAsDefaultBrowser:
-            return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
+        case .onboardingSetAsDefaultBrowserPiPVideo:
+            return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserPiPVideoExperiment))
         case .failsafeExampleCrossPlatformFeature:
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
@@ -330,7 +330,7 @@ public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescri
     case treatment
 }
 
-public enum OnboardingSetAsDefaultBrowserCohort: String, FeatureFlagCohortDescribing {
+public enum OnboardingSetAsDefaultBrowserPiPVideoCohort: String, FeatureFlagCohortDescribing {
     /// Control cohort with no changes applied.
     case control
     /// Treatment cohort where the experiment modifications are applied.

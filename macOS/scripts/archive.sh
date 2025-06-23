@@ -129,6 +129,7 @@ set_up_environment() {
 	dsym_path="${archive}/dSYMs"
 
 	output_app_xip_path="${workdir}/DuckDuckGo-${version_identifier}.xip"
+	output_app_zip_path="${workdir}/DuckDuckGo-${version_identifier}.zip"
 	output_dsym_zip_path="${workdir}/DuckDuckGo-${version_identifier}-dSYM.zip"
 }
 

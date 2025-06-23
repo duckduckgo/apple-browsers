@@ -151,7 +151,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     }
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
-        let switchBarHandler = SwitchBarHandler()
+        let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper)
 
         guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty else {
             return switchBarHandler
@@ -187,7 +187,8 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 
     func onPromptSubmitted(_ query: String) {
-        editingStateViewController?.dismissAnimated {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
             self.omniDelegate?.onOmniPromptSubmitted(query)
         }
     }
@@ -200,5 +201,14 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     func onSelectSuggestion(_ suggestion: Suggestion) {
         omniDelegate?.onOmniSuggestionSelected(suggestion)
         editingStateViewController?.dismissAnimated()
+    }
+
+    func onVoiceSearchRequested(from mode: TextEntryMode) {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
+
+            let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
+            self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
+        }
     }
 }

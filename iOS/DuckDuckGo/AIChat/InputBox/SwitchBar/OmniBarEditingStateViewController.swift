@@ -43,6 +43,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onPromptSubmitted(_ query: String)
     func onSelectFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
+    func onVoiceSearchRequested(from mode: TextEntryMode)
 }
 
 /// Later: Inject auto suggestions here.
@@ -310,6 +311,17 @@ final class OmniBarEditingStateViewController: UIViewController {
             }
             .store(in: &cancellables)
 
+        switchBarHandler.microphoneButtonTappedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.handleMicrophoneButtonTapped()
+            }
+            .store(in: &cancellables)
+
+    }
+
+    private func handleMicrophoneButtonTapped() {
+        delegate?.onVoiceSearchRequested(from: switchBarHandler.currentToggleState)
     }
 
     func selectAllText() {

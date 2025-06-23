@@ -1662,14 +1662,29 @@ class MainViewController: UIViewController {
         // hide toolbar on iPhone
         viewCoordinator.toolbar.accessibilityElementsHidden = !AppWidthObserver.shared.isLargeWidth
     }
-    
-    private func showVoiceSearch() {
+
+    private func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
+        SpeechRecognizer.requestMicAccess { [weak self] permission in
+            guard let self = self else { return }
+            if permission {
+                if let target = preferredTarget {
+                    self.showVoiceSearch(preferredTarget: target)
+                } else {
+                    self.showVoiceSearch()
+                }
+            } else {
+                self.showNoMicrophonePermissionAlert()
+            }
+        }
+    }
+
+    private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
         // https://app.asana.com/0/0/1201408131067987
         UIMenuController.shared.hideMenu()
         viewCoordinator.omniBar.removeTextSelection()
         
         Pixel.fire(pixel: .openVoiceSearch)
-        let voiceSearchController = VoiceSearchViewController()
+        let voiceSearchController = VoiceSearchViewController(preferredTarget: preferredTarget)
         voiceSearchController.delegate = self
         voiceSearchController.modalTransitionStyle = .crossDissolve
         voiceSearchController.modalPresentationStyle = .overFullScreen
@@ -2142,7 +2157,6 @@ extension MainViewController: BrowserChromeDelegate {
 
 // MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
-
     func onSelectFavorite(_ favorite: BookmarkEntity) {
         handleFavoriteSelected(favorite)
     }
@@ -2460,13 +2474,11 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onVoiceSearchPressed() {
-        SpeechRecognizer.requestMicAccess { permission in
-            if permission {
-                self.showVoiceSearch()
-            } else {
-                self.showNoMicrophonePermissionAlert()
-            }
-        }
+        handleVoiceSearchOpenRequest()
+    }
+
+    func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget) {
+        handleVoiceSearchOpenRequest(preferredTarget: preferredTarget)
     }
 
     /// We always want to show the AI Chat button if the keyboard is on focus

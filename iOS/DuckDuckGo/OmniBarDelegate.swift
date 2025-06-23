@@ -74,6 +74,8 @@ protocol OmniBarDelegate: AnyObject {
     func selectedSuggestion() -> Suggestion?
     
     func onVoiceSearchPressed()
+    
+    func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget)
 
     func onDidBeginEditing()
 
@@ -146,4 +148,7 @@ extension OmniBarDelegate {
     func onForwardPressed() {
     }
     
+    func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget) {
+        onVoiceSearchPressed()
+    }
 }

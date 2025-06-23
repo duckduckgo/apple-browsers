@@ -816,6 +816,8 @@ extension Pixel {
         case syncSignupConnect
         case syncLogin
         case syncDaily
+        case syncDisabled
+        case syncDisabledAndDeleted
         case syncDuckAddressOverride
         case syncSuccessRateDaily
         case syncLocalTimestampResolutionTriggered(Feature)
@@ -1984,6 +1986,8 @@ extension Pixel.Event {
         case .syncSignupConnect: return "m_sync_signup_connect"
         case .syncLogin: return "m_sync_login"
         case .syncDaily: return "m_sync_daily"
+        case .syncDisabled: return "sync_disabled"
+        case .syncDisabledAndDeleted: return "sync_disabledanddeleted"
         case .syncDuckAddressOverride: return "m_sync_duck_address_override"
         case .syncSuccessRateDaily: return "m_sync_success_rate_daily"
         case .syncLocalTimestampResolutionTriggered(let feature): return "m_sync_\(feature.name)_local_timestamp_resolution_triggered"

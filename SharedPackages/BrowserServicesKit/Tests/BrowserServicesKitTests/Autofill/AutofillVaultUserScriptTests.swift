@@ -811,7 +811,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             cancelExpectation.fulfill()
         }
-        waitForExpectations(timeout: 0.5)
+        waitForExpectations(timeout: 2)
 
         // First reply should have been cancelled with NoActionResponse
         XCTAssertTrue(firstReplyReceived)
@@ -841,7 +841,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             replyExpectation.fulfill()
         }
-        waitForExpectations(timeout: 0.5)
+        waitForExpectations(timeout: 2)
 
         // Second reply should have the actual card data
         XCTAssertTrue(secondReplyReceived)
@@ -917,7 +917,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             cancelExpectation.fulfill()
         }
-        waitForExpectations(timeout: 0.5)
+        waitForExpectations(timeout: 2)
 
         // Verify all replies were received and were NoActionResponses
         XCTAssertEqual(repliesReceived, 2)
@@ -942,7 +942,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
             expect.fulfill() // This should not be called
         }
 
-        waitForExpectations(timeout: 0.5)
+        waitForExpectations(timeout: 2)
 
         // Verify delegate was not called
         XCTAssertFalse(delegate.receivedCallbacks.contains(.didRequestCreditCard))

@@ -27,7 +27,7 @@ struct SettingsDescription {
     let explanation: String
 }
 
-// Universal preferences description view
+// Universal Settings description view
 struct SettingsDescriptionView: View {
 
     let content: SettingsDescription

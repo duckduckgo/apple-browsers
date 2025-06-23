@@ -44,7 +44,6 @@ class TabSwitcherBarsStateHandler {
     private(set) var totalTabsCount: Int = 0
     private(set) var containsWebPages = false
     private(set) var showAIChatButton = false
-    private(set) var canShowEditButton = false
 
     private(set) var isFirstUpdate = true
 
@@ -85,7 +84,7 @@ class TabSwitcherBarsStateHandler {
         self.tabSwitcherStyleButton.accessibilityLabel = "Toggle between grid and list view"
         self.duckChatButton.accessibilityLabel = UserText.aiChatFeatureName
 
-        self.canShowEditButton = self.totalTabsCount > 1 || containsWebPages
+        self.editButton.isEnabled = self.totalTabsCount > 1 || containsWebPages
 
         updateBottomBar()
         updateTopLeftButtons()
@@ -99,7 +98,6 @@ class TabSwitcherBarsStateHandler {
 
         switch interfaceMode {
         case .regularSize:
-            editButton.isEnabled = canShowEditButton
 
             newItems = [
                 tabSwitcherStyleButton,
@@ -155,9 +153,9 @@ class TabSwitcherBarsStateHandler {
 
         case .largeSize:
             topBarLeftButtonItems = [
-                canShowEditButton ? editButton : nil,
+                editButton,
                 tabSwitcherStyleButton,
-            ].compactMap { $0 }
+            ]
 
         case .editingRegularSize:
             topBarLeftButtonItems = [

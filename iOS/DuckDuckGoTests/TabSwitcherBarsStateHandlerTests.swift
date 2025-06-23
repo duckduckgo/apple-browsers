@@ -127,13 +127,19 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
     func testWhenTotalTabsCountIsGreaterThanOneThenCanShowEditButtonIsTrue() {
         stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
 
-        XCTAssertTrue(stateHandler.canShowEditButton)
+        XCTAssertTrue(stateHandler.editButton.isEnabled)
     }
 
     func testWhenContainsWebPagesIsTrueThenCanShowEditButtonIsTrue() {
         stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: true, showAIChatButton: false)
 
-        XCTAssertTrue(stateHandler.canShowEditButton)
+        XCTAssertTrue(stateHandler.editButton.isEnabled)
+    }
+
+    func testWhenNotEnoughTabsAndNowWebPagesEditButtonIsDisabled() {
+        stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
+
+        XCTAssertFalse(stateHandler.editButton.isEnabled)
     }
 
     func testWhenInterfaceModeIsLargeSizeThenBottomBarIsHidden() {
@@ -172,7 +178,8 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         stateHandler.update(.largeSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertEqual(stateHandler.topBarLeftButtonItems, [
-            stateHandler.tabSwitcherStyleButton
+            stateHandler.editButton,
+            stateHandler.tabSwitcherStyleButton,
         ])
     }
 

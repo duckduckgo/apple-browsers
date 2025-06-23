@@ -273,8 +273,7 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 
         if statusCode >= 400 {
             Logger.action.log("WebViewHandler failed with status code: \(String(describing: statusCode), privacy: .public)")
-            self.activeContinuation?.resume(throwing: DataBrokerProtectionError.httpError(code: statusCode))
-            self.activeContinuation = nil
+            Logger.action.log("WebViewHandler continuing despite error")
         }
 
         return .allow

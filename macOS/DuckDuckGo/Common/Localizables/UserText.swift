@@ -457,6 +457,9 @@ struct UserText {
     static let searchAssistSettings = NSLocalizedString("duckai.search-assist-settings", value: "Search Assist Settings", comment: "The section name in preferences for Search Assist Settings")
     static let searchAssistSettingsDescription = NSLocalizedString("duckai.search-assist-settings.description", value: "Choose how often you want AI-Assisted answers to appear in your searches", comment: "Description of the section in Settings")
     static let searchAssistSettingsLink = NSLocalizedString("duckai.search-assist-settings.link", value: "Open Search Assist Settings", comment: "Button to open the Search Assist Settings")
+    static let aiChatSidebarTitle = NSLocalizedString("aichat.sidebar.title", value: "Duck.ai", comment: "Title for the Duck.ai sidebar")
+    static let aiChatSidebarExpandButtonTooltip = NSLocalizedString("aichat.sidebar.expand-button.tooltip", value: "Expand", comment: "Tooltip for button to open duck.ai chat from sidebar in a full tab")
+    static let aiChatSidebarCloseButtonTooltip = NSLocalizedString("aichat.sidebar.close-button.tooltip", value: "Close", comment: "Tooltip for button to close the sidebar with the duck.ai chat")
 
     // Duck Player Preferences
     static let duckPlayerSettingsTitle = NSLocalizedString("duck-player.title", value: "Duck Player", comment: "Private YouTube Player settings title")

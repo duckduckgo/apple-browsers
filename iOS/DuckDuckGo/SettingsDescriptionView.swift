@@ -1,5 +1,5 @@
 //
-//  SettingsPreferencesDescriptionView.swift
+//  SettingsDescriptionView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -20,7 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 
-struct PreferencesDescription {
+struct SettingsDescription {
     let imageName: String
     let title: String
     let status: StatusIndicator
@@ -28,9 +28,9 @@ struct PreferencesDescription {
 }
 
 // Universal preferences description view
-struct PreferencesDescriptionView: View {
+struct SettingsDescriptionView: View {
 
-    let content: PreferencesDescription
+    let content: SettingsDescription
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var body: some View {

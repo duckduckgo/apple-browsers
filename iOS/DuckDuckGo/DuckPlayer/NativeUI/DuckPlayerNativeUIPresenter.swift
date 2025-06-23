@@ -502,6 +502,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     ///   - videoID: The YouTube video ID to be played
     ///   - timestamp: The timestamp of the video
     @MainActor
+    // swiftlint:disable:next cyclomatic_complexity
     func presentPill(for videoID: String, in hostViewController: DuckPlayerHosting, timestamp: TimeInterval?) {
         
         if duckPlayerSettings.nativeUIYoutubeMode == .never {

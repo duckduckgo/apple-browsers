@@ -26,6 +26,7 @@ import NetworkingTestingUtils
 import Foundation
 
 struct UnifiedFeedbackFormViewModelTests {
+
     // MARK: - Test Fixtures
     enum TestError: Swift.Error {
         case generic
@@ -575,92 +576,5 @@ struct UnifiedFeedbackFormViewModelTests {
 
             try await Task.sleep(nanoseconds: UInt64(pollingInterval * 1_000_000_000))
         }
-    }
-}
-
-// MARK: - Mock Classes
-
-final class MockFeedbackSender: UnifiedFeedbackSender {
-    var shouldThrowError = false
-
-    // Pixel tracking
-    var formShowPixelSent = false
-    var actionsScreenShowPixelSent = false
-    var categoryScreenShowPixelSent = false
-    var subcategoryScreenShowPixelSent = false
-    var submitScreenShowPixelSent = false
-    var submitScreenFAQClickPixelSent = false
-
-    var featureRequestPixelSent = false
-    var generalFeedbackPixelSent = false
-    var reportIssuePixelSent = false
-
-    var lastFeatureRequestDescription: String?
-    var lastGeneralFeedbackDescription: String?
-    var lastReportIssueDescription: String?
-    var lastReportIssueCategory: String?
-    var lastReportIssueSubcategory: String?
-
-    enum MockError: Error {
-        case testError
-    }
-
-    func sendFeatureRequestPixel(description: String, source: String) async throws {
-        if shouldThrowError {
-            throw MockError.testError
-        }
-        featureRequestPixelSent = true
-        lastFeatureRequestDescription = description
-    }
-
-    func sendGeneralFeedbackPixel(description: String, source: String) async throws {
-        if shouldThrowError {
-            throw MockError.testError
-        }
-        generalFeedbackPixelSent = true
-        lastGeneralFeedbackDescription = description
-    }
-
-    func sendReportIssuePixel<T>(source: String, category: String, subcategory: String, description: String, metadata: T?) async throws where T : DuckDuckGo.UnifiedFeedbackMetadata {
-        if shouldThrowError {
-            throw MockError.testError
-        }
-        reportIssuePixelSent = true
-        lastReportIssueDescription = description
-        lastReportIssueCategory = category
-        lastReportIssueSubcategory = subcategory
-    }
-
-    func sendFormShowPixel() async {
-        formShowPixelSent = true
-    }
-
-    func sendSubmitScreenShowPixel(source: String, reportType: String, category: String, subcategory: String) async {
-        submitScreenShowPixelSent = true
-    }
-
-    func sendActionsScreenShowPixel(source: String) async {
-        actionsScreenShowPixelSent = true
-    }
-
-    func sendCategoryScreenShow(source: String, reportType: String) async {
-        categoryScreenShowPixelSent = true
-    }
-
-    func sendSubcategoryScreenShow(source: String, reportType: String, category: String) async {
-        subcategoryScreenShowPixelSent = true
-    }
-
-    func sendSubmitScreenFAQClickPixel(source: String, reportType: String, category: String, subcategory: String) async {
-        submitScreenFAQClickPixelSent = true
-    }
-}
-
-final class MockUnifiedMetadataCollector: UnifiedMetadataCollector {
-
-    typealias Metadata = DefaultFeedbackMetadata
-
-    func collectMetadata() async -> DefaultFeedbackMetadata? {
-        DefaultFeedbackMetadata()
     }
 }

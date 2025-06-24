@@ -530,11 +530,34 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.isEnabled = !isOnboarding
     }
 
+    @objc func openAIChatContextMenuAction(_ sender: NSMenuItem) {
+        // Open AI Chat action implementation - behavior opposite to default setting
+
+        if aiChatMenuConfig.openAIChatInSidebar {
+            // Default is sidebar, menu action forces new tab
+            let behavior = LinkOpenBehavior(
+                event: NSApp.currentEvent,
+                switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
+                canOpenLinkInCurrentTab: false,
+                shouldSelectNewTab: true
+            )
+
+            if let value = textFieldValue {
+                aiChatTabOpener.openAIChatTab(value, with: behavior)
+            } else {
+                aiChatTabOpener.openAIChatTab(nil, with: behavior)
+            }
+        } else {
+            // Default is new tab, menu action forces sidebar
+            aiChatSidebarPresenter.toggleSidebar()
+        }
+    }
+
     @objc func hideAIChatButtonAction(_ sender: NSMenuItem) {
         delegate?.addressBarButtonsViewControllerHideAIChatButtonClicked(self)
     }
 
-    @objc func openDuckAISettingsAction(_ sender: NSMenuItem) {
+    @objc func openAIChatSettingsContextMenuAction(_ sender: NSMenuItem) {
         delegate?.addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(self)
     }
 
@@ -891,6 +914,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 stopAnimations()
                 updateBookmarkButtonImage()
                 updateButtons()
+                configureAIChatButton()
                 subscribeToTrackerAnimationTrigger()
             }
     }
@@ -946,6 +970,7 @@ final class AddressBarButtonsViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: { [weak self] in
                 self?.updateAIChatButtonVisibility()
+                self?.configureAIChatButton()
             }).store(in: &cancellables)
     }
 
@@ -966,14 +991,35 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         aiChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
-        aiChatButton.menu = NSMenu {
-            NSMenuItem(title: UserText.aiChatAddressBarHideButton,
-                       action: #selector(hideAIChatButtonAction(_:)),
-                       keyEquivalent: "")
-            NSMenuItem.separator()
-            NSMenuItem(title: "Open Duck.ai Settings",
-                       action: #selector(openDuckAISettingsAction(_:)),
-                       keyEquivalent: "")
+
+        if featureFlagger.isFeatureOn(.aiChatSidebar) {
+            let shouldShowOpenAIChatButton: Bool = {
+                guard let tabContent = tabViewModel?.tab.content, case .url = tabContent else {
+                    return false
+                }
+                return true
+            }()
+
+            aiChatButton.menu = NSMenu {
+                if shouldShowOpenAIChatButton {
+                    NSMenuItem(title: aiChatMenuConfig.openAIChatInSidebar ? "Open New Duck.ai Tab" : "Toggle Duck.ai Sidebar",
+                               action: #selector(openAIChatContextMenuAction(_:)),
+                               keyEquivalent: "")
+                }
+                NSMenuItem(title: UserText.aiChatAddressBarHideButton,
+                           action: #selector(hideAIChatButtonAction(_:)),
+                           keyEquivalent: "")
+                NSMenuItem.separator()
+                NSMenuItem(title: "Open Duck.ai Settings",
+                           action: #selector(openAIChatSettingsContextMenuAction(_:)),
+                           keyEquivalent: "")
+            }
+        } else {
+            aiChatButton.menu = NSMenu {
+                NSMenuItem(title: UserText.aiChatAddressBarHideButton,
+                           action: #selector(hideAIChatButtonAction(_:)),
+                           keyEquivalent: "")
+            }
         }
     }
 

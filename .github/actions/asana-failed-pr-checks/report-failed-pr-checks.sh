@@ -7,7 +7,6 @@ project_id="1205237866452338"
 workflow_id_custom_field_id="1205563320492190"
 apple_team_id="1203552211911076"
 asana_api_url="https://app.asana.com/api/1.0"
-fallback_assignee_id="856498666990313" # (bwaresiak)
 
 print_usage_and_exit() {
 	local reason=$1
@@ -210,42 +209,43 @@ validate_assignee() {
 
 	if _is_user_in_apple_team "${assignee}"; then
 		echo "${assignee}"
-	else
-		echo "Assignee $assignee not found in Apple team, checking PR reviewers" >&2
+		return
+	fi
 
-		# Check each PR reviewer if pr_reviewers is not empty
-		if [[ -n "${pr_reviewers}" ]]; then
-			local gh_asana_mapping
-			if ! gh_asana_mapping="$(_fetch_github_asana_mapping)"; then
-				echo "Skipping reviewer validation due to mapping fetch failure" >&2
-			else
-				# Split comma-separated reviewers and iterate through them
-				IFS=',' read -ra reviewer_array <<< "${pr_reviewers}"
-				for reviewer in "${reviewer_array[@]}"; do
-					# Trim whitespace
-					reviewer="$(echo "${reviewer}" | xargs)"
+	echo "Assignee $assignee not found in Apple team, checking PR reviewers" >&2
 
-					if reviewer_asana_id="$(yq -r ".${reviewer}" <<< "${gh_asana_mapping}" 2>/dev/null)" && \
-						[[ -n "${reviewer_asana_id}" ]] && \
-						[[ "${reviewer_asana_id}" != "null" ]]; then
-
-						echo "Checking reviewer: ${reviewer_asana_id}" >&2
-
-						if _is_user_in_apple_team "${reviewer_asana_id}"; then
-							echo "Found Apple team member reviewer: ${reviewer_asana_id}" >&2
-							echo "${reviewer_asana_id}"
-							return
-						fi
-					else
-						echo "Could not find Asana ID for GitHub user: ${reviewer}" >&2
-					fi
-				done
-			fi
+	# Check each PR reviewer if pr_reviewers is not empty
+	if [[ -n "${pr_reviewers}" ]]; then
+		local gh_asana_mapping
+		if ! gh_asana_mapping="$(_fetch_github_asana_mapping)"; then
+			echo "Skipping reviewer validation due to mapping fetch failure" >&2
+			return
 		fi
 
-		echo "No Apple team members found among PR reviewers, using fallback" >&2
-		echo "${fallback_assignee_id}"
+		# Split comma-separated reviewers and iterate through them
+		IFS=',' read -ra reviewer_array <<< "${pr_reviewers}"
+		for reviewer in "${reviewer_array[@]}"; do
+			# Trim whitespace
+			reviewer="$(echo "${reviewer}" | xargs)"
+
+			if reviewer_asana_id="$(yq -r ".${reviewer}" <<< "${gh_asana_mapping}" 2>/dev/null)" && \
+				[[ -n "${reviewer_asana_id}" ]] && \
+				[[ "${reviewer_asana_id}" != "null" ]]; then
+
+				echo "Checking reviewer: ${reviewer_asana_id}" >&2
+
+				if _is_user_in_apple_team "${reviewer_asana_id}"; then
+					echo "Found Apple team member reviewer: ${reviewer_asana_id}" >&2
+					echo "${reviewer_asana_id}"
+					return
+				fi
+			else
+				echo "Could not find Asana ID for GitHub user: ${reviewer}" >&2
+			fi
+		done
 	fi
+
+	echo "No Apple team members found among PR reviewers, skipping task assignment" >&2
 }
 
 main() {

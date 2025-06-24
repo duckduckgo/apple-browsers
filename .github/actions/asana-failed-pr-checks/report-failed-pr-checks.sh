@@ -166,19 +166,34 @@ _fetch_github_asana_mapping() {
 	local gh_asana_mapping_content
 	local gh_asana_mapping
 
-	if gh_asana_mapping_content="$(gh api https://api.github.com/repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml --jq .content 2>/dev/null)" && \
-	   [[ -n "${gh_asana_mapping_content}" ]] && \
-	   [[ "${gh_asana_mapping_content}" != "null" ]] && \
-	   gh_asana_mapping="$(echo "${gh_asana_mapping_content}" | base64 -d 2>/dev/null)" && \
-	   [[ -n "${gh_asana_mapping}" ]]; then
-
-		echo "Successfully retrieved user mapping" >&2
-		echo "${gh_asana_mapping}"
-		return 0
-	else
-		echo "Failed to fetch or parse GitHub to Asana user mapping" >&2
+	# Try to fetch the mapping content from GitHub API
+	if ! gh_asana_mapping_content="$(gh api https://api.github.com/repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml --jq .content 2>/dev/null)"; then
+		echo "Failed to fetch user mapping from GitHub API" >&2
 		return 1
 	fi
+
+	# Check if content is empty or null
+	if [[ -z "${gh_asana_mapping_content}" ]] || [[ "${gh_asana_mapping_content}" == "null" ]]; then
+		echo "GitHub API returned empty or null content" >&2
+		return 1
+	fi
+
+	# Try to decode base64 content
+	if ! gh_asana_mapping="$(echo "${gh_asana_mapping_content}" | base64 -d 2>/dev/null)"; then
+		echo "Failed to decode base64 content" >&2
+		return 1
+	fi
+
+	# Check if decoded content is empty
+	if [[ -z "${gh_asana_mapping}" ]]; then
+		echo "Decoded mapping content is empty" >&2
+		return 1
+	fi
+
+	# Happy path - all checks passed
+	echo "Successfully retrieved user mapping" >&2
+	echo "${gh_asana_mapping}"
+	return 0
 }
 
 _is_user_in_apple_team() {
@@ -201,14 +216,19 @@ validate_assignee() {
 		# Check each PR reviewer if pr_reviewers is not empty
 		if [[ -n "${pr_reviewers}" ]]; then
 			local gh_asana_mapping
-			if gh_asana_mapping="$(_fetch_github_asana_mapping)"; then
+			if ! gh_asana_mapping="$(_fetch_github_asana_mapping)"; then
+				echo "Skipping reviewer validation due to mapping fetch failure" >&2
+			else
 				# Split comma-separated reviewers and iterate through them
 				IFS=',' read -ra reviewer_array <<< "${pr_reviewers}"
 				for reviewer in "${reviewer_array[@]}"; do
 					# Trim whitespace
 					reviewer="$(echo "${reviewer}" | xargs)"
+
 					if reviewer_asana_id="$(yq -r ".${reviewer}" <<< "${gh_asana_mapping}" 2>/dev/null)" && \
-					   [[ -n "${reviewer_asana_id}" ]] && [[ "${reviewer_asana_id}" != "null" ]]; then
+						[[ -n "${reviewer_asana_id}" ]] && \
+						[[ "${reviewer_asana_id}" != "null" ]]; then
+
 						echo "Checking reviewer: ${reviewer_asana_id}" >&2
 
 						if _is_user_in_apple_team "${reviewer_asana_id}"; then
@@ -220,8 +240,6 @@ validate_assignee() {
 						echo "Could not find Asana ID for GitHub user: ${reviewer}" >&2
 					fi
 				done
-			else
-				echo "Skipping reviewer validation due to mapping fetch failure" >&2
 			fi
 		fi
 

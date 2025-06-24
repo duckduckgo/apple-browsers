@@ -559,7 +559,7 @@ private extension SubscriptionPagesUseSubscriptionFeature {
             notificationCenter.post(name: .subscriptionUpgradeFromFreemium, object: nil)
         }
     }
-    
+
     /// Sends a freemium subscription pixel event if the freemium feature has been activated.
     ///
     /// This function checks whether the user has activated the freemium feature by querying the `freemiumDBPUserStateManager`.

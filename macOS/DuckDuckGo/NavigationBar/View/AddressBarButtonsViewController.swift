@@ -521,7 +521,9 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.toolTip = isTextFieldEditorFirstResponder ? UserText.aiChatAddressBarShortcutTooltip : UserText.aiChatAddressBarTooltip
 
         let isPopUpWindow = view.window?.isPopUpWindow ?? false
-        aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut || isPopUpWindow
+        let isDuckAIURL = tabViewModel?.tab.url?.isDuckAIURL ?? false
+
+        aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut || isPopUpWindow || isDuckAIURL
         updateAIChatDividerVisibility()
         delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
 

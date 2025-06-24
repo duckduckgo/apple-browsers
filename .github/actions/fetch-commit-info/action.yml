@@ -31,8 +31,10 @@ runs:
         # Check if this is a merge commit from a PR
         commit_message=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .commit.message)
 
-        # Extract PR number from merge commit message (format: "Merge pull request #123 from ...")
-        pr_number=$(echo "$commit_message" | grep -oE "Merge pull request #[0-9]+" | grep -oE "[0-9]+")
+        # Extract PR number from commit message
+        # Format 1: "Merge pull request #123 from ..." (merge commits)
+        # Format 2: "Some message (#123)" (squash commits)
+        pr_number=$(echo "$commit_message" | grep -oE "(Merge pull request #[0-9]+|\(#[0-9]+\))" | grep -oE "[0-9]+")
 
         if [[ -n "$pr_number" ]]; then
           echo "Found PR merge: #${pr_number}"

@@ -489,6 +489,7 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.tests.outputs.commit_author }}
+          pr-reviewers: ${{ needs.tests.outputs.pr_reviewers }}
           github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:

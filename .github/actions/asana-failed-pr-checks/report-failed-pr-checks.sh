@@ -201,6 +201,7 @@ main() {
 	local asana_personal_access_token="${ASANA_ACCESS_TOKEN}"
 	local section_id="${ASANA_SECTION_ID}"
 	local assignee="${ASANA_ASSIGNEE}"
+	local github_token="${GITHUB_TOKEN}"
 	local workflow_id="${GITHUB_RUN_ID}"
 	local action
 	local title

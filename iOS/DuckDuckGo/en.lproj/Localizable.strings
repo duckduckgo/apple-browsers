@@ -2670,7 +2670,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.enable.aichat" = "Enable Duck.ai";
 
 /* A description of what the AI Chat toggle does */
-"settings.enable.aichat.subtitle" = "Chat anonymously with popular 3rd-aparty AI chat models";
+"settings.enable.aichat.subtitle" = "Chat privately with popular 3rd-party AI models";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Enable Email Protection";

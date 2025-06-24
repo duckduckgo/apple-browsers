@@ -53,7 +53,7 @@ struct DataImportSourcePicker: View {
             }
         } label: {}
             .pickerStyle(.menu)
-            .controlSize(.large)
+            .controlSize(.regular)
             .onChange(of: viewModel.selectedSourceIndex) { idx in
                 guard let importSource = importSources[idx] else { return }
                 onSelectedSourceChanged(importSource)

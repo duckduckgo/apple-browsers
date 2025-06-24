@@ -390,7 +390,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             let tokenContainer = try oAuthClient.currentTokenContainer()
             return tokenContainer != nil
         } catch {
-            return userDefaults.isUserAuthenticated
+            return cachedIsUserAuthenticated
         }
     }
 
@@ -400,10 +400,51 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     var cachedUserEntitlements: [SubscriptionEntitlement] {
         get {
-            userDefaults.userEntitlements ?? []
+            userDefaults.userEntitlements
         }
         set {
+            let currentCachedEntitlements = cachedUserEntitlements
             userDefaults.userEntitlements = newValue
+
+            // Send notification when entitlements change
+            if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedEntitlements, newValue) {
+                Logger.subscription.debug("Entitlements changed - New \(newValue) Old \(String(describing: currentCachedEntitlements))")
+
+                // TMP: Convert to Entitlement (authV1)
+                let entitlements = newValue.map { $0.entitlement }
+                let previousEntitlements = currentCachedEntitlements
+
+                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [
+                    UserDefaultsCacheKey.subscriptionEntitlements: entitlements,
+                    UserDefaultsCacheKey.subscriptionPreviousEntitlements: previousEntitlements
+                ])
+            }
+        }
+    }
+
+    var cachedIsUserAuthenticated: Bool {
+        get {
+            userDefaults.isUserAuthenticated
+        }
+        set {
+            let currentCachedIsAuthenticated = userDefaults.isUserAuthenticated
+            userDefaults.isUserAuthenticated = newValue
+
+            // Send notification when the login changes
+            switch (currentCachedIsAuthenticated, newValue) {
+            case (false, true):
+                Logger.subscription.debug("Login detected")
+                NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
+            case (true, false):
+                Logger.subscription.debug("Logout detected")
+                NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
+            default:
+                break
+            }
+
+            if newValue == false {
+                cachedUserEntitlements = []
+            }
         }
     }
 
@@ -413,34 +454,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         Logger.subscription.debug("Get tokens \(policy.description, privacy: .public)")
 
         do {
-            let currentCachedTokenContainer = try oAuthClient.currentTokenContainer()
-            let currentCachedEntitlements = currentCachedTokenContainer?.decodedAccessToken.subscriptionEntitlements
-
             await migrateAuthV1toAuthV2IfNeeded()
 
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
             let newEntitlements = resultTokenContainer.decodedAccessToken.subscriptionEntitlements
             cachedUserEntitlements = newEntitlements
-
-            // Send "accountDidSignIn" notification when login changes
-            if currentCachedTokenContainer == nil {
-                Logger.subscription.debug("New login detected")
-                accountDidChange(isAuthenticated: true)
-            }
-
-            // Send notification when entitlements change
-            if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedEntitlements, newEntitlements) {
-                Logger.subscription.debug("Entitlements changed - New \(newEntitlements) Old \(String(describing: currentCachedEntitlements))")
-
-                // TMP: Convert to Entitlement (authV1)
-                let entitlements = newEntitlements.map { $0.entitlement }
-                let previousEntitlements = currentCachedEntitlements?.map { $0.entitlement } ?? []
-
-                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [
-                    UserDefaultsCacheKey.subscriptionEntitlements: entitlements,
-                    UserDefaultsCacheKey.subscriptionPreviousEntitlements: previousEntitlements
-                ])
-            }
+            cachedIsUserAuthenticated = true
 
             return resultTokenContainer
         } catch OAuthClientError.missingTokenContainer {
@@ -490,7 +509,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func exchange(tokenV1: String) async throws -> TokenContainer {
         let tokenContainer = try await oAuthClient.exchange(accessTokenV1: tokenV1)
-        accountDidChange(isAuthenticated: true)
+        cachedIsUserAuthenticated = true
+        cachedUserEntitlements = tokenContainer.decodedAccessToken.subscriptionEntitlements
         return tokenContainer
     }
 
@@ -506,34 +526,26 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         // It’s important to force refresh the token to immediately branch from the one received.
         // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
         let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
+        cachedIsUserAuthenticated = true
         cachedUserEntitlements = refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements
-        accountDidChange(isAuthenticated: true)
-    }
-
-    private func accountDidChange(isAuthenticated: Bool) {
-        userDefaults.isUserAuthenticated = isAuthenticated
-        if isAuthenticated {
-            NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
-        } else {
-            NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
-        }
     }
 
     public func removeLocalAccount() {
         Logger.subscription.log("Removing local account")
-        accountDidChange(isAuthenticated: false)
+        cachedIsUserAuthenticated = false
         oAuthClient.removeLocalAccount()
     }
 
     public func signOut(notifyUI: Bool) async {
-        Logger.subscription.log("SignOut: Removing all traces of the subscription and account")
+        Logger.subscription.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false")")
         try? await oAuthClient.logout()
         clearSubscriptionCache()
         if notifyUI {
-            Logger.subscription.log("SignOut: Notifying the UI")
-            accountDidChange(isAuthenticated: false)
+            cachedIsUserAuthenticated = false
         } else {
+            // skipping cached setter for avoiding notification
             userDefaults.isUserAuthenticated = false
+            userDefaults.userEntitlements = []
         }
         Logger.subscription.log("Removing V1 Account")
         try? legacyAccountStorage?.clearAuthenticationState()
@@ -630,29 +642,21 @@ fileprivate extension UserDefaults {
         }
         set {
             set(newValue, forKey: Self.isUserAuthenticatedKey)
-            if newValue == false {
-                userEntitlements = nil
-            }
         }
     }
 
     static let userEntitlementsKey = "com.duckduckgo.subscription.userEntitlements"
-    var userEntitlements: [SubscriptionEntitlement]? {
+    var userEntitlements: [SubscriptionEntitlement] {
         get {
-            guard let data = data(forKey: Self.userEntitlementsKey) else {
-                return nil
+            guard let data = UserDefaults.standard.data(forKey: Self.userEntitlementsKey) else {
+                return []
             }
-            return (try? JSONDecoder().decode([SubscriptionEntitlement].self, from: data))
+            let entitlements = try? JSONDecoder().decode([SubscriptionEntitlement].self, from: data)
+            return entitlements ?? []
         }
         set {
-            guard let newValue else {
-                removeObject(forKey: Self.userEntitlementsKey)
-                return
-            }
-
-            if let data = try? JSONEncoder().encode(newValue) {
-                set(data, forKey: Self.userEntitlementsKey)
-            }
+            let data = try? JSONEncoder().encode(newValue)
+            UserDefaults.standard.set(data, forKey: Self.userEntitlementsKey)
         }
     }
 }

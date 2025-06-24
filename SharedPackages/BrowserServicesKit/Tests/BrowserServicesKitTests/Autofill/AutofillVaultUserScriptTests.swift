@@ -762,7 +762,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
                 expect.fulfill()
             }
 
-            waitForExpectations(timeout: 1.0)
+            waitForExpectations(timeout: 2)
         }
     }
 

@@ -307,11 +307,11 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         experimentManager: ExperimentCohortsManaging?,
         for: Flag.Type
     ) {
-//#if DEBUG
+// #if DEBUG
 //        assert(!AppVersion.runType.isTests, {
 //            "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
 //        }())
-//#endif
+// #endif
 
         self.internalUserDecider = internalUserDecider
         self.privacyConfigManager = privacyConfigManager

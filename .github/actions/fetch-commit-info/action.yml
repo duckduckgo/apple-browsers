@@ -45,10 +45,10 @@ runs:
             echo "PR reviewers found: ${reviewers}"
             echo "pr_reviewers=${reviewers}" >> $GITHUB_OUTPUT
           else
-            echo "No reviewers found for PR #${pr_number}, using commit author"
-            echo "pr_reviewers=${author}" >> $GITHUB_OUTPUT
+            echo "No reviewers found for PR #${pr_number}"
+            echo "pr_reviewers=" >> $GITHUB_OUTPUT
           fi
         else
-          echo "Not a PR merge, using commit author"
-          echo "pr_reviewers=${author}" >> $GITHUB_OUTPUT
+          echo "Not a PR merge"
+          echo "pr_reviewers=" >> $GITHUB_OUTPUT
         fi

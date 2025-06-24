@@ -165,7 +165,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
         }
     }
     
-    public func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
+    public func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         do {
             let allQueryData = try delegate?.getAllBrokerProfileQueryData() ?? []
             return DBPUIScanAndOptOutMaintenanceState(from: allQueryData)

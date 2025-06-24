@@ -104,3 +104,15 @@ class TabSwitcherTransitionDelegate: NSObject, UIViewControllerTransitioningDele
         return ToWebViewTransition(tabSwitcherViewController: tabSwitcherVC)
     }
 }
+
+extension TabSwitcherTransition {
+
+    func adjustFrame(_ frame: CGRect, forAddressBarPosition position: AddressBarPosition, byMinY minY: CGFloat = 0.0, byHeight height: CGFloat = 0.0) -> CGRect {
+        guard position.isBottom else { return frame }
+        return CGRect(x: frame.minX,
+                           y: frame.minY + minY,
+                           width: frame.width,
+                           height: frame.height + height)
+    }
+
+}

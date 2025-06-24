@@ -362,6 +362,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         actionDelegate?.optionsButtonMenuRequestedLoginsPopover(self, selectedCategory: .cards)
     }
 
+    @MainActor
+    @objc func deleteBrowsingData(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.deleteBrowsingDataActionClicked, frequency: .daily)
+        Application.appDelegate.fireCoordinator.fireButtonAction()
+    }
+
     @objc func openPreferences(_ sender: NSMenuItem) {
         PixelKit.fire(MoreOptionsMenuPixel.settingsActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedPreferences(self)
@@ -603,6 +609,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 .withImage(moreOptionsMenuIconsProvider.fireproofSiteIcon)
         }
 
+        addItem(withTitle: UserText.deleteBrowsingDataMenuItem, action: #selector(deleteBrowsingData(_:)), keyEquivalent: "")
+            .targetting(self)
+            .withImage(moreOptionsMenuIconsProvider.deleteBrowsingDataIcon)
+
+        addItem(NSMenuItem.separator())
+
         addItem(withTitle: UserText.findInPageMenuItem, action: tabViewModel.canFindInPage ? #selector(findInPage(_:)) : nil, keyEquivalent: "f")
             .targetting(self)
             .withImage(moreOptionsMenuIconsProvider.findInPageIcon)
@@ -799,7 +811,7 @@ final class FeedbackSubMenu: NSMenu {
             addItem(.separator())
 
             let sendPProFeedbackItem = NSMenuItem(title: UserText.sendPProFeedback,
-                                                  action: #selector(AppDelegate.openPProFeedback(_:)),
+                                                  action: #selector(sendPrivacyProFeedback(_:)),
                                                   keyEquivalent: "")
                 .targetting(self)
                 .withImage(moreOptionsMenuIconsProvider.sendPrivacyProFeedbackIcon)

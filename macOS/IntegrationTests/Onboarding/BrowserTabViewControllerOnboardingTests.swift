@@ -203,6 +203,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         XCTAssertEqual(factory.capturedType, .tryFireButton)
     }
 
+    // Temporarily Disabled
     func testWhenDialogIsDismissedViewHighlightsAreDismissed() throws {
         dialogProvider.dialog = .tryFireButton
         tab.navigateFromOnboarding(to: .duckDuckGo)

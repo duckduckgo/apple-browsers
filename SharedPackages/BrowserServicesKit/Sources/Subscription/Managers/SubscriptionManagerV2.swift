@@ -649,7 +649,7 @@ fileprivate extension UserDefaults {
     static let userEntitlementsKey = "com.duckduckgo.subscription.userEntitlements"
     var userEntitlements: [SubscriptionEntitlement] {
         get {
-            guard let data = UserDefaults.standard.data(forKey: Self.userEntitlementsKey) else {
+            guard let data = self.data(forKey: Self.userEntitlementsKey) else {
                 return []
             }
             let entitlements = try? JSONDecoder().decode([SubscriptionEntitlement].self, from: data)
@@ -657,7 +657,7 @@ fileprivate extension UserDefaults {
         }
         set {
             let data = try? JSONEncoder().encode(newValue)
-            UserDefaults.standard.set(data, forKey: Self.userEntitlementsKey)
+            self.set(data, forKey: Self.userEntitlementsKey)
         }
     }
 }

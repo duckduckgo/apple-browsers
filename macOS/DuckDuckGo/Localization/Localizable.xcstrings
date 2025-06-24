@@ -1656,6 +1656,42 @@
         }
       }
     },
+    "aichat.address-bar.open-new-tab-button" : {
+      "comment" : "Button to open Duck.ai in a new tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open New Duck.ai Tab"
+          }
+        }
+      }
+    },
+    "aichat.address-bar.open-settings-button" : {
+      "comment" : "Button to open Duck.ai settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai Settings"
+          }
+        }
+      }
+    },
+    "aichat.address-bar.toggle-sidebar-button" : {
+      "comment" : "Button to toggle Duck.ai sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Toggle Duck.ai Sidebar"
+          }
+        }
+      }
+    },
     "aichat.sidebar.close-button.tooltip" : {
       "comment" : "Tooltip for button to close the sidebar with the duck.ai chat",
       "extractionState" : "extracted_with_value",

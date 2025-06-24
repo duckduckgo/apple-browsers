@@ -1002,7 +1002,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
             aiChatButton.menu = NSMenu {
                 if shouldShowOpenAIChatButton {
-                    NSMenuItem(title: aiChatMenuConfig.openAIChatInSidebar ? "Open New Duck.ai Tab" : "Toggle Duck.ai Sidebar",
+                    NSMenuItem(title: aiChatMenuConfig.openAIChatInSidebar ? UserText.aiChatOpenNewTabButton : UserText.aiChatToggleSidebarButton,
                                action: #selector(openAIChatContextMenuAction(_:)),
                                keyEquivalent: "")
                 }
@@ -1010,7 +1010,7 @@ final class AddressBarButtonsViewController: NSViewController {
                            action: #selector(hideAIChatButtonAction(_:)),
                            keyEquivalent: "")
                 NSMenuItem.separator()
-                NSMenuItem(title: "Open Duck.ai Settings",
+                NSMenuItem(title: UserText.aiChatOpenSettingsButton,
                            action: #selector(openAIChatSettingsContextMenuAction(_:)),
                            keyEquivalent: "")
             }

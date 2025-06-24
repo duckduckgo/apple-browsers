@@ -378,7 +378,6 @@ final class AddressBarButtonsViewController: NSViewController {
         let behavior = LinkOpenBehavior(
             event: NSApp.currentEvent,
             switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
-            canOpenLinkInCurrentTab: !shouldSelectNewTab,
             shouldSelectNewTab: shouldSelectNewTab
         )
 
@@ -386,7 +385,8 @@ final class AddressBarButtonsViewController: NSViewController {
            aiChatMenuConfig.openAIChatInSidebar,
            let tab = tabViewModel?.tab,
            case .url = tab.content,
-           !isTextFieldEditorFirstResponder {
+           !isTextFieldEditorFirstResponder,
+           behavior == .currentTab || aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid){
             aiChatSidebarPresenter.toggleSidebar()
         } else if let value = textFieldValue {
             aiChatTabOpener.openAIChatTab(value, with: behavior)

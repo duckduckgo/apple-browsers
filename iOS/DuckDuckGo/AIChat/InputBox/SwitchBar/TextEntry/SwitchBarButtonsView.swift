@@ -62,6 +62,8 @@ struct SwitchBarButtonsView: View {
 
     var body: some View {
         HStack(spacing: Constants.buttonSpacing) {
+            Spacer()
+
             if buttonState.showsMicButton {
                 Button(action: onMicrophoneTapped) {
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)

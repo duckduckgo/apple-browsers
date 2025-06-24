@@ -7,6 +7,7 @@ project_id="1205237866452338"
 workflow_id_custom_field_id="1205563320492190"
 apple_team_id="1203552211911076"
 asana_api_url="https://app.asana.com/api/1.0"
+fallback_assignee_id="856498666990313" # (bwaresiak)
 
 print_usage_and_exit() {
 	local reason=$1
@@ -189,7 +190,7 @@ validate_assignee() {
 		fi
 
 		echo "No Apple team members found among PR reviewers, using fallback" >&2
-		echo "856498666990313" # (bwaresiak)
+		echo "${fallback_assignee_id}"
 	fi
 }
 

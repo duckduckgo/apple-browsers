@@ -487,7 +487,8 @@ extension OmniBarEditingStateViewController {
             return
         }
 
-        let keyboardHeight = keyboardFrame.height
+        let logoOffsetForVisibleKeyboard: CGFloat = 50
+        let keyboardHeight = keyboardFrame.height - logoOffsetForVisibleKeyboard
         let safeAreaInsets = view.safeAreaInsets
         let adjustedKeyboardHeight = keyboardHeight - safeAreaInsets.bottom
         let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRawNSN.uintValue)

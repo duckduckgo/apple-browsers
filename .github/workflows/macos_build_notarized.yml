@@ -182,7 +182,7 @@ jobs:
         echo "app-name=${{ env.app-name }}" >> $GITHUB_OUTPUT
         echo "dsym-name=DuckDuckGo-${{ env.app-version }}-dSYM.zip" >> $GITHUB_OUTPUT
 
-    - name: Upload tar.xz artifact
+    - name: Upload app artifact
       uses: actions/upload-artifact@v4
       with:
         name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app.tar.xz
@@ -314,6 +314,9 @@ jobs:
         name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app.tar.xz
         path: ${{ github.workspace }}/macOS/dmg
 
+    - name: Install xz
+      run: brew install xz
+
     - name: Extract app bundle
       run: |
         tar -xf DuckDuckGo-${{ env.app-version }}.app.tar.xz
@@ -326,7 +329,7 @@ jobs:
           expected_app_name="${{ env.app-name }}.app"
           if [[ "${extracted_app_name}" != "${expected_app_name}" ]]; then
             echo "Renaming extracted app from '${extracted_app_name}' to '${expected_app_name}'"
-            mv "${extracted_app}" "${expected_app_name}"
+            mv -f "${extracted_app}" "${expected_app_name}"
           else
             echo "Extracted app already has the correct name: ${expected_app_name}"
           fi

@@ -299,7 +299,7 @@ compress_app_and_dsym() {
 	
 	if [[ "${original_app_name}" != "${versioned_app_name}" ]]; then
 		echo "Temporarily renaming app bundle for archive: ${versioned_app_name}"
-		mv "${original_app_name}" "${versioned_app_name}"
+		mv -f "${original_app_name}" "${versioned_app_name}"
 	fi
 	
 	# Create tar archive of the versioned app bundle
@@ -309,7 +309,7 @@ compress_app_and_dsym() {
 	# Rename app bundle back to original name for compatibility with other workflows
 	if [[ "${original_app_name}" != "${versioned_app_name}" ]]; then
 		echo "Renaming app bundle back to original name: ${original_app_name}"
-		mv "${versioned_app_name}" "${original_app_name}"
+		mv -f "${versioned_app_name}" "${original_app_name}"
 	fi
 	
 	# Compress with xz using maximum compression

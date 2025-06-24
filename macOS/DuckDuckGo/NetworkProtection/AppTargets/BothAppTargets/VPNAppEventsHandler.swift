@@ -64,12 +64,12 @@ final class VPNAppEventsHandler {
 
     /// Call this method when the app finishes launching, to run the startup logic for NetP.
     ///
-    func applicationDidFinishLaunching() {
-        loginItemsControlCheckpoint(canRestart: true)
+    func applicationDidFinishLaunching() async {
+        await loginItemsControlCheckpoint(canRestart: true, loginItemsManager: loginItemsManager)
     }
 
-    func applicationDidBecomeActive() {
-        loginItemsControlCheckpoint(canRestart: false)
+    func applicationDidBecomeActive() async {
+        await loginItemsControlCheckpoint(canRestart: false, loginItemsManager: loginItemsManager)
     }
 
     // MARK: - Login Item Control Checkpoints
@@ -98,27 +98,29 @@ final class VPNAppEventsHandler {
 
     /// Checks whether the VNP login items need to be disabled
     ///
-    private func loginItemsControlCheckpoint(canRestart: Bool) {
-        Task { @MainActor [loginItemsManager] in
-            switch try? await featureGatekeeper.canStartVPN() {
-            case .some(true) where loginItemsManager.isAnyEnabled(LoginItemsManager.vpnLoginItems):
-                if canRestart {
-                    restartLoginItem(using: loginItemsManager)
-                }
-            case .some(false) where loginItemsManager.isAnyInstalled(LoginItemsManager.vpnLoginItems):
+    @MainActor
+    private func loginItemsControlCheckpoint(canRestart: Bool, loginItemsManager: LoginItemsManaging) async {
+        switch try? await featureGatekeeper.canStartVPN() {
+        case .some(true) where loginItemsManager.isAnyEnabled(LoginItemsManager.vpnLoginItems):
+            if canRestart {
+                restartLoginItem(using: loginItemsManager)
+            }
+        case .some(false) where loginItemsManager.isAnyInstalled(LoginItemsManager.vpnLoginItems):
+            await withCheckedContinuation { continuation in
                 ipcClient.stop { error in
                     if let error {
                         self.pixelKit?.fire(LoginItemsControlCheckpointPixel.cannotStopVPN(error))
                     }
 
-                    Task {
+                    Task { @MainActor in
                         try await Task.sleep(interval: .seconds(2))
                         self.disableLoginItem(using: loginItemsManager)
+                        continuation.resume()
                     }
                 }
-            default:
-                break
             }
+        default:
+            break
         }
     }
 

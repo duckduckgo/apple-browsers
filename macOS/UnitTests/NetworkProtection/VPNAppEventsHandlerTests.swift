@@ -27,7 +27,7 @@ final class VPNAppEventsHandlerTests: XCTestCase {
 
     /// Tests that VPN login items are disabled and not restarted at startup when user has no VPN access.
     ///
-    func testVPNLoginItemStartupCheckpointIfUserHasNoVPNAccess() {
+    func testVPNLoginItemStartupCheckpointIfUserHasNoVPNAccess() async {
         let loginItemsDisabledExpectation = expectation(description: "The login items should be disabled")
         let loginItemsRestartedExpectation = expectation(description: "The login items should NOT be restarted")
         loginItemsRestartedExpectation.isInverted = true
@@ -54,14 +54,13 @@ final class VPNAppEventsHandlerTests: XCTestCase {
             loginItemsManager: mockLoginItemsManager,
             defaults: UserDefaults(suiteName: UUID().uuidString)!)
 
-        appEventsHandler.applicationDidFinishLaunching()
-
-        waitForExpectations(timeout: 0.1)
+        await appEventsHandler.applicationDidFinishLaunching()
+        await fulfillment(of: [loginItemsDisabledExpectation, loginItemsRestartedExpectation])
     }
 
     /// Tests that VPN login items are not disabled and are restarted at startup when user has VPN access.
     ///
-    func testVPNLoginItemStartupCheckpointIfUserHasVPNAccess() {
+    func testVPNLoginItemStartupCheckpointIfUserHasVPNAccess() async {
         let loginItemsDisabledExpectation = expectation(description: "The login items should NOT be disabled")
         loginItemsDisabledExpectation.isInverted = true
         let loginItemsRestartedExpectation = expectation(description: "The login items should be restarted")
@@ -88,8 +87,7 @@ final class VPNAppEventsHandlerTests: XCTestCase {
             loginItemsManager: mockLoginItemsManager,
             defaults: UserDefaults(suiteName: UUID().uuidString)!)
 
-        appEventsHandler.applicationDidFinishLaunching()
-
-        waitForExpectations(timeout: 0.1)
+        await appEventsHandler.applicationDidFinishLaunching()
+        await fulfillment(of: [loginItemsDisabledExpectation, loginItemsRestartedExpectation])
     }
 }

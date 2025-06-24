@@ -711,7 +711,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()
 
-            vpnAppEventsHandler.applicationDidFinishLaunching()
+            await vpnAppEventsHandler.applicationDidFinishLaunching()
         }
 
         historyCoordinator.loadHistory {
@@ -890,9 +890,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        vpnAppEventsHandler.applicationDidBecomeActive()
-
         Task { @MainActor in
+            await vpnAppEventsHandler.applicationDidBecomeActive()
             await subscriptionCookieManager.refreshSubscriptionCookie()
         }
     }

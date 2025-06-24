@@ -5,6 +5,7 @@ set -eo pipefail
 workspace_id="137249556945"
 project_id="1205237866452338"
 workflow_id_custom_field_id="1205563320492190"
+apple_team_id="1203552211911076"
 asana_api_url="https://app.asana.com/api/1.0"
 
 print_usage_and_exit() {
@@ -158,6 +159,14 @@ close_task() {
 	[[ ${return_code} -eq 200 ]]
 }
 
+_validate_assignee() {
+	local assignee=$1
+
+	curl -s "${asana_api_url}/teams/${apple_team_id}/users?opt_fields=gid" \
+		-H "Authorization: Bearer ${asana_personal_access_token}" \
+		| jq -e "any(.data[]?; .gid == \"${assignee}\")" > /dev/null
+}
+
 main() {
 	local asana_personal_access_token="${ASANA_ACCESS_TOKEN}"
 	local section_id="${ASANA_SECTION_ID}"
@@ -167,6 +176,8 @@ main() {
 	local title
 	local description
 	local message
+
+	_validate_assignee "${assignee}"
 
 	read_command_line_arguments "$@"
 

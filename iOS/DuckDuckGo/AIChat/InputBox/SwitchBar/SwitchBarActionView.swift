@@ -21,19 +21,20 @@ import SwiftUI
 
 struct SwitchBarActionView: View {
     let hasText: Bool
-    let onImageUpload: () -> Void
+    let forceWebSearchEnabled: Bool
+    let onWebSearchToggle: () -> Void
     let onSend: () -> Void
 
     var body: some View {
         HStack {
             Spacer()
 
-            Button(action: onImageUpload) {
-                Image(systemName: "photo")
+            Button(action: onWebSearchToggle) {
+                Image(systemName: "globe")
                     .font(.system(size: 18))
-                    .foregroundColor(.primary)
+                    .foregroundColor(forceWebSearchEnabled ? .white : .primary)
                     .frame(width: 44, height: 44)
-                    .background(Color.secondary.opacity(0.1))
+                    .background(forceWebSearchEnabled ? Color.accentColor : Color.secondary.opacity(0.1))
                     .clipShape(Circle())
             }
             .buttonStyle(PlainButtonStyle())
@@ -60,7 +61,8 @@ struct SwitchBarActionView: View {
 #Preview {
     SwitchBarActionView(
         hasText: true,
-        onImageUpload: { print("Image upload tapped") },
+        forceWebSearchEnabled: false,
+        onWebSearchToggle: { print("Web search toggled") },
         onSend: { print("Send tapped") }
     )
 }

@@ -33,11 +33,13 @@ protocol SwitchBarHandling: AnyObject {
     var currentText: String { get }
     var currentToggleState: TextEntryMode { get }
     var isVoiceSearchEnabled: Bool { get }
+    var forceWebSearch: Bool { get }
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { get }
+    var forceWebSearchPublisher: AnyPublisher<Bool, Never> { get }
 
     // MARK: - Methods
     func updateCurrentText(_ text: String)
@@ -45,6 +47,8 @@ protocol SwitchBarHandling: AnyObject {
     func setToggleState(_ state: TextEntryMode)
     func clearText()
     func microphoneButtonTapped()
+    func toggleForceWebSearch()
+    func setForceWebSearch(_ enabled: Bool)
 }
 
 // MARK: - SwitchBarHandler Implementation
@@ -56,6 +60,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
     @Published private(set) var currentToggleState: TextEntryMode = .search
+    @Published private(set) var forceWebSearch: Bool = false
 
     var isVoiceSearchEnabled: Bool {
         voiceSearchHelper.isVoiceSearchEnabled
@@ -67,6 +72,10 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> {
         $currentToggleState.eraseToAnyPublisher()
+    }
+
+    var forceWebSearchPublisher: AnyPublisher<Bool, Never> {
+        $forceWebSearch.eraseToAnyPublisher()
     }
 
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> {
@@ -104,5 +113,13 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     func microphoneButtonTapped() {
         microphoneButtonTappedSubject.send(())
+    }
+
+    func toggleForceWebSearch() {
+        forceWebSearch.toggle()
+    }
+
+    func setForceWebSearch(_ enabled: Bool) {
+        forceWebSearch = enabled
     }
 }

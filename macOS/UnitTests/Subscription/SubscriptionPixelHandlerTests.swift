@@ -40,7 +40,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         let old: [Entitlement] = []
 
         pixelKit.expectedFireCalls = [
-            .init(pixel: PrivacyProPixel.privacyProEntitlementsAdded(.mainApp) , frequency: .dailyAndCount),
+            .init(pixel: PrivacyProPixel.privacyProEntitlementsAdded(.mainApp), frequency: .dailyAndCount),
         ]
 
         AuthV2PixelHandler.sendPixelForEntitlementChange(
@@ -58,7 +58,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         let old = [Entitlement(product: .dataBrokerProtection)]
 
         pixelKit.expectedFireCalls = [
-            .init(pixel: PrivacyProPixel.privacyProEntitlementsRemoved(.vpnApp) , frequency: .dailyAndCount),
+            .init(pixel: PrivacyProPixel.privacyProEntitlementsRemoved(.vpnApp), frequency: .dailyAndCount),
         ]
 
         AuthV2PixelHandler.sendPixelForEntitlementChange(
@@ -76,8 +76,8 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         let old = [Entitlement(product: .paidAIChat)]
 
         pixelKit.expectedFireCalls = [
-            .init(pixel: PrivacyProPixel.privacyProEntitlementsAdded(.dbp) , frequency: .dailyAndCount),
-            .init(pixel: PrivacyProPixel.privacyProEntitlementsRemoved(.dbp) , frequency: .dailyAndCount),
+            .init(pixel: PrivacyProPixel.privacyProEntitlementsAdded(.dbp), frequency: .dailyAndCount),
+            .init(pixel: PrivacyProPixel.privacyProEntitlementsRemoved(.dbp), frequency: .dailyAndCount),
         ]
 
         AuthV2PixelHandler.sendPixelForEntitlementChange(

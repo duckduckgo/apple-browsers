@@ -23,7 +23,7 @@ public struct Entitlement: Codable, Equatable {
     public init(product: Entitlement.ProductName) {
         self.product = product
     }
-    
+
     public let product: ProductName
 
     public enum ProductName: String, Codable {

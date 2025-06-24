@@ -12,7 +12,7 @@ outputs:
     description: 'The commit author username'
     value: ${{ steps.fetch_info.outputs.commit_author }}
   pr_reviewers:
-    description: 'Comma-separated list of all PR reviewers (or commit author if not a PR merge)'
+    description: 'Comma-separated list of all PR reviewers (empty if not a PR merge)'
     value: ${{ steps.fetch_info.outputs.pr_reviewers }}
 
 runs:

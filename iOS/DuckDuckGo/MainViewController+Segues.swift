@@ -177,7 +177,8 @@ extension MainViewController {
                                       syncService: self.syncService,
                                       featureFlagger: self.featureFlagger,
                                       tabManager: self.tabManager,
-                                      aiChatSettings: self.aiChatSettings)
+                                      aiChatSettings: self.aiChatSettings,
+                                      appSettings: self.appSettings)
         }) else {
             assertionFailure()
             return

@@ -190,12 +190,14 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertFalse(moreOptionsMenu.items[16].hasSubmenu)
         XCTAssertTrue(moreOptionsMenu.items[17].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[18].title, UserText.fireproofSite)
-        XCTAssertEqual(moreOptionsMenu.items[19].title, UserText.findInPageMenuItem)
-        XCTAssertEqual(moreOptionsMenu.items[20].title, UserText.shareMenuItem)
-        XCTAssertEqual(moreOptionsMenu.items[21].title, UserText.printMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[22].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[23].title, UserText.mainMenuHelp)
-        XCTAssertEqual(moreOptionsMenu.items[24].title, UserText.settings)
+        XCTAssertEqual(moreOptionsMenu.items[19].title, UserText.deleteBrowsingDataMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[20].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[21].title, UserText.findInPageMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[22].title, UserText.shareMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[23].title, UserText.printMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[24].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[25].title, UserText.mainMenuHelp)
+        XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.settings)
     }
 
     @MainActor
@@ -230,12 +232,14 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(moreOptionsMenu.items[17].title, UserText.freemiumDBPOptionsMenuItem)
         XCTAssertTrue(moreOptionsMenu.items[18].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[19].title, UserText.fireproofSite)
-        XCTAssertEqual(moreOptionsMenu.items[20].title, UserText.findInPageMenuItem)
-        XCTAssertEqual(moreOptionsMenu.items[21].title, UserText.shareMenuItem)
-        XCTAssertEqual(moreOptionsMenu.items[22].title, UserText.printMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[23].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[24].title, UserText.mainMenuHelp)
-        XCTAssertEqual(moreOptionsMenu.items[25].title, UserText.settings)
+        XCTAssertEqual(moreOptionsMenu.items[20].title, UserText.deleteBrowsingDataMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[21].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[22].title, UserText.findInPageMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[23].title, UserText.shareMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[24].title, UserText.printMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[25].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.mainMenuHelp)
+        XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
     }
 
     @MainActor

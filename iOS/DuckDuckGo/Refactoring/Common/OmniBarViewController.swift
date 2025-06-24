@@ -616,7 +616,6 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func onSharePressed() {
-        // TODO pixel
         omniDelegate?.onSharePressed()
     }
 

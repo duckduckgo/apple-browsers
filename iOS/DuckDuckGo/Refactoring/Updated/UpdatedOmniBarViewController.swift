@@ -145,7 +145,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
         if shouldAutoSelectText {
             DispatchQueue.main.async {
-                editingStateViewController.selectAllText()
+                editingStateViewController.setUpForInitialSelectedState()
             }
         }
     }

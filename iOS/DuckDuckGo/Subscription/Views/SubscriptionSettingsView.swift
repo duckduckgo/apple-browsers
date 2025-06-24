@@ -304,7 +304,7 @@ struct SubscriptionSettingsView: View {
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                                                     apiService: DefaultAPIService(),
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(),
-                                                                                                    featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                                                                    isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
                                                                                                     source: .ppro)),
                        isActive: $isShowingSupportView) {
             EmptyView()
@@ -699,7 +699,7 @@ struct SubscriptionSettingsViewV2: View {
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                                                     apiService: DefaultAPIService(),
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(),
-                                                                                                    featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                                                                    isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
                                                                                                     source: .ppro)),
                        isActive: $isShowingSupportView) {
             EmptyView()

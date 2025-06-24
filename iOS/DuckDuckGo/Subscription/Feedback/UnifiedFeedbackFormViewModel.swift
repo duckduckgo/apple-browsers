@@ -141,7 +141,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private let vpnMetadataCollector: any UnifiedMetadataCollector
     private let defaultMetadataCollector: any UnifiedMetadataCollector
     private let feedbackSender: any UnifiedFeedbackSender
-    private let featureFlagger: FeatureFlagger
+    private let isPaidAIChatFeatureEnabled: () -> Bool
 
     let source: String
 
@@ -152,7 +152,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
          vpnMetadataCollector: any UnifiedMetadataCollector,
          defaultMetadatCollector: any UnifiedMetadataCollector = DefaultMetadataCollector(),
          feedbackSender: any UnifiedFeedbackSender = DefaultFeedbackSender(),
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         isPaidAIChatFeatureEnabled: @escaping () -> Bool,
          source: Source = .unknown) {
         self.viewState = .feedbackPending
         self.subscriptionManager = subscriptionManager
@@ -160,7 +160,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         self.vpnMetadataCollector = vpnMetadataCollector
         self.defaultMetadataCollector = defaultMetadatCollector
         self.feedbackSender = feedbackSender
-        self.featureFlagger = featureFlagger
+        self.isPaidAIChatFeatureEnabled = isPaidAIChatFeatureEnabled
         self.source = source.rawValue
 
         Task {
@@ -172,7 +172,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             if features.contains(.dataBrokerProtection) {
                 availableCategories.append(.pir)
             }
-            if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) {
+            if features.contains(.paidAIChat) && isPaidAIChatFeatureEnabled() {
                 availableCategories.append(.duckAi)
             }
             if features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal) {

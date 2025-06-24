@@ -195,7 +195,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
         UIView.animateKeyframes(withDuration: TabSwitcherTransition.Constants.duration, delay: 0, options: .calculationModeLinear, animations: {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
-                self.imageContainer.frame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)                
+                self.imageContainer.frame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
                 self.imageContainer.frame = self.adjustFrame(self.imageContainer.frame,
                                                              forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
                                                              byHeight: -mainViewController.omniBar.barView.expectedHeight)

@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import SwiftUI
 import Combine
 import DesignResourcesKitIcons
 
@@ -44,12 +45,13 @@ class SwitchBarTextEntryView: UIView {
         // Animation
         static let animationDuration: TimeInterval = 0.2
     }
-    
+
     private let handler: SwitchBarHandling
 
     private let textView = UITextView()
     private let placeholderLabel = UILabel()
-    private let buttonsView = SwitchBarButtonsView()
+    private var buttonsHostingController: UIHostingController<SwitchBarButtonsView>?
+    private var currentButtonState: SwitchBarButtonState = .noButtons
 
     private var currentMode: TextEntryMode {
         handler.currentToggleState
@@ -88,32 +90,55 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.textColor = UIColor.placeholderText
         placeholderLabel.numberOfLines = 0
 
-        // Setup buttons view
-        buttonsView.onMicrophoneTapped = { [weak self] in
-            self?.handler.microphoneButtonTapped()
-        }
-        
-        buttonsView.onClearTapped = { [weak self] in
-            // When clear button is tapped, exit initial selected state
-            if self?.isInInitialSelectedState == true {
-                self?.isInInitialSelectedState = false
-            }
-            self?.handler.clearText()
-        }
+        // Setup SwiftUI buttons view
+        setupButtonsView()
 
         addSubview(textView)
         addSubview(placeholderLabel)
-        addSubview(buttonsView)
 
         textView.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
-        buttonsView.translatesAutoresizingMaskIntoConstraints = false
 
         heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight)
         heightConstraint?.isActive = true
 
         // Create both trailing constraints for textView
         textViewTrailingConstraint = textView.trailingAnchor.constraint(equalTo: trailingAnchor)
+
+        setupConstraints()
+
+        updateButtonState()
+        updateForCurrentMode()
+        updateTextViewHeight()
+    }
+
+    // MARK: - Setup Methods
+
+    private func setupButtonsView() {
+        let buttonsView = SwitchBarButtonsView(
+            buttonState: currentButtonState,
+            onMicrophoneTapped: { [weak self] in
+                self?.handler.microphoneButtonTapped()
+            },
+            onClearTapped: { [weak self] in
+                if self?.isInInitialSelectedState == true {
+                    self?.isInInitialSelectedState = false
+                }
+                self?.handler.clearText()
+            }
+        )
+
+        let hostingController = UIHostingController(rootView: buttonsView)
+        hostingController.view.backgroundColor = .clear
+        buttonsHostingController = hostingController
+
+        addSubview(hostingController.view)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+    }
+
+    private func setupConstraints() {
+        guard let buttonsView = buttonsHostingController?.view else { return }
+
         textViewTrailingConstraintWithButtons = textView.trailingAnchor.constraint(equalTo: buttonsView.leadingAnchor, constant: Constants.textButtonSpacing)
 
         NSLayoutConstraint.activate([
@@ -126,18 +151,14 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
 
             buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
-            buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.buttonViewTrailingOffset)
+            buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.buttonViewTrailingOffset),
+            buttonsView.heightAnchor.constraint(equalToConstant: 24),
+            buttonsView.widthAnchor.constraint(lessThanOrEqualToConstant: 60)
         ])
-
-        updateButtonState()
-        updateForCurrentMode()
-        updateTextViewHeight()
     }
 
-    // MARK: - Button State Management
-
     // MARK: - UI Updates
-    
+
     private func updateForCurrentMode() {
         switch currentMode {
         case .search:
@@ -160,35 +181,50 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.isHidden = !textView.text.isEmpty
     }
 
-    /// Determines and updates the current button state based on text content and special states
     private func updateButtonState() {
         let hasText = !textView.text.isEmpty
         let isVoiceSearchEnabled = handler.isVoiceSearchEnabled
-        
-        let newButtonState: SwitchBarButtonsView.ButtonState
-        
+        let newButtonState: SwitchBarButtonState
+
         if isInInitialSelectedState && hasText {
-            // Special case: both buttons visible when in initial selected state with text
             newButtonState = .initialSelected
         } else if hasText {
-            // Normal case: clear button only when there's text
             newButtonState = .clearOnly
         } else if isVoiceSearchEnabled {
-            // No text but voice search enabled: mic button only
             newButtonState = .micOnly
         } else {
-            // No text and no voice search: no buttons
             newButtonState = .noButtons
         }
-        
-        if newButtonState != buttonsView.getButtonState() {
-            buttonsView.setButtonState(newButtonState)
+
+        if newButtonState != currentButtonState {
+            currentButtonState = newButtonState
+            updateButtonsView()
             updateConstraintsForButtonVisibility()
         }
     }
 
+    private func updateButtonsView() {
+        let buttonsView = SwitchBarButtonsView(
+            buttonState: currentButtonState,
+            onMicrophoneTapped: { [weak self] in
+                self?.handler.microphoneButtonTapped()
+            },
+            onClearTapped: { [weak self] in
+                if self?.isInInitialSelectedState == true {
+                    self?.isInInitialSelectedState = false
+                }
+                self?.handler.clearText()
+            }
+        )
+
+        buttonsHostingController?.rootView = buttonsView
+
+        if let hostingView = buttonsHostingController?.view {
+            hostingView.invalidateIntrinsicContentSize()
+        }
+    }
+
     private func updateConstraintsForButtonVisibility() {
-        let currentButtonState = buttonsView.getButtonState()
         if currentButtonState.showsAnyButton {
             textViewTrailingConstraint?.isActive = false
             textViewTrailingConstraintWithButtons?.isActive = true
@@ -246,16 +282,15 @@ class SwitchBarTextEntryView: UIView {
     override func resignFirstResponder() -> Bool {
         return textView.resignFirstResponder()
     }
-    
+
     func selectAllText() {
         textView.selectAll(nil)
-        // When text is selected initially, enter the special state where both buttons are visible
         isInInitialSelectedState = true
         updateButtonState()
     }
-    
+
     // MARK: - Public Methods
-    
+
     /// Sets the initial selected state where both mic and clear buttons should be visible
     func setInitialSelectedState(_ isInitialSelected: Bool) {
         isInInitialSelectedState = isInitialSelected
@@ -277,7 +312,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         if isInInitialSelectedState && !text.isEmpty {
             isInInitialSelectedState = false
         }
-        
+
         if text == "\n" {
             switch currentMode {
             case .search:

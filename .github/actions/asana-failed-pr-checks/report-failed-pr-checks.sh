@@ -160,6 +160,35 @@ close_task() {
 	[[ ${return_code} -eq 200 ]]
 }
 
+_fetch_github_asana_mapping() {
+	echo "Fetching GitHub to Asana user mapping..." >&2
+
+	local gh_asana_mapping_content
+	local gh_asana_mapping
+
+	if gh_asana_mapping_content="$(gh api https://api.github.com/repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml --jq .content 2>/dev/null)" && \
+	   [[ -n "${gh_asana_mapping_content}" ]] && \
+	   [[ "${gh_asana_mapping_content}" != "null" ]] && \
+	   gh_asana_mapping="$(echo "${gh_asana_mapping_content}" | base64 -d 2>/dev/null)" && \
+	   [[ -n "${gh_asana_mapping}" ]]; then
+
+		echo "Successfully retrieved user mapping" >&2
+		echo "${gh_asana_mapping}"
+		return 0
+	else
+		echo "Failed to fetch or parse GitHub to Asana user mapping" >&2
+		return 1
+	fi
+}
+
+_is_user_in_apple_team() {
+	local user_id=$1
+
+	curl -s "${asana_api_url}/teams/${apple_team_id}/users?opt_fields=gid" \
+		-H "Authorization: Bearer ${asana_personal_access_token}" \
+		| jq -e "any(.data[]?; .gid == \"${user_id}\")" > /dev/null
+}
+
 validate_assignee() {
 	local assignee=$1
 	local pr_reviewers=$2
@@ -171,16 +200,8 @@ validate_assignee() {
 
 		# Check each PR reviewer if pr_reviewers is not empty
 		if [[ -n "${pr_reviewers}" ]]; then
-			# Fetch GitHub to Asana user mapping with error handling
-			echo "Fetching GitHub to Asana user mapping..." >&2
-			if gh_asana_mapping_content="$(gh api https://api.github.com/repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml --jq .content 2>/dev/null)" && \
-			   [[ -n "${gh_asana_mapping_content}" ]] && \
-			   [[ "${gh_asana_mapping_content}" != "null" ]] && \
-			   gh_asana_mapping="$(echo "${gh_asana_mapping_content}" | base64 -d 2>/dev/null)" && \
-			   [[ -n "${gh_asana_mapping}" ]]; then
-
-				echo "Successfully retrieved user mapping" >&2
-
+			local gh_asana_mapping
+			if gh_asana_mapping="$(_fetch_github_asana_mapping)"; then
 				# Split comma-separated reviewers and iterate through them
 				IFS=',' read -ra reviewer_array <<< "${pr_reviewers}"
 				for reviewer in "${reviewer_array[@]}"; do
@@ -200,21 +221,13 @@ validate_assignee() {
 					fi
 				done
 			else
-				echo "Failed to fetch or parse GitHub to Asana user mapping, skipping reviewer validation" >&2
+				echo "Skipping reviewer validation due to mapping fetch failure" >&2
 			fi
 		fi
 
 		echo "No Apple team members found among PR reviewers, using fallback" >&2
 		echo "${fallback_assignee_id}"
 	fi
-}
-
-_is_user_in_apple_team() {
-	local user_id=$1
-
-	curl -s "${asana_api_url}/teams/${apple_team_id}/users?opt_fields=gid" \
-		-H "Authorization: Bearer ${asana_personal_access_token}" \
-		| jq -e "any(.data[]?; .gid == \"${user_id}\")" > /dev/null
 }
 
 main() {

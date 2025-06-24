@@ -82,7 +82,7 @@ jobs:
 
     outputs:
       commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
-      pr_reviewer: ${{ steps.fetch_commit_author.outputs.pr_reviewer }}
+      pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
     steps:
 
@@ -192,7 +192,7 @@ jobs:
       with:
         pixel-name: m_ci_apple_status_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}
 
-    - name: Fetch latest commit author and PR reviewer
+    - name: Fetch latest commit author and PR reviewers
       if: always() && github.ref_name == 'main'
       id: fetch_commit_author
       env:
@@ -211,20 +211,20 @@ jobs:
         if [[ -n "$pr_number" ]]; then
           echo "Found PR merge: #${pr_number}"
 
-          # Get the PR reviewer (first reviewer who approved)
-          reviewer=$(gh api https://api.github.com/repos/${{ github.repository }}/pulls/${pr_number}/reviews \
-            --jq '.[] | select(.state == "APPROVED") | .user.login' | head -n 1)
+          # Get all PR reviewers who approved (unique reviewers only)
+          reviewers=$(gh api https://api.github.com/repos/${{ github.repository }}/pulls/${pr_number}/reviews \
+            --jq '[.[] | select(.state == "APPROVED") | .user.login] | unique | join(",")')
 
-          if [[ -n "$reviewer" ]]; then
-            echo "PR reviewer found: ${reviewer}"
-            echo "pr_reviewer=${reviewer}" >> $GITHUB_OUTPUT
+          if [[ -n "$reviewers" && "$reviewers" != "null" && "$reviewers" != "" ]]; then
+            echo "PR reviewers found: ${reviewers}"
+            echo "pr_reviewers=${reviewers}" >> $GITHUB_OUTPUT
           else
-            echo "No reviewer found for PR #${pr_number}, using commit author"
-            echo "pr_reviewer=${author}" >> $GITHUB_OUTPUT
+            echo "No reviewers found for PR #${pr_number}, using commit author"
+            echo "pr_reviewers=${author}" >> $GITHUB_OUTPUT
           fi
         else
           echo "Not a PR merge, using commit author"
-          echo "pr_reviewer=${author}" >> $GITHUB_OUTPUT
+          echo "pr_reviewers=${author}" >> $GITHUB_OUTPUT
         fi
 
   release-build:

@@ -168,7 +168,6 @@ New: \(subscription.debugDescription, privacy: .public)
 
     func updateCache(with subscription: PrivacyProSubscription) {
         cacheSerialQueue.sync {
-            let previousEntitlements = self.subscriptionCache.get()?.features?.map { $0.entitlement } ?? []
             let expiryDate = subscription.expiresOrRenewsAt
 #if DEBUG
             // In DEBUG the subscription duration is just a few minutes, we want to avoid the cache to be immediately invalidated
@@ -183,18 +182,9 @@ New: \(subscription.debugDescription, privacy: .public)
                 Logger.subscriptionEndpointService.debug("Subscription cache set with default expiration date")
                 subscriptionCache.set(subscription)
             }
-            Logger.subscriptionEndpointService.debug("Notifying subscription changed")
             Task { @MainActor in
+                Logger.subscriptionEndpointService.debug("Notifying subscription changed")
                 NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: subscription])
-                // TMP: Convert to Entitlement (authV1)
-                if let features = subscription.features {
-                    let entitlements = features.map { $0.entitlement }
-                    let userInfo: [AnyHashable: [Entitlement]] = [
-                        UserDefaultsCacheKey.subscriptionEntitlements: entitlements,
-                        UserDefaultsCacheKey.subscriptionPreviousEntitlements: previousEntitlements
-                    ]
-                    NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: userInfo)
-                }
             }
         }
     }

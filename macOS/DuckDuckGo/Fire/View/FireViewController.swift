@@ -38,6 +38,8 @@ final class FireViewController: NSViewController {
         return storyboard.instantiateController(identifier: "FirePopoverViewController")
     }()
 
+    @IBOutlet weak var fakeFireButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var fakeFireButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var deletingDataLabel: NSTextField!
     @IBOutlet weak var fakeFireButton: NSButton!
     @IBOutlet weak var progressIndicatorWrapper: NSView!
@@ -73,6 +75,9 @@ final class FireViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        fakeFireButton.image = visualStyle.iconsProvider.fireButtonStyleProvider.icon
+        fakeFireButtonWidthConstraint.constant = visualStyle.tabBarButtonSize
+        fakeFireButtonHeightConstraint.constant = visualStyle.tabBarButtonSize
         deletingDataLabel.stringValue = UserText.fireDialogDelitingData
         if case .normal = AppVersion.runType {
             fireAnimationViewLoadingTask = Task.detached(priority: .userInitiated) {
@@ -126,7 +131,6 @@ final class FireViewController: NSViewController {
         fakeFireButton.layer?.backgroundColor = NSColor.buttonMouseDown.cgColor
 
         fakeFireButton.setAccessibilityIdentifier("FireViewController.fakeFireButton")
-        fakeFireButton.image = visualStyle.iconsProvider.fireButtonStyleProvider.icon
         subscribeToIsBurning()
     }
 

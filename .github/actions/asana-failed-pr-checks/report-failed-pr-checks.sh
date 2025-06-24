@@ -212,7 +212,7 @@ main() {
 	local description
 	local message
 
-	assignee=$(validate_assignee "${assignee}" "${pr_reviewers}")
+	assignee="$(validate_assignee "${assignee}" "${pr_reviewers}")"
 
 	read_command_line_arguments "$@"
 

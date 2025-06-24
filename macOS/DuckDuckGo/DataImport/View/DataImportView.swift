@@ -67,8 +67,6 @@ struct DataImportView: ModalView {
                     .padding(.bottom, 8)
             }
 
-            Divider()
-
             viewFooter()
                 .padding(.top, 16)
                 .padding(.bottom, 16)
@@ -81,7 +79,7 @@ struct DataImportView: ModalView {
 #endif
         }
         .font(.system(size: 13))
-        .frame(width: 512)
+        .frame(width: 340)
         .fixedSize()
     }
 
@@ -111,7 +109,7 @@ struct DataImportView: ModalView {
     private var shortcutsHeader: some View {
         Text(UserText.importDataShortcutsTitle)
             .font(.title2.weight(.semibold))
-            .padding(.bottom, 24)
+            .padding(.bottom, 20)
     }
 
     @ViewBuilder
@@ -123,7 +121,7 @@ struct DataImportView: ModalView {
             
             Text(title)
                 .font(.title2.weight(.semibold))
-                .padding(.bottom, 24)
+                .padding(.bottom, 20)
         }
     }
 
@@ -132,8 +130,8 @@ struct DataImportView: ModalView {
         DataImportSourcePicker(importSources: model.availableImportSources, selectedSource: model.importSource) { importSource in
             model.update(with: importSource)
         }
+        .padding(.bottom, 8)
         .disabled(model.isImportSourcePickerDisabled)
-        .padding(.bottom, 16)
     }
 
     @ViewBuilder
@@ -162,43 +160,35 @@ struct DataImportView: ModalView {
     }
 
     @ViewBuilder
-    private var importSourceDataTitle: some View {
-        Text(UserText.importDataSourceTitle)
-            .padding(.bottom, 16)
-    }
-
-    @ViewBuilder
     private var profileAndDataTypesPickerBody: some View {
-        importSourceDataTitle
-        importSourcePicker
-        VStack(alignment: .leading, spacing: 0) {
-            // Browser Profile picker
-            if model.browserProfiles?.validImportableProfiles.count ?? 0 > 1 {
-                DataImportProfilePicker(profileList: model.browserProfiles,
-                                        selectedProfile: $model.selectedProfile)
-                .disabled(model.isImportSourcePickerDisabled)
-                .padding(.bottom, 24)
-            }
-
-            // Collapsible section for data type selection
-            ExpandableSection(
-                title: "Select data to import",
-                isExpanded: $isDataTypePickerExpanded
-            ) {
-                DataImportTypePicker(viewModel: $model)
+        importPickerPanel {
+            VStack(alignment: .leading, spacing: 8) {
+                // Browser Profile picker
+                if model.browserProfiles?.validImportableProfiles.count ?? 0 > 1 {
+                    DataImportProfilePicker(profileList: model.browserProfiles,
+                                            selectedProfile: $model.selectedProfile)
+                    .padding(.bottom, 8)
                     .disabled(model.isImportSourcePickerDisabled)
-            }
-            .padding(.bottom, 16)
+                }
 
-            passwordsExplainerView().padding(.top, 20)
+                // Collapsible section for data type selection
+                ExpandableSection(
+                    isExpanded: $isDataTypePickerExpanded
+                ) {
+                    DataImportTypePicker(viewModel: $model)
+                        .disabled(model.isImportSourcePickerDisabled)
+                }
+                .padding(.top, 8)
+            }
         }
+        passwordsExplainerView().padding(.top, 12)
     }
 
     @ViewBuilder
     private var moreInfoBody: some View {
-        importSourceDataTitle
-        importSourcePicker
-        BrowserImportMoreInfoView(source: model.importSource)
+        importPickerPanel {
+            BrowserImportMoreInfoView(source: model.importSource)
+        }
     }
 
     @ViewBuilder
@@ -213,45 +203,60 @@ struct DataImportView: ModalView {
 
     @ViewBuilder
     private func getReadPermissionBody(url: URL) -> some View {
-        importSourceDataTitle
-        importSourcePicker
-        RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
-            model.initiateImport()
+        importPickerPanel {
+            RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
+                model.initiateImport()
+            }
         }
     }
 
     @ViewBuilder
     private func fileImportBody(dataType: DataImport.DataType, summaryTypes: Set<DataImport.DataType>) -> some View {
-        importSourceDataTitle
-        importSourcePicker
-        VStack(alignment: .leading, spacing: 0) {
-            if !summaryTypes.isEmpty {
-                DataImportSummaryView(model, dataTypes: summaryTypes)
-                    .padding(.bottom, 24)
-            }
+        importPickerPanel {
+            VStack(alignment: .leading, spacing: 0) {
+                if !summaryTypes.isEmpty {
+                    DataImportSummaryView(model, dataTypes: summaryTypes)
+                        .padding(.bottom, 24)
+                }
 
-            // if no data to import
-            if model.summary(for: dataType)?.isEmpty == true
-                || model.error(for: dataType)?.errorType == .noData {
-                DataImportNoDataView(source: model.importSource, dataType: dataType)
-                    .padding(.bottom, 24)
-            // if browser importer failed - display error message
-            } else if model.error(for: dataType) != nil {
-                DataImportErrorView(source: model.importSource, dataType: dataType)
-                    .padding(.bottom, 24)
-            }
+                // if no data to import
+                if model.summary(for: dataType)?.isEmpty == true
+                    || model.error(for: dataType)?.errorType == .noData {
+                    DataImportNoDataView(source: model.importSource, dataType: dataType)
+                        .padding(.bottom, 24)
+                // if browser importer failed - display error message
+                } else if model.error(for: dataType) != nil {
+                    DataImportErrorView(source: model.importSource, dataType: dataType)
+                        .padding(.bottom, 24)
+                }
 
-            // manual file import instructions for CSV/HTML
-            FileImportView(source: model.importSource, dataType: dataType, isButtonDisabled: model.isSelectFileButtonDisabled) {
-                model.selectFile()
-            } onFileDrop: { url in
-                model.initiateImport(fileURL: url)
-            }
-
-            if dataType == .passwords {
-                passwordsExplainerView().padding(.top, 20)
+                // manual file import instructions for CSV/HTML
+                FileImportView(source: model.importSource, dataType: dataType, isButtonDisabled: model.isSelectFileButtonDisabled) {
+                    model.selectFile()
+                } onFileDrop: { url in
+                    model.initiateImport(fileURL: url)
+                }
             }
         }
+        if dataType == .passwords {
+            passwordsExplainerView().padding(.top, 20)
+        }
+    }
+
+    private func importPickerPanel<Content: View>(_ content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            importSourceDataTitle
+            importSourcePicker
+            content()
+        }
+        .frame(idealWidth: .infinity, maxWidth: .infinity, alignment: .topLeading)
+        .padding(12)
+        .background(Color.blackWhite1)
+        .roundedBorder()
+    }
+
+    private var importSourceDataTitle: some View {
+        Text(UserText.importDataSourceTitle)
     }
 
     private func progressView(_ progress: TaskProgress<DataImportViewModel, Never, DataImportProgressEvent>) -> some View {
@@ -287,16 +292,17 @@ struct DataImportView: ModalView {
 
     private func passwordsExplainerView() -> some View {
         HStack(alignment: .top, spacing: 8) {
-            Image(.lockColor16)
-            Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
+            (
+                Text(Image(.lockSolid16)).baselineOffset(-1.0)
+                +
+                Text(" ")
+                +
+                Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
+            )
+            .font(.system(size: 10))
+            .foregroundColor(.secondary)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .frame(idealWidth: .infinity, maxWidth: .infinity, alignment: .topLeading)
-        .padding(14)
-        .background(Color.blackWhite1)
-        .roundedBorder()
     }
 
     private func handleImportProgress(_ progress: TaskProgress<DataImportViewModel, Never, DataImportProgressEvent>) async {
@@ -655,7 +661,6 @@ extension DataImportViewModel {
 #endif
 
 private struct ExpandableSection<Content: View>: View {
-    let title: String
     @Binding var isExpanded: Bool
     let content: () -> Content
     
@@ -663,10 +668,17 @@ private struct ExpandableSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             if !isExpanded {
                 Button(action: { isExpanded = true }) {
-                    HStack {
-                        Text(title)
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Import all available data")
+                            Text("Bookmarks and passwords")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                        }
                         Spacer()
-                        Image(systemName: "chevron.down")
+                        Image(.plusCircle)
+                            .resizable()
+                            .frame(width: 16, height: 16)
                     }
                 }
                 .buttonStyle(.plain)

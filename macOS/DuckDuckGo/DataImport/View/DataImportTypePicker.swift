@@ -32,30 +32,38 @@ struct DataImportTypePicker: View {
             Text("What do you want to import?",
                  comment: "Data Import section title for checkboxes of data type to import: Passwords or Bookmarks.")
 
-            ForEach(DataImport.DataType.allCases, id: \.self) { dataType in
-                // display all types for a browser disabling unavailable options
-                if viewModel.importSource.isBrowser
-                    // display only supported types for a non-browser
-                    || viewModel.importSource.supportedDataTypes.contains(dataType) {
+            VStack(alignment: .leading) {
+                ForEach(DataImport.DataType.allCases, id: \.self) { dataType in
+                    // display all types for a browser disabling unavailable options
+                    if viewModel.importSource.isBrowser
+                        // display only supported types for a non-browser
+                        || viewModel.importSource.supportedDataTypes.contains(dataType) {
 
-                    Toggle(isOn: Binding {
-                        viewModel.selectedDataTypes.contains(dataType)
-                    } set: { isOn in
-                        viewModel.setDataType(dataType, selected: isOn)
-                    }) {
-                        Text(dataType.displayName)
-                    }
-                    .disabled(!viewModel.importSource.supportedDataTypes.contains(dataType))
+                        Toggle(isOn: Binding {
+                            viewModel.selectedDataTypes.contains(dataType)
+                        } set: { isOn in
+                            viewModel.setDataType(dataType, selected: isOn)
+                        }) {
+                            Text(dataType.displayName)
+                        }
+                        .disabled(!viewModel.importSource.supportedDataTypes.contains(dataType))
 
-                    // subtitle
-                    if case .passwords = dataType,
-                       !viewModel.importSource.supportedDataTypes.contains(.passwords) {
-                        Text("\(viewModel.importSource.importSourceName) does not support storing passwords",
-                             comment: "Data Import disabled checkbox message about a browser (%@) not supporting storing passwords")
+                        // subtitle
+                        if case .passwords = dataType,
+                           !viewModel.importSource.supportedDataTypes.contains(.passwords) {
+                            Text("\(viewModel.importSource.importSourceName) does not support storing passwords",
+                                 comment: "Data Import disabled checkbox message about a browser (%@) not supporting storing passwords")
                             .foregroundColor(Color(.disabledControlTextColor))
+                        }
                     }
                 }
             }
+            .padding(.leading, 8)
+            .padding(.trailing, 0)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .background(Color.blackWhite3)
+            .cornerRadius(5)
         }
     }
 

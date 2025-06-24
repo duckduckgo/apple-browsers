@@ -569,13 +569,42 @@ final class AddressBarButtonsViewController: NSViewController {
         guard isViewLoaded else { return }
 
         leadingAIChatDivider.isHidden = aiChatButton.isHidden || bookmarkButton.isHidden
-        trailingAIChatDivider.isHidden = aiChatButton.isHidden || cancelButton.isHidden
+//    TODO: trailingAIChatDivider is probably unnecessary
+        trailingAIChatDivider.isHidden = true // aiChatButton.isHidden || cancelButton.isHidden
     }
 
     private func updateButtonsPosition() {
         cancelButton.position = .right
         aiChatButton.position = cancelButton.isShown ? .center : .right
         bookmarkButton.position = aiChatButton.isShown ? .center : .right
+
+        // TODO: Find a better way to determine aiChatButton state
+
+        if aiChatButton.position == .center {
+            aiChatButton.title = " Ask Duck.ai" + "  " + "⇧⏎"
+            aiChatButton.imagePosition = .imageLeading
+            aiChatButton.imageHugsTitle = true
+            aiChatButton.backgroundColor = .buttonMouseDown
+//            aiChatButton.normalTintColor = nil
+//            aiChatButton.state = .on
+            aiChatButton.setButtonType(.momentaryPushIn)
+            aiChatButton.state = .off
+            aiChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
+
+            aiChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize + 120
+//            aiChatButton.sizeToFit()
+            aiChatButton.needsDisplay = true
+            aiChatButton.needsLayout = true
+            aiChatButton.isHidden = !(aiChatMenuConfig.shouldDisplayAddressBarShortcut && (textFieldValue?.isText ?? false || textFieldValue?.isSuggestion ?? false))
+        } else {
+            aiChatButton.title = ""
+            aiChatButton.imagePosition = .imageOverlaps
+            aiChatButton.imageHugsTitle = true
+            aiChatButton.backgroundColor = .clear
+            aiChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+            updateAIChatButtonVisibility()
+            updateAIChatButtonState()
+        }
     }
 
     func openBookmarkPopover(setFavorite: Bool, accessPoint: GeneralPixel.AccessPoint) {

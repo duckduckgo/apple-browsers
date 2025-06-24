@@ -5783,6 +5783,16 @@
 			path = OpenAction;
 			sourceTree = "<group>";
 		};
+		856C5F2D2E0467EB00D64AF1 /* Transitions */ = {
+			isa = PBXGroup;
+			children = (
+				985AAE4424899369007A43EC /* HomeScreenTransition.swift */,
+				855D914C2063EF6A00C4B448 /* TabSwitcherTransition.swift */,
+				986DA94924884B18004A7E39 /* WebViewTransition.swift */,
+			);
+			path = Transitions;
+			sourceTree = "<group>";
+		};
 		858479C72B8792C900D156C1 /* History */ = {
 			isa = PBXGroup;
 			children = (
@@ -7809,6 +7819,7 @@
 		F1386BA21E6846320062FC3C /* TabSwitcher */ = {
 			isa = PBXGroup;
 			children = (
+				856C5F2D2E0467EB00D64AF1 /* Transitions */,
 				9872D204247DCAC100CEF398 /* TabPreviewsSource.swift */,
 				85DFEDF824CF3D0E00973FE7 /* TabsBarCell.swift */,
 				8586A10F24CCCD040049720E /* TabsBarViewController.swift */,
@@ -8339,7 +8350,6 @@
 				856B2A672DCCF6550075ED44 /* EnlargedHitAreaButton.swift */,
 				37FCAABF29930E26000E420A /* FailedAssertionView.swift */,
 				980891A122369ADB00313A70 /* FeedbackUserText.swift */,
-				985AAE4424899369007A43EC /* HomeScreenTransition.swift */,
 				1EF24234273BB9D200DE3D02 /* IntervalSlider.swift */,
 				4B412ACB2BBB3D0900A39F5E /* LazyView.swift */,
 				4B6484E927FD1E340050A7A1 /* MenuControllerView.swift */,
@@ -8349,7 +8359,6 @@
 				F143C32B1E4A9A4800CFDE3A /* RoundedRectangleView.swift */,
 				F143C3451E4AA32D00CFDE3A /* SearchBarExtension.swift */,
 				8524CC95246D620B00E59D45 /* String+Markdown.swift */,
-				855D914C2063EF6A00C4B448 /* TabSwitcherTransition.swift */,
 				F197EA3B1E6885F20029BDC1 /* TextFieldWithInsets.swift */,
 				98F78B8D22419093007CACF4 /* ThemableNavigationController.swift */,
 				83004E832193E14C00DA013C /* UIAlertControllerExtension.swift */,
@@ -8369,7 +8378,6 @@
 				F1DE78591E5CD2A70058895A /* UIViewExtension.swift */,
 				F1F5337B1F26A9EF00D80D4F /* UserText.swift */,
 				4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */,
-				986DA94924884B18004A7E39 /* WebViewTransition.swift */,
 			);
 			name = UserInterface;
 			sourceTree = "<group>";

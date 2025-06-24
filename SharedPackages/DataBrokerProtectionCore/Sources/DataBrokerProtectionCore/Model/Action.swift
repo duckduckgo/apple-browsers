@@ -45,7 +45,6 @@ public protocol Action: Codable, Sendable {
     /// to respond to the native message.
     ///
     /// This decides whether a given action can time out.
-    /// To minimize the impact of this behavior, for now we limit it to ExpectationAction when scanning only.
     ///
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1210079565270206?focus=true
     func canTimeOut(while stepType: StepType?) -> Bool
@@ -56,6 +55,6 @@ extension Action {
     public var dataSource: DataSource { .userProfile }
 
     public func canTimeOut(while stepType: StepType?) -> Bool {
-        stepType == .scan && actionType == .expectation
+        true
     }
 }

@@ -100,6 +100,9 @@ class FromWebViewTransition: WebViewTransition {
         solidBackground.frame = webViewFrame
         
         imageContainer.frame = mainViewController.viewCoordinator.contentContainer.frame
+        imageContainer.frame = adjustFrame(imageContainer.frame,
+                                           forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
+                                           byHeight: -mainViewController.omniBar.barView.expectedHeight)
         imageView.frame = imageContainer.bounds
         imageView.image = preview
 

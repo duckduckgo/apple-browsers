@@ -36,6 +36,7 @@ protocol MoreOptionsMenuIconsProviding {
     var downloadsIcon: NSImage { get }
     var historyIcon: NSImage { get }
     var passwordsIcon: NSImage { get }
+    var deleteBrowsingDataIcon: NSImage { get }
     var emailProtectionIcon: NSImage { get }
     var privacyProIcon: NSImage { get }
     var fireproofSiteIcon: NSImage { get }
@@ -89,6 +90,7 @@ final class LegacyMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let downloadsIcon: NSImage = .downloads
     let historyIcon: NSImage = .history
     let passwordsIcon: NSImage = .passwordManagement
+    let deleteBrowsingDataIcon: NSImage = .burn
     let emailProtectionIcon: NSImage = .optionsButtonMenuEmail
     let privacyProIcon: NSImage = .subscriptionIcon
     let fireproofSiteIcon: NSImage = .fireproof
@@ -132,6 +134,7 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let downloadsIcon: NSImage = DesignSystemImages.Glyphs.Size16.downloads
     let historyIcon: NSImage = DesignSystemImages.Glyphs.Size16.history
     let passwordsIcon: NSImage = DesignSystemImages.Glyphs.Size16.keyLogin
+    let deleteBrowsingDataIcon: NSImage = DesignSystemImages.Glyphs.Size16.fire
     let emailProtectionIcon: NSImage = DesignSystemImages.Glyphs.Size16.email
     let privacyProIcon: NSImage = DesignSystemImages.Glyphs.Size16.privacyPro
     let fireproofSiteIcon: NSImage = DesignSystemImages.Glyphs.Size16.fireproof

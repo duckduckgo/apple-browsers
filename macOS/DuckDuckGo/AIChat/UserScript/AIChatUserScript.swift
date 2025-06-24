@@ -58,6 +58,12 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.openAIChat
         case .getAIChatNativeHandoffData:
             return handler.getAIChatNativeHandoffData
+        case .recordChat:
+            return handler.recordChat
+        case .restoreChat:
+            return handler.restoreChat
+        case .removeChat:
+            return handler.removeChat
         default:
             return nil
         }

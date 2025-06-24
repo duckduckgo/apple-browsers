@@ -174,7 +174,15 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
                                                      feedbackSender: MockVPNFeedbackSender(),
                                                      featureFlagger: featureFlagger)
 
-        try await Task.sleep(nanoseconds: 500_000_000)
+        let expectation = XCTestExpectation(description: "Wait for DuckAi category to become available")
+        let pollingInterval: TimeInterval = 0.1
+        Task {
+            while !viewModel.availableCategories.contains(.duckAi) {
+                try await Task.sleep(nanoseconds: UInt64(pollingInterval * 1_000_000_000))
+            }
+            expectation.fulfill()
+        }
+        await fulfillment(of: [expectation], timeout: 2)
         XCTAssertTrue(viewModel.availableCategories.contains(.duckAi))
     }
 

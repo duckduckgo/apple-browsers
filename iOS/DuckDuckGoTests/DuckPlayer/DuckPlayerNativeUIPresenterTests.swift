@@ -825,6 +825,13 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let notification = Notification(name: DefaultOmniBarView.didLayoutNotification, object: omnibarHeight)
         sut.handleOmnibarDidLayout(notification)
         
+        // Wait for async constraint update
+        let expectation = expectation(description: "Constraint update")
+        DispatchQueue.main.async {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+        
         // Then
         XCTAssertEqual(sut.bottomConstraint?.constant, 0, "Bottom constraint should be 0 for top address bar")
     }
@@ -842,6 +849,13 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // When
         let notification = Notification(name: DefaultOmniBarView.didLayoutNotification, object: omnibarHeight)
         sut.handleOmnibarDidLayout(notification)
+        
+        // Wait for async constraint update
+        let expectation = expectation(description: "Constraint update")
+        DispatchQueue.main.async {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
         
         // Then
         XCTAssertEqual(sut.bottomConstraint?.constant, -omnibarHeight, "Bottom constraint should be negative omnibar height for bottom address bar")

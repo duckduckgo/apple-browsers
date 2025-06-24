@@ -23,6 +23,38 @@ import DesignResourcesKitIcons
 
 class SwitchBarTextEntryView: UIView {
 
+    // MARK: - Button State Enum
+    
+    /// Represents the different button states for the text entry view
+    private enum ButtonState {
+        case noButtons          // No buttons visible
+        case micOnly           // Only microphone button visible (no text, voice search enabled)
+        case clearOnly         // Only clear button visible (has text, normal state)
+        case initialSelected   // Both mic and clear buttons visible (initial selected state with text)
+        
+        var showsMicButton: Bool {
+            switch self {
+            case .noButtons, .clearOnly:
+                return false
+            case .micOnly, .initialSelected:
+                return true
+            }
+        }
+        
+        var showsClearButton: Bool {
+            switch self {
+            case .noButtons, .micOnly:
+                return false
+            case .clearOnly, .initialSelected:
+                return true
+            }
+        }
+        
+        var showsAnyButton: Bool {
+            return showsMicButton || showsClearButton
+        }
+    }
+
     private enum Constants {
         static let maxHeight: CGFloat = 120
         static let minHeight: CGFloat = 44
@@ -37,29 +69,34 @@ class SwitchBarTextEntryView: UIView {
         static let placeholderTopOffset: CGFloat = 12
         static let placeholderHorizontalOffset: CGFloat = 16
 
-        // Clear button
-        static let clearButtonSize: CGFloat = 24
-        static let clearButtonTrailingOffset: CGFloat = -12
-        static let clearButtonSpacing: CGFloat = -8
+        // Button stack view
+        static let buttonSize: CGFloat = 24
+        static let buttonStackTrailingOffset: CGFloat = -12
+        static let buttonStackSpacing: CGFloat = 2
+        static let textButtonSpacing: CGFloat = -8
 
         // Animation
         static let animationDuration: TimeInterval = 0.2
     }
+    
     private let handler: SwitchBarHandling
 
     private let textView = UITextView()
     private let placeholderLabel = UILabel()
     private let clearButton = UIButton(type: .system)
     private let microphoneButton = UIButton(type: .system)
+    private let buttonStackView = UIStackView()
 
     private var currentMode: TextEntryMode {
         handler.currentToggleState
     }
     private var cancellables = Set<AnyCancellable>()
+    private var currentButtonState: ButtonState = .noButtons
+    private var isInInitialSelectedState = false
 
     private var heightConstraint: NSLayoutConstraint?
     private var textViewTrailingConstraint: NSLayoutConstraint?
-    private var textViewTrailingConstraintWithButton: NSLayoutConstraint?
+    private var textViewTrailingConstraintWithButtons: NSLayoutConstraint?
 
     // MARK: - Initialization
     init(handler: SwitchBarHandling) {
@@ -91,22 +128,30 @@ class SwitchBarTextEntryView: UIView {
         // Setup clear button
         clearButton.setImage(DesignSystemImages.Glyphs.Size24.clear, for: .normal)
         clearButton.tintColor = UIColor.systemGray
-        clearButton.isHidden = true
         clearButton.addTarget(self, action: #selector(clearButtonTapped), for: .touchUpInside)
 
         // Setup microphone button
         microphoneButton.setImage(DesignSystemImages.Glyphs.Size24.microphone, for: .normal)
         microphoneButton.tintColor = UIColor.systemGray
-        microphoneButton.isHidden = !handler.isVoiceSearchEnabled  // Initially visible when no text and voice search is enabled
         microphoneButton.addTarget(self, action: #selector(microphoneButtonTapped), for: .touchUpInside)
+
+        // Setup button stack view
+        buttonStackView.axis = .horizontal
+        buttonStackView.alignment = .center
+        buttonStackView.distribution = .fill
+        buttonStackView.spacing = Constants.buttonStackSpacing
+        
+        // Add buttons to stack view (mic button on left, clear button on right)
+        buttonStackView.addArrangedSubview(microphoneButton)
+        buttonStackView.addArrangedSubview(clearButton)
 
         addSubview(textView)
         addSubview(placeholderLabel)
-        addSubview(clearButton)
-        addSubview(microphoneButton)
+        addSubview(buttonStackView)
 
         textView.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
+        buttonStackView.translatesAutoresizingMaskIntoConstraints = false
         clearButton.translatesAutoresizingMaskIntoConstraints = false
         microphoneButton.translatesAutoresizingMaskIntoConstraints = false
 
@@ -115,7 +160,7 @@ class SwitchBarTextEntryView: UIView {
 
         // Create both trailing constraints for textView
         textViewTrailingConstraint = textView.trailingAnchor.constraint(equalTo: trailingAnchor)
-        textViewTrailingConstraintWithButton = textView.trailingAnchor.constraint(equalTo: clearButton.leadingAnchor, constant: Constants.clearButtonSpacing)
+        textViewTrailingConstraintWithButtons = textView.trailingAnchor.constraint(equalTo: buttonStackView.leadingAnchor, constant: Constants.textButtonSpacing)
 
         NSLayoutConstraint.activate([
             textView.topAnchor.constraint(equalTo: topAnchor),
@@ -126,20 +171,16 @@ class SwitchBarTextEntryView: UIView {
             placeholderLabel.leadingAnchor.constraint(equalTo: textView.leadingAnchor, constant: Constants.placeholderHorizontalOffset),
             placeholderLabel.trailingAnchor.constraint(equalTo: textView.trailingAnchor, constant: -Constants.placeholderHorizontalOffset),
 
-            clearButton.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
-            clearButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.clearButtonTrailingOffset),
-            clearButton.widthAnchor.constraint(equalToConstant: Constants.clearButtonSize),
-            clearButton.heightAnchor.constraint(equalToConstant: Constants.clearButtonSize),
-
-            microphoneButton.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
-            microphoneButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.clearButtonTrailingOffset),
-            microphoneButton.widthAnchor.constraint(equalToConstant: Constants.clearButtonSize),
-            microphoneButton.heightAnchor.constraint(equalToConstant: Constants.clearButtonSize)
+            buttonStackView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
+            buttonStackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.buttonStackTrailingOffset),
+            
+            clearButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            clearButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
+            microphoneButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            microphoneButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize)
         ])
 
-        // Initially determine which constraint to activate based on initial state
-        updateConstraintsForButtonVisibility()
-
+        updateButtonState()
         updateForCurrentMode()
         updateTextViewHeight()
     }
@@ -147,6 +188,10 @@ class SwitchBarTextEntryView: UIView {
     // MARK: - Button Actions
     
     @objc private func clearButtonTapped() {
+        // When clear button is tapped, exit initial selected state
+        if isInInitialSelectedState {
+            isInInitialSelectedState = false
+        }
         handler.clearText()
     }
 
@@ -170,7 +215,7 @@ class SwitchBarTextEntryView: UIView {
         }
         textView.reloadInputViews()
         updatePlaceholderVisibility()
-        updateActionButtonsVisibility()
+        updateButtonState()
         updateTextViewHeight()
     }
 
@@ -178,31 +223,48 @@ class SwitchBarTextEntryView: UIView {
         placeholderLabel.isHidden = !textView.text.isEmpty
     }
 
-    /// Updates visibility of action buttons (clear/microphone) - they are mutually exclusive
-    /// - Clear button shows when there's text
-    /// - Microphone button shows when there's no text and voice search is enabled
-    private func updateActionButtonsVisibility() {
+    /// Determines and updates the current button state based on text content and special states
+    private func updateButtonState() {
         let hasText = !textView.text.isEmpty
-        let shouldShowMicrophoneButton = !hasText && handler.isVoiceSearchEnabled
+        let isVoiceSearchEnabled = handler.isVoiceSearchEnabled
         
-        UIView.animate(withDuration: Constants.animationDuration) {
-            self.clearButton.isHidden = !hasText
-            self.microphoneButton.isHidden = !shouldShowMicrophoneButton
+        let newButtonState: ButtonState
+        
+        if isInInitialSelectedState && hasText {
+            // Special case: both buttons visible when in initial selected state with text
+            newButtonState = .initialSelected
+        } else if hasText {
+            // Normal case: clear button only when there's text
+            newButtonState = .clearOnly
+        } else if isVoiceSearchEnabled {
+            // No text but voice search enabled: mic button only
+            newButtonState = .micOnly
+        } else {
+            // No text and no voice search: no buttons
+            newButtonState = .noButtons
         }
+        
+        if newButtonState != currentButtonState {
+            currentButtonState = newButtonState
+            updateButtonVisibility()
+        }
+    }
+    
+    /// Updates the button visibility changes based on current button state
+    private func updateButtonVisibility() {
+        microphoneButton.isHidden = !currentButtonState.showsMicButton
+        clearButton.isHidden = !currentButtonState.showsClearButton
+        buttonStackView.isHidden = !currentButtonState.showsAnyButton
         
         updateConstraintsForButtonVisibility()
     }
 
     private func updateConstraintsForButtonVisibility() {
-        let hasText = !textView.text.isEmpty
-        let shouldShowMicrophoneButton = !hasText && handler.isVoiceSearchEnabled
-        let anyButtonVisible = hasText || shouldShowMicrophoneButton
-        
-        if anyButtonVisible {
+        if currentButtonState.showsAnyButton {
             textViewTrailingConstraint?.isActive = false
-            textViewTrailingConstraintWithButton?.isActive = true
+            textViewTrailingConstraintWithButtons?.isActive = true
         } else {
-            textViewTrailingConstraintWithButton?.isActive = false
+            textViewTrailingConstraintWithButtons?.isActive = false
             textViewTrailingConstraint?.isActive = true
         }
     }
@@ -239,7 +301,7 @@ class SwitchBarTextEntryView: UIView {
                 if self.textView.text != text {
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
-                    self.updateActionButtonsVisibility()
+                    self.updateButtonState()
                     self.updateTextViewHeight()
                 }
             }
@@ -258,6 +320,17 @@ class SwitchBarTextEntryView: UIView {
     
     func selectAllText() {
         textView.selectAll(nil)
+        // When text is selected initially, enter the special state where both buttons are visible
+        isInInitialSelectedState = true
+        updateButtonState()
+    }
+    
+    // MARK: - Public Methods
+    
+    /// Sets the initial selected state where both mic and clear buttons should be visible
+    func setInitialSelectedState(_ isInitialSelected: Bool) {
+        isInInitialSelectedState = isInitialSelected
+        updateButtonState()
     }
 }
 
@@ -265,12 +338,17 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textViewDidChange(_ textView: UITextView) {
         updatePlaceholderVisibility()
-        updateActionButtonsVisibility()
+        updateButtonState()
         updateTextViewHeight()
         handler.updateCurrentText(textView.text ?? "")
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        // Exit initial selected state when user starts typing
+        if isInInitialSelectedState && !text.isEmpty {
+            isInInitialSelectedState = false
+        }
+        
         if text == "\n" {
             switch currentMode {
             case .search:

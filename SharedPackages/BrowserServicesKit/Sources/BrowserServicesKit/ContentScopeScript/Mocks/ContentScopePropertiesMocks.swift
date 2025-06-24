@@ -16,10 +16,9 @@
 //  limitations under the License.
 //
 import Foundation
-@testable import BrowserServicesKit
 
 extension ContentScopeFeatureToggles {
-    static let allTogglesOn = ContentScopeFeatureToggles(emailProtection: true,
+    public static let allTogglesOn = ContentScopeFeatureToggles(emailProtection: true,
                                                          emailProtectionIncontextSignup: true,
                                                          credentialsAutofill: true,
                                                          identitiesAutofill: true,

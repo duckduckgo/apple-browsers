@@ -168,7 +168,7 @@ New: \(subscription.debugDescription, privacy: .public)
 
     func updateCache(with subscription: PrivacyProSubscription) {
         cacheSerialQueue.sync {
-            let previousEntitlements = getCachedSubscription()?.features?.map { $0.entitlement } ?? []
+            let previousEntitlements = self.subscriptionCache.get()?.features?.map { $0.entitlement } ?? []
             let expiryDate = subscription.expiresOrRenewsAt
 #if DEBUG
             // In DEBUG the subscription duration is just a few minutes, we want to avoid the cache to be immediately invalidated

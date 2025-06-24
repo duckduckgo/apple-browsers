@@ -456,6 +456,8 @@ struct UserText {
 
     static let aiChatOpenNewTabButton = NSLocalizedString("aichat.address-bar.open-new-tab-button", value: "Open New Duck.ai Tab", comment: "Button to open Duck.ai in a new tab")
     static let aiChatToggleSidebarButton = NSLocalizedString("aichat.address-bar.toggle-sidebar-button", value: "Toggle Duck.ai Sidebar", comment: "Button to toggle Duck.ai sidebar")
+    static let aiChatOpenSidebarButton = NSLocalizedString("aichat.address-bar.open-sidebar-button", value: "Open Duck.ai Sidebar", comment: "Button to open Duck.ai sidebar")
+    static let aiChatCloseSidebarButton = NSLocalizedString("aichat.address-bar.close-sidebar-button", value: "Close Duck.ai Sidebar", comment: "Button to close Duck.ai sidebar")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
     static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open Duck.ai Settings", comment: "Button to open Duck.ai settings")
 

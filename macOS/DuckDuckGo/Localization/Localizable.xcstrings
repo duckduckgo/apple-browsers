@@ -1596,6 +1596,18 @@
         }
       }
     },
+    "aichat.address-bar.close-sidebar-button" : {
+      "comment" : "Button to close Duck.ai sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close Duck.ai Sidebar"
+          }
+        }
+      }
+    },
     "aichat.address-bar.hide-button" : {
       "comment" : "Button to hide duck.ai shortcut in address bar",
       "extractionState" : "extracted_with_value",
@@ -1676,6 +1688,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Open Duck.ai Settings"
+          }
+        }
+      }
+    },
+    "aichat.address-bar.open-sidebar-button" : {
+      "comment" : "Button to open Duck.ai sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai Sidebar"
           }
         }
       }

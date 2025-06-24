@@ -505,6 +505,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatButtonForSidebar(_ isShowingSidebar: Bool) {
+        configureAIChatButtonMenu(isSidebarOpen: isShowingSidebar)
         if isShowingSidebar {
             aiChatButton.setButtonType(.toggle)
             aiChatButton.state = .on
@@ -992,6 +993,10 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
 
+        configureAIChatButtonMenu()
+    }
+
+    private func configureAIChatButtonMenu(isSidebarOpen: Bool? = nil) {
         if featureFlagger.isFeatureOn(.aiChatSidebar) {
             let shouldShowOpenAIChatButton: Bool = {
                 guard let tabContent = tabViewModel?.tab.content, case .url = tabContent else {
@@ -1002,7 +1007,20 @@ final class AddressBarButtonsViewController: NSViewController {
 
             aiChatButton.menu = NSMenu {
                 if shouldShowOpenAIChatButton {
-                    NSMenuItem(title: aiChatMenuConfig.openAIChatInSidebar ? UserText.aiChatOpenNewTabButton : UserText.aiChatToggleSidebarButton,
+                    let contextMenuTitle: String = {
+                        if aiChatMenuConfig.openAIChatInSidebar {
+                            return UserText.aiChatOpenNewTabButton
+                        } else {
+                            // Check if sidebar is currently open for this tab
+                            guard let tab = tabViewModel?.tab else {
+                                return UserText.aiChatOpenSidebarButton
+                            }
+                            let isShowingSidebar = isSidebarOpen ?? aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
+                            return isShowingSidebar ? UserText.aiChatCloseSidebarButton : UserText.aiChatOpenSidebarButton
+                        }
+                    }()
+
+                    NSMenuItem(title: contextMenuTitle,
                                action: #selector(openAIChatContextMenuAction(_:)),
                                keyEquivalent: "")
                 }

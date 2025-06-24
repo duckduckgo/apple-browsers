@@ -213,13 +213,12 @@ main() {
 	local description
 	local message
 
-	assignee="$(validate_assignee "${assignee}" "${pr_reviewers}")"
-
 	read_command_line_arguments "$@"
 
 	case "${action}" in
 		create-task)
-			create_task "${title}" "${description}"
+			assignee="$(validate_assignee "${assignee}" "${pr_reviewers}")"
+			create_task "${title}" "${description}" "${assignee}"
 			;;
 		close-task)
 			task_id=$(find_task_for_workflow_id "${workflow_id}")

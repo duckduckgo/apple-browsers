@@ -53,6 +53,9 @@
         }
       }
     },
+    " " : {
+
+    },
     " %@" : {
       "localizations" : {
         "de" : {
@@ -30735,6 +30738,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Импортировать закладки..."
+          }
+        }
+      }
+    },
+    "import.browser.data.import-type.subtitle.collapsed" : {
+      "comment" : "Import Browser Data dialog title for option to choose what to import in collapsed state",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bookmarks and passwords"
+          }
+        }
+      }
+    },
+    "import.browser.data.import-type.title.collapsed" : {
+      "comment" : "Import Browser Data dialog title for option to choose what to import in collapsed state",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import all available data"
+          }
+        }
+      }
+    },
+    "import.browser.data.import-type.title.expanded" : {
+      "comment" : "Import Browser Data dialog title for option to choose what to import in expanded state",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select data to import"
           }
         }
       }
@@ -77326,6 +77365,7 @@
     },
     "What do you want to import?" : {
       "comment" : "Data Import section title for checkboxes of data type to import: Passwords or Bookmarks.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

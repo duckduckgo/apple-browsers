@@ -171,22 +171,37 @@ validate_assignee() {
 
 		# Check each PR reviewer if pr_reviewers is not empty
 		if [[ -n "${pr_reviewers}" ]]; then
-			gh_asana_mapping="$(gh api https://api.github.com/repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml --jq .content | base64 -d)"
+			# Fetch GitHub to Asana user mapping with error handling
+			echo "Fetching GitHub to Asana user mapping..." >&2
+			if gh_asana_mapping_content="$(gh api https://api.github.com/repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml --jq .content 2>/dev/null)" && \
+			   [[ -n "${gh_asana_mapping_content}" ]] && \
+			   [[ "${gh_asana_mapping_content}" != "null" ]] && \
+			   gh_asana_mapping="$(echo "${gh_asana_mapping_content}" | base64 -d 2>/dev/null)" && \
+			   [[ -n "${gh_asana_mapping}" ]]; then
 
-			# Split comma-separated reviewers and iterate through them
-			IFS=',' read -ra reviewer_array <<< "${pr_reviewers}"
-			for reviewer in "${reviewer_array[@]}"; do
-				# Trim whitespace
-				reviewer="$(echo "${reviewer}" | xargs)"
-				reviewer_asana_id="$(yq -r ".${reviewer}" <<< "${gh_asana_mapping}")"
-				echo "Checking reviewer: ${reviewer_asana_id}" >&2
+				echo "Successfully retrieved user mapping" >&2
 
-				if _is_user_in_apple_team "${reviewer_asana_id}"; then
-					echo "Found Apple team member reviewer: ${reviewer_asana_id}" >&2
-					echo "${reviewer_asana_id}"
-					return
-				fi
-			done
+				# Split comma-separated reviewers and iterate through them
+				IFS=',' read -ra reviewer_array <<< "${pr_reviewers}"
+				for reviewer in "${reviewer_array[@]}"; do
+					# Trim whitespace
+					reviewer="$(echo "${reviewer}" | xargs)"
+					if reviewer_asana_id="$(yq -r ".${reviewer}" <<< "${gh_asana_mapping}" 2>/dev/null)" && \
+					   [[ -n "${reviewer_asana_id}" ]] && [[ "${reviewer_asana_id}" != "null" ]]; then
+						echo "Checking reviewer: ${reviewer_asana_id}" >&2
+
+						if _is_user_in_apple_team "${reviewer_asana_id}"; then
+							echo "Found Apple team member reviewer: ${reviewer_asana_id}" >&2
+							echo "${reviewer_asana_id}"
+							return
+						fi
+					else
+						echo "Could not find Asana ID for GitHub user: ${reviewer}" >&2
+					fi
+				done
+			else
+				echo "Failed to fetch or parse GitHub to Asana user mapping, skipping reviewer validation" >&2
+			fi
 		fi
 
 		echo "No Apple team members found among PR reviewers, using fallback" >&2

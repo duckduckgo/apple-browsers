@@ -30,11 +30,14 @@ final class AIChatPreferences: ObservableObject {
     private let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/aichat/")!
     private let searchAssistSettingsURL = URL(string: "https://duckduckgo.com/settings#aifeatures")!
     private var windowControllersManager: WindowControllersManager
+    private let featureFlagger: FeatureFlagger
 
     init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-         windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager) {
+         windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager,
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.storage = storage
         self.windowControllersManager = windowControllersManager
+        self.featureFlagger = featureFlagger
 
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
         showShortcutInAddressBar = storage.showShortcutInAddressBar
@@ -61,6 +64,10 @@ final class AIChatPreferences: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: \.openAIChatInSidebar, onWeaklyHeld: self)
             .store(in: &cancellables)
+    }
+
+    var shouldShowOpenAIChatInSidebarToggle: Bool {
+        featureFlagger.isFeatureOn(.aiChatSidebar)
     }
 
     @Published var showShortcutInApplicationMenu: Bool {

@@ -26,6 +26,7 @@ import Persistence
 import History
 import Core
 import Suggestions
+import SwiftUI
 
 struct SuggestionTrayDependencies {
     let favoritesViewModel: FavoritesListInteracting
@@ -42,10 +43,17 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onPromptSubmitted(_ query: String)
     func onSelectFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
+    func onVoiceSearchRequested(from mode: TextEntryMode)
 }
 
 /// Later: Inject auto suggestions here.
 final class OmniBarEditingStateViewController: UIViewController {
+
+    private enum ViewVisibility {
+        case visible
+        case hidden
+    }
+
     var textAreaView: UIView {
         switchBarVC.textEntryViewController.textEntryView
     }
@@ -54,6 +62,7 @@ final class OmniBarEditingStateViewController: UIViewController {
     private lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     private var suggestionTrayViewController: SuggestionTrayViewController?
+    private var daxLogoHostingController: UIHostingController<NewTabPageDaxLogoView>?
     var expectedStartFrame: CGRect?
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
@@ -73,6 +82,7 @@ final class OmniBarEditingStateViewController: UIViewController {
 
         installSwitchBarVC()
         installSuggestionsTray()
+        installDaxLogoView()
 
         self.view.backgroundColor = .clear
     }
@@ -165,7 +175,9 @@ final class OmniBarEditingStateViewController: UIViewController {
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
         switchBarVC.unfocusTextField()
-        hideSuggestionTray()
+        setSuggestionTrayVisibility(.hidden)
+        setLogoVisibility(.hidden)
+
         dismissAnimated()
     }
 
@@ -279,7 +291,8 @@ final class OmniBarEditingStateViewController: UIViewController {
                         self.showSuggestionTray(.autocomplete(query: self.switchBarHandler.currentText))
                     }
                 case .aiChat:
-                    self.hideSuggestionTray()
+                    self.setSuggestionTrayVisibility(.hidden)
+                    self.setLogoVisibility(.visible)
                 }
             }
             .store(in: &cancellables)
@@ -298,10 +311,43 @@ final class OmniBarEditingStateViewController: UIViewController {
             }
             .store(in: &cancellables)
 
+        switchBarHandler.microphoneButtonTappedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.handleMicrophoneButtonTapped()
+            }
+            .store(in: &cancellables)
+
+    }
+
+    private func handleMicrophoneButtonTapped() {
+        delegate?.onVoiceSearchRequested(from: switchBarHandler.currentToggleState)
     }
 
     func selectAllText() {
         switchBarVC.textEntryViewController.selectAllText()
+    }
+
+    private func installDaxLogoView() {
+        let daxLogoView = NewTabPageDaxLogoView()
+        let hostingController = UIHostingController(rootView: daxLogoView)
+        daxLogoHostingController = hostingController
+        
+        hostingController.view.backgroundColor = .clear
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        /// Offset so the logo is displayed on the same height as the NTP logo
+        let logoOffset: CGFloat = 18
+        NSLayoutConstraint.activate([
+            hostingController.view.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            hostingController.view.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: logoOffset),
+        ])
+        
+        hostingController.didMove(toParent: self)
+        
+        view.sendSubviewToBack(hostingController.view)
     }
 }
 
@@ -350,12 +396,22 @@ extension OmniBarEditingStateViewController {
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
         guard switchBarHandler.currentToggleState == .search else { return }
 
-        suggestionTrayViewController?.show(for: type)
-        suggestionTrayViewController?.view.isHidden = false
+        let canShowSuggestion = suggestionTrayViewController?.canShow(for: type) == true
+        suggestionTrayViewController?.view.isHidden = !canShowSuggestion
+        daxLogoHostingController?.view.isHidden = canShowSuggestion
+
+        if canShowSuggestion {
+            suggestionTrayViewController?.show(for: type)
+        }
     }
 
-    private func hideSuggestionTray() {
-        suggestionTrayViewController?.view.isHidden = true
+
+    private func setSuggestionTrayVisibility(_ visibility: ViewVisibility) {
+        suggestionTrayViewController?.view.isHidden = visibility == .hidden
+    }
+
+    private func setLogoVisibility(_ visibility: ViewVisibility) {
+        daxLogoHostingController?.view.isHidden = visibility == .hidden
     }
 
     private func installSuggestionsTray() {

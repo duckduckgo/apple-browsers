@@ -97,7 +97,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockOAuthClient.getTokensResponse = .success(tokenContainer)
         mockOAuthClient.internalCurrentTokenContainer = tokenContainer
 
-        let subscription = try await subscriptionManager.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+        let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
         XCTAssertTrue(subscription.isActive)
     }
 
@@ -115,7 +115,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockSubscriptionEndpointService.getSubscriptionResult = .success(expiredSubscription)
         mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
         do {
-            try await subscriptionManager.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
         } catch {
             XCTAssertEqual(error.localizedDescription, SubscriptionEndpointServiceError.noData.localizedDescription)
         }

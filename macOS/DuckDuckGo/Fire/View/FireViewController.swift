@@ -30,6 +30,7 @@ final class FireViewController: NSViewController {
 
     private(set) var fireViewModel: FireViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
+    private let visualStyle: VisualStyleProviding
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var fireDialogViewController: FirePopoverViewController = {
@@ -56,9 +57,12 @@ final class FireViewController: NSViewController {
         fatalError("TabBarViewController: Bad initializer")
     }
 
-    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel) {
+    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
+          fireViewModel: FireViewModel,
+          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.fireViewModel = fireViewModel
+        self.visualStyle = visualStyle
 
         super.init(coder: coder)
     }
@@ -122,6 +126,7 @@ final class FireViewController: NSViewController {
         fakeFireButton.layer?.backgroundColor = NSColor.buttonMouseDown.cgColor
 
         fakeFireButton.setAccessibilityIdentifier("FireViewController.fakeFireButton")
+        fakeFireButton.image = visualStyle.iconsProvider.fireButtonStyleProvider.icon
         subscribeToIsBurning()
     }
 

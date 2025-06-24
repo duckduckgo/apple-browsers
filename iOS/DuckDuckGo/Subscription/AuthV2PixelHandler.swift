@@ -25,6 +25,7 @@ import Networking
 import Combine
 import os.log
 
+/// Handles the pixels fired by SubscriptionManagerV2, listens to subscriptionDidChange and entitlementsDidChange notifications and fires the related pixels for debugging purposes
 public class AuthV2PixelHandler: SubscriptionPixelHandler {
 
     public enum Source {
@@ -51,11 +52,12 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
     private var sourceParam: [String: String] {
         [Defaults.sourceKey: source.description]
     }
-    private let notificationCenter: NotificationCenter = NotificationCenter.default
+    private let notificationCenter: NotificationCenter
     private var cancellables = Set<AnyCancellable>()
 
-    public init(source: Source) {
+    public init(source: Source, notificationCenter: NotificationCenter = .default) {
         self.source = source
+        self.notificationCenter = notificationCenter
 
         notificationCenter.publisher(for: .subscriptionDidChange).sink { [weak self] notification in
 
@@ -82,19 +84,31 @@ public class AuthV2PixelHandler: SubscriptionPixelHandler {
                 return
             }
 
-            let userInfo = notification.userInfo as? [AnyHashable: [Entitlement]]
-            let entitlements = userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] ?? []
-            let previousEntitlements = userInfo?[UserDefaultsCacheKey.subscriptionPreviousEntitlements] ?? []
+            let userInfo = notification.userInfo as? [AnyHashable: [Entitlement]] ?? [:]
+            let entitlements = Set(userInfo[UserDefaultsCacheKey.subscriptionEntitlements] ?? [])
+            let previousEntitlements = Set(userInfo[UserDefaultsCacheKey.subscriptionPreviousEntitlements] ?? [])
 
-            switch (previousEntitlements.isEmpty, entitlements.isEmpty) {
-            case (true, false):
-                DailyPixel.fireDailyAndCount(pixel: .privacyProEntitlementsAdded, withAdditionalParameters: self.sourceParam)
-            case (false, true):
-                DailyPixel.fireDailyAndCount(pixel: .privacyProEntitlementsRemoved, withAdditionalParameters: self.sourceParam)
-            default:
-                Logger.subscription.debug("We shouldn't have received this notification: \(notification.name.rawValue, privacy: .public), ignoring it...")
-            }
+            Self.sendPixelForEntitlementChange(newEntitlement: entitlements, previousEntitlements: previousEntitlements, sourceParam: self.sourceParam)
         }.store(in: &cancellables)
+    }
+
+    static func sendPixelForEntitlementChange(newEntitlement: Set<Entitlement>,
+                                              previousEntitlements: Set<Entitlement>,
+                                              sourceParam: [String: String]) {
+        let addedEntitlements = newEntitlement.subtracting(previousEntitlements)
+        let removedEntitlements = previousEntitlements.subtracting(newEntitlement)
+        
+        if !addedEntitlements.isEmpty {
+            DailyPixel.fireDailyAndCount(pixel: .privacyProEntitlementsAdded, withAdditionalParameters: sourceParam)
+        }
+        
+        if !removedEntitlements.isEmpty {
+            DailyPixel.fireDailyAndCount(pixel: .privacyProEntitlementsRemoved, withAdditionalParameters: sourceParam)
+        }
+        
+        if addedEntitlements.isEmpty && removedEntitlements.isEmpty {
+            Logger.subscription.debug("No changes in entitlements in notification, ignoring...")
+        }
     }
 
     public func handle(pixelType: SubscriptionPixelType) {

@@ -116,7 +116,7 @@ struct DataImportView: ModalView {
             // If screen is not the first screen where the user choose the type of import they want to do show the generic title.
             // Otherwise show the injected title.
             let title = model.screen == .profileAndDataTypesPicker ? self.title : UserText.importDataTitle
-            
+
             Text(title)
                 .font(.title2.weight(.semibold))
                 .padding(.bottom, 20)
@@ -656,7 +656,7 @@ extension DataImportViewModel {
 private struct ExpandableSection<Content: View>: View {
     @Binding var isExpanded: Bool
     let content: () -> Content
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if !isExpanded {
@@ -676,7 +676,7 @@ private struct ExpandableSection<Content: View>: View {
                 }
                 .buttonStyle(.plain)
             }
-            
+
             if isExpanded {
                 content()
             }

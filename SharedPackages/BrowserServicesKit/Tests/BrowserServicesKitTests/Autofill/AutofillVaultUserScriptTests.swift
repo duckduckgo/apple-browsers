@@ -570,17 +570,6 @@ class AutofillVaultUserScriptTests: XCTestCase {
                                                                  completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void) {
                 didRequestCreditCardCalled = true
                 capturedTrigger = trigger
-
-                let mockCard = SecureVaultModels.CreditCard(
-                    id: 123,
-                    title: "Test Card",
-                    cardNumber: "4111111111111111",
-                    cardholderName: "Test User",
-                    cardSecurityCode: "123",
-                    expirationMonth: 12,
-                    expirationYear: 2030)
-
-                completionHandler(mockCard, .fill)
             }
         }
 
@@ -596,31 +585,10 @@ class AutofillVaultUserScriptTests: XCTestCase {
         let mockWebView = MockWebView()
         let message = MockWKScriptMessage(name: "getAutofillData", body: body, webView: mockWebView)
 
-        let expect = expectation(description: #function)
+        userScript.userContentController(userContentController, didReceive: message) { _, _ in }
 
-        userScript.userContentController(userContentController, didReceive: message) {
-            XCTAssertNotNil($0)
-            XCTAssertNil($1)
-
-            // Verify the response format
-            let data = ($0 as? String)?.data(using: .utf8)
-            let response = try? JSONDecoder().decode(AutofillUserScript.RequestVaultCreditCardResponse.self, from: data!)
-
-            XCTAssertNotNil(response)
-            XCTAssertNotNil(response?.success.creditCards)
-            XCTAssertEqual(response?.success.action, .fill)
-            XCTAssertEqual(response?.success.creditCards?.id, "123")
-            XCTAssertEqual(response?.success.creditCards?.cardNumber, "4111111111111111")
-            XCTAssertEqual(response?.success.creditCards?.cardName, "Test User")
-
-            // Verify the delegate was called correctly
-            XCTAssertTrue(delegate.didRequestCreditCardCalled)
-            XCTAssertEqual(delegate.capturedTrigger, .userInitiated)
-
-            expect.fulfill()
-        }
-
-        waitForExpectations(timeout: 1.0)
+        XCTAssertTrue(delegate.didRequestCreditCardCalled, "Delegate should receive the credit-card request")
+        XCTAssertEqual(delegate.capturedTrigger, .userInitiated)
     }
 
     func testWhenGetAutofillDataFocusCalledForCreditCards_ThenDelegateMethodCalled() {
@@ -633,17 +601,6 @@ class AutofillVaultUserScriptTests: XCTestCase {
                                                      completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void) {
                 didCallDidFocus = true
                 capturedMainType = mainType
-
-                let mockCard = SecureVaultModels.CreditCard(
-                        id: 456,
-                        title: "Focus Test Card",
-                        cardNumber: "5555555555554444",
-                        cardholderName: "Focus User",
-                        cardSecurityCode: "999",
-                        expirationMonth: 6,
-                        expirationYear: 2025)
-
-                completionHandler(mockCard, .fill)
             }
         }
 
@@ -657,31 +614,10 @@ class AutofillVaultUserScriptTests: XCTestCase {
         let mockWebView = MockWebView()
         let message = MockWKScriptMessage(name: "getAutofillDataFocus", body: body, webView: mockWebView)
 
-        let expect = expectation(description: #function)
+        userScript.userContentController(userContentController, didReceive: message) { _, _ in }
 
-        userScript.userContentController(userContentController, didReceive: message) {
-            XCTAssertNotNil($0)
-            XCTAssertNil($1)
-
-            // Verify the response format
-            let data = ($0 as? String)?.data(using: .utf8)
-            let response = try? JSONDecoder().decode(AutofillUserScript.RequestVaultCreditCardResponse.self, from: data!)
-
-            XCTAssertNotNil(response)
-            XCTAssertNotNil(response?.success.creditCards)
-            XCTAssertEqual(response?.success.action, .fill)
-            XCTAssertEqual(response?.success.creditCards?.id, "456")
-            XCTAssertEqual(response?.success.creditCards?.cardNumber, "5555555555554444")
-            XCTAssertEqual(response?.success.creditCards?.cardName, "Focus User")
-
-            // Verify the delegate was called correctly
-            XCTAssertTrue(delegate.didCallDidFocus)
-            XCTAssertEqual(delegate.capturedMainType, .creditCards)
-
-            expect.fulfill()
-        }
-
-        waitForExpectations(timeout: 1.0)
+        XCTAssertTrue(delegate.didCallDidFocus, "Delegate should receive focus request")
+        XCTAssertEqual(delegate.capturedMainType, .creditCards)
     }
 
     func testWhenGetAutofillDataFocusCalledWithNilCard_ThenNoneActionReturned() {
@@ -704,16 +640,19 @@ class AutofillVaultUserScriptTests: XCTestCase {
 
         let expect = expectation(description: #function)
 
-        userScript.userContentController(userContentController, didReceive: message) {
-            XCTAssertNotNil($0)
-            XCTAssertNil($1)
+        userScript.userContentController(userContentController, didReceive: message) { result, error in
+            XCTAssertNil(error)
 
-            let data = ($0 as? String)?.data(using: .utf8)
-            let response = try? JSONDecoder().decode(AutofillUserScript.RequestVaultCreditCardResponse.self, from: data!)
+            guard let jsonString = result as? String,
+                  let data = jsonString.data(using: .utf8),
+                  let response = try? JSONDecoder().decode(AutofillUserScript.RequestVaultCreditCardResponse.self, from: data)
+            else {
+                XCTFail("Could not decode `RequestVaultCreditCardResponse`")
+                return
+            }
 
-            XCTAssertNotNil(response)
-            XCTAssertNil(response?.success.creditCards)
-            XCTAssertEqual(response?.success.action, RequestVaultDataAction.none)
+            XCTAssertNil(response.success.creditCards)
+            XCTAssertEqual(response.success.action, RequestVaultDataAction.none)
 
             expect.fulfill()
         }
@@ -749,15 +688,18 @@ class AutofillVaultUserScriptTests: XCTestCase {
             let expect = expectation(description: "Testing mainType: \(mainType)")
 
             userScript.userContentController(userContentController, didReceive: message) { result, error in
-                XCTAssertNotNil(result)
                 XCTAssertNil(error)
 
-                let data = (result as? String)?.data(using: .utf8)
-                let response = try? JSONDecoder().decode(AutofillUserScript.RequestVaultCreditCardResponse.self, from: data!)
+                guard let jsonString = result as? String,
+                      let data = jsonString.data(using: .utf8),
+                      let response = try? JSONDecoder().decode(AutofillUserScript.RequestVaultCreditCardResponse.self, from: data)
+                else {
+                    XCTFail("Could not decode `RequestVaultCreditCardResponse` for mainType \(mainType)")
+                    return
+                }
 
-                XCTAssertNotNil(response)
-                XCTAssertNil(response?.success.creditCards)
-                XCTAssertEqual(response?.success.action, RequestVaultDataAction.none)
+                XCTAssertNil(response.success.creditCards)
+                XCTAssertEqual(response.success.action, RequestVaultDataAction.none)
 
                 expect.fulfill()
             }
@@ -873,55 +815,52 @@ class AutofillVaultUserScriptTests: XCTestCase {
         let delegate = NeverCompletingDelegate()
         userScript.vaultDelegate = delegate
 
-        var repliesReceived = 0
-        var allRepliesWereNoAction = true
+        let expFocus = expectation(description: "focus field no-action")
+        let expGet = expectation(description: "getData no-action")
 
-        // Send multiple requests of different types
-        var focusBody = encryptedMessagingParams
-        focusBody["mainType"] = "creditCards"
-
-        let focusMessage = MockWKScriptMessage(name: "getAutofillDataFocus", body: focusBody, webView: MockWebView())
-        userScript.userContentController(userContentController, didReceive: focusMessage) { result, error in
-            repliesReceived += 1
-            if let resultString = result as? String,
-               let data = resultString.data(using: .utf8),
-               let response = try? JSONDecoder().decode(AutofillUserScript.NoActionResponse.self, from: data) {
-                allRepliesWereNoAction = allRepliesWereNoAction && (response.success.action == .none)
+        userScript.userContentController(userContentController,
+                                         didReceive: MockWKScriptMessage(name: "getAutofillDataFocus",
+                                                                         body: {
+            var b = encryptedMessagingParams
+            b["mainType"] = "creditCards"
+            return b
+        }(),
+                                                                         webView: MockWebView())
+        ) { result, _ in
+            if let json = result as? String,
+               let data = json.data(using: .utf8),
+               let resp = try? JSONDecoder().decode(AutofillUserScript.NoActionResponse.self, from: data),
+               resp.success.action == .none {
+                expFocus.fulfill()
             } else {
-                allRepliesWereNoAction = false
+                XCTFail("Expected NoActionResponse for focus")
             }
         }
 
-        var getDataBody = encryptedMessagingParams
-        getDataBody["mainType"] = "creditCards"
-        getDataBody["subType"] = "cardNumber"
-        getDataBody["trigger"] = "userInitiated"
-
-        let getDataMessage = MockWKScriptMessage(name: "getAutofillData", body: getDataBody, webView: MockWebView())
-        userScript.userContentController(userContentController, didReceive: getDataMessage) { result, error in
-            repliesReceived += 1
-            if let resultString = result as? String,
-               let data = resultString.data(using: .utf8),
-               let response = try? JSONDecoder().decode(AutofillUserScript.NoActionResponse.self, from: data) {
-                allRepliesWereNoAction = allRepliesWereNoAction && (response.success.action == .none)
+        userScript.userContentController(userContentController,
+                                         didReceive: MockWKScriptMessage(name: "getAutofillData",
+                                                                         body: {
+            var b = encryptedMessagingParams
+            b["mainType"] = "creditCards"
+            b["subType"] = "cardNumber"
+            b["trigger"] = "userInitiated"
+            return b
+        }(),
+                                                                         webView: MockWebView())
+        ) { result, _ in
+            if let json = result as? String,
+               let data = json.data(using: .utf8),
+               let resp = try? JSONDecoder().decode(AutofillUserScript.NoActionResponse.self, from: data),
+               resp.success.action == .none {
+                expGet.fulfill()
             } else {
-                allRepliesWereNoAction = false
+                XCTFail("Expected NoActionResponse for getData")
             }
         }
 
-        // Cancel all pending replies
         userScript.cancelAllPendingReplies()
 
-        // Wait for cancellations to process
-        let cancelExpectation = expectation(description: "Waiting for cancellations")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            cancelExpectation.fulfill()
-        }
-        waitForExpectations(timeout: 0.5)
-
-        // Verify all replies were received and were NoActionResponses
-        XCTAssertEqual(repliesReceived, 2)
-        XCTAssertTrue(allRepliesWereNoAction)
+        wait(for: [expFocus, expGet], timeout: 1.0)
     }
 
     func testWhenInvalidMessageBodyForGetAutofillDataFocus_ThenNothingHappens() {

@@ -41,6 +41,7 @@ struct NetworkProtectionRootView: View {
         feedbackFormModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
                                                          apiService: DefaultAPIService(),
                                                          vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                         featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                          source: .vpn)
     }
 

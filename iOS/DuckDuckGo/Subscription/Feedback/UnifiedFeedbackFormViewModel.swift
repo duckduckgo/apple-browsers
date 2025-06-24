@@ -21,6 +21,7 @@ import Combine
 import SwiftUI
 import Networking
 import Subscription
+import BrowserServicesKit
 
 final class UnifiedFeedbackFormViewModel: ObservableObject {
     private static let feedbackEndpoint = URL(string: "https://subscriptions.duckduckgo.com/api/feedback")!
@@ -32,6 +33,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         case vpn
         case pir
         case itr
+        case duckAi
         case unknown
     }
 
@@ -139,6 +141,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private let vpnMetadataCollector: any UnifiedMetadataCollector
     private let defaultMetadataCollector: any UnifiedMetadataCollector
     private let feedbackSender: any UnifiedFeedbackSender
+    private let featureFlagger: FeatureFlagger
 
     let source: String
 
@@ -149,6 +152,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
          vpnMetadataCollector: any UnifiedMetadataCollector,
          defaultMetadatCollector: any UnifiedMetadataCollector = DefaultMetadataCollector(),
          feedbackSender: any UnifiedFeedbackSender = DefaultFeedbackSender(),
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          source: Source = .unknown) {
         self.viewState = .feedbackPending
         self.subscriptionManager = subscriptionManager
@@ -156,6 +160,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         self.vpnMetadataCollector = vpnMetadataCollector
         self.defaultMetadataCollector = defaultMetadatCollector
         self.feedbackSender = feedbackSender
+        self.featureFlagger = featureFlagger
         self.source = source.rawValue
 
         Task {
@@ -166,6 +171,9 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             }
             if features.contains(.dataBrokerProtection) {
                 availableCategories.append(.pir)
+            }
+            if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) {
+                availableCategories.append(.duckAi)
             }
             if features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal) {
                 availableCategories.append(.itr)
@@ -234,6 +242,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             case .vpn: return VPNFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .pir: return PIRFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .itr: return ITRFeedbackSubcategory(rawValue: selectedSubcategory)?.url
+            case .duckAi: return PaidAIChatFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             }
         }()
 
@@ -263,20 +272,20 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         switch UnifiedFeedbackCategory(rawValue: selectedCategory) {
         case .vpn:
             let metadata = await vpnMetadataCollector.collectMetadata()
-            try await submitIssue(metadata: metadata)
             try await feedbackSender.sendReportIssuePixel(source: source,
                                                           category: selectedCategory,
                                                           subcategory: selectedSubcategory,
                                                           description: feedbackFormText,
                                                           metadata: metadata as? VPNMetadata)
+            try await submitIssue(metadata: metadata)
         default:
             let metadata = await defaultMetadataCollector.collectMetadata()
-            try await submitIssue(metadata: metadata)
             try await feedbackSender.sendReportIssuePixel(source: source,
                                                           category: selectedCategory,
                                                           subcategory: selectedSubcategory,
                                                           description: feedbackFormText,
                                                           metadata: metadata as? DefaultFeedbackMetadata)
+            try await submitIssue(metadata: metadata)
         }
     }
 

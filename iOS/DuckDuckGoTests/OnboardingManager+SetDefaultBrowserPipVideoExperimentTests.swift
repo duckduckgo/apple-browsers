@@ -1,5 +1,5 @@
 //
-//  OnboardingManager+SetDefaultBrowserExperimentTests.swift
+//  OnboardingManager+SetDefaultBrowserPipVideoExperimentTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -21,10 +21,10 @@ import Testing
 @testable import Core
 @testable import DuckDuckGo
 
-@Suite("Set As Default Browser Experiment Tests")
-final class OnboardingManagerSetDefaultBrowserExperimentTests {
+@Suite("Set As Default Browser Picture In Picture Video Experiment Tests")
+final class OnboardingManagerSetDefaultBrowserPipVideoExperimentTests {
     private static let isUnsupportedOSVersionForExperiment: Bool = {
-        if #available(iOS 18.3, *) {
+        if #available(iOS 18.2, *) {
             false
         } else {
             true
@@ -50,42 +50,42 @@ final class OnboardingManagerSetDefaultBrowserExperimentTests {
     }
 
     @Test(
-        "Check isSetAsDefaultBrowserEnabled returns correct value based on cohort",
+        "Check cohorts are not assigned to returning users",
         arguments: zip(
             [
-                (VariantIOS(name: "zz", weight: 0, isIncluded: VariantIOS.When.always, features: []), OnboardingSetAsDefaultBrowserCohort.control),
-                (VariantIOS(name: "zz", weight: 0, isIncluded: VariantIOS.When.always, features: []), OnboardingSetAsDefaultBrowserCohort.treatment),
+                (VariantIOS(name: "zz", weight: 0, isIncluded: VariantIOS.When.always, features: []), OnboardingSetAsDefaultBrowserPiPVideoCohort.control),
+                (VariantIOS(name: "zz", weight: 0, isIncluded: VariantIOS.When.always, features: []), OnboardingSetAsDefaultBrowserPiPVideoCohort.treatment),
                 (VariantIOS.returningUser, .control),
                 (VariantIOS.returningUser, .treatment)
             ],
             [
-                OnboardingSetAsDefaultBrowserCohort.control,
+                OnboardingSetAsDefaultBrowserPiPVideoCohort.control,
                 .treatment,
                 nil,
                 nil
             ]
         )
     )
-    @available(iOS 18.3, *)
-    func checkIsSetAsDefaultBrowserEnabledReturnsCorrectValue(_ variantContext: (variant: VariantIOS, cohortToAssign: OnboardingSetAsDefaultBrowserCohort?), expectedCohort: OnboardingSetAsDefaultBrowserCohort?) {
+    @available(iOS 18.2, *)
+    func checkIsSetAsDefaultBrowserEnabledReturnsCorrectValue(_ variantContext: (variant: VariantIOS, cohortToAssign: OnboardingSetAsDefaultBrowserPiPVideoCohort?), expectedCohort: OnboardingSetAsDefaultBrowserPiPVideoCohort?) {
         variantManagerMock.currentVariant = variantContext.variant
         featureFlaggerMock.cohortToReturn = variantContext.cohortToAssign
         makeSUT()
 
         // WHEN
-        let result = sut.resolveSetAsDefaultBrowserExperimentCohort()
+        let result = sut.resolveSetAsDefaultBrowserPipVideoExperimentCohort(isPictureInPictureSupported: true)
 
         // THEN
         #expect(result == expectedCohort)
     }
 
-    @Test("Check isSetAsDefaultBrowserEnabled returns false for iOS < 18.3", .enabled(if: Self.isUnsupportedOSVersionForExperiment))
+    @Test("Check Users should not be enrolled in experiment if iOS < 18.2", .enabled(if: Self.isUnsupportedOSVersionForExperiment))
     func checkIsSetAsDefaultBrowserDisabledForUnsupportedOSVersions() {
         // GIVEN
         variantManagerMock.currentVariant = VariantIOS(name: "zz", weight: 0, isIncluded: VariantIOS.When.always, features: [])
 
         // WHEN
-        let result = sut.isEnrolledInSetAsDefaultBrowserExperiment
+        let result = sut.isEnrolledInSetAsDefaultBrowserPipVideoExperiment
 
         // THEN
         #expect(!result)
@@ -98,61 +98,54 @@ final class OnboardingManagerSetDefaultBrowserExperimentTests {
             (VariantIOS.returningUser, false),
         ]
     )
-    @available(iOS 18.3, *)
+    @available(iOS 18.2, *)
     func checkCorrectExperimentEnrollment(_ context: (variant: VariantIOS, expectedResult: Bool)) {
         // GIVEN
         variantManagerMock.currentVariant = context.variant
         makeSUT()
 
         // WHEN
-        _ = sut.resolveSetAsDefaultBrowserExperimentCohort()
+        _ = sut.resolveSetAsDefaultBrowserPipVideoExperimentCohort(isPictureInPictureSupported: true)
 
         // THEN
         #expect(featureFlaggerMock.didCallResolveCohort == context.expectedResult)
     }
 
-    @Test("Check Experiment is not run for iOS < 18.3", .enabled(if: Self.isUnsupportedOSVersionForExperiment))
+    @Test("Check Cohort is not resolved if iOS < 18.2", .enabled(if: Self.isUnsupportedOSVersionForExperiment))
     func checkExperimentNotRunOnUnsupportedOSVersion() {
         // GIVEN
         variantManagerMock.currentVariant = VariantIOS(name: "zz", weight: 0, isIncluded: VariantIOS.When.always, features: [])
 
         // WHEN
-        _ = sut.resolveSetAsDefaultBrowserExperimentCohort()
+        _ = sut.resolveSetAsDefaultBrowserPipVideoExperimentCohort(isPictureInPictureSupported: true)
 
         // THEN
         #expect(!featureFlaggerMock.didCallResolveCohort)
     }
 
     @Test(
-        "Check Right Settings URL is returned",
+        "Check Users should not be enrolled in experiment if PiP is not supported",
         arguments: [
-            (OnboardingSetAsDefaultBrowserCohort.control, UIApplication.openSettingsURLString),
-            (.treatment, UIApplication.openDefaultApplicationsSettingsURLString),
-            (nil, UIApplication.openSettingsURLString)
+            OnboardingSetAsDefaultBrowserPiPVideoCohort.control,
+            OnboardingSetAsDefaultBrowserPiPVideoCohort.treatment
+        ],
+        [
+            true,
+            false
         ]
     )
-    @available(iOS 18.3, *)
-    func checkCorrectSettingsURLIsReturned(_ context: (cohort: OnboardingSetAsDefaultBrowserCohort?, expectedURLPath: String)) {
+    @available(iOS 18.2, *)
+    func checkIsSetAsDefaultBrowserDisabledForUnsupportedOSVersions(cohort: OnboardingSetAsDefaultBrowserPiPVideoCohort, isPictureInPictureSupported: Bool) {
         // GIVEN
-        featureFlaggerMock.cohortToReturn = context.cohort
+        featureFlaggerMock.cohortToReturn = cohort
+        variantManagerMock.currentVariant = VariantIOS(name: "zz", weight: 0, isIncluded: VariantIOS.When.always, features: [])
 
         // WHEN
-        let result = sut.settingsURLPath
+        let result = sut.resolveSetAsDefaultBrowserPipVideoExperimentCohort(isPictureInPictureSupported: isPictureInPictureSupported)
 
         // THEN
-        #expect(result == context.expectedURLPath)
-    }
-
-    @Test("Check Default Settings URL is returned for iOS < 18.3", .enabled(if: Self.isUnsupportedOSVersionForExperiment))
-    func checkDefaultSettingsURLIsReturnedForUnsupportedOSVersion() {
-        // GIVEN
-        let expectedURLString = UIApplication.openSettingsURLString
-
-        // WHEN
-        let result = sut.settingsURLPath
-
-        // THEN
-        #expect(result == expectedURLString)
+        let expectedCohort = isPictureInPictureSupported ? cohort : nil
+        #expect(result == expectedCohort)
     }
 
 }

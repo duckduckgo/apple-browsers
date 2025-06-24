@@ -81,6 +81,8 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     private let featureFlagger: FeatureFlagger
     private let tld: TLD
 
+    lazy var usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
+
     public override func viewDidLoad() {
         initWebView()
         addTrackingArea()
@@ -157,10 +159,8 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         self.topAutofillUserScript = OverlayAutofillUserScript(scriptSourceProvider: scriptSourceProvider, overlay: self)
         guard let topAutofillUserScript = topAutofillUserScript else { return }
         let configuration = WKWebViewConfiguration()
-
-#if DEBUG
-        configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
-#endif
+        let debugScriptEnabled = AutofillPreferences().debugScriptEnabled
+        configuration.preferences.setValue(debugScriptEnabled, forKey: "developerExtrasEnabled")
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.allowsLinkPreview = false
@@ -168,6 +168,9 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         webView.window?.ignoresMouseEvents = false
         webView.configuration.userContentController.addHandler(topAutofillUserScript)
         webView.configuration.userContentController.addUserScript(topAutofillUserScript.makeWKUserScriptSync())
+        if #available(macOS 13.3, *) {
+            webView.isInspectable = debugScriptEnabled
+        }
         self.webView = webView
         view.addAndLayout(webView)
         topAutofillUserScript.contentOverlay = self
@@ -328,7 +331,8 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
     }
 
     public func secureVaultManager(_: SecureVaultManager, didAutofill type: AutofillType, withObjectId objectId: String) {
-        PixelKit.fire(GeneralPixel.formAutofilled(kind: type.formAutofillKind))
+        let parameters = usageProvider.formattedFillDate.flatMap { [AutofillPixelKitEvent.Parameter.lastUsed: $0] } ?? [:]
+        PixelKit.fire(GeneralPixel.formAutofilled(kind: type.formAutofillKind), withAdditionalParameters: parameters)
         NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
 
         if type.formAutofillKind == .password &&
@@ -364,10 +368,15 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         } else if pixel.isCredentialsImportPromotionPixel {
             PixelKit.fire(NonStandardEvent(GeneralPixel.jsPixel(pixel)))
         } else {
+            var existingParameters = pixel.pixelParameters ?? [:]
+            var parameters = usageProvider.formattedFillDate.flatMap {
+                existingParameters[AutofillPixelKitEvent.Parameter.lastUsed] = $0
+                return existingParameters
+            } ?? existingParameters
+            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: parameters)
             if pixel.isIdentityPixel {
                 NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
             }
-            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: pixel.pixelParameters)
         }
     }
 

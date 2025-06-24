@@ -92,6 +92,8 @@ extension UserText {
 
     static let generalFeedbackFormCategoryITR = NSLocalizedString("general.feedback-form.category.itr", value: "Identity Theft Restoration", comment: "Description for the feedback form when the issue is related to Identity Theft Restoration (ITR)")
 
+    static let generalFeedbackFormCategoryAiChat = NSLocalizedString("general.feedback-form.category.ai-chat", value: "Duck.ai", comment: "Description for the feedback form when the issue is related to Duck.ai")
+
     static let pproFeedbackFormCategorySelect = NSLocalizedString("ppro.feedback-form.category.select-category", value: "Select a category", comment: "Title for the category selection state of the feedback form")
 
     static let pproFeedbackFormCategoryOTP = NSLocalizedString("ppro.feedback-form.category.otp", value: "Issue with one-time password", comment: "Description for the feedback form when there is an issue with the one-time password")
@@ -137,6 +139,14 @@ extension UserText {
     static let itrFeedbackFormCategoryUnhelpful = NSLocalizedString("itr.feedback-form.category.unhelpful", value: "Call to Advisor was unhelpful", comment: "Description for the feedback form when the call to an advisor was unhelpful")
 
     static let itrFeedbackFormCategorySomethingElse = NSLocalizedString("itr.feedback-form.category.something-else", value: "Something else", comment: "Description for the feedback form when the user has an issue not categorized in other options")
+
+    static let paidDuckAIFeedbackFormCategorySelect = NSLocalizedString("paid-duck-ai.feedback-form.category.select-category", value: "Select a category", comment: "Title for the category selection state of the paid duck.ai feedback form")
+
+    static let paidDuckAIFeedbackFormCategoryAccessSubscriptionModels = NSLocalizedString("paid-duck-ai.feedback-form.category.access-subscription-models", value: "Unable to access the subscription Duck.ai models", comment: "Description for the feedback form when there is an issue with accessing the paid tier models")
+
+    static let paidDuckAIFeedbackFormCategoryLoginThirdPartyBrowser = NSLocalizedString("paid-duck-ai.feedback-form.category.login-third-party-browser", value: "Can’t log in to Duck.ai with my subscription", comment: "Description for the feedback form when there is an issue with logging into Duck.ai")
+
+    static let paidDuckAIFeedbackFormCategorySomethingElse = NSLocalizedString("paid-duck-ai.feedback-form.category.something-else", value: "Other Duck.ai feedback", comment: "Description for the feedback form when the user has an issue not categorized in other options")
 
     static let pproFeedbackFormText1 = NSLocalizedString("ppro.feedback-form.text-1", value: "Found an issue not covered in our [help center](duck://)? We definitely want to know about it.\n\nTell us what's going on:", comment: "Text for the body of the PPro feedback form")
 

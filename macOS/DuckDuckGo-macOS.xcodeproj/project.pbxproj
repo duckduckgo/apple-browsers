@@ -1043,7 +1043,6 @@
 		371BFF5F2D3936140075DB87 /* HistoryViewActionsManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371BFF5E2D39360E0075DB87 /* HistoryViewActionsManagerExtension.swift */; };
 		371BFF602D3936140075DB87 /* HistoryViewActionsManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371BFF5E2D39360E0075DB87 /* HistoryViewActionsManagerExtension.swift */; };
 		371C0A2927E33EDC0070591F /* FeedbackPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371C0A2827E33EDC0070591F /* FeedbackPresenter.swift */; };
-		371D00E129D8509400EC8598 /* OpenSSL in Frameworks */ = {isa = PBXBuildFile; productRef = 371D00E029D8509400EC8598 /* OpenSSL */; };
 		371E1D672D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371E1D662D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift */; };
 		371E1D682D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371E1D662D0B2E9F00F9205B /* NewTabPageCustomizationProvider.swift */; };
 		372042D42DF9B0AD00CE099A /* InternalFeedbackFormTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372042D32DF9B0A400CE099A /* InternalFeedbackFormTabExtension.swift */; };
@@ -2276,6 +2275,7 @@
 		845B43372DB69F2E00D46001 /* SwiftObjectRetainCycleBreakerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845B43332DB69F2C00D46001 /* SwiftObjectRetainCycleBreakerTests.swift */; };
 		845B43402DB7689F00D46001 /* OnboardingNavigatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A054402C22438C007D8FAB /* OnboardingNavigatingTests.swift */; };
 		845B43412DB7689F00D46001 /* OnboardingNavigatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A054402C22438C007D8FAB /* OnboardingNavigatingTests.swift */; };
+		846F4CDF2E048A0500266DB7 /* BWIntegration in Frameworks */ = {isa = PBXBuildFile; productRef = 846F4CDE2E048A0500266DB7 /* BWIntegration */; };
 		847873DE2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
 		847873DF2E02A32C00A8CB04 /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
 		848648A12C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
@@ -2303,8 +2303,6 @@
 		84BC22002DAFBEE7007EF85C /* BookmarkListInsertionIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84BC21FE2DAFBEE7007EF85C /* BookmarkListInsertionIndicatorView.swift */; };
 		84C176392DF02556001DEEC7 /* CommonObjCExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84C176382DF02556001DEEC7 /* CommonObjCExtensions */; };
 		84C1763B2DF02567001DEEC7 /* CommonObjCExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84C1763A2DF02567001DEEC7 /* CommonObjCExtensions */; };
-		84C176402DF02DEE001DEEC7 /* BWEncryption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C1763C2DF02DEE001DEEC7 /* BWEncryption.swift */; };
-		84C176412DF02DEE001DEEC7 /* BWEncryptionOutput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C1763D2DF02DEE001DEEC7 /* BWEncryptionOutput.swift */; };
 		84C176502DF0462F001DEEC7 /* LetsMove in Frameworks */ = {isa = PBXBuildFile; productRef = 84C1764F2DF0462F001DEEC7 /* LetsMove */; };
 		84C176522DF050E5001DEEC7 /* DownloadsWebViewMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C176512DF050E4001DEEC7 /* DownloadsWebViewMock.swift */; };
 		84C176532DF050E5001DEEC7 /* DownloadsWebViewMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84C176512DF050E4001DEEC7 /* DownloadsWebViewMock.swift */; };
@@ -4775,8 +4773,6 @@
 		84AECC532DFBFB1300438ACC /* AddressBarSpoofingIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarSpoofingIntegrationTests.swift; sourceTree = "<group>"; };
 		84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+UnitTests.swift"; sourceTree = "<group>"; };
 		84BC21FE2DAFBEE7007EF85C /* BookmarkListInsertionIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkListInsertionIndicatorView.swift; sourceTree = "<group>"; };
-		84C1763C2DF02DEE001DEEC7 /* BWEncryption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BWEncryption.swift; sourceTree = "<group>"; };
-		84C1763D2DF02DEE001DEEC7 /* BWEncryptionOutput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BWEncryptionOutput.swift; sourceTree = "<group>"; };
 		84C176512DF050E4001DEEC7 /* DownloadsWebViewMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsWebViewMock.swift; sourceTree = "<group>"; };
 		84C63D872DF178AF001E5EE3 /* NetworkProtectionInfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = NetworkProtectionInfoPlist.xcstrings; sourceTree = "<group>"; };
 		84C96E442CF9BB6400A80A01 /* malwareFilterSet.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = malwareFilterSet.json; sourceTree = "<group>"; };
@@ -5954,6 +5950,7 @@
 				7B3A16442D4B7A9C00D4C869 /* AppInfoRetriever in Frameworks */,
 				4B9EE3242D76C84800DDC75C /* History in Frameworks */,
 				AA06B6B72672AF8100F541C5 /* Sparkle in Frameworks */,
+				846F4CDF2E048A0500266DB7 /* BWIntegration in Frameworks */,
 				37EE81412D00DBC40068034A /* WebKitExtensions in Frameworks */,
 				4B9EE33E2D76C90600DDC75C /* PrivacyDashboard in Frameworks */,
 				F198C71E2BD18D88000BF24D /* SwiftLintTool in Frameworks */,
@@ -5962,7 +5959,6 @@
 				4B9EE3202D76C83100DDC75C /* DDGSync in Frameworks */,
 				4B9EE3302D76C88300DDC75C /* Persistence in Frameworks */,
 				4B9EE3402D76C91000DDC75C /* SpecialErrorPages in Frameworks */,
-				371D00E129D8509400EC8598 /* OpenSSL in Frameworks */,
 				9FF521462BAA908500B9819B /* Lottie in Frameworks */,
 				7B2366842C09FAC2002D393F /* VPNAppLauncher in Frameworks */,
 				374EFDEB2D01A1D800B30939 /* Utilities in Frameworks */,
@@ -6113,8 +6109,6 @@
 		1D43EAFE291D29E40065E5D6 /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				84C1763C2DF02DEE001DEEC7 /* BWEncryption.swift */,
-				84C1763D2DF02DEE001DEEC7 /* BWEncryptionOutput.swift */,
 				4BBDEE8C28FC14760092FAA6 /* BWInstallationService.swift */,
 				1D6216B129069BBF00386B2C /* BWKeyStorage.swift */,
 				1DDF075D28F815AD00EDFBE3 /* NativeMessagingCommunicator.swift */,
@@ -11454,7 +11448,6 @@
 			packageProductDependencies = (
 				AA06B6B62672AF8100F541C5 /* Sparkle */,
 				378F44E329B4BDE900899924 /* SwiftUIExtensions */,
-				371D00E029D8509400EC8598 /* OpenSSL */,
 				4B4D60B02A0C83B900BCD287 /* NetworkProtectionUI */,
 				7B31FD8B2AD125620086AA24 /* NetworkProtectionIPC */,
 				7BA59C9A2AE18B49009A97B1 /* SystemExtensionManager */,
@@ -11509,6 +11502,7 @@
 				84C176382DF02556001DEEC7 /* CommonObjCExtensions */,
 				84C1764F2DF0462F001DEEC7 /* LetsMove */,
 				7BC26CA32DFC103D00E52480 /* VPN */,
+				846F4CDE2E048A0500266DB7 /* BWIntegration */,
 			);
 			productName = DuckDuckGo;
 			productReference = AA585D7E248FD31100E9A3E2 /* DuckDuckGo.app */;
@@ -11681,7 +11675,6 @@
 				B6DA44152616C13800DD1EC2 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
 				AA06B6B52672AF8100F541C5 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				B6EC37F529B5DAAC001ACE79 /* XCRemoteSwiftPackageReference "swifter" */,
-				371D00DF29D8509400EC8598 /* XCRemoteSwiftPackageReference "OpenSSL-XCFramework" */,
 				B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
 				B6F997B92B8F352500476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */,
 				F1D43AF12B98E47800BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */,
@@ -14287,8 +14280,6 @@
 				371BFF5F2D3936140075DB87 /* HistoryViewActionsManagerExtension.swift in Sources */,
 				841BE93B2C6F1CB200E9C2B5 /* MenuItemNode.swift in Sources */,
 				4B9DB0412A983B24000927DB /* WaitlistDialogView.swift in Sources */,
-				84C176402DF02DEE001DEEC7 /* BWEncryption.swift in Sources */,
-				84C176412DF02DEE001DEEC7 /* BWEncryptionOutput.swift in Sources */,
 				37D2377A287EB8CA00BCE03B /* TabIndex.swift in Sources */,
 				B60C6F8D29B200AB007BFAA8 /* SavePanelAccessoryView.swift in Sources */,
 				F1D042992BFBABA100A31506 /* SubscriptionManager+StandardConfiguration.swift in Sources */,
@@ -16805,14 +16796,6 @@
 				version = 9.1.0;
 			};
 		};
-		371D00DF29D8509400EC8598 /* XCRemoteSwiftPackageReference "OpenSSL-XCFramework" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/duckduckgo/OpenSSL-XCFramework";
-			requirement = {
-				kind = exactVersion;
-				version = 3.1.5004;
-			};
-		};
 		3FFD51CF7C19ACBDB9687474 /* XCRemoteSwiftPackageReference "BrowserServicesKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/duckduckgo/BrowserServicesKit";
@@ -16982,11 +16965,6 @@
 		371BBC582D00C897008FA0C7 /* NewTabPage */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NewTabPage;
-		};
-		371D00E029D8509400EC8598 /* OpenSSL */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 371D00DF29D8509400EC8598 /* XCRemoteSwiftPackageReference "OpenSSL-XCFramework" */;
-			productName = OpenSSL;
 		};
 		374EFDEA2D01A1D800B30939 /* Utilities */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -17667,6 +17645,10 @@
 		8417B7CE2D958D5E00C0A379 /* InputFilesChecker */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = "plugin:InputFilesChecker";
+		};
+		846F4CDE2E048A0500266DB7 /* BWIntegration */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BWIntegration;
 		};
 		84B49F0C2CB10F0900FF08BB /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;

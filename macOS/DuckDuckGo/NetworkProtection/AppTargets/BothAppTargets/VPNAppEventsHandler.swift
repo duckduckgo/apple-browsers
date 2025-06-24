@@ -91,7 +91,7 @@ final class VPNAppEventsHandler {
             }
         }
 
-        var parameters: [String : String]? {
+        var parameters: [String: String]? {
             nil
         }
     }

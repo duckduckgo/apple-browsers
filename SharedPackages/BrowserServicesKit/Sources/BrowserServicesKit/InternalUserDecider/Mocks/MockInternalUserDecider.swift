@@ -1,5 +1,5 @@
 //
-//  InternalUserDeciderMock.swift
+//  MockInternalUserDecider.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -26,7 +26,7 @@ public class MockInternalUserDecider: InternalUserDecider {
         self.isInternalUser = isInternalUser
         self.isInternalUserSubject = isInternalUserSubject
     }
-    
+
     public var isInternalUser: Bool = false
 
     public var isInternalUserPublisher: AnyPublisher<Bool, Never> {
@@ -39,15 +39,3 @@ public class MockInternalUserDecider: InternalUserDecider {
         return false
     }
 }
-//
-//public final class MockInternalUserDecider: InternalUserDecider {
-//    public var isInternalUser: Bool = false
-//
-//    public var isInternalUserPublisher: AnyPublisher<Bool, Never> {
-//        Just(false).eraseToAnyPublisher()
-//    }
-//
-//    public func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
-//        return false
-//    }
-//}

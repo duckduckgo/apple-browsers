@@ -19,27 +19,6 @@
 import Foundation
 import Combine
 
-//public final class MockInternalUserStoring: InternalUserStoring {
-//    public var isInternalUser: Bool = false
-//}
-
-//public extension DefaultInternalUserDecider {
-//
-//    convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
-//        self.init(store: mockedStore)
-//    }
-//}
-
-//public final class MockInternalUserStoring: InternalUserStoring {
-//    public var isInternalUser: Bool = false
-//}
-//
-//extension DefaultInternalUserDecider {
-//    convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
-//        self.init(store: mockedStore)
-//    }
-//}
-
 public final class MockInternalUserStoring: InternalUserStoring {
 
     public var isInternalUser: Bool = false

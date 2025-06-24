@@ -24,8 +24,8 @@ public final class MockFeatureFlagger: FeatureFlagger {
                 didCallResolveCohort: Bool = false,
                 internalUserDecider: any InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring()),
                 localOverrides: (any FeatureFlagLocalOverriding)? = nil,
-                mockActiveExperiments: [String : ExperimentData] = [:],
-                featuresStub: [String : Bool] = [:],
+                mockActiveExperiments: [String: ExperimentData] = [:],
+                featuresStub: [String: Bool] = [:],
                 resolveCohortStub: (any FeatureFlagCohortDescribing)? = nil) {
         self.allActiveExperiments = allActiveExperiments
         self.didCallResolveCohort = didCallResolveCohort
@@ -35,7 +35,7 @@ public final class MockFeatureFlagger: FeatureFlagger {
         self.featuresStub = featuresStub
         self.resolveCohortStub = resolveCohortStub
     }
-    
+
     public var allActiveExperiments: BrowserServicesKit.Experiments = [:]
 
     private(set) var didCallResolveCohort: Bool = false

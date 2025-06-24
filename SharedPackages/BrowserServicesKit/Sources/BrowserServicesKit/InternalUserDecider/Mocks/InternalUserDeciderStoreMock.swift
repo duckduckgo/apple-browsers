@@ -20,7 +20,7 @@ import Foundation
 import Combine
 
 public class InternalUserDeciderStoreMock: InternalUserStoring {
-    
+
     public var isInternalUser: Bool = false
 
     public init(isInternalUser: Bool = false) {

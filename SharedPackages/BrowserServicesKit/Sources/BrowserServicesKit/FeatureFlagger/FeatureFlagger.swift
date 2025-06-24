@@ -312,7 +312,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
             "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
         }())
 #endif
-        
+
         self.internalUserDecider = internalUserDecider
         self.privacyConfigManager = privacyConfigManager
         self.localOverrides = localOverrides

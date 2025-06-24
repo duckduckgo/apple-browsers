@@ -27,16 +27,13 @@ final class AIChatPreferences: ObservableObject {
     static let shared = AIChatPreferences()
     private var storage: AIChatPreferencesStorage
     private var cancellables = Set<AnyCancellable>()
-    private let configuration: AIChatMenuVisibilityConfigurable
     private let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/aichat/")!
     private let searchAssistSettingsURL = URL(string: "https://duckduckgo.com/settings#aifeatures")!
     private var windowControllersManager: WindowControllersManager
 
     init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-         configuration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
          windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager) {
         self.storage = storage
-        self.configuration = configuration
         self.windowControllersManager = windowControllersManager
 
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu

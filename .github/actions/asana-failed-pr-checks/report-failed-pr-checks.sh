@@ -159,12 +159,20 @@ close_task() {
 	[[ ${return_code} -eq 200 ]]
 }
 
-_validate_assignee() {
+validate_assignee() {
 	local assignee=$1
+
+	if ! _is_user_in_apple_team "${assignee}"; then
+		assignee="33604954490307"
+	fi
+}
+
+_is_user_in_apple_team() {
+	local user_id=$1
 
 	curl -s "${asana_api_url}/teams/${apple_team_id}/users?opt_fields=gid" \
 		-H "Authorization: Bearer ${asana_personal_access_token}" \
-		| jq -e "any(.data[]?; .gid == \"${assignee}\")" > /dev/null
+		| jq -e "any(.data[]?; .gid == \"${user_id}\")" > /dev/null
 }
 
 main() {
@@ -177,7 +185,7 @@ main() {
 	local description
 	local message
 
-	_validate_assignee "${assignee}"
+	validate_assignee "${assignee}"
 
 	read_command_line_arguments "$@"
 

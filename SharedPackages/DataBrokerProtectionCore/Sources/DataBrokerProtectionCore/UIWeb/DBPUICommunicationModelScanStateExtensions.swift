@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Algorithms
 
 public extension DBPUIInitialScanState {
 
@@ -208,15 +209,16 @@ private extension Array where Element == BrokerProfileQueryData {
                 $0.wasExtant(on: lastRunDate)
             }
 
-            let uiDataBroker = DBPUIDataBroker(fromDataBroker: dataBroker, withDate: lastRunDate)
+            let uiDataBroker = DBPUIDataBroker(from: dataBroker, withDate: lastRunDate)
             let uiMirrorSites = mirrorSitesAddedBeforeLastRunDate.map {
-                DBPUIDataBroker(fromMirrorSite: $0, parentBroker: dataBroker, withDate: lastRunDate)
+                DBPUIDataBroker(from: $0, parentBroker: dataBroker, withDate: lastRunDate)
             }
 
             return [uiDataBroker] + uiMirrorSites
         }
 
-        return brokers.uniqued()
+        let uniqued = brokers.uniqued()
+        return uniqued.map { $0 }
     }
 
     func uiBrokersSortedByScanPreferredRunDateWhereDateIsBetween(earlierDate: Date, laterDate: Date) -> [DBPUIDataBroker] {
@@ -233,15 +235,16 @@ private extension Array where Element == BrokerProfileQueryData {
                 $0.wasExtant(on: preferredRunDate)
             }
 
-            let uiDataBroker = DBPUIDataBroker(fromDataBroker: dataBroker, withDate: preferredRunDate)
+            let uiDataBroker = DBPUIDataBroker(from: dataBroker, withDate: preferredRunDate)
             let uiMirrorSites = mirrorSitesStillExtantByPreferredRunDate.map {
-                DBPUIDataBroker(fromMirrorSite: $0, parentBroker: dataBroker, withDate: preferredRunDate)
+                DBPUIDataBroker(from: $0, parentBroker: dataBroker, withDate: preferredRunDate)
             }
 
             return [uiDataBroker] + uiMirrorSites
         }
 
-        return brokers.uniqued()
+        let uniqued = brokers.uniqued()
+        return uniqued.map { $0 }
     }
 
     typealias ScannedBroker = DBPUIScanProgress.ScannedBroker

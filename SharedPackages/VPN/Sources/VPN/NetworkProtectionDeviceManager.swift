@@ -211,11 +211,18 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
             return wrappedError
         }
 
+        func unmanagedSubscriptionError(underlyingError: Error) -> Error {
+            let wrappedError = NetworkProtectionError.unmanagedSubscriptionError(underlyingError)
+            errorEvents?.fire(wrappedError)
+            return wrappedError
+        }
+
         Logger.networkProtection.log("Registering with server using method: \(selectionMethod.debugDescription, privacy: .public)")
 
         let token: String
 
         do {
+            throw SubscriptionManagerError.noTokenAvailable
             token = try await VPNAuthTokenBuilder.getVPNAuthToken(from: tokenHandler)
         } catch {
             Logger.networkProtection.error("Missing auth token: \(error.localizedDescription)")
@@ -224,7 +231,7 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
             case SubscriptionManagerError.noTokenAvailable:
                 throw accessRevokedError(underlyingError: error)
             default:
-                throw NetworkProtectionError.unmanagedSubscriptionError(error)
+                throw unmanagedSubscriptionError(underlyingError: error)
             }
         }
 
@@ -275,7 +282,7 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
             case .accessDenied, .invalidAuthToken:
                 throw accessRevokedError(underlyingError: error)
             default:
-                break
+                throw unmanagedSubscriptionError(underlyingError: error)
             }
             throw error
         }

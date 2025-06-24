@@ -332,6 +332,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                 pixelEvent = .networkProtectionClientFailedToParseRegisteredServersResponse
             case .invalidAuthToken:
                 pixelEvent = .networkProtectionClientInvalidAuthToken
+            case .vpnAccessRevoked(let error):
+                pixelEvent = .networkProtectionVPNAccessRevoked
+                pixelError = error
+            case .unmanagedSubscriptionError(let error):
+                pixelEvent = .networkProtectionUnmanagedSubscriptionError
+                pixelError = error
             case .serverListInconsistency:
                 return
             case .failedToCastKeychainValueToData(let field):

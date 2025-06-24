@@ -114,6 +114,10 @@ private struct FeedbackFormBodyView: View {
                 CategoryPicker(options: ITRFeedbackSubcategory.allCases, selection: $viewModel.selectedSubcategory) {
                     issueDescriptionView()
                 }
+            case .duckAi:
+                CategoryPicker(options: PaidAIChatFeedbackSubcategory.allCases, selection: $viewModel.selectedSubcategory) {
+                    issueDescriptionView()
+                }
             }
         }
     }

@@ -321,6 +321,12 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
+    @objc
+    private func onAutofillScriptDebugSettingsDidChange(_ notification: Notification) {
+        contentOverlayPopover?.viewController.closeContentOverlayPopover()
+        contentOverlayPopover = nil
+    }
+
     private func subscribeToSelectedTabViewModel() {
         tabCollectionViewModel.$selectedTabViewModel
             .sink { [weak self] selectedTabViewModel in
@@ -412,6 +418,10 @@ final class BrowserTabViewController: NSViewController {
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(onSubscriptionUpgradeFromFreemium),
                                                name: .subscriptionUpgradeFromFreemium,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onAutofillScriptDebugSettingsDidChange),
+                                               name: .autofillScriptDebugSettingsDidChange,
                                                object: nil)
     }
 

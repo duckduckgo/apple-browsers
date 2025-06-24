@@ -57,6 +57,7 @@ enum UnifiedFeedbackCategory: String, FeedbackCategoryProviding {
     case vpn
     case pir
     case itr
+    case duckAi
 
     static var prompt = UnifiedFeedbackCategory.selectFeature
 
@@ -67,6 +68,7 @@ enum UnifiedFeedbackCategory: String, FeedbackCategoryProviding {
         case .vpn: return UserText.generalFeedbackFormCategoryVPN
         case .pir: return UserText.generalFeedbackFormCategoryPIR
         case .itr: return UserText.generalFeedbackFormCategoryITR
+        case .duckAi: return UserText.generalFeedbackFormCategoryAiChat
         }
     }
 }
@@ -193,6 +195,41 @@ enum ITRFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProvi
         case .cantContactAdvisor: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/identity-theft-restoration/iris/")!
         case .advisorUnhelpful: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/identity-theft-restoration/")!
         case .somethingElse: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/identity-theft-restoration/")!
+        }
+    }
+}
+
+enum PaidAIChatFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProviding {
+    case selectSubcategory
+    case accessSubscriptionModels
+    case loginThirdPartyBrowser
+    case somethingElse
+
+    static var prompt = PaidAIChatFeedbackSubcategory.selectSubcategory
+
+    var displayName: String {
+        switch self {
+        case .selectSubcategory:
+            UserText.paidDuckAIFeedbackFormCategorySelect
+        case .accessSubscriptionModels:
+            UserText.paidDuckAIFeedbackFormCategoryAccessSubscriptionModels
+        case .loginThirdPartyBrowser:
+            UserText.paidDuckAIFeedbackFormCategoryLoginThirdPartyBrowser
+        case .somethingElse:
+            UserText.paidDuckAIFeedbackFormCategorySomethingElse
+        }
+    }
+
+    var url: URL? {
+        switch self {
+        case .selectSubcategory:
+            return nil
+        case .accessSubscriptionModels:
+            return nil
+        case .loginThirdPartyBrowser:
+            return nil
+        case .somethingElse:
+            return nil
         }
     }
 }

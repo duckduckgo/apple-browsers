@@ -20,7 +20,7 @@ import Foundation
 import PixelKit
 
 enum UnifiedFeedbackSource: String, StringRepresentable {
-    case settings, ppro, vpn, pir, itr, unknown
+    case settings, ppro, vpn, pir, itr, duckAi, unknown
     static var `default` = UnifiedFeedbackSource.unknown
 
     private static let sourceKey = "source"
@@ -79,7 +79,7 @@ struct DefaultFeedbackSender: UnifiedFeedbackSender {
     }
 
     enum Category: String, StringRepresentable {
-        case subscription, vpn, pir, itr, unknown
+        case subscription, vpn, pir, itr, duckAi, unknown
         static var `default` = Category.unknown
     }
 
@@ -88,6 +88,7 @@ struct DefaultFeedbackSender: UnifiedFeedbackSender {
         case unableToInstall, failsToConnect, tooSlow, issueWithAppOrWebsite, appCrashesOrFreezes, cantConnectToLocalDevice
         case nothingOnSpecificSite, notMe, scanStuck, removalStuck
         case accessCode, cantContactAdvisor, advisorUnhelpful
+        case accessSubscriptionModels, loginThirdPartyBrowser
         case somethingElse
         static var `default` = Subcategory.somethingElse
     }

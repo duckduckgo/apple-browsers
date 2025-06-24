@@ -1,7 +1,7 @@
 //
-//  MapperToUITests.swift
+//  DBPUICommunicationViewModelScanStateExtensionsTests.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,20 +16,16 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Foundation
-@testable import DataBrokerProtection_macOS
-import DataBrokerProtectionCore
+@testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
+import XCTest
 
-final class MapperToUITests: XCTestCase {
-
-    private let sut = MapperToUI()
+final class DBPUICommunicationViewModelScanStateExtensionsTests: XCTestCase {
 
     func testWhenNoScansRanYet_thenCurrentScansAndMatchesAreEmpty() {
         let brokerProfileQueryData: [BrokerProfileQueryData] = [.mock(), .mock(), .mock()]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanProgress.currentScans, 0)
         XCTAssertTrue(result.resultsFound.isEmpty)
@@ -42,7 +38,7 @@ final class MapperToUITests: XCTestCase {
             .mock(dataBrokerName: "Broker #2")
         ]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanProgress.totalScans, 2)
     }
@@ -58,7 +54,7 @@ final class MapperToUITests: XCTestCase {
             .mock("Broker #1", status: .completed),
         ]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanProgress.currentScans, brokerProfileQueryData.legacyCurrentScans)
         XCTAssertEqual(result.scanProgress.currentScans, expected.completeBrokerScansCount)
@@ -78,7 +74,7 @@ final class MapperToUITests: XCTestCase {
             .mock("Broker #1", status: .inProgress),
         ]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanProgress.currentScans, brokerProfileQueryData.legacyCurrentScans)
         XCTAssertEqual(result.scanProgress.currentScans, expected.completeBrokerScansCount)
@@ -90,7 +86,7 @@ final class MapperToUITests: XCTestCase {
     func testWhenAScanRanAndHasAMatch_thenResultsFoundIsUpdated() {
         let brokerProfileQueryData: [BrokerProfileQueryData] = [.mock(), .mock(), .mock(lastRunDate: Date(), extractedProfile: .mockWithoutRemovedDate)]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.resultsFound.count, 1)
     }
@@ -102,7 +98,7 @@ final class MapperToUITests: XCTestCase {
             .mock(dataBrokerName: "Broker #1", lastRunDate: Date(), extractedProfile: .mockWithoutRemovedDate)
         ]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.resultsFound.count, 2)
     }
@@ -119,7 +115,7 @@ final class MapperToUITests: XCTestCase {
             .mock("Broker #2", status: .completed),
         ]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanProgress.totalScans, result.scanProgress.currentScans)
         XCTAssertEqual(result.scanProgress.currentScans, brokerProfileQueryData.legacyCurrentScans)
@@ -141,7 +137,7 @@ final class MapperToUITests: XCTestCase {
             .mock("Broker #2", status: .completed),
         ]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanProgress.totalScans, 2)
         XCTAssertEqual(result.scanProgress.currentScans, brokerProfileQueryData.legacyCurrentScans)
@@ -165,7 +161,7 @@ final class MapperToUITests: XCTestCase {
             .mock("Broker #2", status: .completed),
         ]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanProgress.totalScans, 2)
         XCTAssertEqual(result.scanProgress.currentScans, brokerProfileQueryData.legacyCurrentScans)
@@ -182,7 +178,7 @@ final class MapperToUITests: XCTestCase {
             .mock(extractedProfile: .mockWithoutRemovedDate)
         ]
 
-        let result = sut.maintenanceScanState(brokerProfileQueryData)
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.completedOptOuts.count, 1)
         XCTAssertEqual(result.inProgressOptOuts.count, 2)
@@ -203,7 +199,7 @@ final class MapperToUITests: XCTestCase {
             .mock(dataBrokerName: "Broker #3")
         ]
 
-        let result = sut.maintenanceScanState(brokerProfileQueryData)
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanHistory.sitesScanned, 2)
     }
@@ -217,7 +213,7 @@ final class MapperToUITests: XCTestCase {
             .mock(dataBrokerName: "Broker #4", url: "broker4.com")
         ]
 
-        let result = sut.maintenanceScanState(brokerProfileQueryData)
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanSchedule.lastScan.dataBrokers.count, 3)
         XCTAssertTrue(areDatesEqualsOnDayMonthAndYear(date1: Date().yesterday, date2: Date(timeIntervalSince1970: result.scanSchedule.lastScan.date)))
@@ -235,7 +231,7 @@ final class MapperToUITests: XCTestCase {
             .mock(dataBrokerName: "Broker #4", url: "broker4.com")
         ]
 
-        let result = sut.maintenanceScanState(brokerProfileQueryData)
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanSchedule.nextScan.dataBrokers.count, 2)
         XCTAssertTrue(areDatesEqualsOnDayMonthAndYear(date1: Date().tomorrow, date2: Date(timeIntervalSince1970: result.scanSchedule.nextScan.date)))
@@ -249,7 +245,7 @@ final class MapperToUITests: XCTestCase {
             brokerProfileQueryWithMirrorSite
         ]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanProgress.totalScans, 2)
     }
@@ -258,7 +254,7 @@ final class MapperToUITests: XCTestCase {
         let brokerWithMirrorSiteThatWasRemoved = BrokerProfileQueryData.mock(dataBrokerName: "Broker #1", mirrorSites: [.init(name: "mirror", url: "mirror1.com", addedAt: Date(), removedAt: Date().yesterday)])
         let brokerProfileQueryData: [BrokerProfileQueryData] = [.mock(dataBrokerName: "Broker #1"), brokerWithMirrorSiteThatWasRemoved, .mock(dataBrokerName: "Broker #2")]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanProgress.totalScans, 2)
     }
@@ -275,7 +271,7 @@ final class MapperToUITests: XCTestCase {
             .mock(dataBrokerName: "Broker #2")
         ]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanProgress.currentScans, 2)
         XCTAssertEqual(result.scanProgress.scannedBrokers.count, result.scanProgress.currentScans)
@@ -294,7 +290,7 @@ final class MapperToUITests: XCTestCase {
             brokerWithMirrorSiteRemovedAndWithScan
         ]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanProgress.currentScans, 1)
         XCTAssertEqual(result.scanProgress.scannedBrokers.count, result.scanProgress.currentScans)
@@ -308,7 +304,7 @@ final class MapperToUITests: XCTestCase {
         )
         let brokerProfileQueryData: [BrokerProfileQueryData] = [.mock(), .mock(), brokerWithMirrorSiteNotRemovedAndWithMatch]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.resultsFound.count, 2)
     }
@@ -320,7 +316,7 @@ final class MapperToUITests: XCTestCase {
         )
         let brokerProfileQueryData: [BrokerProfileQueryData] = [.mock(), .mock(), brokerWithMirrorSiteRemovedAndWithMatch]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.resultsFound.count, 1)
     }
@@ -335,7 +331,7 @@ final class MapperToUITests: XCTestCase {
                   mirrorSites: [mirrorSiteNotRemoved, mirrorSiteRemoved])
         ]
 
-        let result = sut.maintenanceScanState(brokerProfileQueryData)
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.inProgressOptOuts.count, 2)
     }
@@ -351,7 +347,7 @@ final class MapperToUITests: XCTestCase {
                                                              mirrorSites: [mirrorSiteRemoved, newMirrorSiteOne, newMirrorSiteTwo])
         let brokerProfileQueryData: [BrokerProfileQueryData] = [brokerProfileQuery]
 
-        let result = sut.maintenanceScanState(brokerProfileQueryData)
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.completedOptOuts.count, 2)
     }
@@ -365,7 +361,7 @@ final class MapperToUITests: XCTestCase {
             .mock(dataBrokerName: "Broker #3", url: "broker3.com")
         ]
 
-        let result = sut.maintenanceScanState(brokerProfileQueryData)
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanSchedule.lastScan.dataBrokers.count, 3)
         XCTAssertTrue(areDatesEqualsOnDayMonthAndYear(date1: Date().yesterday, date2: Date(timeIntervalSince1970: result.scanSchedule.lastScan.date)))
@@ -380,7 +376,7 @@ final class MapperToUITests: XCTestCase {
             .mock(dataBrokerName: "Broker #3", url: "broker3.com")
         ]
 
-        let result = sut.maintenanceScanState(brokerProfileQueryData)
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanSchedule.nextScan.dataBrokers.count, 3)
         XCTAssertTrue(areDatesEqualsOnDayMonthAndYear(date1: Date().tomorrow, date2: Date(timeIntervalSince1970: result.scanSchedule.nextScan.date)))
@@ -415,7 +411,7 @@ final class MapperToUITests: XCTestCase {
             .mock("Broker #3", status: .inProgress)
         ]
 
-        let result = sut.initialScanState(brokerProfileQueryData)
+        let result = DBPUIInitialScanState(from: brokerProfileQueryData)
 
         XCTAssertEqual(result.scanProgress.currentScans, 3)
         XCTAssertEqual(result.scanProgress.scannedBrokers, expected)
@@ -443,7 +439,7 @@ final class MapperToUITests: XCTestCase {
         )
 
         // When
-        let state = sut.maintenanceScanState([childBroker, parentBroker])
+        let state = DBPUIScanAndOptOutMaintenanceState(from: [childBroker, parentBroker])
 
         // Then
         XCTAssertEqual(state.inProgressOptOuts.count, 2)
@@ -476,7 +472,7 @@ final class MapperToUITests: XCTestCase {
         )
 
         // When
-        let state = sut.maintenanceScanState([childBroker, parentBroker])
+        let state = DBPUIScanAndOptOutMaintenanceState(from: [childBroker, parentBroker])
 
         // Then
         XCTAssertEqual(state.inProgressOptOuts.count, 2)
@@ -486,7 +482,7 @@ final class MapperToUITests: XCTestCase {
         XCTAssertEqual(childProfile?.dataBroker.optOutUrl, "parent.com/optout")
 
         let parentProfile = state.inProgressOptOuts.first { $0.dataBroker.name == "ParentBroker" }
-        XCTAssertEqual(childProfile?.dataBroker.optOutUrl, "parent.com/optout")
+        XCTAssertEqual(parentProfile?.dataBroker.optOutUrl, "parent.com/optout")
     }
 }
 

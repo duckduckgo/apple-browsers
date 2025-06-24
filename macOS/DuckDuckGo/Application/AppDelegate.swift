@@ -473,7 +473,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 privacyConfigurationManager: privacyConfigurationManager,
                 purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform, paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) }
             ),
-            internalUserDecider: internalUserDecider
+            internalUserDecider: internalUserDecider,
+            featureFlagger: featureFlagger
         )
         self.windowControllersManager = windowControllersManager
 

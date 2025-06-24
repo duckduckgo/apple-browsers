@@ -882,7 +882,6 @@ class AddressBarTests: XCTestCase {
         XCTAssertEqual(window2.firstResponder, window2)
     }
 
-    // Temporarily Disabled
     @MainActor
     func test_WhenSiteCertificateNil_ThenAddressBarShowsStandardShieldIcon() async throws {
         // GIVEN
@@ -901,7 +900,6 @@ class AddressBarTests: XCTestCase {
         XCTAssertTrue(shieldImage.isEqualToImage(expectedImage))
     }
 
-    // Temporarily Disabled
     @MainActor
     func test_WhenSiteCertificateValid_ThenAddressBarShowsStandardShieldIcon() async throws {
         // GIVEN
@@ -921,7 +919,6 @@ class AddressBarTests: XCTestCase {
         XCTAssertTrue(shieldImage.isEqualToImage(expectedImage))
     }
 
-    // Temporarily Disabled
     @MainActor
     func test_WhenSiteCertificateInvalid_ThenAddressBarShowsDottedShieldIcon() async throws {
         // GIVEN

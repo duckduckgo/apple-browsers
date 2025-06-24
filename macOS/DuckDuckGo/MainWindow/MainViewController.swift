@@ -666,14 +666,20 @@ extension MainViewController {
         let isWebViewFocused = view.window?.firstResponder is WebView
 
         // Handle Enter
-        if event.keyCode == kVK_Return,
-           navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
-            if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcut {
-                navigationBarViewController.addressBarViewController?.addressBarTextField.aiChatQueryEnterPressed()
-            } else {
-                navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
+        if event.keyCode == kVK_Return {
+            if navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
+                if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcut {
+                    navigationBarViewController.addressBarViewController?.addressBarTextField.aiChatQueryEnterPressed()
+                } else {
+                    navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
+                }
+                return true
             }
-            return true
+
+            if featureFlagger.isFeatureOn(.aiChatTextSummarization) && flags == [.shift] {
+                NSApp.menu?.performKeyEquivalent(with: event)
+                return true
+            }
         }
 
         // Handle Escape

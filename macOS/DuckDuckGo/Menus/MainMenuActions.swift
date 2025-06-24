@@ -740,6 +740,10 @@ extension MainViewController {
         getActiveTabAndIndex()?.tab.webView.resetZoomLevel()
     }
 
+    @objc func summarize(_ sender: Any) {
+        Logger.aiChat.debug("Summarize action to be implemented")
+    }
+
     @objc func toggleDownloads(_ sender: Any) {
         var navigationBarViewController = self.navigationBarViewController
         if view.window?.isPopUpWindow == true {

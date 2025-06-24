@@ -1604,6 +1604,7 @@ public final class MockAuthenticationManager: DataBrokerProtectionAuthentication
     public init() { }
 
     public var isUserAuthenticatedValue = false
+    public var isUserEligibleForFreeTrialValue = false
     public var accessTokenValue: String? = "fake token"
     public var shouldAskForInviteCodeValue = false
     public var redeemCodeCalled = false
@@ -1612,6 +1613,8 @@ public final class MockAuthenticationManager: DataBrokerProtectionAuthentication
     public var shouldThrowEntitlementError = false
 
     public var isUserAuthenticated: Bool { isUserAuthenticatedValue }
+    
+    public var isUserEligibleForFreeTrial: Bool { isUserEligibleForFreeTrialValue }
 
     public func accessToken() async -> String? { accessTokenValue }
 

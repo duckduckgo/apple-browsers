@@ -27,6 +27,8 @@ public enum AuthenticationError: Error, Equatable {
 
 public protocol DataBrokerProtectionAuthenticationManaging {
     var isUserAuthenticated: Bool { get }
+    /// Returns whether the user is eligible for a free trial
+    var isUserEligibleForFreeTrial: Bool { get }
     func accessToken() async -> String?
     func hasValidEntitlement() async throws -> Bool
     func getAuthHeader() async -> String?
@@ -45,6 +47,11 @@ public final class DataBrokerProtectionAuthenticationManager: DataBrokerProtecti
         }
         semaphore.wait()
         return token != nil
+    }
+
+    /// Returns whether the user is eligible for a free trial
+    public var isUserEligibleForFreeTrial: Bool {
+        subscriptionManager.isUserEligibleForFreeTrial()
     }
 
     public func accessToken() async -> String? {

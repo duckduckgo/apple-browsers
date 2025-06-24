@@ -26455,6 +26455,19 @@
         }
       }
     },
+    "general.feedback-form.category.ai-chat" : {
+      "comment" : "Description for the feedback form when the issue is related to Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "general.feedback-form.category.itr" : {
       "comment" : "Description for the feedback form when the issue is related to Identity Theft Restoration (ITR)",
       "extractionState" : "extracted_with_value",
@@ -44567,6 +44580,58 @@
           }
         }
       }
+    },
+    "paid-duck-ai.feedback-form.category.access-subscription-models" : {
+      "comment" : "Description for the feedback form when there is an issue with accessing the paid tier models",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unable to access the subscription Duck.ai models"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "paid-duck-ai.feedback-form.category.login-third-party-browser" : {
+      "comment" : "Description for the feedback form when there is an issue with logging into Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Can’t log in to Duck.ai with my subscription"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "paid-duck-ai.feedback-form.category.select-category" : {
+      "comment" : "Title for the category selection state of the paid duck.ai feedback form",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select a category"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "paid-duck-ai.feedback-form.category.something-else" : {
+      "comment" : "Description for the feedback form when the user has an issue not categorized in other options",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Other Duck.ai feedback"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "passsword.management.all-items" : {
       "comment" : "Used as title for the Autofill All Items option",

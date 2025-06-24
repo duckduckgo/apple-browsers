@@ -89,6 +89,13 @@ struct UnifiedFeedbackRootView: View {
                             IssueDescriptionFormView(viewModel: viewModel,
                                                      placeholder: UserText.pproFeedbackFormReportProblemPlaceholder)
                         }
+                    case .duckAi:
+                        UnifiedFeedbackCategoryView(UserText.pproFeedbackFormReportProblemTitle,
+                                                    options: PaidAIChatFeedbackSubcategory.allCases,
+                                                    selection: $viewModel.selectedSubcategory) {
+                            IssueDescriptionFormView(viewModel: viewModel,
+                                                     placeholder: UserText.pproFeedbackFormReportProblemPlaceholder)
+                        }
                     }
                 }
             }

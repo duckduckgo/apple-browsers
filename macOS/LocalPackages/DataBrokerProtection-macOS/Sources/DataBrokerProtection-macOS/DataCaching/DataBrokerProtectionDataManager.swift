@@ -414,7 +414,7 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
         return mapper.initialScanState(brokerProfileQueryData)
     }
 
-    public func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
+    public func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         await scanDelegate?.updateCacheWithCurrentScans()
 
         return mapper.maintenanceScanState(brokerProfileQueryData)

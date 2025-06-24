@@ -35,6 +35,8 @@ public protocol DataBrokerProtectionRepository {
     func fetchAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData]
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile]
 
+    func fetchAllDataBrokers() throws -> [DataBroker]
+
     func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws
     func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws
     func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws
@@ -64,6 +66,7 @@ public protocol DataBrokerProtectionRepository {
     func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent]
     func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [HistoryEvent]
     func hasMatches() throws -> Bool
+    func matchRemovedByUser(_ matchID: Int64) throws
 
     func fetchAllAttempts() throws -> [AttemptInformation]
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation?
@@ -439,6 +442,17 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository,
         }
     }
 
+    public func fetchAllDataBrokers() throws -> [DataBroker] {
+        let vault = try requireVault(context: "DataBrokerProtectionDatabase.fetchAllDataBrokers")
+
+        do {
+            return try vault.fetchAllBrokers()
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchAllDataBrokers")
+            throw error
+        }
+    }
+
     public func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws {
         let vault = try requireVault(context: "DataBrokerProtectionDatabase.saveOptOutJob")
 
@@ -481,6 +495,19 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository,
             handleError(error, context: "DataBrokerProtectionDatabase.hasMatches")
             throw error
         }
+    }
+
+    public func matchRemovedByUser(_ matchID: Int64) throws {
+        guard let extractedProfile = try fetchExtractedProfile(with: matchID) else {
+            assertionFailure("Couldn't get extracted profile for matchID \(matchID)")
+            return
+        }
+
+        let event = HistoryEvent(extractedProfileId: matchID,
+                                 brokerId: extractedProfile.brokerId,
+                                 profileQueryId: extractedProfile.profileQueryId,
+                                 type: .matchRemovedByUser)
+        try add(event)
     }
 
     public func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent] {

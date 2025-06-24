@@ -166,10 +166,22 @@
             </BuildableReference>
             <SkippedTests>
                <Test
+                  Identifier = "AddressBarTests/test_WhenSiteCertificateInvalid_ThenAddressBarShowsDottedShieldIcon()">
+               </Test>
+               <Test
+                  Identifier = "AddressBarTests/test_WhenSiteCertificateNil_ThenAddressBarShowsStandardShieldIcon()">
+               </Test>
+               <Test
+                  Identifier = "AddressBarTests/test_WhenSiteCertificateValid_ThenAddressBarShowsStandardShieldIcon()">
+               </Test>
+               <Test
                   Identifier = "AutoconsentIntegrationTests/testFilterlistRule_whenFakeCookieBannerIsDisplayed_bannerIsHidden()">
                </Test>
                <Test
                   Identifier = "AutoconsentIntegrationTests/testWhenAutoconsentDisabled_promptIsDisplayed()">
+               </Test>
+               <Test
+                  Identifier = "BrowserTabViewControllerOnboardingTests/testWhenDialogIsDismissedViewHighlightsAreDismissed()">
                </Test>
                <Test
                   Identifier = "ConfigurationManagerIntegrationTests/testTdsAreFetchedFromURLBasedOnPrivacyConfigExperiment()">

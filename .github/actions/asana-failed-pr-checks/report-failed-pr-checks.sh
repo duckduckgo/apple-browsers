@@ -161,31 +161,35 @@ close_task() {
 
 validate_assignee() {
 	local assignee=$1
-	local workflow_url="${WORKFLOW_URL:-}"
+	local pr_reviewers=$2
 
-	# First try to get PR reviewers if this is a PR merge
-	local pr_reviewers
-	pr_reviewers=$(get_pr_reviewers_from_merge_commit)
+	if _is_user_in_apple_team "${assignee}"; then
+		echo "${assignee}"
+	else
+		echo "Assignee $assignee not found in Apple team, checking PR reviewers" >&2
 
-	if [[ -n "$pr_reviewers" ]]; then
-		echo "Found PR reviewers: $pr_reviewers"
+		# Check each PR reviewer if pr_reviewers is not empty
+		if [[ -n "${pr_reviewers}" ]]; then
+			gh_asana_mapping="$(gh api https://api.github.com/repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml --jq .content | base64 -d)"
 
-		# Try each reviewer until we find one in the Apple team
-		while IFS= read -r reviewer; do
-			if [[ -n "$reviewer" ]] && _is_user_in_apple_team "$reviewer"; then
-				echo "Using PR reviewer: $reviewer"
-				assignee="$reviewer"
-				return 0
-			fi
-		done <<< "$pr_reviewers"
+			# Split comma-separated reviewers and iterate through them
+			IFS=',' read -ra reviewer_array <<< "${pr_reviewers}"
+			for reviewer in "${reviewer_array[@]}"; do
+				# Trim whitespace
+				reviewer="$(echo "${reviewer}" | xargs)"
+				reviewer_asana_id="$(yq -r ".${reviewer}" <<< "${gh_asana_mapping}")"
+				echo "Checking reviewer: ${reviewer_asana_id}" >&2
 
-		echo "No valid PR reviewers found in Apple team, falling back to commit author"
-	fi
+				if _is_user_in_apple_team "${reviewer_asana_id}"; then
+					echo "Found Apple team member reviewer: ${reviewer_asana_id}" >&2
+					echo "${reviewer_asana_id}"
+					return
+				fi
+			done
+		fi
 
-	# Fall back to original assignee (commit author) or hardcoded ID
-	if ! _is_user_in_apple_team "${assignee}"; then
-		echo "Assignee $assignee not found in Apple team, using fallback"
-		assignee="33604954490307"
+		echo "No Apple team members found among PR reviewers, using fallback" >&2
+		echo "856498666990313" # (bwaresiak)
 	fi
 }
 
@@ -201,14 +205,14 @@ main() {
 	local asana_personal_access_token="${ASANA_ACCESS_TOKEN}"
 	local section_id="${ASANA_SECTION_ID}"
 	local assignee="${ASANA_ASSIGNEE}"
-	local github_token="${GITHUB_TOKEN}"
 	local workflow_id="${GITHUB_RUN_ID}"
+	local pr_reviewers="${GITHUB_PR_REVIEWERS}"
 	local action
 	local title
 	local description
 	local message
 
-	validate_assignee "${assignee}"
+	assignee=$(validate_assignee "${assignee}" "${pr_reviewers}")
 
 	read_command_line_arguments "$@"
 

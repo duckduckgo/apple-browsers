@@ -114,7 +114,9 @@ struct UnifiedFeedbackFormViewModelTests {
         let viewModel = makeViewModel()
 
         // Wait for async category setup
-        try await Task.sleep(nanoseconds: 100_000_000)
+        try await waitForCondition {
+            viewModel.availableCategories.contains(.subscription)
+        }
 
         #expect(viewModel.availableCategories.contains(.subscription))
     }
@@ -127,8 +129,10 @@ struct UnifiedFeedbackFormViewModelTests {
             isPaidAIChatFeatureEnabled: true
         )
 
-        // Wait for async category setup
-        try await Task.sleep(nanoseconds: 100_000_000)
+        // Wait for DuckAi category to become available
+        try await waitForCondition {
+            viewModel.availableCategories.contains(.duckAi)
+        }
         
         #expect(viewModel.availableCategories.contains(.duckAi))
     }
@@ -139,8 +143,10 @@ struct UnifiedFeedbackFormViewModelTests {
             isPaidAIChatFeatureEnabled: false
         )
 
-        // Wait for async category setup
-        try await Task.sleep(nanoseconds: 100_000_000)
+        // Wait for categories to be processed, then verify DuckAi is not included
+        try await waitForCondition {
+            !viewModel.availableCategories.isEmpty
+        }
         
         #expect(!viewModel.availableCategories.contains(.duckAi))
     }
@@ -151,8 +157,10 @@ struct UnifiedFeedbackFormViewModelTests {
             isPaidAIChatFeatureEnabled: true
         )
 
-        // Wait for async category setup
-        try await Task.sleep(nanoseconds: 100_000_000)
+        // Wait for categories to be processed, then verify DuckAi is not included
+        try await waitForCondition {
+            !viewModel.availableCategories.isEmpty
+        }
         
         #expect(!viewModel.availableCategories.contains(.duckAi))
     }
@@ -162,8 +170,10 @@ struct UnifiedFeedbackFormViewModelTests {
             subscriptionFeatures: [.networkProtection]
         )
 
-        // Wait for async category setup
-        try await Task.sleep(nanoseconds: 100_000_000)
+        // Wait for VPN category to become available
+        try await waitForCondition {
+            viewModel.availableCategories.contains(.vpn)
+        }
 
         #expect(viewModel.availableCategories.contains(.vpn))
     }
@@ -173,8 +183,10 @@ struct UnifiedFeedbackFormViewModelTests {
             subscriptionFeatures: [.dataBrokerProtection]
         )
 
-        // Wait for async category setup
-        try await Task.sleep(nanoseconds: 100_000_000)
+        // Wait for PIR category to become available
+        try await waitForCondition {
+            viewModel.availableCategories.contains(.pir)
+        }
 
         #expect(viewModel.availableCategories.contains(.pir))
     }
@@ -184,8 +196,10 @@ struct UnifiedFeedbackFormViewModelTests {
             subscriptionFeatures: [.identityTheftRestoration]
         )
 
-        // Wait for async category setup
-        try await Task.sleep(nanoseconds: 100_000_000)
+        // Wait for ITR category to become available
+        try await waitForCondition {
+            viewModel.availableCategories.contains(.itr)
+        }
 
         #expect(viewModel.availableCategories.contains(.itr))
     }
@@ -541,6 +555,26 @@ struct UnifiedFeedbackFormViewModelTests {
         let viewModel = makeViewModel(source: .settings)
 
         #expect(viewModel.source == "settings")
+    }
+
+    // MARK: - Helper Functions
+
+    /// Polls a condition until it's met or timeout is reached
+    private func waitForCondition(
+        timeout: TimeInterval = 2.0,
+        pollingInterval: TimeInterval = 0.1,
+        condition: @escaping () -> Bool
+    ) async throws {
+        let startTime = Date()
+
+        while !condition() {
+            let elapsedTime = Date().timeIntervalSince(startTime)
+            if elapsedTime >= timeout {
+                throw TestError.generic // Timeout
+            }
+
+            try await Task.sleep(nanoseconds: UInt64(pollingInterval * 1_000_000_000))
+        }
     }
 }
 

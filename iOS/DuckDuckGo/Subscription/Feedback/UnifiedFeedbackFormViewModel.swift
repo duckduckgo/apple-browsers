@@ -272,20 +272,20 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         switch UnifiedFeedbackCategory(rawValue: selectedCategory) {
         case .vpn:
             let metadata = await vpnMetadataCollector.collectMetadata()
+            try await submitIssue(metadata: metadata)
             try await feedbackSender.sendReportIssuePixel(source: source,
                                                           category: selectedCategory,
                                                           subcategory: selectedSubcategory,
                                                           description: feedbackFormText,
                                                           metadata: metadata as? VPNMetadata)
-            try await submitIssue(metadata: metadata)
         default:
             let metadata = await defaultMetadataCollector.collectMetadata()
+            try await submitIssue(metadata: metadata)
             try await feedbackSender.sendReportIssuePixel(source: source,
                                                           category: selectedCategory,
                                                           subcategory: selectedSubcategory,
                                                           description: feedbackFormText,
                                                           metadata: metadata as? DefaultFeedbackMetadata)
-            try await submitIssue(metadata: metadata)
         }
     }
 

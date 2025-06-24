@@ -41,20 +41,13 @@ public class DefaultUserAgentManager: UserAgentManager {
     private var userAgent = UserAgent()
 
     init() {
-        prepareUserAgent()
-    }
-
-    private func prepareUserAgent() {
-        if Thread.isMainThread {
-            createWebViewAndExtractUserAgent()
-        } else {
-            DispatchQueue.main.sync {
-                createWebViewAndExtractUserAgent()
-            }
+        // Defer WKWebView creation until we're on main thread
+        DispatchQueue.main.async { [weak self] in
+            self?.prepareUserAgent()
         }
     }
 
-    private func createWebViewAndExtractUserAgent() {
+    private func prepareUserAgent() {
         let webview = WKWebView()
         webview.load(URLRequest.developerInitiated(URL(string: "about:blank")!))
         getDefaultAgent(webView: webview) { [weak self] agent in

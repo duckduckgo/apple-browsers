@@ -106,6 +106,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210410403692636?focus=true
     case aiChatSidebar
 
+    /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1210012162616039?focus=true
+    case aiChatTextSummarization
+
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case osSupportForceUnsupportedMessage
 
@@ -168,6 +171,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport,
 				.aiChatSidebar,
+                .aiChatTextSummarization,
                 .shortHistoryMenu:
             return true
         case .debugMenu,
@@ -257,6 +261,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
             return .internalOnly()
+        case .aiChatTextSummarization:
+            return .disabled
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:

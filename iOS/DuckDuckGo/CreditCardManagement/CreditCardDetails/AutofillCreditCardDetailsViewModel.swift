@@ -163,6 +163,7 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
         case .cardNumber:
             message = UserText.autofillCreditCardCopyToastCopiedCardNumber
             UIPasteboard.general.string = cardNumber
+            Pixel.fire(pixel: .autofillCardsManagementCopyCardNumber)
         case .expirationDate:
             message = UserText.autofillCreditCardCopyToastCopiedExpirationDate
             UIPasteboard.general.string = formattedExpiration
@@ -207,6 +208,7 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
                     delegate?.autofillCreditCardDetailsViewModelDidSave()
                     
                     if let newCard = try vault.creditCardFor(id: cardId) {
+                        Pixel.fire(pixel: .autofillCardsManagementUpdateCard)
                         self.updateData(with: newCard)
                     }
                     
@@ -233,6 +235,7 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
                 delegate?.autofillCreditCardDetailsViewModelDidSave()
                 
                 if let newCard = try vault.creditCardFor(id: cardId) {
+                    Pixel.fire(pixel: .autofillCardsManagementSaveCard)
                     self.updateData(with: newCard)
                 }
             } catch let error {
@@ -263,11 +266,11 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
 
     private func setupCancellables() {
         authenticator.$state
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in
-                    self?.updateAuthViews()
-                }
-                .store(in: &cancellables)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateAuthViews()
+            }
+            .store(in: &cancellables)
     }
 
     private func updateAuthViews() {

@@ -237,11 +237,21 @@ extension MainViewController {
         }
     }
 
-    func segueToSettingsLoginsWithAccount(_ account: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource?) {
+    func segueToSettingsAutofillWith(account: SecureVaultModels.WebsiteAccount?,
+                                     card: SecureVaultModels.CreditCard?,
+                                     showCardManagement: Bool = false,
+                                     source: AutofillSettingsSource?) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.shouldPresentLoginsViewWithAccount(accountDetails: account, source: source)
+        if showCardManagement {
+            launchSettings(configure: { viewModel, controller in
+                controller.decorateNavigationBar()
+                viewModel.shouldPresentAutofillViewWith(accountDetails: nil, card: nil, showCreditCardManagement: true, source: nil)
+            })
+        } else {
+            launchSettings {
+                $0.shouldPresentAutofillViewWith(accountDetails: account, card: card, showCreditCardManagement: showCardManagement, source: source)
+            }
         }
     }
 
@@ -281,7 +291,8 @@ extension MainViewController {
    }
 
     func launchSettings(completion: ((SettingsViewModel) -> Void)? = nil,
-                        deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection? = nil) {
+                        deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection? = nil,
+                        configure: ((SettingsViewModel, SettingsHostingController) -> Void)? = nil) {
         let legacyViewProvider = SettingsLegacyViewProvider(syncService: syncService,
                                                             syncDataProviders: syncDataProviders,
                                                             appSettings: appSettings,
@@ -323,6 +334,9 @@ extension MainViewController {
             // We are still presenting legacy views, so use a Navcontroller
             let navController = SettingsUINavigationController(rootViewController: settingsController)
             settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
+
+            // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
+            configure?(settingsViewModel, settingsController)
 
             present(navController, animated: true) {
                 completion?(settingsViewModel)

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AVKit
 import BrowserServicesKit
 import Core
 
@@ -37,7 +38,7 @@ enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertibl
     }
 }
 
-typealias OnboardingIntroExperimentManaging = OnboardingSetAsDefaultExperimentManaging
+typealias OnboardingIntroExperimentManaging = OnboardingSetAsDefaultBrowserPiPVideoExperimentManaging
 typealias OnboardingManaging = OnboardingSettingsURLProvider & OnboardingStepsProvider & OnboardingIntroExperimentManaging
 
 final class OnboardingManager {
@@ -154,52 +155,38 @@ extension OnboardingManager: OnboardingStepsProvider {
 
 }
 
-// MARK: - Set Default Browser Experiment
+// MARK: - Set Default Browser  PiP Experiment
 
-protocol OnboardingSetAsDefaultExperimentManaging: AnyObject {
-    var isEnrolledInSetAsDefaultBrowserExperiment: Bool { get }
-    func resolveSetAsDefaultBrowserExperimentCohort() -> OnboardingSetAsDefaultBrowserCohort?
+protocol OnboardingSetAsDefaultBrowserPiPVideoExperimentManaging: AnyObject {
+    var isEnrolledInSetAsDefaultBrowserPipVideoExperiment: Bool { get }
+    func resolveSetAsDefaultBrowserPipVideoExperimentCohort(isPictureInPictureSupported: Bool) -> OnboardingSetAsDefaultBrowserPiPVideoCohort?
 }
 
-extension OnboardingManager: OnboardingSetAsDefaultExperimentManaging {
+extension OnboardingSetAsDefaultBrowserPiPVideoExperimentManaging {
 
-    var isEnrolledInSetAsDefaultBrowserExperiment: Bool {
-        resolveSetAsDefaultBrowserExperimentCohort() != nil
-    }
-
-    func resolveSetAsDefaultBrowserExperimentCohort() -> OnboardingSetAsDefaultBrowserCohort? {
-        // The experiment runs only for users on iOS 18.3+ and for non returning users
-        guard #available(iOS 18.3, *), isNewUser else { return nil }
-
-        return featureFlagger.resolveCohort(for: FeatureFlag.onboardingSetAsDefaultBrowser) as? OnboardingSetAsDefaultBrowserCohort
+    func resolveSetAsDefaultBrowserPipVideoExperimentCohort() -> OnboardingSetAsDefaultBrowserPiPVideoCohort? {
+        resolveSetAsDefaultBrowserPipVideoExperimentCohort(isPictureInPictureSupported: AVPictureInPictureController.isPictureInPictureSupported())
     }
 
 }
 
-// MARK: - Settings URL Provider + Set As Default Browser Experiment
+extension OnboardingManager: OnboardingSetAsDefaultBrowserPiPVideoExperimentManaging {
 
-extension OnboardingSettingsURLProvider where Self: OnboardingSetAsDefaultExperimentManaging {
+    var isEnrolledInSetAsDefaultBrowserPipVideoExperiment: Bool {
+        resolveSetAsDefaultBrowserPipVideoExperimentCohort() != nil
+    }
 
-    // If running iOS 18.3 check if the user should be enrolled in the SetAsDefaultBrowser experiment.
-    // If the user is enrolled in the control group or SetAsDefaultBrowser is not running, deep link to DDG custom settings in the Settings app.
-    // If the user is enrolled in the treatment group, deep link to the Settings app for default app selection.
-    var settingsURLPath: String {
-        if #available(iOS 18.3, *) {
-            switch resolveSetAsDefaultBrowserExperimentCohort() {
-            case .none:
-                Logger.onboarding.debug("SetAsDefaultBrowser experiment not running")
-                return UIApplication.openSettingsURLString
-            case .control:
-                Logger.onboarding.debug("User enrolled in the control group of the SetAsDefaultBrowser experiment")
-                return UIApplication.openSettingsURLString
-            case .treatment:
-                Logger.onboarding.debug("User enrolled in the treatment group of the SetAsDefaultBrowser experiment")
-                return UIApplication.openDefaultApplicationsSettingsURLString
-            }
-        } else {
-            Logger.onboarding.debug("User running an iOS version lower than iOS 18.3. Returning DDG’s custom settings url in the Settings app.")
-            return UIApplication.openSettingsURLString
+    func resolveSetAsDefaultBrowserPipVideoExperimentCohort(isPictureInPictureSupported: Bool) -> OnboardingSetAsDefaultBrowserPiPVideoCohort? {
+        // The experiment runs only for users on iOS 18.2+ and for non returning users
+        guard
+            isPictureInPictureSupported,
+            #available(iOS 18.2, *),
+            isNewUser
+        else {
+            return nil
         }
+
+        return featureFlagger.resolveCohort(for: FeatureFlag.onboardingSetAsDefaultBrowserPiPVideo) as? OnboardingSetAsDefaultBrowserPiPVideoCohort
     }
 
 }

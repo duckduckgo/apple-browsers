@@ -25,8 +25,8 @@ struct SubscriptionAIChatView: View {
 
     let viewModel: SettingsViewModel
 
-    private var description: PreferencesDescription {
-        PreferencesDescription(imageName: "AIChat-Settings",
+    private var description: SettingsDescription {
+        SettingsDescription(imageName: "AIChat-Settings",
                                      title: UserText.aiChatSubscriptionTitle,
                                      status: viewModel.isPaidAIChatAvailable ? .on : .off,
                                      explanation: UserText.aiChatSubscriptionCaption)
@@ -34,7 +34,7 @@ struct SubscriptionAIChatView: View {
 
     var body: some View {
         List {
-            PreferencesDescriptionView(content: description)
+            SettingsDescriptionView(content: description)
             Section {
                 SettingsCellView(label: UserText.openSubscriptionAIChat, action: {
                     viewModel.openAIChat()

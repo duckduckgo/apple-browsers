@@ -164,8 +164,8 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
             return DBPUIInitialScanState.emptyInitialScanState()
         }
     }
-    
-    public func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
+
+    public func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         do {
             let allQueryData = try delegate?.getAllBrokerProfileQueryData() ?? []
             return DBPUIScanAndOptOutMaintenanceState(from: allQueryData)
@@ -228,7 +228,7 @@ extension EditablePartialProfile {
         guard !name.requiredComponentsAreBlank() else { return false }
 
         // Duplicates not allowed
-        guard names.firstIndex(where: { $0  == name }) == nil else { return false }
+        guard names.firstIndex(where: { $0 == name }) == nil else { return false }
 
         names.append(name)
         return true

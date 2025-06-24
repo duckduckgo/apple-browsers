@@ -42,7 +42,7 @@ public protocol DBPUICommunicationDelegate: AnyObject {
     func removeAddressAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool
     func startScanAndOptOut() -> Bool
     func getInitialScanState() async -> DBPUIInitialScanState
-    func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState
+    func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState
     func getDataBrokers() async -> [DBPUIDataBroker]
     func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata
     func openSendFeedbackModal() async
@@ -300,7 +300,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func maintenanceScanStatus(params: Any, origin: WKScriptMessage) async throws -> Encodable? {
-        guard let maintenanceScanStatus = await delegate?.getMaintananceScanState() else {
+        guard let maintenanceScanStatus = await delegate?.getMaintenanceScanState() else {
             return DBPUIStandardResponse(version: Constants.version, success: false, id: "NOT_FOUND", message: "No maintenance data found")
         }
 

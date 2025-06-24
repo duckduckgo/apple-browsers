@@ -130,4 +130,21 @@ struct OnboardingManagerTests {
 
     }
 
+    struct URLSettingsProvider {
+
+        @Test("Check Right Settings URL is returned")
+        func checkCorrectSettingsURLIsReturned() {
+            // GIVEN
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: MockVariantManager())
+            let expectedSettingsURL = UIApplication.openSettingsURLString
+
+            // WHEN
+            let result = sut.settingsURLPath
+
+            // THEN
+            #expect(result == expectedSettingsURL)
+        }
+
+    }
+
 }

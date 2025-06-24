@@ -457,13 +457,11 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         let internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
         overrides = CapturingFeatureFlagOverriding()
-        return DefaultFeatureFlagger(
-            internalUserDecider: internalUserDecider,
-            privacyConfigManager: manager,
-            localOverrides: overrides,
-            experimentManager: nil,
-            for: TestFeatureFlag.self
-        )
+        return DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
+                                     privacyConfigManager: manager,
+                                     localOverrides: overrides,
+                                     experimentManager: nil,
+                                     for: TestFeatureFlag.self)
     }
 
     private static func embeddedConfig(autofillState: String = "enabled",

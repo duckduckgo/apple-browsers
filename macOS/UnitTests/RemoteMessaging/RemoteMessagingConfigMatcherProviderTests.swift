@@ -107,7 +107,7 @@ final class RemoteMessagingConfigMatcherProviderTests: XCTestCase {
             startupPreferencesPersistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             duckPlayerPreferencesPersistor: DuckPlayerPreferencesPersistorMock(),
             pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
-            internalUserDecider: VisualStyleManagerTests.MockInternalUserDecider(),
+            internalUserDecider: MockInternalUserDecider(),
             statisticsStore: MockStatisticsStore(),
             variantManager: MockVariantManager(),
             subscriptionManager: DefaultSubscriptionManager(),

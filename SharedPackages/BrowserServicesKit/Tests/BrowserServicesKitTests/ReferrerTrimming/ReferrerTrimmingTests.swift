@@ -63,7 +63,7 @@ class ReferrerTrimmingTests: XCTestCase {
                                            fetchedData: nil,
                                            embeddedDataProvider: embeddedDataProvider,
                                            localProtection: localProtection,
-                                           internalUserDecider: DefaultInternalUserDecider())
+                                           internalUserDecider: MockInternalUserDecider())
     }
 
     private var contentBlockingManager: ContentBlockerRulesManager {

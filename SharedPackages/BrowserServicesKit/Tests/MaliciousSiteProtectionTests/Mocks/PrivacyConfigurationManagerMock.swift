@@ -136,7 +136,7 @@ class PrivacyConfigurationManagerMock: PrivacyConfigurationManaging {
     }
 
     var privacyConfig: PrivacyConfiguration = PrivacyConfigurationMock()
-    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider()
+    var internalUserDecider: InternalUserDecider = MockInternalUserDecider()
 
     var reloadFired = [(etag: String?, data: Data?)]()
     var reloadResult: PrivacyConfigurationManager.ReloadResult = .embedded
@@ -145,10 +145,6 @@ class PrivacyConfigurationManagerMock: PrivacyConfigurationManaging {
         return reloadResult
     }
 
-}
-
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
 }
 
 extension DefaultInternalUserDecider {

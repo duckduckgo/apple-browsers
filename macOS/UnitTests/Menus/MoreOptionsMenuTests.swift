@@ -35,7 +35,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     var passwordManagerCoordinator: PasswordManagerCoordinator!
     var networkProtectionVisibilityMock: NetworkProtectionVisibilityMock!
     var capturingActionDelegate: CapturingOptionsButtonMenuDelegate!
-    var internalUserDecider: InternalUserDeciderMock!
+    var internalUserDecider: MockInternalUserDecider!
     var defaultBrowserProvider: DefaultBrowserProviderMock!
     var dockCustomizer: DockCustomizerMock!
 
@@ -60,7 +60,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         passwordManagerCoordinator = PasswordManagerCoordinator()
         networkProtectionVisibilityMock = NetworkProtectionVisibilityMock(isInstalled: false, visible: false)
         capturingActionDelegate = CapturingOptionsButtonMenuDelegate()
-        internalUserDecider = InternalUserDeciderMock()
+        internalUserDecider = MockInternalUserDecider()
         defaultBrowserProvider = DefaultBrowserProviderMock()
         dockCustomizer = DockCustomizerMock()
         dockCustomizer.addToDock()

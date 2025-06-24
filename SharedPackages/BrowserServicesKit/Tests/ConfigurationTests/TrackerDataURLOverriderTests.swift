@@ -183,7 +183,7 @@ class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManaging {
 
     var updatesPublisher: AnyPublisher<Void, Never> = Just(()).eraseToAnyPublisher()
     var privacyConfig: PrivacyConfiguration = MockPrivacyConfiguration()
-    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider()
+    var internalUserDecider: InternalUserDecider = MockInternalUserDecider()
 }
 
 class MockPrivacyConfiguration: PrivacyConfiguration {
@@ -247,10 +247,6 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
     func settings(for feature: PrivacyFeature) -> PrivacyConfigurationData.PrivacyFeature.FeatureSettings { featureSettings }
     func userEnabledProtection(forDomain: String) {}
     func userDisabledProtection(forDomain: String) {}
-}
-
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
 }
 
 extension DefaultInternalUserDecider {

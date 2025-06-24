@@ -336,19 +336,6 @@ class VisualStyleManagerTests: XCTestCase {
 
     // MARK: - Mock Classes
 
-    class MockInternalUserDecider: InternalUserDecider {
-        var isInternalUser: Bool = false
-        var isInternalUserPublisher: AnyPublisher<Bool, Never> {
-            isInternalUserSubject.eraseToAnyPublisher()
-        }
-
-        private let isInternalUserSubject = PassthroughSubject<Bool, Never>()
-
-        func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
-            return false
-        }
-    }
-
     final class MockFeatureFlagger: FeatureFlagger {
 
         private(set) var didCallResolveCohort: Bool = false

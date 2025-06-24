@@ -38,7 +38,7 @@ final class ConfigurationManagerTests: XCTestCase {
         userDefaults.removePersistentDomain(forName: "ConfigurationManagerTests")
         mockFetcher = MockConfigurationFetcher(operationLog: operationLog)
         mockStore = MockConfigurationStore()
-        mockPrivacyConfigManager = MockPrivacyConfigurationManager(operationLog: operationLog, fetchedETag: nil, fetchedData: nil, embeddedDataProvider: MockEmbeddedDataProvider(), localProtection: MockDomainsProtectionStore(), internalUserDecider: DefaultInternalUserDecider())
+        mockPrivacyConfigManager = MockPrivacyConfigurationManager(operationLog: operationLog, fetchedETag: nil, fetchedData: nil, embeddedDataProvider: MockEmbeddedDataProvider(), localProtection: MockDomainsProtectionStore(), internalUserDecider: MockInternalUserDecider())
         mockPrivacyConfigManager.operationLog = operationLog
         mockTrackerDataManager = MockTrackerDataManager(operationLog: operationLog, etag: nil, data: nil, embeddedDataProvider: MockEmbeddedDataProvider())
         mockContentBlockingManager = MockContentBlockerRulesManager(operationLog: operationLog)

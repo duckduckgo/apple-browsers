@@ -952,8 +952,6 @@
 		98E563CA2DE8B32D00E6E75F /* MockSecureVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A82DE8B32D00E6E75F /* MockSecureVault.swift */; };
 		98E563CB2DE8B32D00E6E75F /* MockVariantManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B32DE8B32D00E6E75F /* MockVariantManager.swift */; };
 		98E563CC2DE8B32D00E6E75F /* AppSettingsMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563922DE8B32D00E6E75F /* AppSettingsMock.swift */; };
-		98E563CD2DE8B32D00E6E75F /* MockContentScopeExperimentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563992DE8B32D00E6E75F /* MockContentScopeExperimentManager.swift */; };
-		98E563CE2DE8B32D00E6E75F /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E5639E2DE8B32D00E6E75F /* MockFeatureFlagger.swift */; };
 		98E563CF2DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift */; };
 		98E563D02DE8B32D00E6E75F /* MockOmniBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A22DE8B32D00E6E75F /* MockOmniBar.swift */; };
 		98E563D12DE8B32D00E6E75F /* MockUsageSegmentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B12DE8B32D00E6E75F /* MockUsageSegmentation.swift */; };
@@ -961,7 +959,6 @@
 		98E563D32DE8B32D00E6E75F /* MockURLOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B02DE8B32D00E6E75F /* MockURLOpener.swift */; };
 		98E563D42DE8B32D00E6E75F /* MockPrivacyDataReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A72DE8B32D00E6E75F /* MockPrivacyDataReporter.swift */; };
 		98E563D52DE8B32D00E6E75F /* OnboardingManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B82DE8B32D00E6E75F /* OnboardingManagerMock.swift */; };
-		98E563D62DE8B32D00E6E75F /* MockInternalUserStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A02DE8B32D00E6E75F /* MockInternalUserStoring.swift */; };
 		98E563D72DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563952DE8B32D00E6E75F /* DuckPlayerMocks.swift */; };
 		98E563D82DE8B32D00E6E75F /* MockTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563AE2DE8B32D00E6E75F /* MockTimer.swift */; };
 		98E563D92DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563972DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift */; };
@@ -992,8 +989,6 @@
 		98E563F22DE8B32D00E6E75F /* MockSecureVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A82DE8B32D00E6E75F /* MockSecureVault.swift */; };
 		98E563F32DE8B32D00E6E75F /* MockVariantManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B32DE8B32D00E6E75F /* MockVariantManager.swift */; };
 		98E563F42DE8B32D00E6E75F /* AppSettingsMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563922DE8B32D00E6E75F /* AppSettingsMock.swift */; };
-		98E563F52DE8B32D00E6E75F /* MockContentScopeExperimentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563992DE8B32D00E6E75F /* MockContentScopeExperimentManager.swift */; };
-		98E563F62DE8B32D00E6E75F /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E5639E2DE8B32D00E6E75F /* MockFeatureFlagger.swift */; };
 		98E563F72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift */; };
 		98E563F82DE8B32D00E6E75F /* MockOmniBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A22DE8B32D00E6E75F /* MockOmniBar.swift */; };
 		98E563F92DE8B32D00E6E75F /* MockUsageSegmentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B12DE8B32D00E6E75F /* MockUsageSegmentation.swift */; };
@@ -1001,7 +996,6 @@
 		98E563FB2DE8B32D00E6E75F /* MockURLOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B02DE8B32D00E6E75F /* MockURLOpener.swift */; };
 		98E563FC2DE8B32D00E6E75F /* MockPrivacyDataReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A72DE8B32D00E6E75F /* MockPrivacyDataReporter.swift */; };
 		98E563FD2DE8B32D00E6E75F /* OnboardingManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B82DE8B32D00E6E75F /* OnboardingManagerMock.swift */; };
-		98E563FE2DE8B32D00E6E75F /* MockInternalUserStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A02DE8B32D00E6E75F /* MockInternalUserStoring.swift */; };
 		98E563FF2DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563952DE8B32D00E6E75F /* DuckPlayerMocks.swift */; };
 		98E564002DE8B32D00E6E75F /* MockTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563AE2DE8B32D00E6E75F /* MockTimer.swift */; };
 		98E564012DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563972DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift */; };
@@ -1032,8 +1026,6 @@
 		98E5641A2DE8B32D00E6E75F /* MockSecureVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A82DE8B32D00E6E75F /* MockSecureVault.swift */; };
 		98E5641B2DE8B32D00E6E75F /* MockVariantManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B32DE8B32D00E6E75F /* MockVariantManager.swift */; };
 		98E5641C2DE8B32D00E6E75F /* AppSettingsMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563922DE8B32D00E6E75F /* AppSettingsMock.swift */; };
-		98E5641D2DE8B32D00E6E75F /* MockContentScopeExperimentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563992DE8B32D00E6E75F /* MockContentScopeExperimentManager.swift */; };
-		98E5641E2DE8B32D00E6E75F /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E5639E2DE8B32D00E6E75F /* MockFeatureFlagger.swift */; };
 		98E5641F2DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift */; };
 		98E564202DE8B32D00E6E75F /* MockOmniBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A22DE8B32D00E6E75F /* MockOmniBar.swift */; };
 		98E564212DE8B32D00E6E75F /* MockUsageSegmentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B12DE8B32D00E6E75F /* MockUsageSegmentation.swift */; };
@@ -1041,7 +1033,6 @@
 		98E564232DE8B32D00E6E75F /* MockURLOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B02DE8B32D00E6E75F /* MockURLOpener.swift */; };
 		98E564242DE8B32D00E6E75F /* MockPrivacyDataReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A72DE8B32D00E6E75F /* MockPrivacyDataReporter.swift */; };
 		98E564252DE8B32D00E6E75F /* OnboardingManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B82DE8B32D00E6E75F /* OnboardingManagerMock.swift */; };
-		98E564262DE8B32D00E6E75F /* MockInternalUserStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A02DE8B32D00E6E75F /* MockInternalUserStoring.swift */; };
 		98E564272DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563952DE8B32D00E6E75F /* DuckPlayerMocks.swift */; };
 		98E564282DE8B32D00E6E75F /* MockTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563AE2DE8B32D00E6E75F /* MockTimer.swift */; };
 		98E564292DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563972DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift */; };
@@ -1064,7 +1055,6 @@
 		98E5644E2DE8DDDC00E6E75F /* MockBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563982DE8B32D00E6E75F /* MockBundle.swift */; };
 		98E5644F2DE8DDDC00E6E75F /* MockOmniBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A22DE8B32D00E6E75F /* MockOmniBar.swift */; };
 		98E564502DE8DDDC00E6E75F /* MockMessageNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A12DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift */; };
-		98E564512DE8DDDC00E6E75F /* MockContentScopeExperimentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563992DE8B32D00E6E75F /* MockContentScopeExperimentManager.swift */; };
 		98E564522DE8DDDC00E6E75F /* OnboardingFirePixelMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B62DE8B32D00E6E75F /* OnboardingFirePixelMock.swift */; };
 		98E564532DE8DDDC00E6E75F /* MockPersistentPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A42DE8B32D00E6E75F /* MockPersistentPixel.swift */; };
 		98E564542DE8DDDC00E6E75F /* MockFeatureDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E5639D2DE8B32D00E6E75F /* MockFeatureDiscovery.swift */; };
@@ -1084,12 +1074,10 @@
 		98E564622DE8DDDC00E6E75F /* MockUserAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B22DE8B32D00E6E75F /* MockUserAgent.swift */; };
 		98E564632DE8DDDC00E6E75F /* MockStatisticsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A92DE8B32D00E6E75F /* MockStatisticsStore.swift */; };
 		98E564642DE8DDDC00E6E75F /* MockVoiceSearchHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B42DE8B32D00E6E75F /* MockVoiceSearchHelper.swift */; };
-		98E564652DE8DDDC00E6E75F /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E5639E2DE8B32D00E6E75F /* MockFeatureFlagger.swift */; };
 		98E564662DE8DDDC00E6E75F /* MockTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563AE2DE8B32D00E6E75F /* MockTimer.swift */; };
 		98E564672DE8DDDC00E6E75F /* OnboardingHostingControllerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563B72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift */; };
 		98E564682DE8DDDC00E6E75F /* MockDataExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E5639A2DE8B32D00E6E75F /* MockDataExtensions.swift */; };
 		98E564692DE8DDDC00E6E75F /* MockPrivacyConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A62DE8B32D00E6E75F /* MockPrivacyConfiguration.swift */; };
-		98E5646A2DE8DDDC00E6E75F /* MockInternalUserStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A02DE8B32D00E6E75F /* MockInternalUserStoring.swift */; };
 		98E5646B2DE8DDDC00E6E75F /* DuckPlayerMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563952DE8B32D00E6E75F /* DuckPlayerMocks.swift */; };
 		98E5646C2DE8DDDC00E6E75F /* MockSecureVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563A82DE8B32D00E6E75F /* MockSecureVault.swift */; };
 		98E5646D2DE8DDDC00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E563932DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift */; };
@@ -1688,6 +1676,10 @@
 		F194FAED1F14E2B3009B4DF8 /* UIFontExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = F194FAEC1F14E2B3009B4DF8 /* UIFontExtension.swift */; };
 		F194FAFB1F14E622009B4DF8 /* UIFontExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F194FAFA1F14E622009B4DF8 /* UIFontExtensionTests.swift */; };
 		F198D78E1E39762C0088DA8A /* StringExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F198D78D1E39762C0088DA8A /* StringExtensionTests.swift */; };
+		F1A83D862E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A83D852E0AB27E00054B03 /* MockFeatureFlagger.swift */; };
+		F1A83D872E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A83D852E0AB27E00054B03 /* MockFeatureFlagger.swift */; };
+		F1A83D882E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A83D852E0AB27E00054B03 /* MockFeatureFlagger.swift */; };
+		F1A83D892E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A83D852E0AB27E00054B03 /* MockFeatureFlagger.swift */; };
 		F1A886781F29394E0096251E /* WebCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A886771F29394E0096251E /* WebCacheManager.swift */; };
 		F1AE54E81F0425FC00D9A700 /* AuthenticationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AE54E71F0425FC00D9A700 /* AuthenticationViewController.swift */; };
 		F1BDDBFD2C340D9C00459306 /* SubscriptionContainerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1BDDBF92C340D9C00459306 /* SubscriptionContainerViewModelTests.swift */; };
@@ -3227,14 +3219,11 @@
 		98E563962DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAIChatSettingsProvider.swift; sourceTree = "<group>"; };
 		98E563972DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBookmarksCoreDataStorage.swift; sourceTree = "<group>"; };
 		98E563982DE8B32D00E6E75F /* MockBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockBundle.swift; sourceTree = "<group>"; };
-		98E563992DE8B32D00E6E75F /* MockContentScopeExperimentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockContentScopeExperimentManager.swift; sourceTree = "<group>"; };
 		98E5639A2DE8B32D00E6E75F /* MockDataExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDataExtensions.swift; sourceTree = "<group>"; };
 		98E5639B2DE8B32D00E6E75F /* MockDDGSyncing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDDGSyncing.swift; sourceTree = "<group>"; };
 		98E5639C2DE8B32D00E6E75F /* MockFaviconStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFaviconStore.swift; sourceTree = "<group>"; };
 		98E5639D2DE8B32D00E6E75F /* MockFeatureDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFeatureDiscovery.swift; sourceTree = "<group>"; };
-		98E5639E2DE8B32D00E6E75F /* MockFeatureFlagger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFeatureFlagger.swift; sourceTree = "<group>"; };
 		98E5639F2DE8B32D00E6E75F /* MockFireproofing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFireproofing.swift; sourceTree = "<group>"; };
-		98E563A02DE8B32D00E6E75F /* MockInternalUserStoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockInternalUserStoring.swift; sourceTree = "<group>"; };
 		98E563A12DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockMessageNavigationDelegate.swift; sourceTree = "<group>"; };
 		98E563A22DE8B32D00E6E75F /* MockOmniBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockOmniBar.swift; sourceTree = "<group>"; };
 		98E563A32DE8B32D00E6E75F /* MockOmnibarDependency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockOmnibarDependency.swift; sourceTree = "<group>"; };
@@ -3902,6 +3891,7 @@
 		F197EA3B1E6885F20029BDC1 /* TextFieldWithInsets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TextFieldWithInsets.swift; path = ../Core/TextFieldWithInsets.swift; sourceTree = "<group>"; };
 		F198D78D1E39762C0088DA8A /* StringExtensionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringExtensionTests.swift; sourceTree = "<group>"; };
 		F198D7971E3A45D90088DA8A /* WKWebViewConfigurationExtensionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WKWebViewConfigurationExtensionTests.swift; sourceTree = "<group>"; };
+		F1A83D852E0AB27E00054B03 /* MockFeatureFlagger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFeatureFlagger.swift; sourceTree = "<group>"; };
 		F1A886771F29394E0096251E /* WebCacheManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebCacheManager.swift; sourceTree = "<group>"; };
 		F1AA54601E48D90700223211 /* NotificationCenter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NotificationCenter.framework; path = System/Library/Frameworks/NotificationCenter.framework; sourceTree = SDKROOT; };
 		F1AE54E71F0425FC00D9A700 /* AuthenticationViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthenticationViewController.swift; sourceTree = "<group>"; };
@@ -6186,14 +6176,12 @@
 				98E563962DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift */,
 				98E563972DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift */,
 				98E563982DE8B32D00E6E75F /* MockBundle.swift */,
-				98E563992DE8B32D00E6E75F /* MockContentScopeExperimentManager.swift */,
 				98E5639A2DE8B32D00E6E75F /* MockDataExtensions.swift */,
 				98E5639B2DE8B32D00E6E75F /* MockDDGSyncing.swift */,
 				98E5639C2DE8B32D00E6E75F /* MockFaviconStore.swift */,
+				F1A83D852E0AB27E00054B03 /* MockFeatureFlagger.swift */,
 				98E5639D2DE8B32D00E6E75F /* MockFeatureDiscovery.swift */,
-				98E5639E2DE8B32D00E6E75F /* MockFeatureFlagger.swift */,
 				98E5639F2DE8B32D00E6E75F /* MockFireproofing.swift */,
-				98E563A02DE8B32D00E6E75F /* MockInternalUserStoring.swift */,
 				98E563A12DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift */,
 				98E563A22DE8B32D00E6E75F /* MockOmniBar.swift */,
 				98E563A32DE8B32D00E6E75F /* MockOmnibarDependency.swift */,
@@ -10482,8 +10470,6 @@
 				98E563F22DE8B32D00E6E75F /* MockSecureVault.swift in Sources */,
 				98E563F32DE8B32D00E6E75F /* MockVariantManager.swift in Sources */,
 				98E563F42DE8B32D00E6E75F /* AppSettingsMock.swift in Sources */,
-				98E563F52DE8B32D00E6E75F /* MockContentScopeExperimentManager.swift in Sources */,
-				98E563F62DE8B32D00E6E75F /* MockFeatureFlagger.swift in Sources */,
 				98E564A22DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,
 				98E563F72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift in Sources */,
 				98E563F82DE8B32D00E6E75F /* MockOmniBar.swift in Sources */,
@@ -10492,7 +10478,6 @@
 				98E563FB2DE8B32D00E6E75F /* MockURLOpener.swift in Sources */,
 				98E563FC2DE8B32D00E6E75F /* MockPrivacyDataReporter.swift in Sources */,
 				98E563FD2DE8B32D00E6E75F /* OnboardingManagerMock.swift in Sources */,
-				98E563FE2DE8B32D00E6E75F /* MockInternalUserStoring.swift in Sources */,
 				56A3CDE52DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */,
 				98E563FF2DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				98E564002DE8B32D00E6E75F /* MockTimer.swift in Sources */,
@@ -10506,6 +10491,7 @@
 				98E564082DE8B32D00E6E75F /* OnboardingPixelReporterMock.swift in Sources */,
 				98E564092DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				9F4CC5172C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift in Sources */,
+				F1A83D872E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,
 				F13B4BFB1F18E3D900814661 /* TabsModelPersistenceTests.swift in Sources */,
 				9FD6E61B2DFA739200C2B032 /* MockAVPictureInPictureController.swift in Sources */,
 				8528AE7E212EF5FF00D0BD74 /* AppRatingPromptTests.swift in Sources */,
@@ -10671,6 +10657,7 @@
 				98E5640D2DE8B32D00E6E75F /* MockDataExtensions.swift in Sources */,
 				98E5640E2DE8B32D00E6E75F /* MockBundle.swift in Sources */,
 				98E5640F2DE8B32D00E6E75F /* MockTabInteractionStateSource.swift in Sources */,
+				F1A83D862E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,
 				98E564102DE8B32D00E6E75F /* MockUserAgent.swift in Sources */,
 				98E564112DE8B32D00E6E75F /* MockVoiceSearchHelper.swift in Sources */,
 				98E564122DE8B32D00E6E75F /* MockTextZoomCoordinator.swift in Sources */,
@@ -10684,8 +10671,6 @@
 				98E5641A2DE8B32D00E6E75F /* MockSecureVault.swift in Sources */,
 				98E5641B2DE8B32D00E6E75F /* MockVariantManager.swift in Sources */,
 				98E5641C2DE8B32D00E6E75F /* AppSettingsMock.swift in Sources */,
-				98E5641D2DE8B32D00E6E75F /* MockContentScopeExperimentManager.swift in Sources */,
-				98E5641E2DE8B32D00E6E75F /* MockFeatureFlagger.swift in Sources */,
 				98E5641F2DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift in Sources */,
 				986CD53D2DE8FA1400AFA98A /* ConfigurationMocks.swift in Sources */,
 				98E564202DE8B32D00E6E75F /* MockOmniBar.swift in Sources */,
@@ -10699,7 +10684,6 @@
 				98E564BF2DE8F34E00E6E75F /* MockMaliciousSiteProtectionManager.swift in Sources */,
 				98E564C02DE8F34E00E6E75F /* TimeTraveller.swift in Sources */,
 				98E564C12DE8F34E00E6E75F /* MaliciousSiteProtectionMocks.swift in Sources */,
-				98E564262DE8B32D00E6E75F /* MockInternalUserStoring.swift in Sources */,
 				98E564272DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				98E564282DE8B32D00E6E75F /* MockTimer.swift in Sources */,
 				98E564292DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */,
@@ -10771,6 +10755,7 @@
 				98E5634A2DE8B04D00E6E75F /* UserDefaultsExtension.swift in Sources */,
 				98E5634B2DE8B04D00E6E75F /* JsonTestDataLoader.swift in Sources */,
 				98E5634C2DE8B04D00E6E75F /* SwiftUITestUtilities.swift in Sources */,
+				F1A83D882E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,
 				98E5634D2DE8B04D00E6E75F /* CoreDataTestUtilities.swift in Sources */,
 				98424AAB2CED4FF10071C7DB /* CookieStorageTests.swift in Sources */,
 				98E563BA2DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift in Sources */,
@@ -10794,12 +10779,10 @@
 				98E563CA2DE8B32D00E6E75F /* MockSecureVault.swift in Sources */,
 				98E563CB2DE8B32D00E6E75F /* MockVariantManager.swift in Sources */,
 				98E563CC2DE8B32D00E6E75F /* AppSettingsMock.swift in Sources */,
-				98E563CD2DE8B32D00E6E75F /* MockContentScopeExperimentManager.swift in Sources */,
 				986CD5542DE913EE00AFA98A /* MockFavoritesListInteracting.swift in Sources */,
 				98E564B62DE8F34E00E6E75F /* MockMaliciousSiteProtectionManager.swift in Sources */,
 				98E564B72DE8F34E00E6E75F /* TimeTraveller.swift in Sources */,
 				98E564B82DE8F34E00E6E75F /* MaliciousSiteProtectionMocks.swift in Sources */,
-				98E563CE2DE8B32D00E6E75F /* MockFeatureFlagger.swift in Sources */,
 				98E563CF2DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift in Sources */,
 				98E563D02DE8B32D00E6E75F /* MockOmniBar.swift in Sources */,
 				98E563D12DE8B32D00E6E75F /* MockUsageSegmentation.swift in Sources */,
@@ -10808,7 +10791,6 @@
 				98E563D42DE8B32D00E6E75F /* MockPrivacyDataReporter.swift in Sources */,
 				98E564AD2DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift in Sources */,
 				98E563D52DE8B32D00E6E75F /* OnboardingManagerMock.swift in Sources */,
-				98E563D62DE8B32D00E6E75F /* MockInternalUserStoring.swift in Sources */,
 				98E563D72DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				98E563D82DE8B32D00E6E75F /* MockTimer.swift in Sources */,
 				98E563D92DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */,
@@ -10849,7 +10831,6 @@
 				98E5644F2DE8DDDC00E6E75F /* MockOmniBar.swift in Sources */,
 				98E564502DE8DDDC00E6E75F /* MockMessageNavigationDelegate.swift in Sources */,
 				98E564AA2DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift in Sources */,
-				98E564512DE8DDDC00E6E75F /* MockContentScopeExperimentManager.swift in Sources */,
 				9876DF2C2DEEE21700E30713 /* MockThemeManager.swift in Sources */,
 				98E564522DE8DDDC00E6E75F /* OnboardingFirePixelMock.swift in Sources */,
 				986CD5402DE8FA1400AFA98A /* ConfigurationMocks.swift in Sources */,
@@ -10879,13 +10860,11 @@
 				98E564622DE8DDDC00E6E75F /* MockUserAgent.swift in Sources */,
 				98E564632DE8DDDC00E6E75F /* MockStatisticsStore.swift in Sources */,
 				98E564642DE8DDDC00E6E75F /* MockVoiceSearchHelper.swift in Sources */,
-				98E564652DE8DDDC00E6E75F /* MockFeatureFlagger.swift in Sources */,
 				986CD5522DE913EE00AFA98A /* MockFavoritesListInteracting.swift in Sources */,
 				98E564662DE8DDDC00E6E75F /* MockTimer.swift in Sources */,
 				98E564672DE8DDDC00E6E75F /* OnboardingHostingControllerMock.swift in Sources */,
 				98E564682DE8DDDC00E6E75F /* MockDataExtensions.swift in Sources */,
 				98E564692DE8DDDC00E6E75F /* MockPrivacyConfiguration.swift in Sources */,
-				98E5646A2DE8DDDC00E6E75F /* MockInternalUserStoring.swift in Sources */,
 				98E5646B2DE8DDDC00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				98E5646C2DE8DDDC00E6E75F /* MockSecureVault.swift in Sources */,
 				98E564762DE8DDE200E6E75F /* JsonTestDataLoader.swift in Sources */,
@@ -10902,6 +10881,7 @@
 				98E5647D2DE8DDE200E6E75F /* SwiftUITestUtilities.swift in Sources */,
 				98E5647E2DE8DDE200E6E75F /* TestDataLoader.swift in Sources */,
 				98E5647F2DE8DDE200E6E75F /* HtmlTestDataLoader.swift in Sources */,
+				F1A83D892E0AB27E00054B03 /* MockFeatureFlagger.swift in Sources */,
 				98E564802DE8DDE200E6E75F /* CoreDataTestUtilities.swift in Sources */,
 				98E5646D2DE8DDDC00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				98E5646E2DE8DDDC00E6E75F /* OnboardingManagerMock.swift in Sources */,

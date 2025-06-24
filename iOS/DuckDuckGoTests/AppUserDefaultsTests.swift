@@ -108,13 +108,13 @@ class AppUserDefaultsTests: XCTestCase {
 
     func testDefaultAutofillStateIsFalse() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = createFeatureFlagger(withSubfeatureEnabled: false)
+        appUserDefaults.featureFlagger = MockFeatureFlagger()
         XCTAssertFalse(appUserDefaults.autofillCredentialsEnabled)
     }
 
     func testWhenAutofillCredentialsIsDisabledAndHasNotBeenTurnedOnAutomaticallyBeforeWhenSavePromptShownThenDefaultAutofillStateIsFalse() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = createFeatureFlagger(withSubfeatureEnabled: false)
+        appUserDefaults.featureFlagger = MockFeatureFlagger()
         appUserDefaults.autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary = false
         appUserDefaults.autofillCredentialsSavePromptShowAtLeastOnce = true
 
@@ -123,7 +123,7 @@ class AppUserDefaultsTests: XCTestCase {
 
     func testWhenAutofillCredentialsIsDisabledAndHasNotBeenTurnedOnAutomaticallyBeforeAndPromptHasNotBeenSeenAndIsNotNewInstallThenDefaultAutofillStateIsFalse() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = createFeatureFlagger(withSubfeatureEnabled: false)
+        appUserDefaults.featureFlagger = MockFeatureFlagger()
         appUserDefaults.autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary = false
         appUserDefaults.autofillCredentialsSavePromptShowAtLeastOnce = false
         appUserDefaults.autofillIsNewInstallForOnByDefault = false
@@ -136,7 +136,7 @@ class AppUserDefaultsTests: XCTestCase {
         appUserDefaults.autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary = false
         appUserDefaults.autofillCredentialsSavePromptShowAtLeastOnce = false
         appUserDefaults.autofillIsNewInstallForOnByDefault = true
-        let featureFlagger = createFeatureFlagger(withSubfeatureEnabled: false)
+        let featureFlagger = MockFeatureFlagger()
         appUserDefaults.featureFlagger = featureFlagger
 
         XCTAssertFalse(appUserDefaults.autofillCredentialsEnabled)
@@ -193,7 +193,7 @@ class AppUserDefaultsTests: XCTestCase {
 
     func testDefaultAutoconsentStateIsFalse_WhenNotInRollout() {
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.featureFlagger = createFeatureFlagger(withSubfeatureEnabled: false)
+        appUserDefaults.featureFlagger = MockFeatureFlagger()
         XCTAssertFalse(appUserDefaults.autoconsentEnabled)
     }
 
@@ -214,20 +214,12 @@ class AppUserDefaultsTests: XCTestCase {
 
         // When setting enabled by user and rollout disabled
         appUserDefaults.autoconsentEnabled = true
-        appUserDefaults.featureFlagger = createFeatureFlagger(withSubfeatureEnabled: false)
+        appUserDefaults.featureFlagger = MockFeatureFlagger()
 
         XCTAssertTrue(appUserDefaults.autoconsentEnabled)
     }
 
     // MARK: - Mock Creation
-
-    private func createFeatureFlagger(withSubfeatureEnabled enabled: Bool) -> DefaultFeatureFlagger {
-        let mockManager = MockPrivacyConfigurationManager()
-        mockManager.privacyConfig = mockConfiguration(subfeatureEnabled: enabled)
-
-        let internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
-        return DefaultFeatureFlagger(internalUserDecider: internalUserDecider, privacyConfigManager: mockManager, experimentManager: nil)
-    }
 
     private func mockConfiguration(subfeatureEnabled: Bool) -> PrivacyConfiguration {
         let mockPrivacyConfiguration = MockPrivacyConfiguration()

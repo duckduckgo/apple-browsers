@@ -51,6 +51,7 @@ import SyncDataProviders
 import UserNotifications
 import VPNAppState
 import WebKit
+import ContentScopeScripts
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -381,21 +382,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        let featureFlagger = DefaultFeatureFlagger(
-            internalUserDecider: internalUserDecider,
-            privacyConfigManager: privacyConfigurationManager,
-            localOverrides: FeatureFlagLocalOverrides(
-                keyValueStore: UserDefaults.appConfiguration,
-                actionHandler: featureFlagOverridesPublishingHandler
-            ),
-            experimentManager: ExperimentCohortsManager(
-                store: ExperimentsDataStore(),
-                fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
-            ),
-            for: FeatureFlag.self
-        )
-        self.featureFlagger = featureFlagger
-        self.contentScopeExperimentsManager = featureFlagger
+        var featureFlagger: FeatureFlagger
+        if AppVersion.runType.isTests {
+            let mockFeatureFlagger = MockFeatureFlagger()
+            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
+            self.featureFlagger = mockFeatureFlagger
+            featureFlagger = mockFeatureFlagger
+        } else {
+            let defaultFeatureFlagger = DefaultFeatureFlagger(
+                internalUserDecider: internalUserDecider,
+                privacyConfigManager: privacyConfigurationManager,
+                localOverrides: FeatureFlagLocalOverrides(
+                    keyValueStore: UserDefaults.appConfiguration,
+                    actionHandler: featureFlagOverridesPublishingHandler
+                ),
+                experimentManager: ExperimentCohortsManager(
+                    store: ExperimentsDataStore(),
+                    fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
+                ),
+                for: FeatureFlag.self
+            )
+            self.featureFlagger = defaultFeatureFlagger
+            self.contentScopeExperimentsManager = defaultFeatureFlagger
+            featureFlagger = defaultFeatureFlagger
+        }
 
         pinnedTabsManagerProvider = PinnedTabsManagerProvider()
 

@@ -59,7 +59,7 @@ final class URLParameterTests: XCTestCase {
                                            fetchedData: nil,
                                            embeddedDataProvider: embeddedDataProvider,
                                            localProtection: localProtection,
-                                           internalUserDecider: DefaultInternalUserDecider())
+                                           internalUserDecider: MockInternalUserDecider())
     }
 
     private lazy var urlParamTestSuite: URLParamRefTests = {

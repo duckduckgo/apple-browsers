@@ -18,6 +18,7 @@
 
 import Foundation
 import Combine
+import Common
 
 public protocol InternalUserDecider {
 
@@ -38,6 +39,11 @@ public class DefaultInternalUserDecider: InternalUserDecider {
     private let isInternalUserSubject: CurrentValueSubject<Bool, Never>
 
     public init(store: InternalUserStoring) {
+//#if DEBUG
+//        assert(!AppVersion.runType.isTests, {
+//            "Use MockInternalUserDecider instead in unit tests or previews:\n" + Thread.callStackSymbols.description
+//        }())
+//#endif
         self.store = store
         isInternalUserSubject = CurrentValueSubject(store.isInternalUser)
     }

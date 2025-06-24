@@ -30,7 +30,7 @@ final class DuckPlayerContingencyHandlerTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
 
         let handler = DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: manager)
         XCTAssertTrue(handler.shouldDisplayContingencyMessage)
@@ -44,7 +44,7 @@ final class DuckPlayerContingencyHandlerTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
 
         let handler = DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: manager)
         XCTAssertFalse(handler.shouldDisplayContingencyMessage)
@@ -58,7 +58,7 @@ final class DuckPlayerContingencyHandlerTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
 
         let handler = DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: manager)
         XCTAssertFalse(handler.shouldDisplayContingencyMessage)
@@ -72,7 +72,7 @@ final class DuckPlayerContingencyHandlerTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
 
         let handler = DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: manager)
         XCTAssertFalse(handler.shouldDisplayContingencyMessage)
@@ -86,7 +86,7 @@ final class DuckPlayerContingencyHandlerTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
 
         let handler = DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: manager)
         XCTAssertEqual(handler.learnMoreURL, URL(string: MockConfig.learnMoreURL))
@@ -99,7 +99,7 @@ final class DuckPlayerContingencyHandlerTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
 
         let handler = DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: manager)
         XCTAssertNil(handler.learnMoreURL)
@@ -266,10 +266,6 @@ private final class MockDomainsProtectionStore: DomainsProtectionStore {
     func enableProtection(forDomain domain: String) {
         unprotectedDomains.remove(domain)
     }
-}
-
-private final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
 }
 
 extension DefaultInternalUserDecider {

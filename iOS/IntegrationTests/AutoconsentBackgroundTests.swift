@@ -64,7 +64,7 @@ final class AutoconsentBackgroundTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
         return AutoconsentUserScript(config: manager.privacyConfig,
                                      preferences: MockAutoconsentPreferences(),
                                      ignoreNonHTTPURLs: false)

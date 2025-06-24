@@ -31,7 +31,7 @@ struct AutofillTestHelper {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: DefaultInternalUserDecider(store: MockInternalUserStoring()))
         return manager
     }
 }

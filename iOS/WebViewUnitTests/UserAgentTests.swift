@@ -123,7 +123,7 @@ final class UserAgentTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: mockProtectionStore,
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
 
         privacyConfig = manager.privacyConfig
     }
@@ -197,8 +197,8 @@ final class UserAgentTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: mockProtectionStore,
-                                                  internalUserDecider: DefaultInternalUserDecider())
-        
+                                                  internalUserDecider: MockInternalUserDecider())
+
         let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
         XCTAssertEqual(ExpectedAgent.mobileNoApplication, testee.agent(forUrl: Constants.url, isDesktop: false,
                                                                        privacyConfig: manager.privacyConfig))
@@ -214,7 +214,7 @@ final class UserAgentTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: mockProtectionStore,
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
         return manager.privacyConfig
     }
 

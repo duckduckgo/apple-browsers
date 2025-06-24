@@ -23,6 +23,7 @@ import Persistence
 import CoreData
 import Bookmarks
 import Core
+import BrowserServicesKit
 
 @testable import RemoteMessaging
 @testable import DuckDuckGo

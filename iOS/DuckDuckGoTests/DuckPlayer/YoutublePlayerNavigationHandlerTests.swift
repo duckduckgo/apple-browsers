@@ -44,11 +44,11 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         mockAppSettings = AppSettingsMock()
         mockAppSettings.duckPlayerOpenInNewTab = false // Disable openInNewTab
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
+        featureFlagger = MockDuckPlayerFeatureFlagger()
         playerSettings = MockDuckPlayerSettings(appSettings: mockAppSettings,
                                                 privacyConfigManager: mockPrivacyConfig,
-                                                featureFlagger: MockDuckPlayerFeatureFlagger(),
+                                                featureFlagger: featureFlagger,
                                                 internalUserDecider: MockInternalUserDecider())
-        featureFlagger = MockDuckPlayerFeatureFlagger()
         player = MockDuckPlayer(settings: playerSettings, featureFlagger: featureFlagger)
 
         // Create and assign the mock tab navigator

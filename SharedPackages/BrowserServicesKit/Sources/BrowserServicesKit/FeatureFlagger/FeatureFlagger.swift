@@ -308,7 +308,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         for: Flag.Type
     ) {
 #if DEBUG
-        assert(![.unitTests, .xcPreviews].contains(AppVersion.runType), {
+        assert(!AppVersion.runType.isTests, {
             "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
         }())
 #endif

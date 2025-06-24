@@ -62,7 +62,7 @@ class MockPrivacyConfigurationManaging: PrivacyConfigurationManaging {
         privacyConfig as! MockPrivacyConfiguration
     }
 
-    var internalUserDecider: InternalUserDecider = InternalUserDeciderMock()
+    var internalUserDecider: InternalUserDecider = MockInternalUserDecider()
 
     func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
         return PrivacyConfigurationManager.ReloadResult.downloaded

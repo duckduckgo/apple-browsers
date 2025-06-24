@@ -64,6 +64,7 @@ public enum NetworkProtectionError: LocalizedError, CustomNSError {
 
     // Subscription errors
     case vpnAccessRevoked(Error)
+    case unmanagedSubscriptionError(Error)
 
     // Unhandled error
     case unhandledError(function: String, line: Int, error: Error)
@@ -107,6 +108,7 @@ public enum NetworkProtectionError: LocalizedError, CustomNSError {
         case .noAuthTokenFound: return 400
             // 500+ Subscription errors
         case .vpnAccessRevoked: return 500
+        case .unmanagedSubscriptionError: return 501
             // 600+ Unhandled errors
         case .unhandledError: return 600
         }
@@ -151,7 +153,8 @@ public enum NetworkProtectionError: LocalizedError, CustomNSError {
                 .failedToFetchServerStatus(let error),
                 .failedToParseServerStatusResponse(let error),
                 .noAuthTokenFound(let error),
-                .vpnAccessRevoked(let error):
+                .vpnAccessRevoked(let error),
+                .unmanagedSubscriptionError(let error):
             return [
                 NSUnderlyingErrorKey: error
             ]

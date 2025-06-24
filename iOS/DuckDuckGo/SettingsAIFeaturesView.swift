@@ -1,5 +1,5 @@
 //
-//  SettingsAIChatView.swift
+//  SettingsAIFeaturesView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -22,7 +22,7 @@ import DesignResourcesKit
 import Core
 import DesignResourcesKitIcons
 
-struct SettingsAIChatView: View {
+struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var body: some View {

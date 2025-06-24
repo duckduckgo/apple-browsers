@@ -177,7 +177,7 @@
 		317045C02858C6B90016ED1F /* AutofillInterfaceEmailTruncatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317045BF2858C6B90016ED1F /* AutofillInterfaceEmailTruncatorTests.swift */; };
 		317A247F2D8336650033A0D6 /* DownloadsDirectoryHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317A247E2D8336650033A0D6 /* DownloadsDirectoryHandling.swift */; };
 		317A24812D8339C10033A0D6 /* DownloadsDirectoryHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317A24802D8339C10033A0D6 /* DownloadsDirectoryHandlerTests.swift */; };
-		317CA3432CFF82E100F88848 /* SettingsAIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317CA3422CFF82DB00F88848 /* SettingsAIChatView.swift */; };
+		317CA3432CFF82E100F88848 /* SettingsAIFeaturesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317CA3422CFF82DB00F88848 /* SettingsAIFeaturesView.swift */; };
 		317DF6082D01E7B900DE0145 /* RoundedPageSheetContainerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317DF6072D01E7B900DE0145 /* RoundedPageSheetContainerViewController.swift */; };
 		317DF60B2D01E7D600DE0145 /* RoundedPageSheetPresentationAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317DF60A2D01E7D600DE0145 /* RoundedPageSheetPresentationAnimator.swift */; };
 		317F5F982C94A9EB0081666F /* MarketplaceAdPostbackStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317F5F972C94A9EB0081666F /* MarketplaceAdPostbackStorage.swift */; };
@@ -2084,7 +2084,7 @@
 		31794BFF2821DFB600F18633 /* DuckUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = DuckUI; sourceTree = "<group>"; };
 		317A247E2D8336650033A0D6 /* DownloadsDirectoryHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsDirectoryHandling.swift; sourceTree = "<group>"; };
 		317A24802D8339C10033A0D6 /* DownloadsDirectoryHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsDirectoryHandlerTests.swift; sourceTree = "<group>"; };
-		317CA3422CFF82DB00F88848 /* SettingsAIChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAIChatView.swift; sourceTree = "<group>"; };
+		317CA3422CFF82DB00F88848 /* SettingsAIFeaturesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAIFeaturesView.swift; sourceTree = "<group>"; };
 		317DF6072D01E7B900DE0145 /* RoundedPageSheetContainerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedPageSheetContainerViewController.swift; sourceTree = "<group>"; };
 		317DF60A2D01E7D600DE0145 /* RoundedPageSheetPresentationAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedPageSheetPresentationAnimator.swift; sourceTree = "<group>"; };
 		317F5F972C94A9EB0081666F /* MarketplaceAdPostbackStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceAdPostbackStorage.swift; sourceTree = "<group>"; };
@@ -4257,7 +4257,7 @@
 				1DEAADEB2BA45B4400E25A97 /* SettingsAccessibilityView.swift */,
 				1DEAADED2BA45DFE00E25A97 /* SettingsDataClearingView.swift */,
 				D65625A02C232F5E006EF297 /* SettingsDuckPlayerView.swift */,
-				317CA3422CFF82DB00F88848 /* SettingsAIChatView.swift */,
+				317CA3422CFF82DB00F88848 /* SettingsAIFeaturesView.swift */,
 			);
 			name = MainSettings;
 			sourceTree = "<group>";
@@ -10259,7 +10259,7 @@
 				B623C1C22862CA9E0043013E /* DownloadSession.swift in Sources */,
 				6F5938982DB1028200C8C068 /* BrowserChromeButton.swift in Sources */,
 				7B16810C2D10CF44005EAE24 /* WidgetVPNIntents.swift in Sources */,
-				317CA3432CFF82E100F88848 /* SettingsAIChatView.swift in Sources */,
+				317CA3432CFF82E100F88848 /* SettingsAIFeaturesView.swift in Sources */,
 				9F7CFF7F2C8A94F70012833E /* OnboardingView+AddressBarPositionContent.swift in Sources */,
 				985892522260B1B200EEB31B /* ProgressView.swift in Sources */,
 				85BA585A1F3506AE00C6E8CA /* AppSettings.swift in Sources */,

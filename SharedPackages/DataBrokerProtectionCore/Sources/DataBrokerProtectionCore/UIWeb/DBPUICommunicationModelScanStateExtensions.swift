@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Algorithms
 
 public extension DBPUIInitialScanState {
 
@@ -122,8 +123,7 @@ public extension DBPUIScanAndOptOutMaintenanceState {
     }
 
     private static func getLastScansInformation(brokerProfileQueryData: [BrokerProfileQueryData],
-                                                currentDate: Date = Date(),
-                                                format: String = "dd/MM/yyyy") -> DBPUIScanDate {
+                                                currentDate: Date = Date()) -> DBPUIScanDate {
         let eightDaysBeforeToday = currentDate.addingTimeInterval(-8 * 24 * 60 * 60)
         let brokers = brokerProfileQueryData.uiBrokersSortedByScanLastRunDateWhereScansRanBetween(earlierDate: eightDaysBeforeToday,
                                                                                                   laterDate: currentDate)
@@ -134,8 +134,7 @@ public extension DBPUIScanAndOptOutMaintenanceState {
     }
 
     private static func getNextScansInformation(brokerProfileQueryData: [BrokerProfileQueryData],
-                                                currentDate: Date = Date(),
-                                                format: String = "dd/MM/yyyy") -> DBPUIScanDate {
+                                                currentDate: Date = Date()) -> DBPUIScanDate {
         let eightDaysAfterToday = currentDate.addingTimeInterval(8 * 24 * 60 * 60)
         let brokers = brokerProfileQueryData.uiBrokersSortedByScanPreferredRunDateWhereDateIsBetween(earlierDate: currentDate,
                                                                                                      laterDate: eightDaysAfterToday)
@@ -199,7 +198,7 @@ private extension Array where Element == BrokerProfileQueryData {
         let sortedElements = elementsSortedByScanLastRunDateWhereScansRanBetween(earlierDate: earlierDate,
                                                                                  laterDate: laterDate)
 
-        // Filter down to brokers and relevent mirror sites
+        // Filter down to brokers and relevant mirror sites
         let brokers = sortedElements.flatMap { queryData in
             let dataBroker = queryData.dataBroker
             let lastRunDate = queryData.scanJobData.lastRunDate!
@@ -218,7 +217,8 @@ private extension Array where Element == BrokerProfileQueryData {
             return [uiDataBroker] + uiMirrorSites
         }
 
-        return brokers.uniqued()
+        let uniqued = brokers.uniqued()
+        return uniqued.map { $0 }
     }
 
     func uiBrokersSortedByScanPreferredRunDateWhereDateIsBetween(earlierDate: Date, laterDate: Date) -> [DBPUIDataBroker] {
@@ -243,7 +243,8 @@ private extension Array where Element == BrokerProfileQueryData {
             return [uiDataBroker] + uiMirrorSites
         }
 
-        return brokers.uniqued()
+        let uniqued = brokers.uniqued()
+        return uniqued.map { $0 }
     }
 
     typealias ScannedBroker = DBPUIScanProgress.ScannedBroker

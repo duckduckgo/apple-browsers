@@ -79,6 +79,7 @@ final class MockMoreOpationsMenuIconProvider: MoreOptionsMenuIconsProviding {
     var downloadsIcon: NSImage = .logo
     var historyIcon: NSImage = .logo
     var passwordsIcon: NSImage = .logo
+    var deleteBrowsingDataIcon: NSImage = .logo
     var syncIcon: NSImage = .logo
     var emailProtectionIcon: NSImage = .logo
     var privacyProIcon: NSImage = .logo

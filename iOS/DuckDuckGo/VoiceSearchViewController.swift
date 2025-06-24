@@ -27,10 +27,21 @@ protocol VoiceSearchViewControllerDelegate: AnyObject {
 class VoiceSearchViewController: UIViewController {
     weak var delegate: VoiceSearchViewControllerDelegate?
     private let speechRecognizer = SpeechRecognizer()
+    private let preferredTarget: VoiceSearchTarget?
+    
     private lazy var blurView: UIVisualEffectView = {
         let effectView = UIVisualEffectView(effect: UIBlurEffect(style: .regular))
         return effectView
     }()
+
+    init(preferredTarget: VoiceSearchTarget? = nil) {
+        self.preferredTarget = preferredTarget
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
     private func setupConstraints() {
         blurView.translatesAutoresizingMaskIntoConstraints = false
@@ -52,7 +63,7 @@ class VoiceSearchViewController: UIViewController {
     }
     
     private func installSpeechView() {
-        let model = VoiceSearchFeedbackViewModel(speechRecognizer: speechRecognizer, aiChatSettings: AIChatSettings())
+        let model = VoiceSearchFeedbackViewModel(speechRecognizer: speechRecognizer, aiChatSettings: AIChatSettings(), preferredTarget: preferredTarget)
         model.delegate = self
         let speechView = VoiceSearchFeedbackView(speechModel: model)
         let controller = UIHostingController(rootView: speechView)

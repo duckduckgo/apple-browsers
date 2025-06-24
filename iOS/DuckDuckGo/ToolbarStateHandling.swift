@@ -157,33 +157,19 @@ final class ToolbarHandler: ToolbarStateHandling {
     }
 
     private func createNewTabButtons() -> [UIBarButtonItem] {
-        if isExperimentalThemingEnabled {
-            return [
-                .additionalFixedSpaceItem(),
-                passwordsButton,
-                .flexibleSpace(),
-                bookmarkButton,
-                .flexibleSpace(),
-                fireBarButtonItem,
-                .flexibleSpace(),
-                tabSwitcherButton,
-                .flexibleSpace(),
-                browserMenuButton,
-                .additionalFixedSpaceItem()
-            ]
-        } else {
-            return [
-                bookmarkButton,
-                .flexibleSpace(),
-                passwordsButton,
-                .flexibleSpace(),
-                fireBarButtonItem,
-                .flexibleSpace(),
-                tabSwitcherButton,
-                .flexibleSpace(),
-                browserMenuButton
-            ]
-        }
+        return [
+            isExperimentalThemingEnabled ? .additionalFixedSpaceItem() : nil,
+            bookmarkButton,
+            .flexibleSpace(),
+            passwordsButton,
+            .flexibleSpace(),
+            fireBarButtonItem,
+            .flexibleSpace(),
+            tabSwitcherButton,
+            .flexibleSpace(),
+            browserMenuButton,
+            isExperimentalThemingEnabled ? .additionalFixedSpaceItem() : nil
+        ].compactMap { $0 }
     }
 }
 

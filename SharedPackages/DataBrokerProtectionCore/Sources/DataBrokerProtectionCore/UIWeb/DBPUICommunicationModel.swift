@@ -219,16 +219,6 @@ public extension DBPUIDataBroker {
     }
 }
 
-public extension Array where Element == DBPUIDataBroker {
-    func uniqued() -> Self {
-        self.reduce(into: [DBPUIDataBroker]()) { result, element in
-            if !result.contains(where: { $0.url == element.url }) {
-                result.append(element)
-            }
-        }
-    }
-}
-
 public struct DBPUIDataBrokerList: DBPUISendableMessage {
     public let dataBrokers: [DBPUIDataBroker]
 

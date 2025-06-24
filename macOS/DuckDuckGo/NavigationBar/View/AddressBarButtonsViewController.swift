@@ -31,6 +31,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool)
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
+    func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
 }
 
 final class AddressBarButtonsViewController: NSViewController {
@@ -533,6 +534,10 @@ final class AddressBarButtonsViewController: NSViewController {
         delegate?.addressBarButtonsViewControllerHideAIChatButtonClicked(self)
     }
 
+    @objc func openDuckAISettingsAction(_ sender: NSMenuItem) {
+        delegate?.addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(self)
+    }
+
     private func updateAIChatDividerVisibility() {
         // Prevent crash if Combine subscriptions outlive view lifecycle: https://app.asana.com/1/137249556945/project/1199230911884351/task/1210593147082728
         guard isViewLoaded else { return }
@@ -964,6 +969,10 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.menu = NSMenu {
             NSMenuItem(title: UserText.aiChatAddressBarHideButton,
                        action: #selector(hideAIChatButtonAction(_:)),
+                       keyEquivalent: "")
+            NSMenuItem.separator()
+            NSMenuItem(title: "Open Duck.ai Settings",
+                       action: #selector(openDuckAISettingsAction(_:)),
                        keyEquivalent: "")
         }
     }

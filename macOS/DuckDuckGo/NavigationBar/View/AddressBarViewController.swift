@@ -759,6 +759,10 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         _ = escapeKeyDown()
     }
+
+    func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: .aiChat))
+    }
 }
 
 // MARK: - NSDraggingSource

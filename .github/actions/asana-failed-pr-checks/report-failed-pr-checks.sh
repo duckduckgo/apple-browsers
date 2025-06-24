@@ -161,8 +161,30 @@ close_task() {
 
 validate_assignee() {
 	local assignee=$1
+	local workflow_url="${WORKFLOW_URL:-}"
 
+	# First try to get PR reviewers if this is a PR merge
+	local pr_reviewers
+	pr_reviewers=$(get_pr_reviewers_from_merge_commit)
+
+	if [[ -n "$pr_reviewers" ]]; then
+		echo "Found PR reviewers: $pr_reviewers"
+
+		# Try each reviewer until we find one in the Apple team
+		while IFS= read -r reviewer; do
+			if [[ -n "$reviewer" ]] && _is_user_in_apple_team "$reviewer"; then
+				echo "Using PR reviewer: $reviewer"
+				assignee="$reviewer"
+				return 0
+			fi
+		done <<< "$pr_reviewers"
+
+		echo "No valid PR reviewers found in Apple team, falling back to commit author"
+	fi
+
+	# Fall back to original assignee (commit author) or hardcoded ID
 	if ! _is_user_in_apple_team "${assignee}"; then
+		echo "Assignee $assignee not found in Apple team, using fallback"
 		assignee="33604954490307"
 	fi
 }

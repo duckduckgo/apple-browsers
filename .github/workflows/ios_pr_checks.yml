@@ -82,6 +82,7 @@ jobs:
 
     outputs:
       commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
+      pr_reviewer: ${{ steps.fetch_commit_author.outputs.pr_reviewer }}
 
     steps:
 
@@ -191,7 +192,7 @@ jobs:
       with:
         pixel-name: m_ci_apple_status_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}
 
-    - name: Fetch latest commit author
+    - name: Fetch latest commit author and PR reviewer
       if: always() && github.ref_name == 'main'
       id: fetch_commit_author
       env:
@@ -200,6 +201,31 @@ jobs:
         head_commit=$(git rev-parse HEAD)
         author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
         echo "commit_author=${author}" >> $GITHUB_OUTPUT
+
+        # Check if this is a merge commit from a PR
+        commit_message=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .commit.message)
+
+        # Extract PR number from merge commit message (format: "Merge pull request #123 from ...")
+        pr_number=$(echo "$commit_message" | grep -oE "Merge pull request #[0-9]+" | grep -oE "[0-9]+")
+
+        if [[ -n "$pr_number" ]]; then
+          echo "Found PR merge: #${pr_number}"
+
+          # Get the PR reviewer (first reviewer who approved)
+          reviewer=$(gh api https://api.github.com/repos/${{ github.repository }}/pulls/${pr_number}/reviews \
+            --jq '.[] | select(.state == "APPROVED") | .user.login' | head -n 1)
+
+          if [[ -n "$reviewer" ]]; then
+            echo "PR reviewer found: ${reviewer}"
+            echo "pr_reviewer=${reviewer}" >> $GITHUB_OUTPUT
+          else
+            echo "No reviewer found for PR #${pr_number}, using commit author"
+            echo "pr_reviewer=${author}" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "Not a PR merge, using commit author"
+          echo "pr_reviewer=${author}" >> $GITHUB_OUTPUT
+        fi
 
   release-build:
 

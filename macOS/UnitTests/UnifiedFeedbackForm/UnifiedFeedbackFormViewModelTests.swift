@@ -166,14 +166,14 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.isFeatureOn = { _ in true }
-        
+
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: MockVPNMetadataCollector(),
                                                      dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: MockVPNFeedbackSender(),
                                                      featureFlagger: featureFlagger)
-        
+
         let expectation = XCTestExpectation(description: "Wait for DuckAi category to become available")
         let pollingInterval: TimeInterval = 0.1
         Task {

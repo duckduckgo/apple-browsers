@@ -395,6 +395,8 @@ public extension DesignSystemImages {
             public static var location: DesignSystemImage { .init(resource: .location24) }
             public static var locationBlocked: DesignSystemImage { .init(resource: .locationBlocked24) }
             public static var locationSolid: DesignSystemImage { .init(resource: .locationSolid24) }
+            public static var menuDotsVertical: DesignSystemImage { .init(resource: .menuDotsVertical24) }
+            public static var menuDotsHorizontal: DesignSystemImage { .init(resource: .menuDotsHorizontal24) }
             public static var menuHamburger: DesignSystemImage { .init(resource: .menuHamburger24) }
             public static var menuHamburgerAlertRecolorable: DesignSystemImage { .init(resource: .menuHamburgerAlertRecolorable24) }
             public static var microphone: DesignSystemImage { .init(resource: .microphone24) }

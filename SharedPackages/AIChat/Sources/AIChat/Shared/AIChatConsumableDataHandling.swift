@@ -86,3 +86,31 @@ public final class AIChatPayloadHandler: AIChatConsumableDataHandling {
 /// For instance, when a user searches for "bread recipe" and clicks the chat button, the SERP sets this payload.
 /// The payload is then consumed when duck.ai is initialized, allowing for seamless data integration.
 public typealias AIChatPayload = [String: Any]
+
+/// Handles serialized restoration data for AI chat
+public final class AIChatRestorationDataHandler: AIChatConsumableDataHandling {
+    public typealias DataType = AIChatRestorationData
+    private var data: DataType?
+
+    public init() {}
+
+    public func setData(_ data: DataType) {
+        self.data = data
+    }
+
+    public func getData() -> DataType? {
+        data
+    }
+
+    public func consumeData() -> DataType? {
+        let currentData = data
+        reset()
+        return currentData
+    }
+
+    public func reset() {
+        self.data = nil
+    }
+}
+
+public typealias AIChatRestorationData = String

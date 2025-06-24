@@ -197,7 +197,7 @@ public struct DBPUIDataBroker: Codable, Hashable {
 }
 
 public extension DBPUIDataBroker {
-    init(fromDataBroker dataBroker: DataBroker, withDate date: Date? = nil) {
+    init(from dataBroker: DataBroker, withDate date: Date? = nil) {
         name = dataBroker.name
         url = dataBroker.url
         self.date = date?.timeIntervalSince1970
@@ -205,22 +205,17 @@ public extension DBPUIDataBroker {
         optOutUrl = dataBroker.optOutUrl
     }
 
-    init(fromMirrorSite mirrorSite: MirrorSite, parentBroker: DataBroker, withDate date: Date? = nil) {
+    init(from mirrorSite: MirrorSite, parentBroker: DataBroker, withDate date: Date? = nil) {
         name = mirrorSite.name
         url = mirrorSite.url
         self.date = date?.timeIntervalSince1970
         parentURL = parentBroker.url
         optOutUrl = parentBroker.optOutUrl
     }
-}
 
-public extension Array where Element == DBPUIDataBroker {
-    func uniqued() -> Self {
-        self.reduce(into: [DBPUIDataBroker]()) { result, element in
-            if !result.contains(where: { $0.url == element.url }) {
-                result.append(element)
-            }
-        }
+    static func brokerWithMirrorSites(from broker: DataBroker, withDate date: Date? = nil) -> [Self] {
+        let mirrorSites = broker.mirrorSites.map { Self(from: $0, parentBroker: broker, withDate: date) }
+        return [.init(from: broker, withDate: date)] + mirrorSites
     }
 }
 

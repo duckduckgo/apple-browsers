@@ -21767,6 +21767,18 @@
         }
       }
     },
+    "duckai.open-in-sidebar.toggle-setting" : {
+      "comment" : "Settings option to open Duck.ai in the sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai in the sidebar"
+          }
+        }
+      }
+    },
     "duckai.preferences.caption" : {
       "comment" : "Ai Chat preferences explanation",
       "extractionState" : "stale",

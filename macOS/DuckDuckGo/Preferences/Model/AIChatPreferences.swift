@@ -41,6 +41,7 @@ final class AIChatPreferences: ObservableObject {
 
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
         showShortcutInAddressBar = storage.showShortcutInAddressBar
+        openAIChatInSidebar = storage.openAIChatInSidebar
 
         subscribeToShowInApplicationMenuSettingsChanges()
     }
@@ -57,6 +58,12 @@ final class AIChatPreferences: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: \.showShortcutInAddressBar, onWeaklyHeld: self)
             .store(in: &cancellables)
+
+        storage.openAIChatInSidebarPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.openAIChatInSidebar, onWeaklyHeld: self)
+            .store(in: &cancellables)
     }
 
     @Published var showShortcutInApplicationMenu: Bool {
@@ -65,6 +72,10 @@ final class AIChatPreferences: ObservableObject {
 
     @Published var showShortcutInAddressBar: Bool {
         didSet { storage.showShortcutInAddressBar = showShortcutInAddressBar }
+    }
+
+    @Published var openAIChatInSidebar: Bool {
+        didSet { storage.openAIChatInSidebar = openAIChatInSidebar }
     }
 
     @MainActor func openLearnMoreLink() {

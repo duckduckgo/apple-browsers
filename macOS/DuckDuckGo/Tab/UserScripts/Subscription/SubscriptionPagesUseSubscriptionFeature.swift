@@ -559,6 +559,16 @@ private extension SubscriptionPagesUseSubscriptionFeature {
             notificationCenter.post(name: .subscriptionUpgradeFromFreemium, object: nil)
         }
     }
+    
+    /// Sends a freemium subscription pixel event if the freemium feature has been activated.
+    ///
+    /// This function checks whether the user has activated the freemium feature by querying the `freemiumDBPUserStateManager`.
+    /// If the feature is activated (`didActivate` returns `true`), it fires a unique subscription-related pixel event using `PixelKit`.
+    func sendFreemiumSubscriptionPixelIfFreemiumActivated() {
+        if freemiumDBPUserStateManager.didActivate {
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.subscription)
+        }
+    }
 
     /// Saves the current timestamp for a subscription upgrade if the freemium feature has been activated.
     ///
@@ -570,16 +580,6 @@ private extension SubscriptionPagesUseSubscriptionFeature {
             freemiumDBPUserStateManager.upgradeToSubscriptionTimestamp = Date()
         }
     }
-
-    /// Sends a freemium subscription pixel event if the freemium feature has been activated.
-       ///
-       /// This function checks whether the user has activated the freemium feature by querying the `freemiumDBPUserStateManager`.
-       /// If the feature is activated (`didActivate` returns `true`), it fires a unique subscription-related pixel event using `PixelKit`.
-       func sendFreemiumSubscriptionPixelIfFreemiumActivated() {
-           if freemiumDBPUserStateManager.didActivate {
-               dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.subscription)
-           }
-       }
 
     /// Sets the origin for attribution if the user has started their first Freemium PIR scan
     ///

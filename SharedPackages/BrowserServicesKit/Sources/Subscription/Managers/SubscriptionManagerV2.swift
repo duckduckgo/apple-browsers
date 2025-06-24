@@ -408,16 +408,17 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
             // Send notification when entitlements change
             if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedEntitlements, newValue) {
-                Logger.subscription.debug("Entitlements changed - New \(newValue) Old \(String(describing: currentCachedEntitlements))")
-
                 // TMP: Convert to Entitlement (authV1)
-                let entitlements = newValue.map { $0.entitlement }
-                let previousEntitlements = currentCachedEntitlements
-
-                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [
+                let entitlements = newValue.map{ $0.entitlement }
+                let previousEntitlements = currentCachedEntitlements.map{ $0.entitlement }
+                let userInfo: [AnyHashable: [Entitlement]] = [
                     UserDefaultsCacheKey.subscriptionEntitlements: entitlements,
                     UserDefaultsCacheKey.subscriptionPreviousEntitlements: previousEntitlements
-                ])
+                ]
+
+                Logger.subscription.debug("Entitlements changed - New \(String(describing: newValue)) Old \(String(describing: previousEntitlements))")
+
+                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: userInfo)
             }
         }
     }

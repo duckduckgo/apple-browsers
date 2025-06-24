@@ -56,20 +56,10 @@ final class NetworkProtectionSubscriptionEventHandler {
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] notification in
                     Logger.networkProtection.log("Entitlements did change notification received")
-                    guard let self else {
-                        return
-                    }
-
-                    guard let entitlements = notification.userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] as? [Entitlement] else {
-                        assertionFailure("Missing entitlements are truly unexpected")
-                        return
-                    }
-
-                    let hasEntitlements = entitlements.contains { entitlement in
-                        entitlement.product == .networkProtection
-                    }
+                    guard let self else { return }
 
                     Task {
+                        let hasEntitlements = await self.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
                         await self.handleEntitlementsChange(hasEntitlements: hasEntitlements)
                     }
                 }

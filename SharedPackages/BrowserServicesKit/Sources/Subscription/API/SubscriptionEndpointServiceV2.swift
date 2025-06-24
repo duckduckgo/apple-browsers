@@ -168,9 +168,10 @@ New: \(subscription.debugDescription, privacy: .public)
 
     func updateCache(with subscription: PrivacyProSubscription) {
         cacheSerialQueue.sync {
+            let previousEntitlements = getCachedSubscription()?.features?.map { $0.entitlement } ?? []
             let expiryDate = subscription.expiresOrRenewsAt
 #if DEBUG
-            // In DEBUG the subscription duration is just a a couple of minutes, we want to avoid the cache to be immediately invalidated
+            // In DEBUG the subscription duration is just a few minutes, we want to avoid the cache to be immediately invalidated
             let isInTheFuture = false
 #else
             let isInTheFuture = expiryDate.isInTheFuture()
@@ -188,7 +189,11 @@ New: \(subscription.debugDescription, privacy: .public)
                 // TMP: Convert to Entitlement (authV1)
                 if let features = subscription.features {
                     let entitlements = features.map { $0.entitlement }
-                    NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
+                    let userInfo: [AnyHashable: [Entitlement]] = [
+                        UserDefaultsCacheKey.subscriptionEntitlements: entitlements,
+                        UserDefaultsCacheKey.subscriptionPreviousEntitlements: previousEntitlements
+                    ]
+                    NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: userInfo)
                 }
             }
         }
@@ -247,7 +252,6 @@ New: \(subscription.debugDescription, privacy: .public)
         cacheSerialQueue.sync {
             subscriptionCache.reset()
         }
-// TBD check if needed: NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: nil)
     }
 
     // MARK: -

@@ -60,16 +60,8 @@ final class DataBrokerProtectionSubscriptionEventHandler {
     }
 
     private func entitlementsDidChange(_ notification: Notification) {
-        guard let entitlements = notification.userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] as? [Entitlement] else {
-            assertionFailure("Missing entitlements are truly unexpected")
-            return
-        }
-
-        let hasEntitlements = entitlements.contains { entitlement in
-            entitlement.product == .dataBrokerProtection
-        }
-
         Task {
+            let hasEntitlements = try await self.authenticationManager.hasValidEntitlement()
             await entitlementsDidChange(hasEntitlements: hasEntitlements)
         }
     }

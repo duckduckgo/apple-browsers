@@ -1889,9 +1889,8 @@ class MainViewController: UIViewController {
     private func onEntitlementsChange(_ notification: Notification) {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            guard let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
-                      hasEntitlement == false
-            else { return }
+            let hasEntitlement = try await subscriptionManager.isEnabled(feature: .networkProtection)
+            guard hasEntitlement == false else { return }
 
             if await networkProtectionTunnelController.isInstalled {
                 tunnelDefaults.enableEntitlementMessaging()

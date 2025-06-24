@@ -233,7 +233,10 @@ public final class DefaultAccountManager: AccountManager {
             } else {
                 entitlementsCache.set(entitlements)
             }
-            NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
+            NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [
+                UserDefaultsCacheKey.subscriptionEntitlements: entitlements,
+                UserDefaultsCacheKey.subscriptionPreviousEntitlements: cachedEntitlements
+            ])
         }
     }
 

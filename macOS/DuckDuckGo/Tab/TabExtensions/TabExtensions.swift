@@ -198,6 +198,10 @@ extension TabExtensionsBuilder {
             SearchNonexistentDomainNavigationResponder(tld: dependencies.privacyFeatures.contentBlocking.tld, contentPublisher: args.contentPublisher, setContent: args.setContent)
         }
 
+        add {
+            WiFiHotspotDetectionTabExtension(permissionModel: args.permissionModel, setContent: args.setContent)
+        }
+
         let isCapturingHistory = !args.isTabBurner && !args.isTabLoadedInSidebar
         add {
             HistoryTabExtension(isCapturingHistory: isCapturingHistory,

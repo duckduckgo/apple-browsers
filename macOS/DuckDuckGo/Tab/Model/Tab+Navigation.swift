@@ -60,6 +60,9 @@ extension Tab: NavigationResponder {
             // open external scheme link in another app
             .weak(nullable: self.externalAppSchemeHandler),
 
+            // WiFi hotspot detection for captive portals
+            .weak(nullable: self.wifiHotspotDetection),
+
             // tracking link rewrite, referrer trimming, global privacy control
             .weak(nullable: self.navigationProtection),
 
@@ -101,6 +104,8 @@ extension Tab: NavigationResponder {
 
             // Internal Feedback Form
             .weak(nullable: self.internalFeedbackForm),
+
+            .weak(nullable: self.wifiHotspotDetection),
 
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)

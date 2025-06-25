@@ -493,6 +493,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseSuccess.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseSuccess.name + "_c",
                                      PrivacyProPixel.privacyProSubscriptionActivated.name])
+        XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.subscription)
     }
 
     func testSubscriptionSelectedSuccessWhenRepurchasingForExpiredAppleSubscription() async throws {

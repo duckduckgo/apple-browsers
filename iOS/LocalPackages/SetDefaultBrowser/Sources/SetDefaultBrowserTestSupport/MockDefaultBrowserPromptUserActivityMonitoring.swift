@@ -20,8 +20,10 @@
 import Foundation
 import SetDefaultBrowserCore
 
-public final class MockDefaultBrowserPromptUserActivityProvider: DefaultBrowserPromptUserActivityProvider {
+public final class MockDefaultBrowserPromptUserActivityProvider: DefaultBrowserPromptUserActivityMonitoring {
     public init() {}
+
+    public private(set) var didCallResetNumberOfActiveDays = false
 
     public var numberOfActiveDaysPassed = 0
 
@@ -29,4 +31,7 @@ public final class MockDefaultBrowserPromptUserActivityProvider: DefaultBrowserP
         numberOfActiveDaysPassed
     }
 
+    public func resetNumberOfActiveDays() {
+        didCallResetNumberOfActiveDays = true
+    }
 }

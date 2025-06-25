@@ -35,7 +35,7 @@ final class DefaultBrowserPromptDecider: DefaultBrowserPromptDeciding {
     private let featureFlagger: DefaultBrowserPromptFeatureFlagger
     private let store: DefaultBrowserPromptStorageReading
     private let userTypeProvider: DefaultBrowserPromptUserTypeProviding
-    private let userActivityProvider: DefaultBrowserPromptUserActivityProvider
+    private let userActivityProvider: DefaultBrowserPromptUserActivityMonitoring
     private let defaultBrowserManager: DefaultBrowserManaging
     private let installDateProvider: () -> Date?
     private let dateProvider: () -> Date
@@ -44,7 +44,7 @@ final class DefaultBrowserPromptDecider: DefaultBrowserPromptDeciding {
         featureFlagger: DefaultBrowserPromptFeatureFlagger,
         store: DefaultBrowserPromptStorageReading,
         userTypeProvider: DefaultBrowserPromptUserTypeProviding,
-        userActivityProvider: DefaultBrowserPromptUserActivityProvider,
+        userActivityProvider: DefaultBrowserPromptUserActivityMonitoring,
         defaultBrowserManager: DefaultBrowserManaging,
         installDateProvider: @escaping () -> Date?,
         dateProvider: @escaping () -> Date = Date.init

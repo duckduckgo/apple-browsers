@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserPromptUserActivityProvider.swift
+//  DefaultBrowserPromptUserActivityMonitoring.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -19,11 +19,11 @@
 
 import Foundation
 
-/// A type that provides user activity information for default browser prompt decisions.
+/// A type that manages the user activity information for SAD prompt decisions.
 ///
-/// This protocol defines the interface for measuring user engagement with the DDG browser,
-/// specifically calculating how many days the user has been active since a given date.
-public protocol DefaultBrowserPromptUserActivityProvider {
+/// This protocol is used to calculate how many days the user has been active since a given date.
+@MainActor
+public protocol DefaultBrowserPromptUserActivityMonitoring {
     /// Calculates the number of days the user has been active in the app since the specified date.
     ///
     /// An "active day" means a day when the user either opened the app (cold start),
@@ -38,4 +38,6 @@ public protocol DefaultBrowserPromptUserActivityProvider {
     ///         For example, if a user was active on days 1, 3, and 7 after the given date,
     ///         this method would return 3, not 7.
     func numberOfActiveDays(since: Date) -> Int
+
+    func resetNumberOfActiveDays()
 }

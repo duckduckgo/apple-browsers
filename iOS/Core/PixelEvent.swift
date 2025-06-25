@@ -1787,7 +1787,7 @@ extension Pixel.Event {
         case .networkProtectionDisconnected: return "m_netp_vpn_disconnect"
         case .networkProtectionNoAccessTokenFoundError: return "m_netp_no_access_token_found_error"
         case .networkProtectionVPNAccessRevoked: return "m_vpn_access_revoked"
-        case .networkProtectionUnmanagedSubscriptionError: return "vpn_access_unmanaged_error"
+        case .networkProtectionUnmanagedSubscriptionError: return "m_vpn_access_unmanaged_error"
         case .networkProtectionMemoryWarning: return "m_netp_vpn_memory_warning"
         case .networkProtectionMemoryCritical: return "m_netp_vpn_memory_critical"
         case .networkProtectionUnhandledError: return "m_netp_unhandled_error"

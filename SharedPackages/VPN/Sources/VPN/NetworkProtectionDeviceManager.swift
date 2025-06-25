@@ -222,7 +222,6 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
         let token: String
 
         do {
-            throw SubscriptionManagerError.noTokenAvailable
             token = try await VPNAuthTokenBuilder.getVPNAuthToken(from: tokenHandler)
         } catch {
             Logger.networkProtection.error("Missing auth token: \(error.localizedDescription)")

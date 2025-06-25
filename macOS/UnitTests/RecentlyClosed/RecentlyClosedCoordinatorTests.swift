@@ -126,4 +126,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
         return nil
     }
     func showTab(with content: DuckDuckGo_Privacy_Browser.Tab.TabContent) { }
+
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
 }

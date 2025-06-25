@@ -31,12 +31,15 @@ import Common
 @testable import DuckDuckGo
 @testable import PersistenceTestingUtils
 
+// swiftlint:disable force_try
+
 final class OnboardingDaxFavouritesTests: XCTestCase {
     private var sut: MainViewController!
     private var tutorialSettingsMock: MockTutorialSettings!
     private var contextualOnboardingLogicMock: ContextualOnboardingLogicMock!
 
     let mockWebsiteDataManager = MockWebsiteDataManager()
+    let keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -67,7 +70,7 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-        let tabsPersistence = try TabsModelPersistence(store: MockKeyValueFileStore(), legacyStore: MockKeyValueStore())
+        let tabsPersistence = try TabsModelPersistence(store: keyValueStore, legacyStore: MockKeyValueStore())
         sut = MainViewController(
             bookmarksDatabase: db,
             bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
@@ -98,7 +101,8 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
-            themeManager: MockThemeManager()
+            themeManager: MockThemeManager(),
+            keyValueStore: keyValueStore
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()
@@ -157,3 +161,5 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
     }
 
 }
+
+// swiftlint:enable force_try

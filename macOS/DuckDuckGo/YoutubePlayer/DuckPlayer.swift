@@ -163,11 +163,7 @@ final class DuckPlayer {
     static let shared = DuckPlayer()
 
     var isAvailable: Bool {
-        if SupportedOSChecker.isCurrentOSReceivingUpdates {
-            return isFeatureEnabled
-        } else {
-            return false
-        }
+        isFeatureEnabled
     }
 
     @Published var mode: DuckPlayerMode

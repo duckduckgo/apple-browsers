@@ -23,7 +23,7 @@ import Combine
 import Common
 import Freemium
 import History
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
 import os.log
@@ -146,6 +146,7 @@ final class NavigationBarViewController: NSViewController {
     private let featureFlagger: FeatureFlagger
     private let visualStyle: VisualStyleProviding
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
+    private let showTab: (Tab.TabContent) -> Void
 
     private var leftFocusSpacer: NSView?
     private var rightFocusSpacer: NSView?
@@ -170,8 +171,13 @@ final class NavigationBarViewController: NSViewController {
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                       visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
-                       aiChatSidebarPresenter: AIChatSidebarPresenting
+                       visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
+                       aiChatSidebarPresenter: AIChatSidebarPresenting,
+                       showTab: @escaping (Tab.TabContent) -> Void = { content in
+                           Task { @MainActor in
+                               Application.appDelegate.windowControllersManager.showTab(with: content)
+                           }
+                       }
     ) -> NavigationBarViewController {
         NSStoryboard(name: "NavigationBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -189,8 +195,9 @@ final class NavigationBarViewController: NSViewController {
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
-                visualStyle: visualStyleManager.style,
-                aiChatSidebarPresenter: aiChatSidebarPresenter
+                visualStyle: visualStyle,
+                aiChatSidebarPresenter: aiChatSidebarPresenter,
+                showTab: showTab
             )
         }!
     }
@@ -211,7 +218,8 @@ final class NavigationBarViewController: NSViewController {
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
         visualStyle: VisualStyleProviding,
-        aiChatSidebarPresenter: AIChatSidebarPresenting
+        aiChatSidebarPresenter: AIChatSidebarPresenting,
+        showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
         self.popovers = NavigationBarPopovers(
@@ -239,6 +247,7 @@ final class NavigationBarViewController: NSViewController {
         self.featureFlagger = featureFlagger
         self.visualStyle = visualStyle
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
+        self.showTab = showTab
         goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
         goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
         super.init(coder: coder)
@@ -1717,7 +1726,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
 
     func optionsButtonMenuRequestedSubscriptionPurchasePage(_ menu: NSMenu) {
         let url = subscriptionManager.url(for: .purchase)
-        Application.appDelegate.windowControllersManager.showTab(with: .subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appMenu.rawValue)))
+        showTab(.subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appMenu.rawValue)))
         PixelKit.fire(PrivacyProPixel.privacyProOfferScreenImpression)
     }
 
@@ -1725,9 +1734,14 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
         Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .subscriptionSettings)
     }
 
+    func optionsButtonMenuRequestedPaidAIChat(_ menu: NSMenu) {
+        let aiChatURL = URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!
+        showTab(.aiChat(aiChatURL))
+    }
+
     func optionsButtonMenuRequestedIdentityTheftRestoration(_ menu: NSMenu) {
         let url = subscriptionManager.url(for: .identityTheftRestoration)
-        Application.appDelegate.windowControllersManager.showTab(with: .identityTheftRestoration(url))
+        showTab(.identityTheftRestoration(url))
     }
 }
 

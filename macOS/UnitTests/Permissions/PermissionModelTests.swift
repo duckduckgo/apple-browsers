@@ -18,6 +18,7 @@
 
 import AVFoundation
 import Combine
+import CommonObjCExtensions
 import Foundation
 import WebKit
 import XCTest

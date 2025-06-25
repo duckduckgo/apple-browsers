@@ -122,6 +122,10 @@ final class UserScripts: UserScriptsProvider {
                 youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: duckPlayer)
                 youtubeOverlayScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
                 youtubePlayerUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
+            } else {
+                // Initialize DuckPlayer UserScript
+                let duckPlayerUserScript = DuckPlayerUserScriptYouTube(duckPlayer: duckPlayer)
+                contentScopeUserScriptIsolated.registerSubfeature(delegate: duckPlayerUserScript)
             }
         }
     }

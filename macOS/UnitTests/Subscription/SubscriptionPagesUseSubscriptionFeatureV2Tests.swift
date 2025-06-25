@@ -16,13 +16,15 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import DuckDuckGo_Privacy_Browser
-@testable import Subscription
 import Common
 import Networking
-import SubscriptionTestingUtilities
 import NetworkingTestingUtils
+import SubscriptionTestingUtilities
+import WebKit
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
+@testable import Subscription
 
 final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
@@ -37,6 +39,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     private var mockFreemiumDBPExperimentManager: MockFreemiumDBPExperimentManager!
     private var mockPixelHandler: MockFreemiumDBPExperimentPixelHandler!
     private var mockFeatureFlagger: MockFeatureFlagger!
+    private var mockNotificationCenter: NotificationCenter!
 
     private struct Constants {
         static let subscriptionOptions = SubscriptionOptionsV2(platform: SubscriptionPlatformName.macos,
@@ -69,12 +72,13 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockStorePurchaseManager = StorePurchaseManagerMockV2()
         let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
-
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
         subscriptionManagerV2 = DefaultSubscriptionManagerV2(storePurchaseManager: mockStorePurchaseManager,
-                                                           oAuthClient: authClient,
-                                                           subscriptionEndpointService: subscriptionEndpointService,
-                                                           subscriptionEnvironment: subscriptionEnvironment,
-                                                           pixelHandler: MockPixelHandler())
+                                                             oAuthClient: authClient,
+                                                             userDefaults: userDefaults,
+                                                             subscriptionEndpointService: subscriptionEndpointService,
+                                                             subscriptionEnvironment: subscriptionEnvironment,
+                                                             pixelHandler: MockPixelHandler())
         subscriptionSuccessPixelHandler = PrivacyProSubscriptionAttributionPixelHandler()
         let mockStripePurchaseFlowV2 = StripePurchaseFlowMockV2(subscriptionOptionsResult: .failure(.noProductsFound), prepareSubscriptionPurchaseResult: .failure(.noProductsFound))
         mockUIHandler = SubscriptionUIHandlerMock { _ in }
@@ -84,6 +88,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockFreemiumDBPExperimentManager = MockFreemiumDBPExperimentManager()
         mockPixelHandler = MockFreemiumDBPExperimentPixelHandler()
         mockFeatureFlagger = MockFeatureFlagger()
+        mockNotificationCenter = NotificationCenter()
 
         sut = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManagerV2,
                                                         subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
@@ -92,7 +97,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                         subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
                                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
                                                         freemiumDBPPixelExperimentManager: mockFreemiumDBPExperimentManager,
-                                                        notificationCenter: .default,
+                                                        notificationCenter: mockNotificationCenter,
                                                         freemiumDBPExperimentPixelHandler: mockPixelHandler,
                                                         featureFlagger: mockFeatureFlagger)
     }
@@ -196,5 +201,136 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
         XCTAssertFalse(featureValue.useDuckAiPro)
+    }
+
+    // MARK: - Feature Selection Tests
+
+    @MainActor
+    func testFeatureSelected_NetworkProtection_PostsCorrectNotification() async throws {
+        // Given
+        let params = ["productFeature": "Network Protection"]
+        let expectation = expectation(description: "Network protection notification posted")
+
+        let observer = mockNotificationCenter.addObserver(forName: .ToggleNetworkProtectionInMainWindow, object: sut, queue: nil) { _ in
+            expectation.fulfill()
+        }
+        defer { mockNotificationCenter.removeObserver(observer) }
+
+        // When
+        let result = try await sut.featureSelected(params: params, original: Constants.mockScriptMessage)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+
+    @MainActor
+    func testFeatureSelected_DataBrokerProtection_PostsNotificationAndShowsTab() async throws {
+        // Given
+        let params = ["productFeature": "Data Broker Protection"]
+        let dbpNotificationExpectation = expectation(description: "DBP notification posted")
+        let uiHandlerExpectation = expectation(description: "UI handler show tab called")
+
+        let observer = mockNotificationCenter.addObserver(forName: .openPersonalInformationRemoval, object: sut, queue: nil) { _ in
+            dbpNotificationExpectation.fulfill()
+        }
+        defer { mockNotificationCenter.removeObserver(observer) }
+
+        mockUIHandler.setDidPerformActionCallback { action in
+            if case .didShowTab(.dataBrokerProtection) = action {
+                uiHandlerExpectation.fulfill()
+            }
+        }
+
+        // When
+        let result = try await sut.featureSelected(params: params, original: Constants.mockScriptMessage)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [dbpNotificationExpectation, uiHandlerExpectation], timeout: 1.0)
+    }
+
+    @MainActor
+    func testFeatureSelected_IdentityTheftRestoration_ShowsCorrectTab() async throws {
+        // Given
+        let params = ["productFeature": "Identity Theft Restoration"]
+        let uiHandlerExpectation = expectation(description: "UI handler show tab called")
+
+        mockUIHandler.setDidPerformActionCallback { action in
+            if case .didShowTab(.identityTheftRestoration(let url)) = action {
+                XCTAssertNotNil(url)
+                uiHandlerExpectation.fulfill()
+            }
+        }
+
+        // When
+        let result = try await sut.featureSelected(params: params, original: Constants.mockScriptMessage)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [uiHandlerExpectation], timeout: 1.0)
+    }
+
+    @MainActor
+    func testFeatureSelected_IdentityTheftRestorationGlobal_ShowsCorrectTab() async throws {
+        // Given
+        let params = ["productFeature": "Global Identity Theft Restoration"]
+        let uiHandlerExpectation = expectation(description: "UI handler show tab called")
+
+        mockUIHandler.setDidPerformActionCallback { action in
+            if case .didShowTab(.identityTheftRestoration(let url)) = action {
+                XCTAssertNotNil(url)
+                uiHandlerExpectation.fulfill()
+            }
+        }
+
+        // When
+        let result = try await sut.featureSelected(params: params, original: Constants.mockScriptMessage)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [uiHandlerExpectation], timeout: 1.0)
+    }
+
+    @MainActor
+    func testFeatureSelected_PaidAIChat_ShowsCorrectTab() async throws {
+        // Given
+        let params = ["productFeature": "Duck.ai"]
+        let uiHandlerExpectation = expectation(description: "UI handler show tab called")
+
+        mockUIHandler.setDidPerformActionCallback { action in
+            if case .didShowTab(.aiChat(let url)) = action {
+                XCTAssertNotNil(url)
+                uiHandlerExpectation.fulfill()
+            }
+        }
+
+        // When
+        let result = try await sut.featureSelected(params: params, original: Constants.mockScriptMessage)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [uiHandlerExpectation], timeout: 1.0)
+    }
+
+    @MainActor
+    func testFeatureSelected_UnknownFeature_DoesNothing() async throws {
+        // Given
+        let params = ["productFeature": "unknown"]
+        let uiHandlerExpectation = expectation(description: "UI handler should not be called")
+        uiHandlerExpectation.isInverted = true
+
+        mockUIHandler.setDidPerformActionCallback { action in
+            if case .didShowTab = action {
+                uiHandlerExpectation.fulfill()
+            }
+        }
+
+        // When
+        let result = try await sut.featureSelected(params: params, original: Constants.mockScriptMessage)
+
+        // Then
+        XCTAssertNil(result)
+        await fulfillment(of: [uiHandlerExpectation], timeout: 0.1)
     }
 }

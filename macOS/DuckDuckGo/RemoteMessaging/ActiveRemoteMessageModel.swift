@@ -54,11 +54,19 @@ final class ActiveRemoteMessageModel: ObservableObject {
      */
     let openURLHandler: (URL) async -> Void
 
-    convenience init(remoteMessagingClient: RemoteMessagingClient, openURLHandler: @escaping (URL) async -> Void) {
+    /**
+     * Handler for opening the user feedback dialog.
+     */
+    let navigateToFeedbackHandler: () async -> Void
+
+    convenience init(remoteMessagingClient: RemoteMessagingClient,
+                     openURLHandler: @escaping (URL) async -> Void,
+                     navigateToFeedbackHandler: @escaping () async -> Void) {
         self.init(
             remoteMessagingStore: remoteMessagingClient.store,
             remoteMessagingAvailabilityProvider: remoteMessagingClient.remoteMessagingAvailabilityProvider,
-            openURLHandler: openURLHandler
+            openURLHandler: openURLHandler,
+            navigateToFeedbackHandler: navigateToFeedbackHandler
         )
     }
 
@@ -68,10 +76,12 @@ final class ActiveRemoteMessageModel: ObservableObject {
     init(
         remoteMessagingStore: @escaping @autoclosure () -> RemoteMessagingStoring?,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding?,
-        openURLHandler: @escaping (URL) async -> Void
+        openURLHandler: @escaping (URL) async -> Void,
+        navigateToFeedbackHandler: @escaping () async -> Void
     ) {
         self.store = remoteMessagingStore
         self.openURLHandler = openURLHandler
+        self.navigateToFeedbackHandler = navigateToFeedbackHandler
 
         let messagesDidChangePublisher = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
             .asVoid()

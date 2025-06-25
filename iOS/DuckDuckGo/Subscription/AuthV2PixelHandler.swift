@@ -59,6 +59,10 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
         case .getTokensError(let policy, let error):
             DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2GetTokensError, withAdditionalParameters: [Defaults.errorKey: error.localizedDescription,
                                                                                                             Defaults.policyCacheKey: policy.description].merging(sourceParam) { $1 })
+        case .invalidRefreshTokenSignedOut:
+            DailyPixel.fireDailyAndCount(pixel: .privacyProInvalidRefreshTokenSignedOut, withAdditionalParameters: sourceParam)
+        case .invalidRefreshTokenRecovered:
+            DailyPixel.fireDailyAndCount(pixel: .privacyProInvalidRefreshTokenRecovered, withAdditionalParameters: sourceParam)
         }
     }
 

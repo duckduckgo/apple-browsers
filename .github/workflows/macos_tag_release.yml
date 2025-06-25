@@ -121,7 +121,8 @@ jobs:
           task_url:"${{ env.asana-task-url }}" \
           template_name:"run-publish-dmg-release" \
           github_handle:"${{ github.actor }}" \
-          is_scheduled_release:"${{ github.event_name == 'schedule' }}"
+          is_scheduled_release:"${{ github.event_name == 'schedule' }}" \
+          due_date:"$(date +%Y-%m-%d)"
 
     - name: Store created tag in a file artifact
       run: echo ${{ steps.tag-release.outputs.tag }} > ${{ github.workspace }}/.github/tag

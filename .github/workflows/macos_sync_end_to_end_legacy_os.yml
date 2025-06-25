@@ -119,9 +119,20 @@ jobs:
           -derivedDataPath DerivedData \
           -configuration Review
 
-    - name: Unzip and Copy app to /DerivedData
+    - name: Extract and Copy app to /DerivedData
       run: |
-        cd DuckDuckGo-review-*.app && unzip DuckDuckGo-*.zip
+        cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
+        
+        # Find the extracted app bundle and rename if needed
+        extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
+        if [[ -n "${extracted_app}" ]]; then
+          extracted_app_name=$(basename "${extracted_app}")
+          if [[ "${extracted_app_name}" != "DuckDuckGo Review.app" ]]; then
+            echo "Renaming extracted app from '${extracted_app_name}' to 'DuckDuckGo Review.app'"
+            mv "${extracted_app}" "DuckDuckGo Review.app"
+          fi
+        fi
+        
         cp -R "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
     - name: Run tests

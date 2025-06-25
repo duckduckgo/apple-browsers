@@ -68,6 +68,9 @@ struct SettingsAIChatView: View {
                     Section {
                         SettingsCellView(label: UserText.settingsAIChatExperimentalMainSwitch,
                                          accessory: .toggle(isOn: viewModel.aiChatExperimentalBinding))
+
+                        SettingsCellView(label: UserText.settingsAIChatExperimentalTransition,
+                                         accessory: .toggle(isOn: viewModel.aiChatExperimentalTransitionBinding))
                     } header: {
                         Text(UserText.settingsAIChatExperimentalSection)
                     }

@@ -44,7 +44,6 @@ class TabSwitcherBarsStateHandler {
     private(set) var totalTabsCount: Int = 0
     private(set) var containsWebPages = false
     private(set) var showAIChatButton = false
-    private(set) var canShowEditButton = false
 
     private(set) var isFirstUpdate = true
 
@@ -85,7 +84,7 @@ class TabSwitcherBarsStateHandler {
         self.tabSwitcherStyleButton.accessibilityLabel = "Toggle between grid and list view"
         self.duckChatButton.accessibilityLabel = UserText.aiChatFeatureName
 
-        self.canShowEditButton = self.totalTabsCount > 1 || containsWebPages
+        self.editButton.isEnabled = self.totalTabsCount > 1 || containsWebPages
 
         updateBottomBar()
         updateTopLeftButtons()
@@ -95,7 +94,6 @@ class TabSwitcherBarsStateHandler {
     func updateBottomBar() {
         var newItems: [UIBarButtonItem]
 
-        let regularItemWidth: CGFloat = 34
         let leadingSideWidthDifference: CGFloat = isExperimentalThemingEnabled ? 6 : 11
 
         switch interfaceMode {
@@ -111,10 +109,12 @@ class TabSwitcherBarsStateHandler {
                 fireButton,
 
                 .flexibleSpace(),
-                showAIChatButton ? duckChatButton : .fixedSpace(regularItemWidth),
+
+                plusButton,
+
                 .flexibleSpace(),
 
-                plusButton
+                editButton
             ].compactMap { $0 }
 
             isBottomBarHidden = false
@@ -148,14 +148,14 @@ class TabSwitcherBarsStateHandler {
 
         case .regularSize:
             topBarLeftButtonItems = [
-                canShowEditButton ? editButton : nil,
-            ].compactMap { $0 }
+                doneButton,
+            ]
 
         case .largeSize:
             topBarLeftButtonItems = [
-                canShowEditButton ? editButton : nil,
+                editButton,
                 tabSwitcherStyleButton,
-            ].compactMap { $0 }
+            ]
 
         case .editingRegularSize:
             topBarLeftButtonItems = [
@@ -184,8 +184,8 @@ class TabSwitcherBarsStateHandler {
 
         case .regularSize:
             topBarRightButtonItems = [
-                doneButton
-            ]
+                showAIChatButton ? duckChatButton : nil,
+            ].compactMap { $0 }
 
         case .editingRegularSize:
             topBarRightButtonItems = [

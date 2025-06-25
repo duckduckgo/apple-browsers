@@ -18,7 +18,7 @@
 
 import Foundation
 import Combine
-import NetworkProtection
+import VPN
 import PixelKit
 
 final class VPNLocationViewModel: ObservableObject {

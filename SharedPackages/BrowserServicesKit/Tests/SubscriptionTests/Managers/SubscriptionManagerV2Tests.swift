@@ -43,10 +43,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockSubscriptionEndpointService = SubscriptionEndpointServiceMockV2()
         mockStorePurchaseManager = StorePurchaseManagerMockV2()
         mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMockV2()
-
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         subscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
             pixelHandler: MockPixelHandler()
@@ -80,22 +81,23 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
     // MARK: - Subscription Status Tests
 
-    func testRefreshCachedSubscription_ActiveSubscription() async {
+    func testRefreshCachedSubscription_ActiveSubscription() async throws {
         let activeSubscription = PrivacyProSubscription(
             productId: "testProduct",
             name: "Test Subscription",
             billingPeriod: .monthly,
-            startedAt: Date(),
-            expiresOrRenewsAt: Date().addingTimeInterval(30 * 24 * 60 * 60), // 30 days from now
+            startedAt: Date().addingTimeInterval(.minutes(-5)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(30)),
             platform: .stripe,
             status: .autoRenewable,
             activeOffers: []
         )
         mockSubscriptionEndpointService.getSubscriptionResult = .success(activeSubscription)
-        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
-        mockOAuthClient.isUserAuthenticated = true
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
 
-        let subscription = try! await subscriptionManager.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+        let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
         XCTAssertTrue(subscription.isActive)
     }
 
@@ -113,7 +115,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockSubscriptionEndpointService.getSubscriptionResult = .success(expiredSubscription)
         mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
         do {
-            try await subscriptionManager.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
         } catch {
             XCTAssertEqual(error.localizedDescription, SubscriptionEndpointServiceError.noData.localizedDescription)
         }
@@ -122,8 +124,9 @@ class SubscriptionManagerV2Tests: XCTestCase {
     // MARK: - URL Generation Tests
 
     func testURLGeneration_ForCustomerPortal() async throws {
-        mockOAuthClient.isUserAuthenticated = true
-        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+        let tokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockOAuthClient.internalCurrentTokenContainer = tokenContainer
+        mockOAuthClient.getTokensResponse = .success(tokenContainer)
         let customerPortalURLString = "https://example.com/customer-portal"
         mockSubscriptionEndpointService.getCustomerPortalURLResult = .success(GetCustomerPortalURLResponse(customerPortalUrl: customerPortalURLString))
 
@@ -133,9 +136,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
     func testURLGeneration_ForSubscriptionTypes() {
         let environment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         subscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: environment,
             pixelHandler: MockPixelHandler()
@@ -190,10 +195,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
     func testForProductionURL() throws {
         // Given
         let productionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
-
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         let productionSubscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: productionEnvironment,
             pixelHandler: MockPixelHandler()
@@ -209,10 +215,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
     func testForStagingURL() throws {
         // Given
         let stagingEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
-
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         let stagingSubscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: stagingEnvironment,
             pixelHandler: MockPixelHandler()
@@ -238,12 +245,12 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
     func testDeadTokenRecoveryFailure() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.refreshTokenExpired)
-        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = SubscriptionManagerError.tokenRefreshFailed(error: nil)
+        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = SubscriptionManagerError.errorRetrievingTokenContainer(error: nil)
 
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
             XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
-        } catch SubscriptionManagerError.tokenUnavailable {
+        } catch SubscriptionManagerError.noTokenAvailable {
 
         } catch {
             XCTFail("Wrong error: \(error)")
@@ -258,7 +265,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
             XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
-        } catch SubscriptionManagerError.tokenUnavailable {
+        } catch SubscriptionManagerError.noTokenAvailable {
 
         } catch {
             XCTFail("Unexpected error: \(error)")
@@ -267,7 +274,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
             XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
-        } catch SubscriptionManagerError.tokenUnavailable {
+        } catch SubscriptionManagerError.noTokenAvailable {
 
         } catch {
             XCTFail("Unexpected error: \(error)")
@@ -280,9 +287,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
         // Given
         mockStorePurchaseManager.isEligibleForFreeTrialResult = true
         let stripeEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         let sut = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: stripeEnvironment,
             pixelHandler: MockPixelHandler()
@@ -299,9 +308,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
         // Given
         mockStorePurchaseManager.isEligibleForFreeTrialResult = true
         let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         let sut = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: appStoreEnvironment,
             pixelHandler: MockPixelHandler()
@@ -318,9 +329,11 @@ class SubscriptionManagerV2Tests: XCTestCase {
         // Given
         mockStorePurchaseManager.isEligibleForFreeTrialResult = false
         let appStoreEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         let sut = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: appStoreEnvironment,
             pixelHandler: MockPixelHandler()

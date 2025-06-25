@@ -19,6 +19,7 @@
 import Foundation
 import BareBonesBrowserKit
 import SwiftUI
+import WebKit
 
 extension MainViewController: BareBonesBrowserUIDelegate {
 

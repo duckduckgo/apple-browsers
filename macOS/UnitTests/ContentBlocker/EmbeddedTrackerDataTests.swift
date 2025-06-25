@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
-import TrackerRadarKit
 import BrowserServicesKit
+import Foundation
+import TrackerRadarKit
+import WebKit
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class EmbeddedTrackerDataTests: XCTestCase {

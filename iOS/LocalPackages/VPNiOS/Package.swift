@@ -14,11 +14,17 @@ let package = Package(
             name: "VPNWidgetSupport",
             targets: ["VPNWidgetSupport"]),
     ],
+    dependencies: [
+        .package(path: "../VPN"),
+    ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "VPNWidgetSupport"
+            name: "VPNWidgetSupport",
+            dependencies: [
+                .product(name: "VPN", package: "VPN"),
+            ],
         ),
     ]
 )

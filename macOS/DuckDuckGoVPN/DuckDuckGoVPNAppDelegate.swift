@@ -26,7 +26,7 @@ import FeatureFlags
 import LoginItems
 import Networking
 import NetworkExtension
-import NetworkProtection
+import VPN
 import NetworkProtectionProxy
 import NetworkProtectionUI
 import os.log

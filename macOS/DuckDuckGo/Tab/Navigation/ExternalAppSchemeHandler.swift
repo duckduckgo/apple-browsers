@@ -19,6 +19,7 @@
 import Combine
 import Foundation
 import Navigation
+import WebKit
 
 protocol PermissionModelProtocol {
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL?, decisionHandler: @escaping (Bool) -> Void)

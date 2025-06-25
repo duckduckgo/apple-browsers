@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class CapturingHistoryViewBookmarksHandler: HistoryViewBookmarksHandling {

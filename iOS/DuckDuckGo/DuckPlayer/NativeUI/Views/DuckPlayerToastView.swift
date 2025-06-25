@@ -35,6 +35,7 @@ enum ToastPosition {
     case bottom
 }
 
+@MainActor
 protocol DuckPlayerToastViewModel {
     var message: AttributedString { get }
     var buttonTitle: String { get }

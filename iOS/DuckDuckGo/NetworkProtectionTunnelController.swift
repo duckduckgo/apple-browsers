@@ -22,7 +22,7 @@ import Combine
 import Core
 import Foundation
 import NetworkExtension
-import NetworkProtection
+import VPN
 import Common
 
 enum VPNConfigurationRemovalReason: String {

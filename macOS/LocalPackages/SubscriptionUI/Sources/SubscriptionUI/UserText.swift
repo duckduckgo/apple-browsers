@@ -32,6 +32,9 @@ enum UserText {
     static let personalInformationRemovalServiceDescription = NSLocalizedString("subscription.preferences.services.personal.information.removal.description", bundle: Bundle.module, value: "Find and remove your personal information from sites that store and sell it.", comment: "Description for the Personal Information Removal service listed in the subscription preferences pane")
     static let personalInformationRemovalServiceButtonTitle = NSLocalizedString("subscription.preferences.services.personal.information.removal.button.title", bundle: Bundle.module, value: "Open", comment: "Title for the Personal Information Removal service button to open its settings")
 
+    static let paidAIChatTitle = NSLocalizedString("subscription.preferences.services.paid.ai.chat.title", bundle: Bundle.module, value: "Duck.ai Pro", comment: "Title for the duck.ai premium listed in the subscription preferences pane")
+    static let paidAIChatServiceDescription = NSLocalizedString("subscription.preferences.services.paid.ai.chat.description", bundle: Bundle.module, value: "Upgrades Duck.ai with advanced AI models.", comment: "Description for the Duck.ai premium service listed in the subscription preferences pane")
+
     static let identityTheftRestorationServiceTitle = NSLocalizedString("subscription.preferences.services.identity.theft.restoration.title", bundle: Bundle.module, value: "Identity Theft Restoration", comment: "Title for the Identity Theft Restoration service listed in the subscription preferences pane")
     static let identityTheftRestorationServiceDescription = NSLocalizedString("subscription.preferences.services.identity.theft.restoration.description", bundle: Bundle.module, value: "Get help restoring stolen accounts and financial losses in the event of identity theft.", comment: "Description for the Identity Theft Restoration service listed in the subscription preferences pane")
     static let identityTheftRestorationServiceButtonTitle = NSLocalizedString("subscription.preferences.services.identity.theft.restoration.button.title", bundle: Bundle.module, value: "View", comment: "Title for the Identity Theft Restoration service button to open its settings")
@@ -40,6 +43,10 @@ enum UserText {
 
     static let preferencesPersonalInformationRemovalTitle = NSLocalizedString("subscription.preferences.personal.information.removal.title", bundle: Bundle.module, value: "Personal Information Removal", comment: "Title of the preferences pane for Personal Information Removal")
     static let openPersonalInformationRemovalButton = NSLocalizedString("subscription.preferences.open.personal.information.removal.button", bundle: Bundle.module, value: "Open Personal Information Removal...", comment: "Title for the preferences pane button to open Personal Information Removal")
+
+    // MARK: Preferences - Duck.ai Premium
+    static let preferencesPaidAIChatTitle = NSLocalizedString("subscription.paid.ai.chat.title", bundle: Bundle.module, value: "Duck.ai Pro", comment: "Title of the preferences pane for Duck.ai Pro")
+    static let openPaidAIChatButton = NSLocalizedString("subscription.preferences.paid.ai.chat.button", bundle: Bundle.module, value: "Open Duck.ai Pro", comment: "Title for the preferences pane button to open Duck.ai Pro")
 
     // MARK: Preferences - Identity Theft Restoration
 
@@ -180,12 +187,18 @@ enum UserText {
 
     // MARK: Preferences when subscription is inactive
     static let preferencesSubscriptionInactiveHeader = NSLocalizedString("subscription.preferences.subscription.inactive.header", bundle: Bundle.module, value: "Protect your connection and identity with Privacy Pro", comment: "Header for the subscription preferences pane when the subscription is inactive")
-    static func preferencesSubscriptionInactiveCaption(region: SubscriptionRegion) -> String {
+    static func preferencesSubscriptionInactiveCaption(region: SubscriptionRegion, isPaidAIChatEnabled: Bool) -> String {
         switch region {
         case .usa:
-            return NSLocalizedString("subscription.preferences.subscription.inactive.us.caption", bundle: Bundle.module, value: "Three premium protections in one subscription.", comment: "Caption for the subscription preferences pane when the subscription is inactive")
+            if isPaidAIChatEnabled {
+                return NSLocalizedString("subscription.preferences.subscription.inactive.us.caption", bundle: Bundle.module, value: "Three premium protections and Duck.ai Pro in one subscription.", comment: "Caption for the subscription preferences pane when the subscription is inactive")
+            }
+            return NSLocalizedString("subscription.preferences.subscription.inactive.us.caption.deprecated", bundle: Bundle.module, value: "Three premium protections in one subscription.", comment: "Caption for the subscription preferences pane when the subscription is inactive")
         case .restOfWorld:
-            return NSLocalizedString("subscription.preferences.subscription.inactive.row.caption", bundle: Bundle.module, value: "Two premium protections in one subscription.", comment: "Caption for the subscription preferences pane when the subscription is inactive")
+            if isPaidAIChatEnabled {
+                return NSLocalizedString("subscription.preferences.subscription.inactive.row.caption", bundle: Bundle.module, value: "Two premium protections and Duck.ai Pro in one subscription.", comment: "Caption for the subscription preferences pane when the subscription is inactive")
+            }
+            return NSLocalizedString("subscription.preferences.subscription.inactive.row.caption.deprecated", bundle: Bundle.module, value: "Two premium protections in one subscription.", comment: "Caption for the subscription preferences pane when the subscription is inactive")
         }
     }
 

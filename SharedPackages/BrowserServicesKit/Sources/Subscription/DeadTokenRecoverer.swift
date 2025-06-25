@@ -43,7 +43,7 @@ public actor DeadTokenRecoverer {
         case .stripe:
             Logger.subscription.debug("Subscription purchased via Stripe can't be restored automatically, notifying the user...")
             NotificationCenter.default.post(name: .expiredRefreshTokenDetected, object: self, userInfo: nil)
-            throw SubscriptionManagerError.tokenRefreshFailed(error: nil)
+            throw SubscriptionManagerError.noTokenAvailable
         }
     }
 
@@ -61,6 +61,6 @@ public actor DeadTokenRecoverer {
 
     private static func reportFailure(error: Error? = nil) throws {
         recoveryAttemptCount = 0
-        throw SubscriptionManagerError.tokenRefreshFailed(error: error)
+        throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
     }
 }

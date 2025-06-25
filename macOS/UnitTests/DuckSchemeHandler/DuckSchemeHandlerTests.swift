@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import MaliciousSiteProtection
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

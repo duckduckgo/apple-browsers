@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Subscription
+import AppKit
 import BrowserServicesKit
 import Common
+import Foundation
+import Subscription
 
 protocol SubscriptionRedirectManager: AnyObject {
     func redirectURL(for url: URL) -> URL?

@@ -31,6 +31,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let purchaseURL: URL
 
+    private let urlOpener: URLOpener
     private var cancellables = Set<AnyCancellable>()
     private var canGoBackCancellable: AnyCancellable?
     private var urlCancellable: AnyCancellable?
@@ -67,11 +68,13 @@ final class SubscriptionFlowViewModel: ObservableObject {
          userScript: SubscriptionPagesUserScript,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          subscriptionManager: SubscriptionAuthV1toV2Bridge,
-         selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil) {
+         selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil,
+         urlOpener: URLOpener = UIApplication.shared) {
         self.purchaseURL = purchaseURL
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
+        self.urlOpener = urlOpener
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -125,14 +128,14 @@ final class SubscriptionFlowViewModel: ObservableObject {
                      UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
                      self.state.selectedFeature = .itr
                  case .paidAIChat:
-                     // Follow up: Implement paidAIChat selection
-                     break
+                     UniquePixel.fire(pixel: .privacyProWelcomeAIChat)
+                     self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
                  case .unknown:
                      break
                  }
              }
          }
-        
+
         subFeature.transactionErrorPublisher
             .receive(on: DispatchQueue.main)
             .removeDuplicates()

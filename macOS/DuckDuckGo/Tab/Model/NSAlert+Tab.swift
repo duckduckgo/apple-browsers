@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import TrackerRadarKit
 
 extension NSAlert {

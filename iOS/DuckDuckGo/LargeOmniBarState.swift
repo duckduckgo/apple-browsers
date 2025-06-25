@@ -198,7 +198,7 @@ struct LargeOmniBarState {
         var onEnterPadState: OmniBarState { return self }
         var onEnterPhoneState: OmniBarState { return SmallOmniBarState.BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onReloadState: OmniBarState { return BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
-        var showSearchLoupe: Bool { !dependencies.voiceSearchHelper.isVoiceSearchEnabled }
+        var showSearchLoupe: Bool { !dependencies.themingProperties.isExperimentalThemingEnabled && !dependencies.voiceSearchHelper.isVoiceSearchEnabled }
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
 
         let dependencies: OmnibarDependencyProvider

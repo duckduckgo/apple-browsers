@@ -15,6 +15,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+
+import AppKit
 import DesignResourcesKitIcons
 
 protocol SettingsIconsProviding {
@@ -79,7 +81,7 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var appearanceIcon: NSImage = DesignSystemImages.Color.Size16.appearance
     var passwordsAndAutoFillIcon: NSImage = DesignSystemImages.Color.Size16.key
     var accessibilityIcon: NSImage = DesignSystemImages.Color.Size16.accessibility
-    var dataClearingIcon: NSImage = DesignSystemImages.Color.Size16.fireNewColor
+    var dataClearingIcon: NSImage = DesignSystemImages.Color.Size16.fire
     var duckPlayerIcon: NSImage = DesignSystemImages.Color.Size16.videoPlayer
     var duckAIIcon: NSImage = DesignSystemImages.Color.Size16.aiChat
     var aboutIcon: NSImage = DesignSystemImages.Color.Size16.duckDuckGo

@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import NetworkProtection
+import VPN
 import Subscription
 import UIKit
 import NotificationCenter
@@ -114,7 +114,7 @@ final class VPNService: NSObject {
     @MainActor
     private func refreshVPNShortcuts() async {
         guard await vpnFeatureVisibility.shouldShowVPNShortcut(),
-              let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection,
+              let hasEntitlement = try? await subscriptionManager.isFeatureAvailableAndEnabled(feature: .networkProtection,
                                                                             cachePolicy: .returnCacheDataDontLoad),
               hasEntitlement
         else {

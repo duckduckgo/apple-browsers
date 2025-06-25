@@ -28,7 +28,7 @@ import DuckPlayer
 import Crashes
 
 import Subscription
-import NetworkProtection
+import VPN
 import AIChat
 
 final class SettingsViewModel: ObservableObject {
@@ -53,6 +53,7 @@ final class SettingsViewModel: ObservableObject {
     private let duckPlayerSettings: DuckPlayerSettings
     private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
     let featureDiscovery: FeatureDiscovery
+    private let urlOpener: URLOpener
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -78,9 +79,12 @@ final class SettingsViewModel: ObservableObject {
     // App Data State Notification Observer
     private var appDataClearingObserver: Any?
     private var textZoomObserver: Any?
+    private var appForegroundObserver: Any?
 
     // Subscription Free Trials
     private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
+
+    private let keyValueStore: ThrowingKeyValueStoring
 
     // Closures to interact with legacy view controllers through the container
     var onRequestPushLegacyView: ((UIViewController) -> Void)?
@@ -102,6 +106,11 @@ final class SettingsViewModel: ObservableObject {
         case networkProtection
     }
 
+    // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
+    var isPaidAIChatEnabled: Bool {
+        featureFlagger.isFeatureOn(.paidAIChat)
+    }
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 
@@ -110,6 +119,9 @@ final class SettingsViewModel: ObservableObject {
     @Published var isInternalUser: Bool = AppDependencyProvider.shared.internalUserDecider.isInternalUser
 
     @Published var selectedFeedbackFlow: String?
+
+    @Published var shouldShowSetAsDefaultBrowser: Bool = false
+    @Published var shouldShowImportPasswords: Bool = false
 
     // MARK: - Deep linking
     // Used to automatically navigate to a specific section
@@ -474,6 +486,11 @@ final class SettingsViewModel: ObservableObject {
         subscriptionAuthV1toV2Bridge.isUserAuthenticated
     }
 
+    // Indicates if the Paid AI Chat entitlement flag is available for the current user
+    var isPaidAIChatAvailable: Bool {
+        state.subscription.subscriptionFeatures.contains(Entitlement.ProductName.paidAIChat)
+    }
+
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
@@ -496,7 +513,9 @@ final class SettingsViewModel: ObservableObject {
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()
+         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
+         urlOpener: URLOpener = UIApplication.shared,
+         keyValueStore: ThrowingKeyValueStoring
     ) {
 
         self.state = SettingsState.defaults
@@ -520,6 +539,8 @@ final class SettingsViewModel: ObservableObject {
         self.duckPlayerPixelHandler = duckPlayerPixelHandler
         self.featureDiscovery = featureDiscovery
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
+        self.urlOpener = urlOpener
+        self.keyValueStore = keyValueStore
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -528,6 +549,9 @@ final class SettingsViewModel: ObservableObject {
         subscriptionSignOutObserver = nil
         appDataClearingObserver = nil
         textZoomObserver = nil
+        if #available(iOS 18.2, *) {
+            appForegroundObserver = nil
+        }
     }
 }
 
@@ -548,6 +572,7 @@ extension SettingsViewModel {
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalThemingEnabled: themeManager.properties.isExperimentalThemingEnabled,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
+            isExperimentalAIChatTransitionEnabled: experimentalAIChatManager.isExperimentalTransitionEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
@@ -557,6 +582,8 @@ extension SettingsViewModel {
             longPressPreviews: appSettings.longPressPreviews,
             allowUniversalLinks: appSettings.allowUniversalLinks,
             activeWebsiteAccount: nil,
+            activeWebsiteCreditCard: nil,
+            showCreditCardManagement: false,
             version: versionProvider.versionAndBuildNumber,
             crashCollectionOptInStatus: appSettings.crashCollectionOptInStatus,
             debugModeEnabled: featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild,
@@ -585,6 +612,11 @@ extension SettingsViewModel {
             .store(in: &cancellables)
 
         updateRecentlyVisitedSitesVisibility()
+
+        if #available(iOS 18.2, *) {
+            updateCompleteSetupSectionVisiblity()
+        }
+
         setupSubscribers()
         Task { await setupSubscriptionEnvironment() }
     }
@@ -651,6 +683,61 @@ extension SettingsViewModel {
         state.duckPlayerNativeUISERPEnabled = duckPlayerSettings.nativeUISERPEnabled
         state.duckPlayerNativeYoutubeMode = duckPlayerSettings.nativeUIYoutubeMode
     }
+
+    @available(iOS 18.2, *)
+    private func updateCompleteSetupSectionVisiblity() {
+        guard featureFlagger.isFeatureOn(.showSettingsCompleteSetupSection) else {
+            return
+        }
+
+        if let didDismissBrowserPrompt = try? keyValueStore.object(forKey: Constants.didDismissSetAsDefaultBrowserKey) as? Bool {
+            shouldShowSetAsDefaultBrowser = !didDismissBrowserPrompt
+        } else {
+            // No dismissal record found, show by default
+            shouldShowSetAsDefaultBrowser = true
+        }
+
+        if let didDismissImportPrompt = try? keyValueStore.object(forKey: Constants.didDismissImportPasswordsKey) as? Bool {
+            shouldShowImportPasswords = !didDismissImportPrompt
+        } else {
+            // No dismissal record found, show by default
+            shouldShowImportPasswords = true
+        }
+
+        // Only proceed with checks if one of the rows from this section has not already been dismissed
+        guard shouldShowSetAsDefaultBrowser || shouldShowImportPasswords else {
+            return
+        }
+
+        if let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter()),
+           let passwordsCount = try? secureVault.accountsCount(),
+           passwordsCount >= 25 {
+            permanentlyDismissCompleteSetupSection()
+            return
+        }
+
+        if let checkIfDefaultBrowser = try? keyValueStore.object(forKey: Constants.shouldCheckIfDefaultBrowserKey) as? Bool {
+            do {
+                if checkIfDefaultBrowser, try UIApplication.shared.isDefault(.webBrowser) {
+                    try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
+                    shouldShowSetAsDefaultBrowser = false
+                }
+            } catch {
+                try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
+                shouldShowSetAsDefaultBrowser = false
+            }
+
+            // only want to check default browser state once after the first time a user interacts with this row due to API restrictions. After that users can swipe to dismiss
+            try? keyValueStore.set(false, forKey: Constants.shouldCheckIfDefaultBrowserKey)
+        }
+    }
+
+    private func permanentlyDismissCompleteSetupSection() {
+        try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
+        try? keyValueStore.set(true, forKey: Constants.didDismissImportPasswordsKey)
+        shouldShowSetAsDefaultBrowser = false
+        shouldShowImportPasswords = false
+    }
 }
 
 // MARK: Subscribers
@@ -670,7 +757,13 @@ extension SettingsViewModel {
 
 // MARK: Public Methods
 extension SettingsViewModel {
-    
+
+    enum Constants {
+        static let didDismissSetAsDefaultBrowserKey = "com.duckduckgo.settings.setup.browser-default-dismissed"
+        static let didDismissImportPasswordsKey = "com.duckduckgo.settings.setup.import-passwords-dismissed"
+        static let shouldCheckIfDefaultBrowserKey = "com.duckduckgo.settings.setup.check-browser-default"
+    }
+
     func onAppear() {
         Task {
             await initState()
@@ -681,18 +774,39 @@ extension SettingsViewModel {
     func onDisappear() {
         self.deepLinkTarget = nil
     }
-    
-    func setAsDefaultBrowser() {
-        Pixel.fire(pixel: .settingsSetAsDefault)
+
+    func setAsDefaultBrowser(_ source: String? = nil) {
+        var parameters: [String: String] = [:]
+        if let source = source {
+            parameters[PixelParameters.source] = source
+        }
+        Pixel.fire(pixel: .settingsSetAsDefault, withAdditionalParameters: parameters)
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
+        if shouldShowSetAsDefaultBrowser {
+            try? keyValueStore.set(true, forKey: Constants.shouldCheckIfDefaultBrowserKey)
+        }
     }
-    
-    @MainActor func shouldPresentLoginsViewWithAccount(accountDetails: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource? = nil) {
+
+    @available(iOS 18.2, *)
+    func dismissSetAsDefaultBrowser() {
+        try? keyValueStore.set(true, forKey: Constants.didDismissSetAsDefaultBrowserKey)
+        updateCompleteSetupSectionVisiblity()
+    }
+
+    @available(iOS 18.2, *)
+    func dismissImportPasswords() {
+        try? keyValueStore.set(true, forKey: Constants.didDismissImportPasswordsKey)
+        updateCompleteSetupSectionVisiblity()
+    }
+
+    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, source: AutofillSettingsSource? = nil) {
         state.activeWebsiteAccount = accountDetails
+        state.activeWebsiteCreditCard = card
+        state.showCreditCardManagement = showCreditCardManagement
         state.autofillSource = source
         
-        presentLegacyView(.logins)
+        presentLegacyView(.autofill)
     }
 
     @MainActor func shouldPresentSyncViewWithSource(_ source: String? = nil) {
@@ -701,24 +815,28 @@ extension SettingsViewModel {
     }
 
     func openEmailProtection() {
-        UIApplication.shared.open(URL.emailProtectionQuickLink)
+        urlOpener.open(URL.emailProtectionQuickLink)
     }
 
     func openEmailAccountManagement() {
-        UIApplication.shared.open(URL.emailProtectionAccountLink)
+        urlOpener.open(URL.emailProtectionAccountLink)
     }
 
     func openEmailSupport() {
-        UIApplication.shared.open(URL.emailProtectionSupportLink)
+        urlOpener.open(URL.emailProtectionSupportLink)
     }
 
     func openOtherPlatforms() {
-        UIApplication.shared.open(URL.otherDevices)
+        urlOpener.open(URL.otherDevices)
     }
 
     func openMoreSearchSettings() {
         Pixel.fire(pixel: .settingsMoreSearchSettings)
-        UIApplication.shared.open(URL.searchSettings)
+        urlOpener.open(URL.searchSettings)
+    }
+
+    func openAIChat() {
+        urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
     }
 
     var shouldDisplayDuckPlayerContingencyMessage: Bool {
@@ -728,7 +846,7 @@ extension SettingsViewModel {
     func openDuckPlayerContingencyMessageSite() {
         guard let url = duckPlayerContingencyHandler.learnMoreURL else { return }
         Pixel.fire(pixel: .duckPlayerContingencyLearnMoreClicked)
-        UIApplication.shared.open(url)
+        urlOpener.open(url)
     }
 
     @MainActor func openCookiePopupManagement() {
@@ -767,9 +885,12 @@ extension SettingsViewModel {
             
         case .feedback:
             presentViewController(legacyViewProvider.feedback, modal: false)
-        case .logins:
+        case .autofill:
             pushViewController(legacyViewProvider.loginSettings(delegate: self,
                                                                 selectedAccount: state.activeWebsiteAccount,
+                                                                selectedCard: state.activeWebsiteCreditCard,
+                                                                showPasswordManagement: false,
+                                                                showCreditCardManagement: state.showCreditCardManagement,
                                                                 source: state.autofillSource))
 
         case .gpc:
@@ -778,6 +899,8 @@ extension SettingsViewModel {
         
         case .autoconsent:
             pushViewController(legacyViewProvider.autoConsent)
+        case .passwordsImport:
+            pushViewController(legacyViewProvider.importPasswords(delegate: self))
         }
     }
  
@@ -801,6 +924,21 @@ extension SettingsViewModel: AutofillSettingsViewControllerDelegate {
         onRequestPopLegacyView?()
     }
 }
+
+// MARK: DataImportViewControllerDelegate
+extension SettingsViewModel: DataImportViewControllerDelegate {
+    @MainActor
+    func dataImportViewControllerDidFinish(_ controller: DataImportViewController) {
+        AppDependencyProvider.shared.autofillLoginSession.startSession()
+        pushViewController(legacyViewProvider.loginSettings(delegate: self,
+                                                            selectedAccount: nil,
+                                                            selectedCard: nil,
+                                                            showPasswordManagement: true,
+                                                            showCreditCardManagement: false,
+                                                            source: state.autofillSource))
+    }
+}
+
 
 // MARK: DeepLinks
 extension SettingsViewModel {
@@ -892,7 +1030,7 @@ extension SettingsViewModel {
         }
         
         do {
-            let subscription = try await subscriptionAuthV1toV2Bridge.getSubscription(cachePolicy: .returnCacheDataElseLoad)
+            let subscription = try await subscriptionAuthV1toV2Bridge.getSubscription(cachePolicy: .cacheFirst)
             state.subscription.platform = subscription.platform
             state.subscription.hasSubscription = true
             state.subscription.hasActiveSubscription = subscription.isActive
@@ -900,7 +1038,7 @@ extension SettingsViewModel {
 
             // Check entitlements and update state
             var currentEntitlements: [Entitlement.ProductName] = []
-            let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal]
+            let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
             for entitlement in entitlementsToCheck {
                 if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isEnabled(feature: entitlement),
@@ -953,6 +1091,15 @@ extension SettingsViewModel {
             guard let self = self else { return }
             self.state.textZoom = SettingsState.TextZoom(enabled: true, level: self.appSettings.defaultTextZoomLevel)
         })
+
+        if #available(iOS 18.2, *) {
+            appForegroundObserver = NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { [weak self] _ in
+                guard let self = self else { return }
+                if self.shouldShowSetAsDefaultBrowser, let shouldCheckIfDefaultBrowser = try? keyValueStore.object(forKey: Constants.shouldCheckIfDefaultBrowserKey) as? Bool, shouldCheckIfDefaultBrowser {
+                    self.updateCompleteSetupSectionVisiblity()
+                }
+            }
+        }
     }
 
     func restoreAccountPurchase() async {
@@ -1130,6 +1277,15 @@ extension SettingsViewModel {
             set: { _ in
                 self.experimentalAIChatManager.toggleExperimentalTheming()
                 self.state.isExperimentalAIChatEnabled = self.experimentalAIChatManager.isExperimentalAIChatSettingsEnabled
+            })
+    }
+
+    var aiChatExperimentalTransitionBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.isExperimentalAIChatTransitionEnabled },
+            set: { _ in
+                self.experimentalAIChatManager.toggleExperimentalTransition()
+                self.state.isExperimentalAIChatTransitionEnabled = self.experimentalAIChatManager.isExperimentalTransitionEnabled
             })
     }
 

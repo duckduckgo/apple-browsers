@@ -20,7 +20,7 @@
 import Combine
 import Common
 import Core
-import NetworkProtection
+import VPN
 import os.log
 import TipKit
 

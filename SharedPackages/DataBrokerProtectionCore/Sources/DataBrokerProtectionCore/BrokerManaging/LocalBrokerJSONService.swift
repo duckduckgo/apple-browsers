@@ -120,23 +120,27 @@ public final class AppVersionNumber: AppVersionNumberProvider {
     }
 }
 
-public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
+public final class LocalBrokerJSONService: BrokerJSONFallbackProvider {
     private let repository: BrokerUpdaterRepository
     private let resources: ResourcesRepository
-    public let vault: any DataBrokerProtectionSecureVault
+    public var vault: (any DataBrokerProtectionSecureVault)?
+    public let vaultMaker: () -> (any DataBrokerProtectionSecureVault)?
+
     private let appVersion: AppVersionNumberProvider
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
     public init(repository: BrokerUpdaterRepository = BrokerUpdaterUserDefaults(),
                 resources: ResourcesRepository = FileResources(),
-                vault: any DataBrokerProtectionSecureVault,
                 appVersion: AppVersionNumberProvider = AppVersionNumber(),
+                vaultMaker: @escaping () -> (any DataBrokerProtectionSecureVault)?,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
         self.repository = repository
         self.resources = resources
-        self.vault = vault
         self.appVersion = appVersion
+        self.vaultMaker = vaultMaker
         self.pixelHandler = pixelHandler
+
+        self.vault = makeSecureVault()
     }
 
     public func updateBrokers() {

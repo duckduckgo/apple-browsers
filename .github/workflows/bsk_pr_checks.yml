@@ -32,6 +32,7 @@ jobs:
 
       outputs:
         commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
+        pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
       steps:
 
@@ -93,7 +94,7 @@ jobs:
         if: always() && github.ref_name == 'main'
         uses: ./.github/actions/send-pixel
         with:
-          pixel-name: m_ci_apple_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}
+          pixel-name: m_ci_apple_status_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}
 
       - name: Report job duration
         if: success() || (always() && steps.run-unit-tests.outcome == 'failure')
@@ -101,7 +102,7 @@ jobs:
         with:
           mode: stop
           start-timestamp: ${{ steps.start-duration-macos.outputs.start-timestamp }}
-          pixel-name: m_ci_apple_bsk_unit_tests_macos_duration
+          pixel-name: m_ci_apple_duration_bsk_unit_tests_macos
           pixel-params: |
             runner: ${{ env.RUNS_ON }}
 
@@ -158,15 +159,12 @@ jobs:
           name: build-log.txt
           path: SharedPackages/BrowserServicesKit/build-log.txt
 
-      - name: Fetch latest commit author
+      - name: Fetch latest commit author and PR reviewers
         if: always() && github.ref_name == 'main'
         id: fetch_commit_author
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          head_commit=$(git rev-parse HEAD)
-          author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
-          echo "commit_author=${author}" >> $GITHUB_OUTPUT
+        uses: ./.github/actions/fetch-commit-info
+        with:
+          github-token: ${{ github.token }}
 
   unit-tests-ios:
 
@@ -247,7 +245,7 @@ jobs:
         with:
           mode: stop
           start-timestamp: ${{ steps.start-duration-ios.outputs.start-timestamp }}
-          pixel-name: m_ci_apple_bsk_unit_tests_ios_duration
+          pixel-name: m_ci_apple_duration_bsk_unit_tests_ios
           pixel-params: |
             runner: ${{ env.RUNS_ON }}
 
@@ -255,7 +253,7 @@ jobs:
         if: always() && github.ref_name == 'main'
         uses: ./.github/actions/send-pixel
         with:
-          pixel-name: m_ci_apple_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
+          pixel-name: m_ci_apple_status_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
@@ -311,6 +309,7 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
+          pr-reviewers: ${{ needs.unit-tests.outputs.pr_reviewers }}
           github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:

@@ -18,6 +18,8 @@
 
 import Foundation
 import XCTest
+import CoreData
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class CoreDataStoreTests: XCTestCase {

@@ -10,18 +10,16 @@
 	</array>
 	<key>com.apple.developer.siri</key>
 	<true/>
-	<key>com.apple.developer.web-browser</key>
-	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.com.duckduckgo.alpha.app-configuration</string>
+		<string>group.com.duckduckgo.alpha.autofill</string>
 		<string>group.com.duckduckgo.alpha.bookmarks</string>
 		<string>group.com.duckduckgo.alpha.contentblocker</string>
 		<string>group.com.duckduckgo.alpha.database</string>
 		<string>group.com.duckduckgo.alpha.netp</string>
 		<string>group.com.duckduckgo.alpha.statistics</string>
 		<string>group.com.duckduckgo.alpha.vault</string>
-		<string>group.com.duckduckgo.alpha.autofill</string>
 	</array>
 	<key>keychain-access-groups</key>
 	<array>

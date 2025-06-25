@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
+import Foundation
+
 protocol TabStyleProviding {
     var separatorColor: NSColor { get }
     var separatorHeight: CGFloat { get }

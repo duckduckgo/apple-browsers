@@ -95,7 +95,6 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
     func testWhenValidatingBookmarkDrop_AndDestinationIsFolder_ThenMoveDragOperationIsReturned() {
         let mockDestinationFolder = BookmarkFolder.mock
         let bookmarkStoreMock = BookmarkStoreMock(bookmarks: [mockDestinationFolder])
-        let faviconManagerMock = FaviconManagerMock()
         let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 

@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
+import Foundation
 import NewTabPage
 
 final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {

@@ -20,6 +20,7 @@ import SwiftUI
 import Common
 import Combine
 import BrowserServicesKit
+import FeatureFlags
 
 final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
@@ -27,17 +28,37 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     private let internalUserDecider: InternalUserDecider
     @Published var isInternalUser: Bool
+    @Published var featureFlagOverrideToggle = false
     private var internalUserCancellable: AnyCancellable?
     private let featureFlagger: FeatureFlagger
+    let supportedOSChecker: SupportedOSChecking
+    private var cancellables = Set<AnyCancellable>()
 
     private init(internalUserDecider: InternalUserDecider,
-                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+                 supportedOSChecker: SupportedOSChecking? = nil) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
         self.isInternalUser = internalUserDecider.isInternalUser
+        self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
         self.internalUserCancellable = internalUserDecider.isInternalUserPublisher
             .sink { [weak self] in self?.isInternalUser = $0 }
+
+        subscribeToFeatureFlagOverrideChanges()
+    }
+
+    private func subscribeToFeatureFlagOverrideChanges() {
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        overridesHandler.flagDidChangePublisher
+            .filter { $0.0.category == .osSupportWarnings }
+            .sink { [weak self] _ in
+                self?.featureFlagOverrideToggle.toggle()
+            }
+            .store(in: &cancellables)
     }
 
 #if SPARKLE
@@ -132,14 +153,16 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     let displayableAboutURL: String = URL.aboutDuckDuckGo
         .toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: false)
 
-    var isCurrentOsReceivingUpdates: Bool {
-        return SupportedOSChecker.isCurrentOSReceivingUpdates
+    var osSupportWarning: OSSupportWarning? {
+        supportedOSChecker.supportWarning
     }
 
+#if FEEDBACK
     @MainActor
     func openFeedbackForm() {
         NSApp.delegateTyped.openFeedback(nil)
     }
+#endif
 
     func copy(_ value: String) {
         NSPasteboard.general.copy(value)

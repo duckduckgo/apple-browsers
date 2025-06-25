@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import Foundation
 
 #if DEBUG
 

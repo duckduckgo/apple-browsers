@@ -17,6 +17,7 @@
 //
 
 import Common
+import CoreData
 import Foundation
 import Persistence
 

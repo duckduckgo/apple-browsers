@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 /// Represents a “Fire Window Session” tracking lifetime of the owning Fire Window and Popup windows created from it.
 /// Used to detect active downloads within a Fire Window Session.
 /// Deinitialized when the last window from the session is closed calling the `deinitObservers`.

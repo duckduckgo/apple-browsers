@@ -56,7 +56,9 @@ struct SyncWithAnotherDeviceView: View {
                         showTextCodeView()
                     }
                 } else {
-                    enterCodeView()
+                    enterCodeView().onAppear {
+                        model.delegate?.enterCodeViewDidAppear()
+                    }
                 }
             }
             .padding(16)
@@ -67,7 +69,7 @@ struct SyncWithAnotherDeviceView: View {
         }
     buttons: {
         Button(UserText.cancel) {
-            model.endFlow()
+            model.cancelPressed()
         }
     }
     .frame(width: 420)

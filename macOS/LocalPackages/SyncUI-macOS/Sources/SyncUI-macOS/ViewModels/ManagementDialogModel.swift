@@ -20,7 +20,6 @@ import Foundation
 import Combine
 
 public protocol ManagementDialogModelDelegate: AnyObject {
-    func recoverDevice(recoveryCode: String, fromRecoveryScreen: Bool)
     func turnOffSync()
     func updateDeviceName(_ name: String)
     func removeDevice(_ device: SyncDevice)
@@ -29,12 +28,13 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func saveRecoveryPDF()
     func recoveryCodeNextPressed()
     func turnOnSync()
-    func recoveryCodePasted(_ code: String)
     func enterRecoveryCodePressed()
     func copyCode()
     func openSystemPasswordSettings()
     func userConfirmedSwitchAccounts(recoveryCode: String)
+    func userPressedCancel(from dialog: ManagementDialogKind)
     func switchAccountsCancelled()
+    func enterCodeViewDidAppear()
 }
 
 public final class ManagementDialogModel: ObservableObject {
@@ -56,6 +56,14 @@ public final class ManagementDialogModel: ObservableObject {
                 self?.shouldShowErrorMessage = hasError
             }
 
+    }
+
+    @MainActor
+    public func cancelPressed() {
+        if let currentDialog = currentDialog {
+            delegate?.userPressedCancel(from: currentDialog)
+        }
+        endFlow()
     }
 
     @MainActor

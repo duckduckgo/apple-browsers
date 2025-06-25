@@ -16,6 +16,4 @@
 //  limitations under the License.
 //
 
-#import "Bridging.h"
-
 #import "WKURLSchemeTask+Private.h"

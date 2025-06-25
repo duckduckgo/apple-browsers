@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Sparkle
-import PixelKit
+import AppKit
 import BrowserServicesKit
 import Combine
+import Foundation
 import os.log
+import PixelKit
+import Sparkle
 
 #if SPARKLE
 
@@ -111,7 +112,7 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     private var onResuming: (() -> Void)? {
         didSet {
             if useLegacyAutoRestartLogic {
-                updateLastCheckForUpdatesDate()
+                updateLastUpdateDownloadedDate()
             }
         }
     }
@@ -119,12 +120,12 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     @UserDefaultsWrapper(key: .pendingUpdateSince, defaultValue: .distantPast)
     private var pendingUpdateSince: Date
 
-    func updateLastCheckForUpdatesDate() {
+    func updateLastUpdateDownloadedDate() {
         pendingUpdateSince = Date()
     }
 
-    var daysSinceLastUpdateCheck: Int {
-        Calendar.current.dateComponents([.day], from: pendingUpdateSince, to: Date()).day ?? Int.max
+    var timeIntervalSinceLastUpdateDownloaded: TimeInterval {
+        Date().timeIntervalSince(pendingUpdateSince)
     }
 
     // Dismiss the current update for the time being but keep the downloaded file around

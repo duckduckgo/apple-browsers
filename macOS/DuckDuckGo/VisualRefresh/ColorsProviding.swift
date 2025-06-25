@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 protocol ColorsProviding {
     var navigationBackgroundColor: NSColor { get }
     var baseBackgroundColor: NSColor { get }

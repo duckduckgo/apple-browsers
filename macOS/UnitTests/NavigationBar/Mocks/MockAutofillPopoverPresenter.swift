@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
+import AppKit
 import BrowserServicesKit
-@testable import DuckDuckGo_Privacy_Browser
 import Foundation
+
+@testable import DuckDuckGo_Privacy_Browser
 
 final class MockAutofillPopoverPresenter: AutofillPopoverPresenter {
 

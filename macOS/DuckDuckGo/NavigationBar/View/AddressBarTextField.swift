@@ -56,7 +56,7 @@ final class AddressBarTextField: NSTextField {
         tabCollectionViewModel.isBurner
     }
 
-    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
+    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
 
     private var suggestionResultCancellable: AnyCancellable?
     private var selectedSuggestionViewModelCancellable: AnyCancellable?
@@ -311,7 +311,7 @@ final class AddressBarTextField: NSTextField {
 
     func aiChatQueryEnterPressed() {
         suggestionContainerViewModel?.clearUserStringValue()
-        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(value, target: .sameTab)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(value, with: .currentTab)
         hideSuggestionWindow()
     }
 
@@ -383,14 +383,10 @@ final class AddressBarTextField: NSTextField {
         }
 
         // reset to actual value
-        let oldValue = value
         clearValue()
         updateValue(selectedTabViewModel: nil, addressBarString: nil)
 
-        if oldValue == value {
-            // resign first responder if nothing has changed
-            self.window?.makeFirstResponder(nil)
-        }
+        self.window?.makeFirstResponder(nil)
     }
 
     override func becomeFirstResponder() -> Bool {

@@ -29,19 +29,25 @@ public struct PreferencesSidebarSubscriptionState: Equatable {
 
     public let personalInformationRemovalStatus: StatusIndicator
     public let identityTheftRestorationStatus: StatusIndicator
+    public let paidAIChatStatus: StatusIndicator
+    public let isPaidAIChatEnabled: Bool
 
     public init(hasSubscription: Bool,
                 subscriptionFeatures: [Entitlement.ProductName]?,
                 userEntitlements: [SubscriptionEntitlement],
                 shouldHideSubscriptionPurchase: Bool,
                 personalInformationRemovalStatus: StatusIndicator,
-                identityTheftRestorationStatus: StatusIndicator) {
+                identityTheftRestorationStatus: StatusIndicator,
+                paidAIChatStatus: StatusIndicator,
+                isPaidAIChatEnabled: Bool) {
         self.hasSubscription = hasSubscription
         self.subscriptionFeatures = subscriptionFeatures
         self.userEntitlements = userEntitlements
         self.shouldHideSubscriptionPurchase = shouldHideSubscriptionPurchase
         self.personalInformationRemovalStatus = personalInformationRemovalStatus
         self.identityTheftRestorationStatus = identityTheftRestorationStatus
+        self.paidAIChatStatus = paidAIChatStatus
+        self.isPaidAIChatEnabled = isPaidAIChatEnabled
     }
 
     public static var initial: Self {
@@ -50,6 +56,8 @@ public struct PreferencesSidebarSubscriptionState: Equatable {
               userEntitlements: [],
               shouldHideSubscriptionPurchase: true,
               personalInformationRemovalStatus: .off,
-              identityTheftRestorationStatus: .off)
+              identityTheftRestorationStatus: .off,
+              paidAIChatStatus: .off,
+              isPaidAIChatEnabled: false)
     }
 }

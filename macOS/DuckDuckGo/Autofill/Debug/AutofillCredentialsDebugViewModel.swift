@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
 import Common
+import Foundation
 import os.log
 
 final class AutofillCredentialsDebugViewModel: ObservableObject {

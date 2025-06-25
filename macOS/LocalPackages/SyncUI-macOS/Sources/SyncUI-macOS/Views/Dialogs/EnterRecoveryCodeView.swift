@@ -61,7 +61,7 @@ public struct EnterRecoveryCodeView: View {
             QRCode(string: stringForQRCode, desiredSize: 192)
         } buttons: {
             Button(UserText.cancel) {
-                model.endFlow()
+                model.cancelPressed()
             }
             .buttonStyle(DismissActionButtonStyle())
         }

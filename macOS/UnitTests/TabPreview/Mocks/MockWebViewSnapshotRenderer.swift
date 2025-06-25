@@ -16,7 +16,10 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
+import WebKit
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class MockWebViewSnapshotRenderer: WebViewSnapshotRendering {

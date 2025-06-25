@@ -20,9 +20,10 @@ import BrowserServicesKit
 import Combine
 import Common
 import DDGSync
+import Foundation
 import Persistence
-import SyncDataProviders
 import PixelKit
+import SyncDataProviders
 
 final class SyncDataProviders: DataProvidersSource {
     public let bookmarksAdapter: SyncBookmarksAdapter

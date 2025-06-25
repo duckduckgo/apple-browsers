@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import Testing
 import FeatureFlags
+import Foundation
+import Testing
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DefaultBrowserAndDockPromptTypeDeciderTests {

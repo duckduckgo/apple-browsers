@@ -66,6 +66,7 @@ public enum PrivacyFeature: String {
     case adAttributionReporting
     case forceOldAppDelegate
     case htmlHistoryPage
+    case shortHistoryMenu
     case tabManager
     case webViewStateRestoration
     case experimentalTheming
@@ -292,7 +293,9 @@ public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
 public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }
 
-    case setAsDefaultBrowserExperiment
+    case showSettingsCompleteSetupSection
+    /// https://app.asana.com/1/137249556945/project/1108686900785972/task/1210454186090900?focus=true
+    case setAsDefaultBrowserPiPVideoExperiment
 }
 
 public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {

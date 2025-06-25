@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Foundation
 
 final class ZoomPopoverViewModel: ObservableObject {
     let tabViewModel: TabViewModel

@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import Testing
 import Common
+import Foundation
 import PersistenceTestingUtils
+import Testing
+
 @testable import DuckDuckGo_Privacy_Browser
 
 struct DefaultBrowserAndDockPromptStorageTests {

@@ -54,6 +54,15 @@ class AutofillDebugViewController: UITableViewController {
 
     @UserDefaultsWrapper(key: .autofillFirstTimeUser, defaultValue: true)
     private var autofillFirstTimeUser: Bool
+    
+    @UserDefaultsWrapper(key: .autofillCreditCardsSaveModalRejectionCount, defaultValue: 0)
+    private var autofillCreditCardsSaveModalRejectionCount: Int
+    
+    @UserDefaultsWrapper(key: .autofillCreditCardsSaveModalDisablePromptShown, defaultValue: false)
+    private var autofillCreditCardsSaveModalDisablePromptShown: Bool
+
+    @UserDefaultsWrapper(key: .autofillCreditCardsFirstTimeUser, defaultValue: true)
+    private var autofillCreditCardsFirstTimeUser: Bool
 
     // swiftlint:disable:next cyclomatic_complexity
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -66,10 +75,10 @@ class AutofillDebugViewController: UITableViewController {
                 NotificationCenter.default.post(Notification(name: AppUserDefaults.Notifications.autofillDebugScriptToggled))
             } else if cell.tag == Row.resetAutofillData.rawValue {
                 let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+                // delete all credential related data
                 try? secureVault?.deleteAllWebsiteCredentials()
                 let autofillPixelReporter = AutofillPixelReporter(
-                        standardUserDefaults: .standard,
-                        appGroupUserDefaults: UserDefaults(suiteName: "\(Global.groupIdPrefix).autofill"),
+                        usageStore: AutofillUsageStore(),
                         autofillEnabled: AppUserDefaults().autofillCredentialsEnabled,
                         eventMapping: EventMapping<AutofillPixelEvent> { _, _, _, _ in })
                 autofillPixelReporter.resetStoreDefaults()
@@ -78,6 +87,16 @@ class AutofillDebugViewController: UITableViewController {
                 autofillSaveModalDisablePromptShown = false
                 autofillFirstTimeUser = true
                 _ = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager.deleteAllNeverPromptWebsites()
+
+                // delete all credit card related data
+                let creditCards = try? secureVault?.creditCards()
+                for card in creditCards ?? [] {
+                    guard let id = card.id else { continue }
+                    try? secureVault?.deleteCreditCardFor(cardId: id)
+                }
+                autofillCreditCardsSaveModalRejectionCount = 0
+                autofillCreditCardsSaveModalDisablePromptShown = false
+                autofillCreditCardsFirstTimeUser = true
             } else if cell.tag == Row.addAutofillData.rawValue {
                 promptForNumberOfLoginsToAdd()
             } else if cell.tag == Row.resetEmailProtectionInContextSignUp.rawValue {
@@ -103,9 +122,8 @@ class AutofillDebugViewController: UITableViewController {
                 let amexCC = SecureVaultModels.CreditCard(cardNumber: "378282246310005", cardholderName: "Dax Duckling", cardSecurityCode: "123", expirationMonth: 12, expirationYear: 2025)
                 let visaCC = SecureVaultModels.CreditCard(cardNumber: "4222222222222", cardholderName: "Dax Duckling", cardSecurityCode: "123", expirationMonth: 1, expirationYear: 2026)
                 let mastercardCC = SecureVaultModels.CreditCard(cardNumber: "5555555555554444", cardholderName: "Dax Duckling", cardSecurityCode: "123", expirationMonth: nil, expirationYear: nil)
-                let invalidCardTypeCC = SecureVaultModels.CreditCard(cardNumber: "123456789", cardholderName: "Dax Duckling", cardSecurityCode: "", expirationMonth: nil, expirationYear: nil)
 
-                for creditCard in [amexCC, visaCC, mastercardCC, invalidCardTypeCC] {
+                for creditCard in [amexCC, visaCC, mastercardCC] {
                     do {
                         let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
                         _ = try secureVault?.storeCreditCard(creditCard)

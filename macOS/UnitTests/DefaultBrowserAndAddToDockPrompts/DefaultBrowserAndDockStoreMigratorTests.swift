@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import Foundation
 import Testing
+
 @testable import DuckDuckGo_Privacy_Browser
 
 struct DefaultBrowserAndDockStoreMigratorTests {

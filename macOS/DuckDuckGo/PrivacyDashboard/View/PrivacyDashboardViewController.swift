@@ -263,7 +263,9 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
 
     func privacyDashboardControllerDidRequestShowGeneralFeedback(_ privacyDashboardController: PrivacyDashboardController) {
         dismiss()
+#if FEEDBACK
         NSApp.delegateTyped.openFeedback(nil)
+#endif
     }
 
     func privacyDashboardController(_ privacyDashboardController: PrivacyDashboardController,

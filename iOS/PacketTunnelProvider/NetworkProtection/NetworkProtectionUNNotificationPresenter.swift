@@ -18,7 +18,7 @@
 //
 
 import UIKit
-import NetworkProtection
+import VPN
 import Core
 
 /// This class takes care of requesting the presentation of notifications using UNNotificationCenter

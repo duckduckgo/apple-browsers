@@ -20,7 +20,7 @@ import Foundation
 import BrowserServicesKit
 import AppKit
 import Combine
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 import NetworkProtectionIPC
 import PixelKit

@@ -20,6 +20,7 @@ import Foundation
 import BrowserServicesKit
 
 public enum FeatureFlagCategory: String, CaseIterable, Comparable {
+    case osSupportWarnings = "OS Support Warnings"
     case other = "Other"
     case sync = "Sync"
     case updates = "Updates"
@@ -43,6 +44,9 @@ public protocol FeatureFlagCategorization {
 extension FeatureFlag: FeatureFlagCategorization {
     public var category: FeatureFlagCategory {
         switch self {
+        case .osSupportForceUnsupportedMessage,
+                .osSupportForceWillSoonDropSupportMessage:
+            return .osSupportWarnings
         case .syncSeamlessAccountSwitching,
                 .syncSetupBarcodeIsUrlBased,
                 .canScanUrlBasedSyncSetupBarcodes,

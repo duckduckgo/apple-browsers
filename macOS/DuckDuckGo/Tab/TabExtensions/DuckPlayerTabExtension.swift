@@ -19,10 +19,11 @@
 import Combine
 import Common
 import ContentBlocking
+import DuckPlayer
 import Foundation
 import Navigation
 import PixelKit
-import DuckPlayer
+import WebKit
 
 protocol YoutubeScriptsProvider {
     var youtubeOverlayScript: YoutubeOverlayUserScript? { get }

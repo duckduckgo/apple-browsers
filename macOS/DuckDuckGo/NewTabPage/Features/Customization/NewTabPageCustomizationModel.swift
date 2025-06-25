@@ -50,7 +50,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
     private var availableCustomImagesCancellable: AnyCancellable?
     private var customBackgroundPixelCancellable: AnyCancellable?
 
-    convenience init(visualStyleManager: VisualStyleManagerProviding, appearancePreferences: AppearancePreferences) {
+    convenience init(visualStyle: VisualStyleProviding, appearancePreferences: AppearancePreferences) {
         self.init(
             appearancePreferences: appearancePreferences,
             userBackgroundImagesManager: UserBackgroundImagesManager(
@@ -71,7 +71,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
                 let alert = NSAlert.cannotReadImageAlert()
                 alert.runModal()
             },
-            visualStyle: visualStyleManager.style
+            visualStyle: visualStyle
         )
     }
 

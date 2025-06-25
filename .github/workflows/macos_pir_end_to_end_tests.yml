@@ -141,7 +141,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_macos_pir_e2e_tests_duration
+        pixel-name: m_ci_apple_duration_macos_pir_e2e_tests
         pixel-params: |
           runner: ${{ matrix.runner }}
 

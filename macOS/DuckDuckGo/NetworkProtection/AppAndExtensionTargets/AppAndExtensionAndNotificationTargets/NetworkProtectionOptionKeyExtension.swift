@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import NetworkProtection
+import VPN
 
 extension NetworkProtectionOptionKey {
     public static let defaultPixelHeaders = "defaultPixelHeaders"

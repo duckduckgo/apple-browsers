@@ -88,15 +88,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
-        if experimentalAIChatManager.isExperimentalAIChatSettingsEnabled {
-            AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
-                                     supportsClosingAIChat: true,
-                                     supportsOpeningSettings: true,
-                                     supportsNativePrompt: false,
-                                     supportsNativeChatInput: true)
-        } else {
-            AIChatNativeConfigValues.defaultValues
-        }
+        AIChatNativeConfigValues.defaultValues
     }
 
     @MainActor

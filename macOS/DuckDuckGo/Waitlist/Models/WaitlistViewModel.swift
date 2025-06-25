@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
-import NetworkProtection
+import VPN
 import UserNotifications
 
 protocol WaitlistViewModelDelegate: AnyObject {

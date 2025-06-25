@@ -21,6 +21,7 @@ import History
 import HistoryView
 import PixelKit
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 private struct FirePixelCall: Equatable {

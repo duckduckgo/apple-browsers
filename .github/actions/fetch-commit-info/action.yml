@@ -1,0 +1,56 @@
+name: 'Fetch Commit Info'
+description: 'Fetches commit author and PR reviewers information from GitHub API'
+
+inputs:
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+    default: ${{ github.token }}
+
+outputs:
+  commit_author:
+    description: 'The commit author username'
+    value: ${{ steps.fetch_info.outputs.commit_author }}
+  pr_reviewers:
+    description: 'Comma-separated list of all PR reviewers (empty if not a PR merge)'
+    value: ${{ steps.fetch_info.outputs.pr_reviewers }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Fetch commit author and PR reviewers
+      id: fetch_info
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        head_commit=$(git rev-parse HEAD)
+        author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
+        echo "commit_author=${author}" >> $GITHUB_OUTPUT
+
+        # Check if this is a merge commit from a PR
+        commit_message=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .commit.message)
+
+        # Extract PR number from commit message
+        # Format 1: "Merge pull request #123 from ..." (merge commits)
+        # Format 2: "Some message (#123)" (squash commits)
+        pr_number=$(echo "$commit_message" | grep -oE "(Merge pull request #[0-9]+|\(#[0-9]+\))" | grep -oE "[0-9]+")
+
+        if [[ -n "$pr_number" ]]; then
+          echo "Found PR merge: #${pr_number}"
+
+          # Get all PR reviewers who approved (unique reviewers only)
+          reviewers=$(gh api https://api.github.com/repos/${{ github.repository }}/pulls/${pr_number}/reviews \
+            --jq '[.[] | select(.state == "APPROVED") | .user.login] | unique | join(",")')
+
+          if [[ -n "$reviewers" && "$reviewers" != "null" && "$reviewers" != "" ]]; then
+            echo "PR reviewers found: ${reviewers}"
+            echo "pr_reviewers=${reviewers}" >> $GITHUB_OUTPUT
+          else
+            echo "No reviewers found for PR #${pr_number}"
+            echo "pr_reviewers=" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "Not a PR merge"
+          echo "pr_reviewers=" >> $GITHUB_OUTPUT
+        fi

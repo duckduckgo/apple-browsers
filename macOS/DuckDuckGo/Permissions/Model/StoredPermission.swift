@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import CoreData
 import Foundation
 import PixelKit
 

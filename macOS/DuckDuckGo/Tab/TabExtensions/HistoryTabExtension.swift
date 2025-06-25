@@ -20,8 +20,9 @@ import Combine
 import Common
 import ContentBlocking
 import Foundation
-import Navigation
 import History
+import Navigation
+import WebKit
 
 final class HistoryTabExtension: NSObject {
 

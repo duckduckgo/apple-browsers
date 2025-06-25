@@ -20,7 +20,9 @@ import BrowserServicesKit
 import Combine
 import FeatureFlags
 import PixelKit
+import WebKit
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 /// This WKWebView subclass allows for counting calls to `reload`.

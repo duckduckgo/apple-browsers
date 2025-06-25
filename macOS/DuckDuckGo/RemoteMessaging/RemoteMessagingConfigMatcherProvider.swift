@@ -21,7 +21,7 @@ import BrowserServicesKit
 import Persistence
 import Bookmarks
 import RemoteMessaging
-import NetworkProtection
+import VPN
 import Subscription
 import Freemium
 import FeatureFlags
@@ -39,7 +39,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        visualStyle: VisualStyleProviding
     ) {
         self.init(
             bookmarksDatabase: bookmarksDatabase,
@@ -51,7 +52,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             statisticsStore: LocalStatisticsStore(pixelDataStore: LocalPixelDataStore(database: database)),
             variantManager: DefaultVariantManager(database: database),
             subscriptionManager: subscriptionManager,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            visualStyle: visualStyle
         )
     }
 
@@ -65,7 +67,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         statisticsStore: @escaping @autoclosure () -> StatisticsStore,
         variantManager: @escaping @autoclosure () -> VariantManager,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        visualStyle: VisualStyleProviding
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
@@ -77,6 +80,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.variantManager = variantManager
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.visualStyle = visualStyle
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -89,6 +93,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let variantManager: () -> VariantManager
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let featureFlagger: FeatureFlagger
+    let visualStyle: VisualStyleProviding
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -117,7 +122,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let statisticsStore = self.statisticsStore()
 
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad)
+            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
             privacyProDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
             privacyProDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
             privacyProPurchasePlatform = subscription.platform.rawValue
@@ -168,7 +173,12 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let enabledFeatureFlags: [String] = FeatureFlag.allCases.filter { flag in
-            flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
+            switch flag {
+            case .visualUpdates:
+                /// For visual updates we need to make sure the user is seeing the new style in order to show the remote message.
+                return visualStyle.isNewStyle
+            default: return flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
+            }
         }.map(\.rawValue)
 
         return RemoteMessagingConfigMatcher(

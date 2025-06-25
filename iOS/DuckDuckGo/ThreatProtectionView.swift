@@ -25,8 +25,8 @@ struct ThreatProtectionView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
 
-    var description: PrivacyProtectionDescription {
-        PrivacyProtectionDescription(imageName: "Radar-Check",
+    var description: SettingsDescription {
+        SettingsDescription(imageName: "Radar-Check",
                                      title: UserText.threatProtection,
                                      status: .on,
                                      explanation: UserText.threatProtectionCaption)
@@ -34,10 +34,10 @@ struct ThreatProtectionView: View {
 
     var body: some View {
         List {
-            PrivacyProtectionDescriptionView(content: description)
+            SettingsDescriptionView(content: description)
             ThreatProtectionViewSettings(model: MaliciousSiteProtectionSettingsViewModel(manager: viewModel.maliciousSiteProtectionPreferencesManager))
         }
-        .applySettingsListModifiers(title: "Threat Protection",
+        .applySettingsListModifiers(title: UserText.threatProtection,
                                     displayMode: .inline,
                                     viewModel: viewModel)
     }
@@ -54,7 +54,7 @@ struct ThreatProtectionViewSettings: View {
         // Smarter Encryption
         Section(footer: Text(LocalizedStringKey(UserText.smarterEncryptionDescription))
             .tint(Color(designSystemColor: .accent))) {
-                SettingsCellView(label: "Smarter Encryption",
+                SettingsCellView(label: UserText.smarterEncryptionTitle,
                                  statusIndicator: StatusIndicatorView(status: .alwaysOn, isDotHidden: true))
         }
 
@@ -69,7 +69,7 @@ struct ThreatProtectionViewSettings: View {
                 }
             })
             {
-                SettingsCellView(label: "Scam Blocker",
+                SettingsCellView(label: UserText.scamBlockerTitle,
                                  accessory: .toggle(isOn: $model.isMaliciousSiteProtectionOn))
             }
         }

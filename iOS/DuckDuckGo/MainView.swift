@@ -20,6 +20,10 @@
 import UIKit
 import BrowserServicesKit
 import AIChat
+import Bookmarks
+import Persistence
+import History
+import Core
 
 class MainViewFactory {
 
@@ -41,17 +45,21 @@ class MainViewFactory {
         self.featureFlagger = featureFlagger
         self.omnibarDependencies = omnibarDependencies
     }
-    
+
     static func createViewHierarchy(_ parentController: UIViewController,
                                     aiChatSettings: AIChatSettingsProvider,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
                                     featureFlagger: FeatureFlagger,
-                                    themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) -> MainViewCoordinator {
-        
+                                    themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties,
+                                    suggestionTrayDependencies: SuggestionTrayDependencies? = nil) -> MainViewCoordinator {
+
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
-                                                      themingProperties: themingProperties)
+                                                      themingProperties: themingProperties,
+                                                      suggestionTrayDependencies: suggestionTrayDependencies)
+
+
         let factory = MainViewFactory(parentController: parentController,
                                       omnibarDependencies: omnibarDependencies,
                                       featureFlagger: featureFlagger)

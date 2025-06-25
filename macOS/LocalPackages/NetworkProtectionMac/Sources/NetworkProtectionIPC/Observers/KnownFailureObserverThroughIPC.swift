@@ -18,7 +18,7 @@
 
 import Foundation
 import Combine
-import NetworkProtection
+import VPN
 
 public final class KnownFailureObserverThroughIPC: KnownFailureObserver {
     private let subject = CurrentValueSubject<KnownFailure?, Never>(nil)

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import AppLauncher
 import Common
 import Foundation

@@ -32,6 +32,8 @@ final class SecureVaultKeyStoreEventMapper: EventMapping<SecureStorageKeyStoreEv
                 PixelKit.fire(DebugEvent(GeneralPixel.secureVaultKeystoreEventL2KeyMigration))
             case .l2KeyPasswordMigration:
                 PixelKit.fire(DebugEvent(GeneralPixel.secureVaultKeystoreEventL2KeyPasswordMigration))
+            case .databaseRecreation:
+                break
             }
         }
     }

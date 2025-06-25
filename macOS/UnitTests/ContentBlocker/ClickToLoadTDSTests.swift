@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
-import TrackerRadarKit
 import BrowserServicesKit
+import TrackerRadarKit
+import WebKit
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 private extension KnownTracker {

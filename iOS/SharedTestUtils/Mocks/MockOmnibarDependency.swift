@@ -23,6 +23,7 @@ import BrowserServicesKit
 @testable import DuckDuckGo
 
 struct MockOmnibarDependency: OmnibarDependencyProvider {
+    var suggestionTrayDependencies: SuggestionTrayDependencies?
     var voiceSearchHelper: VoiceSearchHelperProtocol
     var featureFlagger: FeatureFlagger
     var aiChatSettings: AIChatSettingsProvider

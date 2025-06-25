@@ -67,7 +67,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_ios_sync_tests_build_duration
+        pixel-name: m_ci_apple_duration_ios_sync_tests_build
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
@@ -155,7 +155,7 @@ jobs:
       with:
         mode: stop
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        pixel-name: m_ci_apple_ios_${{ matrix.os-version }}_sync_tests_duration
+        pixel-name: m_ci_apple_duration_ios_${{ matrix.os-version }}_sync_tests
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 

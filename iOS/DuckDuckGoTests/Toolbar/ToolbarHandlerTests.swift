@@ -80,8 +80,8 @@ class ToolbarHandlerTests: XCTestCase {
         toolbarHandler.updateToolbarWithState(.newTab)
 
         XCTAssertEqual(mockToolbar.items?.count, 11)
-        XCTAssertEqual(mockToolbar.items?[1].title, UserText.actionOpenPasswords)
-        XCTAssertEqual(mockToolbar.items?[3].title, UserText.actionOpenBookmarks)
+        XCTAssertEqual(mockToolbar.items?[1].title, UserText.actionOpenBookmarks)
+        XCTAssertEqual(mockToolbar.items?[3].title, UserText.actionOpenPasswords)
         XCTAssertEqual(mockToolbar.items?[5].title, UserText.actionForgetAll)
         XCTAssertEqual(mockToolbar.items?[7].title, UserText.tabSwitcherAccessibilityLabel)
         XCTAssertEqual(mockToolbar.items?[9].title, UserText.menuButtonHint)

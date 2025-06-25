@@ -31,8 +31,8 @@ let package = Package(
             targets: ["DataBrokerProtection-iOS"])
     ],
     dependencies: [
-        .package(path: "../../SharedPackages/BrowserServicesKit"),
-        .package(path: "../../SharedPackages/DataBrokerProtectionCore"),
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/DataBrokerProtectionCore"),
     ],
     targets: [
         .target(

@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import Combine
+import AppKit
 import BrowserServicesKit
+import Combine
 import Common
+import Foundation
 import PixelKit
 
 final class PasswordManagementLoginModel: ObservableObject, PasswordManagementItemModel {

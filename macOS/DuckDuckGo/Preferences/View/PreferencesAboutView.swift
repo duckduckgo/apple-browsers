@@ -46,10 +46,9 @@ extension Preferences {
                 VStack(alignment: .leading) {
                     TextMenuTitle(UserText.aboutDuckDuckGo)
 
-                    if !model.isCurrentOsReceivingUpdates {
-                        UnsupportedDeviceInfoBox(wide: true)
+                    if let warning = model.osSupportWarning {
+                        UnsupportedDeviceInfoBox(warning: warning)
                             .padding(.top, 10)
-                            .padding(.leading, -20)
                     }
 
                     AboutContentSection(model: model)
@@ -64,6 +63,12 @@ extension Preferences {
                     model.checkForUpdate(userInitiated: false)
                 }
 #endif
+            }
+            .onChange(of: model.featureFlagOverrideToggle) { _ in
+                // Intentional no-op
+                // This will cause SwiftUI to re-evaluate the view body and
+                // redraw when one of the relevant feature flag ovverides
+                // is toggled.
             }
         }
     }
@@ -90,23 +95,23 @@ extension Preferences {
                     model.openNewTab(with: .privacyPolicy)
                 }
 
-                #if FEEDBACK
+#if FEEDBACK
                 Button(UserText.sendFeedback) {
                     model.openFeedbackForm()
                 }
                 .padding(.top, 4)
-                #endif
+#endif
             }
-            #if SPARKLE
+#if SPARKLE
             .onAppear {
                 model.subscribeToUpdateInfoIfNeeded()
             }
-            #endif
+#endif
         }
 
         private var rightColumnContent: some View {
             Group {
-                #if APPSTORE
+#if APPSTORE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGoForMacAppStore)
                         .font(.companyName)
@@ -134,7 +139,7 @@ extension Preferences {
                             model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                         })
                     }))
-                #else
+#elseif SPARKLE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGo)
                         .font(.companyName)
@@ -166,7 +171,7 @@ extension Preferences {
                 .padding(.bottom, 4)
 
                 updateButton
-                #endif
+#endif
             }
         }
 
@@ -378,26 +383,36 @@ extension Preferences {
 
         static let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.preferences.softwareupdate")!
 
-        var wide: Bool
+        var warning: OSSupportWarning
 
-        var width: CGFloat {
-            return wide ? 510 : 320
-        }
-
-        var height: CGFloat {
-            return wide ? 130 : 200
-        }
-
-        var osVersion: String {
+        private var osVersion: String {
             return "\(ProcessInfo.processInfo.operatingSystemVersion)"
         }
 
-        var combinedText: String {
-            return UserText.aboutUnsupportedDeviceInfo2(version: versionString)
+        private var versionString: String {
+            switch warning {
+            case .unsupported(let versionString),
+                    .willDropSupportSoon(let versionString):
+                return versionString
+            }
         }
 
-        var versionString: String {
-            return "\(SupportedOSChecker.SupportedVersion.major).\(SupportedOSChecker.SupportedVersion.minor)"
+        private var versionText: String {
+            switch warning {
+            case .unsupported:
+                return UserText.aboutUnsupportedDeviceInfo1
+            case .willDropSupportSoon:
+                return UserText.aboutWillSoonBeUnsupportedDeviceInfo1
+            }
+        }
+
+        private var combinedText: String {
+            switch warning {
+            case .unsupported(let minVersion):
+                return UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
+            case .willDropSupportSoon(let upcomingMinVersion):
+                return UserText.aboutWillSoonBeUnsupportedDeviceInfo2(version: upcomingMinVersion)
+            }
         }
 
         var body: some View {
@@ -406,67 +421,70 @@ extension Preferences {
                 .frame(width: 16, height: 16)
                 .padding(.trailing, 4)
 
-            let versionText = Text(UserText.aboutUnsupportedDeviceInfo1)
+            let versionText = Text(versionText)
 
-            let narrowContentView = Text(combinedText)
-
-            let wideContentView: some View = VStack(alignment: .leading, spacing: 0) {
+            let contentView: some View = HStack(alignment: .center, spacing: 0) {
                 if #available(macOS 12.0, *) {
-                    Text(aboutUnsupportedDeviceInfo2Attributed)
+                    Text(combinedTextAttributedAttributed)
                 } else {
-                    aboutUnsupportedDeviceInfo2DeprecatedView()
+                    NSAttributedTextView(attributedString: legacyCombinedTextAttributed)
                 }
+
+                // Added to prevent bouncy animation when resizing the parent view
+                // caused by the text width being a bit jumpy.
+                Spacer()
             }
 
             return HStack(alignment: .top) {
                 image
                 VStack(alignment: .leading, spacing: 12) {
                     versionText
-                    if wide {
-                        wideContentView
-                    } else {
-                        narrowContentView
-                    }
+                    contentView
                 }
             }
             .padding()
             .background(Color.unsupportedOSWarning)
             .cornerRadius(8)
-            .frame(width: width, height: height)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(minWidth: 320, maxWidth: 510)
         }
 
         @available(macOS 12, *)
-        private var aboutUnsupportedDeviceInfo2Attributed: AttributedString {
-            let baseString = UserText.aboutUnsupportedDeviceInfo2(version: versionString)
-            var instructions = AttributedString(baseString)
+        private var combinedTextAttributedAttributed: AttributedString {
+            var instructions = AttributedString(combinedText)
             if let range = instructions.range(of: "macOS \(versionString)") {
                 instructions[range].link = Self.softwareUpdateURL
             }
             return instructions
         }
 
-        @ViewBuilder
-        private func aboutUnsupportedDeviceInfo2DeprecatedView() -> some View {
-            HStack(alignment: .center, spacing: 0) {
-                Text(verbatim: UserText.aboutUnsupportedDeviceInfo2Part1 + " ")
-                Button(action: {
-                    NSWorkspace.shared.open(Self.softwareUpdateURL)
-                }) {
-                    Text(verbatim: UserText.aboutUnsupportedDeviceInfo2Part2(version: versionString) + " ")
-                        .foregroundColor(Color.blue)
-                        .underline()
-                }
-                .buttonStyle(PlainButtonStyle())
-                .onHover { hovering in
-                    if hovering {
-                        NSCursor.pointingHand.set()
-                    } else {
-                        NSCursor.arrow.set()
-                    }
-                }
-                Text(verbatim: UserText.aboutUnsupportedDeviceInfo2Part3)
+        private var legacyCombinedTextAttributed: NSAttributedString {
+            let fullText = combinedText
+            let attributedString = NSMutableAttributedString(string: fullText)
+
+            // Create paragraph style for consistent formatting
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.lineSpacing = 0
+            paragraphStyle.paragraphSpacing = 0
+
+            // Apply default text styling to match SwiftUI Text
+            let defaultAttributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize),
+                .foregroundColor: NSColor.labelColor,
+                .paragraphStyle: paragraphStyle
+            ]
+            attributedString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attributedString.length))
+
+            // Find the version string to make it clickable
+            let versionText = "macOS \(versionString)"
+            if let range = fullText.range(of: versionText) {
+                let nsRange = NSRange(range, in: fullText)
+                attributedString.addAttribute(.link, value: Self.softwareUpdateURL, range: nsRange)
+                attributedString.addAttribute(.foregroundColor, value: NSColor.linkColor, range: nsRange)
+                attributedString.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: nsRange)
             }
-            Text(verbatim: UserText.aboutUnsupportedDeviceInfo2Part4)
+
+            return attributedString
         }
     }
 }

@@ -99,6 +99,9 @@ extension Tab: NavigationResponder {
 
             .weak(nullable: self.networkProtection),
 
+            // Internal Feedback Form
+            .weak(nullable: self.internalFeedbackForm),
+
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)
             // !! don‘t add Tab Extensions here !!

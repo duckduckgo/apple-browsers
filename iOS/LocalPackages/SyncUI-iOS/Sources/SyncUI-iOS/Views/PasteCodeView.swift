@@ -129,7 +129,9 @@ public struct PasteCodeView: View {
     public var body: some View {
         pastCodeWiewWithNoModifier()
             .modifier(BackButtonModifier())
-
+            .onAppear {
+                model.delegate?.codeEntryScreenShown()
+            }
     }
 
 }

@@ -37,6 +37,7 @@ let package = Package(
         .package(path: "../Freemium"),
         .package(path: "../NetworkProtectionMac"),
         .package(path: "../FeatureFlags"),
+        .package(path: "../VPN"),
     ],
     targets: [
         .target(
@@ -52,7 +53,7 @@ let package = Package(
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "FeatureFlags", package: "FeatureFlags"),
                 .product(name: "Freemium", package: "Freemium"),
-                .product(name: "NetworkProtection", package: "NetworkProtectionMac"),
+                .product(name: "VPN", package: "VPN"),
                 .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
                 .product(name: "NetworkProtectionProxy", package: "NetworkProtectionMac"),
             ],

@@ -20,7 +20,10 @@ import WebKit
 
 @objc public protocol WebKitDownload: AnyObject, NSObjectProtocol {
     var originalRequest: URLRequest? { get }
-    var webView: WKWebView? { get }
+    /// The WebView that initiated this download
+    var originatingWebView: WKWebView? { get }
+    /// The WebView that is loading this download
+    var targetWebView: WKWebView? { get }
     var delegate: WKDownloadDelegate? { get set }
     func cancel(_ completionHandler: ((Data?) -> Void)?)
 }
@@ -31,4 +34,11 @@ extension WebKitDownload {
     }
 }
 
-extension WKDownload: WebKitDownload {}
+extension WKDownload: WebKitDownload {
+
+    /// The WebView that initiated this download
+    public var originatingWebView: WKWebView? {
+        webView
+    }
+
+}

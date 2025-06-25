@@ -334,14 +334,24 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
                                       message: UserText.syncAlertSyncNewDeviceMessage(deviceName),
                                       preferredStyle: .alert)
         let cancelAction = UIAlertAction(title: UserText.actionCancel, style: .cancel) { [weak self] _ in
-            self?.pairingInfo = nil
+            self?.handlePairingCancellation()
         }
         let confirmAction = UIAlertAction(title: UserText.syncAlertSyncNewDeviceButton, style: .default) { [weak self] _ in
-            self?.askForAuthThenStartPairing()
+            self?.handlePairingConfirmation()
         }
         alert.addAction(cancelAction)
         alert.addAction(confirmAction)
         self.present(alert, animated: true)
+    }
+
+    private func handlePairingConfirmation() {
+        askForAuthThenStartPairing()
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted, includedParameters: [.appVersion])
+    }
+
+    private func handlePairingCancellation() {
+        pairingInfo = nil
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned, includedParameters: [.appVersion])
     }
 }
 
@@ -388,13 +398,21 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
                     return
                 }
             } catch {
-                handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
+                await handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
             }
         }
     }
     
-    func syncCodeEntered(code: String) async -> Bool {
-        return await connectionController.syncCodeEntered(code: code, canScanURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes))
+    func syncCodeEntered(code: String, source: CodeEntrySource) async -> Bool {
+        let codeSource: SyncCodeSource
+        switch source {
+        case .pastedCode:
+            codeSource = .pastedCode
+        case .qrCode:
+            codeSource = .qrCode
+        }
+
+        return await connectionController.syncCodeEntered(code: code, canScanURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes), codeSource: codeSource)
     }
 
     func dismissVCAndShowRecoveryPDF() {
@@ -404,6 +422,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     func codeCollectionCancelled() {
         assert(navigationController?.visibleViewController is UIHostingController<AnyView>)
         dismissPresentedViewController()
+        Pixel.fire(pixel: .syncSetupEndedAbandoned)
     }
 
     func gotoSettings() {
@@ -415,7 +434,8 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
 
 extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
-    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool) {
+    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
+        sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
         guard shouldShowSyncEnabled else { return }
         self.rootView.model.$devices
             .removeDuplicates()
@@ -448,12 +468,13 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         showPreparingSync(nil)
     }
     
-    func controllerDidRecognizeScannedCode() async {
+    func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
+        sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource)
         dismissPresentedViewController()
         await showPreparingSync()
     }
     
-    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey) async {
+    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async {
         if rootView.model.devices.count > 1 {
             promptToSwitchAccounts(recoveryKey: recoveryKey)
         } else {
@@ -461,23 +482,81 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         }
     }
     
-    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool) {
+    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole) {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.dismissVCAndShowRecoveryPDF()
         }
+        guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
+            return
+        }
+
+        sendSetupEndedSuccessfullyPixel(setupSource: syncSetupSource, codeSource: syncCodeSource)
     }
     
-    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?) {
+    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
         switch error {
         case .unableToRecognizeCode:
-            handleError(.unableToRecognizeCode, error: underlyingError, event: nil)
+            sendCodeParsingFailedPixel(setupRole: setupRole)
+            await handleError(.unableToRecognizeCode, error: underlyingError, event: nil)
         case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
-            handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToCreateAccount:
-            handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
+        case .pollingForRecoveryKeyTimedOut:
+            dismissPresentedViewController()
+            handleRecoveryKeyPollingTimeout(setupRole: setupRole)
         }
+    }
+
+    private func sendCodeRecognisedPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
+        guard setupSource != .recovery, setupSource != .unknown else { return }
+        let parameters = [PixelParameters.source: setupSource.rawValue]
+        switch codeSource {
+        case .qrCode:
+            Pixel.fire(pixel: .syncSetupBarcodeScannerSuccess, withAdditionalParameters: parameters, includedParameters: [.appVersion])
+        case .pastedCode:
+            Pixel.fire(pixel: .syncSetupManualCodeEnteredSuccess, withAdditionalParameters: parameters, includedParameters: [.appVersion])
+        case .deepLink:
+            break
+        }
+    }
+
+    private func sendCodeParsingFailedPixel(setupRole: SyncSetupRole) {
+        guard case .receiver(_, let codeSource) = setupRole else {
+            return
+        }
+
+        switch codeSource {
+        case .qrCode:
+            Pixel.fire(pixel: .syncSetupBarcodeScannerFailed, includedParameters: [.appVersion])
+        case .pastedCode:
+            Pixel.fire(pixel: .syncSetupManualCodeEnteredFailed, includedParameters: [.appVersion])
+        case .deepLink:
+            break
+        }
+    }
+
+    private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
+        guard setupSource != .recovery, setupSource != .unknown else { return }
+        let parameters = [PixelParameters.source: setupSource.rawValue]
+        switch codeSource {
+        case .pastedCode, .qrCode:
+            Pixel.fire(pixel: .syncSetupEndedSuccessful, withAdditionalParameters: parameters, includedParameters: [.appVersion])
+        case .deepLink:
+            Pixel.fire(pixel: .syncSetupDeepLinkFlowSuccess, includedParameters: [.appVersion])
+        }
+    }
+
+    private func handleRecoveryKeyPollingTimeout(setupRole: SyncSetupRole) {
+        guard case .receiver(let setupSource, let codeSource) = setupRole else {
+            return
+        }
+        guard case .deepLink = codeSource else {
+            return
+        }
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowTimeout, includedParameters: [.appVersion])
     }
 }
 

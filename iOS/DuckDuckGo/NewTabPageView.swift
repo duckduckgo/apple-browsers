@@ -73,16 +73,8 @@ private extension NewTabPageView {
     @ViewBuilder
     private var sectionsView: some View {
         GeometryReader { proxy in
-            let shadowColor = viewModel.isExperimentalAppearanceEnabled ? Color(designSystemColor: .shadowPrimary) : .clear
-            NewTabPageShadowScrollView(shadowColor: shadowColor, setUpScrollView: {
-                // This setting prevents from going into redraw loop for the hosted SUI view when opening a keyboard covering part of the hosted content.
-                $0.contentInsetAdjustmentBehavior = .never
-                
-                $0.backgroundColor = UIColor(designSystemColor: .background)
-                $0.alwaysBounceVertical = true
-                $0.keyboardDismissMode = .onDrag
-            }) {
-                VStack(spacing: Metrics.sectionSpacing) {
+            ScrollView {
+                LazyVStack(spacing: Metrics.sectionSpacing) {
                     
                     messagesSectionView
                         .padding(.top, Metrics.nonGridSectionTopPadding)
@@ -91,6 +83,7 @@ private extension NewTabPageView {
                         }
 
                     favoritesSectionView(proxy: proxy)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(sectionsViewPadding(in: proxy))
                 .background(Color(designSystemColor: .background))
@@ -104,7 +97,9 @@ private extension NewTabPageView {
     @ViewBuilder
     private var emptyStateView: some View {
         ZStack {
-            NewTabPageDaxLogoView()
+            if messagesModel.homeMessageViewModels.isEmpty {
+                NewTabPageDaxLogoView()
+            }
 
             VStack(spacing: Metrics.sectionSpacing) {
                 messagesSectionView

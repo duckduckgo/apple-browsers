@@ -31,14 +31,19 @@ class AutoClearHandlerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         let persistor = MockFireButtonPreferencesPersistor()
-        preferences = DataClearingPreferences(persistor: persistor)
-        fireViewModel = FireViewModel(fire: Fire(tld: ContentBlocking.shared.tld))
+        preferences = DataClearingPreferences(
+            persistor: persistor,
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock()
+        )
+        fireViewModel = FireViewModel(tld: Application.appDelegate.tld)
         let fileName = "AutoClearHandlerTests"
         let fileStore = FileStoreMock()
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
-                                                                    shouldRestorePreviousSession: false)
+                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences)
         handler = AutoClearHandler(preferences: preferences, fireViewModel: fireViewModel, stateRestorationManager: appStateRestorationManager)
     }
 
@@ -50,34 +55,34 @@ class AutoClearHandlerTests: XCTestCase {
     }
 
     func testWhenBurningEnabledAndNoWarningRequiredThenTerminateLaterIsReturned() {
-            preferences.isAutoClearEnabled = true
-            preferences.isWarnBeforeClearingEnabled = false
+        preferences.isAutoClearEnabled = true
+        preferences.isWarnBeforeClearingEnabled = false
 
-            let response = handler.handleAppTermination()
+        let response = handler.handleAppTermination()
 
-            XCTAssertEqual(response, .terminateLater)
-        }
+        XCTAssertEqual(response, .terminateLater)
+    }
 
-        func testWhenBurningDisabledThenNoTerminationResponse() {
-            preferences.isAutoClearEnabled = false
+    func testWhenBurningDisabledThenNoTerminationResponse() {
+        preferences.isAutoClearEnabled = false
 
-            let response = handler.handleAppTermination()
+        let response = handler.handleAppTermination()
 
-            XCTAssertNil(response)
-        }
+        XCTAssertNil(response)
+    }
 
-        func testWhenBurningEnabledAndFlagFalseThenBurnOnStartTriggered() {
-            preferences.isAutoClearEnabled = true
-            handler.resetTheCorrectTerminationFlag()
+    func testWhenBurningEnabledAndFlagFalseThenBurnOnStartTriggered() {
+        preferences.isAutoClearEnabled = true
+        handler.resetTheCorrectTerminationFlag()
 
-            XCTAssertTrue(handler.burnOnStartIfNeeded())
-        }
+        XCTAssertTrue(handler.burnOnStartIfNeeded())
+    }
 
-        func testWhenBurningDisabledThenBurnOnStartNotTriggered() {
-            preferences.isAutoClearEnabled = false
-            handler.resetTheCorrectTerminationFlag()
+    func testWhenBurningDisabledThenBurnOnStartNotTriggered() {
+        preferences.isAutoClearEnabled = false
+        handler.resetTheCorrectTerminationFlag()
 
-            XCTAssertFalse(handler.burnOnStartIfNeeded())
-        }
+        XCTAssertFalse(handler.burnOnStartIfNeeded())
+    }
 
 }

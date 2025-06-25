@@ -18,7 +18,7 @@
 
 import AppLauncher
 import Foundation
-import NetworkProtection
+import VPN
 
 /// A convenience class for making notification presenters.
 ///

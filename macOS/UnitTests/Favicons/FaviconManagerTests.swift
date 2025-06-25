@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class FaviconManagerTests: XCTestCase {

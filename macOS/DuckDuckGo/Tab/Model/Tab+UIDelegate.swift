@@ -24,6 +24,7 @@ import PixelKit
 import UniformTypeIdentifiers
 import WebKit
 import PDFKit
+import CommonObjCExtensions
 
 extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
 

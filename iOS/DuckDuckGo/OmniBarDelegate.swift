@@ -19,6 +19,7 @@
 
 import Foundation
 import Suggestions
+import Bookmarks
 
 enum OmniBarEditingEndResult {
     case suspended
@@ -73,11 +74,19 @@ protocol OmniBarDelegate: AnyObject {
     func selectedSuggestion() -> Suggestion?
     
     func onVoiceSearchPressed()
+    
+    func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget)
 
     func onDidBeginEditing()
 
     func onDidEndEditing()
 
+    /// SwitchBar
+    func onOmniPromptSubmitted(_ query: String)
+
+    func onSelectFavorite(_ favorite: BookmarkEntity)
+
+    func didRequestCurrentURL() -> URL?
 }
 
 extension OmniBarDelegate {
@@ -139,4 +148,7 @@ extension OmniBarDelegate {
     func onForwardPressed() {
     }
     
+    func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget) {
+        onVoiceSearchPressed()
+    }
 }

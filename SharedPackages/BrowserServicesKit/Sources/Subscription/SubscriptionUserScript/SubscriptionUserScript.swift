@@ -48,7 +48,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     }
 
     func subscriptionDetails(params: Any, message: any UserScriptMessage) async throws -> DataModel.SubscriptionDetails {
-        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad) else {
+        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) else {
             return .notSubscribed
         }
         return .init(subscription)
@@ -104,11 +104,6 @@ extension SubscriptionUserScript {
         struct HandshakeResponse: Codable, Equatable {
             let availableMessages: [SubscriptionUserScript.MessageName]
             let platform: Platform
-
-            init(availableMessages: [SubscriptionUserScript.MessageName], platform: Platform) {
-                self.availableMessages = availableMessages
-                self.platform = platform
-            }
         }
 
         /// This struct is returned in response to the `subscriptionDetails` message

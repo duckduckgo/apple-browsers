@@ -19,7 +19,9 @@
 import BrowserServicesKit
 import Common
 import PersistenceTestingUtils
+import WebKit
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class AutoconsentMessageProtocolTests: XCTestCase {

@@ -17,9 +17,11 @@
 //
 
 import Combine
+import WebKit
 import XCTest
-@testable import Subscription
+
 @testable import DuckDuckGo_Privacy_Browser
+@testable import Subscription
 
 final class TabBarViewItemTests: XCTestCase {
 

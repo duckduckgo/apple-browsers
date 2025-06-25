@@ -22,6 +22,7 @@ extension Tab: NSSecureCoding {
     // MARK: - Coding
 
     private enum NSSecureCodingKeys {
+        static let uuid = "uuid"
         static let url = "url"
         static let videoID = "videoID"
         static let videoTimestamp = "videoTimestamp"
@@ -38,6 +39,7 @@ extension Tab: NSSecureCoding {
 
     @MainActor
     convenience init?(coder decoder: NSCoder) {
+        let uuid: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.uuid)
         let url: URL? = decoder.decodeIfPresent(at: NSSecureCodingKeys.url)
         let videoID: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.videoID)
         let videoTimestamp: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.videoTimestamp)
@@ -51,7 +53,8 @@ extension Tab: NSSecureCoding {
 
         let interactionStateData: Data? = decoder.decodeIfPresent(at: NSSecureCodingKeys.interactionStateData) ?? decoder.decodeIfPresent(at: NSSecureCodingKeys.sessionStateData)
 
-        self.init(content: content,
+        self.init(uuid: uuid,
+                  content: content,
                   title: decoder.decodeIfPresent(at: NSSecureCodingKeys.title),
                   favicon: decoder.decodeIfPresent(at: NSSecureCodingKeys.favicon),
                   interactionStateData: interactionStateData,
@@ -64,6 +67,7 @@ extension Tab: NSSecureCoding {
     func encode(with coder: NSCoder) {
         guard webView.configuration.websiteDataStore.isPersistent == true else { return }
 
+        coder.encode(uuid, forKey: NSSecureCodingKeys.uuid)
         content.urlForWebView.map(coder.encode(forKey: NSSecureCodingKeys.url))
         title.map(coder.encode(forKey: NSSecureCodingKeys.title))
         favicon.map(coder.encode(forKey: NSSecureCodingKeys.favicon))

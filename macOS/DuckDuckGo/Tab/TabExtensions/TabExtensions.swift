@@ -24,6 +24,7 @@ import History
 import MaliciousSiteProtection
 import PrivacyDashboard
 import SpecialErrorPages
+import WebKit
 
 /**
  Tab Extensions should conform to TabExtension protocol
@@ -173,7 +174,9 @@ extension TabExtensionsBuilder {
                                  isBurner: args.isTabBurner)
         }
         add {
-            ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript))
+            ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
+                               isLoadedInSidebar: args.isTabLoadedInSidebar,
+                               internalUserDecider: dependencies.featureFlagger.internalUserDecider)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))
@@ -259,6 +262,13 @@ extension TabExtensionsBuilder {
             add {
                 NetworkProtectionControllerTabExtension(tunnelController: tunnelController)
             }
+        }
+
+        add {
+            InternalFeedbackFormTabExtension(
+                webViewPublisher: args.webViewFuture,
+                internalUserDecider: dependencies.featureFlagger.internalUserDecider
+            )
         }
     }
 

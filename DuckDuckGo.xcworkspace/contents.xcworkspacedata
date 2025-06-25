@@ -22,6 +22,9 @@
       <FileRef
          location = "group:UIComponents">
       </FileRef>
+      <FileRef
+         location = "group:VPN">
+      </FileRef>
    </Group>
    <FileRef
       location = "group:iOS/DuckDuckGo-iOS.xcodeproj">

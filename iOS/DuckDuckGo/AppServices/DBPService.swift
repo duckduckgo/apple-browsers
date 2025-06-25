@@ -30,9 +30,10 @@ final class DBPService: NSObject {
 
     init(appDependencies: DependencyProvider) {
 #if DEBUG || ALPHA
-        let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-                                                                          runTypeProvider: appDependencies.dbpSettings,
-                                                                          isAuthV2Enabled: appDependencies.isAuthV2Enabled)
+        let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
+            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            runTypeProvider: appDependencies.dbpSettings,
+            isAuthV2Enabled: appDependencies.isAuthV2Enabled)
         let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
         let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
 
@@ -41,7 +42,11 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
-                pixelKit: pixelKit)
+                pixelKit: pixelKit,
+                quickLinkOpenURLHandler: { url in
+                    guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(url.absoluteString)) else { return }
+                    UIApplication.shared.open(quickLinkURL)
+                })
 
             DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
         } else {

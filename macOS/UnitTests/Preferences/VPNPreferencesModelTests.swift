@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import Common

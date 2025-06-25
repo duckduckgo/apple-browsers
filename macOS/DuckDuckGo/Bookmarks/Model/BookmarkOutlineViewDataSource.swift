@@ -91,7 +91,7 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         dragDropManager: BookmarkDragDropManager,
         sortMode: BookmarksSortMode,
         presentFaviconsFetcherOnboarding: (() -> Void)? = nil,
-        visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+        visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
     ) {
         self.contentMode = contentMode
         self.bookmarkManager = bookmarkManager
@@ -99,7 +99,7 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         self.treeController = treeController
         self.presentFaviconsFetcherOnboarding = presentFaviconsFetcherOnboarding
         self.sortMode = sortMode
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
 
         super.init()
     }

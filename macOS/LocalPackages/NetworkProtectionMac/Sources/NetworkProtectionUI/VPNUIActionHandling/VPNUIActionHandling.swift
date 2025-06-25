@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 
 public protocol VPNUIActionHandling {
     func moveAppToApplications() async

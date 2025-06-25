@@ -19,6 +19,7 @@
 import Combine
 import Navigation
 import PersistenceTestingUtils
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

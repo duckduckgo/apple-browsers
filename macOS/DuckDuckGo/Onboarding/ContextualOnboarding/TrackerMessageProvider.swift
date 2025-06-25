@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
+import AppKit
+import BrowserServicesKit
 import Foundation
 import PrivacyDashboard
 import TrackerRadarKit
-import BrowserServicesKit
 
 protocol TrackerMessageProviding {
     func trackersType(privacyInfo: PrivacyInfo?) -> OnboardingTrackersType?

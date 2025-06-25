@@ -144,8 +144,8 @@ extension Pixel {
         case browsingMenuReportBrokenSite
         case browsingMenuFireproof
         case browsingMenuAutofill
-        case browsingMenuAIChat
-        case browsingMenuListAIChat
+        case browsingMenuAIChatNewTabPage
+        case browsingMenuAIChatWebPage
 
         case addressBarShare
         case addressBarSettings
@@ -413,6 +413,7 @@ extension Pixel {
         case autofillExtensionToggledOn
         case autofillExtensionToggledOff
         case autofillLoginsStacked
+        case autofillCreditCardsStacked
         
         case autofillDeviceCapabilityDeviceAuthDisabled
         
@@ -431,6 +432,24 @@ extension Pixel {
         case autofillLoginsReportConfirmationPromptDisplayed
         case autofillLoginsReportConfirmationPromptConfirmed
         case autofillLoginsReportConfirmationPromptDismissed
+
+        case autofillCardsSaveCardInlineDisplayed
+        case autofillCardsSaveCardInlineConfirmed
+        case autofillCardsSaveCardInlineDismissed
+        case autofillCardsFillCardManualInlineDisplayed
+        case autofillCardsFillCardManualInlineConfirmed
+        case autofillCardsFillCardManualInlineDismissed
+        case autofillCardsKeyboardFill
+        case autofillCardsKeyboardOpenSettings
+        case autofillCardsSaveDisableSnackbarShown
+        case autofillCardsSaveDisableSnackbarOpenSettings
+        case autofillCardsSettingsEnabled
+        case autofillCardsSettingsDisabled
+        case autofillCardsManagementOpened
+        case autofillCardsManagementCopyCardNumber
+        case autofillCardsManagementDeleteCard
+        case autofillCardsManagementSaveCard
+        case autofillCardsManagementUpdateCard
 
         case autofillManagementScreenVisitSurveyAvailable
 
@@ -799,6 +818,8 @@ extension Pixel {
         case syncSignupConnect
         case syncLogin
         case syncDaily
+        case syncDisabled
+        case syncDisabledAndDeleted
         case syncDuckAddressOverride
         case syncSuccessRateDaily
         case syncLocalTimestampResolutionTriggered(Feature)
@@ -856,11 +877,17 @@ extension Pixel {
 
         case syncSetupBarcodeScreenShown
         case syncSetupBarcodeScannerSuccess
-        case syncSetupBarcodeScannedSuccess
+        case syncSetupBarcodeScannerFailed
         case syncSetupBarcodeCodeCopied
         case syncSetupManualCodeEntryScreenShown
-        case syncSetupManualCodeEntered
-        case syncSetupAbandoned
+        case syncSetupManualCodeEnteredSuccess
+        case syncSetupManualCodeEnteredFailed
+        case syncSetupEndedAbandoned
+        case syncSetupEndedSuccessful
+        case syncSetupDeepLinkFlowStarted
+        case syncSetupDeepLinkFlowSuccess
+        case syncSetupDeepLinkFlowAbandoned
+        case syncSetupDeepLinkFlowTimeout
 
         case swipeTabsUsedDaily
         case swipeToOpenNewTab
@@ -945,6 +972,7 @@ extension Pixel {
         case privacyProWelcomeAddDevice
         case privacyProWelcomeVPN
         case privacyProWelcomePersonalInformationRemoval
+        case privacyProWelcomeAIChat
         case privacyProWelcomeIdentityRestoration
         case privacyProSubscriptionSettings
         case privacyProVPNSettings
@@ -1582,6 +1610,7 @@ extension Pixel.Event {
         case .autofillExtensionToggledOff: return "m_autofill_extension_toggled_off"
 
         case .autofillLoginsStacked: return "m_autofill_logins_stacked"
+        case .autofillCreditCardsStacked: return "m_autofill_creditcards_stacked"
             
         case .autofillDeviceCapabilityDeviceAuthDisabled: return "m_autofill_device_capability_device_auth_disabled"
 
@@ -1607,6 +1636,24 @@ extension Pixel.Event {
         case .autofillLoginsReportConfirmationPromptDisplayed: return "autofill_logins_report_confirmation_displayed"
         case .autofillLoginsReportConfirmationPromptConfirmed: return "autofill_logins_report_confirmation_confirmed"
         case .autofillLoginsReportConfirmationPromptDismissed: return "autofill_logins_report_confirmation_dismissed"
+
+        case .autofillCardsSaveCardInlineDisplayed: return "autofill_cards_save_card_inline_displayed"
+        case .autofillCardsSaveCardInlineConfirmed: return "autofill_cards_save_card_inline_confirmed"
+        case .autofillCardsSaveCardInlineDismissed: return "autofill_cards_save_card_inline_dismissed"
+        case .autofillCardsFillCardManualInlineDisplayed: return "autofill_cards_fill_card_inline_manual_displayed"
+        case .autofillCardsFillCardManualInlineConfirmed: return "autofill_cards_fill_card_inline_manual_confirmed"
+        case .autofillCardsFillCardManualInlineDismissed: return "autofill_cards_fill_card_inline_manual_dismissed"
+        case .autofillCardsKeyboardFill: return "autofill_cards_keyboard_fill_confirmed"
+        case .autofillCardsKeyboardOpenSettings: return "autofill_cards_keyboard_open_settings"
+        case .autofillCardsSaveDisableSnackbarShown: return "autofill_cards_save_disable_snackbar_shown"
+        case .autofillCardsSaveDisableSnackbarOpenSettings: return "autofill_cards_save_disable_snackbar_open_settings"
+        case .autofillCardsSettingsEnabled: return "autofill_cards_settings_enabled"
+        case .autofillCardsSettingsDisabled: return "autofill_cards_settings_disabled"
+        case .autofillCardsManagementOpened: return "autofill_cards_management_opened"
+        case .autofillCardsManagementCopyCardNumber: return "autofill_cards_management_copy_card_number"
+        case .autofillCardsManagementDeleteCard: return "autofill_cards_management_delete_card"
+        case .autofillCardsManagementSaveCard: return "autofill_cards_management_save_card"
+        case .autofillCardsManagementUpdateCard: return "autofill_cards_management_update_card"
 
         case .autofillManagementScreenVisitSurveyAvailable: return "m_autofill_management_screen_visit_survey_available"
 
@@ -1944,6 +1991,8 @@ extension Pixel.Event {
         case .syncSignupConnect: return "m_sync_signup_connect"
         case .syncLogin: return "m_sync_login"
         case .syncDaily: return "m_sync_daily"
+        case .syncDisabled: return "sync_disabled"
+        case .syncDisabledAndDeleted: return "sync_disabledanddeleted"
         case .syncDuckAddressOverride: return "m_sync_duck_address_override"
         case .syncSuccessRateDaily: return "m_sync_success_rate_daily"
         case .syncLocalTimestampResolutionTriggered(let feature): return "m_sync_\(feature.name)_local_timestamp_resolution_triggered"
@@ -2001,11 +2050,17 @@ extension Pixel.Event {
 
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
         case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"
-        case .syncSetupBarcodeScannedSuccess: return "sync_setup_barcode_scanned_success"
+        case .syncSetupBarcodeScannerFailed: return "sync_setup_barcode_scanner_failed"
         case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
         case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown"
-        case .syncSetupManualCodeEntered: return "sync_setup_manual_code_entered"
-        case .syncSetupAbandoned: return "sync_setup_abandoned"
+        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success"
+        case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed"
+        case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned"
+        case .syncSetupEndedSuccessful: return "sync_setup_ended_successful"
+        case .syncSetupDeepLinkFlowStarted: return "sync_setup_deep_link_flow_started"
+        case .syncSetupDeepLinkFlowSuccess: return "sync_setup_deep_link_flow_success"
+        case .syncSetupDeepLinkFlowAbandoned: return "sync_setup_deep_link_flow_abandoned"
+        case .syncSetupDeepLinkFlowTimeout: return "sync_setup_deep_link_timeout"
 
         case .swipeTabsUsedDaily: return "m_swipe-tabs-used-daily"
         case .swipeToOpenNewTab: return "m_addressbar_swipe_new_tab"
@@ -2083,6 +2138,7 @@ extension Pixel.Event {
         case .privacyProWelcomeAddDevice: return "m_privacy-pro_welcome_add-device_click_u"
         case .privacyProWelcomeVPN: return "m_privacy-pro_welcome_vpn_click_u"
         case .privacyProWelcomePersonalInformationRemoval: return "m_privacy-pro_welcome_personal-information-removal_click_u"
+        case .privacyProWelcomeAIChat: return "m_privacy-pro_welcome_ai-chat_click_u"
         case .privacyProWelcomeIdentityRestoration: return "m_privacy-pro_welcome_identity-theft-restoration_click_u"
         case .privacyProSubscriptionSettings: return "m_privacy-pro_settings_screen_impression"
         case .privacyProVPNSettings: return "m_privacy-pro_app-settings_vpn_click"
@@ -2301,8 +2357,8 @@ extension Pixel.Event {
         case .openAIChatFromWidgetQuickAction: return "m_aichat-widget-quickaction"
         case .openAIChatFromWidgetControlCenter: return "m_aichat-widget-control-center"
         case .openAIChatFromWidgetLockScreenComplication: return "m_aichat-widget-lock-screen-complication"
-        case .browsingMenuAIChat: return "m_aichat_menu_tab_icon"
-        case .browsingMenuListAIChat: return "m_browsing_menu_list_aichat"
+        case .browsingMenuAIChatNewTabPage: return "m_aichat_menu_newtabpage"
+        case .browsingMenuAIChatWebPage: return "m_aichat_menu_webpage"
         case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
         case .openAIChatFromTabManager: return "m_aichat_tabmanager_icon"
         case .aiChatSettingsVoiceTurnedOff: return "m_aichat_settings_voice_turned_off"

@@ -163,11 +163,13 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
     @Published var syncCodeEnteredCalled: Bool = false
     var spySyncCodeEnteredCode: String?
     var spySyncCodeEnteredCanScanURLBarcodes: Bool?
+    var spySyncCodeEnteredCodeSource: SyncCodeSource?
     var stubSyncCodeEntered: Bool = true
-    func syncCodeEntered(code: String, canScanURLBarcodes: Bool) async -> Bool {
+    func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
         syncCodeEnteredCalled = true
         spySyncCodeEnteredCode = code
         spySyncCodeEnteredCanScanURLBarcodes = canScanURLBarcodes
+        spySyncCodeEnteredCodeSource = codeSource
         return stubSyncCodeEntered
     }
 

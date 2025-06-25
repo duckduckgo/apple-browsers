@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Navigation
 import Combine
 import Common
+import Foundation
+import Navigation
+import WebKit
 
 #if SPARKLE
 

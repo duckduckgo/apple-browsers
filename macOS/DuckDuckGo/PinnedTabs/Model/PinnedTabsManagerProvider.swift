@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Foundation
 
 protocol PinnedTabsManagerProviding {
 

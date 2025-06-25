@@ -18,7 +18,7 @@
 
 import Common
 import Foundation
-import NetworkProtection
+import VPN
 import PixelKit
 
 extension EventMapping where Event == NetworkProtectionError {

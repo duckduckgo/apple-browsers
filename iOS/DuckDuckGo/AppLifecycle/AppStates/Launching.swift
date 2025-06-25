@@ -106,7 +106,8 @@ struct Launching: LaunchingHandling {
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
-                                              didFinishLaunchingStartTime: didFinishLaunchingStartTime)
+                                              didFinishLaunchingStartTime: didFinishLaunchingStartTime,
+                                              keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

@@ -39,9 +39,8 @@ struct AddToDockTutorialView: View {
     @State private var animateTitle = true
     @State private var animateMessage = false
     @State private var showContent = false
-    @State private var isPlaying: Bool = false
     @State private var videoPlayerWidth: CGFloat = 0.0
-    @StateObject private var videoPlayerModel = VideoPlayerViewModel(url: Self.videoURL, loopVideo: true)
+    @StateObject private var videoPlayerModel = VideoPlayerCoordinator(url: Self.videoURL, configuration: .init(loopVideo: true))
 
     init(
         title: String,
@@ -79,9 +78,9 @@ struct AddToDockTutorialView: View {
                 .visibility(showContent ? .visible : .invisible)
                 .onChange(of: showContent) { newValue in
                     if newValue {
-                        // Need to delay playing a video. If calling isPlaying too early the video won't play.
+                        // Need to delay playing a video. If calling play too early the video won't play.
                         DispatchQueue.main.async {
-                            isPlaying = true
+                            videoPlayerModel.play()
                         }
                     }
                 }
@@ -100,8 +99,15 @@ struct AddToDockTutorialView: View {
     private var videoPlayer: some View {
         // Calculate the height of the video based on the width it takes maintaining its aspect ratio
         let heightRatio = videoPlayerWidth * (Self.videoSize.height / Self.videoSize.width)
-        return VideoPlayerView(model: videoPlayerModel, isPlaying: $isPlaying)
+        return PlayerView(coordinator: videoPlayerModel)
             .frame(width: videoPlayerWidth, height: heightRatio)
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+                videoPlayerModel.pause()
+
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                videoPlayerModel.play()
+            }
     }
 
 }

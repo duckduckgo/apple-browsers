@@ -33,7 +33,7 @@ import Networking
 import Suggestions
 import Subscription
 import SwiftUI
-import NetworkProtection
+import VPN
 import Onboarding
 import os.log
 import PageRefreshMonitor
@@ -218,16 +218,10 @@ class MainViewController: UIViewController {
 
     let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
+    let keyValueStore: ThrowingKeyValueStoring
 
     private var duckPlayerEntryPointVisible = false
     private var isExperimentalAppearanceEnabled: Bool { themeManager.properties.isExperimentalThemingEnabled }
-
-    private lazy var aiChatOmnibarExperimentOverlayButton: UIButton = {
-        let button = UIButton(type: .custom)
-        button.backgroundColor = .clear
-        button.addTarget(self, action: #selector(onAIChatOmnibarExperimentOverlayButtonPressed), for: .touchUpInside)
-        return button
-    }()
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -262,7 +256,8 @@ class MainViewController: UIViewController {
         aiChatSettings: AIChatSettingsProvider,
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
-        themeManager: ThemeManaging
+        themeManager: ThemeManaging,
+        keyValueStore: ThrowingKeyValueStoring
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -319,6 +314,7 @@ class MainViewController: UIViewController {
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
+        self.keyValueStore = keyValueStore
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -353,15 +349,21 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
+                                                                    bookmarksDatabase: bookmarksDatabase,
+                                                                    historyManager: historyManager,
+                                                                    tabsModel: tabManager.model,
+                                                                    featureFlagger: featureFlagger,
+                                                                    appSettings: appSettings)
+
+
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
-                                                              featureFlagger: featureFlagger)
-        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
+                                                              featureFlagger: featureFlagger,
+                                                              suggestionTrayDependencies: suggestionTrayDependencies)
 
-        if experimentalAIChatManager.isExperimentalAIChatSettingsEnabled {
-            setupAIChatOmnibarExperimentOverlayButton()
-        }
+        viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
         setUpToolbarButtonsActions()
         installSwipeTabs()
@@ -1487,7 +1489,8 @@ class MainViewController: UIViewController {
             openSearch: openSearch,
             source: source,
             bookmarksDatabase: self.bookmarksDatabase,
-            favoritesDisplayMode: self.appSettings.favoritesDisplayMode
+            favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
+            keyValueStore: self.keyValueStore
         )
         autofillLoginListViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: autofillLoginListViewController)
@@ -1651,10 +1654,6 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         newTabPageViewController?.openedAsNewTab(allowingKeyboard: allowingKeyboard)
         themeColorManager.updateThemeColor()
-        
-        if experimentalAIChatManager.isExperimentalAIChatSettingsEnabled {
-            onAIChatOmnibarExperimentOverlayButtonPressed()
-        }
     }
     
     func updateFindInPage() {
@@ -1663,14 +1662,29 @@ class MainViewController: UIViewController {
         // hide toolbar on iPhone
         viewCoordinator.toolbar.accessibilityElementsHidden = !AppWidthObserver.shared.isLargeWidth
     }
-    
-    private func showVoiceSearch() {
+
+    private func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
+        SpeechRecognizer.requestMicAccess { [weak self] permission in
+            guard let self = self else { return }
+            if permission {
+                if let target = preferredTarget {
+                    self.showVoiceSearch(preferredTarget: target)
+                } else {
+                    self.showVoiceSearch()
+                }
+            } else {
+                self.showNoMicrophonePermissionAlert()
+            }
+        }
+    }
+
+    private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
         // https://app.asana.com/0/0/1201408131067987
         UIMenuController.shared.hideMenu()
         viewCoordinator.omniBar.removeTextSelection()
         
         Pixel.fire(pixel: .openVoiceSearch)
-        let voiceSearchController = VoiceSearchViewController()
+        let voiceSearchController = VoiceSearchViewController(preferredTarget: preferredTarget)
         voiceSearchController.delegate = self
         voiceSearchController.modalTransitionStyle = .crossDissolve
         voiceSearchController.modalPresentationStyle = .overFullScreen
@@ -1941,56 +1955,7 @@ class MainViewController: UIViewController {
     }
 
     func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil) {
-        featureDiscovery.setWasUsedBefore(.aiChat)
         aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, on: self)
-    }
-
-    private func setupAIChatOmnibarExperimentOverlayButton() {
-        guard experimentalAIChatManager.isExperimentalAIChatSettingsEnabled else { return }
-
-        viewCoordinator.omniBar.barView.addSubview(aiChatOmnibarExperimentOverlayButton)
-        aiChatOmnibarExperimentOverlayButton.translatesAutoresizingMaskIntoConstraints = false
-
-        guard let searchContainer = viewCoordinator.omniBar.barView.searchContainer else { return }
-
-        NSLayoutConstraint.activate([
-            aiChatOmnibarExperimentOverlayButton.topAnchor.constraint(equalTo: searchContainer.topAnchor),
-            aiChatOmnibarExperimentOverlayButton.leadingAnchor.constraint(equalTo: searchContainer.leadingAnchor),
-            aiChatOmnibarExperimentOverlayButton.trailingAnchor.constraint(equalTo: searchContainer.trailingAnchor),
-            aiChatOmnibarExperimentOverlayButton.bottomAnchor.constraint(equalTo: searchContainer.bottomAnchor)
-        ])
-    }
-
-    @objc private func onAIChatOmnibarExperimentOverlayButtonPressed() {
-        let viewModel = AIChatInputBoxViewModel(state: .ready, visibility: .visible)
-        let containerVC = ChatInputBoxContainerViewController(viewModel: viewModel, position: appSettings.currentAddressBarPosition)
-        containerVC.delegate = self
-        containerVC.modalPresentationStyle = .fullScreen
-        containerVC.modalTransitionStyle = .crossDissolve
-        containerVC.view.alpha = 0
-        present(containerVC, animated: false) {
-            UIView.animate(withDuration: 0.3) {
-                containerVC.view.alpha = 1
-            }
-        }
-    }
-}
-
-extension MainViewController: ChatInputBoxContainerViewControllerDelegate {
-    func chatInputBoxContainerViewControllerDidPressBack(_ viewController: ChatInputBoxContainerViewController) {
-        viewController.dismiss(animated: true)
-    }
-    
-    func chatInputBoxContainerViewController(_ viewController: ChatInputBoxContainerViewController, didSubmitQuery query: String) {
-        viewController.dismiss(animated: true) { [weak self] in
-            self?.loadQuery(query)
-        }
-    }
-    
-    func chatInputBoxContainerViewController(_ viewController: ChatInputBoxContainerViewController, didSubmitPrompt prompt: String) {
-        viewController.dismiss(animated: true) { [weak self] in
-            self?.openAIChat(prompt, autoSend: true)
-        }
     }
 }
 
@@ -2136,10 +2101,74 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.constraints.navigationBarContainerTop.constant = browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
     }
 
+    private func handleFavoriteSelected(_ favorite: BookmarkEntity) {
+        guard let url = favorite.urlObject else { return }
+        Pixel.fire(pixel: .favoriteLaunchedWebsite)
+        newTabPageViewController?.chromeDelegate = nil
+        dismissOmniBar()
+        Favicons.shared.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
+        if url.isBookmarklet() {
+            executeBookmarklet(url)
+        } else {
+            loadUrl(url)
+        }
+        showHomeRowReminder()
+    }
+
+
+    private func handleSuggestionSelected(_ suggestion: Suggestion) {
+        newTabPageViewController?.chromeDelegate = nil
+        dismissOmniBar()
+        viewCoordinator.omniBar.cancel()
+        switch suggestion {
+        case .phrase(phrase: let phrase):
+            if let url = URL.makeSearchURL(text: phrase) {
+                loadUrl(url)
+            } else {
+                Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
+            }
+
+        case .website(url: let url):
+            if url.isBookmarklet() {
+                executeBookmarklet(url)
+            } else {
+                loadUrl(url)
+            }
+
+        case .bookmark(_, url: let url, _, _):
+            loadUrl(url)
+
+        case .historyEntry(_, url: let url, _):
+            loadUrl(url)
+
+        case .openTab(title: _, url: let url, tabId: let tabId, _):
+            if newTabPageViewController != nil, let tab = tabManager.model.currentTab {
+                self.closeTab(tab)
+            }
+            loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
+
+        case .unknown(value: let value), .internalPage(title: let value, url: _, _):
+            assertionFailure("Unknown suggestion: \(value)")
+        }
+
+        showHomeRowReminder()
+    }
 }
 
+// MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
+    func onSelectFavorite(_ favorite: BookmarkEntity) {
+        handleFavoriteSelected(favorite)
+    }
 
+    func onOmniPromptSubmitted(_ query: String) {
+        openAIChat(query, autoSend: true)
+    }
+
+    func didRequestCurrentURL() -> URL? {
+        return currentTab?.url
+    }
+    
     func onSharePressed() {
         shareCurrentURLFromAddressBar()
     }
@@ -2428,8 +2457,12 @@ extension MainViewController: OmniBarDelegate {
             openAIChat()
         }
 
-        Pixel.fire(pixel: .openAIChatFromAddressBar,
-                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromAddressBar)
+    }
+
+    private func fireAIChatUsagePixelAndSetFeatureUsed(_ pixel: Pixel.Event) {
+        Pixel.fire(pixel: pixel, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        featureDiscovery.setWasUsedBefore(.aiChat)
     }
 
     func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
@@ -2441,13 +2474,11 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onVoiceSearchPressed() {
-        SpeechRecognizer.requestMicAccess { permission in
-            if permission {
-                self.showVoiceSearch()
-            } else {
-                self.showNoMicrophonePermissionAlert()
-            }
-        }
+        handleVoiceSearchOpenRequest()
+    }
+
+    func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget) {
+        handleVoiceSearchOpenRequest(preferredTarget: preferredTarget)
     }
 
     /// We always want to show the AI Chat button if the keyboard is on focus
@@ -2462,23 +2493,13 @@ extension MainViewController: OmniBarDelegate {
 }
 
 extension MainViewController: FavoritesOverlayDelegate {
-    
-    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
-        guard let url = favorite.urlObject else { return }
-        Pixel.fire(pixel: .favoriteLaunchedWebsite)
-        newTabPageViewController?.chromeDelegate = nil
-        dismissOmniBar()
-        Favicons.shared.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
-        if url.isBookmarklet() {
-            executeBookmarklet(url)
-        } else {
-            loadUrl(url)
-        }
-        showHomeRowReminder()
-    }
 
+    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
+        handleFavoriteSelected(favorite)
+    }
 }
 
+// MARK: - AutocompleteViewControllerDelegate Methods
 extension MainViewController: AutocompleteViewControllerDelegate {
 
     func autocompleteDidEndWithUserQuery() {
@@ -2489,41 +2510,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
     }
 
     func autocomplete(selectedSuggestion suggestion: Suggestion) {
-        newTabPageViewController?.chromeDelegate = nil
-        dismissOmniBar()
-        viewCoordinator.omniBar.cancel()
-        switch suggestion {
-        case .phrase(phrase: let phrase):
-            if let url = URL.makeSearchURL(text: phrase) {
-                loadUrl(url)
-            } else {
-                Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
-            }
-
-        case .website(url: let url):
-            if url.isBookmarklet() {
-                executeBookmarklet(url)
-            } else {
-                loadUrl(url)
-            }
-
-        case .bookmark(_, url: let url, _, _):
-            loadUrl(url)
-
-        case .historyEntry(_, url: let url, _):
-            loadUrl(url)
-
-        case .openTab(title: _, url: let url, tabId: let tabId, _):
-            if newTabPageViewController != nil, let tab = tabManager.model.currentTab {
-                self.closeTab(tab)
-            }
-            loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
-
-        case .unknown(value: let value), .internalPage(title: let value, url: _, _):
-            assertionFailure("Unknown suggestion: \(value)")
-        }
-
-        showHomeRowReminder()
+        handleSuggestionSelected(suggestion)
     }
 
     func autocomplete(pressedPlusButtonForSuggestion suggestion: Suggestion) {
@@ -2741,7 +2728,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChat(tab: TabViewController) {
-        // Pixel fired at point where this is triggered to avoid over firing
+        fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
         openAIChat()
     }
 
@@ -2772,7 +2759,15 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController,
              didRequestSettingsToLogins account: SecureVaultModels.WebsiteAccount,
              source: AutofillSettingsSource) {
-        segueToSettingsLoginsWithAccount(account, source: source)
+        segueToSettingsAutofillWith(account: account, card: nil, source: source)
+    }
+
+    func tab(_ tab: TabViewController, didRequestSettingsToCreditCards card: SecureVaultModels.CreditCard, source: AutofillSettingsSource) {
+        segueToSettingsAutofillWith(account: nil, card: card, source: source)
+    }
+
+    func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController, source: AutofillSettingsSource) {
+        segueToSettingsAutofillWith(account: nil, card: nil, showCardManagement: true, source: source)
     }
 
     func tabContentProcessDidTerminate(tab: TabViewController) {
@@ -2976,8 +2971,7 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
-        Pixel.fire(pixel: .openAIChatFromTabManager,
-                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
     }
 }

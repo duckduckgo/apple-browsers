@@ -21,7 +21,7 @@ import BrowserServicesKit
 import Common
 import LoginItems
 import NetworkExtension
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
 import PixelKit

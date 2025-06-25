@@ -27,11 +27,27 @@ let package = Package(
     ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
+        .library(name: "BWIntegration", targets: ["BWIntegration"]),
         .library(name: "CommonObjCExtensions", targets: ["CommonObjCExtensions"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/duckduckgo/OpenSSL-XCFramework", exact: "3.3.2000")
     ],
     targets: [
+        .target(
+            name: "BWIntegration",
+            dependencies: [
+                .product(name: "OpenSSL", package: "OpenSSL-XCFramework")
+            ],
+            sources: [
+                "BWEncryption.m",
+                "BWEncryptionOutput.m",
+            ],
+            publicHeadersPath: "include",
+            cSettings: [
+                .headerSearchPath("include")
+            ]
+        ),
         .target(
             name: "CommonObjCExtensions",
             dependencies: [],

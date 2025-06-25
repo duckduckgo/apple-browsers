@@ -17,6 +17,10 @@ inputs:
     description: "Last commit author's GitHub handle"
     required: false
     type: string
+  pr-reviewers:
+    description: "Comma-separated list of PR reviewers' GitHub handles"
+    required: false
+    type: string
   github-token:
     description: "GitHub token"
     required: true
@@ -36,6 +40,8 @@ runs:
         WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         GITHUB_REF_NAME: ${{ github.ref_name }}
         GITHUB_RUN_ID: ${{ github.run_id }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        GITHUB_PR_REVIEWERS: ${{ inputs.pr-reviewers }}
         ASANA_SECTION_ID: ${{ inputs.asana-section-id }}
         ASANA_ACCESS_TOKEN: ${{ inputs.asana-access-token }}
         ASANA_ASSIGNEE: ${{ steps.get-asana-user-id.outputs.asanaUserId }}

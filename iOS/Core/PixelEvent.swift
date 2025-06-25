@@ -439,6 +439,8 @@ extension Pixel {
         case autofillCardsFillCardManualInlineDisplayed
         case autofillCardsFillCardManualInlineConfirmed
         case autofillCardsFillCardManualInlineDismissed
+        case autofillCardsKeyboardFill
+        case autofillCardsKeyboardOpenSettings
         case autofillCardsSaveDisableSnackbarShown
         case autofillCardsSaveDisableSnackbarOpenSettings
         case autofillCardsSettingsEnabled
@@ -1641,6 +1643,8 @@ extension Pixel.Event {
         case .autofillCardsFillCardManualInlineDisplayed: return "autofill_cards_fill_card_inline_manual_displayed"
         case .autofillCardsFillCardManualInlineConfirmed: return "autofill_cards_fill_card_inline_manual_confirmed"
         case .autofillCardsFillCardManualInlineDismissed: return "autofill_cards_fill_card_inline_manual_dismissed"
+        case .autofillCardsKeyboardFill: return "autofill_cards_keyboard_fill_confirmed"
+        case .autofillCardsKeyboardOpenSettings: return "autofill_cards_keyboard_open_settings"
         case .autofillCardsSaveDisableSnackbarShown: return "autofill_cards_save_disable_snackbar_shown"
         case .autofillCardsSaveDisableSnackbarOpenSettings: return "autofill_cards_save_disable_snackbar_open_settings"
         case .autofillCardsSettingsEnabled: return "autofill_cards_settings_enabled"

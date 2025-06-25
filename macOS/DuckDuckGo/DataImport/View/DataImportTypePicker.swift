@@ -83,7 +83,7 @@ struct DataImportTypePicker: View {
                                 .foregroundColor(.secondary)
                         }
                         Spacer()
-                        Image(.plusCircle)
+                        Image(.chevronCircleRight16)
                             .resizable()
                             .frame(width: 16, height: 16)
                     }

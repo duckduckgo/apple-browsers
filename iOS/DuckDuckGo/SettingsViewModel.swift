@@ -1294,4 +1294,8 @@ extension SettingsViewModel {
             })
     }
 
+    func launchAIFeaturesLearnMore() {
+        urlOpener.open(URL.aiFeaturesLearnMore)
+    }
+
 }

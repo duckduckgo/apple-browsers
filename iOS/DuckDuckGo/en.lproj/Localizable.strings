@@ -1261,9 +1261,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Player's functionality has been affected by recent changes to YouTube. We’re working to fix these issues and appreciate your understanding.";
 
-/* AI features settings explanation with a markdown link. Please do not translate what's inside [] and () or change spacing or formatting. */
-"duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.
-[Learn More](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "DuckDuckGo AI features are private and optional. Your data is not used to train AI.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Address Bar";
@@ -1276,6 +1275,9 @@
 
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Voice Search";
+
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Learn More";
 
 /* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
@@ -2667,7 +2669,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.emailProtection.description" = "Block email trackers and hide your address";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Enable Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
 
 /* A description of what the AI Chat toggle does */
 "settings.enable.aichat.subtitle" = "Chat privately with popular 3rd-party AI models";
@@ -2679,7 +2681,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.enable.voice.search" = "Enable Voice Search";
 
 /* A description of what the AI Chat toggle does */
-"settings.features.assist.subtitle" = "Choose how often you want AI-Assisted answers to appear in your searches";
+"settings.features.assist.subtitle" = "Choose how often you want AI-assisted answers to appear in your searches";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Share Feedback";

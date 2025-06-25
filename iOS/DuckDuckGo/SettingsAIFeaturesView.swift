@@ -32,15 +32,25 @@ struct SettingsAIFeaturesView: View {
                 Image(.settingsAIChatHero)
                     .padding(.top, -20)
 
-                Text(UserText.settingsAiFeatures)
+                Text(UserText.duckAiFeatureName)
                     .daxTitle3()
 
-                Text(.init(UserText.aiChatSettingsCaptionWithLinkMarkdown))
-                    .tint(Color.init(designSystemColor: .accent))
-                    .daxBodyRegular()
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .padding(.top, 12)
+                VStack(spacing: 0) {
+                    Text(.init(UserText.aiFeaturesDescription))
+                        .daxBodyRegular()
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                    Button {
+                        viewModel.launchAIFeaturesLearnMore()
+                    } label: {
+                        Text(UserText.aiFeaturesLearnMore)
+                            .daxBodyRegular()
+                            .foregroundColor(Color(designSystemColor: .textLink))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.top, 12)
+
             }
             .frame(maxWidth: .infinity)
             .listRowBackground(Color.clear)

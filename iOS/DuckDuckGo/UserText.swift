@@ -1635,13 +1635,13 @@ Take back control of your personal information with the browser designed for dat
     public static let settingsAIChatExperimentalSection = NotLocalizedString("settings.aichat.experimental.section.title", value: "Experimental Duck.ai (internal only) ", comment: "")
     public static let settingsAIChatExperimentalTransition = NotLocalizedString("settings.aichat.native.experimental.transition", value: "Experimental switcher bar transition", comment: "")
 
-    public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Enable Duck.ai", comment: "Settings screen cell text for enabling AI chat")
+    public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Duck.ai", comment: "Settings screen cell text for enabling AI chat")
 
     public static let settingsEnableAiChatSubtitle = NSLocalizedString("settings.enable.aichat.subtitle", value: "Chat privately with popular 3rd-party AI models", comment: "A description of what the AI Chat toggle does")
 
     public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
 
-    public static let settingsAiFeaturesSearchAssistSubtitle = NSLocalizedString("settings.features.assist.subtitle", value: "Choose how often you want AI-Assisted answers to appear in your searches", comment: "A description of what the AI Chat toggle does")
+    public static let settingsAiFeaturesSearchAssistSubtitle = NSLocalizedString("settings.features.assist.subtitle", value: "Choose how often you want AI-assisted answers to appear in your searches", comment: "A description of what the AI Chat toggle does")
 
     public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Duck.ai Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")
 
@@ -1649,14 +1649,14 @@ Take back control of your personal information with the browser designed for dat
     public static let voiceSearchToggleAIChat = NotLocalizedString("voice-search-toggle-aichat-option", value: "Duck.ai", comment: "Voice search toggle option for searching on the AI Chat. Feature name. Not translated")
 
     // This is used for accessibility labels so leaving in place to avoid confusing translation memory.
-    public static let aiChatFeatureAccessibilityLabel = NSLocalizedString("duckai.settings.title", value: "Duck.ai", comment: "Accessibility label for Duck.ai")
+    public static let duckAiFeatureName = NSLocalizedString("duckai.settings.title", value: "Duck.ai", comment: "Accessibility label for Duck.ai")
 
     public static let settingsAiFeatures = NSLocalizedString("ai-features.settings.title", value: "AI Features", comment: "Settings screen title for AI features")
 
-    static let aiChatSettingsCaptionWithLinkMarkdown = NSLocalizedString("duckai.preferences.text.markdown", value: """
-DuckDuckGo AI features are private and optional. Your data is not used to train AI.
-[Learn More](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)
-""", comment: "AI features settings explanation with a markdown link. Please do not translate what's inside [] and () or change spacing or formatting.")
+    static let aiFeaturesDescription = NSLocalizedString("duckai.preferences.text.markdown", value: "DuckDuckGo AI features are private and optional. Your data is not used to train AI.", comment: "AI features settings explanation")
+
+    static let aiFeaturesLearnMore = NSLocalizedString("duckai.settings.learn.more", value: "Learn More", comment: "Used in the link to learn more about the AI features.")
+
     public static let aiChatSettingsEnableBrowsingMenuToggle = NSLocalizedString("duckai.settings.enable.browsing-menu-toggle", value: "Browser Menu", comment: "Toggle text to enable/disable AI Chat in the browsing menu")
 
     public static let aiChatSettingsEnableAddressBarToggle = NSLocalizedString("duckai.settings.enable.address-bar-toggle", value: "Address Bar", comment: "Toggle text to enable/disable Duck.ai in the address bar")

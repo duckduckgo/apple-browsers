@@ -1613,7 +1613,7 @@ public final class MockAuthenticationManager: DataBrokerProtectionAuthentication
     public var shouldThrowEntitlementError = false
 
     public var isUserAuthenticated: Bool { isUserAuthenticatedValue }
-    
+
     public var isUserEligibleForFreeTrial: Bool { isUserEligibleForFreeTrialValue }
 
     public func accessToken() async -> String? { accessTokenValue }

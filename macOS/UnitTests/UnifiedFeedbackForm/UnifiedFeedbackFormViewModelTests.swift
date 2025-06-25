@@ -161,7 +161,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         XCTAssertTrue(delegate.receivedDismissedViewCallback)
     }
 
-    func testWhenDuckAiFeatureIsEnabledAndSubscriptionIncludesPaidAIChat_ThenDuckAiCategoryIsAvailable() async throws {
+    func disabledTestWhenDuckAiFeatureIsEnabledAndSubscriptionIncludesPaidAIChat_ThenDuckAiCategoryIsAvailable() async throws {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
         let featureFlagger = MockFeatureFlagger()

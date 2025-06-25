@@ -104,6 +104,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
         burner = CapturingHistoryBurner()
         dateFormatter = MockHistoryViewDateFormatter()
         featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.historyView]
         pixelHandler = CapturingHistoryViewDataProviderPixelHandler()
         provider = HistoryViewDataProvider(
             historyDataSource: dataSource,
@@ -113,6 +114,16 @@ final class HistoryViewDataProviderTests: XCTestCase {
             pixelHandler: pixelHandler
         )
         await provider.refreshData()
+    }
+
+    @MainActor
+    override func tearDown() async throws {
+        provider = nil
+        dataSource = nil
+        burner = nil
+        dateFormatter = nil
+        featureFlagger = nil
+        pixelHandler = nil
     }
 
     // MARK: - ranges

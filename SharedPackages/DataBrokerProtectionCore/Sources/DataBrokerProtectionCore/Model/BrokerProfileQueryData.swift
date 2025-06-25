@@ -55,3 +55,77 @@ public struct BrokerProfileQueryData: Sendable {
         self.optOutJobData = optOutJobData
     }
 }
+
+public extension BrokerProfileQueryData {
+    func namesOfBrokersScannedIncludingMirrorSites() -> [String] {
+        guard scanJobData.lastRunDate != nil else {
+            return []
+        }
+
+        let scanEvents = scanJobData.scanStartedEvents()
+
+        let namesOfMirrorSitesScanned = dataBroker.mirrorSites.compactMap { mirrorSite in
+            let wasMirrorSiteScanned = scanEvents.contains { event in
+                mirrorSite.wasExtant(on: event.date)
+            }
+
+            return wasMirrorSiteScanned ? mirrorSite.name : nil
+        }
+
+        return [dataBroker.name] + namesOfMirrorSitesScanned
+    }
+
+    var numberOfCurrentlyExtantMirrorSites: Int {
+        return dataBroker.mirrorSites.filter { $0.isExtant() }.count
+    }
+}
+
+public extension Array where Element == BrokerProfileQueryData {
+
+    func latestScanLastRunDate() -> Date? {
+        self.lazy.compactMap { $0.scanJobData.lastRunDate }.max()
+    }
+
+    func earliestScanPreferredRunDate() -> Date? {
+        self.lazy.compactMap { $0.scanJobData.preferredRunDate }.min()
+    }
+
+    func elementsSortedByScanLastRunDateWhereScansRanBetween(earlierDate: Date, laterDate: Date) -> [BrokerProfileQueryData] {
+        guard earlierDate < laterDate else {
+            assertionFailure()
+            return []
+        }
+
+        let unsortedElementsBetweenDates = self.filter {
+            $0.scanJobData.lastRunDate != nil &&
+            $0.scanJobData.lastRunDate! >= earlierDate &&
+            $0.scanJobData.lastRunDate! <= laterDate
+        }
+
+        let sortedElements = unsortedElementsBetweenDates.sorted {
+            $0.scanJobData.lastRunDate! < $1.scanJobData.lastRunDate!
+            // At this point they are guaranteed to have a lastRunDate due to the previous filter
+        }
+
+        return sortedElements
+    }
+
+    func elementsSortedByScanPreferredRunDateWhereDateIsBetween(earlierDate: Date, laterDate: Date) -> [BrokerProfileQueryData] {
+        guard earlierDate < laterDate else {
+            assertionFailure()
+            return []
+        }
+
+        let unsortedElementsBetweenDates = self.filter {
+            $0.scanJobData.preferredRunDate != nil &&
+            $0.scanJobData.preferredRunDate! >= earlierDate &&
+            $0.scanJobData.preferredRunDate! <= laterDate
+        }
+
+        let sortedElements = unsortedElementsBetweenDates.sorted {
+            $0.scanJobData.preferredRunDate! < $1.scanJobData.preferredRunDate!
+        }
+
+        return sortedElements
+    }
+}

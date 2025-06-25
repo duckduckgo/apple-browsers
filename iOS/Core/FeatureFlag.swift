@@ -226,9 +226,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .autofillCreditCards:
-            return .disabled
+            return .remoteReleasable(.subfeature(AutofillSubfeature.autofillCreditCards))
         case .autofillCreditCardsOnByDefault:
-            return .disabled
+            return .remoteReleasable(.subfeature(AutofillSubfeature.autofillCreditCardsOnByDefault))
         case .incontextSignup:
             return .remoteReleasable(.feature(.incontextSignup))
         case .autoconsentOnByDefault:

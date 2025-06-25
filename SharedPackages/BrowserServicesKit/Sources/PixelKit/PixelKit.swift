@@ -445,6 +445,11 @@ public final class PixelKit {
         }
 
     private func prefixedAndSuffixedName(for event: Event, namePrefix: String?) -> String {
+
+        if let v3Event = event as? PixelKitEventV3 {
+            return v3Event.namePrefix + v3Event.name + platformSuffix
+        }
+
         let pixelName = (namePrefix ?? "") + event.name
         if pixelName.hasPrefix("experiment") {
             return addPlatformSuffix(to: pixelName)
@@ -472,7 +477,20 @@ public final class PixelKit {
 #endif
     }
 
-    private func addPlatformSuffix(to name: String) -> String {
+    var platformSuffix: String {
+        switch source {
+        case Source.iOS.rawValue:
+            return "_ios_phone"
+        case Source.iPadOS.rawValue:
+            return "_ios_tablet"
+        case Source.macStore.rawValue, Source.macDMG.rawValue:
+            return "_mac"
+        default:
+            return ""
+        }
+    }
+
+    public func addPlatformSuffix(to name: String) -> String {
         if let source {
             switch source {
             case Source.iOS.rawValue:

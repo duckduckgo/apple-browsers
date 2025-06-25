@@ -1947,10 +1947,8 @@ class MainViewController: UIViewController {
                     notificationSourceObject: notification.object),
                 frequency: .dailyAndCount)
 
-            Task {
-                await networkProtectionTunnelController.stop()
-                await networkProtectionTunnelController.removeVPN(reason: .signedOut)
-            }
+            await networkProtectionTunnelController.stop()
+            await networkProtectionTunnelController.removeVPN(reason: .signedOut)
         }
     }
 

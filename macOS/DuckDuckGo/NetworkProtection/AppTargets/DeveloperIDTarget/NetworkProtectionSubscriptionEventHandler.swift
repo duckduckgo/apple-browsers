@@ -104,11 +104,22 @@ final class NetworkProtectionSubscriptionEventHandler {
     }
 
     func registerForSubscriptionAccountManagerEvents() {
-        NotificationCenter.default.addObserver(self, selector: #selector(handleAccountDidSignIn), name: .accountDidSignIn, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(handleAccountDidSignOut), name: .accountDidSignOut, object: nil)
+        NotificationCenter.default
+            .publisher(for: .accountDidSignIn)
+            .sink { [weak self] notification in
+                self?.handleAccountDidSignIn(notification)
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default
+            .publisher(for: .accountDidSignOut)
+            .sink { [weak self] notification in
+                self?.handleAccountDidSignOut(notification)
+            }
+            .store(in: &cancellables)
     }
 
-    @objc private func handleAccountDidSignIn(notification: Notification) {
+    private func handleAccountDidSignIn(_ notification: Notification) {
         Task {
             guard subscriptionManager.isUserAuthenticated else {
                 assertionFailure("[NetP Subscription] AccountManager signed in but token could not be retrieved")
@@ -129,7 +140,7 @@ final class NetworkProtectionSubscriptionEventHandler {
         }
     }
 
-    @objc private func handleAccountDidSignOut(notification: Notification) {
+    private func handleAccountDidSignOut(_ notification: Notification) {
         Task {
             print("[NetP Subscription] Deleted NetP auth token after signing out from Privacy Pro")
 

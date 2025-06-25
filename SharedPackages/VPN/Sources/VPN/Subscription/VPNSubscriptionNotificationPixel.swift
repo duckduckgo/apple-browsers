@@ -19,7 +19,7 @@
 import PixelKit
 import Subscription
 
-public enum VPNSubscriptionNotificationPixel: PixelKitEventV2 {
+public enum VPNSubscriptionNotificationPixel: PixelKitEventV3 {
     case vpnEnabled(isSubscriptionActive: Bool?,
                     isAuthV2Enabled: Bool,
                     notificationSourceObject: Any?)
@@ -33,16 +33,20 @@ public enum VPNSubscriptionNotificationPixel: PixelKitEventV2 {
                    isAuthV2Enabled: Bool,
                    notificationSourceObject: Any?)
 
+    public var namePrefix: String {
+        "m_vpn_subs_notification_"
+    }
+
     public var name: String {
         switch self {
         case .signedIn:
-            return "subs_notification_signed_in"
+            return "signed_in"
         case .signedOut:
-            return "subs_notification_signed_out"
+            return "signed_out"
         case .vpnEnabled:
-            return "subs_notification_vpn_enabled"
+            return "vpn_enabled"
         case .vpnDisabled:
-            return "subs_notification_vpn_disabled"
+            return "vpn_disabled"
         }
     }
 

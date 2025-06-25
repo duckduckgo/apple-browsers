@@ -88,7 +88,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                 VPNSubscriptionNotificationPixel.vpnEnabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    notificationSourceObject: sourceObject),
+                    sourceObject: sourceObject),
                 frequency: .dailyAndCount)
             UserDefaults.netP.networkProtectionEntitlementsExpired = false
         } else {
@@ -96,7 +96,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                 VPNSubscriptionNotificationPixel.vpnDisabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    notificationSourceObject: sourceObject),
+                    sourceObject: sourceObject),
                 frequency: .dailyAndCount)
             await tunnelController.stop()
             UserDefaults.netP.networkProtectionEntitlementsExpired = true
@@ -134,7 +134,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                 VPNSubscriptionNotificationPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    notificationSourceObject: notification.object),
+                    sourceObject: notification.object),
                 frequency: .dailyAndCount)
             userDefaults.networkProtectionEntitlementsExpired = false
         }
@@ -152,7 +152,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                 VPNSubscriptionNotificationPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    notificationSourceObject: notification.object),
+                    sourceObject: notification.object),
                 frequency: .dailyAndCount)
 
             try? await vpnUninstaller.uninstall(removeSystemExtension: false, showNotification: true)

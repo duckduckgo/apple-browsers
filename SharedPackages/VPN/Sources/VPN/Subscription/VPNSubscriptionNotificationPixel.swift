@@ -17,12 +17,13 @@
 //
 
 import PixelKit
+import Subscription
 
 public enum VPNSubscriptionNotificationPixel: PixelKitEventV2 {
-    case vpnEnabled
-    case vpnDisabled
-    case signedIn
-    case signedOut
+    case vpnEnabled(subscriptionStatus: String, isAuthV2Enabled: Bool, notificationObjectClass: Any?)
+    case vpnDisabled(subscriptionStatus: String, isAuthV2Enabled: Bool, notificationObjectClass: Any?)
+    case signedIn(subscriptionStatus: String, isAuthV2Enabled: Bool, notificationObjectClass: Any?)
+    case signedOut(subscriptionStatus: String, isAuthV2Enabled: Bool, notificationObjectClass: Any?)
 
     public var name: String {
         switch self {
@@ -38,7 +39,17 @@ public enum VPNSubscriptionNotificationPixel: PixelKitEventV2 {
     }
 
     public var parameters: [String: String]? {
-        nil
+        switch self {
+        case .signedIn(let subscriptionStatus, let isAuthV2, let notificationObjectClass),
+                .signedOut(let subscriptionStatus, let isAuthV2, let notificationObjectClass),
+                .vpnEnabled(let subscriptionStatus, let isAuthV2, let notificationObjectClass),
+                .vpnDisabled(let subscriptionStatus, let isAuthV2, let notificationObjectClass):
+            return [
+                "status": subscriptionStatus,
+                "version": isAuthV2 ? "v2" : "v1",
+                "notificationObjectClass": String(describing: type(of: notificationObjectClass))
+            ]
+        }
     }
 
     public var error: (any Error)? {

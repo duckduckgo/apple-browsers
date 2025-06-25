@@ -49,7 +49,7 @@ final class NetworkProtectionSubscriptionEventHandler {
         Task {
             let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
             Task {
-                await handleEntitlementsChange(hasEntitlements: hasEntitlement, notificationObject: subscriptionManager)
+                await handleEntitlementsChange(hasEntitlements: hasEntitlement, sourceObject: subscriptionManager)
             }
 
             NotificationCenter.default
@@ -71,14 +71,14 @@ final class NetworkProtectionSubscriptionEventHandler {
                     }
 
                     Task {
-                        await self.handleEntitlementsChange(hasEntitlements: hasEntitlements, notificationObject: notification.object)
+                        await self.handleEntitlementsChange(hasEntitlements: hasEntitlements, sourceObject: notification.object)
                     }
                 }
                 .store(in: &cancellables)
         }
     }
 
-    private func handleEntitlementsChange(hasEntitlements: Bool, notificationObject: Any?) async {
+    private func handleEntitlementsChange(hasEntitlements: Bool, sourceObject: Any?) async {
         let subscriptionManager = await NSApp.delegateTyped.subscriptionAuthV1toV2Bridge
         let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
@@ -88,7 +88,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                 VPNSubscriptionNotificationPixel.vpnEnabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    notificationSourceObject: notificationObject),
+                    notificationSourceObject: sourceObject),
                 frequency: .dailyAndCount)
             UserDefaults.netP.networkProtectionEntitlementsExpired = false
         } else {
@@ -96,7 +96,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                 VPNSubscriptionNotificationPixel.vpnDisabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    notificationSourceObject: notificationObject),
+                    notificationSourceObject: sourceObject),
                 frequency: .dailyAndCount)
             await tunnelController.stop()
             UserDefaults.netP.networkProtectionEntitlementsExpired = true

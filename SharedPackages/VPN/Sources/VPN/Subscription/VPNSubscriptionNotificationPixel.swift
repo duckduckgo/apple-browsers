@@ -22,16 +22,16 @@ import Subscription
 public enum VPNSubscriptionNotificationPixel: PixelKitEventV3 {
     case vpnEnabled(isSubscriptionActive: Bool?,
                     isAuthV2Enabled: Bool,
-                    notificationSourceObject: Any?)
+                    sourceObject: Any?)
     case vpnDisabled(isSubscriptionActive: Bool?,
                      isAuthV2Enabled: Bool,
-                     notificationSourceObject: Any?)
+                     sourceObject: Any?)
     case signedIn(isSubscriptionActive: Bool?,
                   isAuthV2Enabled: Bool,
-                  notificationSourceObject: Any?)
+                  sourceObject: Any?)
     case signedOut(isSubscriptionActive: Bool?,
                    isAuthV2Enabled: Bool,
-                   notificationSourceObject: Any?)
+                   sourceObject: Any?)
 
     public var namePrefix: String {
         "m_vpn_subs_notification_"

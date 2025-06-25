@@ -5,6 +5,7 @@ set -eo pipefail
 workspace_id="137249556945"
 project_id="1205237866452338"
 workflow_id_custom_field_id="1205563320492190"
+apple_team_id="1203552211911076"
 asana_api_url="https://app.asana.com/api/1.0"
 
 print_usage_and_exit() {
@@ -158,11 +159,101 @@ close_task() {
 	[[ ${return_code} -eq 200 ]]
 }
 
+_fetch_github_asana_mapping() {
+	echo "Fetching GitHub to Asana user mapping..." >&2
+
+	local gh_asana_mapping_content
+	local gh_asana_mapping
+
+	# Try to fetch the mapping content from GitHub API
+	if ! gh_asana_mapping_content="$(gh api https://api.github.com/repos/duckduckgo/internal-github-asana-utils/contents/user_map.yml --jq .content 2>/dev/null)"; then
+		echo "Failed to fetch user mapping from GitHub API" >&2
+		return 1
+	fi
+
+	# Check if content is empty or null
+	if [[ -z "${gh_asana_mapping_content}" ]] || [[ "${gh_asana_mapping_content}" == "null" ]]; then
+		echo "GitHub API returned empty or null content" >&2
+		return 1
+	fi
+
+	# Try to decode base64 content
+	if ! gh_asana_mapping="$(echo "${gh_asana_mapping_content}" | base64 -d 2>/dev/null)"; then
+		echo "Failed to decode base64 content" >&2
+		return 1
+	fi
+
+	# Check if decoded content is empty
+	if [[ -z "${gh_asana_mapping}" ]]; then
+		echo "Decoded mapping content is empty" >&2
+		return 1
+	fi
+
+	# Happy path - all checks passed
+	echo "Successfully retrieved user mapping" >&2
+	echo "${gh_asana_mapping}"
+	return 0
+}
+
+_is_user_in_apple_team() {
+	local user_id=$1
+
+	curl -s "${asana_api_url}/teams/${apple_team_id}/users?opt_fields=gid" \
+		-H "Authorization: Bearer ${asana_personal_access_token}" \
+		| jq -e "any(.data[]?; .gid == \"${user_id}\")" > /dev/null
+}
+
+validate_assignee() {
+	local assignee=$1
+	local pr_reviewers=$2
+
+	if _is_user_in_apple_team "${assignee}"; then
+		echo "${assignee}"
+		return
+	fi
+
+	echo "Assignee $assignee not found in Apple team, checking PR reviewers" >&2
+
+	# Check each PR reviewer if pr_reviewers is not empty
+	if [[ -n "${pr_reviewers}" ]]; then
+		local gh_asana_mapping
+		if ! gh_asana_mapping="$(_fetch_github_asana_mapping)"; then
+			echo "Skipping reviewer validation due to mapping fetch failure" >&2
+			return
+		fi
+
+		# Split comma-separated reviewers and iterate through them
+		IFS=',' read -ra reviewer_array <<< "${pr_reviewers}"
+		for reviewer in "${reviewer_array[@]}"; do
+			# Trim whitespace
+			reviewer="$(echo "${reviewer}" | xargs)"
+
+			if reviewer_asana_id="$(yq -r ".${reviewer}" <<< "${gh_asana_mapping}" 2>/dev/null)" && \
+				[[ -n "${reviewer_asana_id}" ]] && \
+				[[ "${reviewer_asana_id}" != "null" ]]; then
+
+				echo "Checking reviewer: ${reviewer_asana_id}" >&2
+
+				if _is_user_in_apple_team "${reviewer_asana_id}"; then
+					echo "Found Apple team member reviewer: ${reviewer_asana_id}" >&2
+					echo "${reviewer_asana_id}"
+					return
+				fi
+			else
+				echo "Could not find Asana ID for GitHub user: ${reviewer}" >&2
+			fi
+		done
+	fi
+
+	echo "No Apple team members found among PR reviewers, skipping task assignment" >&2
+}
+
 main() {
 	local asana_personal_access_token="${ASANA_ACCESS_TOKEN}"
 	local section_id="${ASANA_SECTION_ID}"
 	local assignee="${ASANA_ASSIGNEE}"
 	local workflow_id="${GITHUB_RUN_ID}"
+	local pr_reviewers="${GITHUB_PR_REVIEWERS}"
 	local action
 	local title
 	local description
@@ -172,7 +263,8 @@ main() {
 
 	case "${action}" in
 		create-task)
-			create_task "${title}" "${description}"
+			assignee="$(validate_assignee "${assignee}" "${pr_reviewers}")"
+			create_task "${title}" "${description}" "${assignee}"
 			;;
 		close-task)
 			task_id=$(find_task_for_workflow_id "${workflow_id}")

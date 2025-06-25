@@ -37,7 +37,7 @@ public enum VPNSubscriptionNotificationPixel: PixelKitEventV2 {
         }
     }
 
-    public var parameters: [String : String]? {
+    public var parameters: [String: String]? {
         nil
     }
 

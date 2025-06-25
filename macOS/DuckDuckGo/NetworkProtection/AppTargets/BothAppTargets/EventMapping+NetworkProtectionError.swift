@@ -83,7 +83,7 @@ extension EventMapping where Event == NetworkProtectionError {
         case .vpnAccessRevoked(let error):
             domainEvent = .networkProtectionVPNAccessRevoked(error)
         case .unmanagedSubscriptionError(let error):
-            domainEvent = .networkProtectionVPNAccessRevoked(error)
+            domainEvent = .networkProtectionUnmanagedSubscriptionError(error)
         }
 
         let debugEvent = DebugEvent(eventType: .custom(domainEvent))

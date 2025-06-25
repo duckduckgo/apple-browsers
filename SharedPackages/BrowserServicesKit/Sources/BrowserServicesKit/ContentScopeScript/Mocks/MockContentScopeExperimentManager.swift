@@ -18,14 +18,6 @@
 
 import Foundation
 
-// class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
-//    var allActiveContentScopeExperiments: Experiments = [:]
-//
-//    func resolveContentScopeScriptActiveExperiments() -> Experiments {
-//        return allActiveContentScopeExperiments
-//    }
-// }
-
 public class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
     public var allActiveContentScopeExperiments: Experiments = [:]
     public var resolveContentScopeScriptActiveExperimentsCalled = false

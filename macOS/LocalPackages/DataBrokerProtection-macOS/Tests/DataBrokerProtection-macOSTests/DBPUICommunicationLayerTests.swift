@@ -73,7 +73,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
 
         XCTAssertEqual(resultUserData.userdata.isAuthenticatedUser, false)
     }
-    
+
     func testWhenHandshakeCalled_andDelegateUserElgibleFreeTrialTrue_thenHandshakeUserDataTrue() async throws {
         // Given
         let mockDelegate = MockDelegate()

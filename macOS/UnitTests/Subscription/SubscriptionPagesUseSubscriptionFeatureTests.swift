@@ -1046,7 +1046,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         // Then
         XCTAssertNil(result)
-    }   
+    }
 
     // MARK: - Free Trials
 

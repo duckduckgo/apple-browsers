@@ -336,6 +336,8 @@ final class OmniBarEditingStateViewController: UIViewController {
 
     func setUpForInitialSelectedState() {
         switchBarVC.textEntryViewController.selectAllText()
+        // Enable the initial selected state where both mic and clear buttons are visible
+        switchBarVC.textEntryViewController.textEntryView.setInitialSelectedState(true)
         showSuggestionTray(.favorites)
     }
 

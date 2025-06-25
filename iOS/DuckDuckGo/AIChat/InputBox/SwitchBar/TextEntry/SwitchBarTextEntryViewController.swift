@@ -117,8 +117,9 @@ class SwitchBarTextEntryViewController: UIViewController {
 
         let actionView = SwitchBarActionView(
             hasText: hasText,
-            onImageUpload: { [weak self] in
-                self?.handleImageUpload()
+            forceWebSearchEnabled: handler.forceWebSearch,
+            onWebSearchToggle: { [weak self] in
+                self?.handleWebSearchToggle()
             },
             onSend: { [weak self] in
                 self?.handleSend()
@@ -145,8 +146,9 @@ class SwitchBarTextEntryViewController: UIViewController {
 
         let updatedActionView = SwitchBarActionView(
             hasText: hasText,
-            onImageUpload: { [weak self] in
-                self?.handleImageUpload()
+            forceWebSearchEnabled: handler.forceWebSearch,
+            onWebSearchToggle: { [weak self] in
+                self?.handleWebSearchToggle()
             },
             onSend: { [weak self] in
                 self?.handleSend()
@@ -202,10 +204,18 @@ class SwitchBarTextEntryViewController: UIViewController {
                 self?.updateActionView()
             }
             .store(in: &cancellables)
+
+        handler.forceWebSearchPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateActionView()
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Action Handlers
-    private func handleImageUpload() {
+    private func handleWebSearchToggle() {
+        handler.toggleForceWebSearch()
     }
 
     private func handleSend() {

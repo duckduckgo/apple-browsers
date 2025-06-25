@@ -702,7 +702,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
     }
 
     func testWhenGetAutofillDataFocusCalledForNonCreditCardType_ThenNilCardReturned() throws {
-        throw XCTSkip("Flakey test")
+        throw XCTSkip("Flaky test")
 
         class FocusDelegate: MockSecureVaultDelegate {
             var capturedMainType: AutofillUserScript.GetAutofillDataMainType?
@@ -865,7 +865,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
     }
 
     func testCancelAllPendingReplies() throws {
-        throw XCTSkip("Flakey test")
+        throw XCTSkip("Flaky test")
 
         class NeverCompletingDelegate: MockSecureVaultDelegate {
             let delegateCalledExpectation: XCTestExpectation

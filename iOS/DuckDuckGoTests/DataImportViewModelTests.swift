@@ -232,7 +232,7 @@ class DataImportViewModelTests: XCTestCase {
     }
 
     func testLoadingState_DuringCSVImport() async throws {
-        throw XCTSkip("Flakey test")
+        throw XCTSkip("Flaky test")
 
         viewModel = DataImportViewModel(importScreen: .passwords, importManager: mockImportManager)
         viewModel.delegate = mockDelegate

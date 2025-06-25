@@ -54,14 +54,6 @@ extension SubscriptionAuthV1toV2Bridge {
     public func isEnabled(feature: Entitlement.ProductName) async throws -> Bool {
         try await isFeatureAvailableAndEnabled(feature: feature, cachePolicy: .returnCacheDataElseLoad)
     }
-
-    public func isSubscriptionActiveAsString() async -> String {
-        if let subscription = try? await getSubscription(cachePolicy: .cacheOnly) {
-            return String(subscription.isActive)
-        } else {
-            return "unknown"
-        }
-    }
 }
 
 extension Entitlement.ProductName {

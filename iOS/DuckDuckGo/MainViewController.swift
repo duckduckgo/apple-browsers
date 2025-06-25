@@ -1921,7 +1921,7 @@ class MainViewController: UIViewController {
                 VPNSubscriptionNotificationPixel.vpnDisabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    notificationSourceObject: notification.object),
+                    sourceObject: notification.object),
                 frequency: .dailyAndCount)
 
             if await networkProtectionTunnelController.isInstalled {

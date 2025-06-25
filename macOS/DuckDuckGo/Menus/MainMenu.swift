@@ -245,7 +245,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: UserText.mainMenuEditDelete, action: #selector(NSText.delete))
             NSMenuItem(title: UserText.mainMenuEditSelectAll, action: #selector(NSText.selectAll), keyEquivalent: "a")
 
-            NSMenuItem(title: "", action: #selector(MainViewController.summarize), keyEquivalent: [.shift, "\r"])
+            NSMenuItem(title: "", action: #selector(MainViewController.summarize), keyEquivalent: [.command, .shift, "\r"])
                 .hidden()
             NSMenuItem.separator()
 

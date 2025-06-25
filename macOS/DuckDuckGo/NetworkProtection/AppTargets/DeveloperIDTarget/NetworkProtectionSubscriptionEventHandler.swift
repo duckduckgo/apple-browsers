@@ -22,10 +22,10 @@ import Foundation
 import Subscription
 import VPN
 import NetworkProtectionUI
+import PixelKit
 import os.log
 
 final class NetworkProtectionSubscriptionEventHandler {
-
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let tunnelController: TunnelController
     private let vpnUninstaller: VPNUninstalling
@@ -79,8 +79,10 @@ final class NetworkProtectionSubscriptionEventHandler {
 
     private func handleEntitlementsChange(hasEntitlements: Bool) async {
         if hasEntitlements {
+            PixelKit.fire(VPNSubscriptionNotificationPixel.vpnEnabled, frequency: .dailyAndCount)
             UserDefaults.netP.networkProtectionEntitlementsExpired = false
         } else {
+            PixelKit.fire(VPNSubscriptionNotificationPixel.vpnDisabled, frequency: .dailyAndCount)
             await tunnelController.stop()
             UserDefaults.netP.networkProtectionEntitlementsExpired = true
         }
@@ -96,11 +98,14 @@ final class NetworkProtectionSubscriptionEventHandler {
             assertionFailure("[NetP Subscription] AccountManager signed in but token could not be retrieved")
             return
         }
+
+        PixelKit.fire(VPNSubscriptionNotificationPixel.signedIn, frequency: .dailyAndCount)
         userDefaults.networkProtectionEntitlementsExpired = false
     }
 
     @objc private func handleAccountDidSignOut() {
         print("[NetP Subscription] Deleted NetP auth token after signing out from Privacy Pro")
+        PixelKit.fire(VPNSubscriptionNotificationPixel.signedOut, frequency: .dailyAndCount)
 
         Task {
             try? await vpnUninstaller.uninstall(removeSystemExtension: false, showNotification: true)

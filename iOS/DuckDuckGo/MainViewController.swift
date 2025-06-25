@@ -42,6 +42,7 @@ import AIChat
 import NetworkExtension
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 class MainViewController: UIViewController {
 
@@ -1872,6 +1873,7 @@ class MainViewController: UIViewController {
 
     @objc
     private func onNetworkProtectionAccountSignIn(_ notification: Notification) {
+        PixelKit.fire(VPNSubscriptionNotificationPixel.signedIn, frequency: .dailyAndCount)
         tunnelDefaults.resetEntitlementMessaging()
         Logger.networkProtection.info("[NetP Subscription] Reset expired entitlement messaging")
     }
@@ -1891,7 +1893,12 @@ class MainViewController: UIViewController {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
             guard let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
                       hasEntitlement == false
-            else { return }
+            else {
+                PixelKit.fire(VPNSubscriptionNotificationPixel.vpnEnabled, frequency: .dailyAndCount)
+                return
+            }
+
+            PixelKit.fire(VPNSubscriptionNotificationPixel.vpnDisabled, frequency: .dailyAndCount)
 
             if await networkProtectionTunnelController.isInstalled {
                 tunnelDefaults.enableEntitlementMessaging()
@@ -1904,6 +1911,8 @@ class MainViewController: UIViewController {
 
     @objc
     private func onNetworkProtectionAccountSignOut(_ notification: Notification) {
+        PixelKit.fire(VPNSubscriptionNotificationPixel.signedOut, frequency: .dailyAndCount)
+
         Task {
             await networkProtectionTunnelController.stop()
             await networkProtectionTunnelController.removeVPN(reason: .signedOut)

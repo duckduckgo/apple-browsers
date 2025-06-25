@@ -165,7 +165,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.isFeatureOn = { _ in true }
+        featureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
@@ -190,7 +190,6 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.isFeatureOn = { _ in false }
 
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
@@ -207,7 +206,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let subscriptionManager = SubscriptionManagerMock()
         subscriptionManager.subscriptionFeatures = []
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.isFeatureOn = { _ in true }
+        featureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),

@@ -41,10 +41,17 @@ final class HistoryGroupingProviderTests: XCTestCase {
         provider = await HistoryGroupingProvider(dataSource: dataSource, featureFlagger: featureFlagger)
     }
 
+    override func tearDown() async throws {
+        dataSource = nil
+        featureFlagger = nil
+        provider = nil
+        try await super.tearDown()
+    }
+
     // MARK: - getRecentVisits with deduplication
 
     func testWhenHistoryViewIsEnabledThenRecentVisitsAreDeduplicatedLeavingMostRecentVisit() async throws {
-        featureFlagger.isFeatureOn = { _ in true }
+        featureFlagger.enabledFeatureFlags = [.historyView]
 
         let date = Date.noonToday
         dataSource.history = [
@@ -62,7 +69,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
     }
 
     func testWhenHistoryViewIsEnabledThenRecentVisitsAreSortedByMostRecentVisit() async throws {
-        featureFlagger.isFeatureOn = { _ in true }
+        featureFlagger.enabledFeatureFlags = [.historyView]
 
         let date = Date.noonToday
         dataSource.history = [
@@ -86,7 +93,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
     }
 
     func testWhenHistoryViewIsEnabledThenRecentVisitsAreLimitedToMaxCount() async throws {
-        featureFlagger.isFeatureOn = { _ in true }
+        featureFlagger.enabledFeatureFlags = [.historyView]
 
         let date = Date.noonToday
         dataSource.history = [
@@ -117,7 +124,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
     }
 
     func testWhenHistoryViewIsEnabledThenRecentVisitsAreLimitedToCurrentDay() async throws {
-        featureFlagger.isFeatureOn = { _ in true }
+        featureFlagger.enabledFeatureFlags = [.historyView]
 
         let date = Date.noonToday
         dataSource.history = [
@@ -150,8 +157,6 @@ final class HistoryGroupingProviderTests: XCTestCase {
     // MARK: - getRecentVisits without deduplication
 
     func testWhenHistoryViewIsDisabledThenRecentVisitsAreNotDeduplicated() async throws {
-        featureFlagger.isFeatureOn = { _ in false }
-
         let date = Date.noonToday
         dataSource.history = [
             .make(url: "https://example.com".url!, visits: [
@@ -171,8 +176,6 @@ final class HistoryGroupingProviderTests: XCTestCase {
     }
 
     func testWhenHistoryViewIsDisabledThenRecentVisitsAreSortedByMostRecentVisit() async throws {
-        featureFlagger.isFeatureOn = { _ in false }
-
         let date = Date.noonToday
         dataSource.history = [
             .make(url: "https://example.com".url!, visits: [
@@ -205,8 +208,6 @@ final class HistoryGroupingProviderTests: XCTestCase {
     }
 
     func testWhenHistoryViewIsDisabledThenRecentVisitsAreLimitedToMaxCount() async throws {
-        featureFlagger.isFeatureOn = { _ in false }
-
         let date = Date.noonToday
         dataSource.history = [
             .make(url: "https://example.com".url!, visits: [
@@ -230,8 +231,6 @@ final class HistoryGroupingProviderTests: XCTestCase {
     }
 
     func testWhenHistoryViewIsDisabledThenRecentVisitsAreLimitedToCurrentDay() async throws {
-        featureFlagger.isFeatureOn = { _ in false }
-
         let date = Date.noonToday
         dataSource.history = [
             .make(url: "https://example.com".url!, visits: [
@@ -257,7 +256,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
     // MARK: - getVisitGroupings with deduplication
 
     func testWhenHistoryViewIsEnabledThenVisitGroupingsAreDeduplicated() async throws {
-        featureFlagger.isFeatureOn = { _ in true }
+        featureFlagger.enabledFeatureFlags = [.historyView]
 
         let date = Date.noonToday
         dataSource.history = [
@@ -343,8 +342,6 @@ final class HistoryGroupingProviderTests: XCTestCase {
     // MARK: - getVisitGroupings without deduplication
 
     func testWhenHistoryViewIsDisabledThenVisitGroupingsAreNotDeduplicated() async throws {
-        featureFlagger.isFeatureOn = { _ in false }
-
         let date = Date.noonToday
         dataSource.history = [
             .make(url: "https://example.com".url!, visits: [

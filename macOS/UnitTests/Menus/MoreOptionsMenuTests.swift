@@ -161,6 +161,8 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testThatMoreOptionMenuHasTheExpectedItemsWhenFreemiumFeatureUnavailable() {
+        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
+
         subscriptionManager.canPurchase = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = false
@@ -202,6 +204,8 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testThatMoreOptionMenuHasTheExpectedItemsWhenFreemiumFeatureAvailable() {
+        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
+        
         subscriptionManager.canPurchase = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = true
@@ -290,7 +294,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
 
         // When
@@ -326,7 +330,6 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
-        mockFeatureFlagger.isFeatureOn = { _ in false }
         setupMoreOptionsMenu()
 
         // When
@@ -349,7 +352,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = []
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
 
         // When
@@ -370,7 +373,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
         moreOptionsMenu.actionDelegate = capturingActionDelegate
         let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })

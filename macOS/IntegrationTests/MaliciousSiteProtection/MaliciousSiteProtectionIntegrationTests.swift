@@ -45,9 +45,12 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
         await preloadDataTask.value
         return dataManager
     }
+
+    static var featureFlagger: MockFeatureFlagger! = MockFeatureFlagger()
+
     static var initDetectorTask: Task<MaliciousSiteProtectionManager, Never>! = Task {
         let dataManager = await MaliciousSiteProtectionIntegrationTests.dataManager()
-        return MaliciousSiteProtectionManager(dataManager: dataManager, featureFlagger: MockFeatureFlagger(), updateIntervalProvider: { _ in nil })
+        return MaliciousSiteProtectionManager(dataManager: dataManager, featureFlagger: featureFlagger, updateIntervalProvider: { _ in nil })
     }
 
     var detector: MaliciousSiteDetecting!
@@ -63,6 +66,7 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
     @MainActor
     override func setUp() async throws {
         detector = await Self.initDetectorTask.value
+        Self.featureFlagger.enabledFeatureFlags = [.maliciousSiteProtection]
 
         WebTrackingProtectionPreferences.shared.isGPCEnabled = false
         MaliciousSiteProtectionPreferences.shared.isEnabled = true
@@ -125,6 +129,7 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
     override class func tearDown() {
         initDetectorTask = nil
+        featureFlagger = nil
     }
 
     // MARK: - Phishing Detection Tests
@@ -328,6 +333,8 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
     @MainActor
     func testScamDetected_tabIsMarkedScam() async throws {
+        Self.featureFlagger.enabledFeatureFlags.append(.scamSiteProtection)
+
         let url = URL(string: "http://privacy-test-pages.site/security/badware/scam.html")!
         try await loadUrl(url)
         XCTAssertEqual(tabViewModel.tab.error as NSError? as? MaliciousSiteError, MaliciousSiteError(code: .scam, failingUrl: url))
@@ -335,6 +342,8 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
     @MainActor
     func testFeatureDisabledAndScamDetection_tabIsNotMarkedScam() async throws {
+        Self.featureFlagger.enabledFeatureFlags.append(.scamSiteProtection)
+
         MaliciousSiteProtectionPreferences.shared.isEnabled = false
         let e = expectation(description: "request sent")
         schemeHandler.middleware = [{ _ in
@@ -349,6 +358,8 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
     @MainActor
     func testScamDetectedNotDetected_tabIsNotMarkedScam() async throws {
+        Self.featureFlagger.enabledFeatureFlags.append(.scamSiteProtection)
+
         let url1 = URL(string: "http://privacy-test-pages.site/security/badware/scam.html")!
         try await loadUrl(url1)
         XCTAssertEqual(tabViewModel.tab.error as NSError? as? MaliciousSiteError, MaliciousSiteError(code: .scam, failingUrl: url1))
@@ -360,6 +371,8 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
     @MainActor
     func testScamDetectedThenDDGLoaded_tabIsNotMarkedScam() async throws {
+        Self.featureFlagger.enabledFeatureFlags.append(.scamSiteProtection)
+
         let url1 = URL(string: "http://privacy-test-pages.site/security/badware/scam.html")!
         try await loadUrl(url1)
         XCTAssertEqual(tabViewModel.tab.error as NSError? as? MaliciousSiteError, MaliciousSiteError(code: .scam, failingUrl: url1))
@@ -399,23 +412,5 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
         case .incorrectOrder, .invertedFulfillment, .interrupted: XCTFail("Test waiting failed")
         @unknown default: XCTFail("Unknown result")
         }
-    }
-}
-
-class MockFeatureFlagger: FeatureFlagger {
-    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
-    var localOverrides: FeatureFlagLocalOverriding?
-    var isFeatureOn = true
-
-    func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-        return isFeatureOn
-    }
-
-    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-        return nil
-    }
-
-    var allActiveExperiments: Experiments {
-        return [:]
     }
 }

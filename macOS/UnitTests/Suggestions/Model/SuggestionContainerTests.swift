@@ -43,6 +43,7 @@ final class SuggestionContainerTests: XCTestCase {
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
                                                       bookmarkProvider: bookmarkProviderMock,
+                                                      featureFlagger: MockFeatureFlagger(),
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
 
@@ -73,6 +74,7 @@ final class SuggestionContainerTests: XCTestCase {
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
                                                       bookmarkProvider: bookmarkProviderMock,
+                                                      featureFlagger: MockFeatureFlagger(),
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
 
@@ -93,6 +95,7 @@ final class SuggestionContainerTests: XCTestCase {
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
                                                       bookmarkProvider: bookmarkProviderMock,
+                                                      featureFlagger: MockFeatureFlagger(),
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
 
@@ -199,10 +202,14 @@ final class SuggestionContainerTests: XCTestCase {
                                                                         tabCollectionViewModels: tabCollectionViewModels,
                                                                         selectedWindow: selectedWindow)
 
+        let mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.enabledFeatureFlags.append(.autocompleteTabs)
+
         // Tested object
         let suggestionContainer = SuggestionContainer(urlSession: .mock(),
                                                       historyProvider: HistoryProviderMock(history: input.history),
                                                       bookmarkProvider: BookmarkProviderMock(bookmarks: input.bookmarks),
+                                                      featureFlagger: mockFeatureFlagger,
                                                       burnerMode: tabCollectionViewModels[selectedWindow].burnerMode,
                                                       isUrlIgnored: testScenario.input.isURLIgnored,
                                                       windowControllersManager: windowControllersManagerMock)

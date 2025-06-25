@@ -33,9 +33,14 @@ final class DuckSchemeHandlerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         featureFlagger = MockFeatureFlagger()
-        featureFlagger.isFeatureOn = { _ in false }
 
         handler = DuckURLSchemeHandler(featureFlagger: featureFlagger)
+    }
+
+    override func tearDown() {
+        featureFlagger = nil
+        handler = nil
+        super.tearDown()
     }
 
     func testWebViewFromOnboardingHandlerReturnsResponseAndData() throws {

@@ -44,6 +44,15 @@ final class PreferencesSidebarModelTests: XCTestCase {
         cancellables.removeAll()
     }
 
+    override func tearDownWithError() throws {
+        testNotificationCenter = nil
+        mockSubscriptionManager = nil
+        pixelFiringMock = nil
+        mockFeatureFlagger = nil
+        cancellables.removeAll()
+        try super.tearDownWithError()
+    }
+
     private func PreferencesSidebarModel(loadSections: [PreferencesSection]? = nil, tabSwitcherTabs: [Tab.TabContent] = Tab.TabContent.displayableTabTypes) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
             loadSections: { _ in loadSections ?? PreferencesSection.defaultSections(includingDuckPlayer: false, includingSync: false, includingAIChat: false, subscriptionState: .initial) },
@@ -148,6 +157,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     func testCurrentSubscriptionStateForAvailableSubscriptionFeatures() async throws {
         // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         mockSubscriptionManager.accessTokenResult = .success("token")
         XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
 
@@ -168,9 +178,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
     }
 
     func testCurrentSubscriptionStateIsPaidAIChatEnabledIsFalseWhenFeatureFlagIsOff() async throws {
-        // Given
-        mockFeatureFlagger.isFeatureOn = { _ in false }
-
         // When
         let model = PreferencesSidebarModel()
         model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`

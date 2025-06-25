@@ -45,7 +45,7 @@ public final class MockFeatureFlagger: FeatureFlagger {
 
     var mockActiveExperiments: [String: ExperimentData] = [:]
 
-    var featuresStub: [String: Bool] = [:]
+    public var featuresStub: [String: Bool] = [:]
     public func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
         featuresStub[featureFlag.rawValue] ?? false
     }

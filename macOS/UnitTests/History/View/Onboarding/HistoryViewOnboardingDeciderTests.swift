@@ -36,16 +36,16 @@ final class HistoryViewOnboardingDeciderTests: XCTestCase {
         settingsPersistor = MockHistoryViewOnboardingViewSettingsPersistor()
         decider = HistoryViewOnboardingDecider(featureFlagger: featureFlagger, settingsPersistor: settingsPersistor, isContextualOnboardingCompleted: { self.isContextualOnboardingCompleted }, isNewUser: { self.isNewUser })
 
-        featureFlagger.isFeatureOn = { _ in true }
+        featureFlagger.enabledFeatureFlags = [.historyView]
     }
 
     func testWhenFeatureFlagIsDisabledThenOnboardingShouldNotBePresented() {
-        featureFlagger.isFeatureOn = { _ in false }
+        featureFlagger.enabledFeatureFlags = []
         XCTAssertFalse(decider.shouldPresentOnboarding)
     }
 
     func testWhenFeatureFlagIsEnabledThenOnboardingShouldBePresented() {
-        featureFlagger.isFeatureOn = { _ in true }
+        featureFlagger.enabledFeatureFlags = [.historyView]
         XCTAssertTrue(decider.shouldPresentOnboarding)
     }
 

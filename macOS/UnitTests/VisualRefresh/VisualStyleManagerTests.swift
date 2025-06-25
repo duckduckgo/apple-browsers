@@ -334,49 +334,4 @@ class VisualStyleManagerTests: XCTestCase {
         XCTAssertFalse(visualStyleDecider.shouldFirePixel(style: VisualStyle.legacy))
     }
 
-    // MARK: - Mock Classes
-
-    final class MockFeatureFlagger: FeatureFlagger {
-
-        private(set) var didCallResolveCohort: Bool = false
-
-        var internalUserDecider: InternalUserDecider
-        var localOverrides: FeatureFlagLocalOverriding?
-
-        var mockActiveExperiments: [String: ExperimentData] = [:]
-
-        var enabledFeatureFlags: [FeatureFlag] = []
-
-        var cohortToReturn: (any FeatureFlagCohortDescribing)?
-
-        public init(internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring()),
-                    enabledFeatureFlags: [FeatureFlag] = []) {
-            self.internalUserDecider = internalUserDecider
-            self.enabledFeatureFlags = enabledFeatureFlags
-        }
-
-        func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-            guard let flag = featureFlag as? FeatureFlag else {
-                return false
-            }
-            guard enabledFeatureFlags.contains(flag) else {
-                return false
-            }
-            return true
-        }
-
-        func getCohortIfEnabled(_ subfeature: any PrivacySubfeature) -> CohortID? {
-            return nil
-        }
-
-        func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-            didCallResolveCohort = true
-            return cohortToReturn
-        }
-
-        var allActiveExperiments: Experiments {
-            mockActiveExperiments
-        }
-
-    }
 }

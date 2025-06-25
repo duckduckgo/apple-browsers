@@ -1882,7 +1882,7 @@ class MainViewController: UIViewController {
                 VPNSubscriptionNotificationPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    notificationSourceObject: notification.object),
+                    sourceObject: notification.object),
                 frequency: .dailyAndCount)
             tunnelDefaults.resetEntitlementMessaging()
             Logger.networkProtection.info("[NetP Subscription] Reset expired entitlement messaging")
@@ -1912,7 +1912,7 @@ class MainViewController: UIViewController {
                     VPNSubscriptionNotificationPixel.vpnEnabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
-                        notificationSourceObject: notification.object),
+                        sourceObject: notification.object),
                     frequency: .dailyAndCount)
                 return
             }
@@ -1944,7 +1944,7 @@ class MainViewController: UIViewController {
                 VPNSubscriptionNotificationPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    notificationSourceObject: notification.object),
+                    sourceObject: notification.object),
                 frequency: .dailyAndCount)
 
             await networkProtectionTunnelController.stop()

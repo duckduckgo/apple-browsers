@@ -100,8 +100,8 @@ final class VPNAppEventsHandlerTests: XCTestCase {
             ipcClient: mockIPCClient,
             defaults: UserDefaults(suiteName: UUID().uuidString)!)
 
-        await appEventsHandler.applicationDidFinishLaunching()
-        await fulfillment(of: [loginItemsDisabledExpectation, loginItemsRestartedExpectation])
+        appEventsHandler.applicationDidFinishLaunching()
+        await fulfillment(of: [loginItemsDisabledExpectation, loginItemsRestartedExpectation], timeout: 3)
 
         // Verify that stop was called
         XCTAssertEqual(mockIPCClient.stopCallCount, 1)
@@ -139,8 +139,8 @@ final class VPNAppEventsHandlerTests: XCTestCase {
             ipcClient: mockIPCClient,
             defaults: UserDefaults(suiteName: UUID().uuidString)!)
 
-        await appEventsHandler.applicationDidFinishLaunching()
-        await fulfillment(of: [loginItemsDisabledExpectation, loginItemsRestartedExpectation])
+        appEventsHandler.applicationDidFinishLaunching()
+        await fulfillment(of: [loginItemsDisabledExpectation, loginItemsRestartedExpectation], timeout: 3)
 
         // Verify that stop was not called
         XCTAssertEqual(mockIPCClient.stopCallCount, 0)

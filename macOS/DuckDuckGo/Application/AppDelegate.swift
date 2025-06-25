@@ -711,7 +711,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()
 
-            await vpnAppEventsHandler.applicationDidFinishLaunching()
+            vpnAppEventsHandler.applicationDidFinishLaunching()
         }
 
         historyCoordinator.loadHistory {

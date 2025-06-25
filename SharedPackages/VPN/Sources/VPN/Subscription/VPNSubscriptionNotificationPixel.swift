@@ -22,16 +22,16 @@ import Subscription
 public enum VPNSubscriptionNotificationPixel: PixelKitEventV2 {
     case vpnEnabled(isSubscriptionActive: Bool?,
                     isAuthV2Enabled: Bool,
-                    notificationObjectClass: Any?)
+                    notificationSourceObject: Any?)
     case vpnDisabled(isSubscriptionActive: Bool?,
                      isAuthV2Enabled: Bool,
-                     notificationObjectClass: Any?)
+                     notificationSourceObject: Any?)
     case signedIn(isSubscriptionActive: Bool?,
                   isAuthV2Enabled: Bool,
-                  notificationObjectClass: Any?)
+                  notificationSourceObject: Any?)
     case signedOut(isSubscriptionActive: Bool?,
                    isAuthV2Enabled: Bool,
-                   notificationObjectClass: Any?)
+                   notificationSourceObject: Any?)
 
     public var name: String {
         switch self {
@@ -48,19 +48,38 @@ public enum VPNSubscriptionNotificationPixel: PixelKitEventV2 {
 
     public var parameters: [String: String]? {
         switch self {
-        case .signedIn(let isSubscriptionActive, let isAuthV2, let notificationObjectClass),
-                .signedOut(let isSubscriptionActive, let isAuthV2, let notificationObjectClass),
-                .vpnEnabled(let isSubscriptionActive, let isAuthV2, let notificationObjectClass),
-                .vpnDisabled(let isSubscriptionActive, let isAuthV2, let notificationObjectClass):
+        case .signedIn(let isSubscriptionActive, let isAuthV2, let sourceObject),
+                .signedOut(let isSubscriptionActive, let isAuthV2, let sourceObject),
+                .vpnEnabled(let isSubscriptionActive, let isAuthV2, let sourceObject),
+                .vpnDisabled(let isSubscriptionActive, let isAuthV2, let sourceObject):
             return [
                 "isSubscriptionActive": "\(isSubscriptionActive.map { String($0) } ?? "unknown")",
                 "version": isAuthV2 ? "v2" : "v1",
-                "notificationObjectClass": String(describing: type(of: notificationObjectClass))
+                "notificationObjectClass": Self.sourceClass(from: sourceObject)
             ]
         }
     }
 
     public var error: (any Error)? {
         nil
+    }
+
+    static func sourceClass(from sourceObject: Any?) -> String {
+        guard let sourceObject else {
+            return "missing"
+        }
+
+        switch sourceObject {
+        case is DefaultAccountManager:
+            return "DefaultAccountManager"
+        case is SubscriptionEndpointServiceV2:
+            return "SubscriptionEndpointServiceV2"
+        case is DefaultSubscriptionManagerV2:
+            return "DefaultSubscriptionManagerV2"
+        case is SubscriptionAuthV1toV2Bridge:
+            return "SubscriptionAuthV1toV2Bridge"
+        default:
+            return "Unknown - add class!"
+        }
     }
 }

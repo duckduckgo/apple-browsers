@@ -1876,13 +1876,13 @@ class MainViewController: UIViewController {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
             let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
-            let isSubscriptionActive = try? await getSubscription(cachePolicy: .cacheOnly).isActive
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
             PixelKit.fire(
                 VPNSubscriptionNotificationPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    notificationObjectClass: notification.object),
+                    notificationSourceObject: notification.object),
                 frequency: .dailyAndCount)
             tunnelDefaults.resetEntitlementMessaging()
             Logger.networkProtection.info("[NetP Subscription] Reset expired entitlement messaging")
@@ -1903,25 +1903,25 @@ class MainViewController: UIViewController {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
             let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
-            let isActiveAsString = await subscriptionManager.isSubscriptionActive()
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
             guard let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
                       hasEntitlement == false
             else {
                 PixelKit.fire(
                     VPNSubscriptionNotificationPixel.vpnEnabled(
-                        subscriptionStatus: subscriptionStatus,
+                        isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
-                        notificationObjectClass: notification.object),
+                        notificationSourceObject: notification.object),
                     frequency: .dailyAndCount)
                 return
             }
 
             PixelKit.fire(
                 VPNSubscriptionNotificationPixel.vpnDisabled(
-                    subscriptionStatus: subscriptionStatus,
+                    isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    notificationObjectClass: notification.object),
+                    notificationSourceObject: notification.object),
                 frequency: .dailyAndCount)
 
             if await networkProtectionTunnelController.isInstalled {
@@ -1938,13 +1938,13 @@ class MainViewController: UIViewController {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
             let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
-            let isActive = await subscriptionManager.isSubscriptionActive()
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
             PixelKit.fire(
                 VPNSubscriptionNotificationPixel.signedOut(
-                    subscriptionStatus: subscriptionStatus,
+                    isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    notificationObjectClass: notification.object),
+                    notificationSourceObject: notification.object),
                 frequency: .dailyAndCount)
 
             Task {

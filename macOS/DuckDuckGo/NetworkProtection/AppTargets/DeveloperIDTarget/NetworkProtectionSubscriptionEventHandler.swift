@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Common
 import Foundation
@@ -48,7 +49,7 @@ final class NetworkProtectionSubscriptionEventHandler {
         Task {
             let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
             Task {
-                await handleEntitlementsChange(hasEntitlements: hasEntitlement)
+                await handleEntitlementsChange(hasEntitlements: hasEntitlement, notificationObject: subscriptionManager)
             }
 
             NotificationCenter.default
@@ -70,19 +71,33 @@ final class NetworkProtectionSubscriptionEventHandler {
                     }
 
                     Task {
-                        await self.handleEntitlementsChange(hasEntitlements: hasEntitlements)
+                        await self.handleEntitlementsChange(hasEntitlements: hasEntitlements, notificationObject: notification.object)
                     }
                 }
                 .store(in: &cancellables)
         }
     }
 
-    private func handleEntitlementsChange(hasEntitlements: Bool) async {
+    private func handleEntitlementsChange(hasEntitlements: Bool, notificationObject: Any?) async {
+        let subscriptionManager = await NSApp.delegateTyped.subscriptionAuthV1toV2Bridge
+        let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
+        let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+
         if hasEntitlements {
-            PixelKit.fire(VPNSubscriptionNotificationPixel.vpnEnabled, frequency: .dailyAndCount)
+            PixelKit.fire(
+                VPNSubscriptionNotificationPixel.vpnEnabled(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    notificationSourceObject: notificationObject),
+                frequency: .dailyAndCount)
             UserDefaults.netP.networkProtectionEntitlementsExpired = false
         } else {
-            PixelKit.fire(VPNSubscriptionNotificationPixel.vpnDisabled, frequency: .dailyAndCount)
+            PixelKit.fire(
+                VPNSubscriptionNotificationPixel.vpnDisabled(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    notificationSourceObject: notificationObject),
+                frequency: .dailyAndCount)
             await tunnelController.stop()
             UserDefaults.netP.networkProtectionEntitlementsExpired = true
         }
@@ -93,21 +108,42 @@ final class NetworkProtectionSubscriptionEventHandler {
         NotificationCenter.default.addObserver(self, selector: #selector(handleAccountDidSignOut), name: .accountDidSignOut, object: nil)
     }
 
-    @objc private func handleAccountDidSignIn() {
-        guard subscriptionManager.isUserAuthenticated else {
-            assertionFailure("[NetP Subscription] AccountManager signed in but token could not be retrieved")
-            return
-        }
+    @objc private func handleAccountDidSignIn(notification: Notification) {
+        Task {
+            guard subscriptionManager.isUserAuthenticated else {
+                assertionFailure("[NetP Subscription] AccountManager signed in but token could not be retrieved")
+                return
+            }
 
-        PixelKit.fire(VPNSubscriptionNotificationPixel.signedIn, frequency: .dailyAndCount)
-        userDefaults.networkProtectionEntitlementsExpired = false
+            let subscriptionManager = await NSApp.delegateTyped.subscriptionAuthV1toV2Bridge
+            let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+
+            PixelKit.fire(
+                VPNSubscriptionNotificationPixel.signedIn(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    notificationSourceObject: notification.object),
+                frequency: .dailyAndCount)
+            userDefaults.networkProtectionEntitlementsExpired = false
+        }
     }
 
-    @objc private func handleAccountDidSignOut() {
-        print("[NetP Subscription] Deleted NetP auth token after signing out from Privacy Pro")
-        PixelKit.fire(VPNSubscriptionNotificationPixel.signedOut, frequency: .dailyAndCount)
-
+    @objc private func handleAccountDidSignOut(notification: Notification) {
         Task {
+            print("[NetP Subscription] Deleted NetP auth token after signing out from Privacy Pro")
+
+            let subscriptionManager = await NSApp.delegateTyped.subscriptionAuthV1toV2Bridge
+            let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+
+            PixelKit.fire(
+                VPNSubscriptionNotificationPixel.signedOut(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    notificationSourceObject: notification.object),
+                frequency: .dailyAndCount)
+
             try? await vpnUninstaller.uninstall(removeSystemExtension: false, showNotification: true)
         }
     }

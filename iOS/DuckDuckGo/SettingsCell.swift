@@ -25,7 +25,8 @@ struct SettingsCellComponents {
     static var chevron: some View {
         Image(systemName: "chevron.forward")
             .font(Font.system(.footnote).weight(.bold))
-            .foregroundColor(Color(designSystemColor: .iconsSecondary))
+            // Bypasses the design system to match the system chevron color
+            .foregroundColor(Color(UIColor.tertiaryLabel))
     }
     static var link: some View {
         Image(uiImage: DesignSystemImages.Glyphs.Size16.openIn)

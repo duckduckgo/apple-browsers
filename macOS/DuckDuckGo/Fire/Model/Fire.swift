@@ -25,6 +25,7 @@ import WebKit
 import SecureStorage
 import History
 import PrivacyStats
+import FeatureFlags
 import os.log
 
 final class Fire {
@@ -49,12 +50,28 @@ final class Fire {
     let tld: TLD
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
     let getPrivacyStats: () async -> PrivacyStatsCollecting
+    let featureFlagger: FeatureFlagger
 
     private var dispatchGroup: DispatchGroup?
 
     enum BurningData: Equatable {
         case specificDomains(_ domains: Set<String>, shouldPlayFireAnimation: Bool)
         case all
+
+        func shouldPlayFireAnimation(featureFlagger: FeatureFlagger) -> Bool {
+            // Check if fire animation is disabled by feature flag
+            guard !featureFlagger.isFeatureOn(.disableFireAnimation) else {
+                return false
+            }
+
+            switch self {
+            case .all, .specificDomains(_, shouldPlayFireAnimation: true):
+                return true
+            // We don't present the fire animation if user burns from the privacy feed
+            case .specificDomains(_, shouldPlayFireAnimation: false):
+                return false
+            }
+        }
 
         var shouldPlayFireAnimation: Bool {
             switch self {
@@ -77,6 +94,21 @@ final class Fire {
         case allWindows(mainWindowControllers: [MainWindowController],
                         selectedDomains: Set<String>,
                         customURLToOpen: URL?)
+
+        func shouldPlayFireAnimation(featureFlagger: FeatureFlagger) -> Bool {
+            // Check if fire animation is disabled by feature flag
+            guard !featureFlagger.isFeatureOn(.disableFireAnimation) else {
+                return false
+            }
+
+            switch self {
+            // We don't present the fire animation if user burns from the privacy feed
+            case .none:
+                return false
+            case .tab, .window, .allWindows:
+                return true
+            }
+        }
 
         var shouldPlayFireAnimation: Bool {
             switch self {
@@ -110,7 +142,8 @@ final class Fire {
          syncDataProviders: SyncDataProviders? = nil,
          secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
-         getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil
+         getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
+         featureFlagger: FeatureFlagger? = nil
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -130,6 +163,7 @@ final class Fire {
         self.getPrivacyStats = getPrivacyStats ?? { NSApp.delegateTyped.privacyStats }
         self.getVisitedLinkStore = getVisitedLinkStore ?? { WKWebViewConfiguration.sharedVisitedLinkStore }
         self.autoconsentManagement = autoconsentManagement ?? AutoconsentManagement.shared
+        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
         if let stateRestorationManager = stateRestorationManager {
             self.stateRestorationManager = stateRestorationManager
         } else {
@@ -149,7 +183,7 @@ final class Fire {
         let domains = domainsToBurn(from: entity)
         assert(domains.areAllETLDPlus1(tld: tld))
 
-        burningData = .specificDomains(domains, shouldPlayFireAnimation: entity.shouldPlayFireAnimation)
+        burningData = .specificDomains(domains, shouldPlayFireAnimation: entity.shouldPlayFireAnimation(featureFlagger: featureFlagger))
 
         burnLastSessionState()
         burnDeletedBookmarks()

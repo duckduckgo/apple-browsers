@@ -147,13 +147,11 @@ final class FireViewController: NSViewController {
                         return
                     }
 
-                switch burningData {
-                case .all, .specificDomains(_, shouldPlayFireAnimation: true):
+                // Use the feature flag-aware method to determine if animation should play
+                if burningData.shouldPlayFireAnimation(featureFlagger: self.featureFlagger) {
                     Task {
                         await self.animateFire(burningData: burningData)
                     }
-                case .specificDomains(_, shouldPlayFireAnimation: false):
-                    break
                 }
             })
             .store(in: &cancellables)
@@ -170,6 +168,8 @@ final class FireViewController: NSViewController {
     @MainActor
     func animateFireWhenClosing() async {
         closeAllChildWindows()
+
+        guard !featureFlagger.isFeatureOn(.disableFireAnimation) else { return }
 
         await waitForFireAnimationViewIfNeeded()
         await withUnsafeContinuation { (continuation: UnsafeContinuation<Void, Never>) in

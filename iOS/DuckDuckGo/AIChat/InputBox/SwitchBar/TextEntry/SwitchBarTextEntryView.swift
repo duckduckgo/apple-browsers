@@ -169,7 +169,7 @@ class SwitchBarTextEntryView: UIView {
         case .aiChat:
             placeholderLabel.text = "Ask Duck.ai..."
             textView.keyboardType = .default
-            textView.returnKeyType = .default
+            textView.returnKeyType = .go
         }
         textView.reloadInputViews()
         updatePlaceholderVisibility()
@@ -314,15 +314,10 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         }
 
         if text == "\n" {
-            switch currentMode {
-            case .search:
-                let currentText = textView.text ?? ""
-                if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    handler.submitText(currentText)
-                }
-                return false
-            case .aiChat:
-                return true
+            /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210629837418046?focus=true
+            let currentText = textView.text ?? ""
+            if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                handler.submitText(currentText)
             }
         }
         return true

@@ -113,8 +113,12 @@ final class VPNAppEventsHandler {
                     }
 
                     Task { @MainActor in
-                        try await Task.sleep(interval: .seconds(2))
-                        self.disableLoginItem(using: loginItemsManager)
+                        do {
+                            try await Task.sleep(interval: .seconds(2))
+                            self.disableLoginItem(using: loginItemsManager)
+                        } catch {
+                            // no-op: just want to catch task cancellation to make sure resume is called
+                        }
                         continuation.resume()
                     }
                 }

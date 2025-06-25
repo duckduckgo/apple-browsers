@@ -64,12 +64,16 @@ final class VPNAppEventsHandler {
 
     /// Call this method when the app finishes launching, to run the startup logic for NetP.
     ///
-    func applicationDidFinishLaunching() async {
-        await loginItemsControlCheckpoint(canRestart: true, loginItemsManager: loginItemsManager)
+    func applicationDidFinishLaunching() {
+        Task {
+            await loginItemsControlCheckpoint(canRestart: true, loginItemsManager: loginItemsManager)
+        }
     }
 
-    func applicationDidBecomeActive() async {
-        await loginItemsControlCheckpoint(canRestart: false, loginItemsManager: loginItemsManager)
+    func applicationDidBecomeActive() {
+        Task {
+            await loginItemsControlCheckpoint(canRestart: false, loginItemsManager: loginItemsManager)
+        }
     }
 
     // MARK: - Login Item Control Checkpoints
@@ -115,10 +119,10 @@ final class VPNAppEventsHandler {
                     Task { @MainActor in
                         do {
                             try await Task.sleep(interval: .seconds(2))
-                            self.disableLoginItem(using: loginItemsManager)
                         } catch {
                             // no-op: just want to catch task cancellation to make sure resume is called
                         }
+                        self.disableLoginItem(using: loginItemsManager)
                         continuation.resume()
                     }
                 }

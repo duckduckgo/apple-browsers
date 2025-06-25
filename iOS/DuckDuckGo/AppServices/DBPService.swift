@@ -86,4 +86,3 @@ extension DataBrokerProtectionIOSManager {
 #endif
     }
 }
-

@@ -24,14 +24,16 @@ import Common
 @MainActor
 struct DataImportView: ModalView {
 
+    private let isDataTypePickerExpanded: Bool
     @Environment(\.dismiss) private var dismiss
 
     @State var model: DataImportViewModel
     let title: String
 
-    init(model: DataImportViewModel = DataImportViewModel(), title: String = UserText.importDataTitle) {
+    init(model: DataImportViewModel = DataImportViewModel(), title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool) {
         self._model = State(initialValue: model)
         self.title = title
+        self.isDataTypePickerExpanded = isDataTypePickerExpanded
     }
 
     struct ProgressState {
@@ -169,7 +171,7 @@ struct DataImportView: ModalView {
                     .disabled(model.isImportSourcePickerDisabled)
                 }
 
-                DataImportTypePicker(viewModel: $model)
+                DataImportTypePicker(viewModel: $model, isDataTypePickerExpanded: isDataTypePickerExpanded)
                     .disabled(model.isImportSourcePickerDisabled)
                 .padding(.top, 8)
             }
@@ -639,7 +641,7 @@ extension DataImportViewModel {
 
 #Preview {
     VStack(alignment: .leading, spacing: 0) { @MainActor in
-        DataImportView(model: ._mockPreviewViewModel())
+        DataImportView(model: ._mockPreviewViewModel(), isDataTypePickerExpanded: false)
             // swiftlint:disable:next force_cast
             .environment(\EnvironmentValues.presentationMode as! WritableKeyPath,
                           Binding<PresentationMode> {

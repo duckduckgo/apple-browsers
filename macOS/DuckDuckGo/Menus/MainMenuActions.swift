@@ -274,9 +274,15 @@ extension AppDelegate {
         AboutPanelController.show(internalUserDecider: internalUserDecider)
     }
 
+    @objc func openImportBookmarksWindow(_ sender: Any?) {
+        DispatchQueue.main.async {
+            DataImportView(isDataTypePickerExpanded: true).show()
+        }
+    }
+
     @objc func openImportBrowserDataWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportView().show()
+            DataImportView(isDataTypePickerExpanded: false).show()
         }
     }
 

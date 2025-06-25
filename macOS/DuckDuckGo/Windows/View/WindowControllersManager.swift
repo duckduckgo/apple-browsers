@@ -566,7 +566,7 @@ extension WindowControllersManager: OnboardingNavigating {
 
     @MainActor
     func showImportDataView() {
-        DataImportView(title: UserText.importDataTitleOnboarding).show()
+        DataImportView(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false).show()
     }
 
     @MainActor

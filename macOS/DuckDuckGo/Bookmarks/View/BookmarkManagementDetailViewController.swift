@@ -443,7 +443,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     }
 
     @objc func onImportClicked(_ sender: NSButton) {
-        DataImportView().show()
+        DataImportView(isDataTypePickerExpanded: true).show()
     }
 
     @objc func handleDoubleClick(_ sender: NSTableView) {

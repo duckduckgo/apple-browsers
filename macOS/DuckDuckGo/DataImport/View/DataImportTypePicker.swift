@@ -22,10 +22,11 @@ import BrowserServicesKit
 struct DataImportTypePicker: View {
 
     @Binding var viewModel: DataImportViewModel
-    @State private var isDataTypePickerExpanded = false
+    @State private var isDataTypePickerExpanded: Bool
 
-    init(viewModel: Binding<DataImportViewModel>) {
+    init(viewModel: Binding<DataImportViewModel>, isDataTypePickerExpanded: Bool) {
         _viewModel = viewModel
+        _isDataTypePickerExpanded = State(initialValue: isDataTypePickerExpanded)
     }
 
     var body: some View {

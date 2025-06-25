@@ -36,10 +36,11 @@ final class DataImportViewModel: ObservableObject {
     enum ImportScreen: String {
         case passwords
         case bookmarks
+        case settings
 
         var documentTypes: [UTType] {
             switch self {
-            case .passwords: return [.zip, .commaSeparatedText]
+            case .passwords, .settings: return [.zip, .commaSeparatedText]
             case .bookmarks: return [.zip, .html]
             }
         }
@@ -79,9 +80,9 @@ final class DataImportViewModel: ObservableObject {
             switch (state.browser, state.importScreen) {
             case (.safari, .bookmarks):
                 return attributedInstructionsForSafariBookmarks()
-            case (.safari, .passwords):
+            case (.safari, .passwords), (.safari, .settings):
                 return attributedInstructionsForSafariPasswords()
-            case (.chrome, .passwords), (.chrome, .bookmarks):
+            case (.chrome, .passwords), (.chrome, .bookmarks), (.chrome, .settings):
                 return attributedInstructionsForChrome()
             }
         }
@@ -148,7 +149,7 @@ final class DataImportViewModel: ObservableObject {
 
         var image: Image {
             switch importScreen {
-            case .passwords:
+            case .passwords, .settings:
                 return Image(.passwordsImport128)
             case .bookmarks:
                 return Image(.bookmarksImport96)
@@ -157,7 +158,7 @@ final class DataImportViewModel: ObservableObject {
 
         var title: String {
             switch importScreen {
-            case .passwords:
+            case .passwords, .settings:
                 return UserText.dataImportPasswordsTitle
             case .bookmarks:
                 return UserText.dataImportBookmarksTitle
@@ -166,7 +167,7 @@ final class DataImportViewModel: ObservableObject {
 
         var subtitle: String {
             switch importScreen {
-            case .passwords:
+            case .passwords, .settings:
                 return UserText.dataImportPasswordsSubtitle
             case .bookmarks:
                 return UserText.dataImportBookmarksSubtitle
@@ -175,7 +176,7 @@ final class DataImportViewModel: ObservableObject {
 
         var buttonTitle: String {
             switch importScreen {
-            case .passwords:
+            case .passwords, .settings:
                 return UserText.dataImportPasswordsFileButton
             case .bookmarks:
                 return UserText.dataImportBookmarksFileButton

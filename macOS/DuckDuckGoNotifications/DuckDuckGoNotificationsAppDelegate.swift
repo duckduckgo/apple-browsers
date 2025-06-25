@@ -20,7 +20,7 @@ import AppLauncher
 import Cocoa
 import Combine
 import NetworkExtension
-import NetworkProtection
+import VPN
 import VPNAppLauncher
 import os.log
 

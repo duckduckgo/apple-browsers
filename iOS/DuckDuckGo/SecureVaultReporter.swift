@@ -34,6 +34,8 @@ final class SecureVaultKeyStoreEventMapper: EventMapping<SecureStorageKeyStoreEv
                  Pixel.fire(pixel: .secureVaultL2KeyMigration)
              case .l2KeyPasswordMigration:
                  Pixel.fire(pixel: .secureVaultL2KeyPasswordMigration)
+             case .databaseRecreation:
+                 break
              }
          }
      }

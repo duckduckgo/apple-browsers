@@ -19,7 +19,7 @@
 
 import Foundation
 import Combine
-import NetworkProtection
+import VPN
 import WidgetKit
 import BrowserServicesKit
 import Core

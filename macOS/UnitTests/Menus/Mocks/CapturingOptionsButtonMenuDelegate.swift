@@ -27,6 +27,7 @@ class CapturingOptionsButtonMenuDelegate: OptionsButtonMenuDelegate {
     var optionsButtonMenuRequestedAppearancePreferencesCalled = false
     var optionsButtonMenuRequestedAccessibilityPreferencesCalled = false
     var optionsButtonMenuRequestedBookmarkAllOpenTabsCalled = false
+    var optionsButtonMenuRequestedPaidAIChatCalled = false
 
     func optionsButtonMenuRequestedDataBrokerProtection(_ menu: NSMenu) {
 
@@ -98,6 +99,10 @@ class CapturingOptionsButtonMenuDelegate: OptionsButtonMenuDelegate {
 
     func optionsButtonMenuRequestedIdentityTheftRestoration(_ menu: NSMenu) {
 
+    }
+
+    func optionsButtonMenuRequestedPaidAIChat(_ menu: NSMenu) {
+        optionsButtonMenuRequestedPaidAIChatCalled = true
     }
 
     func optionsButtonMenuRequestedAccessibilityPreferences(_ menu: NSMenu) {

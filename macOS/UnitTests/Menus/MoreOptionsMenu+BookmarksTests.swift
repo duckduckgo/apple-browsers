@@ -79,6 +79,7 @@ final class MockMoreOpationsMenuIconProvider: MoreOptionsMenuIconsProviding {
     var downloadsIcon: NSImage = .logo
     var historyIcon: NSImage = .logo
     var passwordsIcon: NSImage = .logo
+    var deleteBrowsingDataIcon: NSImage = .logo
     var syncIcon: NSImage = .logo
     var emailProtectionIcon: NSImage = .logo
     var privacyProIcon: NSImage = .logo
@@ -91,6 +92,7 @@ final class MockMoreOpationsMenuIconProvider: MoreOptionsMenuIconsProviding {
     var settingsIcon: NSImage = .logo
     var browserFeedbackIcon: NSImage = .logo
     var reportBrokenSiteIcon: NSImage = .logo
+    var paidAIChat: NSImage = .logo
     var sendPrivacyProFeedbackIcon: NSImage = .logo
     var passwordsSubMenuIcon: NSImage = .logo
     var identitiesIcon: NSImage = .logo

@@ -18,7 +18,7 @@
 
 import AppKit
 import Foundation
-import NetworkProtection
+import VPN
 
 public final class StatusBarMenuModel {
     private let vpnSettings: VPNSettings

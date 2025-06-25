@@ -40,7 +40,7 @@ final class EntitlementTests: XCTestCase {
         let itrEntitlement = try JSONDecoder().decode(Entitlement.self, from: Data(rawITREntitlement.utf8))
         XCTAssertEqual(itrEntitlement, Entitlement(product: .identityTheftRestoration))
 
-        let rawDAPEntitlement = "{\"id\":26,\"name\":\"subscriber\",\"product\":\"Premium DuckChat\"}"
+        let rawDAPEntitlement = "{\"id\":26,\"name\":\"subscriber\",\"product\":\"Duck.ai\"}"
         let dapEntitlement = try JSONDecoder().decode(Entitlement.self, from: Data(rawDAPEntitlement.utf8))
         XCTAssertEqual(dapEntitlement, Entitlement(product: .paidAIChat))
 

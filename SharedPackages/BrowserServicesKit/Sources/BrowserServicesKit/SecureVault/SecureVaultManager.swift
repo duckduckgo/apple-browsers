@@ -54,6 +54,16 @@ public protocol SecureVaultManagerDelegate: AnyObject, SecureVaultReporting {
                             completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void)
 
     func secureVaultManager(_: SecureVaultManager,
+                            promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
+                            withTrigger trigger: AutofillUserScript.GetTriggerType,
+                            completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void)
+
+    func secureVaultManager(_: SecureVaultManager,
+                            didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
+                            withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                            completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void)
+
+    func secureVaultManager(_: SecureVaultManager,
                             promptUserWithGeneratedPassword password: String,
                             completionHandler: @escaping (Bool) -> Void)
 
@@ -369,7 +379,7 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
                                    trigger: AutofillUserScript.GetTriggerType,
                                    completionHandler: @escaping (SecureVaultModels.WebsiteCredentials?,
                                                                  SecureVaultModels.CredentialsProvider,
-                                                                 RequestVaultCredentialsAction) -> Void) {
+                                                                 RequestVaultDataAction) -> Void) {
         do {
             let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: self.delegate)
 
@@ -498,6 +508,30 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
         }
     }
 
+    public func autofillUserScriptDidRequestCreditCard(_: AutofillUserScript, trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void) {
+        do {
+            let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: self.delegate)
+            let cards: [SecureVaultModels.CreditCard] = try vault.creditCards()
+
+            guard !cards.isEmpty else {
+                Logger.secureVault.debug("Not showing the modal, no cards found")
+                completionHandler(nil, .none)
+                return
+            }
+
+            delegate?.secureVaultManager(self, promptUserToAutofillCreditCardWith: cards, withTrigger: trigger) { creditCard in
+                guard let creditCard else {
+                    completionHandler(nil, .none)
+                    return
+                }
+                completionHandler(creditCard, .fill)
+            }
+        } catch {
+            Logger.secureVault.error("Error requesting credit card: \(error.localizedDescription, privacy: .public)")
+            completionHandler(nil, .none)
+        }
+    }
+
     public func autofillUserScriptDidAskToUnlockCredentialsProvider(_: AutofillUserScript,
                                                                     andProvideCredentialsForDomain domain: String,
                                                                     completionHandler: @escaping ([SecureVaultModels.WebsiteCredentials],
@@ -555,6 +589,36 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
         delegate?.secureVaultManager(self,
                                      promptUserWithGeneratedPassword: password) { useGeneratedPassword in
             completionHandler(useGeneratedPassword)
+        }
+    }
+
+    public func autofillUserScriptDidFocus(_: AutofillUserScript,
+                                           mainType: AutofillUserScript.GetAutofillDataMainType,
+                                           completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void) {
+        if mainType == .creditCards {
+            do {
+                let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: self.delegate)
+                let cards: [SecureVaultModels.CreditCard] = try vault.creditCards()
+
+                delegate?.secureVaultManager(self, didFocusFieldFor: mainType, withCreditCards: cards) { creditCard in
+                    guard let creditCard else {
+                        completionHandler(nil, .none)
+                        return
+                    }
+                    completionHandler(creditCard, .fill)
+                }
+            } catch {
+                Logger.secureVault.error("Error requesting credit card: \(error.localizedDescription, privacy: .public)")
+                // Notify delegate regardless so the keyboard accessory is updated correctly
+                delegate?.secureVaultManager(self, didFocusFieldFor: mainType, withCreditCards: []) { _ in
+                    completionHandler(nil, .none)
+                }
+
+            }
+        } else {
+            delegate?.secureVaultManager(self, didFocusFieldFor: mainType, withCreditCards: []) { _ in
+                completionHandler(nil, .none)
+            }
         }
     }
 

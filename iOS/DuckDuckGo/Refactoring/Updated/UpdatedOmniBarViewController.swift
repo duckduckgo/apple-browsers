@@ -19,6 +19,8 @@
 
 import UIKit
 import PrivacyDashboard
+import Suggestions
+import Bookmarks
 
 final class UpdatedOmniBarViewController: OmniBarViewController {
 
@@ -34,26 +36,10 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if experimentalManager.isExperimentalTransitionEnabled {
-
-            let switchBarHandler = SwitchBarHandler()
-            if let text = self.omniBarView.text {
-                if let url = textField.text.flatMap({ URL(trimmedAddressBarString: $0.trimmingWhitespace()) }) {
-                    let urlText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: true)
-                    switchBarHandler.updateCurrentText(urlText.string)
-                } else {
-                    switchBarHandler.updateCurrentText(text)
-                }
-            }
-
-            let editingStateVC = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
-            editingStateVC.delegate = self
-            editingStateVC.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
-            editingStateVC.modalPresentationStyle = .overFullScreen
-            present(editingStateVC, animated: false)
-            self.editingStateViewController = editingStateVC
-
+            presentExperimentalEditingState(for: textField)
             return false
         }
+
         return super.textFieldShouldBeginEditing(textField)
     }
 
@@ -108,7 +94,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     override func textFieldDidBeginEditing(_ textField: UITextField) {
         super.textFieldDidBeginEditing(textField)
-        
+
         omniBarView.layoutIfNeeded()
         UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
             self.omniBarView.isActiveState = true
@@ -141,6 +127,54 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     override func preventShadowsOnBottom() {
         omniBarView.updateMaskLayer(maskTop: false)
     }
+
+    // MARK: - Private Helper Methods
+
+    private func presentExperimentalEditingState(for textField: UITextField) {
+        guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
+        let switchBarHandler = createSwitchBarHandler(for: textField)
+        let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
+
+        let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)
+        editingStateViewController.delegate = self
+        editingStateViewController.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
+        editingStateViewController.modalPresentationStyle = .overFullScreen
+        editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
+        present(editingStateViewController, animated: false)
+        self.editingStateViewController = editingStateViewController
+
+        if shouldAutoSelectText {
+            DispatchQueue.main.async {
+                editingStateViewController.setUpForInitialSelectedState()
+            }
+        }
+    }
+
+    private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
+        let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper)
+
+        guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty else {
+            return switchBarHandler
+        }
+
+        /// Determine whether the current text in the omnibar is a search query or a URL.
+        /// - If the text is a URL, retrieve the full URL from the delegate and update the text with the full URL for display.
+        /// - If the text is a search query, simply update the text with the query itself.
+        if URL(trimmedAddressBarString: currentText) != nil,
+           let url = omniDelegate?.didRequestCurrentURL() {
+            let urlText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: true)
+            switchBarHandler.updateCurrentText(urlText.string)
+        } else {
+            switchBarHandler.updateCurrentText(currentText)
+        }
+
+        return switchBarHandler
+    }
+
+    private func shouldAutoSelectTextForUrl(_ textField: UITextField) -> Bool {
+        guard let textFieldText = textField.text else { return false }
+        return URL(trimmedAddressBarString: textFieldText.trimmingWhitespace()) != nil
+    }
 }
 
 extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegate {
@@ -153,8 +187,28 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 
     func onPromptSubmitted(_ query: String) {
-        editingStateViewController?.dismissAnimated {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
             self.omniDelegate?.onOmniPromptSubmitted(query)
+        }
+    }
+
+    func onSelectFavorite(_ favorite: BookmarkEntity) {
+        editingStateViewController?.dismissAnimated()
+        omniDelegate?.onSelectFavorite(favorite)
+    }
+
+    func onSelectSuggestion(_ suggestion: Suggestion) {
+        omniDelegate?.onOmniSuggestionSelected(suggestion)
+        editingStateViewController?.dismissAnimated()
+    }
+
+    func onVoiceSearchRequested(from mode: TextEntryMode) {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
+
+            let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
+            self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
         }
     }
 }

@@ -169,7 +169,7 @@ final class AutofillCreditCardListViewModelTests: XCTestCase {
     func testDeleteCard() {
         // Given
         mockViewModel.populateCards(count: 2)
-        let cardToDelete = mockViewModel.cards[0].card
+        let cardToDelete = mockViewModel.cards[0].creditCard
         let initialCount = mockViewModel.cards.count
 
         // When
@@ -185,7 +185,7 @@ final class AutofillCreditCardListViewModelTests: XCTestCase {
 class MockCreditCardListViewModel: CreditCardListViewModelProtocol {
     var objectWillChange = ObservableObjectPublisher()
     
-    var cards: [CreditCardViewModel] = [] {
+    var cards: [CreditCardRowViewModel] = [] {
         didSet { objectWillChange.send() }
     }
     private(set) var viewState: AutofillCreditCardListViewModel.ViewState = .authLocked {
@@ -205,11 +205,11 @@ class MockCreditCardListViewModel: CreditCardListViewModelProtocol {
     var deleteCardCalled = false
     var cardSelectedCalled = false
     
-    var lastSelectedCard: CreditCardViewModel?
+    var lastSelectedCard: CreditCardRowViewModel?
     var lastDeletedCard: SecureVaultModels.CreditCard?
     var simulatedAuthError: UserAuthenticator.AuthError?
     
-    func cardSelected(_ cardViewModel: CreditCardViewModel) {
+    func cardSelected(_ cardViewModel: CreditCardRowViewModel) {
         cardSelectedCalled = true
         lastSelectedCard = cardViewModel
     }
@@ -222,7 +222,7 @@ class MockCreditCardListViewModel: CreditCardListViewModelProtocol {
         deleteCardCalled = true
         lastDeletedCard = creditCard
         // Remove from cards if present
-        cards.removeAll { $0.card.title == creditCard.title }
+        cards.removeAll { $0.creditCard.title == creditCard.title }
     }
     
     func lockUI() {
@@ -272,7 +272,7 @@ class MockCreditCardListViewModel: CreditCardListViewModelProtocol {
                 expirationMonth: 12,
                 expirationYear: 2030
             )
-            cards.append(CreditCardViewModel(card: card))
+            cards.append(CreditCardRowViewModel(creditCard: card))
         }
     }
 }

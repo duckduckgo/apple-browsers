@@ -19,7 +19,7 @@
 import SwiftUI
 import SwiftUIExtensions
 import Combine
-import NetworkProtection
+import VPN
 import Lottie
 import os.log
 import TipKit

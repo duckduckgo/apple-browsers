@@ -1,0 +1,15 @@
+{
+    "sweetpad.build.launchEnv": {
+    },
+    "sweetpad.build.env": {
+    },
+    "sweetpad.build.args": [
+        "-skipPackagePluginValidation",
+        "-skipMacroValidation"
+    ],
+    "sweetpad.build.xcodeWorkspacePath": "DuckDuckGo.xcworkspace",
+    "sweetpad.xcode.useWorkspaceParser": true,
+    "sweetpad.build.allowProvisioningUpdates": false,
+    "sweetpad.build.xcbeautifyEnabled": true,
+    "sweetpad.xcodebuildserver.autogenerate": true
+}

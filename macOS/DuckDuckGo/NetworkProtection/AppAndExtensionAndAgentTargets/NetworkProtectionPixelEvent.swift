@@ -18,7 +18,7 @@
 
 import Foundation
 import PixelKit
-import NetworkProtection
+import VPN
 import Configuration
 
 enum NetworkProtectionPixelEvent: PixelKitEventV2 {

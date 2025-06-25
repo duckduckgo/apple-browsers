@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import NetworkProtection
+import VPN
 import Subscription
 import UIKit
 import NotificationCenter

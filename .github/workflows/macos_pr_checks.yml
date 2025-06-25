@@ -135,6 +135,7 @@ jobs:
     outputs:
       private-api-check-report: ${{ steps.private-api.outputs.report }}
       commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
+      pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
     steps:
     - name: Register SSH key for certificates repository access
@@ -342,15 +343,12 @@ jobs:
         path: macOS/${{ matrix.flavor }}-integrationtests.xcresult
         retention-days: 7
 
-    - name: Fetch latest commit author
+    - name: Fetch latest commit author and PR reviewers
       if: always() && github.ref_name == 'main'
       id: fetch_commit_author
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        head_commit=$(git rev-parse HEAD)
-        author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
-        echo "commit_author=${author}" >> $GITHUB_OUTPUT
+      uses: ./.github/actions/fetch-commit-info
+      with:
+        github-token: ${{ github.token }}
 
   private-api:
     name: Private API Report
@@ -491,6 +489,7 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.tests.outputs.commit_author }}
+          pr-reviewers: ${{ needs.tests.outputs.pr_reviewers }}
           github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:

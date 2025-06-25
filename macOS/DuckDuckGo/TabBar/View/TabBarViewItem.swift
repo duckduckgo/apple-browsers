@@ -782,7 +782,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconImageView.image == nil && !showCloseButton)
 
         // Adjust colors for burner window
-        if isBurner && cell.faviconImageView.image === TabViewModel.Favicon.burnerHome {
+        if isBurner && cell.titleTextField.stringValue == UserText.burnerTabHomeTitle {
             cell.faviconImageView.contentTintColor = .textColor
         } else {
             cell.faviconImageView.contentTintColor = nil

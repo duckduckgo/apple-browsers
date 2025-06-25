@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import NetworkProtection
+import VPN
 import PixelKit
 import PreferencesUI_macOS
 import SwiftUI

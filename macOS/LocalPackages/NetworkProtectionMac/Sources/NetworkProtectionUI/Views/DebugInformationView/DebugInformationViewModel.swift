@@ -18,7 +18,7 @@
 
 import Combine
 import Foundation
-import NetworkProtection
+import VPN
 import SwiftUI
 
 public final class DebugInformationViewModel: ObservableObject {

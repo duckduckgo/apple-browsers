@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 
 /// Proxy notifications presenter that fires a notification to be caught by the actual presenter.
 ///

@@ -20,6 +20,7 @@ import AppKit
 import Combine
 import Foundation
 import WebKitExtensions
+import BrowserServicesKit
 
 enum NavigationDecision {
     case allow(NewWindowPolicy)
@@ -36,6 +37,8 @@ final class ContextMenuManager: NSObject {
     private var linkURL: String?
 
     private var tabsPreferences: TabsPreferences
+    private let isLoadedInSidebar: Bool
+    private let internalUserDecider: InternalUserDecider
 
     private var isEmailAddress: Bool {
         guard let linkURL, let url = URL(string: linkURL) else {
@@ -55,8 +58,12 @@ final class ContextMenuManager: NSObject {
 
     @MainActor
     init(contextMenuScriptPublisher: some Publisher<ContextMenuUserScript?, Never>,
-         tabsPreferences: TabsPreferences = TabsPreferences.shared) {
+         tabsPreferences: TabsPreferences = TabsPreferences.shared,
+         isLoadedInSidebar: Bool = false,
+         internalUserDecider: InternalUserDecider) {
         self.tabsPreferences = tabsPreferences
+        self.isLoadedInSidebar = isLoadedInSidebar
+        self.internalUserDecider = internalUserDecider
         super.init()
 
         userScriptCancellable = contextMenuScriptPublisher.sink { [weak self] contextMenuScript in
@@ -92,7 +99,8 @@ extension ContextMenuManager {
         .downloadImage: handleDownloadImageItem,
         .searchWeb: handleSearchWebItem,
         .reload: handleReloadItem,
-        .openFrameInNewWindow: handleOpenFrameInNewWindowItem
+        .openFrameInNewWindow: handleOpenFrameInNewWindowItem,
+        .inspectElement: handleInspectElementItem
     ]
 
     private var isCurrentWindowBurner: Bool {
@@ -198,7 +206,13 @@ extension ContextMenuManager {
     }
 
     private func handleReloadItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
+        guard !isLoadedInSidebar else { return }
         menu.insertItem(self.bookmarkPageMenuItem(), at: index + 1)
+    }
+
+    private func handleInspectElementItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
+        guard isLoadedInSidebar, !internalUserDecider.isInternalUser else { return }
+        menu.removeItem(at: index)
     }
 }
 

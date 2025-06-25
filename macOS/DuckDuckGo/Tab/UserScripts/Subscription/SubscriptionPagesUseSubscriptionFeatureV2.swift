@@ -170,7 +170,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
         do {
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
-            try await subscriptionManager.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
             Logger.subscription.log("Subscription retrieved")
         } catch {
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
@@ -395,8 +395,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             let url = subscriptionManager.url(for: .identityTheftRestoration)
             await uiHandler.showTab(with: .identityTheftRestoration(url))
         case .paidAIChat:
-            // Follow up: Implement paidAIChat selection
-            break
+            PixelKit.fire(PrivacyProPixel.privacyProWelcomeAIChat, frequency: .uniqueByName)
+            let aiChatURL = URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!
+            await uiHandler.showTab(with: .aiChat(aiChatURL))
         case .unknown:
             break
         }

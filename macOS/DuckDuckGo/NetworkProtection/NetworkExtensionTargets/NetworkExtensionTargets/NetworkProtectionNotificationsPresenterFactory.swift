@@ -18,10 +18,7 @@
 
 import AppLauncher
 import Foundation
-import NetworkProtection
-#if !NETP_SYSTEM_EXTENSION
-import VPNNotifications
-#endif
+import VPN
 
 /// A convenience class for making notification presenters.
 ///

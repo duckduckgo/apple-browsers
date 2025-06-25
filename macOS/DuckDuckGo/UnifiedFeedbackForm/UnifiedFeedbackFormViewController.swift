@@ -23,6 +23,7 @@ import Combine
 import PixelKit
 import Subscription
 import Networking
+import BrowserServicesKit
 
 final class UnifiedFeedbackFormViewController: NSViewController {
     // Using a dynamic height in the form was causing layout problems and couldn't be completed in time for the release that needed this form.
@@ -45,13 +46,15 @@ final class UnifiedFeedbackFormViewController: NSViewController {
     private var cancellables = Set<AnyCancellable>()
 
     init(feedbackSender: UnifiedFeedbackSender = DefaultFeedbackSender(),
-         source: UnifiedFeedbackSource = .default) {
+         source: UnifiedFeedbackSource = .default,
+         featureFlagger: FeatureFlagger) {
         self.feedbackSender = feedbackSender
         self.viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
                                                       apiService: DefaultAPIService(userAgent: UserAgent.duckDuckGoUserAgent()),
                                                       vpnMetadataCollector: DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
                                                       dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                       feedbackSender: feedbackSender,
+                                                      featureFlagger: featureFlagger,
                                                       source: source)
 
         super.init(nibName: nil, bundle: nil)

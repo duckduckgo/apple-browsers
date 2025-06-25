@@ -27,12 +27,14 @@ typealias MockVaultFactory = SecureVaultFactory<MockSecureVault<MockDatabaseProv
 // swiftlint:disable:next identifier_name
 let MockSecureVaultFactory = SecureVaultFactory<MockSecureVault>(
     makeCryptoProvider: {
-        return MockCryptoProvider()
+        let provider = MockCryptoProvider()
+        provider._derivedKey = "derived".data(using: .utf8)
+        return provider
     }, makeKeyStoreProvider: { _ in
         let provider = MockKeyStoreProvider()
         provider._l1Key = "key".data(using: .utf8)
         return provider
-    }, makeDatabaseProvider: { key in
+    }, makeDatabaseProvider: { key, _ in
         return try MockDatabaseProvider(key: key)
     }
 )

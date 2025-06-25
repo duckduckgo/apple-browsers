@@ -174,7 +174,9 @@ extension TabExtensionsBuilder {
                                  isBurner: args.isTabBurner)
         }
         add {
-            ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript))
+            ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
+                               isLoadedInSidebar: args.isTabLoadedInSidebar,
+                               internalUserDecider: dependencies.featureFlagger.internalUserDecider)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))

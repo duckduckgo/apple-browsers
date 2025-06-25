@@ -18,7 +18,7 @@
 //
 
 import SwiftUI
-import NetworkProtection
+import VPN
 
 struct UnifiedFeedbackRootView: View {
     @StateObject var viewModel: UnifiedFeedbackFormViewModel
@@ -85,6 +85,13 @@ struct UnifiedFeedbackRootView: View {
                     case .itr:
                         UnifiedFeedbackCategoryView(UserText.pproFeedbackFormReportITRProblemTitle,
                                                     options: ITRFeedbackSubcategory.allCases,
+                                                    selection: $viewModel.selectedSubcategory) {
+                            IssueDescriptionFormView(viewModel: viewModel,
+                                                     placeholder: UserText.pproFeedbackFormReportProblemPlaceholder)
+                        }
+                    case .duckAi:
+                        UnifiedFeedbackCategoryView(UserText.pproFeedbackFormReportProblemTitle,
+                                                    options: PaidAIChatFeedbackSubcategory.allCases,
                                                     selection: $viewModel.selectedSubcategory) {
                             IssueDescriptionFormView(viewModel: viewModel,
                                                      placeholder: UserText.pproFeedbackFormReportProblemPlaceholder)

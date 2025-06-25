@@ -19,7 +19,7 @@
 import AppKit
 import Common
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionProxy
 import SwiftUI
 import os.log

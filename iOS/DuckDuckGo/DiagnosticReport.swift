@@ -25,7 +25,7 @@ import Crashes
 import DDGSync
 import Kingfisher
 import LinkPresentation
-import NetworkProtection
+import VPN
 import Persistence
 import SwiftUI
 import UIKit

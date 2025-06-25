@@ -18,12 +18,14 @@
 
 import AppKit
 import BrowserServicesKit
+import AIChat
+import Combine
 
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
 protocol AIChatSidebarViewControllerDelegate: AnyObject {
     /// Called when the user clicks the "Expand" button
-    func didClickOpenInNewTabButton()
+    func didClickOpenInNewTabButton(currentAIChatURL: URL, aiChatRestorationData: AIChatRestorationData?)
     /// Called when the user clicks the "Close" button
     func didClickCloseButton()
 }
@@ -48,6 +50,9 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     weak var delegate: AIChatSidebarViewControllerDelegate?
+    public var aiChatPayload: AIChatPayload?
+    private(set) var currentAIChatURL: URL
+    private let visualStyle: VisualStyleProviding
 
     private var openInNewTabButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -55,9 +60,14 @@ final class AIChatSidebarViewController: NSViewController {
     private var separator: NSView!
     private var topBar: NSView!
 
-    private let aiTab = Tab(content: .url(AIChatRemoteSettings().aiChatURL, source: .ui), isLoadedInSidebar: true)
+    private lazy var aiTab: Tab = Tab(content: .url(currentAIChatURL, source: .ui), isLoadedInSidebar: true)
 
-    init() {
+    private var cancellables = Set<AnyCancellable>()
+
+    init(currentAIChatURL: URL,
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+        self.currentAIChatURL = currentAIChatURL
+        self.visualStyle = visualStyle
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -66,9 +76,11 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     override func loadView() {
-        let container = NSView()
-        container.wantsLayer = true
-        container.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor
+        let container = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.navigationBackgroundColor)
+
+        if let aiChatPayload {
+            aiTab.aiChat?.setAIChatNativeHandoffData(payload: aiChatPayload)
+        }
 
         createAndSetupSeparator(in: container)
         createAndSetupTopBar(in: container)
@@ -90,6 +102,7 @@ final class AIChatSidebarViewController: NSViewController {
 
         // Initial mask update
         updateWebViewMask()
+        subscribeToURLChanges()
     }
 
     private func createAndSetupSeparator(in container: NSView) {
@@ -109,12 +122,11 @@ final class AIChatSidebarViewController: NSViewController {
 
     private func createAndSetupTopBar(in container: NSView) {
         topBar = NSView()
-        topBar.wantsLayer = true
-        topBar.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor
         topBar.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(topBar)
 
         openInNewTabButton = MouseOverButton(image: .expand, target: self, action: #selector(openInNewTabButtonClicked))
+        openInNewTabButton.toolTip = UserText.aiChatSidebarExpandButtonTooltip
         openInNewTabButton.translatesAutoresizingMaskIntoConstraints = false
         openInNewTabButton.bezelStyle = .shadowlessSquare
         openInNewTabButton.cornerRadius = 9
@@ -124,14 +136,15 @@ final class AIChatSidebarViewController: NSViewController {
         openInNewTabButton.isBordered = false
         topBar.addSubview(openInNewTabButton)
 
-        let titleLabel = NSTextField(labelWithString: "Duck.ai")
+        let titleLabel = NSTextField(labelWithString: UserText.aiChatSidebarTitle)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.alignment = .center
         titleLabel.font = .systemFont(ofSize: 13, weight: .medium)
         titleLabel.textColor = .labelColor
         topBar.addSubview(titleLabel)
 
-        closeButton = MouseOverButton(image: .close, target: self, action: #selector(closeButtonClicked))
+        closeButton = MouseOverButton(image: .closeLarge, target: self, action: #selector(closeButtonClicked))
+        closeButton.toolTip = UserText.aiChatSidebarCloseButtonTooltip
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.bezelStyle = .shadowlessSquare
         closeButton.cornerRadius = 9
@@ -225,14 +238,34 @@ final class AIChatSidebarViewController: NSViewController {
         webViewContainer.layer?.mask = shape
     }
 
+    private func subscribeToURLChanges() {
+        aiTab.$content
+            .dropFirst()
+            .sink { [weak self] content in
+            if let currentURL = content.urlForWebView {
+                self?.currentAIChatURL = currentURL
+            }
+        }
+        .store(in: &cancellables)
+    }
+
     @objc private func openInNewTabButtonClicked() {
-        delegate?.didClickOpenInNewTabButton()
+        let aiChatRestorationData = aiTab.aiChat?.aiChatUserScript?.handler.messageHandling.getDataForMessageType(.chatRestorationData) as? AIChatRestorationData
+
+        delegate?.didClickOpenInNewTabButton(currentAIChatURL: currentAIChatURL.removingPlacementParameter(), aiChatRestorationData: aiChatRestorationData)
     }
 
     @objc private func closeButtonClicked() {
         delegate?.didClickCloseButton()
     }
 
+    func stopLoading() {
+        aiTab.webView.navigationDelegate = nil
+        aiTab.webView.uiDelegate = nil
+
+        aiTab.webView.stopLoading()
+        aiTab.webView.loadHTMLString("", baseURL: nil)
+    }
 }
 
 extension AIChatSidebarViewController: TabDelegate {

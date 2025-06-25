@@ -50,6 +50,7 @@ public class AutofillUserScript: NSObject, UserScript, UserScriptMessageEncrypti
         case getRuntimeConfiguration
         case getAvailableInputTypes
         case getAutofillData
+        case getAutofillDataFocus
         case storeFormData
 
         case askToUnlockProvider
@@ -147,6 +148,7 @@ public class AutofillUserScript: NSObject, UserScript, UserScriptMessageEncrypti
         case .getRuntimeConfiguration: return getRuntimeConfiguration
         case .getAvailableInputTypes: return getAvailableInputTypes
         case .getAutofillData: return getAutofillData
+        case .getAutofillDataFocus: return getAutofillDataFocus
         case .storeFormData: return pmStoreData
 
         case .pmHandlerGetAccounts: return pmGetAccounts
@@ -174,6 +176,7 @@ public class AutofillUserScript: NSObject, UserScript, UserScriptMessageEncrypti
 
     public let encrypter: UserScriptEncrypter
     public let generatedSecret: String = UUID().uuidString
+    let replyQueue = PendingRepliesActor()
 
     let hostProvider: UserScriptHostProvider
     func hostForMessage(_ message: UserScriptMessage) -> String {

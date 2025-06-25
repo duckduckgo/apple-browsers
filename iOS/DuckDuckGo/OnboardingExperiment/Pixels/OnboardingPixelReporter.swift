@@ -343,9 +343,9 @@ extension OnboardingPixelReporter: OnboardingAddToDockReporting {
 
 extension OnboardingPixelReporter: OnboardingSetAsDefaultBrowserExperimentReporting {
 
-    enum SetAsDefaultExperimentMetrics {
+    enum SetAsDefaultBrowserPipVideoExperimentMetrics {
         /// Unique identifier for the subfeature being tested.
-        static let subfeatureIdentifier = OnboardingSubfeature.setAsDefaultBrowserExperiment.rawValue
+        static let subfeatureIdentifier = OnboardingSubfeature.setAsDefaultBrowserPiPVideoExperiment.rawValue
 
         /// Metric identifiers for various user actions during the experiment.
         static let metricDefaultBrowserSet = "setAsDefaultBrowser"
@@ -357,18 +357,18 @@ extension OnboardingPixelReporter: OnboardingSetAsDefaultBrowserExperimentReport
 
     func measureDidSetDDGAsDefaultBrowser() {
         experimentPixel.fireExperimentPixel(
-            for: SetAsDefaultExperimentMetrics.subfeatureIdentifier,
-            metric: SetAsDefaultExperimentMetrics.metricDefaultBrowserSet,
-            conversionWindowDays: SetAsDefaultExperimentMetrics.conversionWindowDays,
+            for: SetAsDefaultBrowserPipVideoExperimentMetrics.subfeatureIdentifier,
+            metric: SetAsDefaultBrowserPipVideoExperimentMetrics.metricDefaultBrowserSet,
+            conversionWindowDays: SetAsDefaultBrowserPipVideoExperimentMetrics.conversionWindowDays,
             value: "1"
         )
     }
 
     func measureDidNotSetDDGAsDefaultBrowser() {
         experimentPixel.fireExperimentPixel(
-            for: SetAsDefaultExperimentMetrics.subfeatureIdentifier,
-            metric: SetAsDefaultExperimentMetrics.metricDefaultBrowserNotSet,
-            conversionWindowDays: SetAsDefaultExperimentMetrics.conversionWindowDays,
+            for: SetAsDefaultBrowserPipVideoExperimentMetrics.subfeatureIdentifier,
+            metric: SetAsDefaultBrowserPipVideoExperimentMetrics.metricDefaultBrowserNotSet,
+            conversionWindowDays: SetAsDefaultBrowserPipVideoExperimentMetrics.conversionWindowDays,
             value: "1"
         )
     }

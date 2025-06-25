@@ -1536,6 +1536,66 @@
         }
       }
     },
+    "ai-features.preferences.caption" : {
+      "comment" : "Ai Chat preferences explanation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die KI-Funktionen von DuckDuckGo sind privat und optional. Ihre Daten werden nicht zum Trainieren von KI verwendet."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo AI features are private and optional. Your data is not used to train AI."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las funciones de IA de DuckDuckGo son privadas y opcionales. Tus datos no se utilizan para entrenar a la IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les fonctionnalités de DuckDuckGo AI sont privées et facultatives. Vos données ne servent pas à entraîner l'IA."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le funzionalità AI di DuckDuckGo sono private e opzionali. I tuoi dati non vengono usati per addestrare l'IA."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo AI-functies zijn privé en optioneel. Je gegevens worden niet gebruikt om AI te trainen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funkcje sztucznej inteligencji DuckDuckGo są prywatne i opcjonalne. Twoje dane nie są używane do trenowania AI."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As funcionalidades de IA do DuckDuckGo são privadas e opcionais. Os teus dados não são utilizados para treinar a IA."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo AI — дополнительный конфиденциальный сервис. Ваши данные не применяются для обучения ИИ."
+          }
+        }
+      }
+    },
     "aichat.address-bar.hide-button" : {
       "comment" : "Button to hide duck.ai shortcut in address bar",
       "extractionState" : "extracted_with_value",
@@ -1592,6 +1652,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Скрыть ярлык Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.close-button.tooltip" : {
+      "comment" : "Tooltip for button to close the sidebar with the duck.ai chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.expand-button.tooltip" : {
+      "comment" : "Tooltip for button to open duck.ai chat from sidebar in a full tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Expand"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.title" : {
+      "comment" : "Title for the Duck.ai sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
           }
         }
       }
@@ -17546,6 +17642,66 @@
         }
       }
     },
+    "delete.browsing.data.menu.item" : {
+      "comment" : "Menu item title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browserdaten löschen …"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete Browsing Data…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar los datos de navegación…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer les données de navigation…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina dati di navigazione…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsegegevens verwijderen…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń dane przeglądania…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar dados de navegação…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить данные о посещении сайтов…"
+          }
+        }
+      }
+    },
     "details" : {
       "comment" : "details button",
       "extractionState" : "extracted_with_value",
@@ -21618,62 +21774,62 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Neuer AI Chat"
+            "value" : "Neuer Duck.ai-Chat"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "New AI Chat"
+            "value" : "New Duck.ai Chat"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nuevo AI Chat"
+            "value" : "Nuevo chat de Duck.ai"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nouvel AI Chat"
+            "value" : "Nouveau chat Duck.ai"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nuova AI Chat"
+            "value" : "Nuova chat Duck.ai"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nieuwe AI Chat"
+            "value" : "Nieuwe Duck.ai Chat"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nowy AI Chat"
+            "value" : "Nowy czat Duck.ai"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Novo AI Chat"
+            "value" : "Nova conversa Duck.ai"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Запустить AI Chat"
+            "value" : "Новый чат Duck.ai"
           }
         }
       }
     },
     "duckai.preferences.caption" : {
       "comment" : "Ai Chat preferences explanation",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -21727,6 +21883,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duck.ai — дополнительная функция, позволяющая анонимно беседовать с популярными сторонними чат-моделями на базе искусственного интеллекта. Содержимое чатов не применяется для обучения ИИ."
+          }
+        }
+      }
+    },
+    "duckai.search-assist-settings" : {
+      "comment" : "The section name in preferences for Search Assist Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Such-Assist-Einstellungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search Assist Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configuración de Asistente de búsqueda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paramètres de recherche Assist"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni di Search Assist"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instellingen voor zoek Assist"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawienia wyszukiwania Assist"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definições do Assist de pesquisa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки Search Assist"
+          }
+        }
+      }
+    },
+    "duckai.search-assist-settings.description" : {
+      "comment" : "Description of the section in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kannst auswählen, wie oft KI-gestützte Antworten in deinen Suchergebnissen angezeigt werden sollen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose how often you want AI-Assisted answers to appear in your searches"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige con qué frecuencia deseas que las respuestas asistidas por IA aparezcan en tus búsquedas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez la fréquence à laquelle vous souhaitez que les réponses assistées par l'IA apparaissent dans vos recherches"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli la frequenza con cui vuoi che le risposte assistite dall'intelligenza artificiale appaiano nelle tue ricerche"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies hoe vaak antwoorden op basis van AI in je zoekresultaten moeten worden weergegeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz, jak często w wyszukiwaniach mają pojawiać się odpowiedzi wspomagane przez sztuczną inteligencję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolhe a frequência com que queres que as respostas assistidas por IA apareçam nas suas pesquisas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите, как часто вы хотите видеть ответы от ИИ в результатах поиска."
+          }
+        }
+      }
+    },
+    "duckai.search-assist-settings.link" : {
+      "comment" : "Button to open the Search Assist Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Such-Assist-Einstellungen öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Search Assist Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir la configuración de Asistente de búsqueda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les paramètres de recherche Assist"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri le impostazioni di Search Assist"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instellingen voor zoek Assist openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz ustawienia wyszukiwania Assist"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir as definições do Assist de pesquisa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть настройки Search Assist"
           }
         }
       }
@@ -21798,55 +22134,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "„Neuer AI Chat“ in den Datei- und Anwendungsmenüs anzeigen"
+            "value" : "„Neuer Duck.ai-Chat“ in den Datei- und Anwendungsmenüs anzeigen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Show “New AI Chat” in File and application menus"
+            "value" : "Show “New Duck.ai Chat” in File and application menus"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar «Nuevo AI Chat» en los menús Archivo y Aplicación"
+            "value" : "Mostrar «Nuevo Duck.ai» en los menús Archivo y Aplicación"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afficher « Nouvel AI Chat » dans les menus Fichier et Application"
+            "value" : "Afficher « Nouveau chat Duck.ai » dans les menus Fichier et Application"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostra \"AI Chat\" nel menu File e in quello delle applicazioni"
+            "value" : "Mostra \"Duck.ai Chat\" nel menu File e in quello delle applicazioni"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "'Nieuwe AI Chat' toevoegen aan de menu's 'Bestand' en 'Toepassing'"
+            "value" : "'Nieuwe Duck.ai-chat' weergeven in de menu's 'Bestand' en 'Toepassing'"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pokaż „Nowy AI Chat” w menu plików i aplikacji"
+            "value" : "Pokaż „Nowy czat Duck.ai” w menu plików i aplikacji"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar “Novo AI Chat” nos menus de ficheiro e aplicação"
+            "value" : "Mostrar “Novo Duck.ai Chat” nos menus de ficheiro e aplicação"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Показывать опцию «Запустить AI Chat» в меню «Файл» и меню приложения"
+            "value" : "Показывать опцию «Запустить чат с Duck.ai» в меню «Файл» и меню приложения"
           }
         }
       }
@@ -26118,6 +26454,19 @@
           }
         }
       }
+    },
+    "general.feedback-form.category.ai-chat" : {
+      "comment" : "Description for the feedback form when the issue is related to Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "general.feedback-form.category.itr" : {
       "comment" : "Description for the feedback form when the issue is related to Identity Theft Restoration (ITR)",
@@ -44232,6 +44581,58 @@
         }
       }
     },
+    "paid-duck-ai.feedback-form.category.access-subscription-models" : {
+      "comment" : "Description for the feedback form when there is an issue with accessing the paid tier models",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unable to access the subscription Duck.ai models"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "paid-duck-ai.feedback-form.category.login-third-party-browser" : {
+      "comment" : "Description for the feedback form when there is an issue with logging into Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Can’t log in to Duck.ai with my subscription"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "paid-duck-ai.feedback-form.category.select-category" : {
+      "comment" : "Title for the category selection state of the paid duck.ai feedback form",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select a category"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "paid-duck-ai.feedback-form.category.something-else" : {
+      "comment" : "Description for the feedback form when the user has an issue not categorized in other options",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Other Duck.ai feedback"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "passsword.management.all-items" : {
       "comment" : "Used as title for the Autofill All Items option",
       "extractionState" : "extracted_with_value",
@@ -57276,6 +57677,42 @@
         }
       }
     },
+    "preferences.about.will-soon-be-unsupported-device-info-alert-header" : {
+      "comment" : "This string represents the header for an alert informing the user that their version of macOS will soon be unsupported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your version of macOS will soon be unsupported."
+          }
+        }
+      }
+    },
+    "preferences.about.will-soon-be-unsupported-device-info1" : {
+      "comment" : "This string informs the user that DuckDuckGo will soon discontinue browser updates for their version of macOS",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo will soon stop providing browser updates for your version of macOS."
+          }
+        }
+      }
+    },
+    "preferences.about.will-soon-be-unsupported-device-info2" : {
+      "comment" : "This string informs the user to update their macOS version to continue receiving DuckDuckGo browser updates, as their current version of macOS will soon be unsupported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Please update to macOS %@ or later to continue receiving DuckDuckGo browser updates. You can still use your current browser version, but updates will be discontinued soon."
+          }
+        }
+      }
+    },
     "preferences.accessibility" : {
       "comment" : "Title of the option to show the Accessibility browser preferences",
       "extractionState" : "extracted_with_value",
@@ -57452,6 +57889,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить на док-панель"
+          }
+        }
+      }
+    },
+    "preferences.aiFeatures" : {
+      "comment" : "Title of the option to show AI features in preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-Funktionen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI Features"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Características de la IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fonctionnalités de l'IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funzionalità IA"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI-functies"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funkcje AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funcionalidades de IA"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Функции ИИ"
           }
         }
       }
@@ -58656,6 +59153,66 @@
         }
       }
     },
+    "preferences.duck-ai-shortcuts" : {
+      "comment" : "Title of a subsection in preferences containing shortcut preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Shortcuts"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Shortcuts"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atajos de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raccourcis Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scorciatoie Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-snelkoppelingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skróty Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atalhos Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ярлыки Duck.ai"
+          }
+        }
+      }
+    },
     "preferences.duck-player" : {
       "comment" : "Title of the option to show the Duck Player browser preferences",
       "extractionState" : "extracted_with_value",
@@ -58717,61 +59274,61 @@
       }
     },
     "preferences.duckai" : {
-      "comment" : "Title of the option to show Duck.ai in preferences",
-      "extractionState" : "extracted_with_value",
+      "comment" : "Title of the option to show AI features in preferences",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai"
+            "value" : "KI-Funktionen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Duck.ai"
+            "value" : "AI Features"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai"
+            "value" : "Características de la IA"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai"
+            "value" : "Fonctionnalités de l'IA"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai"
+            "value" : "Funzionalità IA"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai"
+            "value" : "AI-functies"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai"
+            "value" : "Funkcje AI"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai"
+            "value" : "Funcionalidades de IA"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duck.ai"
+            "value" : "Функции ИИ"
           }
         }
       }
@@ -59255,6 +59812,19 @@
           }
         }
       }
+    },
+    "preferences.paidAIChat" : {
+      "comment" : "Title of the option to show the Duck.ai Pro preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "preferences.personalInformationRemoval" : {
       "comment" : "Title of the option to show the Personal Information Removal preferences",
@@ -59881,7 +60451,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Met automatiquement à niveau les liens vers HTTPS lorsque c'est possible."
+            "value" : "Met automatiquement à niveau les liens vers HTTPS lorsque cela est possible."
           }
         },
         "it" : {
@@ -59899,13 +60469,13 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "W miarę możliwości automatycznie aktualizuje łącza do protokołu HTTPS."
+            "value" : "Automatycznie aktualizuje łącza do protokołu HTTPS, jeśli to możliwe."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Atualiza automaticamente os links para HTTPS sempre que possível."
+            "value" : "Atualiza automaticamente links para HTTPS sempre que possível."
           }
         },
         "ru" : {

@@ -36,6 +36,7 @@ protocol MoreOptionsMenuIconsProviding {
     var downloadsIcon: NSImage { get }
     var historyIcon: NSImage { get }
     var passwordsIcon: NSImage { get }
+    var deleteBrowsingDataIcon: NSImage { get }
     var emailProtectionIcon: NSImage { get }
     var privacyProIcon: NSImage { get }
     var fireproofSiteIcon: NSImage { get }
@@ -59,6 +60,7 @@ protocol MoreOptionsMenuIconsProviding {
     /// PrivacyPro Sub-Menu
     var vpnIcon: NSImage? { get }
     var personalInformationRemovalIcon: NSImage { get }
+    var paidAIChat: NSImage { get }
     var identityTheftRestorationIcon: NSImage { get }
 
     /// Email Protection Sub-Menu
@@ -88,6 +90,7 @@ final class LegacyMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let downloadsIcon: NSImage = .downloads
     let historyIcon: NSImage = .history
     let passwordsIcon: NSImage = .passwordManagement
+    let deleteBrowsingDataIcon: NSImage = .burn
     let emailProtectionIcon: NSImage = .optionsButtonMenuEmail
     let privacyProIcon: NSImage = .subscriptionIcon
     let fireproofSiteIcon: NSImage = .fireproof
@@ -105,6 +108,7 @@ final class LegacyMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let creditCardsIcon: NSImage = .creditCardGlyph
     let vpnIcon: NSImage? = .image(for: .vpnIcon)
     let personalInformationRemovalIcon: NSImage = .dbpIcon
+    let paidAIChat: NSImage = .aiChat
     let identityTheftRestorationIcon: NSImage = .itrIcon
     let emailGenerateAddressIcon: NSImage = .optionsButtonMenuEmailGenerateAddress
     let emailManageAccount: NSImage = .identity16
@@ -130,6 +134,7 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let downloadsIcon: NSImage = DesignSystemImages.Glyphs.Size16.downloads
     let historyIcon: NSImage = DesignSystemImages.Glyphs.Size16.history
     let passwordsIcon: NSImage = DesignSystemImages.Glyphs.Size16.keyLogin
+    let deleteBrowsingDataIcon: NSImage = DesignSystemImages.Glyphs.Size16.fire
     let emailProtectionIcon: NSImage = DesignSystemImages.Glyphs.Size16.email
     let privacyProIcon: NSImage = DesignSystemImages.Glyphs.Size16.privacyPro
     let fireproofSiteIcon: NSImage = DesignSystemImages.Glyphs.Size16.fireproof
@@ -147,6 +152,7 @@ final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let creditCardsIcon: NSImage = DesignSystemImages.Glyphs.Size16.creditCard
     let vpnIcon: NSImage? = DesignSystemImages.Glyphs.Size16.vpnOn
     let personalInformationRemovalIcon: NSImage = DesignSystemImages.Glyphs.Size16.profileBlocked
+    let paidAIChat: NSImage = DesignSystemImages.Glyphs.Size16.aiChat
     let identityTheftRestorationIcon: NSImage = DesignSystemImages.Glyphs.Size16.identityTheftRestoration
     let emailGenerateAddressIcon: NSImage = DesignSystemImages.Glyphs.Size16.wand
     let emailManageAccount: NSImage = DesignSystemImages.Glyphs.Size16.profile

@@ -224,10 +224,11 @@ public struct SecureVaultModels {
                     cardholderName: String?,
                     cardSecurityCode: String?,
                     expirationMonth: Int?,
-                    expirationYear: Int?) {
+                    expirationYear: Int?,
+                    created: Date? = nil) {
             self.id = id
             self.title = title ?? ""
-            self.created = Date()
+            self.created = created ?? Date()
             self.lastUpdated = self.created
 
             self.cardNumberData = cardNumber.data(using: .utf8)!

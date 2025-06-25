@@ -21,7 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Core
 import Common
-import NetworkProtection
+import VPN
 import NetworkExtension
 import Network
 import Subscription

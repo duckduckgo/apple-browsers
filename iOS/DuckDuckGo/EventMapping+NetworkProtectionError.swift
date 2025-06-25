@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 import Common
 import Core
 

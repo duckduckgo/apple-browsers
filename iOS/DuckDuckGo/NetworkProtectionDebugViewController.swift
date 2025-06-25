@@ -21,7 +21,7 @@ import UIKit
 import Common
 import Network
 import NetworkExtension
-import NetworkProtection
+import VPN
 import Subscription
 
 final class NetworkProtectionDebugViewController: UITableViewController {

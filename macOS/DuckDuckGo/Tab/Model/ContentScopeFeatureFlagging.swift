@@ -34,6 +34,7 @@ extension ContentScopeFeatureToggles {
                                           thirdPartyCredentialsProvider: true,
                                           unknownUsernameCategorization: privacyConfig.isSubfeatureEnabled(AutofillSubfeature.unknownUsernameCategorization),
                                           partialFormSaves: privacyConfig.isSubfeatureEnabled(AutofillSubfeature.partialFormSaves),
-                                          passwordVariantCategorization: privacyConfig.isSubfeatureEnabled(AutofillSubfeature.passwordVariantCategorization))
+                                          passwordVariantCategorization: privacyConfig.isSubfeatureEnabled(AutofillSubfeature.passwordVariantCategorization),
+                                          inputFocusApi: false)
     }
 }

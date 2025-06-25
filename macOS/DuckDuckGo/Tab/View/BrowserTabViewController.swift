@@ -169,19 +169,17 @@ final class BrowserTabViewController: NSViewController {
         hoverLabelContainer.trailingAnchor.constraint(equalTo: hoverLabel.trailingAnchor, constant: 8).isActive = true
         hoverLabel.topAnchor.constraint(equalTo: hoverLabelContainer.topAnchor, constant: 6).isActive = true
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            view.addSubview(sidebarContainer)
+        view.addSubview(sidebarContainer)
 
-            sidebarContainerLeadingConstraint = sidebarContainer.leadingAnchor.constraint(equalTo: browserTabView.trailingAnchor)
-            sidebarContainerWidthConstraint = sidebarContainer.widthAnchor.constraint(equalToConstant: 0)
+        sidebarContainerLeadingConstraint = sidebarContainer.leadingAnchor.constraint(equalTo: browserTabView.trailingAnchor)
+        sidebarContainerWidthConstraint = sidebarContainer.widthAnchor.constraint(equalToConstant: 0)
 
-            NSLayoutConstraint.activate([
-                sidebarContainer.topAnchor.constraint(equalTo: browserTabView.topAnchor),
-                sidebarContainer.bottomAnchor.constraint(equalTo: browserTabView.bottomAnchor),
-                sidebarContainerLeadingConstraint!,
-                sidebarContainerWidthConstraint!
-            ])
-        }
+        NSLayoutConstraint.activate([
+            sidebarContainer.topAnchor.constraint(equalTo: browserTabView.topAnchor),
+            sidebarContainer.bottomAnchor.constraint(equalTo: browserTabView.bottomAnchor),
+            sidebarContainerLeadingConstraint!,
+            sidebarContainerWidthConstraint!
+        ])
     }
 
     override func viewDidLoad() {
@@ -323,6 +321,12 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
+    @objc
+    private func onAutofillScriptDebugSettingsDidChange(_ notification: Notification) {
+        contentOverlayPopover?.viewController.closeContentOverlayPopover()
+        contentOverlayPopover = nil
+    }
+
     private func subscribeToSelectedTabViewModel() {
         tabCollectionViewModel.$selectedTabViewModel
             .sink { [weak self] selectedTabViewModel in
@@ -353,7 +357,14 @@ final class BrowserTabViewController: NSViewController {
                 guard let self else { return }
                 setDelegate(for: tabs)
                 removeDataBrokerViewIfNecessary(for: tabs)
-                cleanUpSidebarsForClosedTabs(for: tabs)
+            }
+            .store(in: &cancellables)
+
+        tabCollectionViewModel.tabCollection.$tabs
+            .dropFirst()
+            .sink {  [weak self] _ in
+                guard let self else { return }
+                aiChatSidebarHostingDelegate?.sidebarHostDidUpdateTabs()
             }
             .store(in: &cancellables)
     }
@@ -408,6 +419,10 @@ final class BrowserTabViewController: NSViewController {
                                                selector: #selector(onSubscriptionUpgradeFromFreemium),
                                                name: .subscriptionUpgradeFromFreemium,
                                                object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onAutofillScriptDebugSettingsDidChange),
+                                               name: .autofillScriptDebugSettingsDidChange,
+                                               object: nil)
     }
 
     private func removeDataBrokerViewIfNecessary(for tabs: [Tab]) {
@@ -424,12 +439,6 @@ final class BrowserTabViewController: NSViewController {
             tab.autofill?.setDelegate(self)
             tab.downloads?.delegate = self
         }
-    }
-
-    private func cleanUpSidebarsForClosedTabs(for currentTabs: [Tab]) {
-        let currentTabIDs = currentTabs.map { $0.id }
-        let currentPinnedTabIDs = tabCollectionViewModel.pinnedTabsCollection?.tabs.map { $0.id } ?? []
-        aiChatSidebarHostingDelegate?.sidebarHostDidUpdateTabs(currentTabIDs + currentPinnedTabIDs)
     }
 
     private func removeWebViewFromHierarchy(webView: WebView? = nil,
@@ -478,12 +487,8 @@ final class BrowserTabViewController: NSViewController {
         NSLayoutConstraint.activate([
             containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             containerStackView.topAnchor.constraint(equalTo: view.topAnchor),
-            containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        let constraint =  featureFlagger.isFeatureOn(.aiChatSidebar) ? sidebarContainer.leadingAnchor : view.trailingAnchor
-        NSLayoutConstraint.activate([
-            containerStackView.trailingAnchor.constraint(equalTo: constraint)
+            containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            containerStackView.trailingAnchor.constraint(equalTo: sidebarContainer.leadingAnchor)
         ])
 
         containerStackView.addArrangedSubview(container)
@@ -951,7 +956,7 @@ final class BrowserTabViewController: NSViewController {
             removeAllTabContent(includingWebView: true)
             changeWebView(tabViewModel: tabViewModel)
 
-            if let tabID = tabViewModel?.tab.id {
+            if let tabID = tabViewModel?.tab.uuid {
                 aiChatSidebarHostingDelegate?.sidebarHostDidSelectTab(with: tabID)
             }
         }
@@ -1054,7 +1059,8 @@ final class BrowserTabViewController: NSViewController {
             let preferencesViewController = PreferencesViewController(
                 syncService: syncService,
                 tabCollectionViewModel: tabCollectionViewModel,
-                privacyConfigurationManager: privacyConfigurationManager
+                privacyConfigurationManager: privacyConfigurationManager,
+                featureFlagger: featureFlagger
             )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController

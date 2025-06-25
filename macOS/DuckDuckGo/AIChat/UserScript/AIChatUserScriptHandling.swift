@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Foundation
 import UserScript
 import AIChat
 
@@ -24,16 +25,28 @@ protocol AIChatUserScriptHandling {
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
+    func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
+    func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
+    func recordChat(params: Any, message: UserScriptMessage) -> Encodable?
+    func restoreChat(params: Any, message: UserScriptMessage) -> Encodable?
+    func removeChat(params: Any, message: UserScriptMessage) -> Encodable?
+
+    var messageHandling: AIChatMessageHandling { get }
 }
 
 struct AIChatUserScriptHandler: AIChatUserScriptHandling {
-    private let messageHandling: AIChatMessageHandling
+    public let messageHandling: AIChatMessageHandling
     private let storage: AIChatPreferencesStorage
 
     init(storage: AIChatPreferencesStorage,
          messageHandling: AIChatMessageHandling = AIChatMessageHandler()) {
         self.storage = storage
         self.messageHandling = messageHandling
+    }
+
+    enum AIChatKeys {
+        static let aiChatPayload = "aiChatPayload"
+        static let serializedChatData = "serializedChatData"
     }
 
     @MainActor public func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -53,4 +66,46 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable? {
         messageHandling.getDataForMessageType(.nativePrompt)
     }
+
+    @MainActor
+    func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
+        var payload: AIChatPayload?
+        if let paramsDict = params as? AIChatPayload {
+            payload = paramsDict[AIChatKeys.aiChatPayload] as? AIChatPayload
+        }
+
+        NotificationCenter.default.post(name: .aiChatNativeHandoffData,
+                                        object: payload,
+                                        userInfo: nil)
+        return nil
+    }
+
+    public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
+        messageHandling.getDataForMessageType(.nativeHandoffData)
+    }
+
+    public func recordChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        guard let params = params as? [String: String],
+              let data = params[AIChatKeys.serializedChatData]
+        else { return nil }
+
+        messageHandling.setData(data, forMessageType: .chatRestorationData)
+        return nil
+    }
+
+    public func restoreChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        guard let data = messageHandling.getDataForMessageType(.chatRestorationData) as? String
+        else { return nil }
+
+        return [AIChatKeys.serializedChatData: data]
+    }
+
+    public func removeChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        messageHandling.setData(nil, forMessageType: .chatRestorationData)
+        return nil
+    }
+}
+
+extension NSNotification.Name {
+    static let aiChatNativeHandoffData: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.aiChatNativeHandoffData")
 }

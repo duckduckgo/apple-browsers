@@ -54,6 +54,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private let syncService: DDGSyncing
     private let syncDataProviders: SyncDataProviders
     private let appSettings: AppSettings
+    private let keyValueStore: ThrowingKeyValueStoring
     private var localUpdatesCancellable: AnyCancellable?
     private var syncUpdatesCancellable: AnyCancellable?
     private var favoritesDisplayModeCancellable: AnyCancellable?
@@ -183,7 +184,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                    favicons: Favicons = Favicons.shared,
                    syncService: DDGSyncing,
                    syncDataProviders: SyncDataProviders,
-                   appSettings: AppSettings
+                   appSettings: AppSettings,
+                   keyValueStore: ThrowingKeyValueStoring
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.searchDataSource = SearchBookmarksDataSource(searchEngine: bookmarksSearch)
@@ -197,6 +199,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
+        self.keyValueStore = keyValueStore
         super.init(coder: coder)
 
         bindSyncService()
@@ -360,7 +363,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                                                      parentID: parent.objectID,
                                                      syncService: self.syncService,
                                                      syncDataProviders: self.syncDataProviders,
-                                                     appSettings: self.appSettings)
+                                                     appSettings: self.appSettings,
+                                                     keyValueStore: self.keyValueStore)
             controller?.delegate = self.delegate
             return controller
         })
@@ -714,7 +718,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                                                   tld: AppDependencyProvider.shared.storageCache.tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
                                                                 importScreen: DataImportViewModel.ImportScreen.bookmarks,
-                                                                syncService: syncService)
+                                                                syncService: syncService,
+                                                                keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
         navigationController?.setToolbarHidden(true, animated: true)
         navigationController?.pushViewController(dataImportViewController, animated: true)

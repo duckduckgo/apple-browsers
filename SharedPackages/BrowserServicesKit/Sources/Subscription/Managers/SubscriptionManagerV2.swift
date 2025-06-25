@@ -22,16 +22,19 @@ import os.log
 import Networking
 
 public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
-    case tokenUnavailable(error: Error?)
+    /// The app has no `TokenContainer`
+    case noTokenAvailable
+    /// There was a failure wile retrieving, updating or creating the `TokenContainer`
+    case errorRetrievingTokenContainer(error: Error?)
+
     case confirmationHasInvalidSubscription
     case noProductsFound
-    case tokenRefreshFailed(error: Error?)
 
     public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
         switch (lhs, rhs) {
-        case (.tokenUnavailable(let lhsError), .tokenUnavailable(let rhsError)):
-            return lhsError?.localizedDescription == rhsError?.localizedDescription
-        case (.tokenRefreshFailed(let lhsError), .tokenRefreshFailed(let rhsError)):
+        case (.noTokenAvailable, .noTokenAvailable):
+            return true
+        case (.errorRetrievingTokenContainer(let lhsError), .errorRetrievingTokenContainer(let rhsError)):
             return lhsError?.localizedDescription == rhsError?.localizedDescription
         case (.confirmationHasInvalidSubscription, .confirmationHasInvalidSubscription),
             (.noProductsFound, .noProductsFound):
@@ -43,14 +46,14 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .tokenUnavailable(error: let error):
-            "Token unavailable: \(String(describing: error))"
+        case .noTokenAvailable:
+            "No token available"
+        case .errorRetrievingTokenContainer(error: let error):
+            "Error retrieving token container: \(String(describing: error))"
         case .confirmationHasInvalidSubscription:
             "Confirmation has an invalid subscription"
         case .noProductsFound:
             "No products found"
-        case .tokenRefreshFailed(error: let error):
-            "Token is not refreshable: \(String(describing: error))"
         }
     }
 }
@@ -135,8 +138,8 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// - Parameter policy: The policy that will be used to get the token, it effects the tokens source and validity
     /// - Returns: The TokenContainer
     /// - Throws: A `SubscriptionManagerError`.
-    ///     `tokenRefreshFailed` if the token cannot be refreshed, typically due to an expired refresh token.
-    ///     `tokenUnavailable` if the token is not available for the reason specified by the underlying error.
+    ///     `noTokenAvailable` if the TokenContainer is not present.
+    ///     `errorRetrievingTokenContainer(error:...)` in case of any error retrieving, refreshing or creating the TokenContainer, this can be caused by networking issues or keychain errors etc.
     @discardableResult
     func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer
 
@@ -262,7 +265,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     public func loadInitialData() async {
         Logger.subscription.log("Loading initial data...")
         do {
-            let subscription = try await getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+            let subscription = try await getSubscription(cachePolicy: .remoteFirst)
             Logger.subscription.log("Subscription is \(subscription.isActive ? "active" : "not active", privacy: .public)")
         } catch SubscriptionEndpointServiceError.noData {
             Logger.subscription.log("No Subscription available")
@@ -274,27 +277,40 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     @discardableResult
     public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
+
+        // NOTE: This is ugly, the subscription cache will be moved from the endpoint service to here and handled properly https://app.asana.com/0/0/1209015691872191
+
         guard isUserAuthenticated else {
             throw SubscriptionEndpointServiceError.noData
         }
 
         var subscription: PrivacyProSubscription
-        // NOTE: This is ugly, the subscription cache will be moved from the endpoint service to here and handled properly https://app.asana.com/0/0/1209015691872191
+
         switch cachePolicy {
-        case .reloadIgnoringLocalCacheData:
-            let tokenContainer = try await getTokenContainer(policy: .localValid)
-            subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken,
-                                                                                 cachePolicy: cachePolicy)
-        case .returnCacheDataElseLoad:
-            if let tokenContainer = try? await getTokenContainer(policy: .localValid) {
-                subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken,
-                                                                                     cachePolicy: .returnCacheDataElseLoad)
-            } else {
-                subscription = try await getSubscription(cachePolicy: .returnCacheDataDontLoad)
+
+        case .remoteFirst, .cacheFirst:
+
+            if cachePolicy == .cacheFirst {
+                // We skip ahead and try to get the cached subscription, useful with slow/no connections where we don't want to wait for a get token timeout
+                do {
+                    subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: cachePolicy)
+                    break
+                } catch {}
             }
-        case .returnCacheDataDontLoad:
-            subscription = try await subscriptionEndpointService.getSubscription(accessToken: "",
-                                                                                 cachePolicy: .returnCacheDataDontLoad)
+
+            var tokenContainer: TokenContainer
+            do {
+                tokenContainer = try await getTokenContainer(policy: .localValid)
+            } catch SubscriptionManagerError.noTokenAvailable {
+                throw SubscriptionEndpointServiceError.noData
+            } catch {
+                // Failed to get a valid token, fall back on cache
+                subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: .cacheOnly)
+                break
+            }
+            subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken, cachePolicy: cachePolicy)
+        case .cacheOnly:
+            subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: cachePolicy)
         }
 
         if subscription.isActive {
@@ -310,7 +326,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription? {
         do {
             let tokenContainer = try await oAuthClient.activate(withPlatformSignature: lastTransactionJWSRepresentation)
-            return try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken, cachePolicy: .reloadIgnoringLocalCacheData)
+            return try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken, cachePolicy: .remoteFirst)
         } catch SubscriptionEndpointServiceError.noData {
             return nil
         } catch {
@@ -369,7 +385,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     // MARK: - User
     public var isUserAuthenticated: Bool {
-        userDefaults.isUserAuthenticated
+        do {
+            let tokenContainer = try oAuthClient.currentTokenContainer()
+            return tokenContainer != nil
+        } catch {
+            return userDefaults.isUserAuthenticated
+        }
     }
 
     public var userEmail: String? {
@@ -419,7 +440,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         } catch OAuthClientError.missingTokenContainer {
             // Expected when no tokens are available
             cachedUserEntitlements = []
-            throw SubscriptionManagerError.tokenUnavailable(error: OAuthClientError.missingTokenContainer)
+            throw SubscriptionManagerError.noTokenAvailable
         } catch {
             pixelHandler.handle(pixelType: .getTokensError(policy, error))
 
@@ -428,7 +449,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             case OAuthClientError.unknownAccount:
                 Logger.subscription.error("Refresh failed, the account is unknown. Logging out...")
                 await signOut(notifyUI: true)
-                throw SubscriptionManagerError.tokenUnavailable(error: error)
+                throw SubscriptionManagerError.noTokenAvailable
 
             case OAuthClientError.refreshTokenExpired,
                 OAuthClientError.invalidTokenRequest:
@@ -439,18 +460,18 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 } catch {
                     await signOut(notifyUI: false)
                     pixelHandler.handle(pixelType: .invalidRefreshTokenSignedOut)
-                    throw SubscriptionManagerError.tokenUnavailable(error: error)
+                    throw SubscriptionManagerError.noTokenAvailable
                 }
 
             default:
-                throw SubscriptionManagerError.tokenUnavailable(error: error)
+                throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
             }
         }
     }
 
     func attemptTokenRecovery() async throws -> TokenContainer {
         guard let tokenRecoveryHandler else {
-            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+            throw SubscriptionManagerError.errorRetrievingTokenContainer(error: nil)
         }
 
         Logger.subscription.log("The refresh token is expired, attempting subscription recovery...")
@@ -535,11 +556,11 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         var availableFeatures: [SubscriptionEntitlement]
         if forceRefresh {
             let tokenContainer = try await getTokenContainer(policy: .localForceRefresh) // Refresh entitlements if requested
-            let currentSubscription = try await getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+            let currentSubscription = try await getSubscription(cachePolicy: .remoteFirst)
             userEntitlements = tokenContainer.decodedAccessToken.subscriptionEntitlements // What the user has access to
             availableFeatures = currentSubscription.features ?? [] // what the subscription is capable to provide
         } else {
-            let currentSubscription = try? await getSubscription(cachePolicy: .returnCacheDataElseLoad)
+            let currentSubscription = try? await getSubscription(cachePolicy: .cacheFirst)
             let tokenContainer = try? await getTokenContainer(policy: .local)
             userEntitlements = tokenContainer?.decodedAccessToken.subscriptionEntitlements ?? []
             availableFeatures = currentSubscription?.features ?? []

@@ -18,7 +18,7 @@
 
 import Foundation
 import Common
-import NetworkProtection
+import VPN
 import os.log
 import VPNAppState
 

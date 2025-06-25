@@ -40,8 +40,42 @@ final class AIChatTabExtension {
         scriptsPublisher.sink { [weak self] scripts in
             Task { @MainActor in
                 self?.aiChatUserScript = scripts.aiChatUserScript
+
+                // Pass the handoff payload in case it was provided before the user script was loaded
+                if let payload = self?.temporaryAIChatNativeHandoffData {
+                    self?.aiChatUserScript?.handler.messageHandling.setData(payload, forMessageType: .nativeHandoffData)
+                    self?.temporaryAIChatNativeHandoffData = nil
+                }
+
+                if let data = self?.temporaryAIChatRestorationData {
+                    self?.aiChatUserScript?.handler.messageHandling.setData(data, forMessageType: .chatRestorationData)
+                    self?.temporaryAIChatRestorationData = nil
+                }
+
             }
         }.store(in: &cancellables)
+    }
+
+    private var temporaryAIChatNativeHandoffData: AIChatPayload?
+    func setAIChatNativeHandoffData(payload: AIChatPayload) {
+        guard let aiChatUserScript else {
+            // User script not yet loaded, store the payload and set when ready
+            temporaryAIChatNativeHandoffData = payload
+            return
+        }
+
+        aiChatUserScript.handler.messageHandling.setData(payload, forMessageType: .nativeHandoffData)
+    }
+
+    private var temporaryAIChatRestorationData: AIChatRestorationData?
+    func setAIChatRestorationData(data: AIChatRestorationData) {
+        guard let aiChatUserScript else {
+            // User script not yet loaded, store the payload and set when ready
+            temporaryAIChatRestorationData = data
+            return
+        }
+
+        aiChatUserScript.handler.messageHandling.setData(data, forMessageType: .chatRestorationData)
     }
 }
 
@@ -64,6 +98,8 @@ extension AIChatTabExtension: NavigationResponder {
 
 protocol AIChatProtocol: AnyObject, NavigationResponder {
     var aiChatUserScript: AIChatUserScript? { get }
+    func setAIChatNativeHandoffData(payload: AIChatPayload)
+    func setAIChatRestorationData(data: AIChatRestorationData)
 }
 
 extension AIChatTabExtension: AIChatProtocol, TabExtension {

@@ -19,6 +19,7 @@
 
 import SwiftUI
 import UIKit
+import DataBrokerProtection_iOS
 import DesignResourcesKit
 import Subscription
 
@@ -51,6 +52,12 @@ struct SettingsRootView: View {
                        isActive: $isShowingSubscribeFlow) { EmptyView() }
 
         List {
+            if #available(iOS 18.2, *) {
+                if viewModel.shouldShowSetAsDefaultBrowser || viewModel.shouldShowImportPasswords {
+                    SettingsCompleteSetupView()
+                        .listRowBackground(Color(designSystemColor: .surface))
+                }
+            }
             SettingsPrivacyProtectionsView()
                 .listRowBackground(Color(designSystemColor: .surface))
             SettingsSubscriptionView().environmentObject(subscriptionNavigationCoordinator)
@@ -158,7 +165,11 @@ struct SettingsRootView: View {
     @ViewBuilder func navigationDestinationView(for target: SettingsViewModel.SettingsDeepLinkSection) -> some View {
         switch target {
         case .dbp:
-            SubscriptionPIRView()
+            if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
+                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!)
+            } else {
+                SubscriptionPIRMoveToDesktopView()
+            }
         case .itr:
             SubscriptionITPView()
         case let .subscriptionFlow(redirectURLComponents):

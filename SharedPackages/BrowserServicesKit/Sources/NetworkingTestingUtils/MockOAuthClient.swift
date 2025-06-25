@@ -22,14 +22,16 @@ import Networking
 public class MockOAuthClient: OAuthClient {
 
     public init() {}
-    public var isUserAuthenticated: Bool = false
-    var internalcurrentTokenContainer: Networking.TokenContainer?
+    public var isUserAuthenticated: Bool {
+        internalCurrentTokenContainer != nil
+    }
+    public var internalCurrentTokenContainer: Networking.TokenContainer?
     public func currentTokenContainer() throws -> TokenContainer? {
-        internalcurrentTokenContainer
+        internalCurrentTokenContainer
     }
 
     public func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws {
-        internalcurrentTokenContainer = tokenContainer
+        internalCurrentTokenContainer = tokenContainer
     }
 
     public var getTokensResponse: Result<Networking.TokenContainer, Error>!
@@ -50,7 +52,7 @@ public class MockOAuthClient: OAuthClient {
     }
 
     public func adopt(tokenContainer: Networking.TokenContainer) {
-        internalcurrentTokenContainer = tokenContainer
+        internalCurrentTokenContainer = tokenContainer
     }
 
     public var createAccountResponse: Result<Networking.TokenContainer, Error>!

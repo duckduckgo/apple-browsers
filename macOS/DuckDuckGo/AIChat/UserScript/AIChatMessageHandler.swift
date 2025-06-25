@@ -17,22 +17,35 @@
 //
 
 import AIChat
+import BrowserServicesKit
+import UserScript
 
 enum AIChatMessageType {
     case nativeConfigValues
     case nativeHandoffData
     case nativePrompt
+    case chatRestorationData
 }
 
 protocol AIChatMessageHandling {
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable?
+    func setData(_ data: Any?, forMessageType type: AIChatMessageType)
 }
 
-struct AIChatMessageHandler: AIChatMessageHandling {
+final class AIChatMessageHandler: AIChatMessageHandling {
+    private let featureFlagger: FeatureFlagger
     private let promptHandler: any AIChatConsumableDataHandling
+    private let payloadHandler: AIChatPayloadHandler
+    private let chatRestorationDataHandler: AIChatRestorationDataHandler
 
-    init(promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared) {
+    init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+         promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
+         payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
+         chatRestorationDataHandler: AIChatRestorationDataHandler = AIChatRestorationDataHandler()) {
+        self.featureFlagger = featureFlagger
         self.promptHandler = promptHandler
+        self.payloadHandler = payloadHandler
+        self.chatRestorationDataHandler = chatRestorationDataHandler
     }
 
     func getDataForMessageType(_ type: AIChatMessageType) -> Encodable? {
@@ -43,6 +56,19 @@ struct AIChatMessageHandler: AIChatMessageHandling {
             return getNativeHandoffData()
         case .nativePrompt:
             return getAIChatNativePrompt()
+        case .chatRestorationData:
+            return getAIChatRestorationData()
+        }
+    }
+
+    func setData(_ data: Any?, forMessageType type: AIChatMessageType) {
+        switch type {
+        case .nativeHandoffData:
+            setNativeHandoffData(data as? AIChatPayload)
+        case .chatRestorationData:
+            setAIChatRestorationData(data as? AIChatRestorationData)
+        default:
+            break
         }
     }
 }
@@ -50,11 +76,30 @@ struct AIChatMessageHandler: AIChatMessageHandling {
 // MARK: - Messages
 extension AIChatMessageHandler {
     private func getNativeConfigValues() -> Encodable? {
-        AIChatNativeConfigValues.defaultValues
+        if featureFlagger.isFeatureOn(.aiChatSidebar) {
+            return AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
+                                            supportsClosingAIChat: true,
+                                            supportsOpeningSettings: true,
+                                            supportsNativePrompt: true,
+                                            supportsNativeChatInput: false,
+                                            supportsURLChatIDRestoration: true)
+        } else {
+            return AIChatNativeConfigValues.defaultValues
+        }
     }
 
     private func getNativeHandoffData() -> Encodable? {
-        return nil
+        guard let payload = payloadHandler.consumeData() else { return nil }
+        return AIChatNativeHandoffData.defaultValuesWithPayload(payload)
+    }
+
+    private func setNativeHandoffData(_ payload: AIChatPayload?) {
+        guard let payload else {
+            payloadHandler.reset()
+            return
+        }
+
+        payloadHandler.setData(payload)
     }
 
     private func getAIChatNativePrompt() -> Encodable? {
@@ -63,5 +108,18 @@ extension AIChatMessageHandler {
         }
 
         return prompt
+    }
+
+    private func getAIChatRestorationData() -> Encodable? {
+        chatRestorationDataHandler.getData()
+    }
+
+    private func setAIChatRestorationData(_ data: AIChatRestorationData?) {
+        guard let data else {
+            chatRestorationDataHandler.reset()
+            return
+        }
+
+        chatRestorationDataHandler.setData(data)
     }
 }

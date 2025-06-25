@@ -30,5 +30,6 @@ extension ContentScopeFeatureToggles {
                                                          thirdPartyCredentialsProvider: false,
                                                          unknownUsernameCategorization: true,
                                                          partialFormSaves: true,
-                                                         passwordVariantCategorization: true)
+                                                         passwordVariantCategorization: true,
+                                                         inputFocusApi: true)
 }

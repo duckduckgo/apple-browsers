@@ -19,7 +19,7 @@
 import Foundation
 import Combine
 import Common
-import NetworkProtection
+import VPN
 import NetworkExtension
 import Networking
 import PixelKit

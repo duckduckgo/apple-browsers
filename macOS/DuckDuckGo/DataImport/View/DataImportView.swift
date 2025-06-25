@@ -652,34 +652,3 @@ extension DataImportViewModel {
     .frame(minHeight: 666)
 }
 #endif
-
-private struct ExpandableSection<Content: View>: View {
-    @Binding var isExpanded: Bool
-    let content: () -> Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if !isExpanded {
-                Button(action: { isExpanded = true }) {
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(UserText.importDataImportTypeTitleCollapsed)
-                            Text(UserText.importDataImportTypeSubtitleCollapsed)
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
-                        Image(.plusCircle)
-                            .resizable()
-                            .frame(width: 16, height: 16)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-
-            if isExpanded {
-                content()
-            }
-        }
-    }
-}

@@ -1,5 +1,5 @@
 //
-//  SubscriptionPIRView.swift
+//  SubscriptionPIRMoveToDesktopView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -22,8 +22,8 @@ import Foundation
 import DesignResourcesKit
 import DuckUI
 
-struct SubscriptionPIRView: View {
-        
+struct SubscriptionPIRMoveToDesktopView: View {
+
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
     @StateObject var viewModel = SubscriptionPIRViewModel()

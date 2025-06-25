@@ -19,6 +19,7 @@
 
 import SwiftUI
 import UIKit
+import DataBrokerProtection_iOS
 import DesignResourcesKit
 import Subscription
 
@@ -164,7 +165,11 @@ struct SettingsRootView: View {
     @ViewBuilder func navigationDestinationView(for target: SettingsViewModel.SettingsDeepLinkSection) -> some View {
         switch target {
         case .dbp:
-            SubscriptionPIRView()
+            if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
+                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!)
+            } else {
+                SubscriptionPIRMoveToDesktopView()
+            }
         case .itr:
             SubscriptionITPView()
         case let .subscriptionFlow(redirectURLComponents):

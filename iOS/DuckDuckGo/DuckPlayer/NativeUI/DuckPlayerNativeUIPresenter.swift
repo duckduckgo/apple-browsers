@@ -37,7 +37,7 @@ protocol DuckPlayerNativeUIPresenting {
     var pixelHandler: DuckPlayerPixelFiring.Type { get }
 
     @MainActor func presentPill(for videoID: String, in hostViewController: DuckPlayerHosting, timestamp: TimeInterval?)
-    @MainActor func dismissPill(reset: Bool, animated: Bool, programatic: Bool)
+    @MainActor func dismissPill(reset: Bool, animated: Bool, programatic: Bool, skipTransition: Bool)
     @MainActor func presentDuckPlayer(
         videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: DuckPlayerHosting, title: String?, timestamp: TimeInterval?
     ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>)
@@ -88,7 +88,7 @@ final class DuckPlayerNativeUIPresenter {
     private(set) var containerViewController: UIHostingController<DuckPlayerContainer.Container<AnyView>>?
 
     /// References to the host view and source
-    private(set) weak var hostView: DuckPlayerHosting?
+    internal weak var hostView: DuckPlayerHosting?
     private(set) var source: DuckPlayer.VideoNavigationSource?
     internal var state: DuckPlayerState
 
@@ -115,7 +115,7 @@ final class DuckPlayerNativeUIPresenter {
     private var appSettings: AppSettings
 
     /// DuckPlayer Settings
-    private var duckPlayerSettings: DuckPlayerSettings
+    internal var duckPlayerSettings: DuckPlayerSettings
 
     /// Current height of the OmniBar
     private var omniBarHeight: CGFloat = 0
@@ -382,7 +382,7 @@ final class DuckPlayerNativeUIPresenter {
         containerViewModel = nil
     }
     
-    private func cleanupPlayer() {
+    internal func cleanupPlayer() {
         playerCancellables.removeAll()
         playerViewModel = nil
     }
@@ -494,6 +494,7 @@ final class DuckPlayerNativeUIPresenter {
 
 }
 
+
 extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     
     /// Presents a bottom pill asking the user how they want to open the video
@@ -538,7 +539,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Fire pill impression pixels
         firePillImpressionPixels(for: pillType)
 
-        // If no specific timestamp is provided, use the current stave value
+        // If no specific timestamp is provided, use the current state value
         let timestamp = timestamp ?? state.timestamp ?? 0
 
         // If we already have a container view model, just update the content and show it again
@@ -620,7 +621,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
     /// Dismisses the currently presented entry pill
     @MainActor
-    func dismissPill(reset: Bool = false, animated: Bool = true, programatic: Bool = true) {
+    func dismissPill(reset: Bool = false, animated: Bool = true, programatic: Bool = true, skipTransition: Bool = false) {
         // First reset constraints immediately
         resetWebViewConstraint()
 
@@ -650,6 +651,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Function to handle welcome pill transition
         let handleWelcomePillTransition = { [weak self] in
             guard let self = self,
+                  !skipTransition,
                   wasWelcomePill,
                   let videoID = self.state.videoID,
                   let hostView = self.hostView else { return }
@@ -678,6 +680,12 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: DuckPlayerHosting, title: String?, timestamp: TimeInterval?
     ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
 
+        // Store the host view reference for potential pill re-presentation after dismissal
+        self.hostView = hostViewController
+        
+        // Update state with videoID
+        self.state.videoID = videoID
+        
         // Reset the dismiss count if toast not already presented
         if duckPlayerSettings.pillDismissCount < 3 {
             duckPlayerSettings.pillDismissCount = 0
@@ -700,8 +708,9 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         let duckPlayerView = DuckPlayerView(viewModel: viewModel, webView: webView)
 
         let hostingController = UIHostingController(rootView: duckPlayerView)
-        hostingController.modalPresentationStyle = .overFullScreen
-        hostingController.isModalInPresentation = false
+        hostingController.view.backgroundColor = UIColor.black
+
+        let roundedSheetController = RoundedPageSheetContainerViewController(contentViewController: hostingController)
 
         // Update State
         self.state.hasBeenShown = true
@@ -711,7 +720,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // Subscribe to Navigation Request Publisher
         viewModel.youtubeNavigationRequestPublisher
-            .sink { [weak self, weak hostingController] videoID in
+            .sink { [weak self, weak roundedSheetController] videoID in
                 if source != .youtube {
                     let url: URL = .youtube(videoID)
                     navigationRequest.send(url)
@@ -719,7 +728,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
                 Task { @MainActor in
                     await withCheckedContinuation { continuation in
-                        hostingController?.dismiss(animated: true) {
+                        roundedSheetController?.dismiss(animated: true) {
                             continuation.resume()
                         }
                     }
@@ -737,26 +746,33 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // General Dismiss Publisher
         viewModel.dismissPublisher
             .sink { [weak self] timestamp in
-                guard let self = self else { return }
-                guard let videoID = self.state.videoID, let hostView = self.hostView else { return }
+                guard let self = self,
+                      self.hostView != nil,
+                      self.state.videoID != nil else { return }
+
+                // Update state and settings only when we have a valid hostView
                 self.state.timestamp = timestamp
                 self.duckPlayerSettings.welcomeMessageShown = true
-                
+
                 // Notify DuckPlayer to store this timestamp for re-entry pills
                 self.duckPlayerTimestampUpdate.send(timestamp)
-                
+
                 // Schedule pill presentation after a short delay to ensure view is dismissed
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    guard let self = self,
+                          let hostView = self.hostView,
+                          let currentVideoID = self.state.videoID else { return }
+
+                    self.presentPill(for: currentVideoID, in: hostView, timestamp: timestamp)
                     self.containerViewModel?.show()
                 }
             }
             .store(in: &playerCancellables)
 
-        hostViewController.present(hostingController, animated: true, completion: nil)
+        hostViewController.present(roundedSheetController, animated: true, completion: nil)
 
-        // Dismiss the Pill (but don't reset state as we may need to show it again)
-        dismissPill(reset: false)
+        // Dismiss the Pill immediately (but don't reset state as we may need to show it again)
+        dismissPill(reset: false, animated: false, programatic: true, skipTransition: true)
 
         return (navigationRequest, settingsRequest)
     }

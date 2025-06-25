@@ -87,7 +87,8 @@ struct SettingsAIFeaturesView: View {
                                  isButton: true)
             }
 
-            if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
+            if viewModel.isAiChatEnabledBinding.wrappedValue &&
+                viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
                 Section {
                     SettingsCellView(label: UserText.settingsAIChatExperimentalMainSwitch,
                                      accessory: .toggle(isOn: viewModel.aiChatExperimentalBinding))

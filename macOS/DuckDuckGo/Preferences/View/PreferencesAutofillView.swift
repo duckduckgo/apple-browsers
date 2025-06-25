@@ -103,7 +103,7 @@ extension Preferences {
                     if model.passwordManager != .bitwarden {
                         VStack {
                             Button(UserText.importPasswords) {
-                                model.openImportBrowserDataWindow()
+                                model.openImportPasswordsWindow()
                             }
                             Button(UserText.exportLogins) {
                                 model.openExportLogins()

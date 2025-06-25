@@ -75,6 +75,10 @@ final class AIChatSidebarViewController: NSViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    public func setAIChatPrompt(_ prompt: AIChatNativePrompt) {
+        aiTab.aiChat?.submitAIChatNativePrompt(prompt)
+    }
+
     override func loadView() {
         let container = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.navigationBackgroundColor)
 

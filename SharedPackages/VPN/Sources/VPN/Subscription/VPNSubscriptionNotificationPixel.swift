@@ -58,7 +58,7 @@ public enum VPNSubscriptionNotificationPixel: PixelKitEventV3 {
                 .vpnDisabled(let isSubscriptionActive, let isAuthV2, let sourceObject):
             return [
                 "isSubscriptionActive": "\(isSubscriptionActive.map { String($0) } ?? "unknown")",
-                "version": isAuthV2 ? "v2" : "v1",
+                "authVersion": isAuthV2 ? "v2" : "v1",
                 "notificationObjectClass": Self.sourceClass(from: sourceObject)
             ]
         }

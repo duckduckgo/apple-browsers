@@ -120,6 +120,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210493210455717?focus=true
     case shortHistoryMenu
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210522798790015?focus=true
+    case disableFireAnimation
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -172,7 +175,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .willSoonDropBigSurSupport,
 				.aiChatSidebar,
                 .aiChatTextSummarization,
-                .shortHistoryMenu:
+                .shortHistoryMenu,
+                .disableFireAnimation:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -271,6 +275,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
+        case .disableFireAnimation:
+            return .internalOnly()
         }
     }
 }

@@ -288,11 +288,12 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         privacyConfigManager: PrivacyConfigurationManaging,
         experimentManager: ExperimentCohortsManaging?
     ) {
-//#if DEBUG
-//        assert(!AppVersion.runType.isTests, {
-//            "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
-//        }())
-//#endif
+#if DEBUG
+        let allowDefaultFeatureFlaggerInTests = ProcessInfo.processInfo.environment["UITEST_FEATUREFLAGGER_MODE"] == "1"
+        assert(!AppVersion.runType.isTests || allowDefaultFeatureFlaggerInTests, {
+            "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
+        }())
+#endif
 
         self.internalUserDecider = internalUserDecider
         self.privacyConfigManager = privacyConfigManager
@@ -307,11 +308,12 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         experimentManager: ExperimentCohortsManaging?,
         for: Flag.Type
     ) {
-// #if DEBUG
-//        assert(!AppVersion.runType.isTests, {
-//            "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
-//        }())
-// #endif
+ #if DEBUG
+        let allowDefaultFeatureFlaggerInTests = ProcessInfo.processInfo.environment["UITEST_FEATUREFLAGGER_MODE"] == "1"
+        assert(!AppVersion.runType.isTests || allowDefaultFeatureFlaggerInTests, {
+            "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
+        }())
+ #endif
 
         self.internalUserDecider = internalUserDecider
         self.privacyConfigManager = privacyConfigManager

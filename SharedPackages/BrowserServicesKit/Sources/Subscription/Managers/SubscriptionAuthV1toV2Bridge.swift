@@ -55,13 +55,11 @@ extension SubscriptionAuthV1toV2Bridge {
         try await isFeatureAvailableAndEnabled(feature: feature, cachePolicy: .returnCacheDataElseLoad)
     }
 
-    public func statusAsString() async -> String {
-        let subscriptionStatus: String
-
+    public func isSubscriptionActiveAsString() async -> String {
         if let subscription = try? await getSubscription(cachePolicy: .cacheOnly) {
-            return subscription.isActive ? "active" : "inactive"
+            return String(subscription.isActive)
         } else {
-            return "error"
+            return "unknown"
         }
     }
 }

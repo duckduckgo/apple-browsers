@@ -32,7 +32,7 @@ struct SettingsAIFeaturesView: View {
                 Image(.settingsAIChatHero)
                     .padding(.top, -20)
 
-                Text(UserText.duckAiFeatureName)
+                Text(UserText.settingsAiFeatures)
                     .daxTitle3()
 
                 VStack(spacing: 0) {

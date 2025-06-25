@@ -40,7 +40,7 @@ final class VPNAppEventsHandler {
     private var cancellables = Set<AnyCancellable>()
     private let defaults: UserDefaults
     private let featureGatekeeper: VPNFeatureGatekeeper
-    private let ipcClient: VPNControllerXPCClient
+    private let ipcClient: VPNControllerXPCClientProtocol
     private let loginItemsManager: LoginItemsManaging
     private let pixelKit: PixelKit?
 
@@ -49,7 +49,7 @@ final class VPNAppEventsHandler {
     init(featureGatekeeper: VPNFeatureGatekeeper,
          featureFlagOverridesPublisher: FeatureFlagOverridesPublisher,
          loginItemsManager: LoginItemsManaging,
-         ipcClient: VPNControllerXPCClient = .shared,
+         ipcClient: VPNControllerXPCClientProtocol = VPNControllerXPCClient.shared,
          defaults: UserDefaults = .netP,
          pixelKit: PixelKit? = .shared) {
 

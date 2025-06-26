@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserPromptStore.swift
+//  DefaultBrowserPromptStorage.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -20,16 +20,16 @@
 import Foundation
 
 /// A type that provides read-only access to the Set Default Browser (SAD) prompt storage state.
-public protocol DefaultBrowserPromptStorageReading {
+public protocol DefaultBrowserPromptStorage: AnyObject {
     /// The Unix timestamp of when the most recent modal was shown to the user. It returns `nil` if no modal has been shown yet.
-    var lastModalShownDate: TimeInterval? { get }
+    var lastModalShownDate: TimeInterval? { get set }
     /// The total number of SAD modals that have been shown to the user.
-    var modalShownOccurrences: Int { get }
+    var modalShownOccurrences: Int { get set }
     /// A boolean value indicating whether the user has chosen to permanently dismiss the SAD prompts.
-    var isPromptPermanentlyDismissed: Bool { get }
+    var isPromptPermanentlyDismissed: Bool { get set }
 }
 
-public extension DefaultBrowserPromptStorageReading {
+package extension DefaultBrowserPromptStorage {
 
     /// A boolean value Indicating whether the user has seen at least the first modal.
     var hasSeenFirstModal: Bool {

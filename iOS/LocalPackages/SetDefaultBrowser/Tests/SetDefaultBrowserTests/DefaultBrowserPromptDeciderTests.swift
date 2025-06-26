@@ -31,10 +31,10 @@ final class DefaultBrowserPromptDeciderTests {
     private var userActivityProviderMock = MockDefaultBrowserPromptUserActivityProvider()
     private var defaultBrowserManagerMock = MockDefaultBrowserManager()
     private var dateProviderMock = MockDateProvider()
-    private var sut: DefaultBrowserPromptDecider!
+    private var sut: DefaultBrowserPromptTypeDecider!
 
     func makeSUT(installDate: Date? = nil) {
-        sut = DefaultBrowserPromptDecider(
+        sut = DefaultBrowserPromptTypeDecider(
             featureFlagger: featureFlaggerMock,
             store: storeMock,
             userTypeProvider: userTypeProviderMock,
@@ -79,7 +79,7 @@ final class DefaultBrowserPromptDeciderTests {
     @Test(
         "Check First Modal is Presented When No Modal Have Shown And Installation Date Is >= 1 day",
         arguments: [
-            DefaultBrowserUserType.new,
+            DefaultBrowserPromptUserType.new,
             .returning,
             .existing,
         ],
@@ -87,7 +87,7 @@ final class DefaultBrowserPromptDeciderTests {
             1, 10, 15
         ]
     )
-    func checkFirstPromptIsPresentedForEveryTypeOfUserWhenNoModalHaveShownAndInstallationDateIsGreaterThanOneDay(userType: DefaultBrowserUserType, daysSinceInstall: Int) {
+    func checkFirstPromptIsPresentedForEveryTypeOfUserWhenNoModalHaveShownAndInstallationDateIsGreaterThanOneDay(userType: DefaultBrowserPromptUserType, daysSinceInstall: Int) {
         // GIVEN
         storeMock.lastModalShownDate = nil
         storeMock.modalShownOccurrences = 0
@@ -107,11 +107,11 @@ final class DefaultBrowserPromptDeciderTests {
     @Test(
         "Check Second Modal is Presented For New or Returning User When First Modal Has Shown And Number Of Active Days Is 4",
         arguments: [
-            DefaultBrowserUserType.new,
+            DefaultBrowserPromptUserType.new,
             .returning,
         ]
     )
-    func checkSecondModalIsPresentedForNewAndReturningUserWhenFirstModalHasShownAndNumberOfActiveDaysIsFour(userType: DefaultBrowserUserType) {
+    func checkSecondModalIsPresentedForNewAndReturningUserWhenFirstModalHasShownAndNumberOfActiveDaysIsFour(userType: DefaultBrowserPromptUserType) {
         // GIVEN
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         storeMock.lastModalShownDate = 1750739150 // Tuesday, 24 June 2025 12:00:00 AM (GMT)
@@ -131,10 +131,10 @@ final class DefaultBrowserPromptDeciderTests {
     @Test(
         "Check Second Modal is Not Presented For Existing User When First Modal Has Shown And Number Of Active Days Is 4",
         arguments: [
-            DefaultBrowserUserType.existing
+            DefaultBrowserPromptUserType.existing
         ]
     )
-    func checkSecondModalIsNotPresentedForExistingUserWhenFirstModalHasShownAndNumberOfActiveDaysIsFour(userType: DefaultBrowserUserType) {
+    func checkSecondModalIsNotPresentedForExistingUserWhenFirstModalHasShownAndNumberOfActiveDaysIsFour(userType: DefaultBrowserPromptUserType) {
         // GIVEN
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         storeMock.lastModalShownDate = 1750739150 // Tuesday, 24 June 2025 12:00:00 AM (GMT)
@@ -154,11 +154,11 @@ final class DefaultBrowserPromptDeciderTests {
     @Test(
         "Check Subsequent Modal is Presented For New or Returning User When Second Modal Has Shown And Number Of Active Days Is 14",
         arguments: [
-            DefaultBrowserUserType.new,
+            DefaultBrowserPromptUserType.new,
             .returning,
         ]
     )
-    func checkSubsequentModalIsPresentedForNewAndReturningUserWhenSecondModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserUserType) {
+    func checkSubsequentModalIsPresentedForNewAndReturningUserWhenSecondModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserPromptUserType) {
         // GIVEN
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         storeMock.lastModalShownDate = 1750739150 // Tuesday, 24 June 2025 12:00:00 AM (GMT)
@@ -178,10 +178,10 @@ final class DefaultBrowserPromptDeciderTests {
     @Test(
         "Check Subsequent Modal is Presented For Existing User When First Modal Has Shown And Number Of Active Days Is 14",
         arguments: [
-            DefaultBrowserUserType.existing,
+            DefaultBrowserPromptUserType.existing,
         ]
     )
-    func checkSubsequentModalIsPresentedForExistingUserWhenFirstModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserUserType) {
+    func checkSubsequentModalIsPresentedForExistingUserWhenFirstModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserPromptUserType) {
         // GIVEN
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         storeMock.lastModalShownDate = 1750739150 // Tuesday, 24 June 2025 12:00:00 AM (GMT)
@@ -201,14 +201,14 @@ final class DefaultBrowserPromptDeciderTests {
     @Test(
         "Check Subsequent Modal is Presented For New Or Returning User When Last Modal Has Shown And Number Of Active Days Is 14",
         arguments: [
-            DefaultBrowserUserType.new,
+            DefaultBrowserPromptUserType.new,
             .returning,
         ],
         [
             2,3,4,5,6,7,8,9,10
         ]
     )
-    func checkSubsequentModalIsPresentedForNewOrReturningUserWhenLastModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserUserType, numberOfModalShown: Int) {
+    func checkSubsequentModalIsPresentedForNewOrReturningUserWhenLastModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserPromptUserType, numberOfModalShown: Int) {
         // GIVEN
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         storeMock.lastModalShownDate = 1750739150 // Tuesday, 24 June 2025 12:00:00 AM (GMT)
@@ -228,13 +228,13 @@ final class DefaultBrowserPromptDeciderTests {
     @Test(
         "Check Subsequent Modal is Presented For Existing User When Last Modal Has Shown And Number Of Active Days Is 14",
         arguments: [
-            DefaultBrowserUserType.existing,
+            DefaultBrowserPromptUserType.existing,
         ],
         [
             2,3,4,5,6,7,8,9,10
         ]
     )
-    func checkSubsequentModalIsPresentedForExistingUserWhenLastModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserUserType, numberOfModalShown: Int) {
+    func checkSubsequentModalIsPresentedForExistingUserWhenLastModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserPromptUserType, numberOfModalShown: Int) {
         // GIVEN
         defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
         storeMock.lastModalShownDate = 1750739150 // Tuesday, 24 June 2025 12:00:00 AM (GMT)
@@ -254,11 +254,11 @@ final class DefaultBrowserPromptDeciderTests {
     @Test(
         "Check Full Flow Correctness For New and Returning User",
         arguments: [
-            DefaultBrowserUserType.new,
+            DefaultBrowserPromptUserType.new,
                 .returning
         ]
     )
-    func checkFullFlowCorrectnessForNewAndReturningUser(userType: DefaultBrowserUserType) {
+    func checkFullFlowCorrectnessForNewAndReturningUser(userType: DefaultBrowserPromptUserType) {
         // GIVEN
         featureFlaggerMock.firstModalDelayDays = 1
         featureFlaggerMock.secondModalDelayDays = 4
@@ -313,8 +313,8 @@ final class DefaultBrowserPromptDeciderTests {
         #expect(sut.promptType() == nil)
     }
 
-    @Test("Check Full Flow Correctness For Existing User", arguments: [DefaultBrowserUserType.existing])
-    func checkFullFlowCorrectnessForExistingUser(userType: DefaultBrowserUserType) {
+    @Test("Check Full Flow Correctness For Existing User", arguments: [DefaultBrowserPromptUserType.existing])
+    func checkFullFlowCorrectnessForExistingUser(userType: DefaultBrowserPromptUserType) {
         featureFlaggerMock.firstModalDelayDays = 1
         featureFlaggerMock.secondModalDelayDays = 4
         featureFlaggerMock.subsequentModalRepeatIntervalDays = 14

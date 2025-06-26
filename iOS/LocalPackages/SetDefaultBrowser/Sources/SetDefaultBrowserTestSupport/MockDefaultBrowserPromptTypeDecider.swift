@@ -1,5 +1,5 @@
 //
-//  MockDefaultBrowserPromptStore.swift
+//  MockDefaultBrowserPromptTypeDecider.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,13 +17,17 @@
 //  limitations under the License.
 //
 
-import Foundation
 import SetDefaultBrowserCore
 
-public final class MockDefaultBrowserPromptStore: DefaultBrowserPromptStorage {
-    public init() {}
-    
-    public var lastModalShownDate: TimeInterval?
-    public var modalShownOccurrences: Int = 0
-    public var isPromptPermanentlyDismissed: Bool = false
+package final class MockDefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDeciding {
+    package var promptToReturn: DefaultBrowserPromptType?
+    package private(set) var didCallPromptType: Bool = false
+
+    package init() {}
+
+    package func promptType() -> DefaultBrowserPromptType? {
+        didCallPromptType = true
+        return promptToReturn
+    }
+
 }

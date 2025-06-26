@@ -57,7 +57,6 @@ class SwitchBarTextEntryView: UIView {
         handler.currentToggleState
     }
     private var cancellables = Set<AnyCancellable>()
-    private var isInInitialSelectedState = false
 
     private var heightConstraint: NSLayoutConstraint?
     private var textViewTrailingConstraint: NSLayoutConstraint?
@@ -118,9 +117,6 @@ class SwitchBarTextEntryView: UIView {
         let buttonsView = SwitchBarButtonsView(
             buttonState: currentButtonState,
             onClearTapped: { [weak self] in
-                if self?.isInInitialSelectedState == true {
-                    self?.isInInitialSelectedState = false
-                }
                 self?.handler.clearText()
             }
         )
@@ -199,9 +195,6 @@ class SwitchBarTextEntryView: UIView {
         let buttonsView = SwitchBarButtonsView(
             buttonState: currentButtonState,
             onClearTapped: { [weak self] in
-                if self?.isInInitialSelectedState == true {
-                    self?.isInInitialSelectedState = false
-                }
                 self?.handler.clearText()
             }
         )
@@ -274,16 +267,6 @@ class SwitchBarTextEntryView: UIView {
 
     func selectAllText() {
         textView.selectAll(nil)
-        isInInitialSelectedState = true
-        updateButtonState()
-    }
-
-    // MARK: - Public Methods
-
-    /// Sets the initial selected state where both mic and clear buttons should be visible
-    func setInitialSelectedState(_ isInitialSelected: Bool) {
-        isInInitialSelectedState = isInitialSelected
-        updateButtonState()
     }
 }
 
@@ -297,11 +280,6 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        // Exit initial selected state when user starts typing
-        if isInInitialSelectedState && !text.isEmpty {
-            isInInitialSelectedState = false
-        }
-
         if text == "\n" {
             /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210629837418046?focus=true
             let currentText = textView.text ?? ""

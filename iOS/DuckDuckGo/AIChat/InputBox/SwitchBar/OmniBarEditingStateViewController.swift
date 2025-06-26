@@ -77,7 +77,6 @@ final class OmniBarEditingStateViewController: UIViewController {
     private var navigationActionBarHostingController: UIHostingController<NavigationActionBarView>?
     private var navigationActionBarViewModel: NavigationActionBarViewModel?
     private var actionBarBottomConstraint: NSLayoutConstraint?
-    private var isInInitialSelectedState: Bool = false
 
     internal init(switchBarHandler: any SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
@@ -333,13 +332,6 @@ final class OmniBarEditingStateViewController: UIViewController {
                 self?.handleMicrophoneButtonTapped()
             }
             .store(in: &cancellables)
-
-        switchBarHandler.forceWebSearchPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                // State updates are now handled automatically by the ViewModel
-            }
-            .store(in: &cancellables)
     }
 
     private func handleMicrophoneButtonTapped() {
@@ -348,9 +340,6 @@ final class OmniBarEditingStateViewController: UIViewController {
 
     func setUpForInitialSelectedState() {
         switchBarVC.textEntryViewController.selectAllText()
-        // Enable the initial selected state where both mic and clear buttons are visible
-        switchBarVC.textEntryViewController.textEntryView.setInitialSelectedState(true)
-        isInInitialSelectedState = true
         showSuggestionTray(.favorites)
     }
 

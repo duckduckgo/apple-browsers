@@ -144,7 +144,7 @@ public struct DBPUICommunicationLayer: Subfeature {
         }
 
         // Attempt to get handshake user data, but fallback to a default
-        let userData = delegate?.getHandshakeUserData() ?? DBPUIHandshakeUserData(isAuthenticatedUser: true, isUserEligibleForFreeTrial: false)
+        let userData = delegate?.getHandshakeUserData() ?? DBPUIHandshakeUserData(isAuthenticatedUser: true)
 
         if result.version != Constants.version {
             Logger.dataBrokerProtection.log("Incorrect protocol version presented by UI")

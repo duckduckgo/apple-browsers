@@ -50,7 +50,7 @@ public struct DBPUIHandshakeUserData: Codable, Equatable {
     /// Indicates whether the user is eligible for a subscription free trial.
     public let isUserEligibleForFreeTrial: Bool
 
-    public init(isAuthenticatedUser: Bool, isUserEligibleForFreeTrial: Bool) {
+    public init(isAuthenticatedUser: Bool, isUserEligibleForFreeTrial: Bool = false) {
         self.isAuthenticatedUser = isAuthenticatedUser
         self.isUserEligibleForFreeTrial = isUserEligibleForFreeTrial
     }

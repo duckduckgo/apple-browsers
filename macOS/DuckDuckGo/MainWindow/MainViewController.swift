@@ -167,7 +167,7 @@ final class MainViewController: NSViewController {
             aiChatTabOpener: aiChatTabOpener,
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
-            pixelFiring: PixelKit.shared
+            pixelFiring: pixelFiring
         )
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,

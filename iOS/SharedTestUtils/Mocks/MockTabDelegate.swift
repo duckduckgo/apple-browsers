@@ -152,8 +152,7 @@ extension TabViewController {
             fireproofing: MockFireproofing(),
             tabInteractionStateSource: MockTabInteractionStateSource(),
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
-            featureDiscovery: MockFeatureDiscovery(),
-            subscriptionNavigationDelegate: nil
+            featureDiscovery: MockFeatureDiscovery()
         )
         tab.attachWebView(configuration: .nonPersistent(), andLoadRequest: nil, consumeCookies: false, customWebView: customWebView)
         return tab

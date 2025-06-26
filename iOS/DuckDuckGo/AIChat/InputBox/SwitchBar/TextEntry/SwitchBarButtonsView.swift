@@ -64,14 +64,15 @@ struct SwitchBarButtonsView: View {
         HStack(spacing: Constants.buttonSpacing) {
             Spacer()
 
-            if buttonState.showsMicButton {
-                Button(action: onMicrophoneTapped) {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
-                        .foregroundColor(Color(.systemGray))
-                        .frame(width: Constants.buttonSize, height: Constants.buttonSize)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
+            /// Removed for now while people test the ActionBarView
+//            if buttonState.showsMicButton {
+//                Button(action: onMicrophoneTapped) {
+//                    Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
+//                        .foregroundColor(Color(.systemGray))
+//                        .frame(width: Constants.buttonSize, height: Constants.buttonSize)
+//                }
+//                .buttonStyle(PlainButtonStyle())
+//            }
 
             if buttonState.showsClearButton {
                 Button(action: onClearTapped) {

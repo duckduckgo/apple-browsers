@@ -20,15 +20,22 @@ import Foundation
 import BrowserServicesKit
 import Subscription
 
+protocol SubscriptionTabsShowing {
+    func showTab(with content: Tab.TabContent)
+    func showPreferencesTab(withSelectedPane pane: PreferencePaneIdentifier?)
+}
+
+extension WindowControllersManager: SubscriptionTabsShowing {}
+
 @MainActor
 final class SubscriptionNavigationCoordinator {
 
-    private let windowControllersManager: WindowControllersManagerProtocol
+    private let tabShower: SubscriptionTabsShowing
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
 
-    init(windowControllersManager: WindowControllersManagerProtocol,
+    init(tabShower: SubscriptionTabsShowing,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
-        self.windowControllersManager = windowControllersManager
+        self.tabShower = tabShower
         self.subscriptionManager = subscriptionManager
     }
 }
@@ -38,18 +45,18 @@ final class SubscriptionNavigationCoordinator {
 extension SubscriptionNavigationCoordinator: SubscriptionUserScriptNavigationDelegate {
 
     func navigateToSettings() {
-        windowControllersManager.showPreferencesTab(withSelectedPane: .subscriptionSettings)
+        tabShower.showPreferencesTab(withSelectedPane: .subscriptionSettings)
     }
 
     func navigateToSubscriptionActivation() {
         let url = subscriptionManager.url(for: .activationFlow)
-        windowControllersManager.showTab(with: .subscription(url))
+        tabShower.showTab(with: .subscription(url))
     }
 
     func navigateToSubscriptionPurchase() {
         let url = subscriptionManager.url(for: .purchase)
-            .appendingParameter(name: AttributionParameter.origin,
-                              value: SubscriptionFunnelOrigin.appSettings.rawValue)
-        windowControllersManager.showTab(with: .subscription(url))
+        tabShower.showTab(with: .subscription(url))
     }
 }
+
+

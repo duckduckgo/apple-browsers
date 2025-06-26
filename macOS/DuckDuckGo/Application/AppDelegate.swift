@@ -470,7 +470,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.windowControllersManager = windowControllersManager
 
         let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
-            windowControllersManager: windowControllersManager,
+            tabShower: windowControllersManager,
             subscriptionManager: subscriptionAuthV1toV2Bridge
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator

@@ -293,7 +293,7 @@ jobs:
     name: Create Asana Task
     needs: [unit-tests, shellcheck, release-build]
 
-    if: failure() && github.ref_name == 'main' && github.run_attempt == 1
+    if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && github.event_name != 'workflow_call'
 
     runs-on: ubuntu-latest
 
@@ -314,7 +314,7 @@ jobs:
     name: Close Asana Task
     needs: [unit-tests, shellcheck, release-build]
 
-    if: success() && github.ref_name == 'main' && github.run_attempt > 1
+    if: success() && github.ref_name == 'main' && github.run_attempt > 1 && github.event_name != 'workflow_call'
 
     runs-on: ubuntu-latest
 

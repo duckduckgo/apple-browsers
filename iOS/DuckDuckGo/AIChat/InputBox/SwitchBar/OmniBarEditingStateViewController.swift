@@ -75,6 +75,7 @@ final class OmniBarEditingStateViewController: UIViewController {
     
     // MARK: - Navigation Action Bar
     private var navigationActionBarHostingController: UIHostingController<NavigationActionBarView>?
+    private var navigationActionBarViewModel: NavigationActionBarViewModel?
     private var actionBarBottomConstraint: NSLayoutConstraint?
     private var isInInitialSelectedState: Bool = false
 
@@ -295,9 +296,8 @@ final class OmniBarEditingStateViewController: UIViewController {
                 // Clear initial selected state when text is cleared
                 if let self = self, self.isInInitialSelectedState && currentText.isEmpty {
                     self.isInInitialSelectedState = false
+                    self.navigationActionBarViewModel?.setInitialSelectedState(false)
                 }
-                
-                self?.updateNavigationActionBarState()
             }
             .store(in: &cancellables)
 
@@ -316,7 +316,7 @@ final class OmniBarEditingStateViewController: UIViewController {
                     self.setSuggestionTrayVisibility(.hidden)
                     self.setLogoVisibility(.visible)
                 }
-                self.updateNavigationActionBarState()
+                // State updates are now handled automatically by the ViewModel
             }
             .store(in: &cancellables)
 
@@ -344,7 +344,7 @@ final class OmniBarEditingStateViewController: UIViewController {
         switchBarHandler.forceWebSearchPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.updateNavigationActionBarState()
+                // State updates are now handled automatically by the ViewModel
             }
             .store(in: &cancellables)
     }
@@ -358,8 +358,8 @@ final class OmniBarEditingStateViewController: UIViewController {
         // Enable the initial selected state where both mic and clear buttons are visible
         switchBarVC.textEntryViewController.textEntryView.setInitialSelectedState(true)
         isInInitialSelectedState = true
+        navigationActionBarViewModel?.setInitialSelectedState(true)
         showSuggestionTray(.favorites)
-        updateNavigationActionBarState()
     }
 
     private func installDaxLogoView() {
@@ -387,7 +387,8 @@ final class OmniBarEditingStateViewController: UIViewController {
     }
     
     private func installNavigationActionBar() {
-        let actionBarView = NavigationActionBarView(
+        let viewModel = NavigationActionBarViewModel(
+            switchBarHandler: switchBarHandler,
             onMicrophoneTapped: { [weak self] in
                 self?.handleMicrophoneButtonTapped()
             },
@@ -396,11 +397,11 @@ final class OmniBarEditingStateViewController: UIViewController {
             },
             onSearchTapped: { [weak self] in
                 self?.handleSearchButtonTapped()
-            },
-            onWebSearchToggled: { [weak self] in
-                self?.handleWebSearchToggled()
             }
         )
+        navigationActionBarViewModel = viewModel
+        
+        let actionBarView = NavigationActionBarView(viewModel: viewModel)
         
         let hostingController = UIHostingController(rootView: actionBarView)
         navigationActionBarHostingController = hostingController
@@ -413,27 +414,14 @@ final class OmniBarEditingStateViewController: UIViewController {
         actionBarBottomConstraint = hostingController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
         
         NSLayoutConstraint.activate([
-            hostingController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            hostingController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             actionBarBottomConstraint!
         ])
         
         hostingController.didMove(toParent: self)
         
-        // Update the action bar state initially
-        updateNavigationActionBarState()
-    }
-    
-    private func updateNavigationActionBarState() {
-        guard let actionBarView = navigationActionBarHostingController?.rootView else { return }
-        
-        actionBarView.updateState(
-            isSearchMode: switchBarHandler.currentToggleState == .search,
-            hasText: !switchBarHandler.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-            isWebSearchEnabled: switchBarHandler.forceWebSearch,
-            isVoiceSearchEnabled: switchBarHandler.isVoiceSearchEnabled,
-            isInInitialSelectedState: isInInitialSelectedState
-        )
+        // The action bar state is now automatically managed by the ViewModel
     }
     
     // MARK: - Navigation Action Bar Handlers
@@ -451,9 +439,7 @@ final class OmniBarEditingStateViewController: UIViewController {
         }
     }
     
-    private func handleWebSearchToggled() {
-        switchBarHandler.toggleForceWebSearch()
-    }
+
 }
 
 extension OmniBarEditingStateViewController: AutocompleteViewControllerDelegate {

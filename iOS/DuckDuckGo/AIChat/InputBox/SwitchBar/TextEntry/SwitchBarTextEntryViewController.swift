@@ -183,6 +183,7 @@ class SwitchBarTextEntryViewController: UIViewController {
         ])
 
         updateConstraintsForCurrentMode()
+        actionViewController?.view.isHidden = true
     }
 
     func updateConstraintsForCurrentMode() {

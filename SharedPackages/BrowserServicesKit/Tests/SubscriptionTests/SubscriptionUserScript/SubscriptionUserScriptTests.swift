@@ -34,9 +34,9 @@ final class SubscriptionUserScriptTests: XCTestCase {
 
     func testThatPublicInitializerSetsUpHandlerWithCorrectArguments() throws {
         let subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
-        userScript = SubscriptionUserScript(platform: .ios, 
-                                          subscriptionManager: subscriptionManager, 
-                                          paidAIChatFlagStatusProvider: { false }, 
+        userScript = SubscriptionUserScript(platform: .ios,
+                                          subscriptionManager: subscriptionManager,
+                                          paidAIChatFlagStatusProvider: { false },
                                           navigationDelegate: nil)
         let messageHandler = try XCTUnwrap(userScript.handler as? SubscriptionUserScriptHandler)
         XCTAssertEqual(messageHandler.platform, .ios)

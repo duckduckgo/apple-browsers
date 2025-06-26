@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 
 // MARK: - NavigationActionBarView
 
@@ -81,7 +82,7 @@ struct NavigationActionBarView: View {
     
     private var microphoneButton: some View {
         Button(action: viewModel.onMicrophoneTapped) {
-            Image(systemName: "mic.fill")
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
                 .font(.system(size: 18))
                 .foregroundColor(.primary)
                 .frame(width: Constants.buttonSize, height: Constants.buttonSize)
@@ -111,7 +112,7 @@ struct NavigationActionBarView: View {
     
     private var searchButton: some View {
         Button(action: viewModel.onSearchTapped) {
-            Image(systemName: viewModel.isSearchMode ? "magnifyingglass" : "paperplane.fill")
+            Image(uiImage: viewModel.isSearchMode ? DesignSystemImages.Glyphs.Size16.findSearch : DesignSystemImages.Glyphs.Size16.sendPlane)
                 .font(.system(size: 18))
                 .foregroundColor(.white)
                 .frame(width: Constants.buttonSize, height: Constants.buttonSize)

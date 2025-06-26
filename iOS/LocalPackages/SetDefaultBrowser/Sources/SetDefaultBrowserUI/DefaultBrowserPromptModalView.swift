@@ -92,7 +92,7 @@ private extension DefaultBrowserPromptModalView {
                 Group {
                     Text(UserText.title)
                         .font(.system(size: Metrics.Content.titleFontSize, weight: .bold))
-                        .kerningIfAvailable(Metrics.Content.kerning)
+                        .kerning(Metrics.Content.kerning)
 
                     Text(UserText.message)
                         .font(.system(size: Metrics.Content.messageFontSize))

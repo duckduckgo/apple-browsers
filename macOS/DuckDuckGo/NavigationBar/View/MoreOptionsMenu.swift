@@ -55,10 +55,10 @@ protocol OptionsButtonMenuDelegate: AnyObject {
 
 final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
-    private let submenuBuildingCompleteSubject = PassthroughSubject<Void, Never>()
+    private let submenuBuildingCompleteSubject = CurrentValueSubject<Bool, Never>(false)
     /// Publisher that fires when subscription submenu building is complete
     /// Used for testing to wait for async submenu completion
-    var submenuBuildingComplete: AnyPublisher<Void, Never> {
+    var submenuBuildingComplete: AnyPublisher<Bool, Never> {
         submenuBuildingCompleteSubject.eraseToAnyPublisher()
     }
 
@@ -597,7 +597,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                          moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider,
                                                          featureFlagger: featureFlagger,
                                                          onComplete: { [weak self] in
-                                                             self?.submenuBuildingCompleteSubject.send(())
+                                                             self?.submenuBuildingCompleteSubject.send(true)
                                                          })
             return privacyProItem
         }

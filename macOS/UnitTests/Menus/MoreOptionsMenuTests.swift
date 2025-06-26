@@ -119,14 +119,14 @@ final class MoreOptionsMenuTests: XCTestCase {
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }
 
-    /// Helper method to wait for subscription submenu building to complete
+        /// Helper method to wait for subscription submenu building to complete
     @MainActor
     private func waitForSubscriptionSubmenuBuilding(timeout: TimeInterval = 2.0) async {
         var cancellables = Set<AnyCancellable>()
         let submenuBuilt = expectation(description: "Subscription submenu built")
 
         moreOptionsMenu.submenuBuildingComplete
-            .first()
+            .first { $0 == true }
             .sink { _ in
                 submenuBuilt.fulfill()
             }

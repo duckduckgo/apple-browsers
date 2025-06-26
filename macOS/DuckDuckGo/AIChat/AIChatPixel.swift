@@ -23,6 +23,7 @@ import PixelKit
 /// > Related links:
 /// [Original Pixel Triage](https://app.asana.com/0/69071770703008/1208619053222285/f)
 /// [Omnibar and Settings Pixel Triage](https://app.asana.com/0/1204167627774280/1209885580000745)
+/// [Summarization Pixel Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210636012460969?focus=true)
 
 enum AIChatPixel: PixelKitEventV2 {
 
@@ -59,6 +60,19 @@ enum AIChatPixel: PixelKitEventV2 {
     /// Event Trigger: User clicks in the Omnibar duck.ai button
     case aiChatAddressBarButtonClicked
 
+    // MARK: - Summarization
+
+    /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
+    case aiChatSummarizeText(source: AIChatSummarizationRequest.Source)
+
+    /// Event Trigger: User clicks "Show more" on a (collapsed by default) summarize prompt in Duck.ai tab or sidebar
+    case aiChatSummarizePromptExpanded
+
+    /// Event Trigger: User clicks the website link on a summarize prompt in Duck.ai tab or sidebar
+    case aiChatSummarizeSourceLinkClicked
+
+    // MARK: -
+
     var name: String {
         switch self {
         case .aichatApplicationMenuAppClicked:
@@ -79,11 +93,32 @@ enum AIChatPixel: PixelKitEventV2 {
             return "m_mac_aichat_settings_displayed"
         case .aiChatAddressBarButtonClicked:
             return "m_mac_aichat_addressbar_button_clicked"
+        case .aiChatSummarizeText:
+            return "aichat_summarize_text"
+        case .aiChatSummarizePromptExpanded:
+            return "aichat_summarize_prompt_expanded"
+        case .aiChatSummarizeSourceLinkClicked:
+            return "aichat_summarize_source_link_clicked"
         }
     }
 
     var parameters: [String: String]? {
-        nil
+        switch self {
+        case .aichatApplicationMenuAppClicked,
+                .aichatApplicationMenuFileClicked,
+                .aichatNoRemoteSettingsFound,
+                .aiChatSettingsAddressBarShortcutTurnedOn,
+                .aiChatSettingsAddressBarShortcutTurnedOff,
+                .aiChatSettingsApplicationMenuShortcutTurnedOff,
+                .aiChatSettingsApplicationMenuShortcutTurnedOn,
+                .aiChatSettingsDisplayed,
+                .aiChatAddressBarButtonClicked,
+                .aiChatSummarizePromptExpanded,
+                .aiChatSummarizeSourceLinkClicked:
+            return nil
+        case .aiChatSummarizeText(let source):
+            return ["source": source.rawValue]
+        }
     }
 
     var error: (any Error)? {

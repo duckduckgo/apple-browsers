@@ -292,12 +292,6 @@ final class OmniBarEditingStateViewController: UIViewController {
             .sink { [weak self] currentText in
                 self?.delegate?.onQueryUpdated(currentText)
                 self?.handleQueryUpdate(currentText)
-                
-                // Clear initial selected state when text is cleared
-                if let self = self, self.isInInitialSelectedState && currentText.isEmpty {
-                    self.isInInitialSelectedState = false
-                    self.navigationActionBarViewModel?.setInitialSelectedState(false)
-                }
             }
             .store(in: &cancellables)
 
@@ -316,7 +310,6 @@ final class OmniBarEditingStateViewController: UIViewController {
                     self.setSuggestionTrayVisibility(.hidden)
                     self.setLogoVisibility(.visible)
                 }
-                // State updates are now handled automatically by the ViewModel
             }
             .store(in: &cancellables)
 
@@ -358,7 +351,6 @@ final class OmniBarEditingStateViewController: UIViewController {
         // Enable the initial selected state where both mic and clear buttons are visible
         switchBarVC.textEntryViewController.textEntryView.setInitialSelectedState(true)
         isInInitialSelectedState = true
-        navigationActionBarViewModel?.setInitialSelectedState(true)
         showSuggestionTray(.favorites)
     }
 

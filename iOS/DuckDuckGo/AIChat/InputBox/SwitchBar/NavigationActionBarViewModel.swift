@@ -31,7 +31,6 @@ final class NavigationActionBarViewModel: ObservableObject {
     @Published var hasText: Bool = false
     @Published var isWebSearchEnabled: Bool = false
     @Published var isVoiceSearchEnabled: Bool = true
-    @Published var isInInitialSelectedState: Bool = false
     
     // MARK: - Dependencies
     private let switchBarHandler: SwitchBarHandling
@@ -94,18 +93,8 @@ final class NavigationActionBarViewModel: ObservableObject {
     func handleWebSearchToggle() {
         switchBarHandler.toggleForceWebSearch()
     }
-    
-    func setInitialSelectedState(_ isInitialSelected: Bool) {
-        isInInitialSelectedState = isInitialSelected
-    }
-    
+
     var shouldShowMicButton: Bool {
-        if isInInitialSelectedState && hasText {
-            return true
-        } else if !hasText && isVoiceSearchEnabled {
-            return true
-        } else {
-            return false
-        }
+        isVoiceSearchEnabled
     }
-} 
+}

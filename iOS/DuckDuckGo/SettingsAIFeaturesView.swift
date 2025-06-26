@@ -100,7 +100,7 @@ struct SettingsAIFeaturesView: View {
                 }
             }
 
-        }.applySettingsListModifiers(title: "",
+        }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)
 

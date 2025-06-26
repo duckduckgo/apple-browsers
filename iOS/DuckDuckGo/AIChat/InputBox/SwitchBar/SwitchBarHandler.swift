@@ -23,8 +23,8 @@ import Persistence
 
 // MARK: - TextEntryMode Enum
 public enum TextEntryMode: String, CaseIterable {
-    case search = "search"
-    case aiChat = "aiChat"
+    case search
+    case aiChat
 }
 
 // MARK: - SwitchBarHandling Protocol

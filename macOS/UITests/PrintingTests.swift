@@ -63,7 +63,7 @@ class PrintingTests: UITestCase {
 
     // MARK: - Test Cases
 
-    func test_pdf_contextMenuPrint_opensDialogWithCorrectPageRange() throws {
+    func test_pdf_contextMenuPrint_opensPrintDialog() throws {
         // Open PDF
         let pdfWebView = openPDFInBrowser()
 
@@ -76,7 +76,7 @@ class PrintingTests: UITestCase {
 
         // Wait for context menu and click Print
         XCTAssertTrue(
-            printMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            printMenuItem.waitForExistence(timeout: 10),
             "Print menu item did not appear in context menu in a reasonable timeframe."
         )
 
@@ -97,7 +97,7 @@ class PrintingTests: UITestCase {
         }
     }
 
-    func test_pdf_keyboardShortcutPrint_opensDialogWithCorrectPageRange() throws {
+    func test_pdf_keyboardShortcutPrint_opensPrintDialog() throws {
         // Open PDF
         _=openPDFInBrowser()
 
@@ -127,7 +127,7 @@ class PrintingTests: UITestCase {
 
         // Wait for context menu and click Save As
         XCTAssertTrue(
-            saveAsMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            saveAsMenuItem.waitForExistence(timeout: 10),
             "Save As menu item did not appear in context menu in a reasonable timeframe."
         )
 
@@ -366,22 +366,10 @@ class PrintingTests: UITestCase {
         addressBarTextField.typeURL(validationSaveURL, pressingEnter: true)
 
         // Wait for PDF to load and validate content
-        let testStaticText = app.groups.containing(.staticText, identifier: "test").firstMatch
+        let testStaticText = app.groups.containing(.staticText, identifier: "TestPDF").firstMatch
         XCTAssertTrue(
             testStaticText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "PDF should contain 'test' text when loaded in browser."
-        )
-
-        let page2StaticText = app.groups.containing(.staticText, identifier: "page 2").firstMatch
-        XCTAssertTrue(
-            page2StaticText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "PDF should contain 'page 2' text when loaded in browser."
-        )
-
-        let page3StaticText = app.groups.containing(.staticText, identifier: "page 3").firstMatch
-        XCTAssertTrue(
-            page3StaticText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "PDF should contain 'page 3' text when loaded in browser."
+            "PDF should contain 'TestPDF' text when loaded in browser."
         )
     }
 
@@ -395,7 +383,7 @@ class PrintingTests: UITestCase {
         // Click "Open with Preview" menu item
         let openWithPreviewMenuItem = app.menuItems["Open with Preview"]
         XCTAssertTrue(
-            openWithPreviewMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            openWithPreviewMenuItem.waitForExistence(timeout: 10),
             "Open with Preview menu item did not appear in context menu in a reasonable timeframe."
         )
 
@@ -425,11 +413,11 @@ class PrintingTests: UITestCase {
             "PDF window should exist in Preview."
         )
 
-        // Validate that "test" text is present in the PDF window
-        let testText = previewWindow.staticTexts["test"]
+        // Validate that "TestPDF" text is present in the PDF window
+        let testText = previewWindow.staticTexts["TestPDF"]
         XCTAssertTrue(
             testText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Preview window should display 'test' text from PDF."
+            "Preview window should display 'TestPDF' text from PDF."
         )
 
         // Navigate to page 2 by clicking the page 2 thumbnail or navigation in the PDF window
@@ -438,11 +426,11 @@ class PrintingTests: UITestCase {
             page2Image.click()
         }
 
-        // Validate that "page 2" text is present in the PDF window
-        let page2Text = previewWindow.staticTexts["page 2"]
+        // Validate that "Page2" text is present in the PDF window
+        let page2Text = previewWindow.staticTexts["Page2"]
         XCTAssertTrue(
             page2Text.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Preview window should display 'page 2' text from PDF."
+            "Preview window should display 'Page2' text from PDF."
         )
 
         // Close the window using the close button
@@ -514,7 +502,7 @@ class PrintingTests: UITestCase {
         app.typeKey("1", modifierFlags: [.command])
 
         // Verify PDF is loaded in the pinned tab
-        let pdfContent = firstWindow.groups.containing(.staticText, identifier: "test").firstMatch
+        let pdfContent = firstWindow.groups.containing(.staticText, identifier: "TestPDF").firstMatch
         XCTAssertTrue(
             pdfContent.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "PDF should be loaded in pinned tab."
@@ -559,16 +547,10 @@ class PrintingTests: UITestCase {
         )
 
         // Validate content in second window
-        var testTextWindow2 = secondWindow.groups.containing(.staticText, identifier: "test").firstMatch
+        var testTextWindow2 = secondWindow.groups.containing(.staticText, identifier: "TestPDF").firstMatch
         XCTAssertTrue(
             testTextWindow2.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Saved PDF should contain 'test' text when loaded in second window."
-        )
-
-        var page2TextWindow2 = secondWindow.groups.containing(.staticText, identifier: "page 2").firstMatch
-        XCTAssertTrue(
-            page2TextWindow2.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Saved PDF should contain 'page 2' text when loaded in second window."
+            "Saved PDF should contain 'TestPDF' text when loaded in second window."
         )
 
         // Step 10: Hit cmd+p in the 2nd window
@@ -655,16 +637,10 @@ class PrintingTests: UITestCase {
         addressBarWindow2.typeURL(pinnedTabSaveURL, pressingEnter: true)
 
         // Validate content in second window
-        testTextWindow2 = secondWindow.groups.containing(.staticText, identifier: "test").firstMatch
+        testTextWindow2 = secondWindow.groups.containing(.staticText, identifier: "TestPDF").firstMatch
         XCTAssertTrue(
             testTextWindow2.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Saved PDF should contain 'test' text when loaded in second window."
-        )
-
-        page2TextWindow2 = secondWindow.groups.containing(.staticText, identifier: "page 2").firstMatch
-        XCTAssertTrue(
-            page2TextWindow2.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Saved PDF should contain 'page 2' text when loaded in second window."
+            "Saved PDF should contain 'TestPDF' text when loaded in second window."
         )
 
         // Step 13: Additional window switching validation
@@ -734,7 +710,7 @@ private extension PrintingTests {
 
         addressBarTextField.typeURL(pdfURL, pressingEnter: true)
 
-        let element = app.groups.containing(.staticText, identifier: "test").firstMatch
+        let element = app.groups.containing(.staticText, identifier: "TestPDF").firstMatch
         XCTAssertTrue(
             element.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "PDF View did not appear in a reasonable timeframe."

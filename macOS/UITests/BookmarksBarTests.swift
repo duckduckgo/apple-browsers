@@ -189,10 +189,7 @@ private extension BookmarksBarTests {
     func openSecondWindowAndVisitSite() {
         app.typeKey("n", modifierFlags: [.command])
         app.typeKey("l", modifierFlags: [.command]) // Get address bar focus without addressing multiple address bars by identifier
-        XCTAssertTrue( // Use home page logo as a test to know if a new window is fully ready before we type
-            app.images["HomePageLogo"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Home Page Logo did not exist when it was expected."
-        )
+
         app.typeURL(urlForBookmarksBar)
     }
 

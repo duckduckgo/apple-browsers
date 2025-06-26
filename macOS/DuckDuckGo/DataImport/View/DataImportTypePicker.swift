@@ -30,77 +30,75 @@ struct DataImportTypePicker: View {
     }
 
     var body: some View {
-        // Collapsible section for data type selection
-        expandableSection {
-            VStack(alignment: .leading) {
-                Text(UserText.importDataImportTypeTitleExpanded)
-
-                VStack(alignment: .leading) {
-                    ForEach(DataImport.DataType.allCases, id: \.self) { dataType in
-                        // display all types for a browser disabling unavailable options
-                        if viewModel.importSource.isBrowser
-                            // display only supported types for a non-browser
-                            || viewModel.importSource.supportedDataTypes.contains(dataType) {
-
-                            Toggle(isOn: Binding {
-                                viewModel.selectedDataTypes.contains(dataType)
-                            } set: { isOn in
-                                viewModel.setDataType(dataType, selected: isOn)
-                            }) {
-                                Text(dataType.displayName)
-                            }
-                            .disabled(!viewModel.importSource.supportedDataTypes.contains(dataType))
-
-                            // subtitle
-                            if case .passwords = dataType,
-                               !viewModel.importSource.supportedDataTypes.contains(.passwords) {
-                                Text("\(viewModel.importSource.importSourceName) does not support storing passwords",
-                                     comment: "Data Import disabled checkbox message about a browser (%@) not supporting storing passwords")
-                                .foregroundColor(Color(.disabledControlTextColor))
-                            }
-                        }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                if isDataTypePickerExpanded {
+                    Text(UserText.importDataImportTypeTitleExpanded)
+                } else {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(UserText.importDataImportTypeTitleCollapsed)
+                        Text(UserText.importDataImportTypeSubtitleCollapsed)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
                     }
                 }
-                .padding(.leading, 8)
-                .padding(.trailing, 0)
-                .padding(.vertical, 8)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-                .background(Color.blackWhite3)
-                .cornerRadius(5)
-                .clipShape(RoundedRectangle(cornerRadius: 5))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 5)
-                        .stroke(Color.decorationTertiary, lineWidth: 1)
-                )
+                Spacer()
+                Button(action: {
+                    isDataTypePickerExpanded.toggle()
+                }) {
+                    Image(.chevronCircleRight16)
+                        .resizable()
+                        .frame(width: 16, height: 16)
+                        .rotationEffect(.degrees(isDataTypePickerExpanded ? 90 : 0))
+                        .animation(.easeInOut(duration: 0.2), value: isDataTypePickerExpanded)
+                }
+                .buttonStyle(.plain)
+            }
+            if isDataTypePickerExpanded {
+                pickerBody
             }
         }
     }
 
     @ViewBuilder
-    func expandableSection<Content: View>(content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if !isDataTypePickerExpanded {
-                Button(action: { isDataTypePickerExpanded = true }) {
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(UserText.importDataImportTypeTitleCollapsed)
-                            Text(UserText.importDataImportTypeSubtitleCollapsed)
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
-                        Image(.chevronCircleRight16)
-                            .resizable()
-                            .frame(width: 16, height: 16)
+    var pickerBody: some View {
+        VStack(alignment: .leading) {
+            ForEach(DataImport.DataType.allCases, id: \.self) { dataType in
+                // display all types for a browser disabling unavailable options
+                if viewModel.importSource.isBrowser
+                    // display only supported types for a non-browser
+                    || viewModel.importSource.supportedDataTypes.contains(dataType) {
+
+                    Toggle(isOn: Binding {
+                        viewModel.selectedDataTypes.contains(dataType)
+                    } set: { isOn in
+                        viewModel.setDataType(dataType, selected: isOn)
+                    }) {
+                        Text(dataType.displayName)
+                    }
+                    .disabled(!viewModel.importSource.supportedDataTypes.contains(dataType))
+
+                    // subtitle
+                    if case .passwords = dataType,
+                       !viewModel.importSource.supportedDataTypes.contains(.passwords) {
+                        Text("\(viewModel.importSource.importSourceName) does not support storing passwords",
+                             comment: "Data Import disabled checkbox message about a browser (%@) not supporting storing passwords")
+                        .foregroundColor(Color(.disabledControlTextColor))
                     }
                 }
-                .buttonStyle(.plain)
-            }
-
-            if isDataTypePickerExpanded {
-                content()
             }
         }
+        .padding(.leading, 8)
+        .padding(.trailing, 0)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(Color.blackWhite3)
+        .cornerRadius(5)
+        .clipShape(RoundedRectangle(cornerRadius: 5))
+        .overlay(
+            RoundedRectangle(cornerRadius: 5)
+                .stroke(Color.decorationTertiary, lineWidth: 1)
+        )
     }
 }
 

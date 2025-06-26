@@ -29,14 +29,14 @@ public protocol DefaultBrowserManaging: AnyObject {
 
 @MainActor
 public final class DefaultBrowserManager: DefaultBrowserManaging {
-    private let defaultBrowserInfoStore: DefaultBrowserInfoStorage
-    private let defaultBrowserEventMapper: DefaultBrowserManagerEventMapping
+    private let defaultBrowserInfoStore: DefaultBrowserContextStorage
+    private let defaultBrowserEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>
     private let defaultBrowserChecker: CheckDefaultBrowserService
     private let dateProvider: () -> Date
 
     public init(
-        defaultBrowserInfoStore: DefaultBrowserInfoStorage,
-        defaultBrowserEventMapper: any DefaultBrowserManagerEventMapping,
+        defaultBrowserInfoStore: DefaultBrowserContextStorage,
+        defaultBrowserEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>,
         defaultBrowserChecker: CheckDefaultBrowserService = SystemCheckDefaultBrowserService(),
         dateProvider: @escaping () -> Date = Date.init
     ) {
@@ -57,7 +57,7 @@ public final class DefaultBrowserManager: DefaultBrowserManaging {
             return .success(newInfo: defaultBrowserInfo)
         case let .failure(.maxNumberOfAttemptsExceeded(nextRetryDate)):
             // If there's no previous information saved exit early. This should not happen.
-            guard let storedDefaultBrowserInfo = defaultBrowserInfoStore.defaultBrowserInfo else {
+            guard let storedDefaultBrowserInfo = defaultBrowserInfoStore.defaultBrowserContext else {
                 defaultBrowserEventMapper.fire(.rateLimitReachedNoExistingResultPersisted)
                 return .failure(.rateLimitReached(updatedStoredInfo: nil))
             }
@@ -78,13 +78,13 @@ public final class DefaultBrowserManager: DefaultBrowserManaging {
         }
     }
 
-    private func makeDefaultBrowserInfo(isDefaultBrowser: Bool, lastSuccessfulCheckDate: TimeInterval? = nil, nextRetryAvailableDate: Date? = nil) -> DefaultBrowserInfo {
+    private func makeDefaultBrowserInfo(isDefaultBrowser: Bool, lastSuccessfulCheckDate: TimeInterval? = nil, nextRetryAvailableDate: Date? = nil) -> DefaultBrowserContext {
         let lastSuccessfulCheckDate = lastSuccessfulCheckDate ?? dateProvider().timeIntervalSince1970
         let lastAttemptedCheckDate = dateProvider().timeIntervalSince1970
-        let currentNumberOfTimesChecked = defaultBrowserInfoStore.defaultBrowserInfo.flatMap(\.numberOfTimesChecked) ?? 0
+        let currentNumberOfTimesChecked = defaultBrowserInfoStore.defaultBrowserContext.flatMap(\.numberOfTimesChecked) ?? 0
         let nextRetryAvailableDate = nextRetryAvailableDate?.timeIntervalSince1970
 
-        return DefaultBrowserInfo(
+        return DefaultBrowserContext(
             isDefaultBrowser: isDefaultBrowser,
             lastSuccessfulCheckDate: lastSuccessfulCheckDate,
             lastAttemptedCheckDate: lastAttemptedCheckDate,
@@ -93,7 +93,7 @@ public final class DefaultBrowserManager: DefaultBrowserManaging {
         )
     }
 
-    private func saveDefaultBrowserInfo(_ defaultBrowserInfo: DefaultBrowserInfo) {
-        defaultBrowserInfoStore.defaultBrowserInfo = defaultBrowserInfo
+    private func saveDefaultBrowserInfo(_ defaultBrowserInfo: DefaultBrowserContext) {
+        defaultBrowserInfoStore.defaultBrowserContext = defaultBrowserInfo
     }
 }

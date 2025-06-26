@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserInfoStorage.swift
+//  DefaultBrowserManagerEventMapping.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,6 +17,15 @@
 //  limitations under the License.
 //
 
-public protocol DefaultBrowserInfoStorage: AnyObject {
-    var defaultBrowserInfo: DefaultBrowserInfo? { get set }
+public protocol DefaultBrowserPromptEventMapping<Event> {
+    associatedtype Event
+    func fire(_ event: Event, error: Error?, parameters: [String: String]?, onComplete: @escaping (Error?) -> Void)
+}
+
+public extension DefaultBrowserPromptEventMapping {
+
+    func fire(_ event: Event) {
+        fire(event, error: nil, parameters: nil, onComplete: { _ in })
+    }
+
 }

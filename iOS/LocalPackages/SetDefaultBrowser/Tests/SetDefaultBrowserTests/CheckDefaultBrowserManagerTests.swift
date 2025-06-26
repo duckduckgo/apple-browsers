@@ -28,14 +28,14 @@ final class DefaultBrowserManagerTests {
     let defaultBrowserService: MockCheckDefaultBrowserService!
     let dataProviderMock: MockDateProvider!
     let store: MockDefaultBrowserInfoStore
-    let eventMapperMock: MockDefaultBrowserManagerEventMapping!
+    let eventMapperMock: MockDefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>!
     var sut: DefaultBrowserManager!
 
     init() {
         defaultBrowserService = MockCheckDefaultBrowserService()
         store = MockDefaultBrowserInfoStore()
         dataProviderMock = MockDateProvider()
-        eventMapperMock = MockDefaultBrowserManagerEventMapping()
+        eventMapperMock = MockDefaultBrowserPromptEventMapping()
         sut = DefaultBrowserManager(
             defaultBrowserInfoStore: store,
             defaultBrowserEventMapper: eventMapperMock,
@@ -138,7 +138,7 @@ final class DefaultBrowserManagerTests {
         // GIVEN
         let lastSuccessfulTimestamp: TimeInterval = 1741586108 // March 10, 2025
         let nextRetryTimestamp: TimeInterval = 1773122108000 // March 10, 2026
-        let savedDefaultBrowserInfo = DefaultBrowserInfo(
+        let savedDefaultBrowserInfo = DefaultBrowserContext(
             isDefaultBrowser: true,
             lastSuccessfulCheckDate: lastSuccessfulTimestamp,
             lastAttemptedCheckDate: lastSuccessfulTimestamp,
@@ -146,11 +146,11 @@ final class DefaultBrowserManagerTests {
             nextRetryAvailableDate: nextRetryTimestamp
         )
         defaultBrowserService.resultToReturn = .failure(.maxNumberOfAttemptsExceeded(nextRetryDate: Date(timeIntervalSince1970: nextRetryTimestamp)))
-        store.defaultBrowserInfo = savedDefaultBrowserInfo
+        store.defaultBrowserContext = savedDefaultBrowserInfo
         let dateProviderMock = MockDateProvider(date: Date(timeIntervalSince1970: lastSuccessfulTimestamp))
         dateProviderMock.advanceBy(TimeInterval.days(1))
         let lastAttemptedCheckTimestamp = dateProviderMock.getDate().timeIntervalSince1970
-        let expectedDefaultBrowserInfo = DefaultBrowserInfo(
+        let expectedDefaultBrowserInfo = DefaultBrowserContext(
             isDefaultBrowser: savedDefaultBrowserInfo.isDefaultBrowser,
             lastSuccessfulCheckDate: lastSuccessfulTimestamp,
             lastAttemptedCheckDate: lastAttemptedCheckTimestamp,

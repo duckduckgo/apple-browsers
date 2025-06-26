@@ -20,12 +20,12 @@
 import Foundation
 import SetDefaultBrowserCore
 
-public final class MockDefaultBrowserInfoStore: DefaultBrowserInfoStorage {
+public final class MockDefaultBrowserInfoStore: DefaultBrowserContextStorage {
     public init() {}
 
     public private(set) var didSetDefaultBrowserInfo = false
 
-    public var defaultBrowserInfo: DefaultBrowserInfo? {
+    public var defaultBrowserContext: DefaultBrowserContext? {
         didSet {
             didSetDefaultBrowserInfo = true
         }

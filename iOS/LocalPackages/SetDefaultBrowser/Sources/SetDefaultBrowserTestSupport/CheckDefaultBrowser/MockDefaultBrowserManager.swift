@@ -38,7 +38,7 @@ public extension DefaultBrowserInfoResult {
     static func successful(isDefaultBrowser: Bool) -> DefaultBrowserInfoResult {
         .success(
             newInfo:
-                DefaultBrowserInfo(
+                DefaultBrowserContext(
                     isDefaultBrowser: isDefaultBrowser,
                     lastSuccessfulCheckDate: 1741586108000,
                     lastAttemptedCheckDate: 1741586108000,

@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserManagerEventMapping.swift
+//  DefaultBrowserInfoStorage.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,14 +17,6 @@
 //  limitations under the License.
 //
 
-public protocol DefaultBrowserManagerEventMapping {
-    func fire(_ event: DefaultBrowserManagerDebugEvent, error: Error?, parameters: [String: String]?, onComplete: @escaping (Error?) -> Void)
-}
-
-public extension DefaultBrowserManagerEventMapping {
-
-    func fire(_ event: DefaultBrowserManagerDebugEvent) {
-        fire(event, error: nil, parameters: nil, onComplete: { _ in })
-    }
-
+public protocol DefaultBrowserContextStorage: AnyObject {
+    var defaultBrowserContext: DefaultBrowserContext? { get set }
 }

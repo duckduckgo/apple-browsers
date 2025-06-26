@@ -19,17 +19,17 @@
 
 import Foundation
 
-public struct DefaultBrowserInfo: Codable, Equatable {
+public struct DefaultBrowserContext: Codable, Equatable {
     /// True if DDG browser is set as default, false otherwise.
-    let isDefaultBrowser: Bool
+    public let isDefaultBrowser: Bool
     /// The time interval when we last got a valid result.
-    let lastSuccessfulCheckDate: TimeInterval
+    public let lastSuccessfulCheckDate: TimeInterval
     /// The time interval when we last attempted to check an updated result.
-    let lastAttemptedCheckDate: TimeInterval
+    public let lastAttemptedCheckDate: TimeInterval
     /// Total number of times that the app requested an updated result.
-    let numberOfTimesChecked: Int
+    public let numberOfTimesChecked: Int
     /// The time interval at which the app can next request an updated response.
-    let nextRetryAvailableDate: TimeInterval?
+    public let nextRetryAvailableDate: TimeInterval?
 
     public init(isDefaultBrowser: Bool, lastSuccessfulCheckDate: TimeInterval, lastAttemptedCheckDate: TimeInterval, numberOfTimesChecked: Int, nextRetryAvailableDate: TimeInterval?) {
         self.isDefaultBrowser = isDefaultBrowser
@@ -44,17 +44,17 @@ public enum DefaultBrowserInfoResult: Equatable {
     public enum Failure: Equatable {
         case notSupportedOnCurrentOSVersion
         case unknownError(NSError)
-        case rateLimitReached(updatedStoredInfo: DefaultBrowserInfo?)
+        case rateLimitReached(updatedStoredInfo: DefaultBrowserContext?)
     }
 
     case failure(DefaultBrowserInfoResult.Failure)
-    case success(newInfo: DefaultBrowserInfo)
+    case success(newInfo: DefaultBrowserContext)
 }
 
 public extension DefaultBrowserInfoResult {
 
     @discardableResult
-    func onNewValue(_ f: (DefaultBrowserInfo) -> Void) -> Self {
+    func onNewValue(_ f: (DefaultBrowserContext) -> Void) -> Self {
         if case let .success(newInfo) = self {
             f(newInfo)
         }

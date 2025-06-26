@@ -1,5 +1,5 @@
 //
-//  MockDefaultBrowserManagerEventMapping.swift
+//  MockDefaultBrowserPromptEventMapping.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -19,20 +19,19 @@
 
 import SetDefaultBrowserCore
 
-public final class MockDefaultBrowserManagerEventMapping: DefaultBrowserManagerEventMapping {
+public final class MockDefaultBrowserPromptEventMapping<Event: Equatable>: DefaultBrowserPromptEventMapping {
     public init() {}
 
     public private(set) var didCallFireEvent: Bool = false
-    public private(set) var capturedEvent: DefaultBrowserManagerDebugEvent?
+    public private(set) var capturedEvent: Event?
     public private(set) var capturedError: Error?
     public private(set) var capturedParameters: [String : String]?
 
-    public func fire(_ event: DefaultBrowserManagerDebugEvent, error: (any Error)?, parameters: [String : String]?, onComplete: @escaping ((any Error)?) -> Void) {
+    public func fire(_ event: Event, error: (any Error)?, parameters: [String : String]?, onComplete: @escaping ((any Error)?) -> Void) {
         didCallFireEvent = true
         capturedEvent = event
         capturedParameters = parameters
         capturedError = error
         onComplete(nil)
     }
-
 }

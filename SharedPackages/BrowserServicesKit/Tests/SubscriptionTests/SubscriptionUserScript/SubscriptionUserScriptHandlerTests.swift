@@ -198,15 +198,15 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
     var navigateToSettingsCalled = false
     var navigateToSubscriptionActivationCalled = false
     var navigateToSubscriptionPurchaseCalled = false
-    
+
     func navigateToSettings() {
         navigateToSettingsCalled = true
     }
-    
+
     func navigateToSubscriptionActivation() {
         navigateToSubscriptionActivationCalled = true
     }
-    
+
     func navigateToSubscriptionPurchase() {
         navigateToSubscriptionPurchaseCalled = true
     }

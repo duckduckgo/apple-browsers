@@ -71,9 +71,6 @@ final class PixelKitEventV3Tests: XCTestCase {
             .iPadOS: .init(pixel: TestEventV3.iosEvent, expectedName: "m_iosEvent_ios_tablet"),
         ]
 
-        // Set additional expectations
-
-
         // Test for each expectation
         for test in tests {
             let fireCallbackCalled = expectation(description: "Expect the pixel firing callback to be called")

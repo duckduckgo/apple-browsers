@@ -182,7 +182,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
-        XCTAssertTrue(featureValue.useDuckAiPro)
+        XCTAssertTrue(featureValue.usePaidDuckAi)
     }
 
     func testGetFeatureConfig_WhenPaidAIChatDisabled_ReturnsCorrectConfig() async throws {
@@ -200,7 +200,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
-        XCTAssertFalse(featureValue.useDuckAiPro)
+        XCTAssertFalse(featureValue.usePaidDuckAi)
     }
 
     // MARK: - Feature Selection Tests

@@ -152,7 +152,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        navigationDelegate: mockNavigationDelegate)
         
         let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
-        XCTAssertTrue(response.useDuckAiPro)
+        XCTAssertTrue(response.usePaidDuckAi)
     }
 
     func testWhenPaidAIChatIsDisabledThenGetFeatureConfigReturnsFalse() async throws {
@@ -162,7 +162,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        navigationDelegate: mockNavigationDelegate)
         
         let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
-        XCTAssertFalse(response.useDuckAiPro)
+        XCTAssertFalse(response.usePaidDuckAi)
     }
 
     @MainActor

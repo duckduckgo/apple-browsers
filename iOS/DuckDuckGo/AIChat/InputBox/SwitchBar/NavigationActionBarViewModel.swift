@@ -60,7 +60,6 @@ final class NavigationActionBarViewModel: ObservableObject {
     // MARK: - Private Methods
     
     private func setupBindings() {
-        // Observe toggle state changes
         switchBarHandler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] toggleState in
@@ -68,7 +67,6 @@ final class NavigationActionBarViewModel: ObservableObject {
             }
             .store(in: &cancellables)
         
-        // Observe text changes
         switchBarHandler.currentTextPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] (text: String) in
@@ -76,7 +74,6 @@ final class NavigationActionBarViewModel: ObservableObject {
             }
             .store(in: &cancellables)
         
-        // Observe web search state changes
         switchBarHandler.forceWebSearchPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] forceWebSearch in
@@ -94,22 +91,19 @@ final class NavigationActionBarViewModel: ObservableObject {
     
     // MARK: - Public Methods
     
-    /// Handles web search toggle action (only available in AI Chat mode)
     func handleWebSearchToggle() {
         switchBarHandler.toggleForceWebSearch()
     }
     
-    /// Updates the initial selected state
     func setInitialSelectedState(_ isInitialSelected: Bool) {
         isInInitialSelectedState = isInitialSelected
     }
     
-    /// Computed property for mic button visibility
     var shouldShowMicButton: Bool {
         if isInInitialSelectedState && hasText {
-            return true // initialSelected state shows both mic and clear
+            return true
         } else if !hasText && isVoiceSearchEnabled {
-            return true // micOnly state when no text and voice search enabled
+            return true
         } else {
             return false
         }

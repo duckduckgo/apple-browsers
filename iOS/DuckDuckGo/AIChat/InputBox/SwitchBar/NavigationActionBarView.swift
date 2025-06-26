@@ -42,14 +42,12 @@ struct NavigationActionBarView: View {
     
     var body: some View {
         HStack(spacing: Constants.buttonSpacing) {
-            // Left side - Web search toggle (only in AI Chat mode)
             if !viewModel.isSearchMode {
                 webSearchToggleButton
             }
             
             Spacer()
             
-            // Right side buttons
             HStack(spacing: Constants.buttonSpacing) {
                 if viewModel.shouldShowMicButton {
                     microphoneButton
@@ -128,14 +126,4 @@ struct NavigationActionBarView: View {
     }
     
 
-}
-
-// MARK: - Preview
-#Preview {
-    VStack(spacing: 20) {
-        Text("Preview requires NavigationActionBarViewModel")
-        Text("See OmniBarEditingStateViewController for usage example")
-    }
-    .padding()
-    .background(Color.gray.opacity(0.1))
 }

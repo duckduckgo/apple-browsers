@@ -37,10 +37,13 @@ protocol SubscriptionUserScriptHandling {
     // Returns the feature configuration for the Subscription.
     func getFeatureConfig(params: Any, message: any UserScriptMessage) async throws -> SubscriptionUserScript.DataModel.GetFeatureConfigurationResponse
 
+    // Notification message, Subscription Settings should be open
     func backToSettings(params: Any, message: any UserScriptMessage) async throws -> Encodable?
 
+    // Notification message, Subscription activation flow should be open
     func openSubscriptionActivation(params: Any, message: any UserScriptMessage) async throws -> Encodable?
 
+    // Notification message, Subscription purchase flow should be open
     func openSubscriptionPurchase(params: Any, message: any UserScriptMessage) async throws -> Encodable?
 }
 
@@ -73,7 +76,6 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 
     @MainActor
     func handshake(params: Any, message: any UserScriptMessage) async throws -> DataModel.HandshakeResponse {
-//        navigationDelegate?.navigateToSettings()
         return .init(availableMessages: [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase], platform: platform)
     }
 

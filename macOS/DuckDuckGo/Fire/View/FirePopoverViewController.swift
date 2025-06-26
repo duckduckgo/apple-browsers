@@ -72,7 +72,7 @@ final class FirePopoverViewController: NSViewController {
     @IBOutlet weak var closeBurnerWindowButton: NSButton!
     @IBOutlet weak var burnerWindowButton: NSImageView!
     @IBOutlet weak var fireGraphic: NSImageView!
-    
+
     private var viewModelCancellable: AnyCancellable?
     private var selectedCancellable: AnyCancellable?
 

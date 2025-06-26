@@ -92,7 +92,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     }
 
     func getFeatureConfig(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetFeatureConfigurationResponse {
-        return .init(useDuckAiPro: paidAIChatFlagStatusProvider())
+        return .init(usePaidDuckAi: paidAIChatFlagStatusProvider())
     }
 
     @MainActor
@@ -219,7 +219,7 @@ extension SubscriptionUserScript {
         }
 
         struct GetFeatureConfigurationResponse: Encodable {
-            let useDuckAiPro: Bool
+            let usePaidDuckAi: Bool
         }
 
         struct GetAuthAccessTokenResponse: Encodable {

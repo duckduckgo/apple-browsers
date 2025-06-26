@@ -72,6 +72,11 @@ final class OmniBarEditingStateViewController: UIViewController {
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     private var topSwitchBarConstraint: NSLayoutConstraint?
+    
+    // MARK: - Navigation Action Bar
+    private var navigationActionBarHostingController: UIHostingController<NavigationActionBarView>?
+    private var actionBarBottomConstraint: NSLayoutConstraint?
+    private var isInInitialSelectedState: Bool = false
 
     internal init(switchBarHandler: any SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
@@ -92,6 +97,7 @@ final class OmniBarEditingStateViewController: UIViewController {
         installSwitchBarVC()
         installSuggestionsTray()
         installDaxLogoView()
+        installNavigationActionBar()
         setupKeyboardNotifications()
 
         self.view.backgroundColor = .clear
@@ -285,6 +291,13 @@ final class OmniBarEditingStateViewController: UIViewController {
             .sink { [weak self] currentText in
                 self?.delegate?.onQueryUpdated(currentText)
                 self?.handleQueryUpdate(currentText)
+                
+                // Clear initial selected state when text is cleared
+                if let self = self, self.isInInitialSelectedState && currentText.isEmpty {
+                    self.isInInitialSelectedState = false
+                }
+                
+                self?.updateNavigationActionBarState()
             }
             .store(in: &cancellables)
 
@@ -303,6 +316,7 @@ final class OmniBarEditingStateViewController: UIViewController {
                     self.setSuggestionTrayVisibility(.hidden)
                     self.setLogoVisibility(.visible)
                 }
+                self.updateNavigationActionBarState()
             }
             .store(in: &cancellables)
 
@@ -327,6 +341,12 @@ final class OmniBarEditingStateViewController: UIViewController {
             }
             .store(in: &cancellables)
 
+        switchBarHandler.forceWebSearchPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateNavigationActionBarState()
+            }
+            .store(in: &cancellables)
     }
 
     private func handleMicrophoneButtonTapped() {
@@ -337,7 +357,9 @@ final class OmniBarEditingStateViewController: UIViewController {
         switchBarVC.textEntryViewController.selectAllText()
         // Enable the initial selected state where both mic and clear buttons are visible
         switchBarVC.textEntryViewController.textEntryView.setInitialSelectedState(true)
+        isInInitialSelectedState = true
         showSuggestionTray(.favorites)
+        updateNavigationActionBarState()
     }
 
     private func installDaxLogoView() {
@@ -362,6 +384,75 @@ final class OmniBarEditingStateViewController: UIViewController {
         hostingController.didMove(toParent: self)
         
         view.sendSubviewToBack(hostingController.view)
+    }
+    
+    private func installNavigationActionBar() {
+        let actionBarView = NavigationActionBarView(
+            onMicrophoneTapped: { [weak self] in
+                self?.handleMicrophoneButtonTapped()
+            },
+            onNewLineTapped: { [weak self] in
+                self?.handleNewLineButtonTapped()
+            },
+            onSearchTapped: { [weak self] in
+                self?.handleSearchButtonTapped()
+            },
+            onWebSearchToggled: { [weak self] in
+                self?.handleWebSearchToggled()
+            }
+        )
+        
+        let hostingController = UIHostingController(rootView: actionBarView)
+        navigationActionBarHostingController = hostingController
+        
+        hostingController.view.backgroundColor = .clear
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        
+        actionBarBottomConstraint = hostingController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
+        
+        NSLayoutConstraint.activate([
+            hostingController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            hostingController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            actionBarBottomConstraint!
+        ])
+        
+        hostingController.didMove(toParent: self)
+        
+        // Update the action bar state initially
+        updateNavigationActionBarState()
+    }
+    
+    private func updateNavigationActionBarState() {
+        guard let actionBarView = navigationActionBarHostingController?.rootView else { return }
+        
+        actionBarView.updateState(
+            isSearchMode: switchBarHandler.currentToggleState == .search,
+            hasText: !switchBarHandler.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            isWebSearchEnabled: switchBarHandler.forceWebSearch,
+            isVoiceSearchEnabled: switchBarHandler.isVoiceSearchEnabled,
+            isInInitialSelectedState: isInInitialSelectedState
+        )
+    }
+    
+    // MARK: - Navigation Action Bar Handlers
+    
+    private func handleNewLineButtonTapped() {
+        let currentText = switchBarHandler.currentText
+        let newText = currentText + "\n"
+        switchBarHandler.updateCurrentText(newText)
+    }
+    
+    private func handleSearchButtonTapped() {
+        let currentText = switchBarHandler.currentText
+        if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            switchBarHandler.submitText(currentText)
+        }
+    }
+    
+    private func handleWebSearchToggled() {
+        switchBarHandler.toggleForceWebSearch()
     }
 }
 
@@ -497,6 +588,9 @@ extension OmniBarEditingStateViewController {
 
         let keyboardAdjustment = adjustedKeyboardHeight / 2
         logoCenterYConstraint?.constant = Constants.logoOffset - keyboardAdjustment
+        
+        // Adjust action bar position above keyboard
+        actionBarBottomConstraint?.constant = -(keyboardHeight - safeAreaInsets.bottom + 16)
 
         UIView.animate(
             withDuration: duration,
@@ -516,6 +610,9 @@ extension OmniBarEditingStateViewController {
 
         let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRawNSN.uintValue)
         logoCenterYConstraint?.constant = Constants.logoOffset
+        
+        // Reset action bar position to bottom
+        actionBarBottomConstraint?.constant = -16
 
         UIView.animate(
             withDuration: duration,

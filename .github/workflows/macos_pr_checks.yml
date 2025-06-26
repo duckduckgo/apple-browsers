@@ -138,6 +138,14 @@ jobs:
       pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
     steps:
+    - name: Print if workflow call
+      run: |
+        if [[ ${{ github.workflow_ref != '' && github.event.inputs != null }} ]]; then
+          echo "workflow_call"
+        else
+          echo "not workflow_call"
+        fi
+
     - name: Register SSH key for certificates repository access
       uses: webfactory/ssh-agent@v0.9.1
       with:

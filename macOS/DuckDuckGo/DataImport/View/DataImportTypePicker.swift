@@ -30,67 +30,32 @@ struct DataImportTypePicker: View {
     }
 
     var body: some View {
-        if Application.appDelegate.featureFlagger.isFeatureOn(.oneWayImportTypePickerExpansion) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top) {
-                    if isDataTypePickerExpanded {
-                        Text(UserText.importDataImportTypeTitleExpanded)
-                    } else {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(UserText.importDataImportTypeTitleCollapsed)
-                            Text(UserText.importDataImportTypeSubtitleCollapsed)
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    Spacer()
-                    Button(action: {
-                        isDataTypePickerExpanded.toggle()
-                    }) {
-                        Image(.chevronCircleRight16)
-                            .resizable()
-                            .frame(width: 16, height: 16)
-                            .rotationEffect(.degrees(isDataTypePickerExpanded ? 90 : 0))
-                            .animation(.easeInOut(duration: 0.2), value: isDataTypePickerExpanded)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isDataTypePickerExpanded)
-                    .if(isDataTypePickerExpanded) {
-                        $0.hidden()
-                    }
-                }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
                 if isDataTypePickerExpanded {
-                    pickerBody
+                    Text(UserText.importDataImportTypeTitleExpanded)
+                } else {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(UserText.importDataImportTypeTitleCollapsed)
+                        Text(UserText.importDataImportTypeSubtitleCollapsed)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                    }
                 }
+                Spacer()
+                Button(action: {
+                    isDataTypePickerExpanded.toggle()
+                }) {
+                    Image(.chevronCircleRight16)
+                        .resizable()
+                        .frame(width: 16, height: 16)
+                        .rotationEffect(.degrees(isDataTypePickerExpanded ? 90 : 0))
+                        .animation(.easeInOut(duration: 0.2), value: isDataTypePickerExpanded)
+                }
+                .buttonStyle(.plain)
             }
-        } else {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top) {
-                    if isDataTypePickerExpanded {
-                        Text(UserText.importDataImportTypeTitleExpanded)
-                    } else {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(UserText.importDataImportTypeTitleCollapsed)
-                            Text(UserText.importDataImportTypeSubtitleCollapsed)
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    Spacer()
-                    Button(action: {
-                        isDataTypePickerExpanded.toggle()
-                    }) {
-                        Image(.chevronCircleRight16)
-                            .resizable()
-                            .frame(width: 16, height: 16)
-                            .rotationEffect(.degrees(isDataTypePickerExpanded ? 90 : 0))
-                            .animation(.easeInOut(duration: 0.2), value: isDataTypePickerExpanded)
-                    }
-                    .buttonStyle(.plain)
-                }
-                if isDataTypePickerExpanded {
-                    pickerBody
-                }
+            if isDataTypePickerExpanded {
+                pickerBody
             }
         }
     }

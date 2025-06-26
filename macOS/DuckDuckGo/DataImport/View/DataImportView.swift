@@ -246,8 +246,12 @@ struct DataImportView: ModalView {
         }
         .frame(idealWidth: .infinity, maxWidth: .infinity, alignment: .topLeading)
         .padding(12)
-        .background(Color.blackWhite1)
-        .roundedBorder()
+        .background(Color.surfaceSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.decorationTertiary, lineWidth: 1)
+        )
     }
 
     private var importSourceDataTitle: some View {

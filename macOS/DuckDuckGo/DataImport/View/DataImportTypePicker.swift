@@ -67,6 +67,11 @@ struct DataImportTypePicker: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .background(Color.blackWhite3)
                 .cornerRadius(5)
+                .clipShape(RoundedRectangle(cornerRadius: 5))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(Color.decorationTertiary, lineWidth: 1)
+                )
             }
         }
     }

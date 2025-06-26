@@ -147,6 +147,9 @@ final class TabViewModel {
         if case .url(_, credential: _, source: .pendingStateRestoration) = tab.content {
             updateAddressBarStrings()
         }
+        
+        // Set initial favicon based on current tab content
+        updateFavicon()
     }
 
     private func subscribeToUrl() {

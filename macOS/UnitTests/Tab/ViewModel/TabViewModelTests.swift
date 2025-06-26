@@ -231,7 +231,7 @@ final class TabViewModelTests: XCTestCase {
 
         tabViewModel.$favicon.debounce(for: 0.1, scheduler: RunLoop.main).sink { favicon in
             guard favicon != nil else { return }
-            if favicon == .homeFavicon,
+            if favicon?.pngData == NSImage.homeFavicon.pngData,
                 !fulfilled {
                 faviconExpectation.fulfill()
                 fulfilled = true

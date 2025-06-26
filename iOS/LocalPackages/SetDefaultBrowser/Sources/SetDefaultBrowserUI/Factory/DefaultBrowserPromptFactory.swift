@@ -43,7 +43,6 @@ public enum DefaultBrowserPromptFactory {
 
         let userActivityProvider = DefaultBrowsePromptUserActivityMonitor(
             store: userActivityStore,
-            maxDaysToKeep: max(featureFlagger.firstModalDelayDays, featureFlagger.secondModalDelayDays, featureFlagger.subsequentModalRepeatIntervalDays)
         )
 
         let defaultBrowserManager = DefaultBrowserManager(
@@ -65,7 +64,6 @@ public enum DefaultBrowserPromptFactory {
             promptStore: promptActivityStore,
             activityStore: userActivityStore,
             promptTypeDecider: promptTypeDecider,
-            settingsURLString: UIApplication.openSettingsURLString,
             urlOpener: UIApplication.shared,
             eventMapper: promptUserInteractionEventMapper
         )

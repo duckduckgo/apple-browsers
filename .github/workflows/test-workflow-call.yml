@@ -2,8 +2,16 @@ name: Test Workflow Call
 
 on:
   push:
+  workflow_call:
+
 
 jobs:
+  test_workflow_call:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test workflow_ref
+        run: echo "${{ github.workflow_ref }}"
+
   run_tests:
 
     name: Run Tests

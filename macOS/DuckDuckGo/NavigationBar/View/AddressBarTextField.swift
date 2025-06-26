@@ -319,11 +319,14 @@ final class AddressBarTextField: NSTextField {
         switch suggestion {
         case .bookmark(_, _, let isFavorite, _):
             PixelKit.fire(NavigationEngagementPixel.navigateToBookmark(source: .suggestion, isFavorite: isFavorite))
+            PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .suggestion))
         case .historyEntry,
                 .website:
             PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .suggestion))
+        case .openTab:
+            PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .newTab))
         case .none:
-            // Fire pixel for direct URL entry (not search phrases)
+            // Fire engagement pixel for direct URL entry (not search phrases)
             if URL.makeURL(from: stringValueWithoutSuffix) != nil {
                 PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .addressBar))
             }

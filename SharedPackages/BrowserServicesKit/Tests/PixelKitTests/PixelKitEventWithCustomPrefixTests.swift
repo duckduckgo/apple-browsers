@@ -1,5 +1,5 @@
 //
-//  PixelKitEventV3Tests.swift
+//  PixelKitEventWithCustomPrefixTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,9 +20,9 @@ import XCTest
 @testable import PixelKit
 import os.log
 
-final class PixelKitEventV3Tests: XCTestCase {
+final class PixelKitEventWithCustomPrefixTests: XCTestCase {
 
-    private enum TestEventV3: String, PixelKitEventV3 {
+    enum TestEvent: String, PixelKitEventV2, PixelKitEventWithCustomPrefix {
         /// Both test events are the same but the macOS one adds the "mac" prefix, since prefixes aren't
         /// centrally managed anymore.
         case macEvent
@@ -55,20 +55,20 @@ final class PixelKitEventV3Tests: XCTestCase {
     }
 
     struct PixelNameTest {
-        let pixel: PixelKitEventV3
+        let event: TestEvent
         let expectedName: String
     }
 
     /// Tests firing a sample V3 pixel and ensures the pixel name is correct
     ///
-    func testFiringV3Pixel() {
+    func testFiringPixelWithCustomPrefix() {
         // Prepare tests
         let userDefaults = UserDefaults(suiteName: "testFiringASamplePixel-\(UUID().uuidString))")!
         let tests: [PixelKit.Source: PixelNameTest] = [
-            .macDMG: .init(pixel: TestEventV3.macEvent, expectedName: "m_mac_macEvent"),
-            .macStore: .init(pixel: TestEventV3.macEvent, expectedName: "m_mac_macEvent"),
-            .iOS: .init(pixel: TestEventV3.iosEvent, expectedName: "m_iosEvent_ios_phone"),
-            .iPadOS: .init(pixel: TestEventV3.iosEvent, expectedName: "m_iosEvent_ios_tablet"),
+            .macDMG: .init(event: TestEvent.macEvent, expectedName: "m_mac_macEvent"),
+            .macStore: .init(event: TestEvent.macEvent, expectedName: "m_mac_macEvent"),
+            .iOS: .init(event: TestEvent.iosEvent, expectedName: "m_iosEvent_ios_phone"),
+            .iPadOS: .init(event: TestEvent.iosEvent, expectedName: "m_iosEvent_ios_tablet"),
         ]
 
         // Test for each expectation
@@ -87,7 +87,7 @@ final class PixelKitEventV3Tests: XCTestCase {
             }
 
             // Run test
-            pixelKit.fire(test.value.pixel)
+            pixelKit.fire(test.value.event)
 
             wait(for: [fireCallbackCalled], timeout: 0.5)
         }

@@ -1,5 +1,5 @@
 //
-//  PixelKitEventV3.swift
+//  PixelKitEventWithCustomPrefix.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -22,6 +22,6 @@ import Foundation
 ///
 /// This allows us to introduce support for new features without having to immediately migrate every other pixel to it.
 ///
-public protocol PixelKitEventV3: PixelKitEventV2 {
+public protocol PixelKitEventWithCustomPrefix {
     var namePrefix: String { get }
 }

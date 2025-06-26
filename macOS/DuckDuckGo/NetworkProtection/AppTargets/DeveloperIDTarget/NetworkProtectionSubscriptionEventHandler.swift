@@ -49,7 +49,7 @@ final class NetworkProtectionSubscriptionEventHandler {
         Task {
             let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
             Task {
-                await handleEntitlementsChange(hasEntitlements: hasEntitlement, sourceObject: subscriptionManager)
+                await handleEntitlementsChange(hasEntitlements: hasEntitlement, source: .clientCheck(sourceObject: self))
             }
 
             NotificationCenter.default
@@ -71,31 +71,31 @@ final class NetworkProtectionSubscriptionEventHandler {
                     }
 
                     Task {
-                        await self.handleEntitlementsChange(hasEntitlements: hasEntitlements, sourceObject: notification.object)
+                        await self.handleEntitlementsChange(hasEntitlements: hasEntitlements, source: .notification(sourceObject: notification.object))
                     }
                 }
                 .store(in: &cancellables)
         }
     }
 
-    private func handleEntitlementsChange(hasEntitlements: Bool, sourceObject: Any?) async {
+    private func handleEntitlementsChange(hasEntitlements: Bool, source: VPNSubscriptionNotificationPixel.Source) async {
         let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
         if hasEntitlements {
             PixelKit.fire(
-                VPNSubscriptionNotificationPixel.vpnEnabled(
+                VPNSubscriptionNotificationPixel.vpnFeatureEnabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    sourceObject: sourceObject),
+                    source: source),
                 frequency: .dailyAndCount)
             UserDefaults.netP.networkProtectionEntitlementsExpired = false
         } else {
             PixelKit.fire(
-                VPNSubscriptionNotificationPixel.vpnDisabled(
+                VPNSubscriptionNotificationPixel.vpnFeatureDisabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    sourceObject: sourceObject),
+                    source: source),
                 frequency: .dailyAndCount)
             await tunnelController.stop()
             UserDefaults.netP.networkProtectionEntitlementsExpired = true
@@ -132,7 +132,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                 VPNSubscriptionNotificationPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    sourceObject: notification.object),
+                    source: .notification(sourceObject: notification.object)),
                 frequency: .dailyAndCount)
             userDefaults.networkProtectionEntitlementsExpired = false
         }
@@ -149,7 +149,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                 VPNSubscriptionNotificationPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    sourceObject: notification.object),
+                    source: .notification(sourceObject: notification.object)),
                 frequency: .dailyAndCount)
 
             try? await vpnUninstaller.uninstall(removeSystemExtension: false, showNotification: true)

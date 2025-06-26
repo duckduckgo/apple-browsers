@@ -19,19 +19,24 @@
 import PixelKit
 import Subscription
 
-public enum VPNSubscriptionNotificationPixel: PixelKitEventV3 {
-    case vpnEnabled(isSubscriptionActive: Bool?,
+public enum VPNSubscriptionNotificationPixel: PixelKitEventV2, PixelKitEventWithCustomPrefix {
+    case vpnFeatureEnabled(isSubscriptionActive: Bool?,
                     isAuthV2Enabled: Bool,
-                    sourceObject: Any?)
-    case vpnDisabled(isSubscriptionActive: Bool?,
+                    source: Source)
+    case vpnFeatureDisabled(isSubscriptionActive: Bool?,
                      isAuthV2Enabled: Bool,
-                     sourceObject: Any?)
+                     source: Source)
     case signedIn(isSubscriptionActive: Bool?,
                   isAuthV2Enabled: Bool,
-                  sourceObject: Any?)
+                  source: Source)
     case signedOut(isSubscriptionActive: Bool?,
                    isAuthV2Enabled: Bool,
-                   sourceObject: Any?)
+                   source: Source)
+
+    public enum Source {
+        case clientCheck(sourceObject: Any?)
+        case notification(sourceObject: Any?)
+    }
 
     public var namePrefix: String {
 #if os(macOS)
@@ -47,23 +52,23 @@ public enum VPNSubscriptionNotificationPixel: PixelKitEventV3 {
             return "signed_in"
         case .signedOut:
             return "signed_out"
-        case .vpnEnabled:
-            return "vpn_enabled"
-        case .vpnDisabled:
-            return "vpn_disabled"
+        case .vpnFeatureEnabled:
+            return "vpn_feature_enabled"
+        case .vpnFeatureDisabled:
+            return "vpn_feature_disabled"
         }
     }
 
     public var parameters: [String: String]? {
         switch self {
-        case .signedIn(let isSubscriptionActive, let isAuthV2, let sourceObject),
-                .signedOut(let isSubscriptionActive, let isAuthV2, let sourceObject),
-                .vpnEnabled(let isSubscriptionActive, let isAuthV2, let sourceObject),
-                .vpnDisabled(let isSubscriptionActive, let isAuthV2, let sourceObject):
+        case .signedIn(let isSubscriptionActive, let isAuthV2, let source),
+                .signedOut(let isSubscriptionActive, let isAuthV2, let source),
+                .vpnFeatureEnabled(let isSubscriptionActive, let isAuthV2, let source),
+                .vpnFeatureDisabled(let isSubscriptionActive, let isAuthV2, let source):
 
             let isSubscriptionActiveString = {
                 guard let isSubscriptionActive else {
-                    return "unknown"
+                    return "no_subscription"
                 }
 
                 return String(isSubscriptionActive)
@@ -72,7 +77,8 @@ public enum VPNSubscriptionNotificationPixel: PixelKitEventV3 {
             return [
                 "isSubscriptionActive": isSubscriptionActiveString,
                 "authVersion": isAuthV2 ? "v2" : "v1",
-                "notificationObjectClass": Self.sourceClass(from: sourceObject)
+                "trigger": Self.trigger(from: source),
+                "notificationObjectClass": Self.sourceClass(from: source)
             ]
         }
     }
@@ -81,22 +87,24 @@ public enum VPNSubscriptionNotificationPixel: PixelKitEventV3 {
         nil
     }
 
-    static func sourceClass(from sourceObject: Any?) -> String {
-        guard let sourceObject else {
-            return "missing"
+    static func trigger(from source: Source) -> String {
+        switch source {
+        case .clientCheck:
+            return "clientCheck"
+        case .notification:
+            return "notification"
         }
+    }
 
-        switch sourceObject {
-        case is DefaultAccountManager:
-            return "DefaultAccountManager"
-        case is SubscriptionEndpointServiceV2:
-            return "SubscriptionEndpointServiceV2"
-        case is DefaultSubscriptionManagerV2:
-            return "DefaultSubscriptionManagerV2"
-        case is SubscriptionAuthV1toV2Bridge:
-            return "SubscriptionAuthV1toV2Bridge"
-        default:
-            return "Unknown - add class!"
+    static func sourceClass(from source: Source) -> String {
+        switch source {
+        case .clientCheck(let sourceObject),
+                .notification(let sourceObject):
+            guard let sourceObject else {
+                return "nil"
+            }
+
+            return String(describing: sourceObject.self)
         }
     }
 }

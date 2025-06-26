@@ -50,7 +50,6 @@ struct DataImportTypePicker: View {
                         .resizable()
                         .frame(width: 16, height: 16)
                         .rotationEffect(.degrees(isDataTypePickerExpanded ? 90 : 0))
-                        .animation(.easeInOut(duration: 0.2), value: isDataTypePickerExpanded)
                 }
                 .buttonStyle(.plain)
             }

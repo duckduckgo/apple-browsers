@@ -24,6 +24,11 @@ on:
         description: "Branch name"
         required: false
         type: string
+      skip-asana:
+        description: "Skip Asana task creation on tests failure"
+        required: false
+        type: boolean
+        default: true
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -483,7 +488,7 @@ jobs:
     name: Create Asana Task
     needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
 
-    if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && github.event_name != 'workflow_call'
+    if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
 
     runs-on: ubuntu-latest
 
@@ -504,7 +509,7 @@ jobs:
     name: Close Asana Task
     needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
 
-    if: success() && github.ref_name == 'main' && github.run_attempt > 1 && github.event_name != 'workflow_call'
+    if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true
 
     runs-on: ubuntu-latest
 

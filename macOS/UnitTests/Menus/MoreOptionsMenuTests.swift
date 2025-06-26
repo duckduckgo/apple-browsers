@@ -119,6 +119,22 @@ final class MoreOptionsMenuTests: XCTestCase {
         moreOptionsMenu.actionDelegate = capturingActionDelegate
     }
 
+        /// Helper method to wait for subscription submenu building to complete
+    @MainActor
+    private func waitForSubscriptionSubmenuBuilding(timeout: TimeInterval = 2.0) async {
+        var cancellables = Set<AnyCancellable>()
+        let submenuBuilt = expectation(description: "Subscription submenu built")
+
+        moreOptionsMenu.submenuBuildingComplete
+            .first { $0 == true }
+            .sink { _ in
+                submenuBuilt.fulfill()
+            }
+            .store(in: &cancellables)
+
+        await fulfillment(of: [submenuBuilt], timeout: timeout)
+    }
+
     // MARK: - Subscription & Freemium
 
     private func mockAuthentication() {
@@ -297,27 +313,11 @@ final class MoreOptionsMenuTests: XCTestCase {
         // When
         let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
         XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
-        // Give the async menu building time to complete
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+
+        await waitForSubscriptionSubmenuBuilding()
         let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
 
         // Then
-        // Wait for the async menu building to complete
-        let expectation = XCTestExpectation(description: "Wait for paid AI chat menu item")
-
-        func checkForMenuItem() {
-            if subscriptionSubmenu.items.first(where: { $0.title == UserText.paidAIChat }) != nil {
-                expectation.fulfill()
-            } else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    checkForMenuItem()
-                }
-            }
-        }
-
-        checkForMenuItem()
-        await fulfillment(of: [expectation], timeout: 2.0)
-
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
         XCTAssertNotNil(paidAIChatItem, "Paid AI Chat item should appear in subscription submenu when user has entitlement and feature flag is enabled")
     }
@@ -333,14 +333,11 @@ final class MoreOptionsMenuTests: XCTestCase {
         // When
         let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
         XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
-        // Give the async menu building time to complete
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+
+        await waitForSubscriptionSubmenuBuilding()
         let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
 
         // Then
-        // Wait a moment for async menu building, then verify item is NOT present
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
         XCTAssertNil(paidAIChatItem, "Paid AI Chat item should not appear when feature flag is disabled")
     }
@@ -356,12 +353,11 @@ final class MoreOptionsMenuTests: XCTestCase {
         // When
         let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
         XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
+
+        await waitForSubscriptionSubmenuBuilding()
         let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
 
         // Then
-        // Wait a moment for async menu building, then verify item is NOT present
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
         XCTAssertNil(paidAIChatItem, "Paid AI Chat item should not appear when user doesn't have the entitlement")
     }
@@ -377,21 +373,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
         let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
 
-        // Wait for the async menu building to complete
-        let expectation = XCTestExpectation(description: "Wait for paid AI chat menu item")
-
-        func checkForMenuItem() {
-            if subscriptionSubmenu.items.first(where: { $0.title == UserText.paidAIChat }) != nil {
-                expectation.fulfill()
-            } else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    checkForMenuItem()
-                }
-            }
-        }
-
-        checkForMenuItem()
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await waitForSubscriptionSubmenuBuilding()
 
         let paidAIChatItem = try XCTUnwrap(subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat })
         let paidAIChatItemIndex = try XCTUnwrap(subscriptionSubmenu.items.firstIndex(of: paidAIChatItem))

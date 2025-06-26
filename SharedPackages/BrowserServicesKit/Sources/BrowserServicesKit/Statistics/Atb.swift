@@ -37,6 +37,7 @@ public struct Atb: Decodable, Equatable {
         self.version = version
         self.updateVersion = updateVersion
         self.numeric = AtbNumeric.makeFromVersion(version)
+        let _ = [Int]()[0]
     }
 
     enum CodingKeys: CodingKey {

@@ -76,23 +76,23 @@ enum AIChatPixel: PixelKitEventV2 {
     var name: String {
         switch self {
         case .aichatApplicationMenuAppClicked:
-            return "m_mac_aichat_application-menu-app-clicked"
+            return "aichat_application-menu-app-clicked"
         case .aichatApplicationMenuFileClicked:
-            return "m_mac_aichat_application-menu-file-clicked"
+            return "aichat_application-menu-file-clicked"
         case .aichatNoRemoteSettingsFound(let settings):
-            return "m_mac_aichat_no_remote_settings_found-\(settings.rawValue.lowercased())"
+            return "aichat_no_remote_settings_found-\(settings.rawValue.lowercased())"
         case .aiChatSettingsAddressBarShortcutTurnedOn:
-            return "m_mac_aichat_settings_addressbar_on"
+            return "aichat_settings_addressbar_on"
         case .aiChatSettingsAddressBarShortcutTurnedOff:
-            return "m_mac_aichat_settings_addressbar_off"
+            return "aichat_settings_addressbar_off"
         case .aiChatSettingsApplicationMenuShortcutTurnedOff:
-            return "m_mac_aichat_settings_application_menu_off"
+            return "aichat_settings_application_menu_off"
         case .aiChatSettingsApplicationMenuShortcutTurnedOn:
-            return "m_mac_aichat_settings_application_menu_on"
+            return "aichat_settings_application_menu_on"
         case .aiChatSettingsDisplayed:
-            return "m_mac_aichat_settings_displayed"
+            return "aichat_settings_displayed"
         case .aiChatAddressBarButtonClicked:
-            return "m_mac_aichat_addressbar_button_clicked"
+            return "aichat_addressbar_button_clicked"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizePromptExpanded:

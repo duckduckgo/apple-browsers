@@ -1,5 +1,5 @@
 //
-//  MockDefaultBrowserPromptUserActivityProvider.swift
+//  MockDefaultBrowserPromptUserActivityManager.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -20,7 +20,7 @@
 import Foundation
 import SetDefaultBrowserCore
 
-public final class MockDefaultBrowserPromptUserActivityProvider: DefaultBrowserPromptUserActivityMonitoring {
+public final class MockDefaultBrowserPromptUserActivityManager: DefaultBrowserPromptUserActivityManaging {
     public init() {}
 
     public private(set) var didCallResetNumberOfActiveDays = false

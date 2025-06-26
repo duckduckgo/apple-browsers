@@ -28,7 +28,7 @@ final class DefaultBrowserPromptDeciderTests {
     private var featureFlaggerMock = MockDefaultBrowserPromptFeatureFlag()
     private var storeMock = MockDefaultBrowserPromptStore()
     private var userTypeProviderMock = MockDefaultBrowserPromptUserTypeProvider()
-    private var userActivityProviderMock = MockDefaultBrowserPromptUserActivityProvider()
+    private var userActivityProviderMock = MockDefaultBrowserPromptUserActivityManager()
     private var defaultBrowserManagerMock = MockDefaultBrowserManager()
     private var dateProviderMock = MockDateProvider()
     private var sut: DefaultBrowserPromptTypeDecider!
@@ -205,7 +205,7 @@ final class DefaultBrowserPromptDeciderTests {
             .returning,
         ],
         [
-            2,3,4,5,6,7,8,9,10
+            2, 3, 4, 5, 6, 7, 8, 9, 10
         ]
     )
     func checkSubsequentModalIsPresentedForNewOrReturningUserWhenLastModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserPromptUserType, numberOfModalShown: Int) {
@@ -231,7 +231,7 @@ final class DefaultBrowserPromptDeciderTests {
             DefaultBrowserPromptUserType.existing,
         ],
         [
-            2,3,4,5,6,7,8,9,10
+            2, 3, 4, 5, 6, 7, 8, 9, 10
         ]
     )
     func checkSubsequentModalIsPresentedForExistingUserWhenLastModalHasShownAndNumberOfActiveDaysIsFourteen(userType: DefaultBrowserPromptUserType, numberOfModalShown: Int) {

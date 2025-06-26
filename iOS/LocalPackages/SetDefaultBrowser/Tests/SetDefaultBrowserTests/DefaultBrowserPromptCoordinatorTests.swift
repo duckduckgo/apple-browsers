@@ -29,7 +29,7 @@ final class DefaultBrowserPromptCoordinatorTests {
     private var isOnboardingCompleted: Bool = true
     private var dateProvideMock: MockDateProvider
     private var promptStoreMock: MockDefaultBrowserPromptStore
-    private var activityStoreMock: MockDefaultBrowsePromptUserActivityStore
+    private var userActivityManagerMock: MockDefaultBrowserPromptUserActivityManager
     private var promptTypeDeciderMock: MockDefaultBrowserPromptTypeDecider
     private var urlOpenerMock: MockURLOpener
     private var eventMapperMock: MockDefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>
@@ -38,7 +38,7 @@ final class DefaultBrowserPromptCoordinatorTests {
     init() {
         dateProvideMock = MockDateProvider()
         promptStoreMock = MockDefaultBrowserPromptStore()
-        activityStoreMock = MockDefaultBrowsePromptUserActivityStore()
+        userActivityManagerMock = MockDefaultBrowserPromptUserActivityManager()
         promptTypeDeciderMock = MockDefaultBrowserPromptTypeDecider()
         urlOpenerMock = MockURLOpener()
         eventMapperMock = MockDefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>()
@@ -46,7 +46,7 @@ final class DefaultBrowserPromptCoordinatorTests {
         sut = DefaultBrowserPromptCoordinator(
             isOnboardingCompleted: { self.isOnboardingCompleted },
             promptStore: promptStoreMock,
-            activityStore: activityStoreMock,
+            userActivityManager: userActivityManagerMock,
             promptTypeDecider: promptTypeDeciderMock,
             urlOpener: urlOpenerMock,
             eventMapper: eventMapperMock,
@@ -126,6 +126,31 @@ final class DefaultBrowserPromptCoordinatorTests {
     }
 
     @Test(
+        "Check Prompt Occurrence Is Incremented When Prompt Is Not Nil",
+        arguments: [
+            DefaultBrowserPromptType.firstModal,
+            .secondModal,
+            .subsequentModal
+        ],
+        [
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+        ]
+    )
+    func whenPromptIsNotNilThenI(promptType: DefaultBrowserPromptType, numberOfModalShown: Int) {
+        // GIVEN
+        let now = Date(timeIntervalSince1970: 1750896000) // 26 June 2025 12:00:00 AM GMT
+        dateProvideMock.setNowDate(now)
+        promptTypeDeciderMock.promptToReturn = promptType
+        promptStoreMock.modalShownOccurrences = numberOfModalShown
+
+        // WHEN
+        _ = sut.getPrompt()
+
+        // THEN
+        #expect(promptStoreMock.modalShownOccurrences == numberOfModalShown + 1)
+    }
+
+    @Test(
         "Check User Activity Is Reset Once The Prompt Is Shown",
         arguments: [
             DefaultBrowserPromptType.firstModal,
@@ -136,13 +161,13 @@ final class DefaultBrowserPromptCoordinatorTests {
     func whenPromptIsShownThenUserActivityIsReset(promptType: DefaultBrowserPromptType) {
         // GIVEN
         promptTypeDeciderMock.promptToReturn = promptType
-        #expect(!activityStoreMock.didCallDeleteActivity)
+        #expect(!userActivityManagerMock.didCallResetNumberOfActiveDays)
 
         // WHEN
         _ = sut.getPrompt()
 
         // THEN
-        #expect(activityStoreMock.didCallDeleteActivity)
+        #expect(userActivityManagerMock.didCallResetNumberOfActiveDays)
     }
 
     // MARK: - Actions
@@ -208,7 +233,7 @@ final class DefaultBrowserPromptCoordinatorTests {
 
         // THEN
         #expect(eventMapperMock.didCallFireEvent)
-        #expect(eventMapperMock.capturedEvent == .modalShown(numberOfModalShown: numberOfModalAlreadyShown))
+        #expect(eventMapperMock.capturedEvent == .modalShown(numberOfModalShown: numberOfModalAlreadyShown+1))
     }
 
     @Test(

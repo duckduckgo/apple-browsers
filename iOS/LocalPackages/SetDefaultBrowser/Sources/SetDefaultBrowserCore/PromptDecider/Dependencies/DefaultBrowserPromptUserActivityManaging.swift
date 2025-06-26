@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserPromptUserActivityMonitoring.swift
+//  DefaultBrowserPromptUserActivityManaging.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -19,9 +19,9 @@
 
 import Foundation
 
-/// A type that manages the user activity information for SAD prompt decisions.
+/// A type that provides the user activity information for SAD prompt decisions.
 @MainActor
-package protocol DefaultBrowserPromptUserActivityMonitoring {
+package protocol DefaultBrowserPromptUserActivityProvider {
     /// Returns the number of days the user has been active in the app.
     ///
     /// An "active day" means a day when the user either opened the app (cold start), or when they brought the app to the foreground.
@@ -31,6 +31,11 @@ package protocol DefaultBrowserPromptUserActivityMonitoring {
     /// - Note: The count includes only days with actual user activity, not calendar days.
     ///         For example, if a user was active on days 1, 3, and 7 after the given date, this method would return 3, not 7.
     func numberOfActiveDays() -> Int
+}
+
+/// A type that manages the user activity information for SAD prompt decisions.
+@MainActor
+package protocol DefaultBrowserPromptUserActivityManaging: DefaultBrowserPromptUserActivityProvider {
 
     /// Reset the number of days the user was active.
     func resetNumberOfActiveDays()

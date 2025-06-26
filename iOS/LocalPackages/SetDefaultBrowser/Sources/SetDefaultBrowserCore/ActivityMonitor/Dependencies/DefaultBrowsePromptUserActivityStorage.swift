@@ -24,20 +24,13 @@ public protocol DefaultBrowsePromptUserActivityStorage {
     /// This method will overwrite any existing activity data with the new data provided.
     ///
     /// - Parameter activity: The user activity data to be saved.
-    ///
-    /// - Note: Implementations should ensure thread-safety if the storage mechanism
-    ///   might be accessed from multiple threads.
-    func save(_ activity: DefaultBrowsePromptUserActivity)
+    func save(_ activity: DefaultBrowserPromptUserActivity)
 
     /// Removes all stored user activity data.
-    ///
-    /// Use this method when:
-    /// - Starting a new tracking period
-    /// - Clearing user data for privacy reasons
     func deleteActivity()
 
     /// Retrieves the currently stored user activity data.
     ///
     /// - Returns: The current user activity data. If no activity has been saved, return an empty `DefaultBrowsePromptUserActivity`.
-    func currentActivity() -> DefaultBrowsePromptUserActivity
+    func currentActivity() -> DefaultBrowserPromptUserActivity
 }

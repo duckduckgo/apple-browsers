@@ -1,5 +1,5 @@
 //
-//  DefaultBrowsePromptUserActivity.swift
+//  DefaultBrowserPromptUserActivity.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -22,7 +22,7 @@ import Foundation
 /// A value type that represents user activity data for the SAD prompt.
 ///
 /// This struct measure when a user has been active by storing a counter for the active days and the last active day.
-public struct DefaultBrowsePromptUserActivity: Equatable, Sendable, Codable {
+public struct DefaultBrowserPromptUserActivity: Equatable, Sendable, Codable {
     /// An integer representing the number of days the user was active.
     public internal(set) var numberOfActiveDays: Int
 
@@ -40,11 +40,11 @@ public struct DefaultBrowsePromptUserActivity: Equatable, Sendable, Codable {
     }
 }
 
-public extension DefaultBrowsePromptUserActivity {
+public extension DefaultBrowserPromptUserActivity {
 
     /// An empty activity instance with no recorded active days.
     ///
     /// This is equivalent to calling the initialiser with default parameters.
-    static let empty = DefaultBrowsePromptUserActivity()
+    static let empty = DefaultBrowserPromptUserActivity()
 
 }

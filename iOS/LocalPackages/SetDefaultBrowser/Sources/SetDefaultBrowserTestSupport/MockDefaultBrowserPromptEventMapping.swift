@@ -25,9 +25,9 @@ public final class MockDefaultBrowserPromptEventMapping<Event: Equatable>: Defau
     public private(set) var didCallFireEvent: Bool = false
     public private(set) var capturedEvent: Event?
     public private(set) var capturedError: Error?
-    public private(set) var capturedParameters: [String : String]?
+    public private(set) var capturedParameters: [String: String]?
 
-    public func fire(_ event: Event, error: (any Error)?, parameters: [String : String]?, onComplete: @escaping ((any Error)?) -> Void) {
+    public func fire(_ event: Event, error: (any Error)?, parameters: [String: String]?, onComplete: @escaping ((any Error)?) -> Void) {
         didCallFireEvent = true
         capturedEvent = event
         capturedParameters = parameters

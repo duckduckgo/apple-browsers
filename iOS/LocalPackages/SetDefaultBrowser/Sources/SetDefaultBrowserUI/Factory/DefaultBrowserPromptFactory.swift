@@ -41,7 +41,7 @@ public enum DefaultBrowserPromptFactory {
             featureFlagProvider: featureFlagProvider
         )
 
-        let userActivityProvider = DefaultBrowsePromptUserActivityMonitor(
+        let userActivityMonitor = DefaultBrowsePromptUserActivityMonitor(
             store: userActivityStore,
         )
 
@@ -54,7 +54,7 @@ public enum DefaultBrowserPromptFactory {
             featureFlagger: featureFlagger,
             store: promptActivityStore,
             userTypeProvider: userTypeProviding,
-            userActivityProvider: userActivityProvider,
+            userActivityProvider: userActivityMonitor,
             defaultBrowserManager: defaultBrowserManager,
             installDateProvider: installDateProvider
         )
@@ -62,7 +62,7 @@ public enum DefaultBrowserPromptFactory {
         let coordinator = DefaultBrowserPromptCoordinator(
             isOnboardingCompleted: isOnboardingCompletedProvider,
             promptStore: promptActivityStore,
-            activityStore: userActivityStore,
+            userActivityManager: userActivityMonitor,
             promptTypeDecider: promptTypeDecider,
             urlOpener: UIApplication.shared,
             eventMapper: promptUserInteractionEventMapper

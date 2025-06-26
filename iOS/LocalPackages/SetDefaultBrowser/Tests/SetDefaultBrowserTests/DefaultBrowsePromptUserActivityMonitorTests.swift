@@ -1,5 +1,5 @@
 //
-//  DefaultBrowsePromptUserActivityMonitor.swift
+//  DefaultBrowsePromptUserActivityMonitorTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -62,7 +62,7 @@ final class DefaultBrowsePromptUserActivityMonitorTests: XCTestCase, Sendable {
         XCTAssertTrue(storeMock.didCallSaveActivity)
     }
 
-    func testWhenDidBecomeActiveIsCalled_AndTodayActivityIsNotRecorded_ThenAddTodayToActiveDates() {
+    func testWhenDidBecomeActiveIsCalled_AndTodayActivityIsNotRecorded_ThenIncrementNumberOfActiveDays() {
         // GIVEN
         storeMock.activityToReturn = .init(numberOfActiveDays: 1, lastActiveDate: Self.today)
         let tomorrow = Self.today.advanced(by: .days(1))

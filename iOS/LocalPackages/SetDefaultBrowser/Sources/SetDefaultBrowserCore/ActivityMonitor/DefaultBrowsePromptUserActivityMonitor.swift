@@ -25,9 +25,8 @@ import Combine
 ///
 /// This class observes application lifecycle events to automatically measure when users
 /// are active and stores this information to the provided store.
-/// It maintains a rolling window of activity data based on the configured maximum days to keep.
 @MainActor
-package final class DefaultBrowsePromptUserActivityMonitor: DefaultBrowserPromptUserActivityMonitoring {
+package final class DefaultBrowsePromptUserActivityMonitor: DefaultBrowserPromptUserActivityManaging {
     private let store: DefaultBrowsePromptUserActivityStorage
     private let dateProvider: () -> Date
     private let calendar: Calendar
@@ -36,8 +35,7 @@ package final class DefaultBrowsePromptUserActivityMonitor: DefaultBrowserPrompt
 
     /// Creates a new activity monitor with the specified configuration.
     ///
-    /// The monitor immediately begins observing application lifecycle notifications to track user activity. Activity data older than `maxDaysToKeep` is
-    /// automatically pruned to manage storage size.
+    /// The monitor immediately begins observing application lifecycle notifications to measure user activity. 
     ///
     /// - Parameters:
     ///   - store: The storage implementation used to persist activity data.

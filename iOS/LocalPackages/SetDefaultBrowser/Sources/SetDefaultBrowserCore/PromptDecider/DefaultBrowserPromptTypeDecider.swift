@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserPromptDecider.swift
+//  DefaultBrowserPromptTypeDecider.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -46,7 +46,7 @@ package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDec
     private let featureFlagger: DefaultBrowserPromptFeatureFlagger
     private let store: DefaultBrowserPromptStorage
     private let userTypeProvider: DefaultBrowserPromptUserTypeProviding
-    private let userActivityProvider: DefaultBrowserPromptUserActivityMonitoring
+    private let userActivityProvider: DefaultBrowserPromptUserActivityProvider
     private let defaultBrowserManager: DefaultBrowserManaging
     private let installDateProvider: () -> Date?
     private let dateProvider: () -> Date
@@ -55,7 +55,7 @@ package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDec
         featureFlagger: DefaultBrowserPromptFeatureFlagger,
         store: DefaultBrowserPromptStorage,
         userTypeProvider: DefaultBrowserPromptUserTypeProviding,
-        userActivityProvider: DefaultBrowserPromptUserActivityMonitoring,
+        userActivityProvider: DefaultBrowserPromptUserActivityProvider,
         defaultBrowserManager: DefaultBrowserManaging,
         installDateProvider: @escaping () -> Date?,
         dateProvider: @escaping () -> Date = Date.init

@@ -44,7 +44,7 @@ package protocol DefaultBrowserPromptCoordinating: AnyObject {
 package final class DefaultBrowserPromptCoordinator {
     private let isOnboardingCompleted: () -> Bool
     private let promptStore: DefaultBrowserPromptStorage
-    private let activityStore: DefaultBrowsePromptUserActivityStorage
+    private let userActivityManager: DefaultBrowserPromptUserActivityManaging
     private let promptTypeDecider: DefaultBrowserPromptTypeDeciding
     private let urlOpener: URLOpener
     private let eventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>
@@ -53,7 +53,7 @@ package final class DefaultBrowserPromptCoordinator {
     package init(
         isOnboardingCompleted: @escaping () -> Bool,
         promptStore: DefaultBrowserPromptStorage,
-        activityStore: DefaultBrowsePromptUserActivityStorage,
+        userActivityManager: DefaultBrowserPromptUserActivityManaging,
         promptTypeDecider: DefaultBrowserPromptTypeDeciding,
         urlOpener: URLOpener,
         eventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>,
@@ -61,7 +61,7 @@ package final class DefaultBrowserPromptCoordinator {
     ) {
         self.isOnboardingCompleted = isOnboardingCompleted
         self.promptStore = promptStore
-        self.activityStore = activityStore
+        self.userActivityManager = userActivityManager
         self.promptTypeDecider = promptTypeDecider
         self.urlOpener = urlOpener
         self.eventMapper = eventMapper
@@ -113,12 +113,13 @@ private extension DefaultBrowserPromptCoordinator {
     func setPromptSeen() {
         let now = dateProvider()
         promptStore.lastModalShownDate = now.timeIntervalSince1970
+        promptStore.modalShownOccurrences += 1
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Set Prompt Seen \(now).")
         firePromptSeenEvent()
     }
 
     func resetUserActivity() {
-        activityStore.deleteActivity()
+        userActivityManager.resetNumberOfActiveDays()
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - User Activity Reset.")
     }
 

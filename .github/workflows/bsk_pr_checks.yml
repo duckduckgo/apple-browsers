@@ -122,6 +122,15 @@ jobs:
             SharedPackages/BrowserServicesKit/xctest.log
           retention-days: 7
 
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "bsk-crash-reports-macOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/*
+          retention-days: 7
+
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
         if: always()
@@ -254,6 +263,15 @@ jobs:
         uses: ./.github/actions/send-pixel
         with:
           pixel-name: m_ci_apple_status_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
+
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "bsk-crash-reports-iOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/*
+          retention-days: 7
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4

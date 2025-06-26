@@ -125,6 +125,15 @@ jobs:
           name: build-log.txt
           path: SharedPackages/DataBrokerProtectionCore/build-log.txt
 
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "dbp-crash-reports-macOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/*
+          retention-days: 7
+
       - name: Fetch latest commit author and PR reviewers
         if: always() && github.ref_name == 'main'
         id: fetch_commit_author
@@ -247,6 +256,15 @@ jobs:
         with:
           name: ios-build-log.txt
           path: SharedPackages/DataBrokerProtectionCore/ios-build-log.txt
+
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "dbp-crash-reports-iOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/*
+          retention-days: 7
 
   create-asana-task:
     name: Create Asana Task

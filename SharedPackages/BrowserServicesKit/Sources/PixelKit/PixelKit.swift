@@ -483,8 +483,6 @@ public final class PixelKit {
             return "_ios_phone"
         case Source.iPadOS.rawValue:
             return "_ios_tablet"
-        case Source.macStore.rawValue, Source.macDMG.rawValue:
-            return "_mac"
         default:
             return ""
         }

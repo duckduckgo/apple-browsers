@@ -34,7 +34,11 @@ public enum VPNSubscriptionNotificationPixel: PixelKitEventV3 {
                    sourceObject: Any?)
 
     public var namePrefix: String {
+#if os(macOS)
+        "m_mac_vpn_subs_notification_"
+#elseif os(iOS)
         "m_vpn_subs_notification_"
+#endif
     }
 
     public var name: String {

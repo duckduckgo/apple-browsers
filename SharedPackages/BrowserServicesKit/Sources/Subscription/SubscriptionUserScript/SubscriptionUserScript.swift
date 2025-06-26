@@ -131,7 +131,15 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
     }
 
     public let featureName: String = "subscriptions"
-    public let messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: "duckduckgo.com")])
+    
+    // Dynamic message origin policy that supports custom URLs
+    public var messageOriginPolicy: MessageOriginPolicy {
+        let subscriptionManager = handler.subscriptionManager
+        return .only(rules: [
+            HostnameMatchingRule.makeExactRule(for: subscriptionManager.url(for: .baseURL)) ?? .exact(hostname: "duckduckgo.com")
+        ])
+    }
+    
     public weak var broker: UserScriptMessageBroker?
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -165,11 +173,11 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
                                                          navigationDelegate: navigationDelegate))
     }
 
-    init(handler: SubscriptionUserScriptHandling) {
+    init(handler: SubscriptionUserScriptHandler) {
         self.handler = handler
     }
 
-    let handler: SubscriptionUserScriptHandling
+    let handler: SubscriptionUserScriptHandler
 
 }
 

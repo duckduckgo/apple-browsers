@@ -132,7 +132,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testWhenAccessTokenIsAvailableThenGetAuthAccessTokenReturnsToken() async throws {
         let expectedToken = "test_access_token"
         subscriptionManager.accessTokenResult = .success(expectedToken)
-        
+
         let response = try await handler.getAuthAccessToken(params: [], message: WKScriptMessage())
         XCTAssertEqual(response.accessToken, expectedToken)
     }
@@ -140,7 +140,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testWhenAccessTokenIsNotAvailableThenGetAuthAccessTokenReturnsEmptyString() async throws {
         struct SampleError: Error {}
         subscriptionManager.accessTokenResult = .failure(SampleError())
-        
+
         let response = try await handler.getAuthAccessToken(params: [], message: WKScriptMessage())
         XCTAssertEqual(response.accessToken, "")
     }
@@ -150,7 +150,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        subscriptionManager: subscriptionManager,
                        paidAIChatFlagStatusProvider: { true },
                        navigationDelegate: mockNavigationDelegate)
-        
+
         let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
         XCTAssertTrue(response.usePaidDuckAi)
     }
@@ -160,7 +160,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
                        subscriptionManager: subscriptionManager,
                        paidAIChatFlagStatusProvider: { false },
                        navigationDelegate: mockNavigationDelegate)
-        
+
         let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
         XCTAssertFalse(response.usePaidDuckAi)
     }

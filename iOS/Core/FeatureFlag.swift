@@ -135,6 +135,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210410396636449?focus=true
     case showSettingsCompleteSetupSection
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209304767941984?focus=true
+    case scheduledSetDefaultBrowserPrompts
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -313,6 +316,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         case .showSettingsCompleteSetupSection:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
+        case .scheduledSetDefaultBrowserPrompts:
+            return .internalOnly()
         }
     }
 }

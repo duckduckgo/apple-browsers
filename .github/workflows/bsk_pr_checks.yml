@@ -264,15 +264,6 @@ jobs:
         with:
           pixel-name: m_ci_apple_status_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
 
-      - name: Upload crash reports
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: "bsk-crash-reports-iOS"
-          path: |
-            ~/Library/Logs/DiagnosticReports/*
-          retention-days: 7
-
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
         if: always()
@@ -308,6 +299,15 @@ jobs:
         with:
           name: ios-build-log.txt
           path: SharedPackages/BrowserServicesKit/ios-build-log.txt
+
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "bsk-crash-reports-iOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/xctest-*.ips
+          retention-days: 7
 
   create-asana-task:
     name: Create Asana Task

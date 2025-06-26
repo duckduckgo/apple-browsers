@@ -79,7 +79,6 @@ final class NetworkProtectionSubscriptionEventHandler {
     }
 
     private func handleEntitlementsChange(hasEntitlements: Bool, sourceObject: Any?) async {
-        let subscriptionManager = await NSApp.delegateTyped.subscriptionAuthV1toV2Bridge
         let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
@@ -126,7 +125,6 @@ final class NetworkProtectionSubscriptionEventHandler {
                 return
             }
 
-            let subscriptionManager = await NSApp.delegateTyped.subscriptionAuthV1toV2Bridge
             let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
@@ -144,7 +142,6 @@ final class NetworkProtectionSubscriptionEventHandler {
         Task {
             print("[NetP Subscription] Deleted NetP auth token after signing out from Privacy Pro")
 
-            let subscriptionManager = await NSApp.delegateTyped.subscriptionAuthV1toV2Bridge
             let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 

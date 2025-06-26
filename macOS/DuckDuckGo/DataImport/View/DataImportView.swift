@@ -79,7 +79,7 @@ struct DataImportView: ModalView {
 #endif
         }
         .font(.system(size: 13))
-        .frame(width: 340)
+        .frame(width: 420)
         .fixedSize()
     }
 

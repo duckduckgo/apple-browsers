@@ -108,6 +108,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var privacyDashboardWindow: NSWindow?
 
     let windowControllersManager: WindowControllersManager
+    let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
 
     let appearancePreferences: AppearancePreferences
     let dataClearingPreferences: DataClearingPreferences
@@ -468,6 +469,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.windowControllersManager = windowControllersManager
 
+        // Create subscription navigation coordinator with proper dependencies
+        let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
+            windowControllersManager: windowControllersManager,
+            subscriptionManager: subscriptionAuthV1toV2Bridge
+        )
+        self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
+
         self.visualStyleDecider = DefaultVisualStyleDecider(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
         visualStyle = visualStyleDecider.style
 
@@ -520,7 +528,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 database: database.db
             )
         } else {
-            // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
+            // runtime mock-replacement for Unit Tests, to be redone when we'll be doing Dependency Injection
             privacyFeatures = AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
         }
 #else
@@ -914,7 +922,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if !FileDownloadManager.shared.downloads.isEmpty {
-            // if there‘re downloads without location chosen yet (save dialog should display) - ignore them
+            // if there're downloads without location chosen yet (save dialog should display) - ignore them
             let activeDownloads = Set(FileDownloadManager.shared.downloads.filter { $0.state.isDownloading })
             if !activeDownloads.isEmpty {
                 let alert = NSAlert.activeDownloadsTerminationAlert(for: FileDownloadManager.shared.downloads)

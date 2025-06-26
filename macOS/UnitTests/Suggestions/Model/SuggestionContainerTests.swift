@@ -409,7 +409,9 @@ extension SuggestionContainerTests {
         func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
         func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
 
-        init(pinnedTabsManagerProvider: PinnedTabsManagerProviding, tabCollectionViewModels: [TabCollectionViewModel] = [], selectedWindow: Int = 0) {
+        init(pinnedTabsManagerProvider: any DuckDuckGo_Privacy_Browser.PinnedTabsManagerProviding,
+             tabCollectionViewModels: [TabCollectionViewModel], 
+             selectedWindow: Int) {
             self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
             self.allTabCollectionViewModels = tabCollectionViewModels
             self.selectedWindowIndex = selectedWindow

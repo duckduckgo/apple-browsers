@@ -65,7 +65,7 @@ final class UserScripts: UserScriptsProvider {
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
-        
+
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
         contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                         properties: sourceProvider.contentScopeProperties,
@@ -82,8 +82,9 @@ final class UserScripts: UserScriptsProvider {
                                             debugSettings: aiChatDebugSettings)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .ios,
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-        )
+            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            paidAIChatFlagStatusProvider: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
+            navigationDelegate: UIApplication.shared.window?.rootViewController as? MainViewController)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
 

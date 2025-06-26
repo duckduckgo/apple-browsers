@@ -44,6 +44,7 @@ protocol WindowControllersManagerProtocol {
 
     func show(url: URL?, tabId: String?, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool?)
     func showBookmarksTab()
+    func showPreferencesTab(withSelectedPane pane: PreferencePaneIdentifier?)
 
     @discardableResult
     func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel?,

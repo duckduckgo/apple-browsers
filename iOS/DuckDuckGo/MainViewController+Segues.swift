@@ -291,6 +291,14 @@ extension MainViewController {
         }
    }
 
+    func segueToSubscriptionSettings() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .subscriptionSettings)
+        }
+    }
+
     func launchSettings(completion: ((SettingsViewModel) -> Void)? = nil,
                         deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection? = nil,
                         configure: ((SettingsViewModel, SettingsHostingController) -> Void)? = nil) {
@@ -394,4 +402,25 @@ class SettingsUINavigationController: UINavigationController {
 
 extension NSNotification.Name {
     static let settingsDidDisappear: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.settings.didDisappear")
+}
+
+// MARK: - SubscriptionUserScriptNavigationDelegate
+
+extension MainViewController: SubscriptionUserScriptNavigationDelegate {
+    
+    @MainActor
+    func navigateToSettings() {
+        // Navigate directly to Privacy Pro subscription settings
+        segueToSubscriptionSettings()
+    }
+    
+    @MainActor
+    func navigateToSubscriptionActivation() {
+        segueToSubscriptionRestoreFlow()
+    }
+    
+    @MainActor
+    func navigateToSubscriptionPurchase() {
+        segueToPrivacyPro()
+    }
 }

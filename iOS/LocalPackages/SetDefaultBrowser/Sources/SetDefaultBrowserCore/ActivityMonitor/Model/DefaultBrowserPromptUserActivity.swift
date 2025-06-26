@@ -21,34 +21,28 @@ import Foundation
 
 /// A value type that represents user activity data for the SAD prompt.
 ///
-/// This struct measure when a user has been active by storing a collection of dates
-/// and maintaining a reference to the most recent activity date for quick access.
+/// This struct measure when a user has been active by storing a counter for the active days and the last active day.
 public struct DefaultBrowsePromptUserActivity: Equatable, Sendable, Codable {
-    /// The set of dates when the user was active.
-    ///
-    /// This set contains unique dates representing days when the user
-    /// launched the app (cold start) or brought the app to foreground (warm start).
-    public internal(set) var activeDates: Set<Date>
+    /// An integer representing the number of days the user was active.
+    public internal(set) var numberOfActiveDays: Int
 
     /// The most recent date when the user was active.
-    ///
-    /// Provides O(1) access to last user active date. It corresponds to the the maximum date in `activeDates` when activity data exists.
     public internal(set) var lastActiveDate: Date?
 
     /// Initialises a new user activity instance with the specified dates.
     ///
     /// - Parameters:
-    ///   - activeDates: A set of dates when the user was active. Default is an empty set.
+    ///   - numberOfActiveDays: The number of days when the user was active. Default is 0.
     ///   - lastActiveDate: The most recent activity date. Default is `nil`.
-    public init(activeDates: Set<Date> = [], lastActiveDate: Date? = nil) {
-        self.activeDates = activeDates
+    public init(numberOfActiveDays: Int = 0, lastActiveDate: Date? = nil) {
+        self.numberOfActiveDays = numberOfActiveDays
         self.lastActiveDate = lastActiveDate
     }
 }
 
 public extension DefaultBrowsePromptUserActivity {
 
-    /// An empty activity instance with no recorded active dates.
+    /// An empty activity instance with no recorded active days.
     ///
     /// This is equivalent to calling the initialiser with default parameters.
     static let empty = DefaultBrowsePromptUserActivity()

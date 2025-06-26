@@ -27,7 +27,7 @@ public final class MockDefaultBrowserPromptUserActivityProvider: DefaultBrowserP
 
     public var numberOfActiveDaysPassed = 0
 
-    public func numberOfActiveDays(since: Date) -> Int {
+    public func numberOfActiveDays() -> Int {
         numberOfActiveDaysPassed
     }
 

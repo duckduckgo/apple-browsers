@@ -20,24 +20,18 @@
 import Foundation
 
 /// A type that manages the user activity information for SAD prompt decisions.
-///
-/// This protocol is used to calculate how many days the user has been active since a given date.
 @MainActor
-public protocol DefaultBrowserPromptUserActivityMonitoring {
-    /// Calculates the number of days the user has been active in the app since the specified date.
+package protocol DefaultBrowserPromptUserActivityMonitoring {
+    /// Returns the number of days the user has been active in the app.
     ///
-    /// An "active day" means a day when the user either opened the app (cold start),
-    /// or when they brought the app to the foreground.
+    /// An "active day" means a day when the user either opened the app (cold start), or when they brought the app to the foreground.
     ///
-    /// - Parameter since: The starting date from which to count active days.
-    ///
-    /// - Returns: The number of days the user has been active since the given date.
-    ///           Returns 0 if the date is in the future or if there has been no activity.
+    /// - Returns: The number of days the user has been active. Returns 0 if the date is in the future or if there has been no activity.
     ///
     /// - Note: The count includes only days with actual user activity, not calendar days.
-    ///         For example, if a user was active on days 1, 3, and 7 after the given date,
-    ///         this method would return 3, not 7.
-    func numberOfActiveDays(since: Date) -> Int
+    ///         For example, if a user was active on days 1, 3, and 7 after the given date, this method would return 3, not 7.
+    func numberOfActiveDays() -> Int
 
+    /// Reset the number of days the user was active.
     func resetNumberOfActiveDays()
 }

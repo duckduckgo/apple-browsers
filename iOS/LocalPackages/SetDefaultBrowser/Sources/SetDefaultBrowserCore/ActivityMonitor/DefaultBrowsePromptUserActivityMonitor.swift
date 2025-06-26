@@ -27,9 +27,8 @@ import Combine
 /// are active and stores this information to the provided store.
 /// It maintains a rolling window of activity data based on the configured maximum days to keep.
 @MainActor
-public final class DefaultBrowsePromptUserActivityMonitor: DefaultBrowserPromptUserActivityMonitoring {
+package final class DefaultBrowsePromptUserActivityMonitor: DefaultBrowserPromptUserActivityMonitoring {
     private let store: DefaultBrowsePromptUserActivityStorage
-    private let maxDaysToKeep: Int
     private let dateProvider: () -> Date
     private let calendar: Calendar
 
@@ -42,30 +41,24 @@ public final class DefaultBrowsePromptUserActivityMonitor: DefaultBrowserPromptU
     ///
     /// - Parameters:
     ///   - store: The storage implementation used to persist activity data.
-    ///   - maxDaysToKeep: The maximum number of days of activity data to retain. Older data is automatically removed. Defaults to 30 days.
     ///   - dateProvider: A closure that provides the current date. Defaults to `Date.init`. This parameter is primarily useful for testing.
     ///   - calendar: The calendar used for date calculations. Defaults to `.current`, which uses the user's system calendar settings.
-    public init(
+    package init(
         store: DefaultBrowsePromptUserActivityStorage,
-        maxDaysToKeep: Int = 30,
         dateProvider: @escaping () -> Date = Date.init,
         calendar: Calendar = .current
     ) {
         self.store = store
-        self.maxDaysToKeep = maxDaysToKeep
         self.dateProvider = dateProvider
         self.calendar = calendar
         setupNotifications()
     }
 
-    public func numberOfActiveDays(since date: Date) -> Int {
-        let currentActivity = store.currentActivity()
-        let startDay = startOfTheDay(date)
-        return currentActivity.activeDates.filter { $0 >= startDay }.count
-
+    package func numberOfActiveDays() -> Int {
+        store.currentActivity().numberOfActiveDays
     }
 
-    public func resetNumberOfActiveDays() {
+    package func resetNumberOfActiveDays() {
         store.deleteActivity()
     }
 }
@@ -82,35 +75,17 @@ private extension DefaultBrowsePromptUserActivityMonitor {
     }
 
     func handleDidBecomeActiveNotification() {
-        let today = dateProvider()
-        let startOfTheDay = calendar.startOfDay(for: today)
+        let today = calendar.startOfDay(for: dateProvider())
 
         var currentActivity = store.currentActivity()
 
-        // If already tracked Today skip, otherwise insert
-        if let lastActiveDate = currentActivity.lastActiveDate, isSameDay(lastActiveDate, startOfTheDay) {
+        // If we already measured today, skip.
+        if let lastActive = currentActivity.lastActiveDate, calendar.isDate(lastActive, inSameDayAs: today) {
             return
         }
 
-        // Add today
-        currentActivity.activeDates.insert(today)
+        currentActivity.numberOfActiveDays += 1
         currentActivity.lastActiveDate = today
-
-        // Clean up old dates
-        if let cutoffDate = calendar.date(byAdding: .day, value: -maxDaysToKeep, to: today) {
-            currentActivity.activeDates = currentActivity.activeDates.filter { $0 > cutoffDate }
-        }
-
-        // Save activity
         store.save(currentActivity)
     }
-
-    func isSameDay(_ date1: Date, _ date2: Date) -> Bool {
-        calendar.isDate(date1, inSameDayAs: date2)
-    }
-
-    func startOfTheDay(_ date: Date) -> Date {
-        calendar.startOfDay(for: date)
-    }
-
 }

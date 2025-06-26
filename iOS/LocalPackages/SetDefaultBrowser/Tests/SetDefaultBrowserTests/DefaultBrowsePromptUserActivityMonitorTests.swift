@@ -37,7 +37,7 @@ final class DefaultBrowsePromptUserActivityMonitorTests: XCTestCase, Sendable {
 
         storeMock = MockDefaultBrowsePromptUserActivityStore()
         dateProvideMock = MockDateProvider()
-        sut = DefaultBrowsePromptUserActivityMonitor(store: storeMock, maxDaysToKeep: Self.maxDaysToKeep, dateProvider: dateProvideMock.getDate)
+        sut = DefaultBrowsePromptUserActivityMonitor(store: storeMock, dateProvider: dateProvideMock.getDate)
     }
 
     override func tearDown() async throws {
@@ -64,7 +64,7 @@ final class DefaultBrowsePromptUserActivityMonitorTests: XCTestCase, Sendable {
 
     func testWhenDidBecomeActiveIsCalled_AndTodayActivityIsNotRecorded_ThenAddTodayToActiveDates() {
         // GIVEN
-        storeMock.activityToReturn = .init(activeDates: [Self.today], lastActiveDate: Self.today)
+        storeMock.activityToReturn = .init(numberOfActiveDays: 1, lastActiveDate: Self.today)
         let tomorrow = Self.today.advanced(by: .days(1))
         dateProvideMock.setNowDate(tomorrow)
         let expectation = self.expectation(forNotification: UIApplication.didBecomeActiveNotification, object: nil)
@@ -77,8 +77,8 @@ final class DefaultBrowsePromptUserActivityMonitorTests: XCTestCase, Sendable {
         // THEN
         wait(for: [expectation], timeout: 2.0)
         XCTAssertTrue(storeMock.didCallSaveActivity)
-        XCTAssertEqual(storeMock.capturedSaveActivity?.activeDates.sorted(by: <), [Self.today, tomorrow])
-        XCTAssertEqual(storeMock.capturedSaveActivity?.lastActiveDate, tomorrow)
+        XCTAssertEqual(storeMock.capturedSaveActivity?.numberOfActiveDays, 2)
+        XCTAssertEqual(storeMock.capturedSaveActivity?.lastActiveDate, Calendar.current.startOfDay(for: tomorrow))
     }
 
     func testWhenDidBecomeActiveIsCalled_AndTodayActivityIsRecorded_ThenDoNotAskStoreToUpdateActivity() {
@@ -99,47 +99,18 @@ final class DefaultBrowsePromptUserActivityMonitorTests: XCTestCase, Sendable {
         XCTAssertNil(storeMock.capturedSaveActivity)
     }
 
-    func testWhenMaxNumberOfActiveDaysIsReached_ThenRemoveExtraOldDates() throws {
-        // GIVEN
-        let expectation = self.expectation(forNotification: UIApplication.didBecomeActiveNotification, object: nil)
-        // Creates 10 days in the future
-        let dates = (0..<Self.maxDaysToKeep).map { index in
-            Self.today.advanced(by: .days(index))
-        }
-        let lastActivityDate = try XCTUnwrap(dates.last)
-        // Advance to 11th days so that when we record the activity the recorded activity is now 11 and the logic should cap the array to `maxDaysToKeep` value.
-        dateProvideMock.setNowDate(lastActivityDate.advanced(by: .days(1)))
-        storeMock.activityToReturn = .init(activeDates: Set(dates), lastActiveDate: lastActivityDate)
-        XCTAssertFalse(storeMock.didCallSaveActivity)
-
-        // WHEN
-        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
-
-        // THEN
-        wait(for: [expectation], timeout: 2.0)
-        XCTAssertTrue(storeMock.didCallSaveActivity)
-        XCTAssertEqual(storeMock.capturedSaveActivity?.activeDates.count, Self.maxDaysToKeep)
-        XCTAssertEqual(storeMock.capturedSaveActivity?.activeDates.sorted(by: <).first, Self.today.advanced(by: .days(1)))
-    }
-
     // MARK: - Number of Active Days
 
-    func testWhenNumberOfActiveDaysIsCalledThenReturnNumberOfActiveDaysSinceToday() throws {
+    func testWhenNumberOfActiveDaysIsCalledThenReturnNumberOfActiveDays() throws {
         // GIVEN
-        let dates = (0..<Self.maxDaysToKeep).map { index in
-            Self.today.advanced(by: .days(index))
-        }
-        let lastActivityDate = try XCTUnwrap(dates.last)
-        storeMock.activityToReturn = .init(activeDates: Set(dates), lastActiveDate: lastActivityDate)
+        let lastActivityDate = Self.today.advanced(by: .days(10))
+        storeMock.activityToReturn = .init(numberOfActiveDays: 10, lastActiveDate: lastActivityDate)
 
-        // Sort the dates from the greatest to lowest. Checking the number of active days to the greatest to the lowest is equal to index + 1
-        dates.sorted(by: >).enumerated().forEach { index, date in
-            // WHEN
-            let result = sut.numberOfActiveDays(since: date)
+        // WHEN
+        let result = sut.numberOfActiveDays()
 
-            // THEN
-            XCTAssertEqual(result, index+1)
-        }
+        // THEN
+        XCTAssertEqual(result, 10)
     }
 
     // MARK: - Reset Number of Active Days

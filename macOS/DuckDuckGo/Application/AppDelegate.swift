@@ -556,6 +556,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
         )
 
+        let onboardingManager = onboardingContextualDialogsManager
         defaultBrowserAndDockPromptKeyValueStore = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStore)
         DefaultBrowserAndDockPromptStoreMigrator(
             oldStore: DefaultBrowserAndDockPromptLegacyStore(),
@@ -576,7 +577,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let coordinator = DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: defaultBrowserAndDockPromptDecider,
             store: defaultBrowserAndDockPromptKeyValueStore,
-            isOnboardingCompleted: onboardingContextualDialogsManager.state == .onboardingCompleted,
+            isOnboardingCompleted: { onboardingManager.state == .onboardingCompleted },
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()

@@ -1882,7 +1882,7 @@ class MainViewController: UIViewController {
                 VPNSubscriptionStatusPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    sourceObject: notification.object),
+                    source: .notification(sourceObject: notification.object)),
                 frequency: .dailyAndCount)
             tunnelDefaults.resetEntitlementMessaging()
             Logger.networkProtection.info("[NetP Subscription] Reset expired entitlement messaging")
@@ -1909,19 +1909,19 @@ class MainViewController: UIViewController {
                       hasEntitlement == false
             else {
                 PixelKit.fire(
-                    VPNSubscriptionStatusPixel.vpnEnabled(
+                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
-                        sourceObject: notification.object),
+                        source: .notification(sourceObject: notification.object)),
                     frequency: .dailyAndCount)
                 return
             }
 
             PixelKit.fire(
-                VPNSubscriptionStatusPixel.vpnDisabled(
+                VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    sourceObject: notification.object),
+                    source: .notification(sourceObject: notification.object)),
                 frequency: .dailyAndCount)
 
             if await networkProtectionTunnelController.isInstalled {
@@ -1944,7 +1944,7 @@ class MainViewController: UIViewController {
                 VPNSubscriptionStatusPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    sourceObject: notification.object),
+                    source: .notification(sourceObject: notification.object)),
                 frequency: .dailyAndCount)
 
             await networkProtectionTunnelController.stop()

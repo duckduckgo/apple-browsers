@@ -31,14 +31,14 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     override func setUp() async throws {
         subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
         mockNavigationDelegate = await MockNavigationDelegate()
-        handler = .init(platform: .ios, 
+        handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        paidAIChatFlagStatusProvider: { false },
                        navigationDelegate: mockNavigationDelegate)
     }
 
     func testWhenInitializedForIOSThenHandshakeReportsIOS() async throws {
-        handler = .init(platform: .ios, 
+        handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        paidAIChatFlagStatusProvider: { false },
                        navigationDelegate: mockNavigationDelegate)
@@ -47,7 +47,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     }
 
     func testWhenInitializedForMacOSThenHandshakeReportsMacOS() async throws {
-        handler = .init(platform: .macos, 
+        handler = .init(platform: .macos,
                        subscriptionManager: subscriptionManager,
                        paidAIChatFlagStatusProvider: { false },
                        navigationDelegate: mockNavigationDelegate)
@@ -56,7 +56,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     }
 
     func testThatHandshakeReportsSupportForAllMessages() async throws {
-        handler = .init(platform: .ios, 
+        handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        paidAIChatFlagStatusProvider: { false },
                        navigationDelegate: mockNavigationDelegate)
@@ -67,7 +67,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testWhenSubscriptionFailsToBeFetchedThenSubscriptionDetailsReturnsNotSubscribedState() async throws {
         struct SampleError: Error {}
         subscriptionManager.returnSubscription = .failure(SampleError())
-        handler = .init(platform: .ios, 
+        handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        paidAIChatFlagStatusProvider: { false },
                        navigationDelegate: mockNavigationDelegate)
@@ -90,7 +90,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         )
 
         subscriptionManager.returnSubscription = .success(subscription)
-        handler = .init(platform: .ios, 
+        handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        paidAIChatFlagStatusProvider: { false },
                        navigationDelegate: mockNavigationDelegate)
@@ -109,7 +109,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         let subscription = PrivacyProSubscription(status: .expired)
 
         subscriptionManager.returnSubscription = .success(subscription)
-        handler = .init(platform: .ios, 
+        handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        paidAIChatFlagStatusProvider: { false },
                        navigationDelegate: mockNavigationDelegate)
@@ -121,7 +121,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         let subscription = PrivacyProSubscription(status: .inactive)
 
         subscriptionManager.returnSubscription = .success(subscription)
-        handler = .init(platform: .ios, 
+        handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        paidAIChatFlagStatusProvider: { false },
                        navigationDelegate: mockNavigationDelegate)
@@ -146,7 +146,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     }
 
     func testWhenPaidAIChatIsEnabledThenGetFeatureConfigReturnsTrue() async throws {
-        handler = .init(platform: .ios, 
+        handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        paidAIChatFlagStatusProvider: { true },
                        navigationDelegate: mockNavigationDelegate)
@@ -156,7 +156,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     }
 
     func testWhenPaidAIChatIsDisabledThenGetFeatureConfigReturnsFalse() async throws {
-        handler = .init(platform: .ios, 
+        handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
                        paidAIChatFlagStatusProvider: { false },
                        navigationDelegate: mockNavigationDelegate)

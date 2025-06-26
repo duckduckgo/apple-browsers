@@ -160,9 +160,9 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
                     // Calculate availability manually for App Store to include purchase capability
                     // This provides more granular control over the availability calculation
                     // compared to the general isAvailable property
-                    let featureEnabled = isEligibleFeatureFlagEnabled
-                    let notCurrentUser = isEligibleNotCurrentUser
-                    let storeFrontIsUSA = isEligibleAppStorefrontIsUSA
+                    let featureEnabled = isFeatureFlagEnabled
+                    let notCurrentUser = isNotACurrentUser
+                    let storeFrontIsUSA = isUSAAppStorefront
                     let available = featureEnabled && notCurrentUser && storeFrontIsUSA && canPurchase
                     Logger.freemiumDBP.debug("[Freemium DBP] Subscription Updated. Feature Availability = \(available)")
 
@@ -180,11 +180,11 @@ private extension DefaultFreemiumDBPFeature {
 
     /// Determines overall eligibility by combining feature flag, auth status, storefront, and purchase capability.
     var isEligible: Bool {
-        isEligibleFeatureFlagEnabled && isEligibleNotCurrentUser && isEligibleAppStorefrontIsUSA && isEligibleCanPurchase
+        isFeatureFlagEnabled && isNotACurrentUser && isUSAAppStorefront && canPurchaseSubscription
     }
 
     /// Checks if the feature flag is enabled in privacy config, with support for a debug override.
-    var isEligibleFeatureFlagEnabled: Bool {
+    var isFeatureFlagEnabled: Bool {
         if let featureFlagOverride {
             return featureFlagOverride
         }
@@ -192,13 +192,13 @@ private extension DefaultFreemiumDBPFeature {
     }
 
     /// Checks if the user is not a subscriber. Freemium is only for non-subscribed users.
-    var isEligibleNotCurrentUser: Bool {
+    var isNotACurrentUser: Bool {
         !subscriptionManager.isUserAuthenticated
     }
 
     /// Checks for USA App Store storefront. Required for App Store builds, with a debug override.
     /// On macOS versions prior to 12.0, defaults to `false`.
-    var isEligibleAppStorefrontIsUSA: Bool {
+    var isUSAAppStorefront: Bool {
         if let storefrontOverride {
             return storefrontOverride
         }
@@ -218,7 +218,7 @@ private extension DefaultFreemiumDBPFeature {
     }
 
     /// Checks if the user can make purchases. Always true for Stripe, based on `canPurchase` for App Store.
-    var isEligibleCanPurchase: Bool {
+    var canPurchaseSubscription: Bool {
         subscriptionManager.isPotentialPurchaser
     }
 
@@ -234,7 +234,7 @@ private extension DefaultFreemiumDBPFeature {
     var shouldDisableAndDelete: Bool {
         guard freemiumDBPUserStateManager.didActivate else { return false }
 
-        return !isEligibleFeatureFlagEnabled && isEligibleNotCurrentUser && isEligibleAppStorefrontIsUSA && isEligibleCanPurchase
+        return !isFeatureFlagEnabled && isNotACurrentUser && isUSAAppStorefront && canPurchaseSubscription
     }
 
     /// Offboards a user by resetting state and deleting data if `shouldDisableAndDelete` is true.

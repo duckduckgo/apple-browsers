@@ -131,7 +131,8 @@ jobs:
         with:
           name: "dbp-crash-reports-macOS"
           path: |
-            ~/Library/Logs/DiagnosticReports/*
+            ~/Library/Logs/DiagnosticReports/xctest-*.ips
+            /Library/Logs/DiagnosticReports/xctest-*.ips
           retention-days: 7
 
       - name: Fetch latest commit author and PR reviewers
@@ -264,6 +265,7 @@ jobs:
           name: "dbp-crash-reports-iOS"
           path: |
             ~/Library/Logs/DiagnosticReports/xctest-*.ips
+            /Library/Logs/DiagnosticReports/xctest-*.ips
           retention-days: 7
 
   create-asana-task:

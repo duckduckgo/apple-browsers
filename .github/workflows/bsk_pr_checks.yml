@@ -122,15 +122,6 @@ jobs:
             SharedPackages/BrowserServicesKit/xctest.log
           retention-days: 7
 
-      - name: Upload crash reports
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: "bsk-crash-reports-macOS"
-          path: |
-            ~/Library/Logs/DiagnosticReports/*
-          retention-days: 7
-
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
         if: always()
@@ -167,6 +158,16 @@ jobs:
         with:
           name: build-log.txt
           path: SharedPackages/BrowserServicesKit/build-log.txt
+
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "bsk-crash-reports-macOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/xctest-*.ips
+            /Library/Logs/DiagnosticReports/xctest-*.ips
+          retention-days: 7
 
       - name: Fetch latest commit author and PR reviewers
         if: always() && github.ref_name == 'main'
@@ -307,6 +308,7 @@ jobs:
           name: "bsk-crash-reports-iOS"
           path: |
             ~/Library/Logs/DiagnosticReports/xctest-*.ips
+            /Library/Logs/DiagnosticReports/xctest-*.ips
           retention-days: 7
 
   create-asana-task:

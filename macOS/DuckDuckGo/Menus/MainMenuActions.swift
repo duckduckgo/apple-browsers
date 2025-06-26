@@ -955,6 +955,9 @@ extension MainViewController {
         }
 
         guard let bookmark = menuItem.representedObject as? Bookmark else { return }
+
+        PixelKit.fire(NavigationEngagementPixel.navigateToBookmark(source: .menu, isFavorite: bookmark.isFavorite))
+
         makeKeyIfNeeded()
 
         Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)

@@ -123,11 +123,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         let metrics = BookmarksSearchAndSortMetrics()
+        let navigationEngagementMetrics = BookmarksNavigationEngagementMetrics()
         let sortViewModel = SortBookmarksViewModel(manager: bookmarkManager, metrics: metrics, origin: .manager)
         self.sortBookmarksViewModel = sortViewModel
         self.visualStyle = visualStyle
         self.managementDetailViewModel = BookmarkManagementDetailViewModel(bookmarkManager: bookmarkManager,
                                                                            metrics: metrics,
+                                                                           navigationEngagementMetrics: navigationEngagementMetrics,
                                                                            mode: bookmarkManager.sortMode)
         super.init(nibName: nil, bundle: nil)
     }
@@ -464,6 +466,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         managementDetailViewModel.onBookmarkTapped()
 
         if let bookmark = entity as? Bookmark {
+            managementDetailViewModel.onNavigateToBookmark(bookmark)
             Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
         } else if let folder = entity as? BookmarkFolder {
             clearSearch()

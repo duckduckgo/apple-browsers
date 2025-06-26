@@ -242,6 +242,12 @@ final class Fire {
 
         let entity = BurningEntity.allWindows(mainWindowControllers: windowControllerManager.mainWindowControllers, selectedDomains: Set(), customURLToOpen: url)
 
+        // Close windows first if fire animation is disabled
+        let shouldCloseWindowsFirst = featureFlagger.isFeatureOn(.disableFireAnimation)
+        if shouldCloseWindowsFirst {
+            closeWindows(entity: entity)
+        }
+
         burnLastSessionState()
         burnDeletedBookmarks()
 
@@ -274,7 +280,10 @@ final class Fire {
 
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
-                self.closeWindows(entity: entity)
+                // Only close windows at the end if we didn't close them at the beginning
+                if !shouldCloseWindowsFirst {
+                    self.closeWindows(entity: entity)
+                }
 
                 self.burningData = nil
                 completion?()

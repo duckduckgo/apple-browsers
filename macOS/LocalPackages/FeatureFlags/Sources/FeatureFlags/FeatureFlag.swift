@@ -117,6 +117,8 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210493210455717?focus=true
     case shortHistoryMenu
+
+    case oneWayImportTypePickerExpansion
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -168,7 +170,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport,
 				.aiChatSidebar,
-                .shortHistoryMenu:
+                .shortHistoryMenu,
+                .oneWayImportTypePickerExpansion:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -265,6 +268,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
+        case .oneWayImportTypePickerExpansion:
+            return .disabled
         }
     }
 }

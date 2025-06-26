@@ -156,13 +156,13 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
     }
 
     public convenience init(platform: DataModel.Platform,
-                           subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-                           paidAIChatFlagStatusProvider: @escaping () -> Bool,
-                           navigationDelegate: SubscriptionUserScriptNavigationDelegate?) {
-        self.init(handler: SubscriptionUserScriptHandler(platform: platform, 
-                                                        subscriptionManager: subscriptionManager,
-                                                        paidAIChatFlagStatusProvider: paidAIChatFlagStatusProvider,
-                                                        navigationDelegate: navigationDelegate))
+                            subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+                            paidAIChatFlagStatusProvider: @escaping () -> Bool,
+                            navigationDelegate: SubscriptionUserScriptNavigationDelegate?) {
+        self.init(handler: SubscriptionUserScriptHandler(platform: platform,
+                                                         subscriptionManager: subscriptionManager,
+                                                         paidAIChatFlagStatusProvider: paidAIChatFlagStatusProvider,
+                                                         navigationDelegate: navigationDelegate))
     }
 
     init(handler: SubscriptionUserScriptHandling) {

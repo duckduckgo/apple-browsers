@@ -58,5 +58,3 @@ extension SubscriptionNavigationCoordinator: SubscriptionUserScriptNavigationDel
         tabShower.showTab(with: .subscription(url))
     }
 }
-
-

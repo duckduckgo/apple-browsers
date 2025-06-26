@@ -46,16 +46,16 @@ struct SubscriptionNavigationCoordinatorTests {
         let (coordinator, mockTabShower, _) = createCoordinator()
 
         coordinator.navigateToSettings()
-        
+
         #expect(mockTabShower.capturedSettingsPane == .subscriptionSettings)
     }
-    
+
     @Test("navigateToSubscriptionActivation fetches activation URL and shows subscription tab")
     func navigateToSubscriptionActivation() async throws {
         let (coordinator, mockTabShower, mockSubscriptionManager) = createCoordinator()
         let expectedURL = URL(string: "https://duckduckgo.com/pro/activate")!
         mockSubscriptionManager.urls[.activationFlow] = expectedURL
-        
+
         coordinator.navigateToSubscriptionActivation()
         
         // Verify tab shower was called to show tab with subscription content

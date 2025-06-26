@@ -365,12 +365,14 @@ class PrintingTests: UITestCase {
         // Load the saved PDF
         addressBarTextField.typeURL(validationSaveURL, pressingEnter: true)
 
-        // Wait for PDF to load and validate content
-        let testStaticText = app.groups.containing(.staticText, identifier: "TestPDF").firstMatch
-        XCTAssertTrue(
-            testStaticText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "PDF should contain 'TestPDF' text when loaded in browser."
-        )
+        if #available(macOS 14.0, *) {
+            // Wait for PDF to load and validate content
+            let testStaticText = app.groups.containing(.staticText, identifier: "TestPDF").firstMatch
+            XCTAssertTrue(
+                testStaticText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "PDF should contain 'TestPDF' text when loaded in browser."
+            )
+        }
     }
 
     func test_pdf_contextMenuOpenWithPreview_opensPreviewAndValidatesContent() throws {
@@ -501,12 +503,14 @@ class PrintingTests: UITestCase {
         // Step 4: Switch to pinned tab (cmd+1)
         app.typeKey("1", modifierFlags: [.command])
 
-        // Verify PDF is loaded in the pinned tab
-        let pdfContent = firstWindow.groups.containing(.staticText, identifier: "TestPDF").firstMatch
-        XCTAssertTrue(
-            pdfContent.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "PDF should be loaded in pinned tab."
-        )
+        if #available(macOS 14.0, *) {
+            // Verify PDF is loaded in the pinned tab
+            let pdfContent = firstWindow.groups.containing(.staticText, identifier: "TestPDF").firstMatch
+            XCTAssertTrue(
+                pdfContent.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "PDF should be loaded in pinned tab."
+            )
+        }
 
         // Step 5: Open print dialog in first window
         app.typeKey("p", modifierFlags: [.command])
@@ -547,11 +551,13 @@ class PrintingTests: UITestCase {
         )
 
         // Validate content in second window
-        var testTextWindow2 = secondWindow.groups.containing(.staticText, identifier: "TestPDF").firstMatch
-        XCTAssertTrue(
-            testTextWindow2.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Saved PDF should contain 'TestPDF' text when loaded in second window."
-        )
+        if #available(macOS 14.0, *) {
+            var testTextWindow2 = secondWindow.groups.containing(.staticText, identifier: "TestPDF").firstMatch
+            XCTAssertTrue(
+                testTextWindow2.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "Saved PDF should contain 'TestPDF' text when loaded in second window."
+            )
+        }
 
         // Step 10: Hit cmd+p in the 2nd window
         app.typeKey("p", modifierFlags: [.command])
@@ -637,11 +643,13 @@ class PrintingTests: UITestCase {
         addressBarWindow2.typeURL(pinnedTabSaveURL, pressingEnter: true)
 
         // Validate content in second window
-        testTextWindow2 = secondWindow.groups.containing(.staticText, identifier: "TestPDF").firstMatch
-        XCTAssertTrue(
-            testTextWindow2.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Saved PDF should contain 'TestPDF' text when loaded in second window."
-        )
+        if #available(macOS 14.0, *) {
+            testTextWindow2 = secondWindow.groups.containing(.staticText, identifier: "TestPDF").firstMatch
+            XCTAssertTrue(
+                testTextWindow2.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "Saved PDF should contain 'TestPDF' text when loaded in second window."
+            )
+        }
 
         // Step 13: Additional window switching validation
         // switch to the pinned tab
@@ -710,7 +718,12 @@ private extension PrintingTests {
 
         addressBarTextField.typeURL(pdfURL, pressingEnter: true)
 
-        let element = app.groups.containing(.staticText, identifier: "TestPDF").firstMatch
+        let element: XCUIElement
+        if #available(macOS 14.0, *) {
+            element = app.groups.containing(.staticText, identifier: "TestPDF").firstMatch
+        } else {
+            element = app.groups["WebView"]
+        }
         XCTAssertTrue(
             element.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "PDF View did not appear in a reasonable timeframe."

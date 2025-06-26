@@ -36,8 +36,6 @@ let extensionsInputFiles: [InputFile] = [
 ]
 
 let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
-    .init("BWEncryption.swift", .source),
-    .init("BWEncryptionOutput.swift", .source),
     .init("InfoPlist.xcstrings", .resource),
     .init("DeveloperID.xcstrings", .resource),
     .init("BWManager.swift", .source),

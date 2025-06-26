@@ -74,6 +74,8 @@ protocol OmniBarDelegate: AnyObject {
     func selectedSuggestion() -> Suggestion?
     
     func onVoiceSearchPressed()
+    
+    func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget)
 
     func onDidBeginEditing()
 
@@ -83,6 +85,8 @@ protocol OmniBarDelegate: AnyObject {
     func onOmniPromptSubmitted(_ query: String)
 
     func onSelectFavorite(_ favorite: BookmarkEntity)
+
+    func didRequestCurrentURL() -> URL?
 }
 
 extension OmniBarDelegate {
@@ -144,4 +148,7 @@ extension OmniBarDelegate {
     func onForwardPressed() {
     }
     
+    func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget) {
+        onVoiceSearchPressed()
+    }
 }

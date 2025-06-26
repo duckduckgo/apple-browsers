@@ -326,11 +326,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     ///
     public func updateBandwidthAnalyzer() async {
         guard let (rx, tx) = try? await adapter.getBytesTransmitted() else {
-            self.bandwidthAnalyzer.preventIdle()
+            await self.bandwidthAnalyzer.preventIdle()
             return
         }
 
-        bandwidthAnalyzer.record(rxBytes: rx, txBytes: tx)
+        await bandwidthAnalyzer.record(rxBytes: rx, txBytes: tx)
     }
 
     // MARK: - Connection tester
@@ -347,7 +347,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             providerEvents.fire(.userBecameActive)
 
             await updateBandwidthAnalyzer()
-            return bandwidthAnalyzer.isConnectionIdle()
+            return await bandwidthAnalyzer.isConnectionIdle()
         } rekey: { @MainActor [weak self] in
             try await self?.rekey()
         }
@@ -393,7 +393,10 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 }
 
                 self.tunnelHealth.isHavingConnectivityIssues = true
-                self.bandwidthAnalyzer.reset()
+
+                Task {
+                    await self.bandwidthAnalyzer.reset()
+                }
             }
         }
     }()

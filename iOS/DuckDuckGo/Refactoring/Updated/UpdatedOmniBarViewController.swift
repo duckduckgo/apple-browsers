@@ -145,20 +145,23 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
         if shouldAutoSelectText {
             DispatchQueue.main.async {
-                editingStateViewController.selectAllText()
+                editingStateViewController.setUpForInitialSelectedState()
             }
         }
     }
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
-        let switchBarHandler = SwitchBarHandler()
+        let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper)
 
-        guard let currentText = omniBarView.text else {
+        guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty else {
             return switchBarHandler
         }
 
-        if let textFieldText = textField.text,
-           let url = URL(trimmedAddressBarString: textFieldText.trimmingWhitespace()) {
+        /// Determine whether the current text in the omnibar is a search query or a URL.
+        /// - If the text is a URL, retrieve the full URL from the delegate and update the text with the full URL for display.
+        /// - If the text is a search query, simply update the text with the query itself.
+        if URL(trimmedAddressBarString: currentText) != nil,
+           let url = omniDelegate?.didRequestCurrentURL() {
             let urlText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: true)
             switchBarHandler.updateCurrentText(urlText.string)
         } else {
@@ -184,7 +187,8 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     }
 
     func onPromptSubmitted(_ query: String) {
-        editingStateViewController?.dismissAnimated {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
             self.omniDelegate?.onOmniPromptSubmitted(query)
         }
     }
@@ -197,5 +201,14 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
     func onSelectSuggestion(_ suggestion: Suggestion) {
         omniDelegate?.onOmniSuggestionSelected(suggestion)
         editingStateViewController?.dismissAnimated()
+    }
+
+    func onVoiceSearchRequested(from mode: TextEntryMode) {
+        editingStateViewController?.dismissAnimated { [weak self] in
+            guard let self else { return }
+
+            let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
+            self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
+        }
     }
 }

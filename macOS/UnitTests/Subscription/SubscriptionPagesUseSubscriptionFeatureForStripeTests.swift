@@ -106,7 +106,6 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
 
     var accountManager: AccountManager!
     var subscriptionManager: SubscriptionManager!
-    var mockFreemiumDBPExperimentManager: MockFreemiumDBPExperimentManager!
 
     var feature: SubscriptionPagesUseSubscriptionFeature!
 
@@ -184,13 +183,10 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
                                                          subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
                                                          subscriptionEnvironment: subscriptionEnvironment)
 
-        mockFreemiumDBPExperimentManager = MockFreemiumDBPExperimentManager()
-
         feature = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                           stripePurchaseFlow: stripePurchaseFlow,
                                                           uiHandler: uiHandler,
-                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                          freemiumDBPPixelExperimentManager: mockFreemiumDBPExperimentManager)
+                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability)
         feature.with(broker: broker)
     }
 

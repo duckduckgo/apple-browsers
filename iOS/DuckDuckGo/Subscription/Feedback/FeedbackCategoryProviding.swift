@@ -64,6 +64,7 @@ enum UnifiedFeedbackCategory: String, FeedbackCategoryProviding {
     case vpn
     case pir
     case itr
+    case duckAi
 
     var displayName: String {
         switch self {
@@ -71,6 +72,7 @@ enum UnifiedFeedbackCategory: String, FeedbackCategoryProviding {
         case .vpn: return UserText.generalFeedbackFormCategoryVPN
         case .pir: return UserText.generalFeedbackFormCategoryPIR
         case .itr: return UserText.generalFeedbackFormCategoryITR
+        case .duckAi: return UserText.generalFeedbackFormCategoryAiChat
         }
     }
 }
@@ -177,6 +179,28 @@ enum ITRFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProvi
         case .cantContactAdvisor: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/identity-theft-restoration/iris/")!
         case .advisorUnhelpful: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/identity-theft-restoration/")!
         case .somethingElse: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/identity-theft-restoration/")!
+        }
+    }
+}
+
+enum PaidAIChatFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProviding {
+    case accessSubscriptionModels
+    case loginThirdPartyBrowser
+    case somethingElse
+
+    var displayName: String {
+        switch self {
+        case .accessSubscriptionModels: return UserText.paidDuckAIFeedbackFormCategoryAccessSubscriptionModels
+        case .loginThirdPartyBrowser: return UserText.paidDuckAIFeedbackFormCategoryLoginThirdPartyBrowser
+        case .somethingElse: return UserText.paidDuckAIFeedbackFormCategorySomethingElse
+        }
+    }
+
+    var url: URL {
+        switch self {
+        case .accessSubscriptionModels: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
+        case .loginThirdPartyBrowser: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
+        case .somethingElse: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
         }
     }
 }

@@ -84,7 +84,7 @@ struct MapperToUI {
                 }
 
                 if let closestMatchesFoundEvent = scanJob.closestMatchesFoundEvent() {
-                    for mirrorSite in dataBroker.mirrorSites where mirrorSite.shouldWeIncludeMirrorSite(for: closestMatchesFoundEvent.date) {
+                    for mirrorSite in dataBroker.mirrorSites where mirrorSite.wasExtant(on: closestMatchesFoundEvent.date) {
                         let mirrorSiteMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOutJob,
                                                                           dataBrokerName: mirrorSite.name,
                                                                           dataBrokerURL: mirrorSite.url,
@@ -93,7 +93,7 @@ struct MapperToUI {
                                                                           optOutUrl: dataBroker.optOutUrl)
 
                         if let extractedProfileRemovedDate = extractedProfile.removedDate,
-                           mirrorSite.shouldWeIncludeMirrorSite(for: extractedProfileRemovedDate) {
+                           mirrorSite.wasExtant(on: extractedProfileRemovedDate) {
                             removedProfiles.append(mirrorSiteMatch)
                         } else {
                             inProgressOptOuts.append(mirrorSiteMatch)
@@ -306,7 +306,7 @@ fileprivate extension BrokerProfileQueryData {
 
             for mirrorSite in dataBroker.mirrorSites {
                 let wasMirrorSiteScanned = scanEvents.contains { event in
-                    mirrorSite.shouldWeIncludeMirrorSite(for: event.date)
+                    mirrorSite.wasExtant(on: event.date)
                 }
 
                 if wasMirrorSiteScanned {
@@ -374,7 +374,7 @@ fileprivate extension Array where Element == BrokerProfileQueryData {
 
     var totalScans: Int {
         guard let broker = self.first?.dataBroker else { return 0 }
-        return 1 + broker.mirrorSites.filter { $0.shouldWeIncludeMirrorSite() }.count
+        return 1 + broker.mirrorSites.filter { $0.isExtant() }.count
     }
 
     /// Returns an array of brokers which have been either fully or partially scanned
@@ -398,7 +398,7 @@ fileprivate extension Array where Element == BrokerProfileQueryData {
         }
 
         let mirrorBrokers = broker.mirrorSites.compactMap {
-            $0.shouldWeIncludeMirrorSite() ? $0.scannedBroker(withStatus: status) : nil
+            $0.isExtant() ? $0.scannedBroker(withStatus: status) : nil
         }
 
         return [ScannedBroker(name: broker.name, url: broker.url, status: status)] + mirrorBrokers

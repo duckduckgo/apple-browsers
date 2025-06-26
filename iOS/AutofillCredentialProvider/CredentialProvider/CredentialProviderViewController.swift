@@ -53,18 +53,22 @@ class CredentialProviderViewController: ASCredentialProviderViewController {
                                                                                               credentialIdentityStoreManager: credentialIdentityStoreManager)
 
     private lazy var autofillPixelReporter: AutofillPixelReporter? = {
-        guard let sharedUserDefaults = UserDefaults(suiteName: "\(Global.groupIdPrefix).autofill"), sharedUserDefaults.bool(forKey: AutofillPixelReporter.Keys.autofillDauMigratedKey) else {
+        guard let sharedUserDefaults = UserDefaults.autofillGroupDefaults, sharedUserDefaults.bool(forKey: AutofillUsageStore.Keys.autofillDauMigratedKey) else {
             return nil
         }
 
-        return AutofillPixelReporter(
+        let usageStore = AutofillUsageStore(
             standardUserDefaults: .standard,
-            appGroupUserDefaults: UserDefaults(suiteName: "\(Global.groupIdPrefix).autofill"),
+            appGroupUserDefaults: sharedUserDefaults
+        )
+
+        return AutofillPixelReporter(
+            usageStore: usageStore,
             autofillEnabled: true,
             eventMapping: EventMapping<AutofillPixelEvent> { event, _, params, _ in
                 switch event {
                 case .autofillActiveUser:
-                    Pixel.fire(pixel: .autofillActiveUser)
+                    Pixel.fire(pixel: .autofillActiveUser, withAdditionalParameters: params ?? [:])
                 case .autofillLoginsStacked:
                     Pixel.fire(pixel: .autofillLoginsStacked, withAdditionalParameters: params ?? [:])
                 default:

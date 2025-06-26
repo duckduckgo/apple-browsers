@@ -696,7 +696,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         // THEN
         XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 1)
         let firedPixel = try XCTUnwrap(OnboardingExperimentPixelFireMock.firedMetrics.first)
-        XCTAssertEqual(firedPixel.subfeatureID, OnboardingPixelReporter.SetAsDefaultExperimentMetrics.subfeatureIdentifier)
+        XCTAssertEqual(firedPixel.subfeatureID, OnboardingPixelReporter.SetAsDefaultBrowserPipVideoExperimentMetrics.subfeatureIdentifier)
         XCTAssertEqual(firedPixel.metric, "setAsDefaultBrowser")
         XCTAssertEqual(firedPixel.conversionWindow, 0...0)
         XCTAssertEqual(firedPixel.value, "1")
@@ -712,7 +712,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         // THEN
         XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 1)
         let firedPixel = try XCTUnwrap(OnboardingExperimentPixelFireMock.firedMetrics.first)
-        XCTAssertEqual(firedPixel.subfeatureID, OnboardingPixelReporter.SetAsDefaultExperimentMetrics.subfeatureIdentifier)
+        XCTAssertEqual(firedPixel.subfeatureID, OnboardingPixelReporter.SetAsDefaultBrowserPipVideoExperimentMetrics.subfeatureIdentifier)
         XCTAssertEqual(firedPixel.metric, "rejectSetAsDefaultBrowser")
         XCTAssertEqual(firedPixel.conversionWindow, 0...0)
         XCTAssertEqual(firedPixel.value, "1")

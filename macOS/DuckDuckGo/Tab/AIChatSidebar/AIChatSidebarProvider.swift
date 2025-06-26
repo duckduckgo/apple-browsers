@@ -86,6 +86,7 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         guard let tabSidebar = sidebarsByTab[tabID] else {
             return
         }
+        tabSidebar.sidebarViewController.stopLoading()
         tabSidebar.sidebarViewController.removeCompletely()
         sidebarsByTab.removeValue(forKey: tabID)
     }

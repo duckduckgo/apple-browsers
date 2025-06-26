@@ -66,7 +66,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
         self.userEventHandler = userEventHandler
 
         Task {
-            await self.updateSubscription(cachePolicy: .returnCacheDataElseLoad)
+            await self.updateSubscription(cachePolicy: .cacheFirst)
         }
 
         self.email = subscriptionManager.userEmail
@@ -80,7 +80,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
                 }
 
                 await self?.fetchEmail()
-                await self?.updateSubscription(cachePolicy: .returnCacheDataDontLoad)
+                await self?.updateSubscription(cachePolicy: .cacheOnly)
             }
         }
 
@@ -269,7 +269,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
             }
 
             await self?.fetchEmail()
-            await self?.updateSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+            await self?.updateSubscription(cachePolicy: .remoteFirst)
         }
     }
 

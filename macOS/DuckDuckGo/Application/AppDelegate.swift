@@ -463,7 +463,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 privacyConfigurationManager: privacyConfigurationManager,
                 purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform, paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) }
             ),
-            internalUserDecider: internalUserDecider
+            internalUserDecider: internalUserDecider,
+            featureFlagger: featureFlagger
         )
         self.windowControllersManager = windowControllersManager
 
@@ -630,11 +631,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Freemium DBP
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
 
-        let experimentManager = FreemiumDBPPixelExperimentManager(subscriptionManager: subscriptionAuthV1toV2Bridge)
-        experimentManager.assignUserToCohort()
-
         freemiumDBPFeature = DefaultFreemiumDBPFeature(privacyConfigurationManager: privacyConfigurationManager,
-                                                       experimentManager: experimentManager,
                                                        subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
@@ -889,9 +886,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        vpnAppEventsHandler.applicationDidBecomeActive()
-
         Task { @MainActor in
+            await vpnAppEventsHandler.applicationDidBecomeActive()
             await subscriptionCookieManager.refreshSubscriptionCookie()
         }
     }
@@ -1202,13 +1198,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setUpAutofillPixelReporter() {
         autofillPixelReporter = AutofillPixelReporter(
-            standardUserDefaults: .standard,
-            appGroupUserDefaults: nil,
+            usageStore: AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil),
             autofillEnabled: AutofillPreferences().askToSaveUsernamesAndPasswords,
             eventMapping: EventMapping<AutofillPixelEvent> {event, _, params, _ in
                 switch event {
                 case .autofillActiveUser:
-                    PixelKit.fire(GeneralPixel.autofillActiveUser)
+                    PixelKit.fire(GeneralPixel.autofillActiveUser, withAdditionalParameters: params)
                 case .autofillEnabledUser:
                     PixelKit.fire(GeneralPixel.autofillEnabledUser)
                 case .autofillOnboardedUser:

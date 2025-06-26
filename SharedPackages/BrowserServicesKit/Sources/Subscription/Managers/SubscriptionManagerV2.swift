@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Combine
 import Common
 import os.log
 import Networking
@@ -95,6 +96,8 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription?
 
     var canPurchase: Bool { get }
+    /// Publisher that emits a boolean value indicating whether the user can purchase.
+    var canPurchasePublisher: AnyPublisher<Bool, Never> { get }
     func getProducts() async throws -> [GetProductsItem]
 
     @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManagerV2
@@ -168,6 +171,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     private let isInternalUserEnabled: () -> Bool
     private let legacyAccountStorage: AccountKeychainStorage?
     private let userDefaults: UserDefaults
+    private let canPurchaseSubject = PassthroughSubject<Bool, Never>()
+    private var cancellables = Set<AnyCancellable>()
 
     public init(storePurchaseManager: StorePurchaseManagerV2? = nil,
                 oAuthClient: any OAuthClient,
@@ -207,6 +212,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         return storePurchaseManager.areProductsAvailable
     }
 
+    /// Publisher that emits a boolean value indicating whether the user can purchase.
+    /// The value is updated whenever the `areProductsAvailablePublisher` of the underlying StorePurchaseManager emits a new value.
+    public var canPurchasePublisher: AnyPublisher<Bool, Never> { canPurchaseSubject.eraseToAnyPublisher() }
+
     @available(macOS 12.0, iOS 15.0, *)
     public func storePurchaseManager() -> StorePurchaseManagerV2 {
         return _storePurchaseManager!
@@ -235,6 +244,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     // MARK: - Environment
 
     @available(macOS 12.0, iOS 15.0, *) private func setupForAppStore() {
+        storePurchaseManager().areProductsAvailablePublisher
+            .sink { [weak self] value in
+                self?.canPurchaseSubject.send(value)
+            }
+            .store(in: &cancellables)
+
         Task {
             await storePurchaseManager().updateAvailableProducts()
         }
@@ -265,7 +280,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     public func loadInitialData() async {
         Logger.subscription.log("Loading initial data...")
         do {
-            let subscription = try await getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+            let subscription = try await getSubscription(cachePolicy: .remoteFirst)
             Logger.subscription.log("Subscription is \(subscription.isActive ? "active" : "not active", privacy: .public)")
         } catch SubscriptionEndpointServiceError.noData {
             Logger.subscription.log("No Subscription available")
@@ -277,27 +292,40 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     @discardableResult
     public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
+
+        // NOTE: This is ugly, the subscription cache will be moved from the endpoint service to here and handled properly https://app.asana.com/0/0/1209015691872191
+
         guard isUserAuthenticated else {
             throw SubscriptionEndpointServiceError.noData
         }
 
         var subscription: PrivacyProSubscription
-        // NOTE: This is ugly, the subscription cache will be moved from the endpoint service to here and handled properly https://app.asana.com/0/0/1209015691872191
+
         switch cachePolicy {
-        case .reloadIgnoringLocalCacheData:
-            let tokenContainer = try await getTokenContainer(policy: .localValid)
-            subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken,
-                                                                                 cachePolicy: cachePolicy)
-        case .returnCacheDataElseLoad:
-            if let tokenContainer = try? await getTokenContainer(policy: .localValid) {
-                subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken,
-                                                                                     cachePolicy: .returnCacheDataElseLoad)
-            } else {
-                subscription = try await getSubscription(cachePolicy: .returnCacheDataDontLoad)
+
+        case .remoteFirst, .cacheFirst:
+
+            if cachePolicy == .cacheFirst {
+                // We skip ahead and try to get the cached subscription, useful with slow/no connections where we don't want to wait for a get token timeout
+                do {
+                    subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: cachePolicy)
+                    break
+                } catch {}
             }
-        case .returnCacheDataDontLoad:
-            subscription = try await subscriptionEndpointService.getSubscription(accessToken: "",
-                                                                                 cachePolicy: .returnCacheDataDontLoad)
+
+            var tokenContainer: TokenContainer
+            do {
+                tokenContainer = try await getTokenContainer(policy: .localValid)
+            } catch SubscriptionManagerError.noTokenAvailable {
+                throw SubscriptionEndpointServiceError.noData
+            } catch {
+                // Failed to get a valid token, fall back on cache
+                subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: .cacheOnly)
+                break
+            }
+            subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken, cachePolicy: cachePolicy)
+        case .cacheOnly:
+            subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: cachePolicy)
         }
 
         if subscription.isActive {
@@ -313,7 +341,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription? {
         do {
             let tokenContainer = try await oAuthClient.activate(withPlatformSignature: lastTransactionJWSRepresentation)
-            return try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken, cachePolicy: .reloadIgnoringLocalCacheData)
+            return try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken, cachePolicy: .remoteFirst)
         } catch SubscriptionEndpointServiceError.noData {
             return nil
         } catch {
@@ -543,11 +571,11 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         var availableFeatures: [SubscriptionEntitlement]
         if forceRefresh {
             let tokenContainer = try await getTokenContainer(policy: .localForceRefresh) // Refresh entitlements if requested
-            let currentSubscription = try await getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+            let currentSubscription = try await getSubscription(cachePolicy: .remoteFirst)
             userEntitlements = tokenContainer.decodedAccessToken.subscriptionEntitlements // What the user has access to
             availableFeatures = currentSubscription.features ?? [] // what the subscription is capable to provide
         } else {
-            let currentSubscription = try? await getSubscription(cachePolicy: .returnCacheDataElseLoad)
+            let currentSubscription = try? await getSubscription(cachePolicy: .cacheFirst)
             let tokenContainer = try? await getTokenContainer(policy: .local)
             userEntitlements = tokenContainer?.decodedAccessToken.subscriptionEntitlements ?? []
             availableFeatures = currentSubscription?.features ?? []

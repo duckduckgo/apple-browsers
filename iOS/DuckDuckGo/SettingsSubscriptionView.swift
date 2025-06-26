@@ -19,6 +19,7 @@
 
 import Core
 import Subscription
+import DataBrokerProtection_iOS
 import SwiftUI
 import UIKit
 import DesignResourcesKit
@@ -264,15 +265,27 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.dataBrokerProtection) {
             let hasDBPEntitlement = userEntitlements.contains(.dataBrokerProtection)
 
-            NavigationLink(destination: LazyView(SubscriptionPIRView()), isActive: $isShowingDBP) {
-                SettingsCellView(
-                    label: UserText.settingsPProDBPTitle,
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
-                    statusIndicator: StatusIndicatorView(status: hasDBPEntitlement ? .on : .off),
-                    isGreyedOut: !hasDBPEntitlement
-                )
+            if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
+                NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!)), isActive: $isShowingDBP) {
+                    SettingsCellView(
+                        label: UserText.settingsPProDBPTitle,
+                        image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
+                        statusIndicator: StatusIndicatorView(status: hasDBPEntitlement ? .on : .off),
+                        isGreyedOut: !hasDBPEntitlement
+                    )
+                }
+                .disabled(!hasDBPEntitlement)
+            } else {
+                NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView()), isActive: $isShowingDBP) {
+                    SettingsCellView(
+                        label: UserText.settingsPProDBPTitle,
+                        image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
+                        statusIndicator: StatusIndicatorView(status: hasDBPEntitlement ? .on : .off),
+                        isGreyedOut: !hasDBPEntitlement
+                    )
+                }
+                .disabled(!hasDBPEntitlement)
             }
-            .disabled(!hasDBPEntitlement)
         }
 
         if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {

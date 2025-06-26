@@ -26,6 +26,7 @@ import VPN
 import NetworkProtectionUI
 import NetworkProtectionIPC
 import NetworkExtension
+import PixelKit
 import Subscription
 
 /// Implements the sequence of steps that the VPN needs to execute when the App starts up.
@@ -39,18 +40,24 @@ final class VPNAppEventsHandler {
     private var cancellables = Set<AnyCancellable>()
     private let defaults: UserDefaults
     private let featureGatekeeper: VPNFeatureGatekeeper
+    private let ipcClient: VPNControllerXPCClientProtocol
     private let loginItemsManager: LoginItemsManaging
+    private let pixelKit: PixelKit?
 
     // MARK: - Initializers
 
     init(featureGatekeeper: VPNFeatureGatekeeper,
          featureFlagOverridesPublisher: FeatureFlagOverridesPublisher,
          loginItemsManager: LoginItemsManaging,
-         defaults: UserDefaults = .netP) {
+         ipcClient: VPNControllerXPCClientProtocol = VPNControllerXPCClient.shared,
+         defaults: UserDefaults = .netP,
+         pixelKit: PixelKit? = .shared) {
 
         self.defaults = defaults
         self.featureGatekeeper = featureGatekeeper
+        self.ipcClient = ipcClient
         self.loginItemsManager = loginItemsManager
+        self.pixelKit = pixelKit
 
         subscribeToFeatureFlagOverrideChanges(featureFlagOverridesPublisher)
     }
@@ -58,29 +65,70 @@ final class VPNAppEventsHandler {
     /// Call this method when the app finishes launching, to run the startup logic for NetP.
     ///
     func applicationDidFinishLaunching() {
-        loginItemsControlCheckpoint(canRestart: true)
+        Task {
+            await loginItemsControlCheckpoint(canRestart: true, loginItemsManager: loginItemsManager)
+        }
     }
 
     func applicationDidBecomeActive() {
-        loginItemsControlCheckpoint(canRestart: false)
+        Task {
+            await loginItemsControlCheckpoint(canRestart: false, loginItemsManager: loginItemsManager)
+        }
     }
 
     // MARK: - Login Item Control Checkpoints
 
+    private enum LoginItemsControlCheckpointPixel: PixelKitEventV2 {
+        case cannotStopVPN(_ error: Error)
+
+        var name: String {
+            switch self {
+            case .cannotStopVPN:
+                return "vpn_browser_login_items_control_checkpoint_cannot_stop_vpn"
+            }
+        }
+
+        var error: (any Error)? {
+            switch self {
+            case .cannotStopVPN(let error):
+                return error
+            }
+        }
+
+        var parameters: [String: String]? {
+            nil
+        }
+    }
+
     /// Checks whether the VNP login items need to be disabled
     ///
-    private func loginItemsControlCheckpoint(canRestart: Bool) {
-        Task { @MainActor [loginItemsManager] in
-            switch try? await featureGatekeeper.canStartVPN() {
-            case .some(true) where loginItemsManager.isAnyEnabled(LoginItemsManager.vpnLoginItems):
-                if canRestart {
-                    restartLoginItem(using: loginItemsManager)
-                }
-            case .some(false) where loginItemsManager.isAnyInstalled(LoginItemsManager.vpnLoginItems):
-                disableLoginItem(using: loginItemsManager)
-            default:
-                break
+    @MainActor
+    private func loginItemsControlCheckpoint(canRestart: Bool, loginItemsManager: LoginItemsManaging) async {
+        switch try? await featureGatekeeper.canStartVPN() {
+        case .some(true) where loginItemsManager.isAnyEnabled(LoginItemsManager.vpnLoginItems):
+            if canRestart {
+                restartLoginItem(using: loginItemsManager)
             }
+        case .some(false) where loginItemsManager.isAnyInstalled(LoginItemsManager.vpnLoginItems):
+            await withCheckedContinuation { continuation in
+                ipcClient.stop { error in
+                    if let error {
+                        self.pixelKit?.fire(LoginItemsControlCheckpointPixel.cannotStopVPN(error))
+                    }
+
+                    Task { @MainActor in
+                        do {
+                            try await Task.sleep(interval: .seconds(2))
+                        } catch {
+                            // no-op: just want to catch task cancellation to make sure resume is called
+                        }
+                        self.disableLoginItem(using: loginItemsManager)
+                        continuation.resume()
+                    }
+                }
+            }
+        default:
+            break
         }
     }
 

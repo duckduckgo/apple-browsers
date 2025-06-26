@@ -323,8 +323,6 @@ final class AddressBarTextField: NSTextField {
         case .historyEntry,
                 .website:
             PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .suggestion))
-        case .openTab:
-            PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .newTab))
         case .none:
             // Fire engagement pixel for direct URL entry (not search phrases)
             if URL.makeURL(from: stringValueWithoutSuffix) != nil {

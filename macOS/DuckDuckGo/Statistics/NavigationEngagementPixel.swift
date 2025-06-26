@@ -50,7 +50,6 @@ enum NavigationEngagementPixel {
 
     enum URLSource: String {
         case addressBar = "source-address-bar"
-        case newTab = "source-new-tab"
         case suggestion = "source-suggestion"
     }
 }

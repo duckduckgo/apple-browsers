@@ -290,7 +290,6 @@ final class OmniBarEditingStateViewController: UIViewController {
 
         switchBarHandler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
-            .dropFirst()
             .sink { [weak self] newState in
                 guard let self = self else { return }
                 switch newState {

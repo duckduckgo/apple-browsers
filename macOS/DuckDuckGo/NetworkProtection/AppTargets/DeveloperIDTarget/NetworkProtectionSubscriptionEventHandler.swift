@@ -78,13 +78,13 @@ final class NetworkProtectionSubscriptionEventHandler {
         }
     }
 
-    private func handleEntitlementsChange(hasEntitlements: Bool, source: VPNSubscriptionNotificationPixel.Source) async {
+    private func handleEntitlementsChange(hasEntitlements: Bool, source: VPNSubscriptionStatusPixel.Source) async {
         let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
         if hasEntitlements {
             PixelKit.fire(
-                VPNSubscriptionNotificationPixel.vpnFeatureEnabled(
+                VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
                     source: source),
@@ -92,7 +92,7 @@ final class NetworkProtectionSubscriptionEventHandler {
             UserDefaults.netP.networkProtectionEntitlementsExpired = false
         } else {
             PixelKit.fire(
-                VPNSubscriptionNotificationPixel.vpnFeatureDisabled(
+                VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
                     source: source),
@@ -129,7 +129,7 @@ final class NetworkProtectionSubscriptionEventHandler {
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
             PixelKit.fire(
-                VPNSubscriptionNotificationPixel.signedIn(
+                VPNSubscriptionStatusPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
                     source: .notification(sourceObject: notification.object)),
@@ -146,7 +146,7 @@ final class NetworkProtectionSubscriptionEventHandler {
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
             PixelKit.fire(
-                VPNSubscriptionNotificationPixel.signedOut(
+                VPNSubscriptionStatusPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
                     source: .notification(sourceObject: notification.object)),

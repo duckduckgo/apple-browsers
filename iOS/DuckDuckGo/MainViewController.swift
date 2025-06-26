@@ -1879,7 +1879,7 @@ class MainViewController: UIViewController {
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
             PixelKit.fire(
-                VPNSubscriptionNotificationPixel.signedIn(
+                VPNSubscriptionStatusPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: notification.object),
@@ -1909,7 +1909,7 @@ class MainViewController: UIViewController {
                       hasEntitlement == false
             else {
                 PixelKit.fire(
-                    VPNSubscriptionNotificationPixel.vpnEnabled(
+                    VPNSubscriptionStatusPixel.vpnEnabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
                         sourceObject: notification.object),
@@ -1918,7 +1918,7 @@ class MainViewController: UIViewController {
             }
 
             PixelKit.fire(
-                VPNSubscriptionNotificationPixel.vpnDisabled(
+                VPNSubscriptionStatusPixel.vpnDisabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: notification.object),
@@ -1941,7 +1941,7 @@ class MainViewController: UIViewController {
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
             PixelKit.fire(
-                VPNSubscriptionNotificationPixel.signedOut(
+                VPNSubscriptionStatusPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
                     sourceObject: notification.object),

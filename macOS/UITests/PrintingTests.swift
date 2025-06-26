@@ -696,8 +696,69 @@ private extension PrintingTests {
     }
 
     @discardableResult
-    func getPdfViewElement(in element: XCUIElement? = nil) -> XCUIElement {
-        let element = (element ?? app).groups.containing(NSPredicate(format: "elementType == %lu AND value == %@", XCUIElement.ElementType.staticText.rawValue, "TestPDF")).firstMatch
+    func getPdfViewElement(in root: XCUIElement? = nil) -> XCUIElement {
+
+        let element: XCUIElement
+        if #available(macOS 15, *) {
+            element = (root ?? app).groups.containing(NSPredicate(format: "elementType == %lu AND value == %@", XCUIElement.ElementType.staticText.rawValue, "TestPDF")).firstMatch
+        } else {
+            // • [group] isEnabled: 1 frame: NSRect: {{184, 160}, {1552, 786}} - webView
+            //   • [group] isEnabled: 0 frame: NSRect: {{0, 294}, {1552, 786}} - group2
+            //     • [group] isEnabled: 0 frame: NSRect: {{184, 160}, {1552, 786}} - group3
+            //       • [group] label: "document" isEnabled: 0 frame: NSRect: {{184, 160}, {1552, 786}} - pdfView
+            //         • [other] isEnabled: 0 frame: NSRect: {{194, 174}, {1530, 2164}} - page
+            //           • [group] isEnabled: 0 frame: NSRect: {{339, 317}, {106, 33}} - pageGroup
+            //             • [staticText] value: "TestPDF" - staticText
+
+            let webView = (root ?? app).groups["WebView"].firstMatch
+            XCTAssertTrue(
+                webView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "WebView did not appear in a reasonable timeframe."
+            )
+            let group1 = webView.groups.firstMatch
+            XCTAssertTrue(
+                group1.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "group1 did not appear in a reasonable timeframe."
+            )
+            let group2 = group1.groups.firstMatch
+            XCTAssertTrue(
+                group2.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "group2 did not appear in a reasonable timeframe."
+            )
+            let group3 = group2.groups.firstMatch
+            XCTAssertTrue(
+                group3.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "group3 did not appear in a reasonable timeframe."
+            )
+            let pdfView = group3.groups.firstMatch
+            XCTAssertTrue(
+                pdfView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "pdfView did not appear in a reasonable timeframe."
+            )
+            let page = pdfView.otherElements.firstMatch
+            XCTAssertTrue(
+                page.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "page did not appear in a reasonable timeframe."
+            )
+            let pageGroup = page.groups.firstMatch
+            XCTAssertTrue(
+                pageGroup.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "pageGroup did not appear in a reasonable timeframe."
+            )
+            let staticText = pageGroup.staticTexts.firstMatch
+            XCTAssertTrue(
+                staticText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "staticText did not appear in a reasonable timeframe."
+            )
+            let predicatedStaticText = pageGroup.staticTexts.element(matching: NSPredicate(format: "elementType == %lu AND value == %@", XCUIElement.ElementType.staticText.rawValue, "TestPDF"))
+            XCTAssertTrue(
+                predicatedStaticText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                "predicatedStaticText did not appear in a reasonable timeframe."
+            )
+
+
+            element = pdfView
+        }
 
         XCTAssertTrue(
             element.waitForExistence(timeout: UITests.Timeouts.elementExistence),

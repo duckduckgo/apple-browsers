@@ -163,8 +163,10 @@ jobs:
         if: failure()
         run: |
           sleep 100
-          cp -f ~/Library/Logs/DiagnosticReports/xctest-*.ips .
+          mkdir -p crash-reports
+          cp -f ~/Library/Logs/DiagnosticReports/xctest-*.ips crash-reports
           ls -l
+          ls -l crash-reports
 
       - name: Upload crash reports
         uses: actions/upload-artifact@v4
@@ -172,7 +174,7 @@ jobs:
         with:
           name: "bsk-crash-reports-macOS"
           path: |
-            xctest-*.ips
+            crash-reports
           retention-days: 7
           include-hidden-files: true
 
@@ -182,12 +184,6 @@ jobs:
         uses: ./.github/actions/fetch-commit-info
         with:
           github-token: ${{ github.token }}
-
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
 
   unit-tests-ios:
 

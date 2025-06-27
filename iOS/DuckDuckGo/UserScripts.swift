@@ -38,6 +38,7 @@ final class UserScripts: UserScriptsProvider {
     let autoconsentUserScript: AutoconsentUserScript
     let aiChatUserScript: AIChatUserScript
     let subscriptionUserScript: SubscriptionUserScript
+    let subscriptionNavigationHandler: SubscriptionURLNavigationHandler
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -80,11 +81,13 @@ final class UserScripts: UserScriptsProvider {
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
+
+        subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         subscriptionUserScript = SubscriptionUserScript(
             platform: .ios,
             subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-            paidAIChatFlagStatusProvider: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
-            navigationDelegate: UIApplication.shared.window?.rootViewController as? MainViewController)
+            paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
+            navigationDelegate: subscriptionNavigationHandler)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
 

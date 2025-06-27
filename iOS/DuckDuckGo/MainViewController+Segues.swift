@@ -404,23 +404,4 @@ extension NSNotification.Name {
     static let settingsDidDisappear: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.settings.didDisappear")
 }
 
-// MARK: - SubscriptionUserScriptNavigationDelegate
 
-extension MainViewController: SubscriptionUserScriptNavigationDelegate {
-    
-    @MainActor
-    func navigateToSettings() {
-        // Navigate directly to Privacy Pro subscription settings
-        segueToSubscriptionSettings()
-    }
-    
-    @MainActor
-    func navigateToSubscriptionActivation() {
-        segueToSubscriptionRestoreFlow()
-    }
-    
-    @MainActor
-    func navigateToSubscriptionPurchase() {
-        segueToPrivacyPro()
-    }
-}

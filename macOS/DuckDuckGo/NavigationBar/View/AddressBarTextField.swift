@@ -265,7 +265,7 @@ final class AddressBarTextField: NSTextField {
         clearUndoManager()
     }
 
-    // don't update Value when the address bar is being edited
+    // don‘t update Value when the address bar is being edited
     private func updateValueIfNeeded(selectedTabViewModel: TabViewModel?, addressBarString: String) {
         var shouldUpdateValue: Bool {
             switch self.value {
@@ -502,7 +502,7 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func switchTo(_ tab: OpenTab) {
-        // reset value so it's not restored next time we come back to the tab
+        // reset value so it‘s not restored next time we come back to the tab
         value = .text("", userTyped: false)
         Application.appDelegate.windowControllersManager.show(url: tab.url, tabId: tab.tabId, source: .switchToOpenTab, newTab: true /* in case not found */)
     }
@@ -558,7 +558,7 @@ final class AddressBarTextField: NSTextField {
     }
 
     /// flag is set when the TextField undo record creation is disabled for current `controlTextDidChange` action
-    /// AddressBarTextEditor checks the flag and disables UndoManager while it's set to prevent doubling Undo action for both text change and direct Value setting
+    /// AddressBarTextEditor checks the flag and disables UndoManager while it‘s set to prevent doubling Undo action for both text change and direct Value setting
     private(set) var isUndoDisabled = false
 
     func withUndoDisabled<R>(do job: () -> R) -> R {
@@ -784,7 +784,7 @@ extension AddressBarTextField {
         }
 
         // navigate to the dropped url when the home page is open
-        // if we're in url editing mode (non-empty), perform standard system text drag-drop
+        // if we‘re in url editing mode (non-empty), perform standard system text drag-drop
         guard let url = draggingInfo.draggingPasteboard.url, self.stringValue.trimmingWhitespace().isEmpty else {
             // activate our window when dropping text to the address bar
             NSApp.activate(ignoringOtherApps: true)
@@ -1109,7 +1109,7 @@ extension AddressBarTextField: NSTextViewDelegate {
         // when typing over the autocomplete suggestion
         if insertionRange == selectedSuggestionRange,
            autocompleteSuggestionBeingTypedOverByUser(with: oldValue.replacingCharacters(in: selectedSuggestionRange, with: typedString)) != nil {
-            // disable TextEditor's built-in undo, we'll save the Suggestion Value to the Undo Manager instead
+            // disable TextEditor‘s built-in undo, we‘ll save the Suggestion Value to the Undo Manager instead
             isUndoDisabled = true
         }
 

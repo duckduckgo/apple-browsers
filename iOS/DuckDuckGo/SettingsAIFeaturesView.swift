@@ -65,7 +65,7 @@ struct SettingsAIFeaturesView: View {
             if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
                 Section {
                     SettingsCellView(label: UserText.settingsAiChatSearchInput,
-                                     accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
+                                     accessory: .toggle(isOn: viewModel.aiChatSearchInputEnabledBinding))
                 } footer: {
                     Text(UserText.settingsAiChatSearchInputFooter)
                 }

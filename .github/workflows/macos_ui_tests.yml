@@ -12,6 +12,10 @@ on:
         type: boolean
         default: true
         required: true
+      single_test_class:
+        description: "Run only a specific UITestCase (optional, e.g. 'AutocompleteTests')"
+        type: string
+        required: false
   schedule:
     - cron: '0 3 * * 1-5' # 3AM UTC offsetted to legacy to avoid action-junit-report@v4 bug
   push:
@@ -91,10 +95,19 @@ jobs:
       - name: List tests
         id: list-tests
         run: |
-          # Find all test files in the UITests directory
-          # This assumes that all test files are named *Tests.swift and are put directly in the UITests directory
-          test_names="$(find UITests -type f -maxdepth 1 -name *Tests.swift | xargs basename | sed 's/\.swift//')"
-          test=$(echo $test_names | jq -cR 'split(" ")')
+          # Check if a single test class was specified
+          single_test_class="${{ inputs.single_test_class }}"
+          
+          if [[ -n "$single_test_class" ]]; then
+            echo "Running single test class: $single_test_class"
+            test=$(echo "[$single_test_class]" | jq -c)
+          else
+            # Find all test files in the UITests directory
+            # This assumes that all test files are named *Tests.swift and are put directly in the UITests directory
+            test_names="$(find UITests -type f -maxdepth 1 -name *Tests.swift | xargs basename | sed 's/\.swift//')"
+            test=$(echo $test_names | jq -cR 'split(" ")')
+          fi
+          
           echo "test=${test}" >> $GITHUB_OUTPUT
 
   ui-tests:

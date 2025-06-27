@@ -334,14 +334,3 @@ extension DataBrokerProtectionIOSManager: DBPUIViewModelDelegate {
     }
 
 }
-
-extension DataBrokerProtectionIOSManager {
-
-    public static var isDBPStaticallyEnabled: Bool {
-#if DEBUG || ALPHA
-        return true
-#else
-        return false
-#endif
-    }
-}

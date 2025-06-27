@@ -60,7 +60,7 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     /// A boolean indicating if the Freemium DBP feature is currently available.
     /// This property aggregates all eligibility criteria.
     var isAvailable: Bool {
-        isEligible
+        isEligible && freemiumDBPUserStateManager.didActivate
     }
 
     /// Publishes `true` when feature availability changes.
@@ -163,7 +163,8 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
                     let featureEnabled = isFeatureFlagEnabled
                     let notCurrentUser = isNotACurrentUser
                     let storeFrontIsUSA = isUSAAppStorefront
-                    let available = featureEnabled && notCurrentUser && storeFrontIsUSA && canPurchase
+                    let didActivate = freemiumDBPUserStateManager.didActivate
+                    let available = featureEnabled && notCurrentUser && storeFrontIsUSA && canPurchase && didActivate
                     Logger.freemiumDBP.debug("[Freemium DBP] Subscription Updated. Feature Availability = \(available)")
 
                     self.isAvailableSubject.send(available)

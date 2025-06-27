@@ -85,7 +85,7 @@ class PrintingTests: UITestCase {
         for child in menuSnapshot.children {
             guard child.elementType == .menuItem else { continue }
             if child.identifier == "PDFContextMenu.print" {
-
+                predicate = NSPredicate(format: "identifier == 'PDFContextMenu.print'")
             } else if child.title == "Print…" {
                 predicate = NSPredicate(format: "title == 'Print…'")
             } else if child.label == "Print…" {
@@ -166,7 +166,7 @@ class PrintingTests: UITestCase {
         for child in menuSnapshot.children {
             guard child.elementType == .menuItem else { continue }
             if child.identifier == "PDFContextMenu.saveAs" {
-
+                predicate = NSPredicate(format: "identifier == 'PDFContextMenu.saveAs'")
             } else if child.title == "Save As…" {
                 predicate = NSPredicate(format: "title == 'Save As…'")
             } else if child.label == "Save As…" {

@@ -1,5 +1,5 @@
 //
-//  MockContentScopeExperimentManager.swift
+//  MockFeatureFlagger.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,13 +16,22 @@
 //  limitations under the License.
 //
 
-import Foundation
-@testable import BrowserServicesKit
+import BrowserServicesKit
+import FeatureFlags
 
-class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
-    var allActiveContentScopeExperiments: Experiments = [:]
+typealias MockFeatureFlagger = BrowserServicesKit.MockFeatureFlagger
 
-    func resolveContentScopeScriptActiveExperiments() -> Experiments {
-        return allActiveContentScopeExperiments
+extension MockFeatureFlagger {
+
+    var enabledFeatureFlags: [FeatureFlag] {
+        get {
+            featuresStub.compactMap { FeatureFlag(rawValue: $0.key) }
+        }
+        set {
+            featuresStub = newValue.reduce(into: [:]) { result, feature in
+                result[feature.rawValue] = true
+            }
+        }
     }
+
 }

@@ -31,15 +31,24 @@ final class AIChatTabExtension {
 
     private var cancellables = Set<AnyCancellable>()
     private let isLoadedInSidebar: Bool
+    private weak var webView: WKWebView?
 
     private(set) weak var aiChatUserScript: AIChatUserScript?
 
     init(scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
+         webViewPublisher: some Publisher<WKWebView, Never>,
          isLoadedInSidebar: Bool) {
         self.isLoadedInSidebar = isLoadedInSidebar
+
+        webViewPublisher.sink { [weak self] webView in
+            self?.webView = webView
+            self?.aiChatUserScript?.webView = webView
+        }.store(in: &cancellables)
+
         scriptsPublisher.sink { [weak self] scripts in
             Task { @MainActor in
                 self?.aiChatUserScript = scripts.aiChatUserScript
+                self?.aiChatUserScript?.webView = self?.webView
 
                 // Pass the handoff payload in case it was provided before the user script was loaded
                 if let payload = self?.temporaryAIChatNativeHandoffData {
@@ -52,6 +61,10 @@ final class AIChatTabExtension {
                     self?.temporaryAIChatRestorationData = nil
                 }
 
+                if let prompt = self?.temporaryAIChatNativePrompt {
+                    self?.aiChatUserScript?.handler.submitAIChatNativePrompt(prompt)
+                    self?.temporaryAIChatNativePrompt = nil
+                }
             }
         }.store(in: &cancellables)
     }
@@ -77,6 +90,17 @@ final class AIChatTabExtension {
 
         aiChatUserScript.handler.messageHandling.setData(data, forMessageType: .chatRestorationData)
     }
+
+    private var temporaryAIChatNativePrompt: AIChatNativePrompt?
+    func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
+        guard let aiChatUserScript else {
+            // User script not yet loaded, store the payload and set when ready
+            temporaryAIChatNativePrompt = prompt
+            return
+        }
+
+        aiChatUserScript.handler.submitAIChatNativePrompt(prompt)
+    }
 }
 
 extension AIChatTabExtension: NavigationResponder {
@@ -100,6 +124,7 @@ protocol AIChatProtocol: AnyObject, NavigationResponder {
     var aiChatUserScript: AIChatUserScript? { get }
     func setAIChatNativeHandoffData(payload: AIChatPayload)
     func setAIChatRestorationData(data: AIChatRestorationData)
+    func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
 }
 
 extension AIChatTabExtension: AIChatProtocol, TabExtension {

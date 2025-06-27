@@ -18,9 +18,12 @@
 
 import Foundation
 import Combine
-@testable import DuckDuckGo_Privacy_Browser
-import BrowserServicesKit
 
-class InternalUserDeciderStoreMock: InternalUserStoring {
-    var isInternalUser: Bool = false
+public class InternalUserDeciderStoreMock: InternalUserStoring {
+
+    public var isInternalUser: Bool = false
+
+    public init(isInternalUser: Bool = false) {
+        self.isInternalUser = isInternalUser
+    }
 }

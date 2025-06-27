@@ -19,9 +19,10 @@
 
 import Foundation
 import Combine
+import Persistence
 
 // MARK: - TextEntryMode Enum
-public enum TextEntryMode {
+public enum TextEntryMode: String, CaseIterable {
     case search
     case aiChat
 }
@@ -33,11 +34,13 @@ protocol SwitchBarHandling: AnyObject {
     var currentText: String { get }
     var currentToggleState: TextEntryMode { get }
     var isVoiceSearchEnabled: Bool { get }
+    var forceWebSearch: Bool { get }
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { get }
+    var forceWebSearchPublisher: AnyPublisher<Bool, Never> { get }
 
     // MARK: - Methods
     func updateCurrentText(_ text: String)
@@ -45,17 +48,26 @@ protocol SwitchBarHandling: AnyObject {
     func setToggleState(_ state: TextEntryMode)
     func clearText()
     func microphoneButtonTapped()
+    func toggleForceWebSearch()
+    func setForceWebSearch(_ enabled: Bool)
 }
 
 // MARK: - SwitchBarHandler Implementation
 final class SwitchBarHandler: SwitchBarHandling {
 
+    // MARK: - Constants
+    private enum StorageKey {
+        static let toggleState = "SwitchBarHandler.toggleState"
+    }
+
     // MARK: - Dependencies
     private let voiceSearchHelper: VoiceSearchHelperProtocol
+    private let storage: KeyValueStoring
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
     @Published private(set) var currentToggleState: TextEntryMode = .search
+    @Published private(set) var forceWebSearch: Bool = false
 
     var isVoiceSearchEnabled: Bool {
         voiceSearchHelper.isVoiceSearchEnabled
@@ -69,6 +81,10 @@ final class SwitchBarHandler: SwitchBarHandling {
         $currentToggleState.eraseToAnyPublisher()
     }
 
+    var forceWebSearchPublisher: AnyPublisher<Bool, Never> {
+        $forceWebSearch.eraseToAnyPublisher()
+    }
+
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> {
         textSubmissionSubject.eraseToAnyPublisher()
     }
@@ -80,8 +96,10 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
     private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
 
-    init(voiceSearchHelper: VoiceSearchHelperProtocol) {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring) {
         self.voiceSearchHelper = voiceSearchHelper
+        self.storage = storage
+        restoreToggleState()
     }
 
     // MARK: - SwitchBarHandling Implementation
@@ -96,6 +114,7 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     func setToggleState(_ state: TextEntryMode) {
         currentToggleState = state
+        saveToggleState()
     }
 
     func clearText() {
@@ -104,5 +123,24 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     func microphoneButtonTapped() {
         microphoneButtonTappedSubject.send(())
+    }
+
+    func toggleForceWebSearch() {
+        forceWebSearch.toggle()
+    }
+
+    func setForceWebSearch(_ enabled: Bool) {
+        forceWebSearch = enabled
+    }
+
+    func saveToggleState() {
+        storage.set(currentToggleState.rawValue, forKey: StorageKey.toggleState)
+    }
+
+    func restoreToggleState() {
+        if let storedValue = storage.object(forKey: StorageKey.toggleState) as? String,
+           let restoredState = TextEntryMode(rawValue: storedValue) {
+            currentToggleState = restoredState
+        }
     }
 }

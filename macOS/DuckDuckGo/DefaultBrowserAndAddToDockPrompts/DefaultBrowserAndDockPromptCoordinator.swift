@@ -70,13 +70,13 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let pixelFiring: PixelFiring?
     private let isSparkleBuild: Bool
-    private let isOnboardingCompleted: Bool
+    private let isOnboardingCompleted: () -> Bool
     private let dateProvider: () -> Date
 
     init(
         promptTypeDecider: DefaultBrowserAndDockPromptTypeDeciding,
         store: DefaultBrowserAndDockPromptStorage,
-        isOnboardingCompleted: Bool,
+        isOnboardingCompleted: @escaping () -> Bool,
         dockCustomization: DockCustomization = DockCustomizer(),
         defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
         applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
@@ -114,7 +114,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
 
     func getPromptType() -> DefaultBrowserAndDockPromptPresentationType? {
         // If user has not completed the onboarding do not show any prompts.
-        guard isOnboardingCompleted else { return nil }
+        guard isOnboardingCompleted() else { return nil }
 
         // If user has set browser as default and app is added to the dock do not show any prompts.
         guard let evaluatePromptEligibility else { return nil }

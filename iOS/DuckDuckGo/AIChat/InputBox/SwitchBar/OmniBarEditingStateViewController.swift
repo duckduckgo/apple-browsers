@@ -290,7 +290,6 @@ final class OmniBarEditingStateViewController: UIViewController {
 
         switchBarHandler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
-            .dropFirst()
             .sink { [weak self] newState in
                 guard let self = self else { return }
                 switch newState {
@@ -336,6 +335,8 @@ final class OmniBarEditingStateViewController: UIViewController {
 
     func setUpForInitialSelectedState() {
         switchBarVC.textEntryViewController.selectAllText()
+        // Enable the initial selected state where both mic and clear buttons are visible
+        switchBarVC.textEntryViewController.textEntryView.setInitialSelectedState(true)
         showSuggestionTray(.favorites)
     }
 

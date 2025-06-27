@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
+import AIChat
+import Combine
 import Foundation
 import UserScript
-import AIChat
 
 protocol AIChatUserScriptHandling {
     func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -30,18 +31,24 @@ protocol AIChatUserScriptHandling {
     func recordChat(params: Any, message: UserScriptMessage) -> Encodable?
     func restoreChat(params: Any, message: UserScriptMessage) -> Encodable?
     func removeChat(params: Any, message: UserScriptMessage) -> Encodable?
+    var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
+    func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
 }
 
 struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let messageHandling: AIChatMessageHandling
+    public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
+
+    private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let storage: AIChatPreferencesStorage
 
     init(storage: AIChatPreferencesStorage,
          messageHandling: AIChatMessageHandling = AIChatMessageHandler()) {
         self.storage = storage
         self.messageHandling = messageHandling
+        self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
     }
 
     enum AIChatKeys {
@@ -103,6 +110,10 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     public func removeChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
         messageHandling.setData(nil, forMessageType: .chatRestorationData)
         return nil
+    }
+
+    func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
+        aiChatNativePromptSubject.send(prompt)
     }
 }
 

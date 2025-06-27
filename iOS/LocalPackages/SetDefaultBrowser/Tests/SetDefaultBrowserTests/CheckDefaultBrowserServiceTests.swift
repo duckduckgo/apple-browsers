@@ -27,9 +27,9 @@ import SetDefaultBrowserTestSupport
 struct CheckDefaultBrowserServiceTests {
     private static let isLowerThanIOS18PointTwo: Bool = {
         if #available(iOS 18.2, *) {
-            true
-        } else {
             false
+        } else {
+            true
         }
     }()
 
@@ -112,7 +112,7 @@ struct CheckDefaultBrowserServiceTests {
     }
 
     @MainActor
-    @Test(.disabled(if: CheckDefaultBrowserServiceTests.isLowerThanIOS18PointTwo))
+    @Test(.enabled(if: CheckDefaultBrowserServiceTests.isLowerThanIOS18PointTwo))
     func legacyCheckDefaultBrowserReturnsNotSupportedFailure() throws {
         // GIVEN
         let sut = SystemCheckDefaultBrowserService()

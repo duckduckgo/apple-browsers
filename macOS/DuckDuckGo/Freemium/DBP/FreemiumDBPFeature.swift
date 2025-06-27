@@ -163,7 +163,8 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
                     let featureEnabled = isFeatureFlagEnabled
                     let notCurrentUser = isNotACurrentUser
                     let storeFrontIsUSA = isUSAAppStorefront
-                    let available = featureEnabled && notCurrentUser && storeFrontIsUSA && canPurchase
+                    let didActivate = freemiumDBPUserStateManager.didActivate
+                    let available = featureEnabled && notCurrentUser && storeFrontIsUSA && canPurchase && didActivate
                     Logger.freemiumDBP.debug("[Freemium DBP] Subscription Updated. Feature Availability = \(available)")
 
                     self.isAvailableSubject.send(available)

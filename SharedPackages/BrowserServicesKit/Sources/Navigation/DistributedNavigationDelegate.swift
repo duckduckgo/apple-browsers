@@ -886,6 +886,20 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             navigation.navigationActionReceived(navigationAction)
             Logger.navigation.debug("new same-doc navigation(.\(wkNavigationType): \(wkNavigation.debugDescription) (\(navigation.debugDescription)): \(navigationAction.debugDescription), isCurrent: \(shouldBecomeCurrent ? 1 : 0)")
 
+            if let currentNavigation {
+                Logger.navigation.debug("current navigation: \(currentNavigation.debugDescription)")
+                if !currentNavigation.isCompleted,
+                   case .backForward = currentNavigation.navigationAction.navigationType,
+                   case .sameDocumentNavigation(.sessionStatePop) = navigation.navigationAction.navigationType,
+                   currentNavigation.url == navigation.url {
+                    // `sessionStatePop` navigation completion is received after `backForward` navigation `willStart`
+                    // with different WKNavigation.
+                    // We need to complete the original `backForward` navigation so it doesn't hang in unfinished state.
+                    Logger.navigation.debug("finishing current navigation")
+                    currentNavigation.didFinish()
+                }
+            }
+
             // store `current` navigations in `startedNavigation` to get `currentNavigation` published
             if shouldBecomeCurrent {
                 self.startedNavigation = navigation

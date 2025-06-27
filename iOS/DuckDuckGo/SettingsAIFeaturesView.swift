@@ -62,16 +62,16 @@ struct SettingsAIFeaturesView: View {
                                  accessory: .toggle(isOn: viewModel.isAiChatEnabledBinding))
             }
 
-            if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
-                Section {
-                    SettingsCellView(label: UserText.settingsAiChatSearchInput,
-                                     accessory: .toggle(isOn: viewModel.aiChatSearchInputEnabledBinding))
-                } footer: {
-                    Text(UserText.settingsAiChatSearchInputFooter)
-                }
-            }
-
             if viewModel.isAiChatEnabledBinding.wrappedValue {
+                if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
+                    Section {
+                        SettingsCellView(label: UserText.settingsAiChatSearchInput,
+                                         accessory: .toggle(isOn: viewModel.aiChatSearchInputEnabledBinding))
+                    } footer: {
+                        Text(UserText.settingsAiChatSearchInputFooter)
+                    }
+                }
+
                 Section(header: Text(UserText.settingsAiChatShortcuts)) {
                     SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
                                      accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))

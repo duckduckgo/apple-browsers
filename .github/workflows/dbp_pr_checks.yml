@@ -139,6 +139,7 @@ jobs:
           path: |
             ~/Library/Logs/DiagnosticReports/xctest-*.ips
           retention-days: 7
+          if-no-files-found: ignore
 
       - name: Fetch latest commit author and PR reviewers
         if: always() && github.ref_name == 'main'
@@ -277,6 +278,7 @@ jobs:
           path: |
             ~/Library/Logs/DiagnosticReports/xctest-*.ips
           retention-days: 7
+          if-no-files-found: ignore
 
   create-asana-task:
     name: Create Asana Task

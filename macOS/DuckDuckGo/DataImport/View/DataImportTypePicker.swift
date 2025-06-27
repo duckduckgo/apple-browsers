@@ -33,11 +33,16 @@ struct DataImportTypePicker: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top) {
                 if isDataTypePickerExpanded {
-                    Text(UserText.importDataImportTypeTitleExpanded)
+                    Text(UserText.importDataImportTypeTitleSelected)
                 } else {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(UserText.importDataImportTypeTitleCollapsed)
-                        Text(UserText.importDataImportTypeSubtitleCollapsed)
+                        if case .all = viewModel.dataTypesSelection {
+                            Text(UserText.importDataImportTypeTitleCollapsedAll)
+                        } else {
+                            Text(UserText.importDataImportTypeTitleSelected)
+                        }
+
+                        subtitleText
                             .font(.system(size: 11))
                             .foregroundColor(.secondary)
                     }
@@ -59,8 +64,19 @@ struct DataImportTypePicker: View {
         }
     }
 
+    private var subtitleText: Text {
+        switch viewModel.dataTypesSelection {
+        case .all:
+            Text(UserText.importDataImportTypeSubtitleBookmarksAndPasswords)
+        case .single(let type):
+            Text(type.displayName)
+        case .none:
+            Text(UserText.importDataImportTypeSubtitleNone)
+        }
+    }
+
     @ViewBuilder
-    var pickerBody: some View {
+    private var pickerBody: some View {
         VStack(alignment: .leading) {
             ForEach(DataImport.DataType.allCases, id: \.self) { dataType in
                 // display all types for a browser disabling unavailable options

@@ -30742,14 +30742,26 @@
         }
       }
     },
-    "import.browser.data.import-type.subtitle.collapsed" : {
-      "comment" : "Import Browser Data dialog title for option to choose what to import in collapsed state",
+    "import.browser.data.import-type.subtitle.bookmarks.and.passwords" : {
+      "comment" : "Import Browser Data dialog subtitle for option to choose what to import in collapsed state",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Bookmarks and passwords"
+          }
+        }
+      }
+    },
+    "import.browser.data.import-type.subtitle.none" : {
+      "comment" : "Import Browser Data dialog subtitle for option to choose what to import in collapsed state",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "None"
           }
         }
       }
@@ -30761,19 +30773,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Import all available data"
+            "value" : "Import selected data"
           }
         }
       }
     },
-    "import.browser.data.import-type.title.expanded" : {
-      "comment" : "Import Browser Data dialog title for option to choose what to import in expanded state",
+    "import.browser.data.import-type.title.collapsed.all" : {
+      "comment" : "Import Browser Data dialog title for option to choose what to import in collapsed state",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Select data to import"
+            "value" : "Import all available data"
           }
         }
       }

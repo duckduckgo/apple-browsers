@@ -74,7 +74,6 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
         self.navigationDelegate = navigationDelegate
     }
 
-    @MainActor
     func handshake(params: Any, message: any UserScriptMessage) async throws -> DataModel.HandshakeResponse {
         return .init(availableMessages: [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase], platform: platform)
     }

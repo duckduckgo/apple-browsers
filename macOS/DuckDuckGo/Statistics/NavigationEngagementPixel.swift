@@ -45,7 +45,6 @@ enum NavigationEngagementPixel {
     enum BookmarkSource: String {
         case listInterface = "source-list-interface"
         case menu = "source-menu"
-        case suggestion = "source-suggestion"
     }
 
     enum URLSource: String {

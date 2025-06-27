@@ -317,10 +317,8 @@ final class AddressBarTextField: NSTextField {
 
     private func navigate(suggestion: Suggestion?) {
         switch suggestion {
-        case .bookmark(_, _, let isFavorite, _):
-            PixelKit.fire(NavigationEngagementPixel.navigateToBookmark(source: .suggestion, isFavorite: isFavorite))
-            PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .suggestion))
-        case .historyEntry,
+        case .bookmark(_, _, let isFavorite, _):,
+                .historyEntry,
                 .website:
             PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .suggestion))
         case .none:

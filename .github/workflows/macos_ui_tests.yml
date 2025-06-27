@@ -100,7 +100,7 @@ jobs:
           
           if [[ -n "$single_test_class" ]]; then
             echo "Running single test class: $single_test_class"
-            test=$(echo "[$single_test_class]" | jq -c)
+            test=$(jq -nc --arg class "$single_test_class" '[$class]')
           else
             # Find all test files in the UITests directory
             # This assumes that all test files are named *Tests.swift and are put directly in the UITests directory

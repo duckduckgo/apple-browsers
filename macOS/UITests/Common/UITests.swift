@@ -56,7 +56,6 @@ enum UITests {
     /// - Parameter requestedToggleState: How the autocomplete checkbox state should be set
     static func setAutocompleteToggleBeforeTestcaseRuns(_ requestedToggleState: Bool) {
         let app = XCUIApplication.setUp()
-        app.launch()
 
         let settings = app.menuItems["MainMenu.preferencesMenuItem"]
         XCTAssertTrue(

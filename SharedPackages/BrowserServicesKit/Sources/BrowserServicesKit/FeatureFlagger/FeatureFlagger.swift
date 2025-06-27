@@ -376,7 +376,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
 
     public func resolveCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
         // Check for local overrides
-        if allowOverride, internalUserDecider.isInternalUser, let localOverride = localOverrides?.experimentOverride(for: featureFlag) {
+        if allowOverride, allowOverrides(), let localOverride = localOverrides?.experimentOverride(for: featureFlag) {
             return featureFlag.cohortType?.cohorts.first { $0.rawValue == localOverride }
         }
 
@@ -392,7 +392,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         case .internalOnly(let cohort):
             return cohort
         case .remoteReleasable(let featureType),
-                .remoteDevelopment(let featureType) where internalUserDecider.isInternalUser:
+             .remoteDevelopment(let featureType) where internalUserDecider.isInternalUser:
             if case .subfeature(let subfeature) = featureType {
                 if let resolvedCohortID = resolveCohort(subfeature.rawValue, parentID: subfeature.parent.rawValue, allowCohortAssignment: allowCohortAssignment) {
                     return featureFlag.cohortType?.cohort(for: resolvedCohortID)

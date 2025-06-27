@@ -133,6 +133,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appearancePreferences: appearancePreferences,
         customizationModel: newTabPageCustomizationModel,
         bookmarkManager: bookmarkManager,
+        faviconManager: faviconManager,
         activeRemoteMessageModel: activeRemoteMessageModel,
         historyCoordinator: historyCoordinator,
         contentBlocking: privacyFeatures.contentBlocking,

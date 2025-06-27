@@ -60,7 +60,7 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     /// A boolean indicating if the Freemium DBP feature is currently available.
     /// This property aggregates all eligibility criteria.
     var isAvailable: Bool {
-        isEligible
+        isEligible && freemiumDBPUserStateManager.didActivate
     }
 
     /// Publishes `true` when feature availability changes.

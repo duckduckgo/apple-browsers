@@ -11276,7 +11276,6 @@
 			packageProductDependencies = (
 				B65CD8D22B316E1700A595BB /* SnapshotTesting */,
 				9D9DE57E2C63B64F00D20B15 /* AppKitExtensions */,
-				84E2FC492E0E6BD2000874F7 /* FeatureFlags */,
 			);
 			productName = "UI Tests";
 			productReference = 7B4CE8DA26F02108009134B1 /* UI Tests.xctest */;
@@ -17641,10 +17640,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
 			productName = InlineSnapshotTesting;
-		};
-		84E2FC492E0E6BD2000874F7 /* FeatureFlags */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = FeatureFlags;
 		};
 		84EFBCCF2D817CC400706739 /* InlineSnapshotTesting */ = {
 			isa = XCSwiftPackageProductDependency;

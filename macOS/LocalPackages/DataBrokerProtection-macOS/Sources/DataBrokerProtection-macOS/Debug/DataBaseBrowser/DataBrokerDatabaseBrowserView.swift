@@ -72,7 +72,7 @@ struct DatabaseView: View {
     private func dataView() -> some View {
         GeometryReader { geometry in
             ScrollView([.horizontal, .vertical]) {
-                VStack(alignment: .leading, spacing: 0) {
+                LazyVStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: 0) {
                         ForEach(data[0].data.keys.sorted(), id: \.self) { key in
                             VStack {

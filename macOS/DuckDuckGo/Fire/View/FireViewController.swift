@@ -30,6 +30,7 @@ final class FireViewController: NSViewController {
 
     private(set) var fireViewModel: FireViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
+    private let visualStyle: VisualStyleProviding
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var fireDialogViewController: FirePopoverViewController = {
@@ -37,6 +38,8 @@ final class FireViewController: NSViewController {
         return storyboard.instantiateController(identifier: "FirePopoverViewController")
     }()
 
+    @IBOutlet weak var fakeFireButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var fakeFireButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var deletingDataLabel: NSTextField!
     @IBOutlet weak var fakeFireButton: NSButton!
     @IBOutlet weak var progressIndicatorWrapper: NSView!
@@ -56,9 +59,12 @@ final class FireViewController: NSViewController {
         fatalError("TabBarViewController: Bad initializer")
     }
 
-    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel) {
+    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
+          fireViewModel: FireViewModel,
+          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.fireViewModel = fireViewModel
+        self.visualStyle = visualStyle
 
         super.init(coder: coder)
     }
@@ -69,6 +75,9 @@ final class FireViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        fakeFireButton.image = visualStyle.iconsProvider.fireButtonStyleProvider.icon
+        fakeFireButtonWidthConstraint.constant = visualStyle.tabBarButtonSize
+        fakeFireButtonHeightConstraint.constant = visualStyle.tabBarButtonSize
         deletingDataLabel.stringValue = UserText.fireDialogDelitingData
         if case .normal = AppVersion.runType {
             fireAnimationViewLoadingTask = Task.detached(priority: .userInitiated) {

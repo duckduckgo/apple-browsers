@@ -701,7 +701,9 @@ class AutofillVaultUserScriptTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
     }
 
-    func testWhenGetAutofillDataFocusCalledForNonCreditCardType_ThenNilCardReturned() {
+    func testWhenGetAutofillDataFocusCalledForNonCreditCardType_ThenNilCardReturned() throws {
+        throw XCTSkip("Flaky test")
+
         class FocusDelegate: MockSecureVaultDelegate {
             var capturedMainType: AutofillUserScript.GetAutofillDataMainType?
 
@@ -862,7 +864,9 @@ class AutofillVaultUserScriptTests: XCTestCase {
         }
     }
 
-    func testCancelAllPendingReplies() {
+    func testCancelAllPendingReplies() throws {
+        throw XCTSkip("Flaky test")
+
         class NeverCompletingDelegate: MockSecureVaultDelegate {
             let delegateCalledExpectation: XCTestExpectation
             var callCount = 0

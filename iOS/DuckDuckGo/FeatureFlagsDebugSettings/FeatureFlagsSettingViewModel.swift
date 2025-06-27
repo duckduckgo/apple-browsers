@@ -30,8 +30,8 @@ class FeatureFlagsSettingViewModel: ObservableObject {
     @Published var experiments: [FeatureFlag] = []
 
     init() {
-        self.featureFlags = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType == nil }
-        self.experiments = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType != nil }
+        self.featureFlags = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType == nil }.sorted(by: { $0.rawValue < $1.rawValue })
+        self.experiments = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType != nil }.sorted(by: { $0.rawValue < $1.rawValue })
     }
 
     var isInternalUser: Bool {

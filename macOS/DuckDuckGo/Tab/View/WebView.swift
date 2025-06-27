@@ -21,6 +21,7 @@ import Cocoa
 import CommonObjCExtensions
 import WebKit
 
+@MainActor
 protocol WebViewContextMenuDelegate: AnyObject {
     func webView(_ webView: WebView, willOpenContextMenu menu: NSMenu, with event: NSEvent)
     func webView(_ webView: WebView, didCloseContextMenu menu: NSMenu, with event: NSEvent?)

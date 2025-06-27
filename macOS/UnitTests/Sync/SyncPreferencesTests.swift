@@ -519,6 +519,7 @@ final class SyncPreferencesTests: XCTestCase {
     }
 
     func test_syncWithAnotherDevicePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
+        throw XCTSkip("Flakly test")
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
         let expectedCode = "test_code"

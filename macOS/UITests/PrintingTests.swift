@@ -45,8 +45,8 @@ class PrintingTests: UITestCase {
 
         // Initialize UI elements
         addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
-        printMenuItem = app.menuItems["PDFContextMenu.print"]
-        saveAsMenuItem = app.menuItems["PDFContextMenu.saveAs"]
+        printMenuItem = app.menuItems.element(matching: NSPredicate(format: "identifier == 'PDFContextMenu.print'"))
+        saveAsMenuItem = app.menuItems.element(matching: NSPredicate(format: "identifier == 'PDFContextMenu.saveAs'"))
         printDialog = app.sheets.containing(.button, identifier: "Print").firstMatch
         saveDialog = app.sheets.containing(.button, identifier: "Save").firstMatch
 
@@ -73,6 +73,36 @@ class PrintingTests: UITestCase {
         )
 
         pdfWebView.rightClick()
+
+        let contextMenu = app.windows.firstMatch.children(matching: .menu).firstMatch
+        XCTAssertTrue(
+            contextMenu.waitForExistence(timeout: 10),
+            "Context menu item did not appear in a reasonable timeframe."
+        )
+
+        let menuSnapshot = try contextMenu.snapshot()
+        var predicate: NSPredicate!
+        for child in menuSnapshot.children {
+            guard child.elementType == .menuItem else { continue }
+            if child.identifier == "PDFContextMenu.print" {
+
+            } else if child.title == "Print…" {
+                predicate = NSPredicate(format: "title == 'Print…'")
+            } else if child.label == "Print…" {
+                predicate = NSPredicate(format: "label == 'Print…'")
+            } else if child.value as? String == "Print…" {
+                predicate = NSPredicate(format: "value == 'Print…'")
+            }
+        }
+        if predicate == nil {
+            log("🔴 Failed to find 'Print…' menu item in context menu snapshot")
+            predicate = NSPredicate(format: "title == 'Print…'")
+        } else if let predicate {
+            log("🟢 Found 'Print…' menu item in context menu snapshot: \(predicate.predicateFormat)")
+        }
+        if !printMenuItem.exists {
+            printMenuItem = contextMenu.menuItems.element(matching: predicate).firstMatch
+        }
 
         // Wait for context menu and click Print
         XCTAssertTrue(
@@ -124,6 +154,36 @@ class PrintingTests: UITestCase {
 
         // Right click PDF
         pdfWebView.rightClick()
+
+        let contextMenu = app.windows.firstMatch.children(matching: .menu).firstMatch
+        XCTAssertTrue(
+            contextMenu.waitForExistence(timeout: 10),
+            "Context menu item did not appear in a reasonable timeframe."
+        )
+
+        let menuSnapshot = try contextMenu.snapshot()
+        var predicate: NSPredicate!
+        for child in menuSnapshot.children {
+            guard child.elementType == .menuItem else { continue }
+            if child.identifier == "PDFContextMenu.saveAs" {
+
+            } else if child.title == "Save As…" {
+                predicate = NSPredicate(format: "title == 'Save As…'")
+            } else if child.label == "Save As…" {
+                predicate = NSPredicate(format: "label == 'Save As…'")
+            } else if child.value as? String == "Save As…" {
+                predicate = NSPredicate(format: "value == 'Save As…'")
+            }
+        }
+        if predicate == nil {
+            log("🔴 Failed to find 'Save As…' menu item in context menu snapshot")
+            predicate = NSPredicate(format: "title == 'Save As…'")
+        } else if let predicate {
+            log("🟢 Found 'Save As…' menu item in context menu snapshot: \(predicate.predicateFormat)")
+        }
+        if !saveAsMenuItem.exists {
+            saveAsMenuItem = contextMenu.menuItems.element(matching: predicate).firstMatch
+        }
 
         // Wait for context menu and click Save As
         XCTAssertTrue(
@@ -375,12 +435,33 @@ class PrintingTests: UITestCase {
         // Right-click on PDF to open context menu
         pdfWebView.rightClick()
 
-        // Click "Open with Preview" menu item
-        let openWithPreviewMenuItem = app.menuItems.element(matching: NSPredicate(format: "title == 'Open with Preview'"))
+        let contextMenu = app.windows.firstMatch.children(matching: .menu).firstMatch
         XCTAssertTrue(
-            openWithPreviewMenuItem.waitForExistence(timeout: 10),
-            "Open with Preview menu item did not appear in context menu in a reasonable timeframe."
+            contextMenu.waitForExistence(timeout: 10),
+            "Context menu item did not appear in a reasonable timeframe."
         )
+        let menuSnapshot = try contextMenu.snapshot()
+        var predicate: NSPredicate!
+        for child in menuSnapshot.children {
+            guard child.elementType == .menuItem else { continue }
+            if child.title == "Open with Preview" {
+                predicate = NSPredicate(format: "title == 'Open with Preview'")
+            } else if child.label == "Open with Preview" {
+                predicate = NSPredicate(format: "label == 'Open with Preview'")
+            } else if child.value as? String == "Open with Preview" {
+                predicate = NSPredicate(format: "value == 'Open with Preview'")
+            }
+        }
+        if predicate == nil {
+            log("🔴 Failed to find 'Open with Preview' menu item in context menu snapshot")
+            predicate = NSPredicate(format: "title == 'Open with Preview'")
+        } else if let predicate {
+            log("🟢 Found 'Open with Preview' menu item in context menu snapshot: \(predicate.predicateFormat)")
+        }
+
+        // Click "Open with Preview" menu item
+        let openWithPreviewMenuItem = contextMenu.menuItems.element(matching: predicate).firstMatch
+        XCTAssertTrue(openWithPreviewMenuItem.exists, "Menu item 'Open with Preview' does not exist")
 
         openWithPreviewMenuItem.click()
 

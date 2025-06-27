@@ -36,7 +36,8 @@ public final class SetDefaultBrowserModalPresenter: NSObject, DefaultBrowserProm
     }
 
     public func tryPresentDefaultModalPrompt(from viewController: UIViewController) {
-        guard let _ = coordinator.getPrompt() else { return }
+        // When prompt for inactive user is implemented check prompt type and present different view accordingly.
+        guard coordinator.getPrompt() != nil else { return }
         presentDefaultDefaultBrowserPrompt(from: viewController)
     }
 

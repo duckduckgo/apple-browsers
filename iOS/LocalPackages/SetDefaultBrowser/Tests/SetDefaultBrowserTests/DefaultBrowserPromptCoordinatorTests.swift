@@ -100,7 +100,7 @@ final class DefaultBrowserPromptCoordinatorTests {
 
         // THEN
         #expect(promptTypeDeciderMock.didCallPromptType)
-        #expect(result == .active)
+        #expect(result == .activeUserModal)
     }
 
     @Test(

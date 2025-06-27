@@ -20,14 +20,16 @@
 import Foundation
 import class UIKit.UIApplication
 
+// Represent the type of the modal to display for active/inactive user. Currently only active.
+// More info for inactive users: https://app.asana.com/1/137249556945/project/492600419927320/task/1210568683672934?focus=true
 package enum DefaultBrowserPromptPresentationType {
-    case active
-    case inactive
+    case activeUserModal
+    case inactiveUserModal
 
     init(_ prompt: DefaultBrowserPromptType) {
         switch prompt {
         case .firstModal, .secondModal, .subsequentModal:
-            self = .active
+            self = .activeUserModal
         }
     }
 }

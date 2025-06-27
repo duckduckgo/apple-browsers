@@ -72,6 +72,7 @@ class PrintingTests: UITestCase {
             "PDF WebView did not appear in a reasonable timeframe."
         )
 
+        pdfWebView.click()
         pdfWebView.rightClick()
 
         let contextMenu = app.windows.firstMatch.children(matching: .menu).firstMatch
@@ -147,6 +148,7 @@ class PrintingTests: UITestCase {
         let pdfWebView = openPDFInBrowser()
 
         // Right click PDF
+        pdfWebView.click()
         pdfWebView.rightClick()
 
         let contextMenu = app.windows.firstMatch.children(matching: .menu).firstMatch
@@ -421,6 +423,7 @@ class PrintingTests: UITestCase {
         let pdfWebView = openPDFInBrowser()
 
         // Right-click on PDF to open context menu
+        pdfWebView.click()
         pdfWebView.rightClick()
 
         let contextMenu = app.windows.firstMatch.children(matching: .menu).firstMatch

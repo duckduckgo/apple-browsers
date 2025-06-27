@@ -258,22 +258,14 @@ jobs:
         cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/"
         
         # Store archive name for upload step
-        echo "ARCHIVE_NAME='$(pwd)/$archive_name'" >> $GITHUB_ENV
-        echo "Set ARCHIVE_NAME to: $(pwd)/$archive_name"
-
-    - name: Debug environment variable
-      if: failure() || cancelled()
-      run: |
-        echo "ARCHIVE_NAME environment variable: '$ARCHIVE_NAME'"
-        echo "Checking if archive directory exists:"
-        ls -la "$ARCHIVE_NAME" || echo "Archive directory '$ARCHIVE_NAME' does not exist"
+        echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV
 
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
       if: failure() || cancelled()
       with:
         name: "${{ env.ARCHIVE_NAME }}"
-        path: "${{ env.ARCHIVE_NAME }}"
+        path: "macOS/${{ env.ARCHIVE_NAME }}"
         retention-days: 7
 
   test-report:

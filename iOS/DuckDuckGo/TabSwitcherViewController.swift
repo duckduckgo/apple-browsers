@@ -100,6 +100,10 @@ class TabSwitcherViewController: UIViewController {
         featureFlagger.isFeatureOn(.visualUpdates)
     }
 
+    var isJune2025LayoutChangeEnabled: Bool {
+        featureFlagger.isFeatureOn(.june2025TabManagerLayoutChanges)
+    }
+
     private(set) var bookmarksDatabase: CoreDataDatabase
     let syncService: DDGSyncing
 
@@ -124,7 +128,9 @@ class TabSwitcherViewController: UIViewController {
         tabManager.model
     }
 
-    let barsHandler = TabSwitcherBarsStateHandler()
+    /// Updated based on featureflag / killswitch in `viewDidLoad`
+    var barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
+
     private var tabObserverCancellable: AnyCancellable?
     private let appSettings: AppSettings
 
@@ -158,7 +164,7 @@ class TabSwitcherViewController: UIViewController {
     }
 
     private func activateLayoutConstraintsBasedOnBarPosition() {
-        let isBottomBar = appSettings.currentAddressBarPosition.isBottom
+        let isBottomBar = isJune2025LayoutChangeEnabled && appSettings.currentAddressBarPosition.isBottom
 
         // Potentially for these 3 we could do thing better for 'normal' on iPad
         let topOffset = -6.0
@@ -216,6 +222,8 @@ class TabSwitcherViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        applyJune2025LayoutChanges()
+
         createTitleBar()
         setupBarsLayout()
 
@@ -238,6 +246,10 @@ class TabSwitcherViewController: UIViewController {
         tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.collectionView.reloadData()
         }
+    }
+
+    private func applyJune2025LayoutChanges() {
+        barsHandler = isJune2025LayoutChangeEnabled ? DefaultTabSwitcherBarsStateHandler() : LegacyTabSwitcherBarsStateHandler()
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {

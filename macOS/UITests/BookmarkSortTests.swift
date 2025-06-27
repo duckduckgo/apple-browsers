@@ -35,9 +35,7 @@ class BookmarkSortTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launch()
+        app = XCUIApplication.setUp()
         app.resetBookmarks()
         app.enforceSingleWindow()
     }
@@ -162,9 +160,7 @@ class BookmarkSortTests: UITestCase {
         selectSortByName(mode: .panel)
 
         app.terminate()
-        let newApp = XCUIApplication()
-        newApp.launchEnvironment["UITEST_MODE"] = "1"
-        newApp.launch()
+        let newApp = XCUIApplication.setUp()
         newApp.enforceSingleWindow()
 
         // Wait for new application to start

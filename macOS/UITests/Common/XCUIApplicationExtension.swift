@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import FeatureFlags
 import XCTest
 
 // Enum to represent bookmark modes
@@ -31,6 +32,22 @@ extension XCUIApplication {
         static let bookmarksPanelShortcutButton = "NavigationBarViewController.bookmarkListButton"
         static let manageBookmarksMenuItem = "MainMenu.manageBookmarksMenuItem"
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"
+    }
+
+    static func setUp(environment: [String: String]? = nil, featureFlags: [FeatureFlag: Bool] = [.visualUpdates: true]) -> XCUIApplication {
+        let app = XCUIApplication()
+        if let environment {
+            app.launchEnvironment = app.launchEnvironment.merging(environment, uniquingKeysWith: { $1 })
+        } else {
+            app.launchEnvironment["UITEST_MODE"] = "1"
+        }
+        if !featureFlags.isEmpty {
+            app.launchEnvironment["FEATURE_FLAGS"] = featureFlags.map {
+                "\($0.rawValue)=\($1)"
+            }.joined(separator: " ")
+        }
+        app.launch()
+        return app
     }
 
     /// Dismiss popover with the passed button identifier if exists. If it does not exist it continues the execution without failing.

@@ -279,6 +279,7 @@ public extension FeatureFlagger {
 public class DefaultFeatureFlagger: FeatureFlagger {
 
     public let internalUserDecider: InternalUserDecider
+    private let allowOverrides: () -> Bool
     public let privacyConfigManager: PrivacyConfigurationManaging
     private let experimentManager: ExperimentCohortsManaging?
     public let localOverrides: FeatureFlagLocalOverriding?
@@ -299,12 +300,14 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         self.privacyConfigManager = privacyConfigManager
         self.experimentManager = experimentManager
         self.localOverrides = nil
+        self.allowOverrides = { false }
     }
 
     public init<Flag: FeatureFlagDescribing>(
         internalUserDecider: InternalUserDecider,
         privacyConfigManager: PrivacyConfigurationManaging,
         localOverrides: FeatureFlagLocalOverriding,
+        allowOverrides: (() -> Bool)? = nil,
         experimentManager: ExperimentCohortsManaging?,
         for: Flag.Type
     ) {
@@ -318,6 +321,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         self.internalUserDecider = internalUserDecider
         self.privacyConfigManager = privacyConfigManager
         self.localOverrides = localOverrides
+        self.allowOverrides = allowOverrides ?? { internalUserDecider.isInternalUser }
         self.experimentManager = experimentManager
         localOverrides.featureFlagger = self
 
@@ -328,7 +332,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
     }
 
     public func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-        if allowOverride, internalUserDecider.isInternalUser, let localOverride = localOverrides?.override(for: featureFlag) {
+        if allowOverride, allowOverrides(), let localOverride = localOverrides?.override(for: featureFlag) {
             return localOverride
         }
         switch featureFlag.source {

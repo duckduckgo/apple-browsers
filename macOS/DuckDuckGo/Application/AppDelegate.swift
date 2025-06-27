@@ -382,31 +382,58 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        var featureFlagger: FeatureFlagger
+        let featureFlagger: FeatureFlagger
         if AppVersion.runType.isTests {
-            let mockFeatureFlagger = MockFeatureFlagger()
+            featureFlagger = MockFeatureFlagger()
             self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
-            self.featureFlagger = mockFeatureFlagger
-            featureFlagger = mockFeatureFlagger
+
         } else {
-            let defaultFeatureFlagger = DefaultFeatureFlagger(
+            let isRunningUITests: Bool
+#if REVIEW
+            isRunningUITests = (AppVersion.runType == .uiTests)
+#else
+            isRunningUITests = false
+#endif
+
+            let featureFlagOverrides = FeatureFlagLocalOverrides(
+                keyValueStore: UserDefaults.appConfiguration,
+                actionHandler: featureFlagOverridesPublishingHandler
+            )
+            featureFlagger = DefaultFeatureFlagger(
                 internalUserDecider: internalUserDecider,
                 privacyConfigManager: privacyConfigurationManager,
-                localOverrides: FeatureFlagLocalOverrides(
-                    keyValueStore: UserDefaults.appConfiguration,
-                    actionHandler: featureFlagOverridesPublishingHandler
-                ),
+                localOverrides: featureFlagOverrides,
+                allowOverrides: { [internalUserDecider] in
+                    internalUserDecider.isInternalUser || isRunningUITests
+                },
                 experimentManager: ExperimentCohortsManager(
                     store: ExperimentsDataStore(),
                     fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
                 ),
                 for: FeatureFlag.self
             )
-            self.featureFlagger = defaultFeatureFlagger
-            self.contentScopeExperimentsManager = defaultFeatureFlagger
-            featureFlagger = defaultFeatureFlagger
-        }
+            self.contentScopeExperimentsManager = featureFlagger
 
+            if isRunningUITests {
+                for item in ProcessInfo().environment["FEATURE_FLAGS", default: ""].split(separator: " ") {
+                    let keyValue = item.split(separator: "=")
+                    let key = String(keyValue[0])
+                    guard let value = Bool(keyValue[safe: 1]?.lowercased() ?? "true") else {
+                        fatalError("Only true/false values are supported for feature flag values (or none)")
+                    }
+                    guard let featureFlag = FeatureFlag(rawValue: key) else {
+                        fatalError("Unrecognized feature flag: \(key)")
+                    }
+                    guard featureFlag.supportsLocalOverriding else {
+                        fatalError("Feature flag \(key) does not support local overriding")
+                    }
+                    if featureFlagger.isFeatureOn(for: featureFlag, allowOverride: true) != value {
+                        featureFlagOverrides.toggleOverride(for: featureFlag)
+                    }
+                }
+            }
+        }
+        self.featureFlagger = featureFlagger
         pinnedTabsManagerProvider = PinnedTabsManagerProvider()
 
 #if DEBUG || REVIEW

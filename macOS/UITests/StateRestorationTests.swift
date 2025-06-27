@@ -37,8 +37,7 @@ class StateRestorationTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
+        app = XCUIApplication.setUp()
         firstPageTitle = UITests.randomPageTitle(length: titleStringLength)
         secondPageTitle = UITests.randomPageTitle(length: titleStringLength)
         firstURLForBookmarksBar = UITests.simpleServedPage(titled: firstPageTitle)
@@ -48,7 +47,6 @@ class StateRestorationTests: UITestCase {
         openANewWindowPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.openANewWindow"]
         reopenAllWindowsFromLastSessionPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"]
 
-        app.launch()
         app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window
         app.typeKey("n", modifierFlags: .command)
     }

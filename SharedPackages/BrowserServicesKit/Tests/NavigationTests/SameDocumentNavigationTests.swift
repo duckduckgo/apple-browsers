@@ -27,7 +27,7 @@ import os.log
 @testable import Navigation
 
 @available(macOS 12.0, iOS 15.0, *)
-class ASameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
+class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
 
     override func setUp() {
         super.setUp()

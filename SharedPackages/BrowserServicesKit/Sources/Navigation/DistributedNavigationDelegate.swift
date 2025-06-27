@@ -832,7 +832,7 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
 #if PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED
     @MainActor
     @objc(_webView:navigation:didSameDocumentNavigation:)
-    public func webView(_ webView: WKWebView, wkNavigation: WKNavigation?, didSameDocumentNavigation wkNavigationType: Int) {
+    public func webView(_ webView: WKWebView, wkNavigation: WKNavigation?, didSameDocumentNavigation wkNavigationType: Int) { // swiftlint:disable:this cyclomatic_complexity
         // currentHistoryItemIdentity should only change for completed navigation, not while in progress
         let navigationType = WKSameDocumentNavigationType(rawValue: wkNavigationType) ?? {
             assertionFailure("Unsupported SameDocumentNavigationType \(wkNavigationType)")

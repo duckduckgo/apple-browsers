@@ -160,8 +160,10 @@ jobs:
           path: SharedPackages/BrowserServicesKit/build-log.txt
 
       - name: Copy crash reports to current directory
+        if: failure()
         run: |
           cp -f ~/Library/Logs/DiagnosticReports/xctest-*.ips .
+          ls -l
 
       - name: Upload crash reports
         uses: actions/upload-artifact@v4

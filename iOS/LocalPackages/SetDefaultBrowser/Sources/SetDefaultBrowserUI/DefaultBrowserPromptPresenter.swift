@@ -28,7 +28,7 @@ public protocol DefaultBrowserPromptPresenting: AnyObject {
 }
 
 @MainActor
-public final class SetDefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenting {
+final class DefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenting {
     private let coordinator: DefaultBrowserPromptCoordinating
 
     init(coordinator: DefaultBrowserPromptCoordinating) {
@@ -45,7 +45,7 @@ public final class SetDefaultBrowserModalPresenter: NSObject, DefaultBrowserProm
 
 // MARK: - Private
 
-private extension SetDefaultBrowserModalPresenter {
+private extension DefaultBrowserModalPresenter {
 
     func presentDefaultDefaultBrowserPrompt(from viewController: UIViewController) {
         let rootView = DefaultBrowserPromptModalView(

@@ -68,7 +68,7 @@ public enum DefaultBrowserPromptFactory {
             eventMapper: promptUserInteractionEventMapper
         )
 
-        return SetDefaultBrowserModalPresenter(coordinator: coordinator)
+        return DefaultBrowserModalPresenter(coordinator: coordinator)
     }
 
 }

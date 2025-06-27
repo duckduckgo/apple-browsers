@@ -25,7 +25,7 @@ import Bookmarks
 final class UpdatedOmniBarViewController: OmniBarViewController {
 
     private lazy var omniBarView = UpdatedOmniBarView.create()
-    private let experimentalManager = ExperimentalAIChatManager()
+    private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
 
     override func loadView() {
@@ -35,7 +35,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     // MARK: - Initialization
 
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        if experimentalManager.isExperimentalTransitionEnabled {
+        if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             presentExperimentalEditingState(for: textField)
             return false
         }

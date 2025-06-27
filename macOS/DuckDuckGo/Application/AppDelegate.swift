@@ -388,22 +388,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
 
         } else {
-            let isRunningUITests: Bool
-#if REVIEW
-            isRunningUITests = (AppVersion.runType == .uiTests)
-#else
-            isRunningUITests = false
-#endif
-
             let featureFlagOverrides = FeatureFlagLocalOverrides(
                 keyValueStore: UserDefaults.appConfiguration,
                 actionHandler: featureFlagOverridesPublishingHandler
             )
-            featureFlagger = DefaultFeatureFlagger(
+            let defaultFeatureFlagger = DefaultFeatureFlagger(
                 internalUserDecider: internalUserDecider,
                 privacyConfigManager: privacyConfigurationManager,
                 localOverrides: featureFlagOverrides,
-                allowOverrides: { [internalUserDecider] in
+                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
                     internalUserDecider.isInternalUser || isRunningUITests
                 },
                 experimentManager: ExperimentCohortsManager(
@@ -412,26 +405,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 ),
                 for: FeatureFlag.self
             )
-            self.contentScopeExperimentsManager = featureFlagger
+            featureFlagger = defaultFeatureFlagger
+            self.contentScopeExperimentsManager = defaultFeatureFlagger
 
-            if isRunningUITests {
-                for item in ProcessInfo().environment["FEATURE_FLAGS", default: ""].split(separator: " ") {
-                    let keyValue = item.split(separator: "=")
-                    let key = String(keyValue[0])
-                    guard let value = Bool(keyValue[safe: 1]?.lowercased() ?? "true") else {
-                        fatalError("Only true/false values are supported for feature flag values (or none)")
-                    }
-                    guard let featureFlag = FeatureFlag(rawValue: key) else {
-                        fatalError("Unrecognized feature flag: \(key)")
-                    }
-                    guard featureFlag.supportsLocalOverriding else {
-                        fatalError("Feature flag \(key) does not support local overriding")
-                    }
-                    if featureFlagger.isFeatureOn(for: featureFlag, allowOverride: true) != value {
-                        featureFlagOverrides.toggleOverride(for: featureFlag)
-                    }
-                }
-            }
+            featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
         pinnedTabsManagerProvider = PinnedTabsManagerProvider()
@@ -1281,6 +1258,31 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         completionHandler()
+    }
+
+}
+
+private extension FeatureFlagLocalOverrides {
+
+    func applyUITestsFeatureFlagsIfNeeded() {
+        guard AppVersion.runType == .uiTests else { return }
+
+        for item in ProcessInfo().environment["FEATURE_FLAGS", default: ""].split(separator: " ") {
+            let keyValue = item.split(separator: "=")
+            let key = String(keyValue[0])
+            guard let value = Bool(keyValue[safe: 1]?.lowercased() ?? "true") else {
+                fatalError("Only true/false values are supported for feature flag values (or none)")
+            }
+            guard let featureFlag = FeatureFlag(rawValue: key) else {
+                fatalError("Unrecognized feature flag: \(key)")
+            }
+            guard featureFlag.supportsLocalOverriding else {
+                fatalError("Feature flag \(key) does not support local overriding")
+            }
+            if currentValue(for: featureFlag)! != value {
+                toggleOverride(for: featureFlag)
+            }
+        }
     }
 
 }

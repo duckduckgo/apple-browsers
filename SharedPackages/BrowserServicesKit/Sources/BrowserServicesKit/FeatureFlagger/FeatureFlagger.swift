@@ -291,7 +291,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
     ) {
 #if DEBUG
         let allowDefaultFeatureFlaggerInTests = ProcessInfo.processInfo.environment["TESTS_FEATUREFLAGGER_MODE"] == "1"
-        assert([.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) || allowDefaultFeatureFlaggerInTests, {
+        assert(![.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) || allowDefaultFeatureFlaggerInTests, {
             "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
         }())
 #endif
@@ -317,7 +317,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
     ) {
  #if DEBUG
         let allowDefaultFeatureFlaggerInTests = ProcessInfo.processInfo.environment["TESTS_FEATUREFLAGGER_MODE"] == "1"
-        assert([.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) || allowDefaultFeatureFlaggerInTests, {
+        assert(![.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) || allowDefaultFeatureFlaggerInTests, {
             "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
         }())
  #endif

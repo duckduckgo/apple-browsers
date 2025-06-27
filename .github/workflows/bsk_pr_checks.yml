@@ -159,15 +159,20 @@ jobs:
           name: build-log.txt
           path: SharedPackages/BrowserServicesKit/build-log.txt
 
-      - name: Copy crash reports to current directory
+      # - name: Copy crash reports to current directory
+      #   if: failure()
+      #   run: |
+      #     sleep 100
+      #     mkdir -p crash-reports
+      #     touch crash-reports/test.txt
+      #     cp -f ~/Library/Logs/DiagnosticReports/xctest*.ips crash-reports
+      #     ls -l
+      #     ls -l crash-reports
+
+      - name: List crash reports
         if: failure()
         run: |
-          sleep 100
-          mkdir -p crash-reports
-          touch crash-reports/test.txt
-          cp -f ~/Library/Logs/DiagnosticReports/xctest-*.ips crash-reports
-          ls -l
-          ls -l crash-reports
+          ls -l ~/Library/Logs/DiagnosticReports
 
       - name: Upload crash reports
         uses: actions/upload-artifact@v4
@@ -175,7 +180,7 @@ jobs:
         with:
           name: "bsk-crash-reports-macOS"
           path: |
-            crash-reports
+            ~/Library/Logs/DiagnosticReports
           retention-days: 7
           include-hidden-files: true
 

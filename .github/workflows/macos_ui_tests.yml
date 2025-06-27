@@ -247,19 +247,43 @@ jobs:
         # Create staging directory with timestamp, OS version and failing test name
         timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
         archive_name="BuildLogs ${{ matrix.test }} (macOS ${{ matrix.os-version }}) ${timestamp}"
+        echo "Creating archive directory: $archive_name"
         mkdir -p "$archive_name"
         
-        # locate and copy all files, flattening the structure
-        find macOS -name "xcodebuild.log" -type f -exec cp -f {} "$archive_name/" \; 2>/dev/null || true
-        find macOS/DerivedData/Logs/Test -name "*.xcresult" -exec cp -rf {} "$archive_name/" \; 2>/dev/null || true
-        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/"
+        # Debug: Show current working directory and list contents
+        echo "Current working directory: $(pwd)"
+        echo "Contents of current directory:"
+        ls -la
+        
+        # locate and copy all files, flattening the structure with verbose output
+        echo "Looking for xcodebuild.log files..."
+        find macOS -name "xcodebuild.log" -type f -print -exec cp -f {} "$archive_name/" \; 2>&1 || echo "No xcodebuild.log found"
+        
+        echo "Looking for .xcresult files..."
+        find macOS/DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
+        
+        echo "Looking for diagnostic reports..."
+        if [ -d ~/Library/Logs/DiagnosticReports ]; then
+          echo "DiagnosticReports directory exists, copying contents..."
+          cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/" 2>&1 || echo "Failed to copy diagnostic reports"
+        else
+          echo "DiagnosticReports directory does not exist"
+        fi
+        
+        # Show what was actually copied
+        echo "Contents of archive directory:"
+        ls -la "$archive_name/" || echo "Archive directory is empty or doesn't exist"
+        
+        # Store archive name for upload step (simplified approach)
+        echo "ARCHIVE_NAME='$archive_name'" >> $GITHUB_ENV
+        echo "Set ARCHIVE_NAME to: $archive_name"
 
-        # Store archive name for upload step (using multiline syntax for safety with spaces)
-        {
-          echo "ARCHIVE_NAME<<EOF"
-          echo "$archive_name"
-          echo "EOF"
-        } >> $GITHUB_ENV
+    - name: Debug environment variable
+      if: failure() || cancelled()
+      run: |
+        echo "ARCHIVE_NAME environment variable: '$ARCHIVE_NAME'"
+        echo "Checking if archive directory exists:"
+        ls -la "$ARCHIVE_NAME" || echo "Archive directory '$ARCHIVE_NAME' does not exist"
 
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4

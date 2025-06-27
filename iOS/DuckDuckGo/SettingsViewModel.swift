@@ -1251,9 +1251,9 @@ extension SettingsViewModel {
 
     var aiChatAddressBarEnabledBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
+            get: { self.aiChatSettings.isAIChatAddressBarUserSettingsEnabled },
             set: { newValue in
-                self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                self.aiChatSettings.enableAIChatAddressBarUserSettings(enable: newValue)
             }
         )
     }
@@ -1262,7 +1262,7 @@ extension SettingsViewModel {
         Binding<Bool>(
             get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
             set: { newValue in
-                self.aiChatSettings.enableAIChatAddressBarUserSettings(enable: newValue)
+                self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
             }
         )
     }

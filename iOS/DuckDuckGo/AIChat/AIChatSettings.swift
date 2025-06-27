@@ -208,7 +208,7 @@ private extension UserDefaults {
     static let showAIChatAddressBarDefaultValue = true
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
-    static let showAIChatSearchInput = true
+    static let showAIChatSearchInputDefaultValue = true
 
     @objc dynamic var isAIChatEnabled: Bool {
         get {
@@ -256,7 +256,7 @@ private extension UserDefaults {
 
     @objc dynamic var showAIChatSearchInput: Bool {
         get {
-            value(forKey: Keys.showAIChatSearchInput) as? Bool ?? Self.showAIChatAddressBarDefaultValue
+            value(forKey: Keys.showAIChatSearchInput) as? Bool ?? Self.showAIChatSearchInputDefaultValue
         }
 
         set {

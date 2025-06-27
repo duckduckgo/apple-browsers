@@ -162,6 +162,7 @@ jobs:
       - name: Copy crash reports to current directory
         if: failure()
         run: |
+          sleep 10
           cp -f ~/Library/Logs/DiagnosticReports/xctest-*.ips .
           ls -l
 

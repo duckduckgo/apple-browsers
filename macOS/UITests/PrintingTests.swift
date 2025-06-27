@@ -72,11 +72,9 @@ class PrintingTests: UITestCase {
             "PDF WebView did not appear in a reasonable timeframe."
         )
 
-        pdfWebView.click()
         pdfWebView.rightClick()
 
-        printMenuItem = app.windows.firstMatch.children(matching: .menu).firstMatch.menuItems.element(matching: NSPredicate(format: "identifier == 'PDFContextMenu.print'")).firstMatch
-        printMenuItem.click()
+        try app.clickContextMenuItem(matching: { $0.identifier == "PDFContextMenu.print" })
 
         // Wait for print dialog to appear
         XCTAssertTrue(
@@ -119,11 +117,9 @@ class PrintingTests: UITestCase {
         let pdfWebView = openPDFInBrowser()
 
         // Right click PDF
-        pdfWebView.click()
         pdfWebView.rightClick()
 
-        saveAsMenuItem = app.windows.firstMatch.children(matching: .menu).firstMatch.menuItems.element(matching: NSPredicate(format: "identifier == 'PDFContextMenu.saveAs'")).firstMatch
-        saveAsMenuItem.click()
+        try app.clickContextMenuItem(matching: { $0.identifier == "PDFContextMenu.saveAs" })
 
         // Wait for save dialog to appear
         XCTAssertTrue(
@@ -365,12 +361,10 @@ class PrintingTests: UITestCase {
         let pdfWebView = openPDFInBrowser()
 
         // Right-click on PDF to open context menu
-        pdfWebView.click()
         pdfWebView.rightClick()
 
         // Click "Open with Preview" menu item
-        let openWithPreviewMenuItem = app.windows.firstMatch.children(matching: .menu).firstMatch.menuItems.element(matching: NSPredicate(format: "title == 'Open with Preview'")).firstMatch
-        openWithPreviewMenuItem.click()
+        try app.clickContextMenuItem(matching: { $0.title == "Open with Preview" })
 
         // Get Preview app
         let previewApp = XCUIApplication(bundleIdentifier: "com.apple.Preview")

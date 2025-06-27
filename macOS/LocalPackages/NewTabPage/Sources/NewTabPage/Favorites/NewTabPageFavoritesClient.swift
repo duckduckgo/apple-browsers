@@ -130,7 +130,7 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
 
     @MainActor
     private func notifyFaviconsLoaded() {
-        let refresh = NewTabPageDataModel.Refresh(items: [.favicons])
+        let refresh = NewTabPageDataModel.FavoritesRefresh(items: [.favicons])
         pushMessage(named: MessageName.onRefresh.rawValue, params: refresh)
     }
 

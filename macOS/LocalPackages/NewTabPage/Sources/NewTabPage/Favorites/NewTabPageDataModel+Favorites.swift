@@ -77,7 +77,7 @@ extension NewTabPageDataModel {
         let src: String
     }
 
-    struct Refresh: Encodable, Equatable {
+    struct FavoritesRefresh: Encodable, Equatable {
         let items: [Item]
 
         enum Item: String, Codable {

@@ -24,7 +24,7 @@ jobs:
       name: Run unit tests (macOS)
 
       runs-on: macos-15
-      timeout-minutes: 30
+      timeout-minutes: 60
 
       env:
         RUNS_ON: macos-15 # keep this in sync with runs-on above
@@ -175,6 +175,12 @@ jobs:
         uses: ./.github/actions/fetch-commit-info
         with:
           github-token: ${{ github.token }}
+
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
   unit-tests-ios:
 

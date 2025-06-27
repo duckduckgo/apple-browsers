@@ -206,34 +206,15 @@ extension XCTestCase {
     /// Handle system interruptions during UI tests
     /// Override this method in subclasses to provide custom interruption handling
     func handleInterruption(_ element: XCUIElement) -> Bool {
-        log("🔴 UITestCase: Handling interruption - \(element.debugDescription)")
-        log("d: \(try? element.snapshot().dictionaryRepresentation)")
+        log("🔴 UITestCase: Handling interruption - \(element.description)")
+        if element.tables["SuggestionViewController.tableView"].firstMatch.exists {
+            log("Skipping Suggestions window interpreted as interruption")
+            return true
+        }
 
         // Capture screenshot of the interrupting element
         attachInterruptionScreenshot(element)
 
-        // Default handling for common system dialogs
-        if element.staticTexts["Don't Allow"].exists {
-            element.staticTexts["Don't Allow"].tap()
-            return true
-        }
-
-        if element.staticTexts["Not Now"].exists {
-            element.staticTexts["Not Now"].tap()
-            return true
-        }
-
-        if element.staticTexts["Cancel"].exists {
-            element.staticTexts["Cancel"].tap()
-            return true
-        }
-
-        if element.staticTexts["Dismiss"].exists {
-            element.staticTexts["Dismiss"].tap()
-            return true
-        }
-
-        // If we can't handle it, return false
         return false
     }
 

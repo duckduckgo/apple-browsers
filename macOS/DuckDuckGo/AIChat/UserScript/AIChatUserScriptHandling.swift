@@ -119,5 +119,4 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
 
 extension NSNotification.Name {
     static let aiChatNativeHandoffData: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.aiChatNativeHandoffData")
-    static let aiChatSummarizationQuery: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.aiChatSummarizationQuery")
 }

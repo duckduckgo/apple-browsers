@@ -394,8 +394,8 @@ private extension ContextMenuManager {
             return
         }
 
-        NotificationCenter.default.post(name: .aiChatSummarizationQuery,
-                                        object: selectedText,
+        NotificationCenter.default.post(name: .aiChatSummarizationRequest,
+                                        object: AIChatSummarizationRequest(text: selectedText, source: .contextMenu),
                                         userInfo: nil)
     }
 

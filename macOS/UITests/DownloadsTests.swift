@@ -18,7 +18,7 @@
 
 import XCTest
 
-class DownloadsTests: XCTestCase {
+class DownloadsTests: UITestCase {
 
     private var app: XCUIApplication!
 

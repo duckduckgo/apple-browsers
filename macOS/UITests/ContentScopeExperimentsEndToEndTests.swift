@@ -18,7 +18,7 @@
 
 import XCTest
 
-final class ContentScopeExperimentsEndToEndTests: XCTestCase {
+final class ContentScopeExperimentsEndToEndTests: UITestCase {
 
     func testContentScopeExperiments() throws {
         // Initial set up

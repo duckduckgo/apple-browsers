@@ -112,8 +112,13 @@ enum UITests {
 }
 
 class TestFailureObserver: NSObject, XCTestObservation {
+    func testCaseWillStart(_ testCase: XCTestCase) {
+        testCase.addUIInterruptionMonitor(withDescription: "UITestCase Interruption Monitor") { [weak testCase] element -> Bool in
+            return testCase?.handleInterruption(element) ?? false
+        }
+    }
     func testCase(_ testCase: XCTestCase, didRecord issue: XCTIssue) {
-        print("Failed test with name: \(testCase.name)")
+        testCase.log("Failed test with name: \(testCase.name)")
         let screenshotName = "\(testCase.name)-failure"
         testCase.takeScreenshot(screenshotName)
     }
@@ -147,14 +152,19 @@ class UITestCase: XCTestCase {
         XCTestObservationCenter.shared.addTestObserver(failureObserver)
         
         // Trigger one-time swizzling
-        _ = swizzleCompactDescriptionOnce
-        _ = swizzleElementSnapshotOnce
+//        _ = swizzleCompactDescriptionOnce
+//        _ = swizzleElementSnapshotOnce
+    }
+
+    override func setUp() {
+
     }
 
     override class func tearDown() {
         XCTestObservationCenter.shared.removeTestObserver(failureObserver)
         super.tearDown()
     }
+    
 }
 
 extension XCUIElement {
@@ -192,6 +202,64 @@ extension XCUIElementSnapshot {
 }
 
 extension XCTestCase {
+
+    /// Handle system interruptions during UI tests
+    /// Override this method in subclasses to provide custom interruption handling
+    func handleInterruption(_ element: XCUIElement) -> Bool {
+        log("🔴 UITestCase: Handling interruption - \(element.debugDescription)")
+        log("d: \(try? element.snapshot().dictionaryRepresentation)")
+
+        // Capture screenshot of the interrupting element
+        attachInterruptionScreenshot(element)
+
+        // Default handling for common system dialogs
+        if element.staticTexts["Don't Allow"].exists {
+            element.staticTexts["Don't Allow"].tap()
+            return true
+        }
+
+        if element.staticTexts["Not Now"].exists {
+            element.staticTexts["Not Now"].tap()
+            return true
+        }
+
+        if element.staticTexts["Cancel"].exists {
+            element.staticTexts["Cancel"].tap()
+            return true
+        }
+
+        if element.staticTexts["Dismiss"].exists {
+            element.staticTexts["Dismiss"].tap()
+            return true
+        }
+
+        // If we can't handle it, return false
+        return false
+    }
+
+    /// Capture and attach a screenshot of the interrupting element
+    private func attachInterruptionScreenshot(_ element: XCUIElement) {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        let timestamp = formatter.string(from: Date())
+        let screenshotName = "interruption-\(timestamp)"
+
+        // Try to get element screenshot first, fallback to full screen
+        let screenshot: XCUIScreenshot
+        if element.exists {
+            screenshot = element.screenshot()
+        } else {
+            screenshot = XCUIScreen.main.screenshot()
+        }
+
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.name = screenshotName
+        attachment.lifetime = .keepAlways
+
+        // Add to current test context
+        add(attachment)
+    }
+
     func takeScreenshot(_ name: String) {
         let fullScreenshot = XCUIScreen.main.screenshot()
         let screenshot = XCTAttachment(screenshot: fullScreenshot)

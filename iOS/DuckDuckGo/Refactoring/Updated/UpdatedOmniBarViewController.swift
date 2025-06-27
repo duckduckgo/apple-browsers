@@ -131,6 +131,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     // MARK: - Private Helper Methods
 
     private func presentExperimentalEditingState(for textField: UITextField) {
+        guard editingStateViewController == nil else { return }
         guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
         let switchBarHandler = createSwitchBarHandler(for: textField)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)

@@ -361,7 +361,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testIsAvailablePublisherEmitsWhenCanPurchaseChangesOnAppStore() {
         // Given
-        mockFreemiumDBPUserStateManagerManager.didActivate = true 
+        mockFreemiumDBPUserStateManagerManager.didActivate = true
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
         mockSubscriptionManager.canPurchase = false
         mockAccountManager.accessToken = nil

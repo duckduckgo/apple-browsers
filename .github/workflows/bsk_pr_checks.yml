@@ -172,6 +172,7 @@ jobs:
       - name: List crash reports
         if: failure()
         run: |
+          sleep 30
           ls -l ~/Library/Logs/DiagnosticReports
 
       - name: Upload crash reports

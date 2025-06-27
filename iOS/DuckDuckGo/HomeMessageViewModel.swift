@@ -141,8 +141,8 @@ struct HomeMessageViewModel {
             }
         case .survey(let value):
             return { @MainActor in
-                let refreshedUrl = refreshLastSearchState(in: value)
-                LaunchTabNotification.postLaunchTabNotification(urlString: refreshedUrl)
+                let refreshedURL = refreshLastSearchState(in: value)
+                LaunchTabNotification.postLaunchTabNotification(urlString: refreshedURL)
                 await onDidClose(buttonAction)
             }
         case .appStore:

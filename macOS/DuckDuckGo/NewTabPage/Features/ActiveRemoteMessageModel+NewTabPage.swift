@@ -47,8 +47,8 @@ extension ActiveRemoteMessageModel: NewTabPageActiveRemoteMessageProviding {
                 await openURLHandler(url)
             }
         case .survey(let value):
-            let refreshedUrl = refreshLastSearchState(in: value)
-            if let url = URL.makeURL(from: refreshedUrl) {
+            let refreshedURL = refreshLastSearchState(in: value)
+            if let url = URL.makeURL(from: refreshedURL) {
                 await openURLHandler(url)
             }
         case .appStore:

@@ -141,14 +141,14 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
         guard let lastSearchDate = lastSearchDate else {
             return "none"
         }
-        
+
         let calendar = Calendar.current
         let startOfToday = calendar.startOfDay(for: Date())
         let startOfLast = calendar.startOfDay(for: lastSearchDate)
         let daysApart = calendar
             .dateComponents([.day], from: startOfLast, to: startOfToday)
             .day ?? Int.max
-        
+
         switch daysApart {
         case 0...1:
             return "day"
@@ -158,23 +158,22 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
             return "none"
         }
     }
-    
+
     public static func refreshLastSearchState(in urlString: String, lastSearchDate: Date?) -> String {
-        guard let lastSearchDate = lastSearchDate,
-              var comps = URLComponents(string: urlString),
+        guard var comps = URLComponents(string: urlString),
               let items = comps.queryItems,
               items.contains(where: { $0.name == RemoteMessagingSurveyActionParameter.lastSearchState.rawValue }) else {
             return urlString
         }
-        
+
         let filtered = items.filter { $0.name != RemoteMessagingSurveyActionParameter.lastSearchState.rawValue }
-        
+
         let updatedState = Self.searchState(lastSearchDate: lastSearchDate)
-        
+
         comps.queryItems = filtered + [
             URLQueryItem(name: RemoteMessagingSurveyActionParameter.lastSearchState.rawValue, value: updatedState)
         ]
-        
+
         return comps.url?.absoluteString ?? urlString
     }
 }

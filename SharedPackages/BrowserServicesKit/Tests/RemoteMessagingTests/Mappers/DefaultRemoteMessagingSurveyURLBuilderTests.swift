@@ -135,7 +135,7 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         let finalURL = builder.add(parameters: [.lastSearchState], to: baseURL)
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?last_search_state=week")
     }
-    
+
     func testRefreshLastSearchState_noParamPresent_returnsUnchangedURL() {
         let raw = "https://duckduckgo.com?atb=v1"
         let refreshed = DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState(in: raw, lastSearchDate: Date())
@@ -147,12 +147,11 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: Date())!
         let refreshed = DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState(in: raw, lastSearchDate: twoDaysAgo)
 
-        var comps = URLComponents(string: refreshed)!
-        let state = comps.queryItems?.first(where: { $0.name == "last_search_state" })?.value
+        let components = URLComponents(string: refreshed)!
+        let state = components.queryItems?.first(where: { $0.name == "last_search_state" })?.value
         XCTAssertEqual(state, "week")
 
-        // and ensure foo=bar is preserved
-        XCTAssertTrue(comps.queryItems!.contains { $0.name == "foo" && $0.value == "bar"})
+        XCTAssertTrue(components.queryItems!.contains { $0.name == "foo" && $0.value == "bar"})
     }
 
     private func buildRemoteMessagingSurveyURLBuilder(

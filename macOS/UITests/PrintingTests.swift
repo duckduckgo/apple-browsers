@@ -376,7 +376,7 @@ class PrintingTests: UITestCase {
         pdfWebView.rightClick()
 
         // Click "Open with Preview" menu item
-        let openWithPreviewMenuItem = app.menuItems["PDFContextMenu.openWithPreview"]
+        let openWithPreviewMenuItem = app.menuItems.element(matching: NSPredicate(format: "title == 'Open with Preview'"))
         XCTAssertTrue(
             openWithPreviewMenuItem.waitForExistence(timeout: 10),
             "Open with Preview menu item did not appear in context menu in a reasonable timeframe."

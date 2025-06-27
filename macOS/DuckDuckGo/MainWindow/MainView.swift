@@ -200,11 +200,6 @@ final class MainView: NSView {
             let separatorIdx = (idxAfterCopy..<menu.items.endIndex).first(where: { menu.items[$0].isSeparatorItem }) ?? idxAfterCopy //  separator
             // 3. descend 2 items down: the separator, `Open with Preview`
             insertionIdx = min(separatorIdx + 2, menu.items.count /* just in case… */)
-            // Set Open with Preview item AX identifier for UI tests
-            let openWithPreviewIdx = separatorIdx + 1
-            if openWithPreviewIdx < menu.items.count {
-                menu.item(at: openWithPreviewIdx)?.setAccessibilityIdentifier("PDFContextMenu.openWithPreview")
-            }
         } else {
             insertionIdx = min(1, menu.items.count /* just in case… */)
         }

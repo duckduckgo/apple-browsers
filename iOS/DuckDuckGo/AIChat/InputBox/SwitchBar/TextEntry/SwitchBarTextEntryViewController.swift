@@ -26,12 +26,9 @@ class SwitchBarTextEntryViewController: UIViewController {
     // MARK: - Properties
     let textEntryView: SwitchBarTextEntryView
     private let handler: SwitchBarHandling
-    private var actionViewController: UIHostingController<SwitchBarActionView>?
     private let containerView = UIView()
 
     // Constraint references for dynamic sizing
-    private var actionViewHeightConstraint: NSLayoutConstraint?
-    private var actionViewBottomConstraint: NSLayoutConstraint?
     private var textEntryBottomConstraint: NSLayoutConstraint?
 
     private var cancellables = Set<AnyCancellable>()
@@ -54,14 +51,11 @@ class SwitchBarTextEntryViewController: UIViewController {
         super.viewDidLoad()
         setupViews()
         setupConstraints()
-        setupSubscriptions()
-        updateConstraintsForCurrentMode()
         self.view.layoutIfNeeded()
     }
 
     func setExpanded(_ expanded: Bool) {
         isExpanded = expanded
-        updateConstraintsForCurrentMode()
     }
 
     func focusTextField() {
@@ -78,7 +72,6 @@ class SwitchBarTextEntryViewController: UIViewController {
 
         containerView.addSubview(textEntryView)
         containerView.backgroundColor = UIColor(designSystemColor: .surface)
-        setupActionView()
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
         textEntryView.translatesAutoresizingMaskIntoConstraints = false
@@ -112,105 +105,23 @@ class SwitchBarTextEntryViewController: UIViewController {
         updateShadowPath()
     }
 
-    private func setupActionView() {
-        let hasText = !handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-
-        let actionView = SwitchBarActionView(
-            hasText: hasText,
-            forceWebSearchEnabled: handler.forceWebSearch,
-            onWebSearchToggle: { [weak self] in
-                self?.handleWebSearchToggle()
-            },
-            onSend: { [weak self] in
-                self?.handleSend()
-            }
-        )
-
-        actionViewController = UIHostingController(rootView: actionView)
-
-        if let actionVC = actionViewController {
-            addChild(actionVC)
-            containerView.addSubview(actionVC.view)
-            actionVC.didMove(toParent: self)
-
-            actionVC.view.backgroundColor = UIColor.clear
-            actionVC.view.translatesAutoresizingMaskIntoConstraints = false
-
-            let isSearchMode = handler.currentToggleState == .search
-            actionVC.view.alpha = isSearchMode ? 0 : 1
-        }
-    }
-
-    private func updateActionView() {
-        let hasText = !handler.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-
-        let updatedActionView = SwitchBarActionView(
-            hasText: hasText,
-            forceWebSearchEnabled: handler.forceWebSearch,
-            onWebSearchToggle: { [weak self] in
-                self?.handleWebSearchToggle()
-            },
-            onSend: { [weak self] in
-                self?.handleSend()
-            }
-        )
-
-        actionViewController?.rootView = updatedActionView
-    }
 
     private func setupConstraints() {
-        guard let actionView = actionViewController?.view else { return }
-
-        actionViewBottomConstraint = actionView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         textEntryBottomConstraint = textEntryView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         textEntryBottomConstraint?.priority = UILayoutPriority(999)
-
-        let spacingConstraint = actionView.topAnchor.constraint(equalTo: textEntryView.bottomAnchor, constant: 8)
+        textEntryBottomConstraint?.isActive = true
 
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: view.topAnchor),
             containerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            containerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 70),
 
             textEntryView.topAnchor.constraint(equalTo: containerView.topAnchor),
             textEntryView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             textEntryView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-
-            actionView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            actionView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            spacingConstraint
         ])
-
-        updateConstraintsForCurrentMode()
-    }
-
-    func updateConstraintsForCurrentMode() {
-        if showsActionView {
-            textEntryBottomConstraint?.isActive = false
-            actionViewBottomConstraint?.isActive = true
-            actionViewController?.view.alpha = 1
-        } else {
-            actionViewBottomConstraint?.isActive = false
-            textEntryBottomConstraint?.isActive = true
-            actionViewController?.view.alpha = 0
-        }
-    }
-
-    private func setupSubscriptions() {
-        handler.currentTextPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateActionView()
-            }
-            .store(in: &cancellables)
-
-        handler.forceWebSearchPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateActionView()
-            }
-            .store(in: &cancellables)
     }
 
     // MARK: - Action Handlers

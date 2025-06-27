@@ -1124,7 +1124,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialOptionsAvailable_ReturnsFreeTrialOptions() async throws {
         // Given
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
         subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
         let freeTrialOptions = SubscriptionOptions(
@@ -1147,7 +1147,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialReturnsNil_ReturnsRegularOptions() async throws {
         // Given
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
         subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
         storePurchaseManager.freeTrialSubscriptionOptionsResult = nil
@@ -1164,7 +1164,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOff_AndFreeTrialOptionsAvailable_ReturnsRegularOptions() async throws {
         // Given
-        mockFeatureFlagger.isFeatureOn = { _ in false }
         subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
         let freeTrialOptions = SubscriptionOptions(

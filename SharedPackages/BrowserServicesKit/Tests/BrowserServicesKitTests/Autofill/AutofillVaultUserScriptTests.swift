@@ -982,7 +982,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
             expect.fulfill() // This should not be called
         }
 
-        waitForExpectations(timeout: 0.5)
+        waitForExpectations(timeout: 2)
 
         // Verify delegate was not called
         XCTAssertFalse(delegate.receivedCallbacks.contains(.didRequestCreditCard))

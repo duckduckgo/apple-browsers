@@ -57,7 +57,6 @@ class SwitchBarTextEntryView: UIView {
         handler.currentToggleState
     }
     private var cancellables = Set<AnyCancellable>()
-    private var isInInitialSelectedState = false
 
     private var heightConstraint: NSLayoutConstraint?
     private var textViewTrailingConstraint: NSLayoutConstraint?
@@ -117,13 +116,7 @@ class SwitchBarTextEntryView: UIView {
     private func setupButtonsView() {
         let buttonsView = SwitchBarButtonsView(
             buttonState: currentButtonState,
-            onMicrophoneTapped: { [weak self] in
-                self?.handler.microphoneButtonTapped()
-            },
             onClearTapped: { [weak self] in
-                if self?.isInInitialSelectedState == true {
-                    self?.isInInitialSelectedState = false
-                }
                 self?.handler.clearText()
             }
         )
@@ -183,15 +176,10 @@ class SwitchBarTextEntryView: UIView {
 
     private func updateButtonState() {
         let hasText = !textView.text.isEmpty
-        let isVoiceSearchEnabled = handler.isVoiceSearchEnabled
         let newButtonState: SwitchBarButtonState
 
-        if isInInitialSelectedState && hasText {
-            newButtonState = .initialSelected
-        } else if hasText {
+        if hasText {
             newButtonState = .clearOnly
-        } else if isVoiceSearchEnabled {
-            newButtonState = .micOnly
         } else {
             newButtonState = .noButtons
         }
@@ -206,13 +194,7 @@ class SwitchBarTextEntryView: UIView {
     private func updateButtonsView() {
         let buttonsView = SwitchBarButtonsView(
             buttonState: currentButtonState,
-            onMicrophoneTapped: { [weak self] in
-                self?.handler.microphoneButtonTapped()
-            },
             onClearTapped: { [weak self] in
-                if self?.isInInitialSelectedState == true {
-                    self?.isInInitialSelectedState = false
-                }
                 self?.handler.clearText()
             }
         )
@@ -225,7 +207,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateConstraintsForButtonVisibility() {
-        if currentButtonState.showsAnyButton {
+        if currentButtonState.showsClearButton {
             textViewTrailingConstraint?.isActive = false
             textViewTrailingConstraintWithButtons?.isActive = true
         } else {
@@ -285,16 +267,6 @@ class SwitchBarTextEntryView: UIView {
 
     func selectAllText() {
         textView.selectAll(nil)
-        isInInitialSelectedState = true
-        updateButtonState()
-    }
-
-    // MARK: - Public Methods
-
-    /// Sets the initial selected state where both mic and clear buttons should be visible
-    func setInitialSelectedState(_ isInitialSelected: Bool) {
-        isInInitialSelectedState = isInitialSelected
-        updateButtonState()
     }
 }
 
@@ -308,11 +280,6 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        // Exit initial selected state when user starts typing
-        if isInInitialSelectedState && !text.isEmpty {
-            isInInitialSelectedState = false
-        }
-
         if text == "\n" {
             /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210629837418046?focus=true
             let currentText = textView.text ?? ""

@@ -55,6 +55,13 @@ protocol OptionsButtonMenuDelegate: AnyObject {
 
 final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
+    private let submenuBuildingCompleteSubject = CurrentValueSubject<Bool, Never>(false)
+    /// Publisher that fires when subscription submenu building is complete
+    /// Used for testing to wait for async submenu completion
+    var submenuBuildingComplete: AnyPublisher<Bool, Never> {
+        submenuBuildingCompleteSubject.eraseToAnyPublisher()
+    }
+
     weak var actionDelegate: OptionsButtonMenuDelegate?
 
     private let tabCollectionViewModel: TabCollectionViewModel
@@ -588,7 +595,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                          subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(),
                                                          subscriptionManager: subscriptionManager,
                                                          moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider,
-                                                         featureFlagger: featureFlagger)
+                                                         featureFlagger: featureFlagger,
+                                                         onComplete: { [weak self] in
+                                                             self?.submenuBuildingCompleteSubject.send(true)
+                                                         })
             return privacyProItem
         }
         return nil
@@ -1149,7 +1159,8 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         onComplete: @escaping () -> Void = {}) {
 
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.subscriptionManager = subscriptionManager
@@ -1168,6 +1179,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
 
         Task {
             await addMenuItems()
+            onComplete()
         }
     }
 

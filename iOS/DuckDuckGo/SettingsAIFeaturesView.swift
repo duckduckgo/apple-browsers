@@ -1,5 +1,5 @@
 //
-//  SettingsAIChatView.swift
+//  SettingsAIFeaturesView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -20,8 +20,9 @@
 import SwiftUI
 import DesignResourcesKit
 import Core
+import DesignResourcesKitIcons
 
-struct SettingsAIChatView: View {
+struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var body: some View {
@@ -31,21 +32,33 @@ struct SettingsAIChatView: View {
                 Image(.settingsAIChatHero)
                     .padding(.top, -20)
 
-                Text(UserText.aiChatFeatureName)
+                Text(UserText.settingsAiFeatures)
                     .daxTitle3()
 
-                Text(.init(UserText.aiChatSettingsCaptionWithLinkMarkdown))
-                    .tint(Color.init(designSystemColor: .accent))
-                    .daxBodyRegular()
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .padding(.top, 12)
+                VStack(spacing: 0) {
+                    Text(.init(UserText.aiFeaturesDescription))
+                        .daxBodyRegular()
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                    Button {
+                        viewModel.launchAIFeaturesLearnMore()
+                    } label: {
+                        Text(UserText.aiFeaturesLearnMore)
+                            .daxBodyRegular()
+                            .foregroundColor(Color(designSystemColor: .textLink))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.top, 12)
+
             }
             .frame(maxWidth: .infinity)
             .listRowBackground(Color.clear)
 
             Section {
                 SettingsCellView(label: UserText.settingsEnableAiChat,
+                                 subtitle: UserText.settingsEnableAiChatSubtitle,
+                                 image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat),
                                  accessory: .toggle(isOn: viewModel.isAiChatEnabledBinding))
             }
 
@@ -63,23 +76,34 @@ struct SettingsAIChatView: View {
                     SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
                                      accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
                 }
+            }
 
-                if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
-                    Section {
-                        SettingsCellView(label: UserText.settingsAIChatExperimentalMainSwitch,
-                                         accessory: .toggle(isOn: viewModel.aiChatExperimentalBinding))
+            Section {
+                SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
+                                 subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
+                                 image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
+                                 action: { viewModel.openAssistSettings() },
+                                 webLinkIndicator: true,
+                                 isButton: true)
+            }
 
-                        SettingsCellView(label: UserText.settingsAIChatExperimentalTransition,
-                                         accessory: .toggle(isOn: viewModel.aiChatExperimentalTransitionBinding))
-                    } header: {
-                        Text(UserText.settingsAIChatExperimentalSection)
-                    }
+            if viewModel.isAiChatEnabledBinding.wrappedValue &&
+                viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
+                Section {
+                    SettingsCellView(label: UserText.settingsAIChatExperimentalMainSwitch,
+                                     accessory: .toggle(isOn: viewModel.aiChatExperimentalBinding))
+
+                    SettingsCellView(label: UserText.settingsAIChatExperimentalTransition,
+                                     accessory: .toggle(isOn: viewModel.aiChatExperimentalTransitionBinding))
+                } header: {
+                    Text(UserText.settingsAIChatExperimentalSection)
                 }
             }
 
-        }.applySettingsListModifiers(title: UserText.aiChatFeatureName,
+        }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)
+
         .onAppear {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed,
                                          withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat))

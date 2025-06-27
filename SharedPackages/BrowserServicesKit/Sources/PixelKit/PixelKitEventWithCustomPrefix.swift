@@ -1,7 +1,7 @@
 //
-//  MockInternalUserStoring.swift
+//  PixelKitEventWithCustomPrefix.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,14 +17,11 @@
 //
 
 import Foundation
-import BrowserServicesKit
 
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
-}
-
-extension DefaultInternalUserDecider {
-    convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
-        self.init(store: mockedStore)
-    }
+/// New version of this protocol that allows us to maintain backwards-compatibility with PixelKitEvent
+///
+/// This allows us to introduce support for new features without having to immediately migrate every other pixel to it.
+///
+public protocol PixelKitEventWithCustomPrefix {
+    var namePrefix: String { get }
 }

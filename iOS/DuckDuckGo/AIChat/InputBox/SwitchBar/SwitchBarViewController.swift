@@ -91,12 +91,6 @@ class SwitchBarViewController: UIViewController {
 
     private func updateLayouts() {
         self.view.layoutIfNeeded()
-        self.textEntryViewController.updateConstraintsForCurrentMode()
-
-        // AICHATFUTURE: Fix issue
-        // UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut], animations: {
-        //     self.view.layoutIfNeeded()
-        // })
     }
 
     func focusTextField() {

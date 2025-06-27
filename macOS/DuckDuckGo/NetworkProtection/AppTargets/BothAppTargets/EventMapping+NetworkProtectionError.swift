@@ -80,8 +80,10 @@ extension EventMapping where Event == NetworkProtectionError {
             domainEvent = .networkProtectionUnhandledError(function: function, line: line, error: error)
             frequency = .standard
             return
-        case .vpnAccessRevoked:
-            return
+        case .vpnAccessRevoked(let error):
+            domainEvent = .networkProtectionVPNAccessRevoked(error)
+        case .unmanagedSubscriptionError(let error):
+            domainEvent = .networkProtectionUnmanagedSubscriptionError(error)
         }
 
         let debugEvent = DebugEvent(eventType: .custom(domainEvent))

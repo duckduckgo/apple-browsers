@@ -423,7 +423,7 @@ class PrintingTests: UITestCase {
         )
 
         // Load the saved PDF
-        addressBarTextField.typeURL(validationSaveURL, pressingEnter: true)
+        addressBarTextField.pasteURL(validationSaveURL, pressingEnter: true)
 
         getPdfViewElement()
     }
@@ -701,7 +701,7 @@ class PrintingTests: UITestCase {
             "Address bar should exist in second window."
         )
 
-        addressBarWindow2.typeURL(pinnedTabSaveURL, pressingEnter: true)
+        addressBarWindow2.pasteURL(pinnedTabSaveURL, pressingEnter: true)
 
         // Validate content in second window
         getPdfViewElement(in: secondWindow)
@@ -771,7 +771,7 @@ private extension PrintingTests {
             "Address bar text field did not appear in a reasonable timeframe."
         )
 
-        addressBarTextField.typeURL(pdfURL, pressingEnter: true)
+        addressBarTextField.pasteURL(pdfURL, pressingEnter: true)
 
         return getPdfViewElement()
     }

@@ -207,10 +207,6 @@ extension XCTestCase {
     /// Override this method in subclasses to provide custom interruption handling
     func handleInterruption(_ element: XCUIElement) -> Bool {
         log("🔴 UITestCase: Handling interruption - \(element.description)")
-        if element.tables["SuggestionViewController.tableView"].firstMatch.exists {
-            log("Skipping Suggestions window interpreted as interruption")
-            return true
-        }
 
         // Capture screenshot of the interrupting element
         attachInterruptionScreenshot(element)

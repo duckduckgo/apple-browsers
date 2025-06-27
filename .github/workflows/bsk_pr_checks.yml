@@ -159,16 +159,6 @@ jobs:
           name: build-log.txt
           path: SharedPackages/BrowserServicesKit/build-log.txt
 
-      # - name: Copy crash reports to current directory
-      #   if: failure()
-      #   run: |
-      #     sleep 100
-      #     mkdir -p crash-reports
-      #     touch crash-reports/test.txt
-      #     cp -f ~/Library/Logs/DiagnosticReports/xctest*.ips crash-reports
-      #     ls -l
-      #     ls -l crash-reports
-
       - name: List crash reports
         if: failure()
         run: |
@@ -181,9 +171,8 @@ jobs:
         with:
           name: "bsk-crash-reports-macOS"
           path: |
-            ~/Library/Logs/DiagnosticReports
+            ~/Library/Logs/DiagnosticReports/xctest-*.ips
           retention-days: 7
-          include-hidden-files: true
 
       - name: Fetch latest commit author and PR reviewers
         if: always() && github.ref_name == 'main'

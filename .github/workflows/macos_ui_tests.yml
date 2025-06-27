@@ -244,39 +244,22 @@ jobs:
     - name: Organize logs for upload
       if: failure() || cancelled()
       run: |
+        echo "Current working directory: $(pwd)"
+
         # Create staging directory with timestamp, OS version and failing test name
         timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
         archive_name="BuildLogs ${{ matrix.test }} (macOS ${{ matrix.os-version }}) ${timestamp}"
         echo "Creating archive directory: $archive_name"
         mkdir -p "$archive_name"
         
-        # Debug: Show current working directory and list contents
-        echo "Current working directory: $(pwd)"
-        echo "Contents of current directory:"
-        ls -la
-        
         # locate and copy all files, flattening the structure with verbose output
-        echo "Looking for xcodebuild.log files..."
-        find macOS -name "xcodebuild.log" -type f -print -exec cp -f {} "$archive_name/" \; 2>&1 || echo "No xcodebuild.log found"
+        cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
+        find DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
+        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/"
         
-        echo "Looking for .xcresult files..."
-        find macOS/DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
-        
-        echo "Looking for diagnostic reports..."
-        if [ -d ~/Library/Logs/DiagnosticReports ]; then
-          echo "DiagnosticReports directory exists, copying contents..."
-          cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/" 2>&1 || echo "Failed to copy diagnostic reports"
-        else
-          echo "DiagnosticReports directory does not exist"
-        fi
-        
-        # Show what was actually copied
-        echo "Contents of archive directory:"
-        ls -la "$archive_name/" || echo "Archive directory is empty or doesn't exist"
-        
-        # Store archive name for upload step (simplified approach)
-        echo "ARCHIVE_NAME='$archive_name'" >> $GITHUB_ENV
-        echo "Set ARCHIVE_NAME to: $archive_name"
+        # Store archive name for upload step
+        echo "ARCHIVE_NAME='$(pwd)/$archive_name'" >> $GITHUB_ENV
+        echo "Set ARCHIVE_NAME to: $(pwd)/$archive_name"
 
     - name: Debug environment variable
       if: failure() || cancelled()

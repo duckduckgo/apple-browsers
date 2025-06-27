@@ -64,7 +64,7 @@ public struct SaveRecoveryKeyView: View {
             }
             .buttonStyle(SecondaryButtonStyle(compact: isCompact))
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 12)
                 .inset(by: 0.5)
                 .stroke(.blue, lineWidth: 1)
                 )
@@ -78,7 +78,7 @@ public struct SaveRecoveryKeyView: View {
             }
             .buttonStyle(SecondaryButtonStyle(compact: isCompact))
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 12)
                     .inset(by: 0.5)
                     .stroke(.blue, lineWidth: 1)
             )
@@ -134,7 +134,7 @@ public struct SaveRecoveryKeyView: View {
     @ViewBuilder
     func codeCopiedToast() -> some View {
         ZStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: 12)
                 .fill(Color.black)
                 .frame(height: 45)
             Text(UserText.saveRecoveryCodeSaveCodeCopiedToast)

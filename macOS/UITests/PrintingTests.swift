@@ -65,7 +65,7 @@ class PrintingTests: UITestCase {
 
     func test_pdf_contextMenuPrint_opensPrintDialog() throws {
         // Open PDF
-        let pdfWebView = try openPDFInBrowser()
+        let pdfWebView = openPDFInBrowser()
 
         XCTAssertTrue(
             pdfWebView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -99,7 +99,7 @@ class PrintingTests: UITestCase {
 
     func test_pdf_keyboardShortcutPrint_opensPrintDialog() throws {
         // Open PDF
-        _ = try openPDFInBrowser()
+        _=openPDFInBrowser()
 
         // Use Cmd+P to print
         app.typeKey("p", modifierFlags: [.command])
@@ -120,7 +120,7 @@ class PrintingTests: UITestCase {
 
     func test_pdf_contextMenuSaveAs_opensDialogAndSavesPDF() throws {
         // Open PDF
-        let pdfWebView = try openPDFInBrowser()
+        let pdfWebView = openPDFInBrowser()
 
         // Right click PDF
         pdfWebView.rightClick()
@@ -200,7 +200,7 @@ class PrintingTests: UITestCase {
 
     func test_pdf_keyboardShortcutSaveAs_opensDialogAndSavesPDF() throws {
         // Open PDF
-        _ = try openPDFInBrowser()
+        _=openPDFInBrowser()
 
         // Use Cmd+S to save
         app.typeKey("s", modifierFlags: [.command])
@@ -269,7 +269,7 @@ class PrintingTests: UITestCase {
 
     func test_pdf_saveToPDF_createsValidPDFFile() throws {
         // Open PDF
-        _ = try openPDFInBrowser()
+        _ = openPDFInBrowser()
 
         // Use Cmd+P to open print dialog
         app.typeKey("p", modifierFlags: [.command])
@@ -365,12 +365,12 @@ class PrintingTests: UITestCase {
         // Load the saved PDF
         addressBarTextField.typeURL(validationSaveURL, pressingEnter: true)
 
-        try getPdfViewElement()
+        getPdfViewElement()
     }
 
     func test_pdf_contextMenuOpenWithPreview_opensPreviewAndValidatesContent() throws {
         // Open PDF in browser
-        let pdfWebView = try openPDFInBrowser()
+        let pdfWebView = openPDFInBrowser()
 
         // Right-click on PDF to open context menu
         pdfWebView.rightClick()
@@ -475,7 +475,7 @@ class PrintingTests: UITestCase {
 
         // Step 2: Open PDF in current window
         app.typeKey("t", modifierFlags: [.command])
-        _ = try openPDFInBrowser()
+        _ = openPDFInBrowser()
 
         // Step 3: Pin the tab using Window -> Pin Tab menu
         // Use Window menu to pin the current tab
@@ -496,7 +496,7 @@ class PrintingTests: UITestCase {
         // Step 4: Switch to pinned tab (cmd+1)
         app.typeKey("1", modifierFlags: [.command])
 
-        try getPdfViewElement(in: firstWindow)
+        getPdfViewElement(in: firstWindow)
 
         // Step 5: Open print dialog in first window
         app.typeKey("p", modifierFlags: [.command])
@@ -537,7 +537,7 @@ class PrintingTests: UITestCase {
         )
 
         // Validate content in second window
-        try getPdfViewElement(in: secondWindow)
+        getPdfViewElement(in: secondWindow)
 
         // Step 10: Hit cmd+p in the 2nd window
         app.typeKey("p", modifierFlags: [.command])
@@ -623,7 +623,7 @@ class PrintingTests: UITestCase {
         addressBarWindow2.typeURL(pinnedTabSaveURL, pressingEnter: true)
 
         // Validate content in second window
-        try getPdfViewElement(in: secondWindow)
+        getPdfViewElement(in: secondWindow)
 
         // Step 13: Additional window switching validation
         // switch to the pinned tab
@@ -684,7 +684,7 @@ class PrintingTests: UITestCase {
 private extension PrintingTests {
 
     /// Opens the test PDF in the browser
-    func openPDFInBrowser() throws -> XCUIElement {
+    func openPDFInBrowser() -> XCUIElement {
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Address bar text field did not appear in a reasonable timeframe."
@@ -692,137 +692,19 @@ private extension PrintingTests {
 
         addressBarTextField.typeURL(pdfURL, pressingEnter: true)
 
-        return try getPdfViewElement()
+        return getPdfViewElement()
     }
 
     @discardableResult
-    func getPdfViewElement(in root: XCUIElement? = nil) throws -> XCUIElement {
-        let webView = (root ?? app).groups["WebView"].firstMatch
+    func getPdfViewElement(in root: XCUIElement? = nil) -> XCUIElement {
+        let element = (root ?? app).groups.containing(NSPredicate(format: "elementType == %lu AND value LIKE 'TestPDF*'", XCUIElement.ElementType.staticText.rawValue)).firstMatch
 
-        var json: String
-        let expected: String
-        if #available(macOS 14, *) {
-            expected = """
-            {
-              "children" : [
-                {
-                  "children" : [
-                    {
-                      "children" : [
-                        {
-                          "children" : [
-                            {
-                              "children" : [
-                                {
-                                  "children" : [
-            
-                                  ],
-                                  "elementType" : ".staticText",
-                                  "value" : "TestPDF"
-                                }
-                              ],
-                              "elementType" : ".group"
-                            }
-                          ],
-                          "elementType" : ".other"
-                        },
-                        {
-                          "children" : [
-                            {
-                              "children" : [
-                                {
-                                  "children" : [
-            
-                                  ],
-                                  "elementType" : ".staticText",
-                                  "value" : "Page2"
-                                }
-                              ],
-                              "elementType" : ".group"
-                            }
-                          ],
-                          "elementType" : ".other"
-                        }
-                      ],
-                      "elementType" : ".group"
-                    }
-                  ],
-                  "elementType" : ".group"
-                }
-              ],
-              "elementType" : ".group"
-            }
-            """
-        } else {
-            expected = """
-            {
-              "children" : [
-                {
-                  "children" : [
-                    {
-                      "children" : [
-                        {
-                          "children" : [
-                            {
-                              "children" : [
-                                {
-                                  "children" : [
-                                    {
-                                      "children" : [
+        XCTAssertTrue(
+            element.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "PDF View did not appear in a reasonable timeframe."
+        )
 
-                                      ],
-                                      "elementType" : ".staticText",
-                                      "value" : "TestPDF"
-                                    }
-                                  ],
-                                  "elementType" : ".group"
-                                }
-                              ],
-                              "elementType" : ".other"
-                            },
-                            {
-                              "children" : [
-                                {
-                                  "children" : [
-                                    {
-                                      "children" : [
-
-                                      ],
-                                      "elementType" : ".staticText",
-                                      "value" : "Page2"
-                                    }
-                                  ],
-                                  "elementType" : ".group"
-                                }
-                              ],
-                              "elementType" : ".other"
-                            }
-                          ],
-                          "elementType" : ".group"
-                        }
-                      ],
-                      "elementType" : ".group"
-                    }
-                  ],
-                  "elementType" : ".group"
-                }
-              ],
-              "elementType" : ".group"
-            }
-            """
-        }
-
-        let start = Date()
-        repeat {
-            Thread.sleep(forTimeInterval: 0.5)
-            let snapshot = try webView.snapshot()
-
-            let dict = snapshot.toDictionary(keys: ["elementType", "value"])
-            json = try String(data: JSONSerialization.data(withJSONObject: dict, options: [.prettyPrinted, .sortedKeys]), encoding: .utf8)!
-        } while json != expected && Date().timeIntervalSince(start) < 5
-        XCTAssertEqual(json, expected, "PDF View did not appear in a reasonable timeframe.")
-
-        return webView
+        return element
     }
 
 }

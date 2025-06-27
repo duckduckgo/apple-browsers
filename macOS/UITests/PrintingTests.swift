@@ -75,36 +75,7 @@ class PrintingTests: UITestCase {
         pdfWebView.click()
         pdfWebView.rightClick()
 
-        let contextMenu = app.windows.firstMatch.children(matching: .menu).firstMatch
-        XCTAssertTrue(
-            contextMenu.waitForExistence(timeout: 10),
-            "Context menu item did not appear in a reasonable timeframe."
-        )
-        printMenuItem = contextMenu.menuItems.element(matching: NSPredicate(format: "identifier == 'PDFContextMenu.print'")).firstMatch
-
-        if !printMenuItem.exists {
-            let menuSnapshot = try contextMenu.snapshot()
-            var predicate: NSPredicate!
-            for child in menuSnapshot.children {
-                guard child.elementType == .menuItem else { continue }
-                if child.identifier == "PDFContextMenu.print" {
-                    predicate = NSPredicate(format: "identifier == 'PDFContextMenu.print'")
-                } else if child.title == "Print…" {
-                    predicate = NSPredicate(format: "title == 'Print…'")
-                } else if child.label == "Print…" {
-                    predicate = NSPredicate(format: "label == 'Print…'")
-                } else if child.value as? String == "Print…" {
-                    predicate = NSPredicate(format: "value == 'Print…'")
-                }
-            }
-            if predicate == nil {
-                log("🔴 Failed to find 'Print…' menu item in context menu snapshot")
-                predicate = NSPredicate(format: "title == 'Print…'")
-            } else if let predicate {
-                log("🟢 Found 'Print…' menu item in context menu snapshot: \(predicate.predicateFormat)")
-            }
-        }
-
+        printMenuItem = app.windows.firstMatch.children(matching: .menu).firstMatch.menuItems.element(matching: NSPredicate(format: "identifier == 'PDFContextMenu.print'")).firstMatch
         printMenuItem.click()
 
         // Wait for print dialog to appear
@@ -151,36 +122,7 @@ class PrintingTests: UITestCase {
         pdfWebView.click()
         pdfWebView.rightClick()
 
-        let contextMenu = app.windows.firstMatch.children(matching: .menu).firstMatch
-        XCTAssertTrue(
-            contextMenu.waitForExistence(timeout: 10),
-            "Context menu item did not appear in a reasonable timeframe."
-        )
-        saveAsMenuItem = contextMenu.menuItems.element(matching: NSPredicate(format: "identifier == 'PDFContextMenu.saveAs'")).firstMatch
-
-        if !saveAsMenuItem.exists {
-            let menuSnapshot = try contextMenu.snapshot()
-            var predicate: NSPredicate!
-            for child in menuSnapshot.children {
-                guard child.elementType == .menuItem else { continue }
-                if child.identifier == "PDFContextMenu.saveAs" {
-                    predicate = NSPredicate(format: "identifier == 'PDFContextMenu.saveAs'")
-                } else if child.title == "Save As…" {
-                    predicate = NSPredicate(format: "title == 'Save As…'")
-                } else if child.label == "Save As…" {
-                    predicate = NSPredicate(format: "label == 'Save As…'")
-                } else if child.value as? String == "Save As…" {
-                    predicate = NSPredicate(format: "value == 'Save As…'")
-                }
-            }
-            if predicate == nil {
-                log("🔴 Failed to find 'Save As…' menu item in context menu snapshot")
-                predicate = NSPredicate(format: "title == 'Save As…'")
-            } else if let predicate {
-                log("🟢 Found 'Save As…' menu item in context menu snapshot: \(predicate.predicateFormat)")
-            }
-        }
-
+        saveAsMenuItem = app.windows.firstMatch.children(matching: .menu).firstMatch.menuItems.element(matching: NSPredicate(format: "identifier == 'PDFContextMenu.saveAs'")).firstMatch
         saveAsMenuItem.click()
 
         // Wait for save dialog to appear
@@ -426,15 +368,8 @@ class PrintingTests: UITestCase {
         pdfWebView.click()
         pdfWebView.rightClick()
 
-        let contextMenu = app.windows.firstMatch.children(matching: .menu).firstMatch
-        XCTAssertTrue(
-            contextMenu.waitForExistence(timeout: 10),
-            "Context menu item did not appear in a reasonable timeframe."
-        )
         // Click "Open with Preview" menu item
-        let openWithPreviewMenuItem = contextMenu.menuItems.element(matching: NSPredicate(format: "title == 'Open with Preview'")).firstMatch
-        XCTAssertTrue(openWithPreviewMenuItem.exists, "Menu item 'Open with Preview' does not exist")
-
+        let openWithPreviewMenuItem = app.windows.firstMatch.children(matching: .menu).firstMatch.menuItems.element(matching: NSPredicate(format: "title == 'Open with Preview'")).firstMatch
         openWithPreviewMenuItem.click()
 
         // Get Preview app

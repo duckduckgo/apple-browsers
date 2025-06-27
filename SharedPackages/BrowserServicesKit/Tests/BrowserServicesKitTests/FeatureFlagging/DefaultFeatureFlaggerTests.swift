@@ -78,7 +78,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         experimentManager = MockExperimentManager()
 
         // Set environment variable to allow DefaultFeatureFlagger in tests
-        setenv("UITEST_FEATUREFLAGGER_MODE", "1", 1)
+        setenv("TESTS_FEATUREFLAGGER_MODE", "1", 1)
     }
 
     override func tearDown() {
@@ -86,7 +86,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         experimentManager = nil
 
         // Clean up environment variable
-        unsetenv("UITEST_FEATUREFLAGGER_MODE")
+        unsetenv("TESTS_FEATUREFLAGGER_MODE")
 
         super.tearDown()
     }

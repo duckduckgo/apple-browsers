@@ -383,7 +383,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
         let featureFlagger: FeatureFlagger
-        if AppVersion.runType.isTests {
+        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType)  {
             featureFlagger = MockFeatureFlagger()
             self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
 

@@ -290,8 +290,8 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         experimentManager: ExperimentCohortsManaging?
     ) {
 #if DEBUG
-        let allowDefaultFeatureFlaggerInTests = ProcessInfo.processInfo.environment["UITEST_FEATUREFLAGGER_MODE"] == "1"
-        assert(!AppVersion.runType.isTests || allowDefaultFeatureFlaggerInTests, {
+        let allowDefaultFeatureFlaggerInTests = ProcessInfo.processInfo.environment["TESTS_FEATUREFLAGGER_MODE"] == "1"
+        assert([.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) || allowDefaultFeatureFlaggerInTests, {
             "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
         }())
 #endif
@@ -307,13 +307,17 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         internalUserDecider: InternalUserDecider,
         privacyConfigManager: PrivacyConfigurationManaging,
         localOverrides: FeatureFlagLocalOverriding,
+        /// Allows to define custom behavior for allowing overrides.
+        ///
+        /// By default, overrides are allowed only for internal users. A custom closure can be injected
+        /// here to allow feature flag overriding in other situations (e.g. for UI testing).
         allowOverrides: (() -> Bool)? = nil,
         experimentManager: ExperimentCohortsManaging?,
         for: Flag.Type
     ) {
  #if DEBUG
-        let allowDefaultFeatureFlaggerInTests = ProcessInfo.processInfo.environment["UITEST_FEATUREFLAGGER_MODE"] == "1"
-        assert(!AppVersion.runType.isTests || allowDefaultFeatureFlaggerInTests, {
+        let allowDefaultFeatureFlaggerInTests = ProcessInfo.processInfo.environment["TESTS_FEATUREFLAGGER_MODE"] == "1"
+        assert([.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) || allowDefaultFeatureFlaggerInTests, {
             "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
         }())
  #endif

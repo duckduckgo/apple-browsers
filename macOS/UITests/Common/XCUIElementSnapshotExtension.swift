@@ -27,7 +27,7 @@ extension XCUIElementSnapshot {
             if key == "elementType" {
                 dict[key] = elementType.description
             } else if let value = (self as! NSObject).value(forKey: key) {
-                dict[key] = value
+                dict[key] = "\(value)"
             }
         }
 

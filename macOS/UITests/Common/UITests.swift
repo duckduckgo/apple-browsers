@@ -121,16 +121,74 @@ class TestFailureObserver: NSObject, XCTestObservation {
 
 class UITestCase: XCTestCase {
     private static let failureObserver = TestFailureObserver()
+    
+    private static let swizzleCompactDescriptionOnce: Void = {
+        guard let originalMethod = class_getInstanceMethod(XCUIElement.self, NSSelectorFromString("compactDescription")),
+              let swizzledMethod = class_getInstanceMethod(XCUIElement.self, #selector(XCUIElement.xcui_compactDescription)) else {
+            print("Failed to get methods for swizzling compactDescription")
+            return
+        }
+        
+        method_exchangeImplementations(originalMethod, swizzledMethod)
+    }()
+    
+    private static let swizzleElementSnapshotOnce: Void = {
+        guard let originalMethod = class_getInstanceMethod(NSClassFromString("XCElementSnapshot")!, NSSelectorFromString("compactDescription")),
+              let swizzledMethod = class_getInstanceMethod(NSObject.self, #selector(NSObject.swizzled_compactDescription)) else {
+            print("Failed to get methods for swizzling XCUIElementSnapshot compactDescription")
+            return
+        }
+        
+        method_exchangeImplementations(originalMethod, swizzledMethod)
+    }()
 
     override class func setUp() {
         super.setUp()
         XCTestObservationCenter.shared.addTestObserver(failureObserver)
+        
+        // Trigger one-time swizzling
+        _ = swizzleCompactDescriptionOnce
+        _ = swizzleElementSnapshotOnce
     }
 
     override class func tearDown() {
         XCTestObservationCenter.shared.removeTestObserver(failureObserver)
         super.tearDown()
     }
+}
+
+extension XCUIElement {
+
+    @objc dynamic func xcui_compactDescription() -> String {
+        guard let snapshot = try? self.snapshot() else {
+            // Fallback to original implementation if snapshot is unavailable
+            return self.xcui_compactDescription()
+        }
+
+        return snapshot.jsonDescription
+    }
+}
+
+extension NSObject {
+
+    @objc dynamic func swizzled_compactDescription() -> String {
+        return (self as! XCUIElementSnapshot).jsonDescription
+    }
+}
+
+extension XCUIElementSnapshot {
+    var jsonDescription: String {
+        let keys = ["identifier", "elementType", "title", "label", "value", "frame"]
+        let snapshotDict = self.toDictionary(keys: keys)
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: snapshotDict, options: [])
+            return String(data: jsonData, encoding: .utf8) ?? "Failed to encode JSON"
+        } catch {
+            return "JSON serialization error: \(error.localizedDescription)"
+        }
+    }
+    
 }
 
 extension XCTestCase {
@@ -147,5 +205,25 @@ extension XCTestCase {
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
         let result = XCTWaiter().wait(for: [expectation], timeout: UITests.Timeouts.elementExistence)
         XCTAssertEqual(result, .completed, "Unexpected status field text content after a \"Find Next\" operation.")
+    }
+
+    func log(_ message: String) {
+        XCTContext.current.recordActivityMessage(message)
+    }
+
+    class func log(_ message: String) {
+        XCTContext.current.recordActivityMessage(message)
+    }
+
+}
+
+extension XCTContext {
+
+    func recordActivityMessage(_ message: String) {
+        _=self.perform(NSSelectorFromString("_recordActivityMessageWithFormat:"), with: message.replacingOccurrences(of: "%", with: "%%"))
+    }
+
+    static var current: XCTContext! {
+        return self.perform(NSSelectorFromString("currentContext"))?.takeUnretainedValue() as? XCTContext
     }
 }

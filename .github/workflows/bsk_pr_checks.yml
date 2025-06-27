@@ -164,6 +164,7 @@ jobs:
         run: |
           sleep 100
           mkdir -p crash-reports
+          touch crash-reports/test.txt
           cp -f ~/Library/Logs/DiagnosticReports/xctest-*.ips crash-reports
           ls -l
           ls -l crash-reports

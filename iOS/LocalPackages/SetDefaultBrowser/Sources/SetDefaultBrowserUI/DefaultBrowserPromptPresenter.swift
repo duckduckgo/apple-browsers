@@ -69,7 +69,6 @@ private extension SetDefaultBrowserModalPresenter {
 
     func configurePresentationStyle(hostingController: UIHostingController<DefaultBrowserPromptModalView>, presentingController: UIViewController) {
         guard let presentationController = hostingController.sheetPresentationController else { return }
-        presentationController.delegate = self
 
         if #available(iOS 16.0, *) {
             presentationController.detents = [
@@ -101,16 +100,6 @@ private extension SetDefaultBrowserModalPresenter {
         } else {
             return nil
         }
-    }
-
-}
-
-// MARK: UISheetPresentationDelegate
-
-extension SetDefaultBrowserModalPresenter: UISheetPresentationControllerDelegate {
-
-    public func presentationControllerWillDismiss(_ presentationController: UIPresentationController) {
-        coordinator.dismissAction(shouldDismissPromptPermanently: false)
     }
 
 }

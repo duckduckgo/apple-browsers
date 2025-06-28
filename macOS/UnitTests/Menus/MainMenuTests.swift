@@ -108,7 +108,7 @@ class MainMenuTests: XCTestCase {
             faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
             aiChatMenuConfig: DummyAIChatConfig(),
-            internalUserDecider: DefaultInternalUserDecider(),
+            internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
@@ -178,7 +178,7 @@ class MainMenuTests: XCTestCase {
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
             aiChatMenuConfig: DummyAIChatConfig(),
-            internalUserDecider: DefaultInternalUserDecider(),
+            internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
@@ -203,7 +203,7 @@ class MainMenuTests: XCTestCase {
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
             aiChatMenuConfig: DummyAIChatConfig(),
-            internalUserDecider: DefaultInternalUserDecider(),
+            internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
@@ -227,7 +227,7 @@ class MainMenuTests: XCTestCase {
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             aiChatMenuConfig: DummyAIChatConfig(),
-            internalUserDecider: DefaultInternalUserDecider(),
+            internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
@@ -253,7 +253,7 @@ class MainMenuTests: XCTestCase {
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             aiChatMenuConfig: aiChatConfig,
-            internalUserDecider: DefaultInternalUserDecider(),
+            internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
@@ -281,7 +281,7 @@ class MainMenuTests: XCTestCase {
             historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             aiChatMenuConfig: aiChatConfig,
-            internalUserDecider: DefaultInternalUserDecider(),
+            internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager()
         )

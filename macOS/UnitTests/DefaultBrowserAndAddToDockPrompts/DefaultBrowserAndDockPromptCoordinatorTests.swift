@@ -30,6 +30,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     private var storeMock: MockDefaultBrowserAndDockPromptStore!
     private var pixelKitMock: PixelKitMock!
     private var timeTraveller: TimeTraveller!
+    private var isOnboardingCompleted = true
     private static let now = Date(timeIntervalSince1970: 1747872000) // 22 May 2025 12:00:00 AM
 
     override func setUpWithError() throws {
@@ -56,7 +57,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     }
 
     func makeSUT(
-        isOnboardingCompleted: Bool = true,
         expectedFireCalls: [ExpectedFireCall] = []
     ) -> DefaultBrowserAndDockPromptCoordinator  {
         pixelKitMock = PixelKitMock(expecting: expectedFireCalls)
@@ -64,7 +64,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         return DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: promptTypeDeciderMock,
             store: storeMock,
-            isOnboardingCompleted: isOnboardingCompleted,
+            isOnboardingCompleted: { self.isOnboardingCompleted },
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
             applicationBuildType: applicationBuildTypeMock,
@@ -148,10 +148,30 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
         promptTypeDeciderMock.promptTypeToReturn = .banner
-        let sut = makeSUT(isOnboardingCompleted: false)
+        isOnboardingCompleted = false
+        let sut = makeSUT()
 
         // THEN
         XCTAssertNil(sut.getPromptType())
+    }
+
+    func testGetPromptTypeReturnsValueWhenOnboardingIsNotCompletedAndThenCompletes() {
+        // GIVEN
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        promptTypeDeciderMock.promptTypeToReturn = .banner
+        isOnboardingCompleted = false
+        let sut = makeSUT()
+
+        // THEN
+        XCTAssertNil(sut.getPromptType())
+
+        // WHEN
+        isOnboardingCompleted = true
+
+        // THEN
+        XCTAssertNotNil(sut.getPromptType())
+
     }
 
     func testGetPromptTypeReturnsNilWhenBrowserIsDefaultAndAddedToDock() {

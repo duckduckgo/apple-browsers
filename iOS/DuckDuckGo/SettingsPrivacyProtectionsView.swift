@@ -36,6 +36,7 @@ struct SettingsPrivacyProtectionsView: View {
                                  action: { viewModel.setAsDefaultBrowser() },
                                  webLinkIndicator: true,
                                  isButton: true)
+                .accessibilityIdentifier("Settings.ListItem.Field_DefaultBrowser")
             }
             // Private Search
             NavigationLink(destination: PrivateSearchView().environmentObject(viewModel)) {

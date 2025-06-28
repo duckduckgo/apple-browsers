@@ -36,6 +36,7 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
         model = NewTabPageFavoritesModel(
             actionsHandler: CapturingNewTabPageFavoritesActionsHandler(),
             favoritesPublisher: favoritesSubject.eraseToAnyPublisher(),
+            faviconsDidLoadPublisher: Empty().eraseToAnyPublisher(),
             settingsPersistor: settingsPersistor
         )
     }

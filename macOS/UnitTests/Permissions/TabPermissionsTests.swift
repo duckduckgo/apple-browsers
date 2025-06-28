@@ -214,8 +214,6 @@ final class TabPermissionsTests: XCTestCase {
 
     @MainActor
     func testWhenExternalAppPermissionEnteredByUser_permissionIsQueriedAndAppIsOpened() async throws {
-        throw XCTSkip("Flaky - https://app.asana.com/0/0/1210006654873574")
-
         let extensionsBuilder = TestTabExtensionsBuilder(load: [ExternalAppSchemeHandler.self, DownloadsTabExtension.self])
         let workspace = WorkspaceMock()
         let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
@@ -386,8 +384,6 @@ final class TabPermissionsTests: XCTestCase {
 
     @MainActor
     func testWhenSessionIsRestored_externalAppIsNotOpened() throws {
-        throw XCTSkip("Flaky - https://app.asana.com/0/0/1210006654873575")
-
         var eDidCancel: XCTestExpectation!
         let extensionsBuilder = TestTabExtensionsBuilder(load: [ExternalAppSchemeHandler.self, DownloadsTabExtension.self]) { builder in { _, _ in
             builder.add {

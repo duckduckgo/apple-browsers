@@ -18,6 +18,7 @@
 
 import Foundation
 import Combine
+import Common
 
 public protocol InternalUserDecider {
 

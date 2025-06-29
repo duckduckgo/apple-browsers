@@ -22,9 +22,20 @@ import Core
 import BrowserServicesKit
 import Subscription
 
+/// iOS-specific navigation handler for subscription web pages.
+///
+/// Enables Duck.ai (SERP) to navigate to specific sections within the app using SubscriptionUserScript
+/// by posting `settingsDeepLinkNotification` that `MainViewController` handles.
+///
+/// **Architecture:** Duck.ai → SubscriptionUserScript → This Handler → NotificationCenter → MainViewController → Settings
+///
+/// Used in `UserScripts.swift` as the navigation delegate for `SubscriptionUserScript`.
+/// macOS uses `SubscriptionNavigationCoordinator` instead of notifications.
+@MainActor
 final class SubscriptionURLNavigationHandler: SubscriptionUserScriptNavigationDelegate {
 
-    @MainActor
+    /// Navigates to the subscription settings section.
+    /// Called when Duck.ai need to navigate to subscription management.
     func navigateToSettings() {
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
@@ -32,7 +43,8 @@ final class SubscriptionURLNavigationHandler: SubscriptionUserScriptNavigationDe
         )
     }
 
-    @MainActor
+    /// Navigates to the subscription restore/activation flow.
+    /// Called when Duck.ai need to restore an existing subscription.
     func navigateToSubscriptionActivation() {
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
@@ -40,7 +52,8 @@ final class SubscriptionURLNavigationHandler: SubscriptionUserScriptNavigationDe
         )
     }
 
-    @MainActor
+    /// Navigates to the subscription purchase flow.
+    /// Called when Duck.ai need to start a new subscription purchase.
     func navigateToSubscriptionPurchase() {
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,

@@ -24,18 +24,19 @@ import WebKit
 /// This protocol describes the interface for `SubscriptionUserScript` message handler
 ///
 protocol SubscriptionUserScriptHandling {
+    typealias DataModel = SubscriptionUserScript.DataModel
 
     /// Returns a handshake message reporting capabilities of the app.
-    func handshake(params: Any, message: UserScriptMessage) async throws -> SubscriptionUserScript.DataModel.HandshakeResponse
+    func handshake(params: Any, message: UserScriptMessage) async throws -> DataModel.HandshakeResponse
 
     /// Returns the details of Privacy Pro subscription.
-    func subscriptionDetails(params: Any, message: UserScriptMessage) async throws -> SubscriptionUserScript.DataModel.SubscriptionDetails
+    func subscriptionDetails(params: Any, message: UserScriptMessage) async throws -> DataModel.SubscriptionDetails
 
     // Returns the AuthToken of the subscription.
-    func getAuthAccessToken(params: Any, message: any UserScriptMessage) async throws -> SubscriptionUserScript.DataModel.GetAuthAccessTokenResponse
+    func getAuthAccessToken(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetAuthAccessTokenResponse
 
     // Returns the feature configuration for the Subscription.
-    func getFeatureConfig(params: Any, message: any UserScriptMessage) async throws -> SubscriptionUserScript.DataModel.GetFeatureConfigurationResponse
+    func getFeatureConfig(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetFeatureConfigurationResponse
 
     // Notification message, Subscription Settings should be open
     func backToSettings(params: Any, message: any UserScriptMessage) async throws -> Encodable?

@@ -20,6 +20,7 @@ import Foundation
 import BrowserServicesKit
 import Subscription
 
+/// Protocol for showing tabs and preferences in the macOS browser.
 protocol SubscriptionTabsShowing {
     func showTab(with content: Tab.TabContent)
     func showPreferencesTab(withSelectedPane pane: PreferencePaneIdentifier?)
@@ -27,6 +28,15 @@ protocol SubscriptionTabsShowing {
 
 extension WindowControllersManager: SubscriptionTabsShowing {}
 
+/// macOS-specific navigation coordinator for subscription web pages.
+///
+/// Enables Duck.ai (SERP) to navigate within the macOS app using SubscriptionUserScript by directly
+/// showing preferences tabs or opening subscription URLs in new tabs.
+///
+/// **Architecture:** Duck.ai → SubscriptionUserScript → This Coordinator → WindowControllersManager → Tabs/Preferences
+///
+/// Used as the navigation delegate for `SubscriptionUserScript` in macOS.
+/// iOS uses `SubscriptionURLNavigationHandler` with notifications instead.
 @MainActor
 final class SubscriptionNavigationCoordinator {
 
@@ -44,15 +54,21 @@ final class SubscriptionNavigationCoordinator {
 
 extension SubscriptionNavigationCoordinator: SubscriptionUserScriptNavigationDelegate {
 
+    /// Opens the subscription settings pane in Preferences.
+    /// Called when Duck.ai need to navigate to subscription management.
     func navigateToSettings() {
         tabShower.showPreferencesTab(withSelectedPane: .subscriptionSettings)
     }
 
+    /// Opens the subscription activation flow in a new tab.
+    /// Called when Duck.ai need to restore an existing subscription.
     func navigateToSubscriptionActivation() {
         let url = subscriptionManager.url(for: .activationFlow)
         tabShower.showTab(with: .subscription(url))
     }
 
+    /// Opens the subscription purchase flow in a new tab.
+    /// Called when Duck.ai need to start a new subscription purchase.
     func navigateToSubscriptionPurchase() {
         let url = subscriptionManager.url(for: .purchase)
         tabShower.showTab(with: .subscription(url))

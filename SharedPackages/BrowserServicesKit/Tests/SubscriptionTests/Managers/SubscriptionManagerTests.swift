@@ -293,4 +293,58 @@ final class SubscriptionManagerTests: XCTestCase {
         // Then
         XCTAssertFalse(result)
     }
+
+    // MARK: - Tests for canPurchasePublisher
+
+    func testCanPurchasePublisherEmitsValuesFromStorePurchaseManager() async throws {
+        // Given
+        let expectation = expectation(description: "Publisher should emit value")
+        var receivedValue: Bool?
+
+        // When
+        let cancellable = subscriptionManager.canPurchasePublisher
+            .sink { value in
+                receivedValue = value
+                expectation.fulfill()
+            }
+
+        // Simulate store purchase manager emitting a value
+        storePurchaseManager.areProductsAvailableSubject.send(true)
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 0.5)
+        XCTAssertTrue(receivedValue ?? false)
+
+        // Clean up
+        cancellable.cancel()
+    }
+
+    func testCanPurchasePublisherEmitsMultipleValues() async throws {
+        // Given
+        let expectation1 = expectation(description: "Publisher should emit first value")
+        let expectation2 = expectation(description: "Publisher should emit second value")
+        var receivedValues: [Bool] = []
+
+        // When
+        let cancellable = subscriptionManager.canPurchasePublisher
+            .sink { value in
+                receivedValues.append(value)
+                if receivedValues.count == 1 {
+                    expectation1.fulfill()
+                } else if receivedValues.count == 2 {
+                    expectation2.fulfill()
+                }
+            }
+
+        // Simulate store purchase manager emitting multiple values
+        storePurchaseManager.areProductsAvailableSubject.send(true)
+        storePurchaseManager.areProductsAvailableSubject.send(false)
+
+        // Then
+        await fulfillment(of: [expectation1, expectation2], timeout: 0.5)
+        XCTAssertEqual(receivedValues, [true, false])
+
+        // Clean up
+        cancellable.cancel()
+    }
 }

@@ -43,7 +43,8 @@ final class ContentScopeUserScriptTests: XCTestCase {
         super.setUp()
         properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "", messageSecret: "", featureToggles: ContentScopeFeatureToggles(emailProtection: false, emailProtectionIncontextSignup: false, credentialsAutofill: false, identitiesAutofill: false, creditCardsAutofill: false, credentialsSaving: false, passwordGeneration: false, inlineIconCredentials: false, thirdPartyCredentialsProvider: false, unknownUsernameCategorization: false, partialFormSaves: false, passwordVariantCategorization: true, inputFocusApi: false), currentCohorts: [experimentData])
         configGenerator = MockCSSPrivacyConfigGenerator()
-        mockPrivacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration(), internalUserDecider: DefaultInternalUserDecider(mockedStore: MockInternalUserStoring()))
+        mockPrivacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration(),
+                                                                          internalUserDecider: DefaultInternalUserDecider(store: MockInternalUserStoring()))
         mockPrivacyConfigurationManager.currentConfigString = managerConfig
     }
 

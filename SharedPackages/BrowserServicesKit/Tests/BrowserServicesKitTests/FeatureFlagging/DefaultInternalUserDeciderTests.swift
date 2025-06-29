@@ -26,26 +26,26 @@ class DefaultInternalUserDeciderTests: XCTestCase {
     let correctStatusCode = 200
 
     func testShouldMarkUserAsInternalWhenURLAndStatusCodeCorrectThenReturnsTrue() {
-        let featureFlagger = DefaultInternalUserDecider()
+        let featureFlagger = DefaultInternalUserDecider(store: MockInternalUserStoring())
         let result = featureFlagger.shouldMarkUserAsInternal(forUrl: correctURL, statusCode: correctStatusCode)
         XCTAssertTrue(result)
     }
 
     func testShouldMarkUserAsInternalWhenURLIsCorrectAndStatusCodeisIncorrectThenReturnsFalse() {
-        let featureFlagger = DefaultInternalUserDecider()
+        let featureFlagger = DefaultInternalUserDecider(store: MockInternalUserStoring())
         let result = featureFlagger.shouldMarkUserAsInternal(forUrl: correctURL, statusCode: 300)
         XCTAssertFalse(result)
     }
 
     func testShouldMarkUserAsInternalWhenURLIsIncorrectButSubdomainIsCorrectAndStatusCodeIsCorrectThenReturnsFalse() {
-        let featureFlagger = DefaultInternalUserDecider()
+        let featureFlagger = DefaultInternalUserDecider(store: MockInternalUserStoring())
         let url = URL(string: "http://login.fishtown.com")!
         let result = featureFlagger.shouldMarkUserAsInternal(forUrl: url, statusCode: correctStatusCode)
         XCTAssertFalse(result)
     }
 
     func testShouldMarkUserAsInternalWhenURLIsIncorrectButdomainIsCorrectAndStatusCodeIsCorrectThenReturnsFalse() {
-        let featureFlagger = DefaultInternalUserDecider()
+        let featureFlagger = DefaultInternalUserDecider(store: MockInternalUserStoring())
         let url = URL(string: "http://sso.duckduckgo.com")!
         let result = featureFlagger.shouldMarkUserAsInternal(forUrl: url, statusCode: correctStatusCode)
         XCTAssertFalse(result)

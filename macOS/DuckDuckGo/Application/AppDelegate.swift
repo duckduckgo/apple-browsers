@@ -51,6 +51,7 @@ import SyncDataProviders
 import UserNotifications
 import VPNAppState
 import WebKit
+import ContentScopeScripts
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -108,6 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var privacyDashboardWindow: NSWindow?
 
     let windowControllersManager: WindowControllersManager
+    let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
 
     let appearancePreferences: AppearancePreferences
     let dataClearingPreferences: DataClearingPreferences
@@ -132,6 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appearancePreferences: appearancePreferences,
         customizationModel: newTabPageCustomizationModel,
         bookmarkManager: bookmarkManager,
+        faviconManager: faviconManager,
         activeRemoteMessageModel: activeRemoteMessageModel,
         historyCoordinator: historyCoordinator,
         contentBlocking: privacyFeatures.contentBlocking,
@@ -381,21 +384,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        let featureFlagger = DefaultFeatureFlagger(
-            internalUserDecider: internalUserDecider,
-            privacyConfigManager: privacyConfigurationManager,
-            localOverrides: FeatureFlagLocalOverrides(
-                keyValueStore: UserDefaults.appConfiguration,
-                actionHandler: featureFlagOverridesPublishingHandler
-            ),
-            experimentManager: ExperimentCohortsManager(
-                store: ExperimentsDataStore(),
-                fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
-            ),
-            for: FeatureFlag.self
-        )
-        self.featureFlagger = featureFlagger
-        self.contentScopeExperimentsManager = featureFlagger
+        var featureFlagger: FeatureFlagger
+        if AppVersion.runType.isTests {
+            let mockFeatureFlagger = MockFeatureFlagger()
+            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
+            self.featureFlagger = mockFeatureFlagger
+            featureFlagger = mockFeatureFlagger
+        } else {
+            let defaultFeatureFlagger = DefaultFeatureFlagger(
+                internalUserDecider: internalUserDecider,
+                privacyConfigManager: privacyConfigurationManager,
+                localOverrides: FeatureFlagLocalOverrides(
+                    keyValueStore: UserDefaults.appConfiguration,
+                    actionHandler: featureFlagOverridesPublishingHandler
+                ),
+                experimentManager: ExperimentCohortsManager(
+                    store: ExperimentsDataStore(),
+                    fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
+                ),
+                for: FeatureFlag.self
+            )
+            self.featureFlagger = defaultFeatureFlagger
+            self.contentScopeExperimentsManager = defaultFeatureFlagger
+            featureFlagger = defaultFeatureFlagger
+        }
 
         pinnedTabsManagerProvider = PinnedTabsManagerProvider()
 
@@ -467,6 +479,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger
         )
         self.windowControllersManager = windowControllersManager
+
+        let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
+            tabShower: windowControllersManager,
+            subscriptionManager: subscriptionAuthV1toV2Bridge
+        )
+        self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
         self.visualStyleDecider = DefaultVisualStyleDecider(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
         visualStyle = visualStyleDecider.style
@@ -557,6 +575,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
         )
 
+        let onboardingManager = onboardingContextualDialogsManager
         defaultBrowserAndDockPromptKeyValueStore = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStore)
         DefaultBrowserAndDockPromptStoreMigrator(
             oldStore: DefaultBrowserAndDockPromptLegacyStore(),
@@ -577,7 +596,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let coordinator = DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: defaultBrowserAndDockPromptDecider,
             store: defaultBrowserAndDockPromptKeyValueStore,
-            isOnboardingCompleted: onboardingContextualDialogsManager.state == .onboardingCompleted,
+            isOnboardingCompleted: { onboardingManager.state == .onboardingCompleted },
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
@@ -631,11 +650,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Freemium DBP
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
 
-        let experimentManager = FreemiumDBPPixelExperimentManager(subscriptionManager: subscriptionAuthV1toV2Bridge)
-        experimentManager.assignUserToCohort()
-
         freemiumDBPFeature = DefaultFreemiumDBPFeature(privacyConfigurationManager: privacyConfigurationManager,
-                                                       experimentManager: experimentManager,
                                                        subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
@@ -890,9 +905,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        vpnAppEventsHandler.applicationDidBecomeActive()
-
         Task { @MainActor in
+            await vpnAppEventsHandler.applicationDidBecomeActive()
             await subscriptionCookieManager.refreshSubscriptionCookie()
         }
     }

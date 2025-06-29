@@ -16,16 +16,17 @@
 //  limitations under the License.
 //
 
+import BrokenSitePrompt
 import BrowserServicesKit
 import Cocoa
 import Carbon.HIToolbox
 import Combine
 import Common
 import History
-import VPN
 import NetworkProtectionIPC
 import os.log
-import BrokenSitePrompt
+import PixelKit
+import VPN
 
 final class MainViewController: NSViewController {
     private(set) lazy var mainView = MainView(frame: NSRect(x: 0, y: 0, width: 600, height: 660))
@@ -94,7 +95,8 @@ final class MainViewController: NSViewController {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
-         fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator
+         fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
+         pixelFiring: PixelFiring? = PixelKit.shared
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -164,7 +166,8 @@ final class MainViewController: NSViewController {
             sidebarProvider: aiChatSidebarProvider,
             aiChatTabOpener: aiChatTabOpener,
             featureFlagger: featureFlagger,
-            windowControllersManager: windowControllersManager
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring
         )
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,

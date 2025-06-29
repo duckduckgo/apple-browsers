@@ -452,7 +452,7 @@ extension TabSwitcherViewController {
             self?.burn(sender: self!.barsHandler.fireButton)
         }
 
-        if interfaceMode == .largeSize {
+        if interfaceMode == .largeSize || !isJune2025LayoutChangeEnabled {
             barsHandler.doneButton.primaryAction = action(UserText.navigationTitleDone) { [weak self] in
                 self?.onDonePressed(self!.barsHandler.doneButton)
             }
@@ -463,8 +463,14 @@ extension TabSwitcherViewController {
             barsHandler.doneButton.accessibilityLabel = UserText.navigationTitleDone
         }
 
-        barsHandler.editButton.image = DesignSystemImages.Glyphs.Size24.menuDotsVertical
-        barsHandler.editButton.title = nil
+        if isJune2025LayoutChangeEnabled {
+            barsHandler.editButton.image = DesignSystemImages.Glyphs.Size24.menuDotsVertical
+            barsHandler.editButton.title = nil
+        } else {
+            barsHandler.editButton.image = nil
+            barsHandler.editButton.title = UserText.actionGenericEdit
+        }
+
         barsHandler.editButton.accessibilityLabel = UserText.actionGenericEdit
         barsHandler.editButton.menu = createEditMenu()
 

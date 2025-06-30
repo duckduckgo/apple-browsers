@@ -202,7 +202,7 @@ final class Fire {
     }
 
     @MainActor
-    func burnAll(opening url: URL = .newtab, completion: (() -> Void)? = nil) {
+    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, completion: (() -> Void)? = nil) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -215,7 +215,7 @@ final class Fire {
         // Close windows first if fire animation is disabled
         let shouldCloseWindowsFirst = !visualizeFireAnimationDecider.shouldShowFireAnimation
         if shouldCloseWindowsFirst {
-            closeWindows(entity: entity)
+            closeWindows(entity: entity, isBurnOnExit: isBurnOnExit)
         }
 
         burnLastSessionState()
@@ -321,7 +321,7 @@ final class Fire {
     // MARK: - Closing windows
 
     @MainActor
-    private func closeWindows(entity: BurningEntity) {
+    private func closeWindows(entity: BurningEntity, isBurnOnExit: Bool = false) {
 
         /// This function returns the dropping point of the closed window,
         /// useful for opening a new window after burning in the exact same place.
@@ -347,7 +347,7 @@ final class Fire {
             if pinnedTabsManagerProvider.pinnedTabsMode == .shared || tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
                 newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
             }
-        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _):
+        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _,):
             newWindowDroppingPoint = NSApp.keyWindow?.frame.droppingPoint
             mainWindowControllers.forEach {
                 if pinnedTabsManagerProvider.pinnedTabsMode == .shared || $0.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
@@ -364,7 +364,9 @@ final class Fire {
             guard let self else { return }
             if self.windowControllerManager.mainWindowControllers.count == 0 {
                 if case let .allWindows(_, _, customURL) = entity, let customURL {
-                    WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false, droppingPoint: newWindowDroppingPoint)
+                    if !isBurnOnExit && !visualizeFireAnimationDecider.shouldShowFireAnimation { /// Improve this
+                        WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false, droppingPoint: newWindowDroppingPoint)
+                    }
                 } else {
                     WindowsManager.openNewWindow(droppingPoint: newWindowDroppingPoint)
                 }

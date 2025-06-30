@@ -83,7 +83,7 @@ final class AutoClearHandler {
 
     @MainActor
     private func performAutoClear() {
-        fireViewModel.fire.burnAll { [weak self] in
+        fireViewModel.fire.burnAll(isBurnOnExit: true) { [weak self] in
             self?.appTerminationHandledCorrectly = true
             self?.onAutoClearCompleted?()
         }

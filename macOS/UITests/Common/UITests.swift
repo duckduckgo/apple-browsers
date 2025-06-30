@@ -127,10 +127,6 @@ class UITestCase: XCTestCase {
         XCTestObservationCenter.shared.removeTestObserver(failureObserver)
         super.tearDown()
     }
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
 }
 
 extension XCTestCase {

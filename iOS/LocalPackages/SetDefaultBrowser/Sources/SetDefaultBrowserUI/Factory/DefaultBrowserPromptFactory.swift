@@ -28,7 +28,7 @@ public enum DefaultBrowserPromptFactory {
         featureFlagSettingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider,
         promptActivityStore: DefaultBrowserPromptStorage,
         userTypeProviding: DefaultBrowserPromptUserTypeProviding,
-        userActivityStore: DefaultBrowsePromptUserActivityStorage,
+        userActivityStore: DefaultBrowserPromptUserActivityStorage,
         checkDefaultBrowserContextStorage: DefaultBrowserContextStorage,
         checkDefaultBrowserDebugEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>,
         promptUserInteractionEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>,
@@ -42,7 +42,7 @@ public enum DefaultBrowserPromptFactory {
             featureFlagProvider: featureFlagProvider
         )
 
-        let userActivityMonitor = DefaultBrowsePromptUserActivityMonitor(
+        let userActivityMonitor = DefaultBrowserPromptUserActivityMonitor(
             store: userActivityStore,
             dateProvider: currentDateProvider
         )

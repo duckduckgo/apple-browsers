@@ -1,5 +1,5 @@
 //
-//  DefaultBrowsePromptUserActivityMonitorTests.swift
+//  DefaultBrowserPromptUserActivityMonitorTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -24,20 +24,20 @@ import SetDefaultBrowserTestSupport
 
 @MainActor
 // https://github.com/swiftlang/swift/issues/75815
-final class DefaultBrowsePromptUserActivityMonitorTests: XCTestCase, Sendable {
+final class DefaultBrowserPromptUserActivityMonitorTests: XCTestCase, Sendable {
     private static let today = Date(timeIntervalSince1970: 1750845600) // Wednesday, 25 June 2025 10:00:00 AM
     private static let maxDaysToKeep: Int = 10
 
-    private var storeMock: MockDefaultBrowsePromptUserActivityStore!
+    private var storeMock: MockDefaultBrowserPromptUserActivityStore!
     private var dateProvideMock: MockDateProvider!
-    private var sut: DefaultBrowsePromptUserActivityMonitor!
+    private var sut: DefaultBrowserPromptUserActivityMonitor!
 
     override func setUp() async throws {
         try await super.setUp()
 
-        storeMock = MockDefaultBrowsePromptUserActivityStore()
+        storeMock = MockDefaultBrowserPromptUserActivityStore()
         dateProvideMock = MockDateProvider()
-        sut = DefaultBrowsePromptUserActivityMonitor(store: storeMock, dateProvider: dateProvideMock.getDate)
+        sut = DefaultBrowserPromptUserActivityMonitor(store: storeMock, dateProvider: dateProvideMock.getDate)
     }
 
     override func tearDown() async throws {

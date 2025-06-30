@@ -1,5 +1,5 @@
 //
-//  DefaultBrowsePromptUserActivityMonitor.swift
+//  DefaultBrowserPromptUserActivityMonitor.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -26,8 +26,8 @@ import Combine
 /// This class observes application lifecycle events to automatically measure when users
 /// are active and stores this information to the provided store.
 @MainActor
-package final class DefaultBrowsePromptUserActivityMonitor: DefaultBrowserPromptUserActivityManaging {
-    private let store: DefaultBrowsePromptUserActivityStorage
+package final class DefaultBrowserPromptUserActivityMonitor: DefaultBrowserPromptUserActivityManaging {
+    private let store: DefaultBrowserPromptUserActivityStorage
     private let dateProvider: () -> Date
     private let calendar: Calendar
 
@@ -42,7 +42,7 @@ package final class DefaultBrowsePromptUserActivityMonitor: DefaultBrowserPrompt
     ///   - dateProvider: A closure that provides the current date. Defaults to `Date.init`. This parameter is primarily useful for testing.
     ///   - calendar: The calendar used for date calculations. Defaults to `.current`, which uses the user's system calendar settings.
     package init(
-        store: DefaultBrowsePromptUserActivityStorage,
+        store: DefaultBrowserPromptUserActivityStorage,
         dateProvider: @escaping () -> Date = Date.init,
         calendar: Calendar = .current
     ) {
@@ -63,7 +63,7 @@ package final class DefaultBrowsePromptUserActivityMonitor: DefaultBrowserPrompt
 
 // MARK: - Private
 
-private extension DefaultBrowsePromptUserActivityMonitor {
+private extension DefaultBrowserPromptUserActivityMonitor {
 
     func setupNotifications() {
         notificationCancellable = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)

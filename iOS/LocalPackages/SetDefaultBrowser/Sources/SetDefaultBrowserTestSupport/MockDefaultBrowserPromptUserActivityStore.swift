@@ -1,5 +1,5 @@
 //
-//  MockDefaultBrowsePromptUserActivityStore.swift
+//  MockDefaultBrowserPromptUserActivityStore.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -19,7 +19,7 @@
 
 import SetDefaultBrowserCore
 
-public final class MockDefaultBrowsePromptUserActivityStore: DefaultBrowsePromptUserActivityStorage {
+public final class MockDefaultBrowserPromptUserActivityStore: DefaultBrowserPromptUserActivityStorage {
     public private(set) var didCallSaveActivity: Bool = false
     public private(set) var capturedSaveActivity: DefaultBrowserPromptUserActivity?
     public private(set) var didCallDeleteActivity: Bool = false

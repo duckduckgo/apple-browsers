@@ -22,7 +22,7 @@ import Persistence
 import class Common.EventMapping
 import SetDefaultBrowserCore
 
-final class DefaultBrowserPromptUserActivityKeyValueFilesStore: DefaultBrowsePromptUserActivityStorage {
+final class DefaultBrowserPromptUserActivityKeyValueFilesStore: DefaultBrowserPromptUserActivityStorage {
 
     enum StorageKey {
         static let userActivity = "com.duckduckgo.defaultBrowserPrompt.userActivity"

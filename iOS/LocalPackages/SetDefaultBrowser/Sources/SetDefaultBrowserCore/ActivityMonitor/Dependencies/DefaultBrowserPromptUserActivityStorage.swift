@@ -1,5 +1,5 @@
 //
-//  DefaultBrowsePromptUserActivityStorage.swift
+//  DefaultBrowserPromptUserActivityStorage.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -18,7 +18,7 @@
 //
 
 /// A type that stores and manages user activity data for the SAD prompt.
-public protocol DefaultBrowsePromptUserActivityStorage {
+public protocol DefaultBrowserPromptUserActivityStorage {
     // Persists the provided user activity data to storage.
     ///
     /// This method will overwrite any existing activity data with the new data provided.
@@ -31,6 +31,6 @@ public protocol DefaultBrowsePromptUserActivityStorage {
 
     /// Retrieves the currently stored user activity data.
     ///
-    /// - Returns: The current user activity data. If no activity has been saved, return an empty `DefaultBrowsePromptUserActivity`.
+    /// - Returns: The current user activity data. If no activity has been saved, return an empty `DefaultBrowserPromptUserActivity`.
     func currentActivity() -> DefaultBrowserPromptUserActivity
 }

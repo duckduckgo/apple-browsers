@@ -40,6 +40,13 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     @Published
+    var isFireAnimationEnabled: Bool {
+        didSet {
+            persistor.isFireAnimationEnabled = isFireAnimationEnabled
+        }
+    }
+
+    @Published
     var isWarnBeforeClearingEnabled: Bool {
         didSet {
             persistor.warnBeforeClearingEnabled = isWarnBeforeClearingEnabled
@@ -79,6 +86,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         isLoginDetectionEnabled = persistor.loginDetectionEnabled
         isAutoClearEnabled = persistor.autoClearEnabled
         isWarnBeforeClearingEnabled = persistor.warnBeforeClearingEnabled
+        isFireAnimationEnabled = persistor.isFireAnimationEnabled
     }
 
     private var persistor: FireButtonPreferencesPersistor
@@ -92,6 +100,7 @@ protocol FireButtonPreferencesPersistor {
     var loginDetectionEnabled: Bool { get set }
     var autoClearEnabled: Bool { get set }
     var warnBeforeClearingEnabled: Bool { get set }
+    var isFireAnimationEnabled: Bool { get set }
 }
 
 struct FireButtonPreferencesUserDefaultsPersistor: FireButtonPreferencesPersistor {
@@ -104,6 +113,9 @@ struct FireButtonPreferencesUserDefaultsPersistor: FireButtonPreferencesPersisto
 
     @UserDefaultsWrapper(key: .warnBeforeClearingEnabled, defaultValue: false)
     var warnBeforeClearingEnabled: Bool
+
+    @UserDefaultsWrapper(key: .fireAnimationEnabled, defaultValue: true)
+    var isFireAnimationEnabled: Bool
 
 }
 

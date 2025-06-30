@@ -41,7 +41,13 @@ extension Preferences {
 
                 }
 
-                // SECTION 2: Fireproof Site
+                PreferencePaneSection("Fire Animation") {
+                    PreferencePaneSubSection {
+                        ToggleMenuItem("Show inferno animation when deleting data", isOn: $model.isFireAnimationEnabled)
+                    }
+                }
+
+                // SECTION 3: Fireproof Site
                 PreferencePaneSection(UserText.fireproofSites) {
 
                     PreferencePaneSubSection {

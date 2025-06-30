@@ -111,7 +111,7 @@ final class AppDependencyProvider: DependencyProvider {
         let experimentManager = ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:))
 
         var featureFlagger: FeatureFlagger
-        if AppVersion.runType.isTests {
+        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) {
             let mockFeatureFlagger = MockFeatureFlagger()
             self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
             self.featureFlagger = mockFeatureFlagger

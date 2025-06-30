@@ -45,7 +45,10 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         try server.start(8084)
 
         var eDidFinish = expectation(description: "#1")
-        responder(at: 0).onDidFinish = { _ in eDidFinish.fulfill() }
+        responder(at: 0).onDidFinish = { _ in
+            Logger.general.info("expectation \(eDidFinish.description): didFinish")
+            eDidFinish.fulfill()
+        }
         responder(at: 0).onNavigationAction = { navigationAction, _ in .allow }
 
         // #1 load URL
@@ -57,7 +60,10 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         // #2 load URL#namedlink1
         eDidFinish = expectation(description: "#2")
         responder(at: 0).onSameDocumentNavigation = { _, type in
-            if type == .sessionStatePop { eDidFinish.fulfill() }
+            if type == .sessionStatePop {
+                Logger.general.info("expectation \(eDidFinish.description): sessionStatePop")
+                eDidFinish.fulfill()
+            }
         }
         withWebView { webView in
             _=webView.load(req(urls.localHashed1))
@@ -190,7 +196,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
             // #7 go back to URL#
             .willStart(Nav(action: NavAction(/*#15*/req(urls.localHashed, defaultHeaders.allowingExtraKeys), .backForw(-1), from: history[14], src: main(urls.local)), .approved, isCurrent: false)),
             .didSameDocumentNavigation(Nav(action: NavAction(/*#16*/req(urls.localHashed, [:]), .sameDocumentNavigation(.sessionStatePop), from: history[14], src: main(urls.localHashed)), .finished), 3),
-            .didSameDocumentNavigation(Nav(action: navAct(15), .approved, isCurrent: false), 0),
+            .didSameDocumentNavigation(Nav(action: navAct(15), .finished, isCurrent: false), 0),
 
             // #8 go back to URL#namedlink
             .willStart(Nav(action: NavAction(req(urls.localHashed, defaultHeaders.allowingExtraKeys), .backForw(-1), from: history[16], src: main(urls.localHashed)), .approved, isCurrent: false)),

@@ -25,18 +25,27 @@ import XCTest
 class AutoClearHandlerTests: XCTestCase {
 
     var handler: AutoClearHandler!
-    var preferences: DataClearingPreferences!
+    var dataClearingPreferences: DataClearingPreferences!
+    var startupPreferences: StartupPreferences!
     var fireViewModel: FireViewModel!
 
     override func setUp() {
         super.setUp()
         let persistor = MockFireButtonPreferencesPersistor()
-        preferences = DataClearingPreferences(
+        dataClearingPreferences = DataClearingPreferences(
             persistor: persistor,
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock()
         )
+        let persistor2 = StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: "duckduckgo.com")
+        let appearancePreferences = AppearancePreferences(
+            persistor: MockAppearancePreferencesPersistor(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
+        startupPreferences = StartupPreferences(persistor: persistor2,
+                                                appearancePreferences: appearancePreferences)
+
         fireViewModel = FireViewModel(tld: Application.appDelegate.tld)
         let fileName = "AutoClearHandlerTests"
         let fileStore = FileStoreMock()
@@ -44,19 +53,23 @@ class AutoClearHandlerTests: XCTestCase {
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
                                                                     startupPreferences: NSApp.delegateTyped.startupPreferences)
-        handler = AutoClearHandler(preferences: preferences, fireViewModel: fireViewModel, stateRestorationManager: appStateRestorationManager)
+        handler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
+                                   startupPreferences: startupPreferences,
+                                   fireViewModel: fireViewModel,
+                                   stateRestorationManager: appStateRestorationManager)
     }
 
     override func tearDown() {
         handler = nil
-        preferences = nil
+        dataClearingPreferences = nil
+        startupPreferences = nil
         fireViewModel = nil
         super.tearDown()
     }
 
     func testWhenBurningEnabledAndNoWarningRequiredThenTerminateLaterIsReturned() {
-        preferences.isAutoClearEnabled = true
-        preferences.isWarnBeforeClearingEnabled = false
+        dataClearingPreferences.isAutoClearEnabled = true
+        dataClearingPreferences.isWarnBeforeClearingEnabled = false
 
         let response = handler.handleAppTermination()
 
@@ -64,7 +77,7 @@ class AutoClearHandlerTests: XCTestCase {
     }
 
     func testWhenBurningDisabledThenNoTerminationResponse() {
-        preferences.isAutoClearEnabled = false
+        dataClearingPreferences.isAutoClearEnabled = false
 
         let response = handler.handleAppTermination()
 
@@ -72,14 +85,14 @@ class AutoClearHandlerTests: XCTestCase {
     }
 
     func testWhenBurningEnabledAndFlagFalseThenBurnOnStartTriggered() {
-        preferences.isAutoClearEnabled = true
+        dataClearingPreferences.isAutoClearEnabled = true
         handler.resetTheCorrectTerminationFlag()
 
         XCTAssertTrue(handler.burnOnStartIfNeeded())
     }
 
     func testWhenBurningDisabledThenBurnOnStartNotTriggered() {
-        preferences.isAutoClearEnabled = false
+        dataClearingPreferences.isAutoClearEnabled = false
         handler.resetTheCorrectTerminationFlag()
 
         XCTAssertFalse(handler.burnOnStartIfNeeded())

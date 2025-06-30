@@ -82,7 +82,7 @@ extension Preferences {
                     }
 #if APPSTORE
                     Button(UserText.importPasswords) {
-                        model.openImportBrowserDataWindow()
+                        model.openImportPasswordsWindow()
                     }
                     Button(UserText.exportLogins) {
                         model.openExportLogins()

@@ -18,7 +18,5 @@ jobs:
             -w /workspace \
             norionomura/swiftlint:0.54.0_swift-5.9.0 \
             swiftlint --reporter github-actions-logging --strict --quiet \
-          | tee >(paste -d: \
-              <(grep -oP 'file=\K[^,]+' || true) \
-              <(grep -oP 'line=\K\d+' || true) \
-              >&2)
+            | tee >(grep -oP 'file=[^,]+,line=\d+' \
+            | sed -E 's/file=([^,]+),line=([0-9]+)/\1:\2/' >&2 || true)

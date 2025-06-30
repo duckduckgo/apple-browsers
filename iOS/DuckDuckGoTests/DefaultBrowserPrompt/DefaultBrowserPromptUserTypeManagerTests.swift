@@ -116,7 +116,6 @@ struct DefaultBrowserPromptUserTypeManagerTests {
         let result = sut.currentUserType()
 
         // THEN
-        let expectedUserType = userType != nil ? userType : .new
-        #expect(result == expectedUserType)
+        #expect(result == userType)
     }
 }

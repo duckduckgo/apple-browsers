@@ -78,12 +78,17 @@ package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDec
 
         // If user has permanently disabled prompt return nil
         guard !store.isPromptPermanentlyDismissed else {
-            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Prompt Permanently Dismissed. Won't show.")
+            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Prompt Permanently Dismissed. Will not show prompt.")
+            return nil
+        }
+
+        guard let userType = userTypeProvider.currentUserType() else {
+            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed to determine user type. Will not show prompt.")
             return nil
         }
 
         // Check if we should be using first, second or subsequent modal depending on the user type.
-        guard let modalToShow = determineModalType(for: userTypeProvider.currentUserType()) else {
+        guard let modalToShow = determineModalType(for: userType) else {
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - No Modal To Show.")
             return nil
         }

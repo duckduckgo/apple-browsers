@@ -251,6 +251,25 @@ final class DefaultBrowserPromptDeciderTests {
         #expect(result == .subsequentModal)
     }
 
+    @Test("Check Prompt Is Not Shown If User Type could not be determined")
+    func checkPromptIsNotShownIfUserTypeCouldNotBeDetermined() {
+        // GIVEN
+        storeMock.lastModalShownDate = nil
+        storeMock.modalShownOccurrences = 0
+        userTypeProviderMock.userType = nil
+        defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
+        let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
+        makeSUT(installDate: installDate)
+        dateProviderMock.setNowDate(installDate)
+        dateProviderMock.advanceBy(.days(2))
+
+        // WHEN
+        let result = sut.promptType()
+
+        // THEN
+        #expect(result == nil)
+    }
+
     @Test(
         "Check Full Flow Correctness For New and Returning User",
         arguments: [

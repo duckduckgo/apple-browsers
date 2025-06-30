@@ -23,9 +23,9 @@ public final class MockDefaultBrowserPromptUserTypeProvider: DefaultBrowserPromp
     public init() {}
 
     public private(set) var didCallCurrentUserType = false
-    public var userType: DefaultBrowserPromptUserType = .new
+    public var userType: DefaultBrowserPromptUserType? = .new
 
-    public func currentUserType() -> DefaultBrowserPromptUserType {
+    public func currentUserType() -> DefaultBrowserPromptUserType? {
         didCallCurrentUserType = true
         return userType
     }

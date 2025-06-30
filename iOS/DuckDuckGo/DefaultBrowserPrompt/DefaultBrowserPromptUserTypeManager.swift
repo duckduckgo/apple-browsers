@@ -51,8 +51,8 @@ final class DefaultBrowserPromptUserTypeManager {
 
 extension DefaultBrowserPromptUserTypeManager: DefaultBrowserPromptUserTypeProviding {
 
-    func currentUserType() -> DefaultBrowserPromptUserType {
-        store.userType() ?? .new
+    func currentUserType() -> DefaultBrowserPromptUserType? {
+        store.userType()
     }
 
 }

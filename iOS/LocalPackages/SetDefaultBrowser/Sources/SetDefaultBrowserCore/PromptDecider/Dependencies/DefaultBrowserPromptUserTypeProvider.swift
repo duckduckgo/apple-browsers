@@ -50,6 +50,6 @@ public enum DefaultBrowserPromptUserType: String, Sendable {
 public protocol DefaultBrowserPromptUserTypeProviding {
     /// Determines the current user's type for default browser prompt logic.
     ///
-    /// - Returns: The user's current type as `.new`, `.returning`, or `.existing`.
-    func currentUserType() -> DefaultBrowserPromptUserType
+    /// - Returns: The user's current type as `.new`, `.returning`, or `.existing`. Returns `nil` if the current type could not be determined.
+    func currentUserType() -> DefaultBrowserPromptUserType?
 }

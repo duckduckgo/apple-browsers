@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 
 /// Implementation of ``PixelKitEvent`` with specific logic for debug events.

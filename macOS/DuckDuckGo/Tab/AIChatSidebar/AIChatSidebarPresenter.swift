@@ -173,7 +173,14 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
         let isShowingSidebar = sidebarProvider.isShowingSidebar(for: currentTabID)
 
-        let prompt = AIChatNativePrompt.queryPrompt("Summarize the following text snippet:\n\n\(request.text)", autoSubmit: true)
+        let promptText = """
+            You are an expert summarizer AI. Your purpose is to read the provided text and generate a concise, accurate, and easy-to-understand summary. Summarize the following text in a neutral, encyclopedic tone. The summary should be a single paragraph and should not exceed 50 words. Use the same language as the original text.
+            <text>
+            \(request.text)
+            </text>
+            """
+
+        let prompt = AIChatNativePrompt.queryPrompt(promptText, autoSubmit: true)
         pixelFiring?.fire(AIChatPixel.aiChatSummarizeText(source: request.source), frequency: .dailyAndStandard)
 
         if !isShowingSidebar {

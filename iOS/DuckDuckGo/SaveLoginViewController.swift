@@ -117,6 +117,12 @@ class SaveLoginViewController: UIViewController {
     }
 }
 
+extension SaveLoginViewController: UISheetPresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        delegate?.saveLoginViewControllerDidCancel(self)
+    }
+}
+
 extension SaveLoginViewController: SaveLoginViewModelDelegate {
     func saveLoginViewModelDidSave(_ viewModel: SaveLoginViewModel) {
         dismiss(animated: true)

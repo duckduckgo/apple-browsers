@@ -19,6 +19,7 @@
 
 import UIKit
 import BrowserServicesKit
+import Core
 import SwiftUI
 
 protocol SaveCreditCardViewControllerDelegate: AnyObject {
@@ -54,7 +55,14 @@ class SaveCreditCardViewController: UIViewController {
         
         let controller = UIHostingController(rootView: SaveCreditCardView(viewModel: viewModel))
         controller.view.backgroundColor = .clear
+        presentationController?.delegate = self
         installChildViewController(controller)
+    }
+}
+
+extension SaveCreditCardViewController: UISheetPresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        Pixel.fire(pixel: .autofillCardsSaveCardInlineDismissed)
     }
 }
 

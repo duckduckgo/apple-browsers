@@ -23,7 +23,6 @@ import SwiftUI
 
 protocol SaveCreditCardViewControllerDelegate: AnyObject {
     func saveCreditCardViewController(_ viewController: SaveCreditCardViewController, didSaveCreditCard card: SecureVaultModels.CreditCard)
-    func saveCreditCardViewControllerDidCancel(_ viewController: SaveCreditCardViewController)
     func saveCreditCardViewControllerConfirmKeepUsing(_ viewController: SaveCreditCardViewController)
 }
 
@@ -60,12 +59,16 @@ class SaveCreditCardViewController: UIViewController {
 }
 
 extension SaveCreditCardViewController: SaveCreditCardViewModelDelegate {
-    func saveCreditCardViewModelDidSave(_ viewModel: SaveCreditCardViewModel, creditCard: SecureVaultModels.CreditCard) {
-        delegate?.saveCreditCardViewController(self, didSaveCreditCard: creditCard)
+    func saveCreditCardViewModelDidSave(_ viewModel: SaveCreditCardViewModel, creditCard: SecureVaultModels.CreditCard?) {
+        dismiss(animated: true)
+        
+        if let creditCard = creditCard {
+            self.delegate?.saveCreditCardViewController(self, didSaveCreditCard: creditCard)
+        }
     }
     
     func saveCreditCardViewModelCancel(_ viewModel: SaveCreditCardViewModel) {
-        delegate?.saveCreditCardViewControllerDidCancel(self)
+        dismiss(animated: true)
     }
     
     func saveCreditCardViewModelConfirmKeepUsing(_ viewModel: SaveCreditCardViewModel) {

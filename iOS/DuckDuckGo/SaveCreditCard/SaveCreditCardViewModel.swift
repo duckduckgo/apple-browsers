@@ -22,7 +22,7 @@ import BrowserServicesKit
 import Core
 
 protocol SaveCreditCardViewModelDelegate: AnyObject {
-    func saveCreditCardViewModelDidSave(_ viewModel: SaveCreditCardViewModel, creditCard: SecureVaultModels.CreditCard)
+    func saveCreditCardViewModelDidSave(_ viewModel: SaveCreditCardViewModel, creditCard: SecureVaultModels.CreditCard?)
     func saveCreditCardViewModelCancel(_ viewModel: SaveCreditCardViewModel)
     func saveCreditCardViewModelConfirmKeepUsing(_ viewModel: SaveCreditCardViewModel)
     func saveCreditCardViewModelDidResizeContent(_ viewModel: SaveCreditCardViewModel, contentHeight: CGFloat)
@@ -96,6 +96,10 @@ final class SaveCreditCardViewModel {
     private func saveCreditCard(_ creditCard: SecureVaultModels.CreditCard, with factory: AutofillVaultFactory) throws -> SecureVaultModels.CreditCard? {
         do {
             let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+            if try vault.existingCardForAutofill(matching: creditCard) != nil {
+                return creditCard
+            }
+
             let cardId = try vault.storeCreditCard(creditCard)
             if let newCard = try vault.creditCardFor(id: cardId) {
                 return newCard

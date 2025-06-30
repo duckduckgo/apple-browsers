@@ -3455,7 +3455,6 @@ extension TabViewController: SaveLoginViewControllerDelegate {
 
 extension TabViewController: SaveCreditCardViewControllerDelegate {
     func saveCreditCardViewController(_ viewController: SaveCreditCardViewController, didSaveCreditCard card: SecureVaultModels.CreditCard) {
-        viewController.dismiss(animated: true)
         let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
         ActionMessageView.present(message: UserText.autofillCreditCardSavedToastMessage,
                                   actionTitle: UserText.autofillLoginSaveToastActionButton,
@@ -3464,10 +3463,6 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
             guard let self = self else { return }
             self.delegate?.tab(self, didRequestSettingsToCreditCards: card, source: .viewSavedCreditCardPrompt)
         })
-    }
-    
-    func saveCreditCardViewControllerDidCancel(_ viewController: SaveCreditCardViewController) {
-        viewController.dismiss(animated: true)
     }
     
     func saveCreditCardViewControllerConfirmKeepUsing(_ viewController: SaveCreditCardViewController) {

@@ -58,8 +58,7 @@ final class ScriptSourceProviderTests: XCTestCase {
         )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
-            appearancePreferences: appearancePreferences,
-            dataClearingPreferences: dataClearingPreferences
+            appearancePreferences: appearancePreferences
         )
 
         let sourceProvider = ScriptSourceProvider(

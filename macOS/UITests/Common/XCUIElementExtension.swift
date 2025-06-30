@@ -77,6 +77,7 @@ extension XCUIElement {
         defer {
             // Restore original pasteboard contents
             NSPasteboard.general.clearContents()
+            NSPasteboard.general.declareTypes(originalTypes, owner: nil)
             for (type, data) in originalContents {
                 NSPasteboard.general.setData(data, forType: type)
             }

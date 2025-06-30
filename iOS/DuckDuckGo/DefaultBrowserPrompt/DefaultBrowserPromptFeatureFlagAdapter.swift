@@ -22,18 +22,21 @@ import Core
 import BrowserServicesKit
 import SetDefaultBrowserCore
 
-extension DefaultFeatureFlagger: @retroactive DefaultBrowserPromptFeatureFlagProvider {
+final class DefaultBrowserPromptFeatureFlagAdapter: DefaultBrowserPromptFeatureFlagProvider, DefaultBrowserPromptFeatureFlagSettingsProvider {
+
+    private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+
+    init(featureFlagger: FeatureFlagger, privacyConfigurationManager: PrivacyConfigurationManaging) {
+        self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+    }
 
     public var isDefaultBrowserPromptsFeatureEnabled: Bool {
-        isFeatureOn(FeatureFlag.scheduledSetDefaultBrowserPrompts)
+        featureFlagger.isFeatureOn(FeatureFlag.scheduledSetDefaultBrowserPrompts)
     }
-
-}
-
-extension PrivacyConfigurationManager: @retroactive DefaultBrowserPromptFeatureFlagSettingsProvider {
 
     public var featureSettings: [String: Any] {
-        privacyConfig.settings(for: .setAsDefaultAndAddToDock)
+        privacyConfigurationManager.privacyConfig.settings(for: .setAsDefaultAndAddToDock)
     }
-
 }

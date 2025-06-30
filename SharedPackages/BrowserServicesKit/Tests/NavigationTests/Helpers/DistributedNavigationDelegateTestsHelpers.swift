@@ -61,14 +61,22 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
         NavigationAction.resetIdentifier()
         server = HttpServer()
         navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
-        self.navigationDelegate.responders.forEach { ($0 as? NavigationResponderMock)?.reset(testName: name) }
+        self.navigationDelegate.responders.forEach { responder in
+            (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in
+                XCTFail("[\(testName)] unexpected event received: \($0)")
+            })
+        }
     }
 
     override func tearDown() {
         self.testSchemeHandler = nil
         server.stop()
         server = nil
-        self.navigationDelegate.responders.forEach { ($0 as? NavigationResponderMock)?.reset(testName: name) }
+        self.navigationDelegate.responders.forEach { responder in
+            (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in
+                XCTFail("[\(testName)] event received after test completed: \($0)")
+            })
+        }
         if let _webView {
             usedWebViews.append(_webView)
             self._webView = nil

@@ -96,7 +96,7 @@ final class SaveCreditCardViewModel {
     private func saveCreditCard(_ creditCard: SecureVaultModels.CreditCard, with factory: AutofillVaultFactory) throws -> SecureVaultModels.CreditCard? {
         do {
             let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
-            if try vault.existingCardForAutofill(matching: creditCard) != nil {
+            guard try vault.existingCardForAutofill(matching: creditCard) == nil else {
                 return creditCard
             }
 

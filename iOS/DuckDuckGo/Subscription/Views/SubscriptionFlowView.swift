@@ -21,6 +21,7 @@ import SwiftUI
 import Foundation
 import DesignResourcesKit
 import Core
+import DataBrokerProtection_iOS
 
 struct SubscriptionFlowView: View {
         
@@ -59,10 +60,16 @@ struct SubscriptionFlowView: View {
         NavigationLink(destination: LazyView(SubscriptionITPView().navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
-        NavigationLink(destination: LazyView(SubscriptionPIRView().navigationViewStyle(.stack)),
-                       isActive: $isShowingDBP,
-                       label: { EmptyView() })
-        
+        if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
+            NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!).navigationViewStyle(.stack)),
+                           isActive: $isShowingDBP,
+                           label: { EmptyView() })
+        } else {
+            NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView().navigationViewStyle(.stack)),
+                           isActive: $isShowingDBP,
+                           label: { EmptyView() })
+        }
+
         baseView
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarLeading) {

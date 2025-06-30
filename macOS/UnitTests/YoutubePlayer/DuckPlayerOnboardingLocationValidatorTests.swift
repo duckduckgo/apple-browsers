@@ -31,6 +31,11 @@ class DuckPlayerOnboardingLocationValidatorTests: XCTestCase {
         validator = DuckPlayerOnboardingLocationValidator()
     }
 
+    override func tearDown() {
+        validator = nil
+        super.tearDown()
+    }
+
     @MainActor
     func testIsValidLocation_RootURL_ReturnsTrue() async {
         let webView = MockWebView()

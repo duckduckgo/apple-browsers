@@ -28,6 +28,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     var bookmarkProviderMock: SuggestionsBookmarkProvider!
     var suggestionContainer: SuggestionContainer!
     var suggestionContainerViewModel: SuggestionContainerViewModel!
+    var featureFlagger: MockFeatureFlagger!
 
     var cancellables = Set<AnyCancellable>()
 
@@ -37,10 +38,13 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         suggestionLoadingMock = SuggestionLoadingMock()
         historyProviderMock = HistoryProviderMock()
         bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
+        featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.autocompleteTabs]
         suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                   suggestionLoading: suggestionLoadingMock,
                                                   historyProvider: historyProviderMock,
                                                   bookmarkProvider: bookmarkProviderMock,
+                                                  featureFlagger: featureFlagger,
                                                   burnerMode: .regular,
                                                   isUrlIgnored: { _ in false })
         suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
@@ -51,6 +55,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         historyProviderMock = nil
         suggestionContainer = nil
         suggestionContainerViewModel = nil
+        featureFlagger = nil
         cancellables.removeAll()
     }
 
@@ -69,6 +74,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         let suggestionContainer = SuggestionContainer(
             historyProvider: HistoryProviderMock(),
             bookmarkProvider: SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager()),
+            featureFlagger: featureFlagger,
             burnerMode: .regular,
             isUrlIgnored: { _ in false }
         )
@@ -103,6 +109,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         let suggestionContainer = SuggestionContainer(
             historyProvider: HistoryProviderMock(),
             bookmarkProvider: SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager()),
+            featureFlagger: featureFlagger,
             burnerMode: .regular,
             isUrlIgnored: { _ in false }
         )
@@ -327,6 +334,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
                                                   suggestionLoading: suggestionLoadingMock,
                                                   historyProvider: historyProviderMock,
                                                   bookmarkProvider: bookmarkProviderMock,
+                                                  featureFlagger: featureFlagger,
                                                   burnerMode: .regular,
                                                   isUrlIgnored: { _ in false })
         suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)

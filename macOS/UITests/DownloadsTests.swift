@@ -18,15 +18,13 @@
 
 import XCTest
 
-class DownloadsTests: XCTestCase {
+class DownloadsTests: UITestCase {
 
     private var app: XCUIApplication!
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launch()
+        app = XCUIApplication.setUp()
         setupSingleWindow()
     }
 

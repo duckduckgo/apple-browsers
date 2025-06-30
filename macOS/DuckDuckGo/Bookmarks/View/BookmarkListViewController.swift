@@ -73,6 +73,7 @@ final class BookmarkListViewController: NSViewController {
     private let treeControllerSearchDataSource: BookmarkListTreeControllerSearchDataSource
     private let sortBookmarksViewModel: SortBookmarksViewModel
     private let bookmarkMetrics: BookmarksSearchAndSortMetrics
+    private let navigationEngagementMetrics: BookmarksNavigationEngagementMetrics
     private let visualStyle: VisualStyleProviding
 
     private let treeController: BookmarkTreeController
@@ -150,12 +151,14 @@ final class BookmarkListViewController: NSViewController {
     init(bookmarkManager: BookmarkManager,
          dragDropManager: BookmarkDragDropManager,
          metrics: BookmarksSearchAndSortMetrics = BookmarksSearchAndSortMetrics(),
+         navigationEngagementMetrics: BookmarksNavigationEngagementMetrics = .init(),
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.treeControllerDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)
         self.treeControllerSearchDataSource = BookmarkListTreeControllerSearchDataSource(bookmarkManager: bookmarkManager)
         self.bookmarkMetrics = metrics
+        self.navigationEngagementMetrics = navigationEngagementMetrics
         self.sortBookmarksViewModel = SortBookmarksViewModel(manager: bookmarkManager, metrics: metrics, origin: .panel)
         self.treeController = BookmarkTreeController(dataSource: treeControllerDataSource,
                                                      sortMode: sortBookmarksViewModel.selectedSortMode,
@@ -722,6 +725,8 @@ final class BookmarkListViewController: NSViewController {
         if dataSource.isSearching {
             bookmarkMetrics.fireSearchResultClicked(origin: .panel)
         }
+
+        navigationEngagementMetrics.fireNavigateToBookmark(isFavorite: bookmark.isFavorite)
 
         Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
     }

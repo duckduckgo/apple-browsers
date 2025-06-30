@@ -106,6 +106,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
+
+    // This is fairly temporary and will likely be removed in a release or two one way or another
+    case june2025TabManagerLayoutChanges
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -163,6 +166,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Keep AI Chat session after the user closes it
     case keepSession
+
+    /// Adds context menu action for summarizing text selected on a website.
+    case textSummarization
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

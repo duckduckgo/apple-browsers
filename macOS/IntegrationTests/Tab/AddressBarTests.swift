@@ -423,7 +423,7 @@ class AddressBarTests: XCTestCase {
 
         try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
 
-        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark))?.result.get()
+        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark(isFavorite: false)))?.result.get()
         XCTAssertEqual(window.firstResponder, tab.webView)
 
         _=window.makeFirstResponder(addressBarTextField)
@@ -452,7 +452,7 @@ class AddressBarTests: XCTestCase {
         XCTAssertTrue(isAddressBarFirstResponder)
 
         let serpUrl = URL.makeSearchUrl(from: "cats")!
-        try await tab.setContent(.url(serpUrl, credential: nil, source: .bookmark))?.result.get()
+        try await tab.setContent(.url(serpUrl, credential: nil, source: .bookmark(isFavorite: false)))?.result.get()
         XCTAssertFalse(isAddressBarFirstResponder)
 
         // go back to New Tab page
@@ -550,7 +550,7 @@ class AddressBarTests: XCTestCase {
         try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
         XCTAssertEqual(window.firstResponder, tab.webView)
 
-        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark))?.result.get()
+        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark(isFavorite: false)))?.result.get()
         XCTAssertEqual(window.firstResponder, tab.webView)
 
         _=window.makeFirstResponder(addressBarTextField)
@@ -626,7 +626,7 @@ class AddressBarTests: XCTestCase {
         _=window.makeFirstResponder(addressBarTextField)
         type("some-text")
 
-        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark))?.result.get()
+        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark(isFavorite: false)))?.result.get()
         XCTAssertEqual(window.firstResponder, tab.webView)
     }
 
@@ -882,11 +882,10 @@ class AddressBarTests: XCTestCase {
         XCTAssertEqual(window2.firstResponder, window2)
     }
 
-    // Temporarily Disabled
     @MainActor
     func test_WhenSiteCertificateNil_ThenAddressBarShowsStandardShieldIcon() async throws {
         // GIVEN
-        let expectedImage = NSImage(named: "Shield")!
+        let expectedImage = NSApp.delegateTyped.visualStyle.addressBarStyleProvider.privacyShieldStyleProvider.icon
         let evaluator = MockCertificateEvaluator()
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), certificateTrustEvaluator: evaluator, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
@@ -901,11 +900,10 @@ class AddressBarTests: XCTestCase {
         XCTAssertTrue(shieldImage.isEqualToImage(expectedImage))
     }
 
-    // Temporarily Disabled
     @MainActor
     func test_WhenSiteCertificateValid_ThenAddressBarShowsStandardShieldIcon() async throws {
         // GIVEN
-        let expectedImage = NSImage(named: "Shield")!
+        let expectedImage = NSApp.delegateTyped.visualStyle.addressBarStyleProvider.privacyShieldStyleProvider.icon
         let evaluator = MockCertificateEvaluator()
         evaluator.isValidCertificate = true
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), certificateTrustEvaluator: evaluator, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
@@ -921,11 +919,10 @@ class AddressBarTests: XCTestCase {
         XCTAssertTrue(shieldImage.isEqualToImage(expectedImage))
     }
 
-    // Temporarily Disabled
     @MainActor
     func test_WhenSiteCertificateInvalid_ThenAddressBarShowsDottedShieldIcon() async throws {
         // GIVEN
-        let expectedImage = NSImage(named: "ShieldDot")!
+        let expectedImage = NSApp.delegateTyped.visualStyle.addressBarStyleProvider.privacyShieldStyleProvider.iconWithDot
         let evaluator = MockCertificateEvaluator()
         evaluator.isValidCertificate = false
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), certificateTrustEvaluator: evaluator, maliciousSiteDetector: MockMaliciousSiteProtectionManager())

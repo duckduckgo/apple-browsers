@@ -73,7 +73,7 @@ extension XCUIElement {
                 originalContents[type] = data
             }
         }
-        
+
         defer {
             // Restore original pasteboard contents
             NSPasteboard.general.clearContents()
@@ -93,7 +93,6 @@ extension XCUIElement {
             self.typeText("\r")
         }
     }
-
 
     /// Check for the existence of the address bar and type a URL into it if it passes. Although it doesn't really make sense to restrict its usage to
     /// the address bar, it is only foreseen and recommended for use with the address bar.

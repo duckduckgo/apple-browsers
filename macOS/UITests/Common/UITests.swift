@@ -122,31 +122,31 @@ class TestFailureObserver: NSObject, XCTestObservation {
 
 class UITestCase: XCTestCase {
     private static let failureObserver = TestFailureObserver()
-    
+
     private static let swizzleCompactDescriptionOnce: Void = {
         guard let originalMethod = class_getInstanceMethod(XCUIElement.self, NSSelectorFromString("compactDescription")),
               let swizzledMethod = class_getInstanceMethod(XCUIElement.self, #selector(XCUIElement.xcui_compactDescription)) else {
             print("Failed to get methods for swizzling compactDescription")
             return
         }
-        
+
         method_exchangeImplementations(originalMethod, swizzledMethod)
     }()
-    
+
     private static let swizzleElementSnapshotOnce: Void = {
         guard let originalMethod = class_getInstanceMethod(NSClassFromString("XCElementSnapshot")!, NSSelectorFromString("compactDescription")),
               let swizzledMethod = class_getInstanceMethod(NSObject.self, #selector(NSObject.swizzled_compactDescription)) else {
             print("Failed to get methods for swizzling XCUIElementSnapshot compactDescription")
             return
         }
-        
+
         method_exchangeImplementations(originalMethod, swizzledMethod)
     }()
 
     override class func setUp() {
         super.setUp()
         XCTestObservationCenter.shared.addTestObserver(failureObserver)
-        
+
         // Trigger one-time swizzling
 //        _ = swizzleCompactDescriptionOnce
 //        _ = swizzleElementSnapshotOnce
@@ -160,7 +160,7 @@ class UITestCase: XCTestCase {
         XCTestObservationCenter.shared.removeTestObserver(failureObserver)
         super.tearDown()
     }
-    
+
 }
 
 extension XCUIElement {
@@ -186,7 +186,7 @@ extension XCUIElementSnapshot {
     var jsonDescription: String {
         let keys = ["identifier", "elementType", "title", "label", "value", "frame"]
         let snapshotDict = self.toDictionary(keys: keys)
-        
+
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: snapshotDict, options: [])
             return String(data: jsonData, encoding: .utf8) ?? "Failed to encode JSON"
@@ -194,7 +194,7 @@ extension XCUIElementSnapshot {
             return "JSON serialization error: \(error.localizedDescription)"
         }
     }
-    
+
 }
 
 extension XCTestCase {

@@ -192,9 +192,6 @@
                <Test
                   Identifier = "NavigationProtectionIntegrationTests/testReferrerTrimming()">
                </Test>
-               <Test
-                  Identifier = "TabContentTests">
-               </Test>
             </SkippedTests>
          </TestableReference>
          <TestableReference

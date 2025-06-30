@@ -187,6 +187,7 @@ private extension BookmarksBarTests {
     func openSecondWindowAndVisitSite() {
         app.typeKey("n", modifierFlags: [.command])
         app.typeKey("l", modifierFlags: [.command]) // Get address bar focus without addressing multiple address bars by identifier
+
         app.typeURL(urlForBookmarksBar)
     }
 

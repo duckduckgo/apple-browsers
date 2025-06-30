@@ -1749,6 +1749,10 @@ class MainViewController: UIViewController {
                     self?.launchSettings(deepLinkTarget: deepLinkTarget)
                 case .subscriptionFlow(let components):
                     self?.launchSettings(deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
+                case .subscriptionSettings:
+                    self?.launchSettings(deepLinkTarget: .subscriptionSettings)
+                case .restoreFlow:
+                    self?.launchSettings(deepLinkTarget: .restoreFlow)
                 default:
                     return
                 }

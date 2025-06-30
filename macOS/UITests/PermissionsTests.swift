@@ -46,8 +46,7 @@ class PermissionsTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
+        app = XCUIApplication.setUp()
 
         permissionsSiteURL = try XCTUnwrap(URL(string: "https://permission.site"), "It wasn't possible to unwrap a URL that the tests depend on.")
         notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
@@ -60,7 +59,6 @@ class PermissionsTests: UITestCase {
         app.resetAuthorizationStatus(for: .camera) // These resets work much better before launch.
         app.resetAuthorizationStatus(for: .microphone)
 
-        app.launch()
         app.activate()
         historyMenuBarItem.clickAfterExistenceTestSucceeds()
         clearAllHistoryMenuItem.clickAfterExistenceTestSucceeds()

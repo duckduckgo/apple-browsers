@@ -29,9 +29,7 @@ class AIChatTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launch()
+        app = XCUIApplication.setUp()
 
         addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
         app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window

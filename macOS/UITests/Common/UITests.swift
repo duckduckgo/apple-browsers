@@ -55,9 +55,7 @@ enum UITests {
     /// does.
     /// - Parameter requestedToggleState: How the autocomplete checkbox state should be set
     static func setAutocompleteToggleBeforeTestcaseRuns(_ requestedToggleState: Bool) {
-        let app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launch()
+        let app = XCUIApplication.setUp()
 
         let settings = app.menuItems["MainMenu.preferencesMenuItem"]
         XCTAssertTrue(
@@ -90,7 +88,7 @@ enum UITests {
 
     /// A debug function that is going to need some other functionality in order to be useful for debugging address bar focus issues
     static func openVanillaBrowser() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.setUp()
         let openVanillaBrowser = app.menuItems["MainMenu.openVanillaBrowser"]
         openVanillaBrowser.clickAfterExistenceTestSucceeds()
         app.typeKey("w", modifierFlags: [.command, .option])
@@ -102,9 +100,7 @@ enum UITests {
         if notificationCenter.exists { // If tests-server is asking for network permissions, deny them.
             notificationCenter.typeKey(.escape, modifierFlags: [])
         }
-        let app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launch()
+        let app = XCUIApplication.setUp()
         app.typeKey("n", modifierFlags: .command)
         app.typeKey("w", modifierFlags: [.command, .option])
         app.terminate()

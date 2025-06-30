@@ -604,7 +604,9 @@ extension Pixel {
         case networkProtectionDisconnected
         
         case networkProtectionNoAccessTokenFoundError
-        
+        case networkProtectionVPNAccessRevoked
+        case networkProtectionUnmanagedSubscriptionError
+
         case networkProtectionMemoryWarning
         case networkProtectionMemoryCritical
         
@@ -1070,6 +1072,9 @@ extension Pixel {
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
 
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
+        case settingsOpenAssistSettings
+
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
         case settingsPresentedFromMenu
 
@@ -1348,6 +1353,7 @@ extension Pixel.Event {
         case .settingsNextStepsAddAppToDock: return "m_settings_next_steps_add_app_to_dock"
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
+        case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -1788,6 +1794,8 @@ extension Pixel.Event {
         case .networkProtectionActivationRequestFailed: return "m_netp_network_extension_error_activation_request_failed"
         case .networkProtectionDisconnected: return "m_netp_vpn_disconnect"
         case .networkProtectionNoAccessTokenFoundError: return "m_netp_no_access_token_found_error"
+        case .networkProtectionVPNAccessRevoked: return "m_vpn_access_revoked"
+        case .networkProtectionUnmanagedSubscriptionError: return "m_vpn_access_unmanaged_error"
         case .networkProtectionMemoryWarning: return "m_netp_vpn_memory_warning"
         case .networkProtectionMemoryCritical: return "m_netp_vpn_memory_critical"
         case .networkProtectionUnhandledError: return "m_netp_unhandled_error"

@@ -19,6 +19,7 @@
 import Combine
 import Navigation
 import XCTest
+import BrowserServicesKit
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -96,7 +97,7 @@ final class TabTests: XCTestCase {
     // MARK: - "Crash Tab" functionality
 
     @MainActor func testWhenUserIsNotInternalThenTabCannotBeCrashed() {
-        let internalUserDecider = InternalUserDeciderMock()
+        let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = false
 
         let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
@@ -106,7 +107,7 @@ final class TabTests: XCTestCase {
     }
 
     @MainActor func testWhenTabCrashDebugToolsFeatureFlagIsDisabledThenTabCannotBeCrashed() {
-        let internalUserDecider = InternalUserDeciderMock()
+        let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = true
 
         let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
@@ -116,7 +117,7 @@ final class TabTests: XCTestCase {
     }
 
     @MainActor func testWhenTabCrashDebugToolsFeatureFlagIsEnabledThenTabCanBeCrashed() {
-        let internalUserDecider = InternalUserDeciderMock()
+        let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = true
 
         let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider, enabledFeatureFlags: [.tabCrashDebugging])

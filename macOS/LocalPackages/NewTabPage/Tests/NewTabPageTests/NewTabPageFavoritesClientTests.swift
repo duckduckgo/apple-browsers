@@ -40,6 +40,7 @@ final class NewTabPageFavoritesClientTests: XCTestCase {
         favoritesModel = NewTabPageFavoritesModel(
             actionsHandler: actionsHandler,
             favoritesPublisher: Empty().eraseToAnyPublisher(),
+            faviconsDidLoadPublisher: Empty().eraseToAnyPublisher(),
             contextMenuPresenterProvider: { _ in self.contextMenuPresenter },
             settingsPersistor: UserDefaultsNewTabPageFavoritesSettingsPersistor(MockKeyValueStore(), getLegacySetting: nil)
         )

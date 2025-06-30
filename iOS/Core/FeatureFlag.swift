@@ -100,6 +100,9 @@ public enum FeatureFlag: String {
     case failsafeExampleCrossPlatformFeature
     case failsafeExamplePlatformSpecificSubfeature
 
+    // https://app.asana.com/1/137249556945/project/715106103902962/task/1210647253853346?focus=true
+    case june2025TabManagerLayoutChanges
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210055762484807?focus=true
     case experimentalAIChat
 
@@ -143,7 +146,12 @@ public enum FeatureFlag: String {
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes, .canInterceptSyncSetupUrls, .removeWWWInCanonicalizationInThreatProtection:
+        case .failsafeExampleCrossPlatformFeature,
+             .failsafeExamplePlatformSpecificSubfeature,
+             .canScanUrlBasedSyncSetupBarcodes,
+             .canInterceptSyncSetupUrls,
+             .removeWWWInCanonicalizationInThreatProtection,
+             .june2025TabManagerLayoutChanges:
             true
         default:
             false
@@ -183,7 +191,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
-             .experimentalSwitcherBarTransition:
+             .experimentalSwitcherBarTransition,
+             .june2025TabManagerLayoutChanges:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -290,6 +299,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
+        case .june2025TabManagerLayoutChanges:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.june2025TabManagerLayoutChanges))
         case .experimentalAIChat:
             return .internalOnly()
         case .experimentalSwitcherBarTransition:

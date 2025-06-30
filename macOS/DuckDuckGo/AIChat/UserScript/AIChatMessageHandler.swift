@@ -81,7 +81,7 @@ extension AIChatMessageHandler {
                                             supportsClosingAIChat: true,
                                             supportsOpeningSettings: true,
                                             supportsNativePrompt: true,
-                                            supportsNativeChatInput: false,
+                                            supportsNativeChatInput: featureFlagger.isFeatureOn(.aiChatTextSummarization), // enabled in order to make submitAIChatNativePrompt message available
                                             supportsURLChatIDRestoration: true)
         } else {
             return AIChatNativeConfigValues.defaultValues

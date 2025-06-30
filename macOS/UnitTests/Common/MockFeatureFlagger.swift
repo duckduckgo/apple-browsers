@@ -1,7 +1,7 @@
 //
-//  InternalUserDeciderMock.swift
+//  MockFeatureFlagger.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,23 +16,22 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Combine
-@testable import DuckDuckGo_Privacy_Browser
 import BrowserServicesKit
+import FeatureFlags
 
-class InternalUserDeciderMock: InternalUserDecider {
+typealias MockFeatureFlagger = BrowserServicesKit.MockFeatureFlagger
 
-    var isInternalUser: Bool = false
+extension MockFeatureFlagger {
 
-    var isInternalUserPublisher: AnyPublisher<Bool, Never> {
-        isInternalUserSubject.eraseToAnyPublisher()
-    }
-
-    var isInternalUserSubject = PassthroughSubject<Bool, Never>()
-
-    func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
-        return false
+    var enabledFeatureFlags: [FeatureFlag] {
+        get {
+            featuresStub.compactMap { FeatureFlag(rawValue: $0.key) }
+        }
+        set {
+            featuresStub = newValue.reduce(into: [:]) { result, feature in
+                result[feature.rawValue] = true
+            }
+        }
     }
 
 }

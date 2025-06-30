@@ -30,13 +30,11 @@ class FireWindowTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
+        app = XCUIApplication.setUp()
 
         settingsGeneralButton = app.buttons["PreferencesSidebar.generalButton"]
         reopenAllWindowsFromLastSessionPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"]
 
-        app.launch()
         app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window
     }
 

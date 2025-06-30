@@ -71,6 +71,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
             bookmarkManager: MockBookmarkManager(),
+            faviconManager: FaviconManagerMock(),
             activeRemoteMessageModel: ActiveRemoteMessageModel(
                 remoteMessagingStore: MockRemoteMessagingStore(),
                 remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
@@ -86,7 +87,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                 freemiumDBPFeature: MockFreemiumDBPFeature(),
                 freemiumDBPPresenter: MockFreemiumDBPPresenter(),
                 notificationCenter: notificationCenter,
-                freemiumDBPExperimentPixelHandler: MockFreemiumDBPExperimentPixelHandler()
+                dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler()
             ),
             tld: Application.appDelegate.tld,
             fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),

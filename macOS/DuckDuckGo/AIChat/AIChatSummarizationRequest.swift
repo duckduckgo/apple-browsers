@@ -1,6 +1,5 @@
 //
-//  MockContentScopeExperimentManager.swift
-//  DuckDuckGo
+//  AIChatSummarizationRequest.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,14 +17,20 @@
 //
 
 import Foundation
-import BrowserServicesKit
 
-class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
-    var allActiveContentScopeExperiments: Experiments = [:]
-    var resolveContentScopeScriptActiveExperimentsCalled = false
+/// This struct represents an object that's posted in `aiChatSummarizationRequest` notification.
+struct AIChatSummarizationRequest: Equatable {
+    /// The text to be summarized
+    let text: String
 
-    func resolveContentScopeScriptActiveExperiments() -> Experiments {
-        resolveContentScopeScriptActiveExperimentsCalled = true
-        return allActiveContentScopeExperiments
+    /// The source of the summarize action
+    let source: Source
+
+    enum Source: String {
+        case contextMenu = "context-menu", keyboardShortcut = "keyboard-shortcut"
     }
+}
+
+extension NSNotification.Name {
+    static let aiChatSummarizationRequest = Notification.Name(rawValue: "com.duckduckgo.notification.aiChatSummarizationRequest")
 }

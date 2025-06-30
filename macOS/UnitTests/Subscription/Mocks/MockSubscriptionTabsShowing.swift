@@ -1,7 +1,7 @@
 //
-//  MockInternalUserStoring.swift
+//  MockSubscriptionTabsShowing.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,14 +17,17 @@
 //
 
 import Foundation
-import BrowserServicesKit
+@testable import DuckDuckGo_Privacy_Browser
 
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
-}
+class MockSubscriptionTabsShowing: SubscriptionTabsShowing {
+    var capturedContent: Tab.TabContent?
+    var capturedSettingsPane: PreferencePaneIdentifier?
 
-extension DefaultInternalUserDecider {
-    convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
-        self.init(store: mockedStore)
+    func showTab(with content: Tab.TabContent) {
+        capturedContent = content
+    }
+
+    func showPreferencesTab(withSelectedPane pane: PreferencePaneIdentifier?) {
+        capturedSettingsPane = pane
     }
 }

@@ -30,6 +30,7 @@ extension NewTabPageActionsManager {
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
+        faviconManager: FaviconManagement,
         duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
         contentBlocking: ContentBlockingProtocol,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
@@ -46,6 +47,7 @@ extension NewTabPageActionsManager {
         let favoritesModel = NewTabPageFavoritesModel(
             actionsHandler: DefaultFavoritesActionsHandler(bookmarkManager: bookmarkManager),
             favoritesPublisher: favoritesPublisher,
+            faviconsDidLoadPublisher: faviconManager.faviconsLoadedPublisher.filter({$0}).asVoid().eraseToAnyPublisher(),
             getLegacyIsViewExpandedSetting: UserDefaultsWrapper<Bool>(key: .homePageShowAllFavorites, defaultValue: true).wrappedValue
         )
 

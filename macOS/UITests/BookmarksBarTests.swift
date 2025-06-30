@@ -41,8 +41,7 @@ class BookmarksBarTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
+        app = XCUIApplication.setUp()
         defaultBookmarkDialogButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
         showBookmarksBarPreferenceToggle = app.checkBoxes["Preferences.AppearanceView.showBookmarksBarPreferenceToggle"]
         resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
@@ -53,7 +52,6 @@ class BookmarksBarTests: UITestCase {
         addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
-        app.launch()
         app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close windows
         app.typeKey("n", modifierFlags: [.command]) // Guarantee a single window
         resetBookmarksAndAddOneBookmark()

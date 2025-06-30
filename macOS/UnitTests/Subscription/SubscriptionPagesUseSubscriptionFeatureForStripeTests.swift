@@ -106,7 +106,6 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
 
     var accountManager: AccountManager!
     var subscriptionManager: SubscriptionManager!
-    var mockFreemiumDBPExperimentManager: MockFreemiumDBPExperimentManager!
 
     var feature: SubscriptionPagesUseSubscriptionFeature!
 
@@ -122,7 +121,9 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
                             appVersion: "1.0.0",
                             defaultHeaders: [:],
                             defaults: userDefaults) { pixelName, _, _, _, _, _ in
-            self.pixelsFired.append(pixelName)
+            Task { @MainActor in
+                self.pixelsFired.append(pixelName)
+            }
         }
         pixelKit.clearFrequencyHistoryForAllPixels()
         PixelKit.setSharedForTesting(pixelKit: pixelKit)
@@ -184,13 +185,10 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
                                                          subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
                                                          subscriptionEnvironment: subscriptionEnvironment)
 
-        mockFreemiumDBPExperimentManager = MockFreemiumDBPExperimentManager()
-
         feature = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                           stripePurchaseFlow: stripePurchaseFlow,
                                                           uiHandler: uiHandler,
-                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                          freemiumDBPPixelExperimentManager: mockFreemiumDBPExperimentManager)
+                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability)
         feature.with(broker: broker)
     }
 

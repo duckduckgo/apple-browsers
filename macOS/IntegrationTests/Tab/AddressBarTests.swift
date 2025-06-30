@@ -423,7 +423,7 @@ class AddressBarTests: XCTestCase {
 
         try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
 
-        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark))?.result.get()
+        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark(isFavorite: false)))?.result.get()
         XCTAssertEqual(window.firstResponder, tab.webView)
 
         _=window.makeFirstResponder(addressBarTextField)
@@ -452,7 +452,7 @@ class AddressBarTests: XCTestCase {
         XCTAssertTrue(isAddressBarFirstResponder)
 
         let serpUrl = URL.makeSearchUrl(from: "cats")!
-        try await tab.setContent(.url(serpUrl, credential: nil, source: .bookmark))?.result.get()
+        try await tab.setContent(.url(serpUrl, credential: nil, source: .bookmark(isFavorite: false)))?.result.get()
         XCTAssertFalse(isAddressBarFirstResponder)
 
         // go back to New Tab page
@@ -550,7 +550,7 @@ class AddressBarTests: XCTestCase {
         try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
         XCTAssertEqual(window.firstResponder, tab.webView)
 
-        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark))?.result.get()
+        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark(isFavorite: false)))?.result.get()
         XCTAssertEqual(window.firstResponder, tab.webView)
 
         _=window.makeFirstResponder(addressBarTextField)
@@ -626,7 +626,7 @@ class AddressBarTests: XCTestCase {
         _=window.makeFirstResponder(addressBarTextField)
         type("some-text")
 
-        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark))?.result.get()
+        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark(isFavorite: false)))?.result.get()
         XCTAssertEqual(window.firstResponder, tab.webView)
     }
 

@@ -142,8 +142,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
        var request = URLRequest(url: url)
        request.setValue(Constants.referrerHeaderValue, forHTTPHeaderField: Constants.referrerHeader)
        
-       // Optimize for slow connections
-       request.cachePolicy = .returnCacheDataElseLoad
+       // Optimize for slow connections       
        request.timeoutInterval = 30.0
        request.networkServiceType = .video
        

@@ -1,5 +1,5 @@
 //
-//  NavigationBarPixel.swift
+//  NavigationEngagementPixel.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //

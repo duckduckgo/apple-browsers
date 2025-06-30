@@ -3408,23 +3408,19 @@ extension TabViewController: SaveLoginViewControllerDelegate {
     }
     
     func saveLoginViewController(_ viewController: SaveLoginViewController, didSaveCredentials credentials: SecureVaultModels.WebsiteCredentials) {
-        viewController.dismiss(animated: true)
         saveCredentials(credentials, withSuccessMessage: UserText.autofillLoginSavedToastMessage)
     }
     
     func saveLoginViewController(_ viewController: SaveLoginViewController, didUpdateCredentials credentials: SecureVaultModels.WebsiteCredentials) {
-        viewController.dismiss(animated: true)
         saveCredentials(credentials, withSuccessMessage: UserText.autofillLoginUpdatedToastMessage)
     }
     
     func saveLoginViewControllerDidCancel(_ viewController: SaveLoginViewController) {
-        viewController.dismiss(animated: true)
         saveLoginPromptLastDismissed = Date()
         saveLoginPromptIsPresenting = false
     }
 
     func saveLoginViewController(_ viewController: SaveLoginViewController, didRequestNeverPromptForWebsite domain: String) {
-        viewController.dismiss(animated: true)
         saveLoginPromptLastDismissed = Date()
         saveLoginPromptIsPresenting = false
 

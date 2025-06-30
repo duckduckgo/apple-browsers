@@ -117,6 +117,9 @@ extension DebugScreensViewModel {
             .view(title: "Tab Generator", { d in
                 BulkGeneratorView(factory: BulkTabFactory(tabManager: d.tabManager))
             }),
+            .view(title: "Default Browser Prompt", { d in
+                DefaultBrowserPromptDebugView(model: DefaultBrowserPromptDebugViewModel(keyValueFilesStore: d.keyValueStore))
+            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in

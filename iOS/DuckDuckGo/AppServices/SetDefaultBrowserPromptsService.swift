@@ -33,6 +33,14 @@ final class DefaultBrowserPromptService {
         privacyConfigManager: PrivacyConfigurationManaging,
         keyValueFilesStore: ThrowingKeyValueStoring
     ) {
+
+#if DEBUG || REVIEW
+        let debugDateProvider = DefaultBrowserPromptDebugDateProvider()
+        let defaultBrowserDateProvider: () -> Date = { debugDateProvider.simulatedTodayDate }
+#else
+        let defaultBrowserDateProvider: () -> Date = Date.init
+#endif
+
         let featureFlagAdapter = DefaultBrowserPromptFeatureFlagAdapter(featureFlagger: featureFlagger, privacyConfigurationManager: privacyConfigManager)
         let userTypeStore = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: keyValueFilesStore)
         let userTypeManager = DefaultBrowserPromptUserTypeManager(store: userTypeStore)
@@ -53,7 +61,8 @@ final class DefaultBrowserPromptService {
             checkDefaultBrowserDebugEventMapper: checkDefaultBrowserPixelHandler,
             promptUserInteractionEventMapper: promptActivityPixelHandler,
             isOnboardingCompletedProvider: { !DaxDialogs.shared.isEnabled },
-            installDateProvider: { StatisticsUserDefaults().installDate }
+            installDateProvider: { StatisticsUserDefaults().installDate },
+            currentDateProvider: defaultBrowserDateProvider
         )
     }
 

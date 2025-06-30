@@ -33,7 +33,8 @@ public enum DefaultBrowserPromptFactory {
         checkDefaultBrowserDebugEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>,
         promptUserInteractionEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>,
         isOnboardingCompletedProvider: @escaping () -> Bool,
-        installDateProvider: @escaping () -> Date?
+        installDateProvider: @escaping () -> Date?,
+        currentDateProvider: @escaping () -> Date
     ) -> DefaultBrowserPromptPresenting {
 
         let featureFlagger = DefaultBrowserPromptFeatureFlag(
@@ -43,6 +44,7 @@ public enum DefaultBrowserPromptFactory {
 
         let userActivityMonitor = DefaultBrowsePromptUserActivityMonitor(
             store: userActivityStore,
+            dateProvider: currentDateProvider
         )
 
         let defaultBrowserManager = DefaultBrowserManager(
@@ -56,7 +58,8 @@ public enum DefaultBrowserPromptFactory {
             userTypeProvider: userTypeProviding,
             userActivityProvider: userActivityMonitor,
             defaultBrowserManager: defaultBrowserManager,
-            installDateProvider: installDateProvider
+            installDateProvider: installDateProvider,
+            dateProvider: currentDateProvider
         )
 
         let coordinator = DefaultBrowserPromptCoordinator(
@@ -65,7 +68,8 @@ public enum DefaultBrowserPromptFactory {
             userActivityManager: userActivityMonitor,
             promptTypeDecider: promptTypeDecider,
             urlOpener: UIApplication.shared,
-            eventMapper: promptUserInteractionEventMapper
+            eventMapper: promptUserInteractionEventMapper,
+            dateProvider: currentDateProvider
         )
 
         return DefaultBrowserModalPresenter(coordinator: coordinator)

@@ -84,7 +84,7 @@ extension XCUIElement {
 
         let urlString = url.absoluteString
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.declareTypes([.URL], owner: nil)
+        NSPasteboard.general.declareTypes([.URL, .string], owner: nil)
         (url as NSURL).write(to: NSPasteboard.general)
         NSPasteboard.general.setString(urlString, forType: .string)
 

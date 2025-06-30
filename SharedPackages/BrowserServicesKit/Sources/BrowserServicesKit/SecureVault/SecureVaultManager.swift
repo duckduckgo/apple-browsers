@@ -281,7 +281,7 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
                 if autosaveAccount != nil, let credentials = autoSavedCredentials {
 
                     let existingUsername = credentials.account.username
-                    let existingPassword =  credentials.password?.utf8String()
+                    let existingPassword =  credentials.password.flatMap { String(bytes: $0, encoding: .utf8) }
                     let submittedUserName = data.credentials?.username
                     let submittedPassword = data.credentials?.password
 

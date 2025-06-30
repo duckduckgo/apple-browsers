@@ -16862,8 +16862,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/duckduckgo/apple-toolbox.git";
 			requirement = {
-				kind = exactVersion;
-				version = 3.1.4;
+				kind = revision;
+				revision = 6b62424258ed81041c5a236969f0894cc28ec54b;
 			};
 		};
 		F1D43AF12B98E47800BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */ = {

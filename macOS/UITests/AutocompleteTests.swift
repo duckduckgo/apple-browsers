@@ -39,8 +39,7 @@ class AutocompleteTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
+        app = XCUIApplication.setUp()
         addBookmarkButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
         resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
         historyMenuBarItem = app.menuBarItems["History"]
@@ -52,7 +51,6 @@ class AutocompleteTests: UITestCase {
         let siteTitleLength = 12
         siteTitleForBookmarkedSite = UITests.randomPageTitle(length: siteTitleLength)
         siteTitleForHistorySite = UITests.randomPageTitle(length: siteTitleLength)
-        app.launch()
         app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
         app.typeKey("n", modifierFlags: .command)
         try resetAndArrangeBookmarksAndHistory() // Manually reset to a clean state
@@ -80,7 +78,7 @@ class AutocompleteTests: UITestCase {
         // And that should be a bookmark suggestion
         XCTAssertEqual(
             containerCellForBookmarkedSuggestion.images.firstMatch.label,
-            "BookmarkSuggestion",
+            "Bookmark 16",
             "Although the suggestion was found, it didn't have the \"BookmarkSuggestion\" image next to it in suggestions."
         )
     }
@@ -107,7 +105,7 @@ class AutocompleteTests: UITestCase {
         // And that should be a history suggestion
         XCTAssertEqual(
             containerCellForHistorySuggestion.images.firstMatch.label,
-            "HistorySuggestion",
+            "History 16",
             "Although the suggestion was found, it didn't have the \"HistorySuggestion\" image next to it in suggestions."
         )
     }
@@ -141,7 +139,7 @@ class AutocompleteTests: UITestCase {
         // And that should be a search suggestion (not website)
         XCTAssertEqual(
             containerCellForWebsiteSuggestion.images.firstMatch.label,
-            "Search",
+            "Find Search 16",
             "Although the suggestion was found, it didn't have the \"Search\" image next to it in suggestions."
         )
     }

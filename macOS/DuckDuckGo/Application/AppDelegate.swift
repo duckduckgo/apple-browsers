@@ -384,31 +384,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        var featureFlagger: FeatureFlagger
-        if AppVersion.runType.isTests {
-            let mockFeatureFlagger = MockFeatureFlagger()
+        let featureFlagger: FeatureFlagger
+        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType)  {
+            featureFlagger = MockFeatureFlagger()
             self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
-            self.featureFlagger = mockFeatureFlagger
-            featureFlagger = mockFeatureFlagger
+
         } else {
+            let featureFlagOverrides = FeatureFlagLocalOverrides(
+                keyValueStore: UserDefaults.appConfiguration,
+                actionHandler: featureFlagOverridesPublishingHandler
+            )
             let defaultFeatureFlagger = DefaultFeatureFlagger(
                 internalUserDecider: internalUserDecider,
                 privacyConfigManager: privacyConfigurationManager,
-                localOverrides: FeatureFlagLocalOverrides(
-                    keyValueStore: UserDefaults.appConfiguration,
-                    actionHandler: featureFlagOverridesPublishingHandler
-                ),
+                localOverrides: featureFlagOverrides,
+                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
+                    internalUserDecider.isInternalUser || isRunningUITests
+                },
                 experimentManager: ExperimentCohortsManager(
                     store: ExperimentsDataStore(),
                     fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
                 ),
                 for: FeatureFlag.self
             )
-            self.featureFlagger = defaultFeatureFlagger
-            self.contentScopeExperimentsManager = defaultFeatureFlagger
             featureFlagger = defaultFeatureFlagger
-        }
+            self.contentScopeExperimentsManager = defaultFeatureFlagger
 
+            featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
+        }
+        self.featureFlagger = featureFlagger
         pinnedTabsManagerProvider = PinnedTabsManagerProvider()
 
 #if DEBUG || REVIEW
@@ -513,7 +517,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager,
             pixelFiring: PixelKit.shared
         )
-        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
+        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld)
@@ -1202,7 +1206,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setUpAutoClearHandler() {
-        let autoClearHandler = AutoClearHandler(preferences: dataClearingPreferences,
+        let autoClearHandler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
+                                                startupPreferences: startupPreferences,
                                                 fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager)
         self.autoClearHandler = autoClearHandler
@@ -1212,7 +1217,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSApplication.shared.reply(toApplicationShouldTerminate: true)
             }
         }
-        self.autoClearHandler.restoreTabsIfNeeded()
     }
 
     private func setUpAutofillPixelReporter() {
@@ -1262,6 +1266,31 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         completionHandler()
+    }
+
+}
+
+private extension FeatureFlagLocalOverrides {
+
+    func applyUITestsFeatureFlagsIfNeeded() {
+        guard AppVersion.runType == .uiTests else { return }
+
+        for item in ProcessInfo().environment["FEATURE_FLAGS", default: ""].split(separator: " ") {
+            let keyValue = item.split(separator: "=")
+            let key = String(keyValue[0])
+            guard let value = Bool(keyValue[safe: 1]?.lowercased() ?? "true") else {
+                fatalError("Only true/false values are supported for feature flag values (or none)")
+            }
+            guard let featureFlag = FeatureFlag(rawValue: key) else {
+                fatalError("Unrecognized feature flag: \(key)")
+            }
+            guard featureFlag.supportsLocalOverriding else {
+                fatalError("Feature flag \(key) does not support local overriding")
+            }
+            if currentValue(for: featureFlag)! != value {
+                toggleOverride(for: featureFlag)
+            }
+        }
     }
 
 }

@@ -52,25 +52,37 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
     var usedWebViews = [WKWebView]()
     var usedDelegates = [NavigationDelegateProxy]()
 
-    let data = DataSource()
-    let urls = URLs()
+    static let data = DataSource()
+    var data: DataSource { Self.data }
+    static let urls = URLs()
+    var urls: URLs { Self.urls }
 
     override func setUp() {
         NavigationAction.resetIdentifier()
         server = HttpServer()
         navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
+        self.navigationDelegate.responders.forEach { ($0 as? NavigationResponderMock)?.reset(testName: name) }
     }
 
     override func tearDown() {
         self.testSchemeHandler = nil
         server.stop()
-        self.navigationDelegate.responders.forEach { ($0 as? NavigationResponderMock)?.reset() }
+        server = nil
+        self.navigationDelegate.responders.forEach { ($0 as? NavigationResponderMock)?.reset(testName: name) }
         if let _webView {
             usedWebViews.append(_webView)
             self._webView = nil
         }
         self.usedDelegates.append(navigationDelegateProxy)
         navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
+        currentHistoryItemIdentityCancellable = nil
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+            self?.usedWebViews = []
+            self?.usedDelegates = []
+            self?.navigationDelegateProxy = nil
+            self?.history.removeAll()
+        }
     }
 
 }

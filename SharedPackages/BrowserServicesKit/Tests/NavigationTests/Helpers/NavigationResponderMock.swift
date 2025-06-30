@@ -200,7 +200,7 @@ class NavigationResponderMock: NavigationResponder {
         self.defaultHandler = defaultHandler
     }
 
-    func reset() {
+    func reset(testName: String) {
         clear()
 
         onNavigationAction = nil
@@ -221,7 +221,7 @@ class NavigationResponderMock: NavigationResponder {
         onNavResponseBecameDownload = nil
 
         defaultHandler = {
-            fatalError("event received after test completed: \($0)")
+            fatalError("[\(testName)] event received after test completed: \($0)")
         }
     }
     func clear() {

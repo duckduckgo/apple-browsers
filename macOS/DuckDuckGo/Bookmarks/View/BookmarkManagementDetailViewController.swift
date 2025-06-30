@@ -705,10 +705,14 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
             return
         }
 
-        let tabs = bookmarks.compactMap { $0.urlObject }.map {
-            Tab(content: .url($0, source: .bookmark),
-                shouldLoadInBackground: true,
-                burnerMode: tabCollection.burnerMode)
+        let tabs = bookmarks.compactMap { bookmark -> Tab? in
+            guard let url = bookmark.urlObject else {
+                return nil
+            }
+
+            return Tab(content: .url(url, source: .bookmark(isFavorite: bookmark.isFavorite)),
+                       shouldLoadInBackground: true,
+                       burnerMode: tabCollection.burnerMode)
         }
         tabCollection.append(tabs: tabs, andSelect: true)
     }

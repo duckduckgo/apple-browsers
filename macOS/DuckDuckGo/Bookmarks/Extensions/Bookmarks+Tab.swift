@@ -23,8 +23,11 @@ extension Tab {
     @MainActor
     static func withContentOfBookmark(folder: BookmarkFolder, burnerMode: BurnerMode) -> [Tab] {
         folder.children.compactMap { entity -> Tab? in
-            guard let url = (entity as? Bookmark)?.urlObject else { return nil }
-            return Tab(content: .url(url, source: .bookmark), shouldLoadInBackground: true, burnerMode: burnerMode)
+            guard let bookmark = entity as? Bookmark,
+                  let url = bookmark.urlObject else {
+                return nil
+            }
+            return Tab(content: .url(url, source: .bookmark(isFavorite: bookmark.isFavorite)), shouldLoadInBackground: true, burnerMode: burnerMode)
         }
     }
 
@@ -32,7 +35,7 @@ extension Tab {
     static func with(contentsOf bookmarks: [Bookmark], burnerMode: BurnerMode) -> [Tab] {
         bookmarks.compactMap { bookmark -> Tab? in
             guard let url = bookmark.urlObject else { return nil }
-            return Tab(content: .url(url, source: .bookmark), shouldLoadInBackground: true, burnerMode: burnerMode)
+            return Tab(content: .url(url, source: .bookmark(isFavorite: bookmark.isFavorite)), shouldLoadInBackground: true, burnerMode: burnerMode)
         }
     }
 }

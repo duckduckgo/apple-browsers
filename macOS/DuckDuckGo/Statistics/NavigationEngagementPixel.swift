@@ -45,10 +45,12 @@ enum NavigationEngagementPixel {
     enum BookmarkSource: String {
         case listInterface = "source-list-interface"
         case menu = "source-menu"
+        case newTabPage = "source-new-tab"
     }
 
     enum URLSource: String {
         case addressBar = "source-address-bar"
+        case newTabPage = "source-new-tab"
         case suggestion = "source-suggestion"
     }
 }

@@ -279,7 +279,7 @@ extension AppDelegate {
             return
         }
         DispatchQueue.main.async {
-            let tab = Tab(content: .url(url, source: .bookmark), shouldLoadInBackground: true)
+            let tab = Tab(content: .url(url, source: .bookmark(isFavorite: bookmark.isFavorite)), shouldLoadInBackground: true)
             WindowsManager.openNewWindow(with: tab)
         }
     }
@@ -973,10 +973,15 @@ extension MainViewController {
             return
         }
 
-        let tabs = models.compactMap { ($0.entity as? Bookmark)?.urlObject }.map {
-            Tab(content: .url($0, source: .bookmark),
-                shouldLoadInBackground: true,
-                burnerMode: tabCollectionViewModel.burnerMode)
+        let tabs = models.compactMap { model -> Tab? in
+            guard let bookmark = model.entity as? Bookmark,
+                  let url = bookmark.urlObject else {
+                return nil
+            }
+
+            return Tab(content: .url(url, source: .bookmark(isFavorite: bookmark.isFavorite)),
+                       shouldLoadInBackground: true,
+                       burnerMode: tabCollectionViewModel.burnerMode)
         }
         tabCollectionViewModel.append(tabs: tabs, andSelect: true)
     }

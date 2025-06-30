@@ -234,7 +234,7 @@ extension WindowControllersManager {
         guard let url = bookmark.urlObject else { return }
 
         // Call updated openBookmark
-        open(url, source: .bookmark, target: nil, event: event)
+        open(url, source: .bookmark(isFavorite: bookmark.isFavorite), target: nil, event: event)
     }
 
     /// Opens a history entry in a tab, respecting the current modifier keys when deciding where to open the URL.

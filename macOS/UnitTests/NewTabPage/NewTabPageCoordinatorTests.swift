@@ -71,6 +71,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
             bookmarkManager: MockBookmarkManager(),
+            faviconManager: FaviconManagerMock(),
             activeRemoteMessageModel: ActiveRemoteMessageModel(
                 remoteMessagingStore: MockRemoteMessagingStore(),
                 remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),

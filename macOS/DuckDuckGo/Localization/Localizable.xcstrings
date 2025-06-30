@@ -7119,7 +7119,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Автоматически закрывает вкладки и стирает данные о посещении сайтов при завершении работы DuckDuckGo."
+            "value" : "Автоматически закрывать вкладки и стирать данные о посещении сайтов при завершении работы DuckDuckGo."
           }
         }
       }
@@ -17881,55 +17881,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Deaktiviere das automatische Löschen beim Beenden, um die Sitzungswiederherstellung einzuschalten."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Disable auto-clear on quit to turn on session restore."
+            "value" : "Your session won't be restored if data is deleted when exiting."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Desactiva el borrado automático al salir para activar Restaurar sesión."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Désactivez l'effacement automatique à la fermeture pour activer la restauration de session."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Disabilita la cancellazione automatica all'uscita per attivare il ripristino della sessione."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Schakel automatisch wissen uit wanneer u stopt om het herstellen van de sessie in te schakelen."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wyłącz automatyczne czyszczenie przy wychodzeniu, aby włączyć przywracanie sesji."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Desativa a limpeza automática ao sair para ativar a restauração da sessão."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Чтобы активировать восстановление сеанса, отключите автоочистку данных при выходе."
           }
         }

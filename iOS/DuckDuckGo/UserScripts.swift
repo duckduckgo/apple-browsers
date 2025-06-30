@@ -38,6 +38,7 @@ final class UserScripts: UserScriptsProvider {
     let autoconsentUserScript: AutoconsentUserScript
     let aiChatUserScript: AIChatUserScript
     let subscriptionUserScript: SubscriptionUserScript
+    let subscriptionNavigationHandler: SubscriptionURLNavigationHandler
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -65,7 +66,7 @@ final class UserScripts: UserScriptsProvider {
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
-        
+
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
         contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                         properties: sourceProvider.contentScopeProperties,
@@ -80,10 +81,13 @@ final class UserScripts: UserScriptsProvider {
         let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
+
+        subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
         subscriptionUserScript = SubscriptionUserScript(
             platform: .ios,
-            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-        )
+            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
+            navigationDelegate: subscriptionNavigationHandler)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
 

@@ -34,7 +34,10 @@ final class SubscriptionUserScriptTests: XCTestCase {
 
     func testThatPublicInitializerSetsUpHandlerWithCorrectArguments() throws {
         let subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
-        userScript = SubscriptionUserScript(platform: .ios, subscriptionManager: subscriptionManager)
+        userScript = SubscriptionUserScript(platform: .ios,
+                                          subscriptionManager: subscriptionManager,
+                                          paidAIChatFlagStatusProvider: { false },
+                                          navigationDelegate: nil)
         let messageHandler = try XCTUnwrap(userScript.handler as? SubscriptionUserScriptHandler)
         XCTAssertEqual(messageHandler.platform, .ios)
         XCTAssertIdentical(messageHandler.subscriptionManager as AnyObject, subscriptionManager)
@@ -44,12 +47,77 @@ final class SubscriptionUserScriptTests: XCTestCase {
         try await handleMessageIgnoringResponse(named: SubscriptionUserScript.MessageName.handshake)
         XCTAssertEqual(handler.handshakeCallCount, 1)
         XCTAssertEqual(handler.subscriptionDetailsCallCount, 0)
+        XCTAssertEqual(handler.getAuthAccessTokenCallCount, 0)
+        XCTAssertEqual(handler.getFeatureConfigCallCount, 0)
+        XCTAssertEqual(handler.backToSettingsCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 0)
     }
 
     func testThatSubscriptionDetailsMessageIsPassedToHandler() async throws {
         try await handleMessageIgnoringResponse(named: SubscriptionUserScript.MessageName.subscriptionDetails)
         XCTAssertEqual(handler.handshakeCallCount, 0)
         XCTAssertEqual(handler.subscriptionDetailsCallCount, 1)
+        XCTAssertEqual(handler.getAuthAccessTokenCallCount, 0)
+        XCTAssertEqual(handler.getFeatureConfigCallCount, 0)
+        XCTAssertEqual(handler.backToSettingsCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 0)
+    }
+
+    func testThatGetAuthAccessTokenMessageIsPassedToHandler() async throws {
+        try await handleMessageIgnoringResponse(named: SubscriptionUserScript.MessageName.getAuthAccessToken)
+        XCTAssertEqual(handler.handshakeCallCount, 0)
+        XCTAssertEqual(handler.subscriptionDetailsCallCount, 0)
+        XCTAssertEqual(handler.getAuthAccessTokenCallCount, 1)
+        XCTAssertEqual(handler.getFeatureConfigCallCount, 0)
+        XCTAssertEqual(handler.backToSettingsCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 0)
+    }
+
+    func testThatGetFeatureConfigMessageIsPassedToHandler() async throws {
+        try await handleMessageIgnoringResponse(named: SubscriptionUserScript.MessageName.getFeatureConfig)
+        XCTAssertEqual(handler.handshakeCallCount, 0)
+        XCTAssertEqual(handler.subscriptionDetailsCallCount, 0)
+        XCTAssertEqual(handler.getAuthAccessTokenCallCount, 0)
+        XCTAssertEqual(handler.getFeatureConfigCallCount, 1)
+        XCTAssertEqual(handler.backToSettingsCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 0)
+    }
+
+    func testThatBackToSettingsMessageIsPassedToHandler() async throws {
+        try await handleMessageIgnoringResponse(named: SubscriptionUserScript.MessageName.backToSettings)
+        XCTAssertEqual(handler.handshakeCallCount, 0)
+        XCTAssertEqual(handler.subscriptionDetailsCallCount, 0)
+        XCTAssertEqual(handler.getAuthAccessTokenCallCount, 0)
+        XCTAssertEqual(handler.getFeatureConfigCallCount, 0)
+        XCTAssertEqual(handler.backToSettingsCallCount, 1)
+        XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 0)
+    }
+
+    func testThatOpenSubscriptionActivationMessageIsPassedToHandler() async throws {
+        try await handleMessageIgnoringResponse(named: SubscriptionUserScript.MessageName.openSubscriptionActivation)
+        XCTAssertEqual(handler.handshakeCallCount, 0)
+        XCTAssertEqual(handler.subscriptionDetailsCallCount, 0)
+        XCTAssertEqual(handler.getAuthAccessTokenCallCount, 0)
+        XCTAssertEqual(handler.getFeatureConfigCallCount, 0)
+        XCTAssertEqual(handler.backToSettingsCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionActivationCallCount, 1)
+        XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 0)
+    }
+
+    func testThatOpenSubscriptionPurchaseMessageIsPassedToHandler() async throws {
+        try await handleMessageIgnoringResponse(named: SubscriptionUserScript.MessageName.openSubscriptionPurchase)
+        XCTAssertEqual(handler.handshakeCallCount, 0)
+        XCTAssertEqual(handler.subscriptionDetailsCallCount, 0)
+        XCTAssertEqual(handler.getAuthAccessTokenCallCount, 0)
+        XCTAssertEqual(handler.getFeatureConfigCallCount, 0)
+        XCTAssertEqual(handler.backToSettingsCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionActivationCallCount, 0)
+        XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 1)
     }
 
     // MARK: - Helpers

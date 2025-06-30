@@ -88,7 +88,7 @@ final class FeatureFlaggerExperimentsTests: XCTestCase {
 
     override func setUp() {
         // Set environment variable to allow DefaultFeatureFlagger in tests
-        setenv("UITEST_FEATUREFLAGGER_MODE", "1", 1)
+        setenv("TESTS_FEATUREFLAGGER_MODE", "1", 1)
 
         locale = Locale(identifier: "fr_US")
         mockEmbeddedData = MockEmbeddedDataProvider(data: featureJson, etag: "test")
@@ -112,7 +112,7 @@ final class FeatureFlaggerExperimentsTests: XCTestCase {
         manager = nil
 
         // Clean up environment variable
-        unsetenv("UITEST_FEATUREFLAGGER_MODE")
+        unsetenv("TESTS_FEATUREFLAGGER_MODE")
     }
 
     func testCohortOnlyAssignedWhenCallingStateForSubfeature() {

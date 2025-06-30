@@ -33425,7 +33425,8 @@
             "value" : "Пароли подвергаются шифрованию. Для их просмотра или заполнения требуется Touch ID или пароль. Никто кроме вас не увидит ваши пароли. Даже мы. Ищите их в разделе «Настройки DuckDuckGo > Пароли и автозаполнение»."
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "import.logins.passwords.explainer.autolock.off" : {
       "comment" : "Explanatory text for the Passwords import option to alleviate security concerns and explain usage when autolock is disabled",
@@ -77436,7 +77437,8 @@
             "value" : "Что будем импортировать?"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "whats.new.menu.item" : {
       "comment" : "Title of the dialog menu item that opens the 'What's New' page",

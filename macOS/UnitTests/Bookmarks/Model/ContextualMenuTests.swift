@@ -378,7 +378,7 @@ final class ContextualMenuTests: XCTestCase {
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
 
         // THEN
-        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).showCalled, .init(url: URL.duckDuckGo, source: .bookmark(isFavorite: false), newTab: true, selected: nil))
+        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).showCalled, .init(url: URL.duckDuckGo, source: .bookmark(isFavorite: true), newTab: true, selected: nil))
     }
 
     @MainActor
@@ -395,7 +395,7 @@ final class ContextualMenuTests: XCTestCase {
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
 
         // THEN
-        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).openNewWindowCalled, .init(contents: [TabContent.url(.duckDuckGo, source: .bookmark(isFavorite: false))], burnerMode: .regular))
+        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).openNewWindowCalled, .init(contents: [TabContent.url(.duckDuckGo, source: .bookmark(isFavorite: true))], burnerMode: .regular))
     }
 
     @MainActor

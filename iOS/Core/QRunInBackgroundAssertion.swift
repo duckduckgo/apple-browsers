@@ -89,7 +89,7 @@ public final class QRunInBackgroundAssertion {
 
     public func release() {
         dispatchPrecondition(condition: .onQueue(.main))
-        self.consumeValidTaskID() { }
+        self.consumeValidTaskID { }
     }
 
     deinit {
@@ -100,7 +100,7 @@ public final class QRunInBackgroundAssertion {
         // own retain on us).
         //
         // dispatchPrecondition(condition: .onQueue(.main))
-        self.consumeValidTaskID() { }
+        self.consumeValidTaskID { }
     }
 
     private func consumeValidTaskID(_ body: () -> Void) {
@@ -116,7 +116,7 @@ public final class QRunInBackgroundAssertion {
 
     private func taskDidExpire() {
         dispatchPrecondition(condition: .onQueue(.main))
-        self.consumeValidTaskID() {
+        self.consumeValidTaskID {
             self.systemDidReleaseAssertion?()
         }
     }

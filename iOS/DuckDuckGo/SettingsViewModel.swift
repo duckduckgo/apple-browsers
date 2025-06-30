@@ -1260,6 +1260,15 @@ extension SettingsViewModel {
         )
     }
 
+    var aiChatSearchInputEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+            }
+        )
+    }
+
     var aiChatVoiceSearchEnabledBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled },

@@ -262,7 +262,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatSidebar:
             return .internalOnly()
         case .aiChatTextSummarization:
-            return .disabled
+            return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:

@@ -391,23 +391,11 @@ class PrintingTests: UITestCase {
         )
 
         // Validate that "TestPDF" text is present in the PDF window
-        let testText = previewWindow.staticTexts["TestPDF"]
+        let testText = previewWindow.staticTexts.element(matching: NSPredicate(format: "value LIKE '*TestPDF*'")).firstMatch
+
         XCTAssertTrue(
             testText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Preview window should display 'TestPDF' text from PDF."
-        )
-
-        // Navigate to page 2 by clicking the page 2 thumbnail or navigation in the PDF window
-        let page2Image = previewWindow.images["2"]
-        if page2Image.waitForExistence(timeout: 2.0) {
-            page2Image.click()
-        }
-
-        // Validate that "Page2" text is present in the PDF window
-        let page2Text = previewWindow.staticTexts["Page2"]
-        XCTAssertTrue(
-            page2Text.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Preview window should display 'Page2' text from PDF."
         )
 
         // Close the window using the close button

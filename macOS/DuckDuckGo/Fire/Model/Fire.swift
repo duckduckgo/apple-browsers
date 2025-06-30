@@ -50,7 +50,7 @@ final class Fire {
     let tld: TLD
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
     let getPrivacyStats: () async -> PrivacyStatsCollecting
-    let featureFlagger: FeatureFlagger
+    let visualizeFireAnimationDecider: VisualizeFireAnimationDecider
 
     private var dispatchGroup: DispatchGroup?
 
@@ -58,25 +58,10 @@ final class Fire {
         case specificDomains(_ domains: Set<String>, shouldPlayFireAnimation: Bool)
         case all
 
-        func shouldPlayFireAnimation(featureFlagger: FeatureFlagger) -> Bool {
-            // Check if fire animation is disabled by feature flag
-            guard !featureFlagger.isFeatureOn(.disableFireAnimation) else {
-                return false
-            }
-
+        func shouldPlayFireAnimation(decider: VisualizeFireAnimationDecider) -> Bool {
             switch self {
             case .all, .specificDomains(_, shouldPlayFireAnimation: true):
-                return true
-            // We don't present the fire animation if user burns from the privacy feed
-            case .specificDomains(_, shouldPlayFireAnimation: false):
-                return false
-            }
-        }
-
-        var shouldPlayFireAnimation: Bool {
-            switch self {
-            case .all, .specificDomains(_, shouldPlayFireAnimation: true):
-                return true
+                return decider.shouldShowFireAnimation
             // We don't present the fire animation if user burns from the privacy feed
             case .specificDomains(_, shouldPlayFireAnimation: false):
                 return false
@@ -95,28 +80,13 @@ final class Fire {
                         selectedDomains: Set<String>,
                         customURLToOpen: URL?)
 
-        func shouldPlayFireAnimation(featureFlagger: FeatureFlagger) -> Bool {
-            // Check if fire animation is disabled by feature flag
-            guard !featureFlagger.isFeatureOn(.disableFireAnimation) else {
-                return false
-            }
-
+        func shouldPlayFireAnimation(decider: VisualizeFireAnimationDecider) -> Bool {
             switch self {
             // We don't present the fire animation if user burns from the privacy feed
             case .none:
                 return false
             case .tab, .window, .allWindows:
-                return true
-            }
-        }
-
-        var shouldPlayFireAnimation: Bool {
-            switch self {
-            // We don't present the fire animation if user burns from the privacy feed
-            case .none:
-                return false
-            case .tab, .window, .allWindows:
-                return true
+                return decider.shouldShowFireAnimation
             }
         }
     }
@@ -143,7 +113,7 @@ final class Fire {
          secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
-         featureFlagger: FeatureFlagger? = nil
+         visualizeFireAnimationDecider: VisualizeFireAnimationDecider? = nil
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -163,7 +133,7 @@ final class Fire {
         self.getPrivacyStats = getPrivacyStats ?? { NSApp.delegateTyped.privacyStats }
         self.getVisitedLinkStore = getVisitedLinkStore ?? { WKWebViewConfiguration.sharedVisitedLinkStore }
         self.autoconsentManagement = autoconsentManagement ?? AutoconsentManagement.shared
-        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
+        self.visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? NSApp.delegateTyped.visualizeFireAnimationDecider
         if let stateRestorationManager = stateRestorationManager {
             self.stateRestorationManager = stateRestorationManager
         } else {
@@ -183,7 +153,7 @@ final class Fire {
         let domains = domainsToBurn(from: entity)
         assert(domains.areAllETLDPlus1(tld: tld))
 
-        burningData = .specificDomains(domains, shouldPlayFireAnimation: entity.shouldPlayFireAnimation(featureFlagger: featureFlagger))
+        burningData = .specificDomains(domains, shouldPlayFireAnimation: entity.shouldPlayFireAnimation(decider: visualizeFireAnimationDecider))
 
         burnLastSessionState()
         burnDeletedBookmarks()
@@ -243,7 +213,7 @@ final class Fire {
         let entity = BurningEntity.allWindows(mainWindowControllers: windowControllerManager.mainWindowControllers, selectedDomains: Set(), customURLToOpen: url)
 
         // Close windows first if fire animation is disabled
-        let shouldCloseWindowsFirst = featureFlagger.isFeatureOn(.disableFireAnimation)
+        let shouldCloseWindowsFirst = !visualizeFireAnimationDecider.shouldShowFireAnimation
         if shouldCloseWindowsFirst {
             closeWindows(entity: entity)
         }

@@ -33,7 +33,7 @@ final class FireViewController: NSViewController {
     private(set) var fireViewModel: FireViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
     private let visualStyle: VisualStyleProviding
-    private let featureFlagger: FeatureFlagger
+    private let visualizeFireAnimationDecider: VisualizeFireAnimationDecider
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var fireDialogViewController: FirePopoverViewController = {
@@ -52,9 +52,9 @@ final class FireViewController: NSViewController {
     private var fireAnimationViewLoadingTask: Task<(), Never>?
     private(set) lazy var fireIndicatorVisibilityManager = FireIndicatorVisibilityManager { [weak self] in self?.view.superview }
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel, featureFlagger: FeatureFlagger) -> FireViewController {
+    static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel, visualizeFireAnimationDecider: VisualizeFireAnimationDecider) -> FireViewController {
         NSStoryboard(name: "Fire", bundle: nil).instantiateInitialController { coder in
-            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireViewModel, featureFlagger: featureFlagger)
+            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
         }!
     }
 
@@ -65,11 +65,11 @@ final class FireViewController: NSViewController {
     init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
           fireViewModel: FireViewModel,
           visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle, 
-          featureFlagger: FeatureFlagger) {
+          visualizeFireAnimationDecider: VisualizeFireAnimationDecider) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.fireViewModel = fireViewModel
         self.visualStyle = visualStyle
-        self.featureFlagger = featureFlagger
+        self.visualizeFireAnimationDecider = visualizeFireAnimationDecider
 
         super.init(coder: coder)
     }
@@ -148,7 +148,7 @@ final class FireViewController: NSViewController {
                     }
 
                 // Use the feature flag-aware method to determine if animation should play
-                if burningData.shouldPlayFireAnimation(featureFlagger: self.featureFlagger) {
+                if burningData.shouldPlayFireAnimation(decider: self.visualizeFireAnimationDecider) {
                     Task {
                         await self.animateFire(burningData: burningData)
                     }
@@ -169,7 +169,7 @@ final class FireViewController: NSViewController {
     func animateFireWhenClosing() async {
         closeAllChildWindows()
 
-        guard !featureFlagger.isFeatureOn(.disableFireAnimation) else { return }
+        guard visualizeFireAnimationDecider.shouldShowFireAnimation else { return }
 
         await waitForFireAnimationViewIfNeeded()
         await withUnsafeContinuation { (continuation: UnsafeContinuation<Void, Never>) in

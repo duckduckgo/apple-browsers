@@ -24,17 +24,17 @@ protocol VisualizeFireAnimationDecider {
 
 final class DefaultVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
     private let featureFlagger: FeatureFlagger
-    private let fireButtonPreferencesPersistor: FireButtonPreferencesPersistor
+    private let dataClearingPreferences: DataClearingPreferences
 
     init(featureFlagger: FeatureFlagger,
-         fireButtonPreferencesPersistor: FireButtonPreferencesPersistor) {
+         dataClearingPreferences: DataClearingPreferences) {
         self.featureFlagger = featureFlagger
-        self.fireButtonPreferencesPersistor = fireButtonPreferencesPersistor
+        self.dataClearingPreferences = dataClearingPreferences
     }
 
     var shouldShowFireAnimation: Bool {
         if featureFlagger.isFeatureOn(.disableFireAnimation) {
-            return fireButtonPreferencesPersistor.isFireAnimationEnabled
+            return dataClearingPreferences.isFireAnimationEnabled
         } else {
             return true
         }

@@ -173,10 +173,8 @@ extension XCUIApplication {
         )
 
         let menuSnapshot = try contextMenu.snapshot()
-        for child in menuSnapshot.children {
-            if matching(child) {
-                return child.frame
-            }
+        for child in menuSnapshot.children where matching(child) {
+            return child.frame
         }
 
         throw XCTestError(.failureWhileWaiting, userInfo: [

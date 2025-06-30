@@ -114,7 +114,9 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 let pixelName = path.dropping(prefix: "/t/")
                     .dropping(suffix: "_ios_phone")
                     .dropping(suffix: "_ios_tablet")
-                self.pixelsFired.append(pixelName)
+                Task { @MainActor in
+                    self.pixelsFired.append(pixelName)
+                }
             }
 
             return HTTPStubsResponse(data: Data(), statusCode: 200, headers: nil)

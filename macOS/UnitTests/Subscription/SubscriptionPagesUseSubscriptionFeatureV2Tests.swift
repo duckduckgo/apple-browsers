@@ -104,7 +104,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialOptionsAvailable_ReturnsFreeTrialOptions() async throws {
         // Given
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
         mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
         let freeTrialOptions = SubscriptionOptionsV2(
@@ -127,7 +127,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialReturnsNil_ReturnsRegularOptions() async throws {
         // Given
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
         mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
         mockStorePurchaseManager.freeTrialSubscriptionOptionsResult = nil
@@ -144,7 +144,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOff_AndFreeTrialOptionsAvailable_ReturnsRegularOptions() async throws {
         // Given
-        mockFeatureFlagger.isFeatureOn = { _ in false }
         mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
         let freeTrialOptions = SubscriptionOptionsV2(
@@ -179,7 +178,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
-        XCTAssertTrue(featureValue.useDuckAiPro)
+        XCTAssertTrue(featureValue.usePaidDuckAi)
     }
 
     func testGetFeatureConfig_WhenPaidAIChatDisabled_ReturnsCorrectConfig() async throws {
@@ -197,7 +196,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
-        XCTAssertFalse(featureValue.useDuckAiPro)
+        XCTAssertFalse(featureValue.usePaidDuckAi)
     }
 
     // MARK: - Feature Selection Tests

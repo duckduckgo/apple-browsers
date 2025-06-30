@@ -182,7 +182,15 @@ struct SettingsRootView: View {
         case .netP:
             NetworkProtectionRootView()
         case .aiChat:
-            SettingsAIChatView().environmentObject(viewModel)
+            SettingsAIFeaturesView().environmentObject(viewModel)
+        case .subscriptionSettings:
+            if viewModel.isAuthV2Enabled {
+                SubscriptionSettingsViewV2(configuration: .subscribed, settingsViewModel: viewModel)
+                    .environmentObject(subscriptionNavigationCoordinator)
+            } else {
+                SubscriptionSettingsView(configuration: .subscribed, settingsViewModel: viewModel)
+                    .environmentObject(subscriptionNavigationCoordinator)
+            }
         }
     }
 }

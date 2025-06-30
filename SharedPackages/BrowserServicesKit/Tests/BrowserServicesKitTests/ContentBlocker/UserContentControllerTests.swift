@@ -300,7 +300,7 @@ class PrivacyConfigurationManagerMock: PrivacyConfigurationManaging {
     var updatesSubject = PassthroughSubject<Void, Never>()
     let updatesPublisher: AnyPublisher<Void, Never>
     var privacyConfig: PrivacyConfiguration = PrivacyConfigurationMock()
-    let internalUserDecider: InternalUserDecider = DefaultInternalUserDecider()
+    let internalUserDecider: InternalUserDecider = MockInternalUserDecider()
     func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
         .downloaded
     }

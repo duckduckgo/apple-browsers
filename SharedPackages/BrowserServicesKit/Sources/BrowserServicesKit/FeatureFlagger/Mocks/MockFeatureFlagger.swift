@@ -16,9 +16,26 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import Foundation
 
 public final class MockFeatureFlagger: FeatureFlagger {
+
+    public init(allActiveExperiments: Experiments = [:],
+                didCallResolveCohort: Bool = false,
+                internalUserDecider: any InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring()),
+                localOverrides: (any FeatureFlagLocalOverriding)? = nil,
+                mockActiveExperiments: [String: ExperimentData] = [:],
+                featuresStub: [String: Bool] = [:],
+                resolveCohortStub: (any FeatureFlagCohortDescribing)? = nil) {
+        self.allActiveExperiments = allActiveExperiments
+        self.didCallResolveCohort = didCallResolveCohort
+        self.internalUserDecider = internalUserDecider
+        self.localOverrides = localOverrides
+        self.mockActiveExperiments = mockActiveExperiments
+        self.featuresStub = featuresStub
+        self.resolveCohortStub = resolveCohortStub
+    }
+
     public var allActiveExperiments: BrowserServicesKit.Experiments = [:]
 
     private(set) var didCallResolveCohort: Bool = false
@@ -28,7 +45,7 @@ public final class MockFeatureFlagger: FeatureFlagger {
 
     var mockActiveExperiments: [String: ExperimentData] = [:]
 
-    var featuresStub: [String: Bool] = [:]
+    public var featuresStub: [String: Bool] = [:]
     public func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
         featuresStub[featureFlag.rawValue] ?? false
     }
@@ -37,8 +54,4 @@ public final class MockFeatureFlagger: FeatureFlagger {
     public func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any BrowserServicesKit.FeatureFlagCohortDescribing)? where Flag: BrowserServicesKit.FeatureFlagDescribing {
         resolveCohortStub
     }
-}
-
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
 }

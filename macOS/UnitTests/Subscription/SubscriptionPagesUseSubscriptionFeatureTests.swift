@@ -116,7 +116,9 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                             appVersion: "1.0.0",
                             defaultHeaders: [:],
                             defaults: userDefaults) { pixelName, _, _, _, _, _ in
-            self.pixelsFired.append(pixelName)
+            Task { @MainActor in
+                self.pixelsFired.append(pixelName)
+            }
         }
         pixelKit.clearFrequencyHistoryForAllPixels()
         PixelKit.setSharedForTesting(pixelKit: pixelKit)
@@ -1124,7 +1126,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialOptionsAvailable_ReturnsFreeTrialOptions() async throws {
         // Given
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
         subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
         let freeTrialOptions = SubscriptionOptions(
@@ -1147,7 +1149,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialReturnsNil_ReturnsRegularOptions() async throws {
         // Given
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
         subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
         storePurchaseManager.freeTrialSubscriptionOptionsResult = nil
@@ -1164,7 +1166,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOff_AndFreeTrialOptionsAvailable_ReturnsRegularOptions() async throws {
         // Given
-        mockFeatureFlagger.isFeatureOn = { _ in false }
         subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
         let freeTrialOptions = SubscriptionOptions(

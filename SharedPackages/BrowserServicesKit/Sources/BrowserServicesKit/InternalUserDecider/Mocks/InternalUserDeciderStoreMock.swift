@@ -1,7 +1,7 @@
 //
-//  MockContentScopeExperimentManager.swift
+//  InternalUserDeciderStoreMock.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,12 +17,13 @@
 //
 
 import Foundation
-@testable import BrowserServicesKit
+import Combine
 
-class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
-    var allActiveContentScopeExperiments: Experiments = [:]
+public class InternalUserDeciderStoreMock: InternalUserStoring {
 
-    func resolveContentScopeScriptActiveExperiments() -> Experiments {
-        return allActiveContentScopeExperiments
+    public var isInternalUser: Bool = false
+
+    public init(isInternalUser: Bool = false) {
+        self.isInternalUser = isInternalUser
     }
 }

@@ -1,6 +1,5 @@
 //
-//  MockInternalUserStoring.swift
-//  DuckDuckGo
+//  MockInternalUserDecider.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -19,26 +18,24 @@
 
 import Foundation
 import Combine
-import BrowserServicesKit
 
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
-}
+public class MockInternalUserDecider: InternalUserDecider {
 
-extension DefaultInternalUserDecider {
-    convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
-        self.init(store: mockedStore)
-    }
-}
-
-final class MockInternalUserDecider: InternalUserDecider {
-    var isInternalUser: Bool = false
-
-    var isInternalUserPublisher: AnyPublisher<Bool, Never> {
-        Just(false).eraseToAnyPublisher()
+    public init(isInternalUser: Bool = false,
+                isInternalUserSubject: PassthroughSubject<Bool, Never> = PassthroughSubject<Bool, Never>()) {
+        self.isInternalUser = isInternalUser
+        self.isInternalUserSubject = isInternalUserSubject
     }
 
-    func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
+    public var isInternalUser: Bool = false
+
+    public var isInternalUserPublisher: AnyPublisher<Bool, Never> {
+        isInternalUserSubject.eraseToAnyPublisher()
+    }
+
+    public var isInternalUserSubject = PassthroughSubject<Bool, Never>()
+
+    public func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
         return false
     }
 }

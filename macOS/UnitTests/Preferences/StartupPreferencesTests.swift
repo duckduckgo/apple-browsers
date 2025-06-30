@@ -76,8 +76,7 @@ fileprivate extension StartupPreferences {
     convenience init(persistor: StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor()) {
         self.init(
             persistor: persistor,
-            appearancePreferences: NSApp.delegateTyped.appearancePreferences,
-            dataClearingPreferences: NSApp.delegateTyped.dataClearingPreferences
+            appearancePreferences: NSApp.delegateTyped.appearancePreferences
         )
     }
 }

@@ -784,8 +784,8 @@ extension MainViewController {
                 guard let selectedText, !selectedText.isEmpty else {
                     return
                 }
-                NotificationCenter.default.post(name: .aiChatSummarizationQuery,
-                                                object: selectedText,
+                NotificationCenter.default.post(name: .aiChatSummarizationRequest,
+                                                object: AIChatSummarizationRequest(text: selectedText, source: .keyboardShortcut),
                                                 userInfo: nil)
             } catch {
                 Logger.aiChat.error("Failed to get selected text from the webView")

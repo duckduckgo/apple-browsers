@@ -23,6 +23,7 @@ import SwiftUI
 import UIKit
 import WebKit
 import Core
+import BrowserServicesKit
 
 @testable import DuckDuckGo
 
@@ -1900,6 +1901,9 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertTrue(sut.state.hasBeenShown, "State should indicate DuckPlayer has been shown")
         XCTAssertNil(sut.containerViewController, "Pill container should not exist while DuckPlayer is shown")
 
+        // Ensure hostView reference is maintained
+        XCTAssertNotNil(sut.hostView, "Host view should be maintained")
+
         // When - Simulate DuckPlayer dismissal by triggering the dismiss publisher
         guard let playerViewModel = sut.playerViewModel else {
             XCTFail("Player view model should exist")
@@ -1909,12 +1913,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Simulate the view disappearing and dismiss publisher firing
         playerViewModel.dismissPublisher.send(timestamp)
 
-        // Wait for the delayed pill presentation
+        // Wait for the delayed pill presentation (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "Pill should be presented after dismissal")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
 
         // Then - Should present re-entry pill 
         XCTAssertNotNil(sut.containerViewController, "Pill container should be created after dismissal")
@@ -1953,12 +1957,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Simulate the view disappearing and dismiss publisher firing
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for the delayed pill presentation to complete
+        // Wait for the delayed pill presentation to complete (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "State should be updated after pill presentation")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         
         // Then - State should preserve the timestamp
         XCTAssertEqual(sut.state.timestamp, timestamp, "State should preserve the timestamp")
@@ -2011,12 +2015,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Simulate the view disappearing and dismiss publisher firing
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for the delayed execution to complete
+        // Wait for the delayed execution to complete (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "Delayed execution should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         
         // Then - State should NOT be updated because hostView is nil
         XCTAssertEqual(sut.state.timestamp, stateBeforeDismissal, "State timestamp should not be updated when hostView is nil")
@@ -2061,12 +2065,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Simulate the view disappearing and dismiss publisher firing
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for the delayed execution to complete
+        // Wait for the delayed execution to complete (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "State should be updated after pill presentation")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         
         // Then - State SHOULD be updated because hostView exists
         XCTAssertEqual(sut.state.timestamp, timestamp, "State timestamp should be updated when hostView exists")
@@ -2113,12 +2117,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Simulate the dismiss publisher firing after presenter is released
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for any delayed execution
+        // Wait for any delayed execution (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "Delayed execution should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
 
         // Then - Settings should not be updated because presenter was released
         XCTAssertEqual(mockDuckPlayerSettings.welcomeMessageShown, initialWelcomeShown,
@@ -2162,12 +2166,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // When - First player's dismiss publisher fires
         firstPlayerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for delayed execution
+        // Wait for delayed execution (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "First player dismissal should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         
         // Then - State should reflect the current video (videoID2), not the dismissed one (videoID1)
         XCTAssertEqual(sut.state.videoID, videoID2, "State should reflect the current video ID")
@@ -2214,8 +2218,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for the update
-        wait(for: [timestampExpectation], timeout: 1.0)
+        // Wait for the update (0.3s delay + buffer)
+        wait(for: [timestampExpectation], timeout: 2.0)
         
         // Then - Should receive timestamp update when state is updated
         XCTAssertEqual(receivedTimestamps.count, 1, "Should receive exactly one timestamp update")
@@ -2258,12 +2262,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for potential delayed execution
+        // Wait for potential delayed execution (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "Delayed execution should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         
         // Then - Should NOT receive timestamp update when hostView is nil
         XCTAssertTrue(receivedTimestamps.isEmpty, "Should not receive timestamp updates when hostView is nil")

@@ -33372,7 +33372,7 @@
     },
     "import.logins.passwords.explainer" : {
       "comment" : "Explanatory text for the Passwords import option to alleviate security concerns and explain usage.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -33486,6 +33486,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Пароли подвергаются шифрованию. Для дополнительной защиты рекомендуем включить автоматическую блокировку в разделе «Настройки DuckDuckGo > Пароли и автозаполнение»."
+          }
+        }
+      }
+    },
+    "import.logins.passwords.explainer2" : {
+      "comment" : "Explanatory text for the Passwords import option to alleviate security concerns and explain usage.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Passwords are encrypted. Nobody but you can see your passwords, not even us. Find Passwords in DuckDuckGo Settings > Passwords & Autofill."
           }
         }
       }

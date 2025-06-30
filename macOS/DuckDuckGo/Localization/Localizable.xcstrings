@@ -1660,10 +1660,58 @@
       "comment" : "Tooltip for button to close the sidebar with the duck.ai chat",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schließen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Close"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть"
           }
         }
       }
@@ -1672,10 +1720,58 @@
       "comment" : "Tooltip for button to open duck.ai chat from sidebar in a full tab",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erweitern"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Expand"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Développer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espandi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uitvouwen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozwiń"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandir"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Развернуть"
           }
         }
       }
@@ -1684,9 +1780,57 @@
       "comment" : "Title for the Duck.ai sidebar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Duck.ai"
           }
         }
@@ -7834,8 +7978,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "Die folgenden Bitwarden-Versionen sind mit DuckDuckGo inkompatibel: v2025.5.0, v2025.5.1. Bitte führe ein Downgrade auf eine ältere Version durch, indem du die folgenden Schritte ausführst:"
           }
         },
         "en" : {
@@ -7846,44 +7990,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "Las siguientes versiones de Bitwarden son incompatibles con DuckDuckGo: v2025.5.0, v2025.5.1. Vuelve a una versión anterior siguiendo estos pasos:"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "Les versions suivantes de Bitwarden sont incompatibles avec DuckDuckGo : v2025.5.0, v2025.5.1. Veuillez revenir à une version antérieure en procédant comme suit :"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "Le seguenti versioni di Bitwarden sono incompatibili con DuckDuckGo: v2025.5.0, v2025.5.1. Esegui il downgrade a una versione precedente seguendo questi passaggi:"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "De volgende versies van Bitwarden zijn niet compatibel met DuckDuckGo: v2025.5.0, v2025.5.1. Volg deze stappen om te downgraden naar een oudere versie:"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "Następujące wersje Bitwarden są niezgodne z DuckDuckGo: v2025.5.0, v2025.5.1. Przywróć starszą wersję, wykonując następujące czynności:"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "As seguintes versões do Bitwarden não são compatíveis com o DuckDuckGo: v2025.5.0, v2025.5.1. Faz downgrade para uma versão mais antiga ao seguir estes passos:"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "С DuckDuckGo несовместимы следующие версии Bitwarden: 2025.5.0, 2025.5.1. Перейдите на более старую версию, выполнив следующие действия:"
           }
         }
       }
@@ -7894,8 +8038,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "v2025.4.2 herunterladen"
           }
         },
         "en" : {
@@ -7906,44 +8050,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Descarga v2025.4.2"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Télécharger v2025.4.2"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Scarica v2025.4.2"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Download v2025.4.2"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Pobierz v2025.4.2"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Descarrega a versão 2025.4.2"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Загрузить версию 2025.4.2"
           }
         }
       }
@@ -17649,7 +17793,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserdaten löschen …"
+            "value" : "Browserdaten löschen …"
           }
         },
         "en" : {
@@ -26455,6 +26599,66 @@
         }
       }
     },
+    "freemium.dbp.menu.item" : {
+      "comment" : "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan auf personenbezogene Daten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Personal Information Scan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escaneo de información personal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analyse des informations personnelles"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scansione delle informazioni personali"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Persoonlijke gegevens scannen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skanowanie danych osobowych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Análise de informações pessoais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сканер личной информации"
+          }
+        }
+      }
+    },
     "general.feedback-form.category.ai-chat" : {
       "comment" : "Description for the feedback form when the issue is related to Duck.ai",
       "extractionState" : "extracted_with_value",
@@ -26467,18 +26671,6 @@
         }
       },
       "shouldTranslate" : false
-    },
-    "freemium.dbp.menu.item" : {
-      "comment" : "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Personal Information Scan"
-          }
-        }
-      }
     },
     "general.feedback-form.category.itr" : {
       "comment" : "Description for the feedback form when the issue is related to Identity Theft Restoration (ITR)",
@@ -29276,10 +29468,58 @@
       "comment" : "Title for the Freemium DBP Home Page Promotion Button",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenloser Scan"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Free Scan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escaneo gratuito"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analyse gratuite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scansione gratuita"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratis scan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verificação gratuita"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатная проверка"
           }
         }
       }
@@ -29288,10 +29528,58 @@
       "comment" : "Description for the Freemium DBP Home Page Promotion",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde heraus, welche Websites deine Daten verkaufen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Find out which sites are selling your info."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descubre qué sitios están vendiendo tu información."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Découvrez quels sites vendent vos informations."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopri quali siti vendono le tue informazioni."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontdek welke sites jouw gegevens verkopen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dowiedz się, które strony sprzedają Twoje dane."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descobre quais são os sites que estão a vender as tuas informações."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Узнайте, какие сайты продают ваши данные."
           }
         }
       }
@@ -29300,10 +29588,58 @@
       "comment" : "Markdown Description for the Freemium DBP Home Page Promotion. Please make sure to keep **STRING** intact.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde heraus, welche Websites **deine Daten** verkaufen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Find out which sites are selling **your info.**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descubre qué sitios están vendiendo **tu información.**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Découvrez quels sites vendent **vos informations**."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopri quali siti stanno vendendo **le tue informazioni.**"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontdek welke sites **jouw gegevens** verkopen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dowiedz się, które strony sprzedają **Twoje dane.**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descobre quais são os sites que estão a vender **as tuas informações**."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Узнайте, какие сайты продают **ваши данные**."
           }
         }
       }
@@ -29312,10 +29648,58 @@
       "comment" : "Title for the Freemium DBP Home Page Post Scan Engagement Promotion Button",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ergebnisse anzeigen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "View Results"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver resultados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher les résultats"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visualizza risultati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resultaten weergeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobacz wyniki"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver resultados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просмотреть результаты"
           }
         }
       }
@@ -29324,10 +29708,58 @@
       "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When There Are No Results",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gute Nachrichten: Dein kostenloser persönlicher Info-Scan hat keine Aufzeichnungen über dich gefunden. Wir werden das regelmäßig überprüfen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Good news, your free personal info scan didn't find any records about you. We'll keep checking periodically."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buenas noticias: tu escaneo gratuito de información personal no ha encontrado ningún dato sobre ti. Seguiremos comprobándolo periódicamente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bonne nouvelle, votre analyse gratuite d'informations personnelles n’a trouvé aucun enregistrement vous concernant. Nous continuerons de vérifier périodiquement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buone notizie, la tua scansione gratuita delle informazioni personali non ha trovato alcun dato su di te. Continueremo a controllare periodicamente."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goed nieuws, je gratis persoonlijke gegevensscan heeft geen gegevens over jou gevonden. We blijven regelmatig controleren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dobra wiadomość: bezpłatne skanowanie danych osobowych nie wykazało żadnych danych na Twój temat. Będziemy to sprawdzać okresowo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boas notícias, a tua análise de informações pessoais gratuita não encontrou nenhum registo sobre ti. Vamos continuar a analisar periodicamente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хорошая новость! В результате бесплатной проверки ваших личных данных не обнаружено. Время от времени мы будем повторять проверку."
           }
         }
       }
@@ -29336,10 +29768,58 @@
       "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on multiple broker sites",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein kostenloser Scan personenbezogener Daten hat %1$d Datensätze über dich auf %2$d verschiedenen Websites gefunden."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your free personal info scan found %1$d records about you on %2$d different sites."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu escaneo gratuito de información personal ha encontrado %1$d registros sobre ti en %2$d sitios diferentes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre analyse gratuite d'informations personnelles a trouvé %1$d enregistrements vous concernant sur %2$d sites différents."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La scansione gratuita delle informazioni personali ha trovato %1$d record su di te su %2$d siti diversi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis persoonlijke infoscan vond %1$d gegevens over jou op %2$d verschillende sites."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie danych osobowych wykazało %1$d rekordów na Twój temat na %2$d różnych stronach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua análise de informações pessoais gratuita encontrou %1$d registos sobre ti em %2$d sites diferentes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По результатам бесплатной поверки обнаружено записей: %1$d, на разных сайтах (%2$d)."
           }
         }
       }
@@ -29348,10 +29828,58 @@
       "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on a single broker site",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein kostenloser Scan personenbezogener Daten hat %d Datensätze über dich auf 1 Website gefunden."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your free personal info scan found %d records about you on 1 site."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu escaneo gratuito de información personal ha encontrado %d registros sobre ti en 1 sitio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre analyse gratuite d'informations personnelles a trouvé %d enregistrements vous concernant sur 1 site."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La scansione gratuita delle informazioni personali ha trovato %d record su 1 sito."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis persoonlijke informatiescan heeft %d records over jou gevonden op één site."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie danych osobowych wykazało %d rekordów na Twój temat na 1 stronie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua análise de informações pessoais gratuita encontrou %d registo sobre ti num site."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По результатам бесплатной поверки обнаружено записей: %1$d (на одном сайте)."
           }
         }
       }
@@ -29360,10 +29888,58 @@
       "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When Only One Record is Found",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein kostenloser Scan personenbezogener Daten hat 1 Datensatz über dich auf 1 Website gefunden."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your free personal info scan found 1 record about you on 1 site."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu escaneo gratuito de información personal ha encontrado 1 registro sobre ti en 1 sitio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre analyse gratuite d'informations personnelles a trouvé 1 enregistrement vous concernant sur 1 site."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La scansione gratuita delle informazioni personali ha trovato 1 record su 1 sito."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis persoonlijke informatiescan heeft 1 record over jou op 1 site gevonden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie danych osobowych wykazało 1 rekord na Twój temat na 1 stronie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua análise de informações pessoais gratuita encontrou 1 registo sobre ti num site."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По результатам бесплатной поверки обнаружена одна запись на одном сайте."
           }
         }
       }
@@ -29372,9 +29948,57 @@
       "comment" : "Title for the Freemium DBP Home Page Promotion",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Personal Information Removal"
           }
         }
@@ -57801,10 +58425,58 @@
       "comment" : "This string represents the header for an alert informing the user that their version of macOS will soon be unsupported",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Version von macOS wird bald nicht mehr unterstützt."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your version of macOS will soon be unsupported."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu versión de macOS pronto dejará de ser compatible."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre version de macOS ne sera bientôt plus prise en charge."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A breve, la versione di macOS non sarà più supportata."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je versie van macOS wordt binnenkort niet meer ondersteund."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja wersja systemu macOS wkrótce przestanie być obsługiwana."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua versão do macOS deixará de ser suportada em breve."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша версия macOS скоро перестанет поддерживаться."
           }
         }
       }
@@ -57813,10 +58485,58 @@
       "comment" : "This string informs the user that DuckDuckGo will soon discontinue browser updates for their version of macOS",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo wird in Kürze keine Browser-Updates mehr für deine Version von macOS bereitstellen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "DuckDuckGo will soon stop providing browser updates for your version of macOS."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo pronto dejará de proporcionar actualizaciones del navegador para tu versión de macOS."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo cessera bientôt de proposer des mises à jour de navigateur pour votre version de macOS."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo smetterà presto di fornire aggiornamenti del browser per la versione di macOS."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo biedt binnenkort geen browserupdates meer voor je versie van macOS."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo wkrótce przestanie udostępniać aktualizacje przeglądarki dla Twojej wersji systemu macOS."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Em breve, o DuckDuckGo deixará de fornecer atualizações de navegador para a tua versão do macOS."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo вскоре прекратит выпуск обновлений браузера для вашей версии macOS."
           }
         }
       }
@@ -57825,10 +58545,58 @@
       "comment" : "This string informs the user to update their macOS version to continue receiving DuckDuckGo browser updates, as their current version of macOS will soon be unsupported",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte aktualisiere auf macOS %@ oder höher, um weiterhin DuckDuckGo-Browser-Updates zu erhalten. Du kannst weiterhin deine aktuelle Browserversion verwenden, die Updates werden jedoch bald eingestellt."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Please update to macOS %@ or later to continue receiving DuckDuckGo browser updates. You can still use your current browser version, but updates will be discontinued soon."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiza a macOS %@ o posterior para seguir recibiendo actualizaciones del navegador DuckDuckGo. Puedes seguir usando la versión actual de tu navegador, pero pronto se suspenderán las actualizaciones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veuillez installer macOS %@ ou une version ultérieure pour continuer à recevoir les mises à jour du navigateur DuckDuckGo. Vous pouvez encore utiliser la version actuelle de votre navigateur, mais les mises à jour seront bientôt interrompues."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna a macOS %@ o successivo per continuare a ricevere gli aggiornamenti del browser DuckDuckGo. Puoi ancora usare la tua versione attuale del browser, ma gli aggiornamenti saranno presto interrotti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update naar macOS %@ of hoger om DuckDuckGo-browserupdates te blijven ontvangen. Je kunt nog steeds je huidige browserversie gebruiken, maar je krijgt binnenkort geen updates meer."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaktualizuj system do wersji macOS %@ lub nowszej, aby dalej otrzymywać aktualizacje przeglądarki DuckDuckGo. Możesz nadal używać obecnej wersji przeglądarki, ale aktualizacje wkrótce przestaną być dostępne."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualiza para a versão macOS %@ ou superior para continuares a receber atualizações do navegador DuckDuckGo. Podes continuar a utilizar a versão atual do teu navegador, mas as atualizações serão descontinuadas em breve."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы поддерживать актуальность браузера DuckDuckGo в будущем, обновите macOS как минимум до версии %@. Вы по-прежнему можете пользоваться текущей версией браузера, но ее обновления скоро прекратятся."
           }
         }
       }

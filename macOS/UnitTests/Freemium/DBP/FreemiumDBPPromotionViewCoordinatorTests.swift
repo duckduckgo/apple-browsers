@@ -113,9 +113,9 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
             mockUserStateManager.didActivate = false
             mockUserStateManager.firstScanResults = nil
         }
-        
+
         let viewModel = try XCTUnwrap(sut.viewModel)
-        
+
         mockPixelHandler.resetCapturedData()
 
         // When
@@ -123,7 +123,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockUserStateManager.didDismissHomePagePromotion)
-        XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(DataBrokerProtectionFreemiumPixels.newTabScanDismiss), 
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(DataBrokerProtectionFreemiumPixels.newTabScanDismiss),
                       "Expected newTabScanDismiss to be fired. Actual events: \(mockPixelHandler.allFiredEvents)")
     }
 
@@ -181,9 +181,9 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         try await waitForViewModelUpdate {
             mockUserStateManager.firstScanResults = FreemiumDBPMatchResults(matchesCount: 0, brokerCount: 0)
         }
-        
+
         let viewModel = try XCTUnwrap(sut.viewModel)
-        
+
         mockPixelHandler.resetCapturedData()
 
         // When

@@ -45,6 +45,7 @@ final class NetworkProtectionSubscriptionEventHandler {
         subscribeToEntitlementChanges()
     }
 
+    @MainActor
     private var lastKnownEntitlementsExpired: Bool {
         get {
             userDefaults.networkProtectionEntitlementsExpired
@@ -88,8 +89,9 @@ final class NetworkProtectionSubscriptionEventHandler {
         }
     }
 
+    @MainActor
     private func handleEntitlementsChange(hasEntitlements: Bool, source: VPNSubscriptionStatusPixel.Source) async {
-        let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
+        let isAuthV2Enabled = NSApp.delegateTyped.isAuthV2Enabled
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
         if hasEntitlements && lastKnownEntitlementsExpired {

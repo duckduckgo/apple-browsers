@@ -93,20 +93,15 @@ public final class QRunInBackgroundAssertion {
     }
 
     deinit {
-        // We don’t apply this assert because it’s hard to force the last object
+        // We don’t check the main thread precondition because it’s hard to force the last object
         // reference to be released on the main thread.  However, it should be
         // safe to call through to `consumeValidTaskID(_:)` because no other
         // thread can be running inside this object (because that would have its
         // own retain on us).
-        //
-        // dispatchPrecondition(condition: .onQueue(.main))
         self.consumeValidTaskID { }
     }
 
     private func consumeValidTaskID(_ body: () -> Void) {
-        // Move this check to all clients except the deinitialiser.
-        //
-        // dispatchPrecondition(condition: .onQueue(.main))
         guard self.taskID != .invalid else { return }
         self.application.endBackgroundTask(self.taskID)
         self.taskID = .invalid

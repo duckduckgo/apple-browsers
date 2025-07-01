@@ -26,7 +26,7 @@ let package = Package(
     dependencies: [
         .package(path: "../DuckUI"),
         .package(path: "../MetricBuilder"),
-        .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.1.5"),
+        .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.2.0"),
     ],
     targets: [
         .target(

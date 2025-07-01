@@ -42,6 +42,7 @@ final class NetworkProtectionSubscriptionEventHandler {
         self.vpnUninstaller = vpnUninstaller
         self.userDefaults = userDefaults
 
+        checkEntitlements()
         subscribeToEntitlementChanges()
     }
 
@@ -56,27 +57,27 @@ final class NetworkProtectionSubscriptionEventHandler {
         }
     }
 
-    private func subscribeToEntitlementChanges() {
+    private func checkEntitlements() {
         Task {
             let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
-            Task {
-                await handleEntitlementsChange(hasEntitlements: hasEntitlement, source: .clientCheck(sourceObject: self))
-            }
-
-            NotificationCenter.default
-                .publisher(for: .entitlementsDidChange)
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] notification in
-                    Logger.networkProtection.log("Entitlements did change notification received")
-                    guard let self else { return }
-
-                    Task {
-                        let hasEntitlements = await self.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
-                        await self.handleEntitlementsChange(hasEntitlements: hasEntitlements, source: .notification(sourceObject: notification.object))
-                    }
-                }
-                .store(in: &cancellables)
+            await handleEntitlementsChange(hasEntitlements: hasEntitlement, source: .clientCheck(sourceObject: self))
         }
+    }
+
+    private func subscribeToEntitlementChanges() {
+        NotificationCenter.default
+            .publisher(for: .entitlementsDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                Logger.networkProtection.log("Entitlements did change notification received")
+                guard let self else { return }
+
+                Task {
+                    let hasEntitlements = await self.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
+                    await self.handleEntitlementsChange(hasEntitlements: hasEntitlements, source: .notification(sourceObject: notification.object))
+                }
+            }
+            .store(in: &cancellables)
     }
 
     @MainActor
@@ -88,7 +89,7 @@ final class NetworkProtectionSubscriptionEventHandler {
         // to be executed only when there are changes - they'll run at every app launch.
         //
         // For source == .notification we assume the notifications are fired on actual changes, so we want to fire
-        // pixels without additiona checks.
+        // pixels without additional checks.
         //
         switch source {
         case .clientCheck:

@@ -45,6 +45,16 @@ final class NetworkProtectionSubscriptionEventHandler {
         subscribeToEntitlementChanges()
     }
 
+    private var lastKnownEntitlementsExpired: Bool {
+        get {
+            userDefaults.networkProtectionEntitlementsExpired
+        }
+
+        set {
+            userDefaults.networkProtectionEntitlementsExpired = newValue
+        }
+    }
+
     private func subscribeToEntitlementChanges() {
         Task {
             let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
@@ -82,23 +92,22 @@ final class NetworkProtectionSubscriptionEventHandler {
         let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
-        if hasEntitlements {
+        if hasEntitlements && lastKnownEntitlementsExpired {
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
                     source: source),
                 frequency: .dailyAndCount)
-            UserDefaults.netP.networkProtectionEntitlementsExpired = false
-        } else {
+            lastKnownEntitlementsExpired = false
+        } else if !hasEntitlements && !lastKnownEntitlementsExpired {
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
                     source: source),
                 frequency: .dailyAndCount)
-            await tunnelController.stop()
-            UserDefaults.netP.networkProtectionEntitlementsExpired = true
+            lastKnownEntitlementsExpired = true
         }
     }
 

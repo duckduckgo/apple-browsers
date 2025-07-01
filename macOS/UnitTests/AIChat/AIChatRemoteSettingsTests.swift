@@ -48,7 +48,7 @@ class AIChatRemoteSettingsTests: XCTestCase {
         XCTAssertEqual(config.aiChatURL, aiChatRemoteSettings.aiChatURL.absoluteString)
     }
 
-    func testValidCustomURL_ThenConfigUsesCutomURL() {
+    func testValidCustomURL_ThenConfigUsesCustomURL() {
         var config = MockConfig()
         config.embeddedData = config.configWithSettings
         aiChatRemoteSettings = setupAIChatRemoteSettings(with: config)

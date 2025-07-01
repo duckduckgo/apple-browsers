@@ -29,20 +29,20 @@ final class DefaultBrowserPromptUserActivityMonitorTests: XCTestCase, Sendable {
     private static let maxDaysToKeep: Int = 10
 
     private var storeMock: MockDefaultBrowserPromptUserActivityStore!
-    private var dateProvideMock: MockDateProvider!
+    private var dateProviderMock: MockDateProvider!
     private var sut: DefaultBrowserPromptUserActivityMonitor!
 
     override func setUp() async throws {
         try await super.setUp()
 
         storeMock = MockDefaultBrowserPromptUserActivityStore()
-        dateProvideMock = MockDateProvider()
-        sut = DefaultBrowserPromptUserActivityMonitor(store: storeMock, dateProvider: dateProvideMock.getDate)
+        dateProviderMock = MockDateProvider()
+        sut = DefaultBrowserPromptUserActivityMonitor(store: storeMock, dateProvider: dateProviderMock.getDate)
     }
 
     override func tearDown() async throws {
         storeMock = nil
-        dateProvideMock = nil
+        dateProviderMock = nil
         sut = nil
         try await super.tearDown()
     }
@@ -66,7 +66,7 @@ final class DefaultBrowserPromptUserActivityMonitorTests: XCTestCase, Sendable {
         // GIVEN
         storeMock.activityToReturn = .init(numberOfActiveDays: 1, lastActiveDate: Self.today)
         let tomorrow = Self.today.advanced(by: .days(1))
-        dateProvideMock.setNowDate(tomorrow)
+        dateProviderMock.setNowDate(tomorrow)
         let expectation = self.expectation(forNotification: UIApplication.didBecomeActiveNotification, object: nil)
         XCTAssertFalse(storeMock.didCallSaveActivity)
         XCTAssertNil(storeMock.capturedSaveActivity)
@@ -83,8 +83,8 @@ final class DefaultBrowserPromptUserActivityMonitorTests: XCTestCase, Sendable {
 
     func testWhenDidBecomeActiveIsCalled_AndTodayActivityIsRecorded_ThenDoNotAskStoreToUpdateActivity() {
         // GIVEN
-        dateProvideMock.setNowDate(Self.today)
-        dateProvideMock.advanceBy(2 * 60 * 60) // Advance by two hours
+        dateProviderMock.setNowDate(Self.today)
+        dateProviderMock.advanceBy(2 * 60 * 60) // Advance by two hours
         storeMock.activityToReturn = .init(lastActiveDate: Self.today)
         let expectation = self.expectation(forNotification: UIApplication.didBecomeActiveNotification, object: nil)
         XCTAssertFalse(storeMock.didCallSaveActivity)

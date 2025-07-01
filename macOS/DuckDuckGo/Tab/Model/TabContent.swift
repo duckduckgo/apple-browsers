@@ -50,7 +50,7 @@ extension TabContent {
         case loadedByStateRestoration
         case userEntered(String, downloadRequested: Bool = false)
         case historyEntry
-        case bookmark
+        case bookmark(isFavorite: Bool)
         case ui
         case link
         case appOpenUrl

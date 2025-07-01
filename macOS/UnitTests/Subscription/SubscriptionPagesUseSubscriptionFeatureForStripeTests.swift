@@ -28,6 +28,7 @@ import PixelKitTestingUtilities
 import os.log
 
 @available(macOS 12.0, *)
+@MainActor
 final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
 
     private struct Constants {
@@ -74,7 +75,7 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
                                                                                                         externalID: Constants.externalID))
 
         static let mockParams: [String: String] = [:]
-        @MainActor static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
+        static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
 
         static let invalidTokenError = APIServiceError.serverError(statusCode: 401, error: "invalid_token")
     }
@@ -106,14 +107,13 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
 
     var accountManager: AccountManager!
     var subscriptionManager: SubscriptionManager!
-    var mockFreemiumDBPExperimentManager: MockFreemiumDBPExperimentManager!
 
     var feature: SubscriptionPagesUseSubscriptionFeature!
 
     var pixelsFired: [String] = []
     var uiEventsHappened: [SubscriptionUIHandlerMock.UIHandlerMockPerformedAction] = []
 
-    @MainActor override func setUpWithError() throws {
+    override func setUpWithError() throws {
         // Mocks
         userDefaults = UserDefaults(suiteName: Constants.userDefaultsSuiteName)!
         userDefaults.removePersistentDomain(forName: Constants.userDefaultsSuiteName)
@@ -122,7 +122,9 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
                             appVersion: "1.0.0",
                             defaultHeaders: [:],
                             defaults: userDefaults) { pixelName, _, _, _, _, _ in
-            self.pixelsFired.append(pixelName)
+            Task { @MainActor in
+                self.pixelsFired.append(pixelName)
+            }
         }
         pixelKit.clearFrequencyHistoryForAllPixels()
         PixelKit.setSharedForTesting(pixelKit: pixelKit)
@@ -184,13 +186,10 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
                                                          subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
                                                          subscriptionEnvironment: subscriptionEnvironment)
 
-        mockFreemiumDBPExperimentManager = MockFreemiumDBPExperimentManager()
-
         feature = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                           stripePurchaseFlow: stripePurchaseFlow,
                                                           uiHandler: uiHandler,
-                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                          freemiumDBPPixelExperimentManager: mockFreemiumDBPExperimentManager)
+                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability)
         feature.with(broker: broker)
     }
 

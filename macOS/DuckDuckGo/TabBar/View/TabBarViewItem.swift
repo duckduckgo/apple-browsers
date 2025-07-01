@@ -99,7 +99,7 @@ final class TabBarItemCellView: NSView {
         init(width: CGFloat) {
             switch width {
             case 0..<61: self = .withoutTitle
-            case 61..<120: self = .withoutCloseButton
+            case 61..<88: self = .withoutCloseButton
             default: self = .full
             }
         }

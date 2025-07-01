@@ -127,7 +127,7 @@ final class TabCollectionViewModel: NSObject {
         var homePage: Tab.TabContent = .newtab
         if startupPreferences.launchToCustomHomePage,
            let customURL = URL(string: startupPreferences.formattedCustomHomePageURL) {
-            homePage = Tab.TabContent.contentFromURL(customURL, source: .bookmark)
+            homePage = Tab.TabContent.contentFromURL(customURL, source: .bookmark(isFavorite: false))
         }
         return homePage
     }

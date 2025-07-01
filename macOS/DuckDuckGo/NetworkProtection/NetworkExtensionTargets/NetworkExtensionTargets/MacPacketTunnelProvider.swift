@@ -98,6 +98,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                 domainEvent = .networkProtectionWireguardErrorCannotSetWireguardConfig(error)
             case .noAuthTokenFound:
                 domainEvent = .networkProtectionNoAuthTokenFoundError
+            case .vpnAccessRevoked(let error):
+                domainEvent = .networkProtectionVPNAccessRevoked(error)
             case .failedToFetchServerStatus(let error):
                 domainEvent = .networkProtectionClientFailedToFetchServerStatus(error)
             case .failedToParseServerStatusResponse(let error):
@@ -108,8 +110,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                     .failedToParseLocationListResponse:
                 // Needs Privacy triage for macOS Geoswitching pixels
                 return
-            case .vpnAccessRevoked:
-                return
+            case .unmanagedSubscriptionError(let error):
+                domainEvent = .networkProtectionUnmanagedSubscriptionError(error)
             }
 
             PixelKit.fire(domainEvent, frequency: .legacyDailyAndCount, includeAppVersionParameter: true)

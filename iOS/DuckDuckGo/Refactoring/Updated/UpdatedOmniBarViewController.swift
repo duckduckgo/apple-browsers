@@ -25,7 +25,7 @@ import Bookmarks
 final class UpdatedOmniBarViewController: OmniBarViewController {
 
     private lazy var omniBarView = UpdatedOmniBarView.create()
-    private let experimentalManager = ExperimentalAIChatManager()
+    private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
 
     override func loadView() {
@@ -35,7 +35,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     // MARK: - Initialization
 
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        if experimentalManager.isExperimentalTransitionEnabled {
+        if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             presentExperimentalEditingState(for: textField)
             return false
         }
@@ -131,6 +131,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     // MARK: - Private Helper Methods
 
     private func presentExperimentalEditingState(for textField: UITextField) {
+        guard editingStateViewController == nil else { return }
         guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
         let switchBarHandler = createSwitchBarHandler(for: textField)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
@@ -151,7 +152,8 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     }
 
     private func createSwitchBarHandler(for textField: UITextField) -> SwitchBarHandler {
-        let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper)
+        let switchBarHandler = SwitchBarHandler(voiceSearchHelper: dependencies.voiceSearchHelper,
+                                                storage: UserDefaults.standard)
 
         guard let currentText = omniBarView.text?.trimmingWhitespace(), !currentText.isEmpty else {
             return switchBarHandler

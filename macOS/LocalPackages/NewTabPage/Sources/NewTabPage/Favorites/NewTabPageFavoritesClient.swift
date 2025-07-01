@@ -51,6 +51,14 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
                 }
             }
             .store(in: &cancellables)
+
+        favoritesModel.faviconsDidLoadPublisher
+            .sink { [weak self] in
+                Task { @MainActor in
+                    self?.notifyFaviconsLoaded()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     enum MessageName: String, CaseIterable {
@@ -60,6 +68,7 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
         case move = "favorites_move"
         case onConfigUpdate = "favorites_onConfigUpdate"
         case onDataUpdate = "favorites_onDataUpdate"
+        case onRefresh = "favorites_onRefresh"
         case open = "favorites_open"
         case openContextMenu = "favorites_openContextMenu"
         case setConfig = "favorites_setConfig"
@@ -117,6 +126,12 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
         let expansion: NewTabPageUserScript.WidgetConfig.Expansion = showAllFavorites ? .expanded : .collapsed
         let config = NewTabPageUserScript.WidgetConfig(animation: .viewTransitions, expansion: expansion)
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
+    }
+
+    @MainActor
+    private func notifyFaviconsLoaded() {
+        let refresh = NewTabPageDataModel.FavoritesRefresh(items: [.favicons])
+        pushMessage(named: MessageName.onRefresh.rawValue, params: refresh)
     }
 
     @MainActor

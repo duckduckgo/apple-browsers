@@ -75,3 +75,14 @@ private final class DBPFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
         self.appDependencies = appDependencies
     }
 }
+
+extension DataBrokerProtectionIOSManager {
+
+    public static var isDBPStaticallyEnabled: Bool {
+#if DEBUG || ALPHA
+        return true
+#else
+        return false
+#endif
+    }
+}

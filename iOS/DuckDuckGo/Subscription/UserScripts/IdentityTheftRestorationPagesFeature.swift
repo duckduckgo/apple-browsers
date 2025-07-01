@@ -88,7 +88,7 @@ final class IdentityTheftRestorationPagesFeature: Subfeature, ObservableObject {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureConfigurationResponse(useSubscriptionsAuthV2: isAuthV2Enabled, useDuckAiPro: false)
+        return GetFeatureConfigurationResponse(useSubscriptionsAuthV2: isAuthV2Enabled, usePaidDuckAi: false)
     }
 
     deinit {

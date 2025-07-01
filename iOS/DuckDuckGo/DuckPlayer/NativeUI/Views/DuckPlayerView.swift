@@ -38,7 +38,6 @@ struct DuckPlayerView: View {
         static let duckPlayerImage: String = "DuckPlayer"
         static let duckPlayerSettingsImage: String = "DuckPlayerOpenSettings"
         static let duckPlayerYoutubeImage: String = "OpenInYoutube"
-        static let dragGestureThreshold: CGFloat = 100
         static let uiElementsBackground: Color = Color.gray.opacity(0.2)
         static let uiElementRadius: CGFloat = 8
         static let chevronUpIcon: String = "chevron.up"
@@ -156,15 +155,6 @@ struct DuckPlayerView: View {
                 }
             }
         }
-        .gesture(
-            DragGesture()
-                .onEnded { gesture in
-                    // Check if the drag was predominantly downward and had enough velocity
-                    if gesture.translation.height > Constants.dragGestureThreshold && gesture.predictedEndTranslation.height > 0 {
-                        dismiss()
-                    }
-                }
-        )
         .onFirstAppear {
             viewModel.onFirstAppear()
             autoOpenOnYoutube = viewModel.autoOpenOnYoutube

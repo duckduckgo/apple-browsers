@@ -832,7 +832,7 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
 #if PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED
     @MainActor
     @objc(_webView:navigation:didSameDocumentNavigation:)
-    public func webView(_ webView: WKWebView, wkNavigation: WKNavigation?, didSameDocumentNavigation wkNavigationType: Int) {
+    public func webView(_ webView: WKWebView, wkNavigation: WKNavigation?, didSameDocumentNavigation wkNavigationType: Int) { // swiftlint:disable:this cyclomatic_complexity
         // currentHistoryItemIdentity should only change for completed navigation, not while in progress
         let navigationType = WKSameDocumentNavigationType(rawValue: wkNavigationType) ?? {
             assertionFailure("Unsupported SameDocumentNavigationType \(wkNavigationType)")
@@ -885,6 +885,20 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             let navigationAction = NavigationAction(request: request, navigationType: .sameDocumentNavigation(navigationType), currentHistoryItemIdentity: currentHistoryItemIdentity, redirectHistory: nil, isUserInitiated: wkNavigation?.isUserInitiated ?? false, sourceFrame: .mainFrame(for: webView), targetFrame: .mainFrame(for: webView), shouldDownload: false, mainFrameNavigation: navigation)
             navigation.navigationActionReceived(navigationAction)
             Logger.navigation.debug("new same-doc navigation(.\(wkNavigationType): \(wkNavigation.debugDescription) (\(navigation.debugDescription)): \(navigationAction.debugDescription), isCurrent: \(shouldBecomeCurrent ? 1 : 0)")
+
+            if let currentNavigation {
+                Logger.navigation.debug("current navigation: \(currentNavigation.debugDescription)")
+                if !currentNavigation.isCompleted,
+                   case .backForward = currentNavigation.navigationAction.navigationType,
+                   case .sameDocumentNavigation(.sessionStatePop) = navigation.navigationAction.navigationType,
+                   currentNavigation.url == navigation.url {
+                    // `sessionStatePop` navigation completion is received after `backForward` navigation `willStart`
+                    // with different WKNavigation.
+                    // We need to complete the original `backForward` navigation so it doesn't hang in unfinished state.
+                    Logger.navigation.debug("finishing current navigation")
+                    currentNavigation.didFinish()
+                }
+            }
 
             // store `current` navigations in `startedNavigation` to get `currentNavigation` published
             if shouldBecomeCurrent {

@@ -109,13 +109,24 @@ final class AppDependencyProvider: DependencyProvider {
                                                                 actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
         )
         let experimentManager = ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:))
-        let featureFlagger = DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
-                                               privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
-                                               localOverrides: featureFlaggerOverrides,
-                                               experimentManager: experimentManager,
-                                               for: FeatureFlag.self)
-        self.featureFlagger = featureFlagger
-        self.contentScopeExperimentsManager = featureFlagger
+
+        var featureFlagger: FeatureFlagger
+        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) {
+            let mockFeatureFlagger = MockFeatureFlagger()
+            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
+            self.featureFlagger = mockFeatureFlagger
+            featureFlagger = mockFeatureFlagger
+        } else {
+            let defaultFeatureFlagger = DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
+                                                              privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
+                                                              localOverrides: featureFlaggerOverrides,
+                                                              experimentManager: experimentManager,
+                                                              for: FeatureFlag.self)
+            self.featureFlagger = defaultFeatureFlagger
+            self.contentScopeExperimentsManager = defaultFeatureFlagger
+            featureFlagger = defaultFeatureFlagger
+        }
+
         configurationManager = ConfigurationManager(store: configurationStore)
 
         // Configure Subscription

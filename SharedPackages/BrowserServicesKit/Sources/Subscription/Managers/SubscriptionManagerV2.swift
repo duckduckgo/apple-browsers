@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Combine
 import Common
 import os.log
 import Networking
@@ -95,6 +96,8 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription?
 
     var canPurchase: Bool { get }
+    /// Publisher that emits a boolean value indicating whether the user can purchase.
+    var canPurchasePublisher: AnyPublisher<Bool, Never> { get }
     func getProducts() async throws -> [GetProductsItem]
 
     @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManagerV2
@@ -168,6 +171,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     private let isInternalUserEnabled: () -> Bool
     private let legacyAccountStorage: AccountKeychainStorage?
     private let userDefaults: UserDefaults
+    private let canPurchaseSubject = PassthroughSubject<Bool, Never>()
+    private var cancellables = Set<AnyCancellable>()
 
     public init(storePurchaseManager: StorePurchaseManagerV2? = nil,
                 oAuthClient: any OAuthClient,
@@ -207,6 +212,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         return storePurchaseManager.areProductsAvailable
     }
 
+    /// Publisher that emits a boolean value indicating whether the user can purchase.
+    /// The value is updated whenever the `areProductsAvailablePublisher` of the underlying StorePurchaseManager emits a new value.
+    public var canPurchasePublisher: AnyPublisher<Bool, Never> { canPurchaseSubject.eraseToAnyPublisher() }
+
     @available(macOS 12.0, iOS 15.0, *)
     public func storePurchaseManager() -> StorePurchaseManagerV2 {
         return _storePurchaseManager!
@@ -235,6 +244,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     // MARK: - Environment
 
     @available(macOS 12.0, iOS 15.0, *) private func setupForAppStore() {
+        storePurchaseManager().areProductsAvailablePublisher
+            .sink { [weak self] value in
+                self?.canPurchaseSubject.send(value)
+            }
+            .store(in: &cancellables)
+
         Task {
             await storePurchaseManager().updateAvailableProducts()
         }

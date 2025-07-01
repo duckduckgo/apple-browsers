@@ -423,7 +423,6 @@ final class SyncPreferencesTests: XCTestCase {
     }
 
     func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_usesRecoveryCode() async throws {
-        throw XCTSkip("Flakey test")
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = false
         let mockAccount = SyncAccount.mock
         ddgSyncing.account = mockAccount
@@ -443,7 +442,6 @@ final class SyncPreferencesTests: XCTestCase {
     }
 
     func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOn_andUrlBarcodeOn_usesUrlFormat() async throws {
-        throw XCTSkip("Flakey test")
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
         let mockAccount = SyncAccount.mock
@@ -467,7 +465,6 @@ final class SyncPreferencesTests: XCTestCase {
     }
 
     func test_enterRecoveryCodePressed_whenUrlBarcodeOn_usesUrlFormat() async throws {
-        throw XCTSkip("Flakey test")
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
         let expectedDisplayCode = "test_code"
         let stubbedPairingInfo = PairingInfo(base64Code: expectedDisplayCode, deviceName: "")
@@ -487,7 +484,6 @@ final class SyncPreferencesTests: XCTestCase {
     }
 
     func test_enterRecoveryCodePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
-        throw XCTSkip("Flakey test")
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
         let expectedDisplayCode = "test_code"
         let stubbedPairingInfo = PairingInfo(base64Code: expectedDisplayCode, deviceName: "")
@@ -503,7 +499,6 @@ final class SyncPreferencesTests: XCTestCase {
     }
 
     func test_syncWithAnotherDevicePressed_whenUrlBarcodeOn_usesUrlFormat() async throws {
-        throw XCTSkip("Flakey test")
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
         let expectedCode = "test_code"
@@ -524,7 +519,7 @@ final class SyncPreferencesTests: XCTestCase {
     }
 
     func test_syncWithAnotherDevicePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
-        throw XCTSkip("Flakey test")
+        throw XCTSkip("Flakly test")
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
         let expectedCode = "test_code"

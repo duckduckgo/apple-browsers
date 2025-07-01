@@ -143,7 +143,6 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     func test_startExchangeMode_pollSucceeds_transmitsRecoveryKey() async throws {
-        throw XCTSkip("Flakey test")
         // Mock exchanger creation
         givenExchangerPollForPublicKeySucceeds()
 
@@ -175,7 +174,6 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     func test_startExchangeMode_pollFails_sendsError() async throws {
-        throw XCTSkip("Flakey test")
         // Mock exchanger creation
         let remoteExchanger = MockRemoteKeyExchanging()
         dependencies.createRemoteKeyExchangerStub = remoteExchanger
@@ -189,7 +187,6 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     func test_startExchangeMode_recoveryKeyTransmitFails_sendsError() async throws {
-        throw XCTSkip("Flakey test")
         // Mock exchanger creation
         givenExchangerPollForPublicKeySucceeds()
 
@@ -225,7 +222,6 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     func test_startConnectMode_pollSucceeds_informsDelegate() async throws {
-        throw XCTSkip("Flakey test")
         let remoteConnector = MockRemoteConnecting()
         dependencies.createRemoteConnectorStub = remoteConnector
         remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: "", primaryKey: Data())
@@ -237,7 +233,6 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     func test_startConnectMode_pollSucceeds_logsIn() async throws {
-        throw XCTSkip("Flakey test")
         let remoteConnector = MockRemoteConnecting()
         let userId = "TestUserId"
         remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: userId, primaryKey: Data())
@@ -253,7 +248,6 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     func test_startConnectMode_pollingFails_sendsError() async throws {
-        throw XCTSkip("Flakey test")
         let remoteConnector = MockRemoteConnecting()
         remoteConnector.pollForRecoveryKeyError = SyncError.failedToPrepareForConnect("")
         dependencies.createRemoteConnectorStub = remoteConnector
@@ -266,7 +260,6 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     func test_startConnectMode_loginFails_sendsError() async throws {
-        throw XCTSkip("Flakey test")
         let remoteConnector = MockRemoteConnecting()
         dependencies.createRemoteConnectorStub = remoteConnector
         remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: "", primaryKey: Data())
@@ -376,8 +369,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertTrue(didCreateAccount)
     }
 
-    func test_startPairingMode_withConnectCode_whenAccountCreationThrows_notifiesError() async throws {
-        throw XCTSkip("Flakey test")
+    func test_startPairingMode_withConnectCode_whenAccountCreationThrows_notifiesError() async {
         let mockAccountManager = AccountManagingMock()
         mockAccountManager.createAccountError = SyncError.failedToDecryptValue("")
         dependencies.account = mockAccountManager
@@ -397,8 +389,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(mockRecoveryKeyTransmitter.sendCalled, 1)
     }
 
-    func test_startPairingMode_withConnectCode_whenTransmitFails_notifiesError() async throws {
-        throw XCTSkip("Flakey test")
+    func test_startPairingMode_withConnectCode_whenTransmitFails_notifiesError() async {
         let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
         mockRecoveryKeyTransmitter.sendError = SyncError.unableToDecodeResponse("")
         dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
@@ -602,8 +593,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertTrue(didCreateAccount)
     }
 
-    func test_syncCodeEntered_withConnectCode_whenAccountCreationThrows_notifiesError() async throws {
-        throw XCTSkip("Flakey test")
+    func test_syncCodeEntered_withConnectCode_whenAccountCreationThrows_notifiesError() async {
         let mockAccountManager = AccountManagingMock()
         mockAccountManager.createAccountError = SyncError.failedToDecryptValue("")
         dependencies.account = mockAccountManager
@@ -623,8 +613,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(mockRecoveryKeyTransmitter.sendCalled, 1)
     }
 
-    func test_syncCodeEntered_withConnectCode_whenTransmitFails_notifiesError() async throws {
-        throw XCTSkip("Flakey test")
+    func test_syncCodeEntered_withConnectCode_whenTransmitFails_notifiesError() async {
         let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
         mockRecoveryKeyTransmitter.sendError = SyncError.unableToDecodeResponse("")
         dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter

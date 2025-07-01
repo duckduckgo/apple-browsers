@@ -259,7 +259,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Assert
         XCTAssertEqual(handler.referrer, .serp)
 
-    }    
+    }
 
     // MARK: - Tests for handleURLChange
 

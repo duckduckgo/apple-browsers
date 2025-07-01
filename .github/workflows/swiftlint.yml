@@ -16,7 +16,7 @@ jobs:
           docker run --rm \
             -v "$(pwd):/workspace" \
             -w /workspace \
-            norionomura/swiftlint:0.54.0_swift-5.9.0 \
+            norionomura/swiftlint:0.59.1_swift-5.9.0 \
             swiftlint --reporter github-actions-logging --strict --quiet \
             | tee >(grep -oP 'file=[^,]+,line=\d+' \
             | sed -E 's/file=([^,]+),line=([0-9]+)/\1:\2/' >&2 || true)

@@ -123,8 +123,7 @@ private struct AIChatDebugURLEntryView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("Custom AI Chat URL"),
-                    footer: Text("Enter a full URL like https://duck.ai or https://euw-serp-dev-testing10.duck.co")) {
+            Section(header: Text(verbatim: "Custom AI Chat URL")) {
                 TextField("https://duck.ai", text: $customURLText)
                     .autocorrectionDisabled(true)
                     .textInputAutocapitalization(.never)
@@ -138,7 +137,7 @@ private struct AIChatDebugURLEntryView: View {
                         presentationMode.wrappedValue.dismiss()
                     }
                 } label: {
-                    Text("Save")
+                    Text(verbatim: "Save")
                 }
                 .disabled(!isValidURL(customURLText))
 
@@ -147,7 +146,7 @@ private struct AIChatDebugURLEntryView: View {
                     customURLText = ""
                     presentationMode.wrappedValue.dismiss()
                 } label: {
-                    Text("Reset to Default")
+                    Text(verbatim: "Reset to Default")
                 }
                 .foregroundColor(.red)
             }

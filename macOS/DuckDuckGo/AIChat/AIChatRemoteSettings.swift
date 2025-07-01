@@ -67,7 +67,7 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
            let url = URL(string: debugURL) {
             return url
         }
-        
+
         // 2. Then check remote configuration
         guard let url = URL(string: getSettingsData(.aiChatURL)) else {
             return URL(string: SettingsValue.aiChatURL.defaultValue)!

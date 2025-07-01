@@ -2590,6 +2590,12 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai Shortcuts";
 
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Search Input";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Search the web or ask Duck.ai directly from the Address Bar";
+
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
 

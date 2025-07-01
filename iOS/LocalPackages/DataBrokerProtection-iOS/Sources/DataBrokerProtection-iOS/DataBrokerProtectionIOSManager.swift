@@ -93,7 +93,8 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                   unknownUsernameCategorization: false,
                                                   partialFormSaves: false,
                                                   passwordVariantCategorization: false,
-                                                  inputFocusApi: false)
+                                                  inputFocusApi: false,
+                                                  autocompleteAttributeSupport: false)
         let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
                                                             sessionKey: UUID().uuidString,
                                                             messageSecret: UUID().uuidString,

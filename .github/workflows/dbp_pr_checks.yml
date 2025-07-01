@@ -142,7 +142,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Fetch latest commit author and PR reviewers
-        if: always() && github.ref_name == 'main'
+        if: failure() && github.ref_name == 'main' && github.run_attempt == 1
         id: fetch_commit_author
         uses: ./.github/actions/fetch-commit-info
         with:

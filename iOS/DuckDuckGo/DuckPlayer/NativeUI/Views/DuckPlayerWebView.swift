@@ -102,9 +102,6 @@ struct DuckPlayerWebView: UIViewRepresentable {
        // Prevent automatic window opening
        configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
 
-       // Create a custom process pool to ensure isolation
-       configuration.processPool = WKProcessPool()
-
        // Add the scripts directly to the WKUserContentController
        contentScopeUserScripts.registerSubfeature(delegate: duckPlayerUserScript)
        contentController.addHandler(contentScopeUserScripts)
@@ -144,7 +141,12 @@ struct DuckPlayerWebView: UIViewRepresentable {
        Logger.duckplayer.debug("Loading video with URL: \(url)")
        var request = URLRequest(url: url)
        request.setValue(Constants.referrerHeaderValue, forHTTPHeaderField: Constants.referrerHeader)
-        webView.load(request)
+       
+       // Optimize for slow connections       
+       request.timeoutInterval = 30.0
+       request.networkServiceType = .video
+       
+       webView.load(request)
    }
 
    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {

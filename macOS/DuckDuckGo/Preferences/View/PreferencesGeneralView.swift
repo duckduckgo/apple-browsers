@@ -156,7 +156,7 @@ extension Preferences {
                                 ForEach(PinnedTabsMode.allCases, id: \.self) { mode in
                                     Text(UserText.pinnedTabsMode(for: mode)).tag(mode)
                                 }
-                            }
+                            }.accessibilityIdentifier("PreferencesGeneralView.pinnedTabsModePicker")
                         }
                         .alert(isPresented: $showWarningAlert) {
                             Alert(

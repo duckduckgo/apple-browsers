@@ -18,12 +18,13 @@
 
 import XCTest
 
-class FireWindowTests: XCTestCase {
+class FireWindowTests: UITestCase {
     private var app: XCUIApplication!
     private var settingsGeneralButton: XCUIElement!
     private var reopenAllWindowsFromLastSessionPreference: XCUIElement!
 
     override class func setUp() {
+        super.setUp()
         UITests.firstRun()
     }
 

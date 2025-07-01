@@ -20,6 +20,7 @@ import Combine
 import Foundation
 import NewTabPage
 import RemoteMessaging
+import BrowserServicesKit
 
 extension ActiveRemoteMessageModel: NewTabPageActiveRemoteMessageProviding {
     var newTabPageRemoteMessagePublisher: AnyPublisher<RemoteMessageModel?, Never> {
@@ -41,8 +42,13 @@ extension ActiveRemoteMessageModel: NewTabPageActiveRemoteMessageProviding {
 
     private func handleAction(_ remoteAction: RemoteAction) async {
         switch remoteAction {
-        case .url(let value), .share(let value, _), .survey(let value):
+        case .url(let value), .share(let value, _):
             if let url = URL.makeURL(from: value) {
+                await openURLHandler(url)
+            }
+        case .survey(let value):
+            let refreshedURL = refreshLastSearchState(in: value)
+            if let url = URL.makeURL(from: refreshedURL) {
                 await openURLHandler(url)
             }
         case .appStore:
@@ -56,6 +62,12 @@ extension ActiveRemoteMessageModel: NewTabPageActiveRemoteMessageProviding {
         default:
             break
         }
+    }
+
+    /// If `last_search_state` is present, refresh before opening URL
+    private func refreshLastSearchState(in urlString: String) -> String {
+        let lastSearchDate = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil).searchDauDate
+        return DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState(in: urlString, lastSearchDate: lastSearchDate)
     }
 }
 

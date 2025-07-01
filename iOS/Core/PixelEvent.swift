@@ -1205,6 +1205,8 @@ extension Pixel {
         case aiChatSettingsVoiceTurnedOn
         case aiChatSettingsAddressBarTurnedOff
         case aiChatSettingsAddressBarTurnedOn
+        case aiChatSettingsSearchInputTurnedOff
+        case aiChatSettingsSearchInputTurnedOn
         case aiChatSettingsBrowserMenuTurnedOff
         case aiChatSettingsBrowserMenuTurnedOn
         case aiChatSettingsTabManagerTurnedOff
@@ -2380,6 +2382,8 @@ extension Pixel.Event {
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
         case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
+        case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
+        case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
 
         case .aiChatOpen: return "m_aichat_open"
         case .aiChatMetricStartNewConversation: return "m_aichat_start_new_conversation"

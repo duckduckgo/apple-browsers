@@ -63,6 +63,15 @@ struct SettingsAIFeaturesView: View {
             }
 
             if viewModel.isAiChatEnabledBinding.wrappedValue {
+                if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
+                    Section {
+                        SettingsCellView(label: UserText.settingsAiChatSearchInput,
+                                         accessory: .toggle(isOn: viewModel.aiChatSearchInputEnabledBinding))
+                    } footer: {
+                        Text(UserText.settingsAiChatSearchInputFooter)
+                    }
+                }
+
                 Section(header: Text(UserText.settingsAiChatShortcuts)) {
                     SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
                                      accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
@@ -86,20 +95,6 @@ struct SettingsAIFeaturesView: View {
                                  webLinkIndicator: true,
                                  isButton: true)
             }
-
-            if viewModel.isAiChatEnabledBinding.wrappedValue &&
-                viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
-                Section {
-                    SettingsCellView(label: UserText.settingsAIChatExperimentalMainSwitch,
-                                     accessory: .toggle(isOn: viewModel.aiChatExperimentalBinding))
-
-                    SettingsCellView(label: UserText.settingsAIChatExperimentalTransition,
-                                     accessory: .toggle(isOn: viewModel.aiChatExperimentalTransitionBinding))
-                } header: {
-                    Text(UserText.settingsAIChatExperimentalSection)
-                }
-            }
-
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)

@@ -137,6 +137,8 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case autofillCreditCards
     case autofillCreditCardsOnByDefault
     case passwordVariantCategorization
+    case autocompleteAttributeSupport
+    case inputFocusApi
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {

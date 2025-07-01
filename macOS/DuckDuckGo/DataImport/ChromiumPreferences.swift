@@ -33,6 +33,10 @@ struct ChromiumPreferences: Decodable {
         let lastOperaVersion: String?
     }
 
+    struct NewTabPage: Decodable {
+        let shortcustVisible: Bool?
+    }
+
     enum Constants {
         static let chromiumPreferencesFileName = "Preferences"
     }
@@ -41,6 +45,7 @@ struct ChromiumPreferences: Decodable {
     let profile: Profile
 
     let extensions: Extensions?
+    let ntp: NewTabPage?
 
     init(from data: Data) throws {
         let decoder = JSONDecoder()
@@ -75,6 +80,10 @@ struct ChromiumPreferences: Decodable {
         // profile.createdByVersion updated on Chrome launch;
         // if it‘s missing - check extensions.last_chrome_version or last_opera_version - for Opera[GX]
         profile.createdByVersion ?? extensions?.lastChromeVersion ?? extensions?.lastOperaVersion
+    }
+
+    var isNewTabShortcutsEnabled: Bool {
+        ntp?.shortcustVisible ?? false
     }
 
 }

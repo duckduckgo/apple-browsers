@@ -118,6 +118,9 @@ class MainViewController: UIViewController {
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
 
+    @UserDefaultsWrapper(key: .networkProtectionEntitlementsExpired, defaultValue: false)
+    private var lastKnownEntitlementsExpired: Bool
+
     private var localUpdatesCancellable: AnyCancellable?
     private var syncUpdatesCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
@@ -388,10 +391,11 @@ class MainViewController: UIViewController {
         subscribeToEmailProtectionStatusNotifications()
         subscribeToURLInterceptorNotifications()
         subscribeToSettingsDeeplinkNotifications()
-        checkSubscriptionEntitlements()
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
+
+        checkSubscriptionEntitlements()
 
         findInPageView.delegate = self
         findInPageBottomLayoutConstraint.constant = 0
@@ -1908,24 +1912,27 @@ class MainViewController: UIViewController {
         Task {
             let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
-            guard let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
-                  hasEntitlement == false
-            else {
+            let hasEntitlements = (try? await subscriptionManager.isEnabled(feature: .networkProtection)) ?? false
+            
+            if hasEntitlements && lastKnownEntitlementsExpired {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
                         source: .clientCheck(sourceObject: self)),
                     frequency: .dailyAndCount)
-                return
+                
+                lastKnownEntitlementsExpired = false
+            } else if !hasEntitlements && !lastKnownEntitlementsExpired {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        source: .clientCheck(sourceObject: self)),
+                    frequency: .dailyAndCount)
+                
+                lastKnownEntitlementsExpired = true
             }
-
-            PixelKit.fire(
-                VPNSubscriptionStatusPixel.vpnFeatureDisabled(
-                    isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
-                    source: .clientCheck(sourceObject: self)),
-                frequency: .dailyAndCount)
         }
     }
 
@@ -1934,25 +1941,33 @@ class MainViewController: UIViewController {
         Task {
             let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            let hasEntitlements = (try? await subscriptionManager.isEnabled(feature: .networkProtection)) ?? false
 
-            guard let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
-                      hasEntitlement == false
-            else {
+            if hasEntitlements {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
                         source: .notification(sourceObject: notification.object)),
                     frequency: .dailyAndCount)
-                return
-            }
 
-            PixelKit.fire(
-                VPNSubscriptionStatusPixel.vpnFeatureDisabled(
-                    isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
-                    source: .notification(sourceObject: notification.object)),
-                frequency: .dailyAndCount)
+                if lastKnownEntitlementsExpired {
+                    lastKnownEntitlementsExpired = false
+                }
+
+                return
+            } else {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        source: .notification(sourceObject: notification.object)),
+                    frequency: .dailyAndCount)
+
+                if !lastKnownEntitlementsExpired {
+                    lastKnownEntitlementsExpired = true
+                }
+            }
 
             if await networkProtectionTunnelController.isInstalled {
                 tunnelDefaults.enableEntitlementMessaging()

@@ -67,12 +67,10 @@ extension SaveCreditCardViewController: UISheetPresentationControllerDelegate {
 }
 
 extension SaveCreditCardViewController: SaveCreditCardViewModelDelegate {
-    func saveCreditCardViewModelDidSave(_ viewModel: SaveCreditCardViewModel, creditCard: SecureVaultModels.CreditCard?) {
+    func saveCreditCardViewModelDidSave(_ viewModel: SaveCreditCardViewModel, creditCard: SecureVaultModels.CreditCard) {
         dismiss(animated: true)
         
-        if let creditCard = creditCard {
-            self.delegate?.saveCreditCardViewController(self, didSaveCreditCard: creditCard)
-        }
+        self.delegate?.saveCreditCardViewController(self, didSaveCreditCard: creditCard)
     }
     
     func saveCreditCardViewModelCancel(_ viewModel: SaveCreditCardViewModel) {

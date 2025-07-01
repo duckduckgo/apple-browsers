@@ -22,7 +22,7 @@ import BrowserServicesKit
 import Core
 
 protocol SaveCreditCardViewModelDelegate: AnyObject {
-    func saveCreditCardViewModelDidSave(_ viewModel: SaveCreditCardViewModel, creditCard: SecureVaultModels.CreditCard?)
+    func saveCreditCardViewModelDidSave(_ viewModel: SaveCreditCardViewModel, creditCard: SecureVaultModels.CreditCard)
     func saveCreditCardViewModelCancel(_ viewModel: SaveCreditCardViewModel)
     func saveCreditCardViewModelConfirmKeepUsing(_ viewModel: SaveCreditCardViewModel)
     func saveCreditCardViewModelDidResizeContent(_ viewModel: SaveCreditCardViewModel, contentHeight: CGFloat)
@@ -86,6 +86,8 @@ final class SaveCreditCardViewModel {
     
     func save() {
         guard let card = try? saveCreditCard(creditCard, with: AutofillSecureVaultFactory) else {
+            // ensure prompt is dismissed if card can't be saved
+            delegate?.saveCreditCardViewModelCancel(self)
             return
         }
         Pixel.fire(pixel: .autofillCardsSaveCardInlineConfirmed)
@@ -97,7 +99,7 @@ final class SaveCreditCardViewModel {
         do {
             let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
             guard try vault.existingCardForAutofill(matching: creditCard) == nil else {
-                return creditCard
+                return nil
             }
 
             let cardId = try vault.storeCreditCard(creditCard)

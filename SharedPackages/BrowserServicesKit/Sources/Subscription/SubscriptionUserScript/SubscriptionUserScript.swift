@@ -120,9 +120,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 ///
 public final class SubscriptionUserScript: NSObject, Subfeature {
 
-    private enum OriginDomains {
-        static let duckduckgo = "duckduckgo.com"
-    }
+    private let defaultOriginDomain = "duckduckgo.com"
 
     public enum MessageName: String, CaseIterable, Codable {
         case handshake

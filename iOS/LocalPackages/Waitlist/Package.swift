@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "5.0.0"),
-        .package(url: "https://github.com/duckduckgo/apple-toolbox.git", revision: "6b62424258ed81041c5a236969f0894cc28ec54b"),
+        .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.1.5"),
     ],
     targets: [
         .target(

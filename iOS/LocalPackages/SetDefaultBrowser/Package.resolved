@@ -1,13 +1,13 @@
 {
-  "originHash" : "81b0e98256db32ed61474737e8a5677fe485bd10baef208c639a968e685f5096",
+  "originHash" : "4c4a8c7e92fdba0d250b257914d685d4b0f6a3646e93348dd5b10a5d56879ef9",
   "pins" : [
     {
       "identity" : "apple-toolbox",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/apple-toolbox.git",
       "state" : {
-        "revision" : "ebdfb5f41a3cfe6d1570b42fbc6368da5be1f45e",
-        "version" : "3.1.4"
+        "revision" : "315298c8467d23040a6f4f611a33c827a5dee4cd",
+        "version" : "3.1.5"
       }
     },
     {

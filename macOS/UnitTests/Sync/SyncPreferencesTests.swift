@@ -429,7 +429,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        let codes = try await waitForSyncWithAnotherDeviceDialog().async()
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
 
         XCTAssertTrue(codes.displayCode.isRecoveryKey)
         XCTAssertTrue(codes.qrCode.isRecoveryKey)
@@ -452,7 +452,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        let codes = try await waitForSyncWithAnotherDeviceDialog().async()
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
 
         XCTAssertEqual(codes.displayCode, expectedExchangeCode)
         XCTAssertTrue(codes.qrCode.isDDGURLString)
@@ -472,7 +472,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.enterRecoveryCodePressed()
 
-        let code = try await waitForEnterRecoveryCodeDialog().async()
+        let code = try await waitForEnterRecoveryCodeDialog()
 
         XCTAssertTrue(code.isDDGURLString)
 
@@ -491,7 +491,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.enterRecoveryCodePressed()
 
-        let code = try await waitForEnterRecoveryCodeDialog().async()
+        let code = try await waitForEnterRecoveryCodeDialog()
 
         XCTAssertEqual(code, expectedDisplayCode)
         XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedDisplayCode)
@@ -508,9 +508,9 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        let dialog = try await waitForSyncWithAnotherDeviceDialog().async()
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
 
-        let dialogQrCode = try XCTUnwrap(dialog.qrCode)
+        let dialogQrCode = try XCTUnwrap(codes.qrCode)
         XCTAssertTrue(dialogQrCode.isDDGURLString)
 
         XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
@@ -519,7 +519,6 @@ final class SyncPreferencesTests: XCTestCase {
     }
 
     func test_syncWithAnotherDevicePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
-        throw XCTSkip("Flakly test")
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
         let expectedCode = "test_code"
@@ -529,10 +528,10 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        let dialog = try await waitForSyncWithAnotherDeviceDialog().async()
+        let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
 
-        XCTAssertEqual(dialog.qrCode, expectedCode)
-        XCTAssertEqual(dialog.displayCode, expectedCode)
+        XCTAssertEqual(codes.qrCode, expectedCode)
+        XCTAssertEqual(codes.displayCode, expectedCode)
 
         XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
         XCTAssertEqual(syncPreferences.stringForQR, expectedCode)
@@ -564,30 +563,50 @@ final class SyncPreferencesTests: XCTestCase {
         let qrCode: String
     }
 
-    private func waitForSyncWithAnotherDeviceDialog() -> AnyPublisher<SyncDialogCodes, Never> {
-        managementDialogModel.$currentDialog
-            .compactMap { $0 }
-            .map { dialog -> SyncDialogCodes? in
-                if case .syncWithAnotherDevice(let displayCode, let qrCode) = dialog {
-                    return SyncDialogCodes(displayCode: displayCode, qrCode: qrCode)
-                }
-                return nil
-            }
-            .compactMap { $0 }
-            .eraseToAnyPublisher()
+    enum TestError: Error {
+        case nilValue
     }
 
-    private func waitForEnterRecoveryCodeDialog() -> AnyPublisher<String, Never> {
+    @MainActor
+    private func waitForSyncWithAnotherDeviceDialogCodes() async throws -> SyncDialogCodes {
+        let expectation = expectation(description: "waitForSyncWithAnotherDeviceDialogCodes")
+        var codes: SyncDialogCodes?
         managementDialogModel.$currentDialog
-            .compactMap { $0 }
-            .map { dialog -> String? in
-                if case .enterRecoveryCode(let qrCode) = dialog {
-                    return qrCode
+            .sink { dialog in
+                if case .syncWithAnotherDevice(let displayCode, let qrCode) = dialog {
+                    codes = SyncDialogCodes(displayCode: displayCode, qrCode: qrCode)
+                    expectation.fulfill()
                 }
-                return nil
             }
-            .compactMap { $0 }
-            .eraseToAnyPublisher()
+            .store(in: &cancellables)
+
+        await fulfillment(of: [expectation], timeout: 10)
+
+        guard let codes else {
+            throw TestError.nilValue
+        }
+
+        return codes
+    }
+
+    @MainActor
+    private func waitForEnterRecoveryCodeDialog() async throws -> String {
+        let expectation = expectation(description: "waitForEnterRecoveryCodeDialog")
+        var code: String?
+        managementDialogModel.$currentDialog.sink {
+            if case .enterRecoveryCode(let qrCode) = $0 {
+                code = qrCode
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        await fulfillment(of: [expectation], timeout: 10)
+
+        guard let code else {
+            throw TestError.nilValue
+        }
+
+        return code
     }
 }
 

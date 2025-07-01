@@ -418,7 +418,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             userDefaults.userEntitlements
         }
         set {
-            let currentCachedUserEntitlements = cachedUserEntitlements
+            let currentCachedUserEntitlements = userDefaults.userEntitlements
             userDefaults.userEntitlements = newValue
 
             // Send notification when entitlements change
@@ -446,6 +446,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             let currentCachedIsAuthenticated = userDefaults.isUserAuthenticated
             userDefaults.isUserAuthenticated = newValue
 
+            if newValue == false {
+                cachedUserEntitlements = []
+            }
+
             // Send notification when the login changes
             switch (currentCachedIsAuthenticated, newValue) {
             case (false, true):
@@ -456,10 +460,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
             default:
                 break
-            }
-
-            if newValue == false {
-                cachedUserEntitlements = []
             }
         }
     }

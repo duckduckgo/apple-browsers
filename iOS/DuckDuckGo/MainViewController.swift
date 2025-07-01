@@ -223,6 +223,7 @@ class MainViewController: UIViewController {
 
     private var duckPlayerEntryPointVisible = false
     private var isExperimentalAppearanceEnabled: Bool { themeManager.properties.isExperimentalThemingEnabled }
+    private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -387,6 +388,7 @@ class MainViewController: UIViewController {
         subscribeToEmailProtectionStatusNotifications()
         subscribeToURLInterceptorNotifications()
         subscribeToSettingsDeeplinkNotifications()
+        checkSubscriptionEntitlements()
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
@@ -1898,10 +1900,34 @@ class MainViewController: UIViewController {
         AppDependencyProvider.shared.networkProtectionTunnelController
     }
 
+    func checkSubscriptionEntitlements() {
+        Task {
+            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            guard let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
+                  hasEntitlement == false
+            else {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        source: .clientCheck(sourceObject: self)),
+                    frequency: .dailyAndCount)
+                return
+            }
+
+            PixelKit.fire(
+                VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    source: .clientCheck(sourceObject: self)),
+                frequency: .dailyAndCount)
+        }
+    }
+
     @objc
     private func onEntitlementsChange(_ notification: Notification) {
         Task {
-            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
             let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 

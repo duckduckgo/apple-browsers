@@ -283,11 +283,11 @@ final class DefaultBrowserPromptDeciderTests {
             .notSupportedOnCurrentOSVersion
         ]
     )
-    func whenDefaultBrowserManagerReturnsErrorThenModalIsNotPresented(userType: DefaultBrowserPromptUserType, numberOfModalShown: DefaultBrowserInfoResult.Failure) {
+    func whenDefaultBrowserManagerReturnsErrorThenModalIsNotPresented(userType: DefaultBrowserPromptUserType, failure: DefaultBrowserInfoResult.Failure) {
         // GIVEN
         storeMock.lastModalShownDate = nil
         storeMock.modalShownOccurrences = 0
-        defaultBrowserManagerMock.resultToReturn = .failure(.notSupportedOnCurrentOSVersion)
+        defaultBrowserManagerMock.resultToReturn = .failure(failure)
         let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
         makeSUT(installDate: installDate)
         dateProviderMock.setNowDate(installDate)

@@ -144,7 +144,7 @@ final class OmniBarEditingStateViewController: UIViewController {
             self.switchBarVC.view.alpha = 1.0
         }
 
-        let expandAnimator = UIViewPropertyAnimator(duration: 0.3, dampingRatio: 0.7) {
+        let expandAnimator = UIViewPropertyAnimator(duration: 0.6, dampingRatio: 0.6) {
             self.switchBarVC.setExpanded(true)
             heightConstraint.isActive = false
 

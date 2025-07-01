@@ -364,7 +364,8 @@ final class Fire {
             guard let self else { return }
             if self.windowControllerManager.mainWindowControllers.count == 0 {
                 if case let .allWindows(_, _, customURL) = entity, let customURL {
-                    if !isBurnOnExit && !visualizeFireAnimationDecider.shouldShowFireAnimation { /// Improve this
+                    /// When we are burning on exit we do not need to open a new window.
+                    if !isBurnOnExit {
                         WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false, droppingPoint: newWindowDroppingPoint)
                     }
                 } else {

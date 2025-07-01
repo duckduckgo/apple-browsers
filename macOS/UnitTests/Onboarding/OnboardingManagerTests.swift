@@ -47,7 +47,8 @@ class OnboardingManagerTests: XCTestCase {
             persistor: fireButtonPreferencesPersistor,
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock()
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger()
         )
         startupPreferences = StartupPreferences(persistor: startupPersistor, appearancePreferences: appearancePreferences)
         importProvider = CapturingDataImportProvider()

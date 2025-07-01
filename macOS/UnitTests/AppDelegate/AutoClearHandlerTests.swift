@@ -36,7 +36,8 @@ class AutoClearHandlerTests: XCTestCase {
             persistor: persistor,
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock()
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger()
         )
         let persistor2 = StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: "duckduckgo.com")
         let appearancePreferences = AppearancePreferences(
@@ -46,7 +47,8 @@ class AutoClearHandlerTests: XCTestCase {
         startupPreferences = StartupPreferences(persistor: persistor2,
                                                 appearancePreferences: appearancePreferences)
 
-        fireViewModel = FireViewModel(tld: Application.appDelegate.tld)
+        fireViewModel = FireViewModel(tld: Application.appDelegate.tld,
+                                      visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider())
         let fileName = "AutoClearHandlerTests"
         let fileStore = FileStoreMock()
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
@@ -98,4 +100,10 @@ class AutoClearHandlerTests: XCTestCase {
         XCTAssertFalse(handler.burnOnStartIfNeeded())
     }
 
+}
+
+final class MockVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
+    var shouldShowFireAnimation: Bool {
+        return false
+    }
 }

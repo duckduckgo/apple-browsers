@@ -186,7 +186,7 @@ class SuggestionTrayViewController: UIViewController {
             variableHeightConstraint.constant = Constant.suggestionTrayInitialHeight
         }
 
-        variableWidthConstraint.constant = width
+        variableWidthConstraint.constant = width + 32
         fullWidthConstraint.isActive = false
         fullHeightConstraint.isActive = false
     }

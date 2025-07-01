@@ -24,7 +24,7 @@ import SetDefaultBrowserTestSupport
 
 @MainActor
 // https://github.com/swiftlang/swift/issues/75815
-final class DefaultBrowsePromptUserActivityMonitorTests: XCTestCase {
+final class DefaultBrowsePromptUserActivityMonitorTests: XCTestCase, Sendable { // swiftlint:disable:this redundant_sendable
     private static let today = Date(timeIntervalSince1970: 1750845600) // Wednesday, 25 June 2025 10:00:00 AM
     private static let maxDaysToKeep: Int = 10
 

@@ -120,6 +120,10 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 ///
 public final class SubscriptionUserScript: NSObject, Subfeature {
 
+    private enum OriginDomains {
+        static let duckduckgo = "duckduckgo.com"
+    }
+
     public enum MessageName: String, CaseIterable, Codable {
         case handshake
         case subscriptionDetails
@@ -131,7 +135,9 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
     }
 
     public let featureName: String = "subscriptions"
-    public let messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: "duckduckgo.com")])
+    public lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
+        .exact(hostname: aiChatURL.host ?? OriginDomains.duckduckgo)
+    ])
     public weak var broker: UserScriptMessageBroker?
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -155,18 +161,24 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
         }
     }
 
+    private let aiChatURL: URL
+
     public convenience init(platform: DataModel.Platform,
                             subscriptionManager: any SubscriptionAuthV1toV2Bridge,
                             paidAIChatFlagStatusProvider: @escaping () -> Bool,
-                            navigationDelegate: SubscriptionUserScriptNavigationDelegate?) {
+                            navigationDelegate: SubscriptionUserScriptNavigationDelegate?,
+                            aiChatURL: URL) {
         self.init(handler: SubscriptionUserScriptHandler(platform: platform,
                                                          subscriptionManager: subscriptionManager,
                                                          paidAIChatFlagStatusProvider: paidAIChatFlagStatusProvider,
-                                                         navigationDelegate: navigationDelegate))
+                                                         navigationDelegate: navigationDelegate),
+                  aiChatURL: aiChatURL)
     }
 
-    init(handler: SubscriptionUserScriptHandling) {
+    init(handler: SubscriptionUserScriptHandling, aiChatURL: URL) {
         self.handler = handler
+        self.aiChatURL = aiChatURL
+        super.init()
     }
 
     let handler: SubscriptionUserScriptHandling

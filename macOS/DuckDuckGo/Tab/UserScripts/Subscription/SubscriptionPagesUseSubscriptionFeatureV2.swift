@@ -393,7 +393,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             await uiHandler.showTab(with: .identityTheftRestoration(url))
         case .paidAIChat:
             PixelKit.fire(PrivacyProPixel.privacyProWelcomeAIChat, frequency: .uniqueByName)
-            let aiChatURL = URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!
+            let aiChatURL = AIChatRemoteSettings().aiChatURL
             await uiHandler.showTab(with: .aiChat(aiChatURL))
         case .unknown:
             break

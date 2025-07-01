@@ -67,7 +67,8 @@ final class UserScripts: UserScriptsProvider {
             platform: .macos,
             subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
             paidAIChatFlagStatusProvider: { NSApp.delegateTyped.featureFlagger.isFeatureOn(.paidAIChat) },
-            navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator
+            navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
+            aiChatURL: AIChatRemoteSettings().aiChatURL
         )
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled

@@ -451,7 +451,7 @@ enum Preferences {
                      switch event {
                      case .openAIC:
                          PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettings)
-                         let aiChatURL = URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!
+                         let aiChatURL = AIChatRemoteSettings().aiChatURL
                          showTab(.url(aiChatURL, source: .ui))
                      case .openURL(let url):
                          openURL(subscriptionURL: url)

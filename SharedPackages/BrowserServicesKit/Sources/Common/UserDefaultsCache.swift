@@ -32,7 +32,6 @@ public protocol UserDefaultsCacheKeyStore {
 }
 
 public enum UserDefaultsCacheKey: String, UserDefaultsCacheKeyStore {
-    case subscriptionPreviousEntitlements = "com.duckduckgo.bsk.subscription.previous.entitlements"
     case subscriptionEntitlements = "com.duckduckgo.bsk.subscription.entitlements"
     case subscription = "com.duckduckgo.bsk.subscription.info"
 }

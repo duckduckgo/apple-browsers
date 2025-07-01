@@ -100,7 +100,7 @@ final class OmniBarEditingStateViewController: UIViewController {
         installNavigationActionBar()
         setupKeyboardNotifications()
 
-        self.view.backgroundColor = .clear
+        self.view.backgroundColor = UIColor(designSystemColor: .background)
     }
 
     override func viewDidAppear(_ animated: Bool) {

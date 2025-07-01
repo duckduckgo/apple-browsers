@@ -675,6 +675,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     override func mouseMoved(with event: NSEvent) {
         super.mouseMoved(with: event)
 
+        guard shouldDisplayTabPreviews else {
+            if tabPreviewWindowController.isPresented {
+                hideTabPreview(allowQuickRedisplay: true)
+            }
+            return
+        }
+
         // show Tab Preview when mouse was moved over a tab when the Tab Preview was hidden before
         guard !tabPreviewWindowController.isPresented else { return }
 

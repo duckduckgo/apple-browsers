@@ -43,6 +43,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         try super.setUpWithError()
         let tabCollectionViewModel = TabCollectionViewModel()
         featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.contextualOnboarding]
         pixelReporter = CapturingOnboardingPixelReporter()
         dialogProvider = MockDialogsProvider()
         factory = CapturingDialogFactory(expectation: expectation)
@@ -82,7 +83,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     func testWhenNavigationCompletedAndFeatureIsOffThenTurnOffFeature() throws {
-        featureFlagger.isFeatureOn = false
+        featureFlagger.enabledFeatureFlags = []
         let expectation = self.expectation(description: "Wait for turnOffFeatureCalled to be called")
         dialogProvider.turnOffFeatureCalledExpectation = expectation
 
@@ -203,6 +204,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         XCTAssertEqual(factory.capturedType, .tryFireButton)
     }
 
+    // Temporarily Disabled
     func testWhenDialogIsDismissedViewHighlightsAreDismissed() throws {
         dialogProvider.dialog = .tryFireButton
         tab.navigateFromOnboarding(to: .duckDuckGo)
@@ -336,6 +338,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            aiChatSidebarProvider: AIChatSidebarProvider(),
             fireCoordinator: fireCoordinator
         )
         window.isVisible = false

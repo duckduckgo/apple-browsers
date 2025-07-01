@@ -298,6 +298,8 @@ extension Navigation {
             self.state = .finished
         case .navigationActionReceived where navigationAction.navigationType.isSameDocumentNavigation:
             self.state = .finished
+        case .approved where navigationAction.navigationType.isBackForward:
+            self.state = .finished
         case .expected, .navigationActionReceived, .approved, .finished, .failed:
             assertionFailure("unexpected state \(self.state)")
         }

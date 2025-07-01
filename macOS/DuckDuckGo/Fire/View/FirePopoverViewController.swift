@@ -22,6 +22,7 @@ import Common
 import History
 import os.log
 import PixelKit
+import DesignResourcesKitIcons
 
 protocol FirePopoverViewControllerDelegate: AnyObject {
 
@@ -68,6 +69,7 @@ final class FirePopoverViewController: NSViewController {
     @IBOutlet weak var clearButton: NSButton!
     @IBOutlet weak var cancelButton: NSButton!
     @IBOutlet weak var closeBurnerWindowButton: NSButton!
+    @IBOutlet weak var burnerWindowButton: NSImageView!
 
     private var viewModelCancellable: AnyCancellable?
     private var selectedCancellable: AnyCancellable?
@@ -104,6 +106,8 @@ final class FirePopoverViewController: NSViewController {
         collectionView.delegate = self
         collectionView.dataSource = self
 
+        updateBurnerButtonAppearance()
+
         if firePopoverViewModel.tabCollectionViewModel?.isBurner ?? false {
             adjustViewForBurnerWindow()
             return
@@ -123,6 +127,33 @@ final class FirePopoverViewController: NSViewController {
         super.viewWillAppear()
 
         firePopoverViewModel.refreshItems()
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        if burnerWindowButton.wantsLayer {
+            addCircularBackground(to: burnerWindowButton)
+        }
+    }
+
+    private func updateBurnerButtonAppearance() {
+        self.burnerWindowButton.image = NSApp.delegateTyped.visualStyle.isNewStyle ?
+            DesignSystemImages.Glyphs.Size16.fireWindow : .newBurnerWindow
+
+        self.burnerWindowButton.wantsLayer = true
+        addCircularBackground(to: self.burnerWindowButton)
+    }
+
+    private func addCircularBackground(to imageView: NSImageView) {
+        let layerName = "circularBackground"
+        imageView.layer?.sublayers?.removeAll { $0.name == layerName }
+        let backgroundLayer = CALayer()
+        backgroundLayer.name = layerName
+        backgroundLayer.backgroundColor = NSColor(designSystemColor: .buttonsWhite).withAlphaComponent(0.05).cgColor
+        backgroundLayer.frame = imageView.bounds
+        let radius = min(imageView.bounds.width, imageView.bounds.height) / 2
+        backgroundLayer.cornerRadius = radius
+        imageView.layer?.insertSublayer(backgroundLayer, at: 0)
     }
 
     private func setUpStrings() {

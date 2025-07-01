@@ -40,6 +40,9 @@ protocol XPCClientInterfaceObjC {
     func knownFailureUpdated(payload: Data)
 }
 
+/// Convenience typealias to offer a more friendly protocol name for testing purposes.
+public typealias VPNControllerXPCClientProtocol = XPCServerInterface
+
 public final class VPNControllerXPCClient {
 
     // MARK: - XPC Communication

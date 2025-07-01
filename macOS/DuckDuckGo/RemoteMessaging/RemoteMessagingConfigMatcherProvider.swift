@@ -122,7 +122,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let statisticsStore = self.statisticsStore()
 
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad)
+            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
             privacyProDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
             privacyProDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
             privacyProPurchasePlatform = subscription.platform.rawValue

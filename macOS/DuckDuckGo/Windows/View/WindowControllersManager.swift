@@ -57,7 +57,11 @@ protocol WindowControllersManagerProtocol {
                        isMaximized: Bool,
                        isFullscreen: Bool) -> MainWindow?
     func showTab(with content: Tab.TabContent)
+
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior)
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool)
 }
+
 extension WindowControllersManagerProtocol {
     @discardableResult
     func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel? = nil,
@@ -83,10 +87,12 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
 
     init(pinnedTabsManagerProvider: PinnedTabsManagerProviding,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-         internalUserDecider: InternalUserDecider) {
+         internalUserDecider: InternalUserDecider,
+         featureFlagger: FeatureFlagger) {
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.internalUserDecider = internalUserDecider
+        self.featureFlagger = featureFlagger
     }
 
     /**
@@ -97,6 +103,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     private(set) var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let internalUserDecider: InternalUserDecider
+    private let featureFlagger: FeatureFlagger
 
     weak var lastKeyMainWindowController: MainWindowController? {
         didSet {
@@ -189,14 +196,18 @@ extension WindowControllersManager {
         showTab(with: .bookmarks)
     }
 
-    /// Opens an AI chat URL in the application, either in a new or existing tab.
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab) {
+        openAIChat(url, with: linkOpenBehavior, hasPrompt: false)
+    }
+
+    /// Opens an AI chat URL in the application.
     ///
     /// - Parameters:
     ///   - url: The AI chat URL to open.
     ///   - linkOpenBehavior: Specifies where to open the URL. Defaults to `.currentTab`.
     ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `target` is `.newTabSelected`
-    ///                or `.newTabUnselected`. Defaults to `false`.
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool = false) {
+    ///                or `.newTabUnselected`.
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) {
 
         let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
 
@@ -223,7 +234,7 @@ extension WindowControllersManager {
         guard let url = bookmark.urlObject else { return }
 
         // Call updated openBookmark
-        open(url, source: .bookmark, target: nil, event: event)
+        open(url, source: .bookmark(isFavorite: bookmark.isFavorite), target: nil, event: event)
     }
 
     /// Opens a history entry in a tab, respecting the current modifier keys when deciding where to open the URL.
@@ -426,7 +437,7 @@ extension WindowControllersManager {
 
     /// Shows the Privacy Pro feedback modal
     func showShareFeedbackModal(source: UnifiedFeedbackSource = .default) {
-        let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source)
+        let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source, featureFlagger: featureFlagger)
         let feedbackFormWindowController = feedbackFormViewController.wrappedInWindowController()
 
         guard let feedbackFormWindow = feedbackFormWindowController.window else {

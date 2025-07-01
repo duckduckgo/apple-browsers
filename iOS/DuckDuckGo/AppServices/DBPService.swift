@@ -42,7 +42,11 @@ final class DBPService: NSObject {
                 authenticationManager: authManager,
                 privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
-                pixelKit: pixelKit)
+                pixelKit: pixelKit,
+                quickLinkOpenURLHandler: { url in
+                    guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(url.absoluteString)) else { return }
+                    UIApplication.shared.open(quickLinkURL)
+                })
 
             DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
         } else {
@@ -69,5 +73,16 @@ private final class DBPFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
 
     init(appDependencies: DependencyProvider) {
         self.appDependencies = appDependencies
+    }
+}
+
+extension DataBrokerProtectionIOSManager {
+
+    public static var isDBPStaticallyEnabled: Bool {
+#if DEBUG || ALPHA
+        return true
+#else
+        return false
+#endif
     }
 }

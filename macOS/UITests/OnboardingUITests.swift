@@ -27,9 +27,9 @@ final class OnboardingUITests: UITestCase {
     func testOnboardingToBrowsing() throws {
         try resetApplicationData()
         continueAfterFailure = false
-        let app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE_ONBOARDING"] = "1"
-        app.launch()
+        let app = XCUIApplication.setUp(environment: [
+            "UITEST_MODE_ONBOARDING": "1"
+        ])
         app.typeKey("w", modifierFlags: [.command, .option, .shift])
         app.typeKey("n", modifierFlags: .command)
         let welcomeWindow = app.windows["Welcome"]

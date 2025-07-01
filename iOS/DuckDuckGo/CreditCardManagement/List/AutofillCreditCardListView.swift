@@ -19,19 +19,21 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import BrowserServicesKit
+import DuckUI
 
 struct AutofillCreditCardListView: View {
     
     @ObservedObject var viewModel: AutofillCreditCardListViewModel
-    
+
     var body: some View {
         Group {
             switch viewModel.viewState {
             case .authLocked, .noAuthAvailable:
                 LockScreenView()
             case .empty:
-                EmptyStateView()
+                EmptyStateView(viewModel: viewModel)
             case .showItems:
                 List {
                     Section {
@@ -39,7 +41,14 @@ struct AutofillCreditCardListView: View {
                             Button {
                                 viewModel.cardSelected(card)
                             } label: {
-                                CreditCardRow(card: card)
+                                CreditCardRow(card: card, showDisclosure: true)
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    viewModel.deleteCard(card.creditCard)
+                                } label: {
+                                    Label(UserText.autofillCreditCardDetailsDeleteButton, systemImage: "trash")
+                                }
                             }
                         }
                     }
@@ -52,6 +61,8 @@ struct AutofillCreditCardListView: View {
 }
 
 private struct EmptyStateView: View {
+    var viewModel: AutofillCreditCardListViewModel
+    
     var body: some View {
         VStack(spacing: 0) {
             Image(.creditCardsAdd96)
@@ -73,6 +84,18 @@ private struct EmptyStateView: View {
             .multilineTextAlignment(.center)
             .frame(maxWidth: 300)
             .lineLimit(nil)
+            
+            Button {
+                viewModel.addCard()
+            } label: {
+                HStack {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.add)
+                    Text(UserText.autofillCreditCardDetailsNewTitle)
+                }
+            }
+            .buttonStyle(PrimaryButtonStyle(fullWidth: false))
+            .padding(.top, 24)
+            
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .background(
@@ -81,38 +104,6 @@ private struct EmptyStateView: View {
     }
 }
 
-private struct CreditCardRow: View {
-    
-    var card: CreditCardViewModel
-    
-    var body: some View {
-        HStack {
-            card.icon
-                .padding(.trailing, 8)
-            
-            VStack(alignment: .leading) {
-                Text(card.displayTitle)
-                    .daxSubheadRegular()
-                    .foregroundStyle(Color(designSystemColor: .textPrimary))
-                    .lineLimit(1)
-                (Text(verbatim: "••••").font(.system(.footnote, design: .monospaced))
-                 + Text(verbatim: " ")
-                 + Text(card.lastFourDigits)
-                 + Text(card.expirationDate))
-                .daxFootnoteRegular()
-                .foregroundStyle(Color(designSystemColor: .textSecondary))
-            }
-            .padding(.vertical, 4)
-            
-            Spacer()
-            
-            Image(systemName: "chevron.forward")
-                .font(Font.system(.footnote).weight(.bold))
-                .foregroundColor(Color(UIColor.tertiaryLabel))
-        }
-    }
-}
-
 #Preview {
-    AutofillCreditCardListView(viewModel: AutofillCreditCardListViewModel())
+    AutofillCreditCardListView(viewModel: AutofillCreditCardListViewModel(source: .settings))
 }

@@ -25,8 +25,8 @@ struct ThreatProtectionView: View {
 
     @EnvironmentObject var viewModel: SettingsViewModel
 
-    var description: PreferencesDescription {
-        PreferencesDescription(imageName: "Radar-Check",
+    var description: SettingsDescription {
+        SettingsDescription(imageName: "Radar-Check",
                                      title: UserText.threatProtection,
                                      status: .on,
                                      explanation: UserText.threatProtectionCaption)
@@ -34,7 +34,7 @@ struct ThreatProtectionView: View {
 
     var body: some View {
         List {
-            PreferencesDescriptionView(content: description)
+            SettingsDescriptionView(content: description)
             ThreatProtectionViewSettings(model: MaliciousSiteProtectionSettingsViewModel(manager: viewModel.maliciousSiteProtectionPreferencesManager))
         }
         .applySettingsListModifiers(title: UserText.threatProtection,

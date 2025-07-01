@@ -56,6 +56,7 @@ final class WindowsManager {
 
     @discardableResult
     class func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel? = nil,
+                             aiChatSidebarProvider: AIChatSidebarProviding = Application.appDelegate.aiChatSidebarProvider,
                              burnerMode: BurnerMode = .regular,
                              droppingPoint: NSPoint? = nil,
                              contentSize: NSSize? = nil,
@@ -68,7 +69,8 @@ final class WindowsManager {
         let mainWindowController = makeNewWindow(tabCollectionViewModel: tabCollectionViewModel,
                                                  popUp: popUp,
                                                  burnerMode: burnerMode,
-                                                 autofillPopoverPresenter: autofillPopoverPresenter)
+                                                 autofillPopoverPresenter: autofillPopoverPresenter,
+                                                 aiChatSidebarProvider: aiChatSidebarProvider)
 
         if let contentSize {
             mainWindowController.window?.setContentSize(contentSize)
@@ -186,11 +188,13 @@ final class WindowsManager {
                                      popUp: Bool = false,
                                      burnerMode: BurnerMode,
                                      autofillPopoverPresenter: AutofillPopoverPresenter,
-                                     fireCoordinator: FireCoordinator? = nil) -> MainWindowController {
+                                     fireCoordinator: FireCoordinator? = nil,
+                                     aiChatSidebarProvider: AIChatSidebarProviding) -> MainWindowController {
         let fireCoordinator = fireCoordinator ?? NSApp.delegateTyped.fireCoordinator
         let mainViewController = MainViewController(
             tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode),
             autofillPopoverPresenter: autofillPopoverPresenter,
+            aiChatSidebarProvider: aiChatSidebarProvider,
             fireCoordinator: fireCoordinator
         )
 

@@ -121,7 +121,7 @@ private final class MockDelegate: DBPUICommunicationDelegate {
         DBPUIInitialScanState(resultsFound: [], scanProgress: .init(currentScans: 0, totalScans: 0, scannedBrokers: []))
     }
 
-    func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
+    func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         DBPUIScanAndOptOutMaintenanceState(
             inProgressOptOuts: [],
             completedOptOuts: [],

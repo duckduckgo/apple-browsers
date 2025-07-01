@@ -475,6 +475,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
         Task { @MainActor in
             do {
                 try await syncService.disconnect()
+                PixelKit.fire(SyncFeatureUsagePixels.syncDisabled)
                 managementDialogModel.endFlow()
                 syncPausedStateManager.syncDidTurnOff()
                 diagnosisHelper.didManuallyDisableSync()
@@ -488,7 +489,9 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     func deleteAccount() {
         Task { @MainActor in
             do {
+                let connectedDevices = devices.count
                 try await syncService.deleteAccount()
+                PixelKit.fire(SyncFeatureUsagePixels.syncDisabledAndDeleted(connectedDevices: connectedDevices))
                 managementDialogModel.endFlow()
                 syncPausedStateManager.syncDidTurnOff()
                 diagnosisHelper.didManuallyDisableSync()

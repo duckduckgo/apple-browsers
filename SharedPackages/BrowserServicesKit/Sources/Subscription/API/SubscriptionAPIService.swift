@@ -65,11 +65,11 @@ public enum APICachePolicy {
     public var subscriptionCachePolicy: SubscriptionCachePolicy {
         switch self {
         case .reloadIgnoringLocalCacheData:
-            return .reloadIgnoringLocalCacheData
+            return .remoteFirst
         case .returnCacheDataElseLoad:
-            return .returnCacheDataElseLoad
+            return .cacheFirst
         case .returnCacheDataDontLoad:
-            return .returnCacheDataDontLoad
+            return .cacheOnly
         }
     }
 }

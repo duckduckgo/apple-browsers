@@ -40,7 +40,7 @@ extension UserDefaults: InternalUserStoring {
         }
     }
 
-    var internalUserPublisher: AnyPublisher<Bool, Never> {
+    public var internalUserPublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.isInternalUser).eraseToAnyPublisher()
     }
 }

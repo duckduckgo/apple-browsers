@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="o2v-eH-jTI">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="24093.7" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="o2v-eH-jTI">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24093.7"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -409,13 +409,9 @@
                         <outlet property="goBackButton" destination="kky-0N-Cfd" id="RA9-yE-URS"/>
                         <outlet property="goBackButtonHeightConstraint" destination="0zh-Jn-l2h" id="1Xv-Mt-Vgm"/>
                         <outlet property="goBackButtonWidthConstraint" destination="8sl-Tr-gSd" id="68f-l3-gFj"/>
-                        <outlet property="goBackHeightConstraint" destination="0zh-Jn-l2h" id="39P-rp-d3H"/>
-                        <outlet property="goBackWidthConstraint" destination="8sl-Tr-gSd" id="Akc-23-mbB"/>
                         <outlet property="goForwardButton" destination="mdE-u0-Ei5" id="7wT-nX-Avr"/>
                         <outlet property="goForwardButtonHeightConstraint" destination="VXS-B2-jFA" id="5qt-by-Oq3"/>
                         <outlet property="goForwardButtonWidthConstraint" destination="jYM-So-c8l" id="lUu-R0-dqm"/>
-                        <outlet property="goForwardHeightConstraint" destination="VXS-B2-jFA" id="HEm-hd-UU2"/>
-                        <outlet property="goForwardWidthConstraint" destination="jYM-So-c8l" id="CQM-pJ-Nkf"/>
                         <outlet property="homeButton" destination="s7D-YB-p00" id="sjk-Af-Zl4"/>
                         <outlet property="homeButtonHeightConstraint" destination="AGI-Qn-D1V" id="f7o-Uj-CzW"/>
                         <outlet property="homeButtonSeparator" destination="3o5-MS-AWl" id="mcV-id-0zR"/>

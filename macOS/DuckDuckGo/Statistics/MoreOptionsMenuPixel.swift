@@ -57,6 +57,9 @@ enum MoreOptionsMenuPixel: PixelKitEventV2 {
     /// Event Trigger: Any action in Passwords and Autofill submenu is clicked
     case passwordsActionClicked
 
+    /// Event Trigger: Delete Browsing Data action is clicked
+    case deleteBrowsingDataActionClicked
+
     /// Event Trigger: Any action in Email Protection submenu is clicked
     case emailProtectionActionClicked
 
@@ -107,6 +110,8 @@ enum MoreOptionsMenuPixel: PixelKitEventV2 {
             return "browser_menu_downloads"
         case .passwordsActionClicked:
             return "browser_menu_passwords"
+        case .deleteBrowsingDataActionClicked:
+            return "browser_menu_delete_browsing_data"
         case .emailProtectionActionClicked:
             return "browser_menu_email_protection"
         case .subscriptionActionClicked:

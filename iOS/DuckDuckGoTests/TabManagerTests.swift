@@ -21,6 +21,7 @@ import XCTest
 import Core
 @testable import DuckDuckGo
 import SubscriptionTestingUtilities
+import BrowserServicesKit
 
 @MainActor
 final class TabManagerTests: XCTestCase {

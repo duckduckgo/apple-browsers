@@ -111,7 +111,7 @@ extension ReleaseNotesUserScript {
         let env = "production"
 #endif
 
-        return InitialSetupResult(env: env, locale: Locale.current.identifier)
+        return InitialSetupResult(env: env, locale: Locale.current.languageCode ?? "en")
     }
 
     @MainActor

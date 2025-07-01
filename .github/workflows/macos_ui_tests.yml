@@ -12,6 +12,10 @@ on:
         type: boolean
         default: true
         required: true
+      single_test_class:
+        description: "Run only a specific UITestCase (optional, e.g. 'AutocompleteTests')"
+        type: string
+        required: false
   schedule:
     - cron: '0 3 * * 1-5' # 3AM UTC offsetted to legacy to avoid action-junit-report@v4 bug
   push:
@@ -91,10 +95,19 @@ jobs:
       - name: List tests
         id: list-tests
         run: |
-          # Find all test files in the UITests directory
-          # This assumes that all test files are named *Tests.swift and are put directly in the UITests directory
-          test_names="$(find UITests -type f -maxdepth 1 -name *Tests.swift | xargs basename | sed 's/\.swift//')"
-          test=$(echo $test_names | jq -cR 'split(" ")')
+          # Check if a single test class was specified
+          single_test_class="${{ inputs.single_test_class }}"
+          
+          if [[ -n "$single_test_class" ]]; then
+            echo "Running single test class: $single_test_class"
+            test=$(jq -nc --arg class "$single_test_class" '[$class]')
+          else
+            # Find all test files in the UITests directory
+            # This assumes that all test files are named *Tests.swift and are put directly in the UITests directory
+            test_names="$(find UITests -type f -maxdepth 1 -name *Tests.swift | xargs basename | sed 's/\.swift//')"
+            test=$(echo $test_names | jq -cR 'split(" ")')
+          fi
+          
           echo "test=${test}" >> $GITHUB_OUTPUT
 
   ui-tests:
@@ -190,9 +203,20 @@ jobs:
         | tee xcodebuild.log \
         | xcbeautify
 
-    - name: Unzip and Copy app to /DerivedData
+    - name: Extract and Copy app to /DerivedData
       run: |
-        cd DuckDuckGo-review-*.app && unzip DuckDuckGo-*.zip
+        cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
+        
+        # Find the extracted app bundle and rename if needed
+        extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
+        if [[ -n "${extracted_app}" ]]; then
+          extracted_app_name=$(basename "${extracted_app}")
+          if [[ "${extracted_app_name}" != "DuckDuckGo Review.app" ]]; then
+            echo "Renaming extracted app from '${extracted_app_name}' to 'DuckDuckGo Review.app'"
+            mv "${extracted_app}" "DuckDuckGo Review.app"
+          fi
+        fi
+        
         mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
     - name: Run UI Tests
@@ -230,15 +254,31 @@ jobs:
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
         retention-days: 1
 
+    - name: Organize logs for upload
+      if: failure() || cancelled()
+      run: |
+        echo "Current working directory: $(pwd)"
+
+        # Create staging directory with timestamp, OS version and failing test name
+        timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+        archive_name="BuildLogs ${{ matrix.test }} (macOS ${{ matrix.os-version }}) ${timestamp}"
+        echo "Creating archive directory: $archive_name"
+        mkdir -p "$archive_name"
+        
+        # locate and copy all files, flattening the structure with verbose output
+        cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
+        find DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
+        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/"
+        
+        # Store archive name for upload step
+        echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV
+
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
       if: failure() || cancelled()
       with:
-        name: "BuildLogs ${{ matrix.test }} (macOS ${{ matrix.os-version }})"
-        path: |
-          macOS/xcodebuild.log
-          macOS/DerivedData/Logs/Test/*.xcresult
-          ~/Library/Logs/DiagnosticReports/*
+        name: "${{ env.ARCHIVE_NAME }}"
+        path: "macOS/${{ env.ARCHIVE_NAME }}"
         retention-days: 7
 
   test-report:

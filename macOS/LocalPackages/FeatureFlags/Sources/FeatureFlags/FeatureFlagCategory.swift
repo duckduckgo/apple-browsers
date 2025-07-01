@@ -20,6 +20,7 @@ import Foundation
 import BrowserServicesKit
 
 public enum FeatureFlagCategory: String, CaseIterable, Comparable {
+    case duckAI = "Duck.ai"
     case osSupportWarnings = "OS Support Warnings"
     case other = "Other"
     case sync = "Sync"
@@ -44,6 +45,9 @@ public protocol FeatureFlagCategorization {
 extension FeatureFlag: FeatureFlagCategorization {
     public var category: FeatureFlagCategory {
         switch self {
+        case .aiChatSidebar,
+                .aiChatTextSummarization:
+            return .duckAI
         case .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage:
             return .osSupportWarnings

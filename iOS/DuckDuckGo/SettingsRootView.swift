@@ -19,6 +19,7 @@
 
 import SwiftUI
 import UIKit
+import DataBrokerProtection_iOS
 import DesignResourcesKit
 import Subscription
 
@@ -164,7 +165,11 @@ struct SettingsRootView: View {
     @ViewBuilder func navigationDestinationView(for target: SettingsViewModel.SettingsDeepLinkSection) -> some View {
         switch target {
         case .dbp:
-            SubscriptionPIRView()
+            if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
+                DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!)
+            } else {
+                SubscriptionPIRMoveToDesktopView()
+            }
         case .itr:
             SubscriptionITPView()
         case let .subscriptionFlow(redirectURLComponents):
@@ -177,7 +182,15 @@ struct SettingsRootView: View {
         case .netP:
             NetworkProtectionRootView()
         case .aiChat:
-            SettingsAIChatView().environmentObject(viewModel)
+            SettingsAIFeaturesView().environmentObject(viewModel)
+        case .subscriptionSettings:
+            if viewModel.isAuthV2Enabled {
+                SubscriptionSettingsViewV2(configuration: .subscribed, settingsViewModel: viewModel)
+                    .environmentObject(subscriptionNavigationCoordinator)
+            } else {
+                SubscriptionSettingsView(configuration: .subscribed, settingsViewModel: viewModel)
+                    .environmentObject(subscriptionNavigationCoordinator)
+            }
         }
     }
 }

@@ -66,7 +66,7 @@ struct BurnerHomePageView: View {
 
                                 VStack(alignment: .leading, spacing: 16) {
                                     HStack {
-                                        Image(.burnerWindowHomepage)
+                                        Image(NSApp.delegateTyped.visualStyle.isNewStyle ? .updatedBurnerWindowHome : .burnerWindowHomepage)
                                             .resizable()
                                             .aspectRatio(contentMode: .fit)
                                             .frame(width: 64, height: 48)

@@ -61,7 +61,7 @@ public extension DesignSystemImages {
             public static var feedback: DesignSystemImage { .init(resource: .feedbackColor16) }
             public static var fewerAds: DesignSystemImage { .init(resource: .fewerAdsColor16) }
             public static var findSearch: DesignSystemImage { .init(resource: .findSearchColor16) }
-            public static var fireNewColor: DesignSystemImage { .init(resource: .fireNewColor16) }
+            public static var fire: DesignSystemImage { .init(resource: .fireColor16) }
             public static var folder: DesignSystemImage { .init(resource: .folderColor16) }
             public static var folderWin: DesignSystemImage { .init(resource: .folderWinColor16) }
             public static var globe: DesignSystemImage { .init(resource: .globeColor16) }

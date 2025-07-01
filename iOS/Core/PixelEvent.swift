@@ -144,8 +144,8 @@ extension Pixel {
         case browsingMenuReportBrokenSite
         case browsingMenuFireproof
         case browsingMenuAutofill
-        case browsingMenuAIChat
-        case browsingMenuListAIChat
+        case browsingMenuAIChatNewTabPage
+        case browsingMenuAIChatWebPage
 
         case addressBarShare
         case addressBarSettings
@@ -413,6 +413,7 @@ extension Pixel {
         case autofillExtensionToggledOn
         case autofillExtensionToggledOff
         case autofillLoginsStacked
+        case autofillCreditCardsStacked
         
         case autofillDeviceCapabilityDeviceAuthDisabled
         
@@ -431,6 +432,24 @@ extension Pixel {
         case autofillLoginsReportConfirmationPromptDisplayed
         case autofillLoginsReportConfirmationPromptConfirmed
         case autofillLoginsReportConfirmationPromptDismissed
+
+        case autofillCardsSaveCardInlineDisplayed
+        case autofillCardsSaveCardInlineConfirmed
+        case autofillCardsSaveCardInlineDismissed
+        case autofillCardsFillCardManualInlineDisplayed
+        case autofillCardsFillCardManualInlineConfirmed
+        case autofillCardsFillCardManualInlineDismissed
+        case autofillCardsKeyboardFill
+        case autofillCardsKeyboardOpenSettings
+        case autofillCardsSaveDisableSnackbarShown
+        case autofillCardsSaveDisableSnackbarOpenSettings
+        case autofillCardsSettingsEnabled
+        case autofillCardsSettingsDisabled
+        case autofillCardsManagementOpened
+        case autofillCardsManagementCopyCardNumber
+        case autofillCardsManagementDeleteCard
+        case autofillCardsManagementSaveCard
+        case autofillCardsManagementUpdateCard
 
         case autofillManagementScreenVisitSurveyAvailable
 
@@ -585,7 +604,9 @@ extension Pixel {
         case networkProtectionDisconnected
         
         case networkProtectionNoAccessTokenFoundError
-        
+        case networkProtectionVPNAccessRevoked
+        case networkProtectionUnmanagedSubscriptionError
+
         case networkProtectionMemoryWarning
         case networkProtectionMemoryCritical
         
@@ -799,6 +820,8 @@ extension Pixel {
         case syncSignupConnect
         case syncLogin
         case syncDaily
+        case syncDisabled
+        case syncDisabledAndDeleted
         case syncDuckAddressOverride
         case syncSuccessRateDaily
         case syncLocalTimestampResolutionTriggered(Feature)
@@ -951,6 +974,7 @@ extension Pixel {
         case privacyProWelcomeAddDevice
         case privacyProWelcomeVPN
         case privacyProWelcomePersonalInformationRemoval
+        case privacyProWelcomeAIChat
         case privacyProWelcomeIdentityRestoration
         case privacyProSubscriptionSettings
         case privacyProVPNSettings
@@ -1047,6 +1071,9 @@ extension Pixel {
         case settingsNextStepsAddAppToDock
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
+
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
+        case settingsOpenAssistSettings
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
         case settingsPresentedFromMenu
@@ -1178,6 +1205,8 @@ extension Pixel {
         case aiChatSettingsVoiceTurnedOn
         case aiChatSettingsAddressBarTurnedOff
         case aiChatSettingsAddressBarTurnedOn
+        case aiChatSettingsSearchInputTurnedOff
+        case aiChatSettingsSearchInputTurnedOn
         case aiChatSettingsBrowserMenuTurnedOff
         case aiChatSettingsBrowserMenuTurnedOn
         case aiChatSettingsTabManagerTurnedOff
@@ -1326,6 +1355,7 @@ extension Pixel.Event {
         case .settingsNextStepsAddAppToDock: return "m_settings_next_steps_add_app_to_dock"
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
+        case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -1588,6 +1618,7 @@ extension Pixel.Event {
         case .autofillExtensionToggledOff: return "m_autofill_extension_toggled_off"
 
         case .autofillLoginsStacked: return "m_autofill_logins_stacked"
+        case .autofillCreditCardsStacked: return "m_autofill_creditcards_stacked"
             
         case .autofillDeviceCapabilityDeviceAuthDisabled: return "m_autofill_device_capability_device_auth_disabled"
 
@@ -1613,6 +1644,24 @@ extension Pixel.Event {
         case .autofillLoginsReportConfirmationPromptDisplayed: return "autofill_logins_report_confirmation_displayed"
         case .autofillLoginsReportConfirmationPromptConfirmed: return "autofill_logins_report_confirmation_confirmed"
         case .autofillLoginsReportConfirmationPromptDismissed: return "autofill_logins_report_confirmation_dismissed"
+
+        case .autofillCardsSaveCardInlineDisplayed: return "autofill_cards_save_card_inline_displayed"
+        case .autofillCardsSaveCardInlineConfirmed: return "autofill_cards_save_card_inline_confirmed"
+        case .autofillCardsSaveCardInlineDismissed: return "autofill_cards_save_card_inline_dismissed"
+        case .autofillCardsFillCardManualInlineDisplayed: return "autofill_cards_fill_card_inline_manual_displayed"
+        case .autofillCardsFillCardManualInlineConfirmed: return "autofill_cards_fill_card_inline_manual_confirmed"
+        case .autofillCardsFillCardManualInlineDismissed: return "autofill_cards_fill_card_inline_manual_dismissed"
+        case .autofillCardsKeyboardFill: return "autofill_cards_keyboard_fill_confirmed"
+        case .autofillCardsKeyboardOpenSettings: return "autofill_cards_keyboard_open_settings"
+        case .autofillCardsSaveDisableSnackbarShown: return "autofill_cards_save_disable_snackbar_shown"
+        case .autofillCardsSaveDisableSnackbarOpenSettings: return "autofill_cards_save_disable_snackbar_open_settings"
+        case .autofillCardsSettingsEnabled: return "autofill_cards_settings_enabled"
+        case .autofillCardsSettingsDisabled: return "autofill_cards_settings_disabled"
+        case .autofillCardsManagementOpened: return "autofill_cards_management_opened"
+        case .autofillCardsManagementCopyCardNumber: return "autofill_cards_management_copy_card_number"
+        case .autofillCardsManagementDeleteCard: return "autofill_cards_management_delete_card"
+        case .autofillCardsManagementSaveCard: return "autofill_cards_management_save_card"
+        case .autofillCardsManagementUpdateCard: return "autofill_cards_management_update_card"
 
         case .autofillManagementScreenVisitSurveyAvailable: return "m_autofill_management_screen_visit_survey_available"
 
@@ -1747,6 +1796,8 @@ extension Pixel.Event {
         case .networkProtectionActivationRequestFailed: return "m_netp_network_extension_error_activation_request_failed"
         case .networkProtectionDisconnected: return "m_netp_vpn_disconnect"
         case .networkProtectionNoAccessTokenFoundError: return "m_netp_no_access_token_found_error"
+        case .networkProtectionVPNAccessRevoked: return "m_vpn_access_revoked"
+        case .networkProtectionUnmanagedSubscriptionError: return "m_vpn_access_unmanaged_error"
         case .networkProtectionMemoryWarning: return "m_netp_vpn_memory_warning"
         case .networkProtectionMemoryCritical: return "m_netp_vpn_memory_critical"
         case .networkProtectionUnhandledError: return "m_netp_unhandled_error"
@@ -1950,6 +2001,8 @@ extension Pixel.Event {
         case .syncSignupConnect: return "m_sync_signup_connect"
         case .syncLogin: return "m_sync_login"
         case .syncDaily: return "m_sync_daily"
+        case .syncDisabled: return "sync_disabled"
+        case .syncDisabledAndDeleted: return "sync_disabledanddeleted"
         case .syncDuckAddressOverride: return "m_sync_duck_address_override"
         case .syncSuccessRateDaily: return "m_sync_success_rate_daily"
         case .syncLocalTimestampResolutionTriggered(let feature): return "m_sync_\(feature.name)_local_timestamp_resolution_triggered"
@@ -2095,6 +2148,7 @@ extension Pixel.Event {
         case .privacyProWelcomeAddDevice: return "m_privacy-pro_welcome_add-device_click_u"
         case .privacyProWelcomeVPN: return "m_privacy-pro_welcome_vpn_click_u"
         case .privacyProWelcomePersonalInformationRemoval: return "m_privacy-pro_welcome_personal-information-removal_click_u"
+        case .privacyProWelcomeAIChat: return "m_privacy-pro_welcome_ai-chat_click_u"
         case .privacyProWelcomeIdentityRestoration: return "m_privacy-pro_welcome_identity-theft-restoration_click_u"
         case .privacyProSubscriptionSettings: return "m_privacy-pro_settings_screen_impression"
         case .privacyProVPNSettings: return "m_privacy-pro_app-settings_vpn_click"
@@ -2313,8 +2367,8 @@ extension Pixel.Event {
         case .openAIChatFromWidgetQuickAction: return "m_aichat-widget-quickaction"
         case .openAIChatFromWidgetControlCenter: return "m_aichat-widget-control-center"
         case .openAIChatFromWidgetLockScreenComplication: return "m_aichat-widget-lock-screen-complication"
-        case .browsingMenuAIChat: return "m_aichat_menu_tab_icon"
-        case .browsingMenuListAIChat: return "m_browsing_menu_list_aichat"
+        case .browsingMenuAIChatNewTabPage: return "m_aichat_menu_newtabpage"
+        case .browsingMenuAIChatWebPage: return "m_aichat_menu_webpage"
         case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
         case .openAIChatFromTabManager: return "m_aichat_tabmanager_icon"
         case .aiChatSettingsVoiceTurnedOff: return "m_aichat_settings_voice_turned_off"
@@ -2328,6 +2382,8 @@ extension Pixel.Event {
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
         case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
+        case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
+        case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
 
         case .aiChatOpen: return "m_aichat_open"
         case .aiChatMetricStartNewConversation: return "m_aichat_start_new_conversation"

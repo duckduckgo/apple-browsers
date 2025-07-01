@@ -582,6 +582,8 @@ extension SettingsViewModel {
             longPressPreviews: appSettings.longPressPreviews,
             allowUniversalLinks: appSettings.allowUniversalLinks,
             activeWebsiteAccount: nil,
+            activeWebsiteCreditCard: nil,
+            showCreditCardManagement: false,
             version: versionProvider.versionAndBuildNumber,
             crashCollectionOptInStatus: appSettings.crashCollectionOptInStatus,
             debugModeEnabled: featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild,
@@ -798,11 +800,13 @@ extension SettingsViewModel {
         updateCompleteSetupSectionVisiblity()
     }
 
-    @MainActor func shouldPresentLoginsViewWithAccount(accountDetails: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource? = nil) {
+    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, source: AutofillSettingsSource? = nil) {
         state.activeWebsiteAccount = accountDetails
+        state.activeWebsiteCreditCard = card
+        state.showCreditCardManagement = showCreditCardManagement
         state.autofillSource = source
         
-        presentLegacyView(.logins)
+        presentLegacyView(.autofill)
     }
 
     @MainActor func shouldPresentSyncViewWithSource(_ source: String? = nil) {
@@ -829,6 +833,11 @@ extension SettingsViewModel {
     func openMoreSearchSettings() {
         Pixel.fire(pixel: .settingsMoreSearchSettings)
         urlOpener.open(URL.searchSettings)
+    }
+
+    func openAssistSettings() {
+        Pixel.fire(pixel: .settingsOpenAssistSettings)
+        urlOpener.open(URL.assistSettings)
     }
 
     func openAIChat() {
@@ -881,10 +890,12 @@ extension SettingsViewModel {
             
         case .feedback:
             presentViewController(legacyViewProvider.feedback, modal: false)
-        case .logins:
+        case .autofill:
             pushViewController(legacyViewProvider.loginSettings(delegate: self,
                                                                 selectedAccount: state.activeWebsiteAccount,
+                                                                selectedCard: state.activeWebsiteCreditCard,
                                                                 showPasswordManagement: false,
+                                                                showCreditCardManagement: state.showCreditCardManagement,
                                                                 source: state.autofillSource))
 
         case .gpc:
@@ -926,7 +937,9 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
         AppDependencyProvider.shared.autofillLoginSession.startSession()
         pushViewController(legacyViewProvider.loginSettings(delegate: self,
                                                             selectedAccount: nil,
+                                                            selectedCard: nil,
                                                             showPasswordManagement: true,
+                                                            showCreditCardManagement: false,
                                                             source: state.autofillSource))
     }
 }
@@ -943,6 +956,7 @@ extension SettingsViewModel {
         case restoreFlow
         case duckPlayer
         case aiChat
+        case subscriptionSettings
         // Add other cases as needed
 
         var id: String {
@@ -954,6 +968,7 @@ extension SettingsViewModel {
             case .restoreFlow: return "restoreFlow"
             case .duckPlayer: return "duckPlayer"
             case .aiChat: return "aiChat"
+            case .subscriptionSettings: return "subscriptionSettings"
             // Ensure all cases are covered
             }
         }
@@ -962,7 +977,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat:
+            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .subscriptionSettings:
                 return .navigationLink
             }
         }
@@ -1022,7 +1037,7 @@ extension SettingsViewModel {
         }
         
         do {
-            let subscription = try await subscriptionAuthV1toV2Bridge.getSubscription(cachePolicy: .returnCacheDataElseLoad)
+            let subscription = try await subscriptionAuthV1toV2Bridge.getSubscription(cachePolicy: .cacheFirst)
             state.subscription.platform = subscription.platform
             state.subscription.hasSubscription = true
             state.subscription.hasActiveSubscription = subscription.isActive
@@ -1245,6 +1260,15 @@ extension SettingsViewModel {
         )
     }
 
+    var aiChatSearchInputEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+            }
+        )
+    }
+
     var aiChatVoiceSearchEnabledBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled },
@@ -1279,6 +1303,10 @@ extension SettingsViewModel {
                 self.experimentalAIChatManager.toggleExperimentalTransition()
                 self.state.isExperimentalAIChatTransitionEnabled = self.experimentalAIChatManager.isExperimentalTransitionEnabled
             })
+    }
+
+    func launchAIFeaturesLearnMore() {
+        urlOpener.open(URL.aiFeaturesLearnMore)
     }
 
 }

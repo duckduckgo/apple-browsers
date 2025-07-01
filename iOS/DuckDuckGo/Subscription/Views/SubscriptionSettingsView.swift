@@ -304,6 +304,7 @@ struct SubscriptionSettingsView: View {
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                                                     apiService: DefaultAPIService(),
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                                                                    isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
                                                                                                     source: .ppro)),
                        isActive: $isShowingSupportView) {
             EmptyView()
@@ -490,7 +491,7 @@ struct SubscriptionSettingsViewV2: View {
                     emailFlow: .manageEmailFlow,
                     onDisappear: {
                         Task {
-                            await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData)
+                            await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
                         }
                     }),
                                isActive: $isShowingManageEmailView) {
@@ -507,7 +508,7 @@ struct SubscriptionSettingsViewV2: View {
                 emailFlow: .activationFlow,
                 onDisappear: {
                     Task {
-                        await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData)
+                        await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
                     }
                 }),
                            isActive: $isShowingActivationView) {
@@ -698,6 +699,7 @@ struct SubscriptionSettingsViewV2: View {
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                                                     apiService: DefaultAPIService(),
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                                                                    isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
                                                                                                     source: .ppro)),
                        isActive: $isShowingSupportView) {
             EmptyView()

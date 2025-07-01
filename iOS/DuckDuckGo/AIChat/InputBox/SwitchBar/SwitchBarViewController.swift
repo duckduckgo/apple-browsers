@@ -136,6 +136,7 @@ class SwitchBarViewController: UIViewController {
         }
 
         segmentedControl.alpha = isExpanded ? 1 : 0
+        backButton.alpha = isExpanded ? 1 : 0
 
         textEntryViewController.setExpanded(isExpanded)
     }

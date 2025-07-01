@@ -44,6 +44,7 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let debugSettings: AIChatDebugSettingsHandling
     private var remoteSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigurationManager.privacyConfig.settings(for: .aiChat)
     }
@@ -51,10 +52,12 @@ struct AIChatSettings: AIChatSettingsProvider {
     private let notificationCenter: NotificationCenter
     private let featureFlagger: FeatureFlagger
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userDefaults: UserDefaults = .standard,
          notificationCenter: NotificationCenter = .default,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.debugSettings = debugSettings
         self.userDefaults = userDefaults
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
@@ -63,6 +66,13 @@ struct AIChatSettings: AIChatSettingsProvider {
     // MARK: - Public
 
     var aiChatURL: URL {
+        // 1. First check for debug URL override
+        if let debugURL = debugSettings.customURL,
+           let url = URL(string: debugURL) {
+            return url
+        }
+        
+        // 2. Then check remote configuration
         guard let url = URL(string: getSettingsData(.aiChatURL)) else {
             return URL(string: SettingsValue.aiChatURL.defaultValue)!
         }

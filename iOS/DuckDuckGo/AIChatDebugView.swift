@@ -32,6 +32,16 @@ struct AIChatDebugView: View {
                     Text("Message policy hostname")
                 }
             }
+            
+            Section(footer: Text("Custom URL: \(viewModel.customURL.isEmpty ? "Default" : viewModel.customURL)")) {
+                NavigationLink(destination: AIChatDebugURLEntryView(viewModel: viewModel)) {
+                    Text("Set Custom AI Chat URL")
+                }
+                Button("Reset Custom URL") {
+                    viewModel.resetCustomURL()
+                }
+                .foregroundColor(.red)
+            }
         }
         .navigationTitle("AI Chat")
     }
@@ -46,12 +56,29 @@ private final class AIChatDebugViewModel: ObservableObject {
         }
     }
 
+    @Published var customURL: String {
+        didSet {
+            debugSettings.customURL = customURL.isEmpty ? nil : customURL
+        }
+    }
+
     init() {
         self.enteredHostname = debugSettings.messagePolicyHostname ?? ""
+        self.customURL = debugSettings.customURL ?? ""
     }
 
     func resetHostname() {
         enteredHostname = ""
+    }
+
+    func resetCustomURL() {
+        customURL = ""
+    }
+
+    func resetAll() {
+        debugSettings.reset()
+        enteredHostname = ""
+        customURL = ""
     }
 }
 
@@ -86,6 +113,54 @@ private struct AIChatDebugHostnameEntryView: View {
         .onAppear {
             policyHostname = viewModel.enteredHostname
         }
+    }
+}
+
+private struct AIChatDebugURLEntryView: View {
+    @ObservedObject var viewModel: AIChatDebugViewModel
+    @State private var customURLText: String = ""
+    @Environment(\.presentationMode) var presentationMode
+
+    var body: some View {
+        Form {
+            Section(header: Text("Custom AI Chat URL"),
+                    footer: Text("Enter a full URL like https://duck.ai or https://euw-serp-dev-testing10.duck.co")) {
+                TextField("https://duck.ai", text: $customURLText)
+                    .autocorrectionDisabled(true)
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.URL)
+            }
+            
+            Section {
+                Button {
+                    if isValidURL(customURLText) {
+                        viewModel.customURL = customURLText
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                } label: {
+                    Text("Save")
+                }
+                .disabled(!isValidURL(customURLText))
+
+                Button {
+                    viewModel.resetCustomURL()
+                    customURLText = ""
+                    presentationMode.wrappedValue.dismiss()
+                } label: {
+                    Text("Reset to Default")
+                }
+                .foregroundColor(.red)
+            }
+        }
+        .navigationTitle("Custom AI Chat URL")
+        .onAppear {
+            customURLText = viewModel.customURL
+        }
+    }
+    
+    private func isValidURL(_ string: String) -> Bool {
+        if string.isEmpty { return true } // Allow empty to reset
+        return URL(string: string) != nil && (string.hasPrefix("http://") || string.hasPrefix("https://"))
     }
 }
 

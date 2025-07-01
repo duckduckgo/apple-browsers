@@ -87,7 +87,8 @@ final class UserScripts: UserScriptsProvider {
             platform: .ios,
             subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
             paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
-            navigationDelegate: subscriptionNavigationHandler)
+            navigationDelegate: subscriptionNavigationHandler,
+            aiChatURL: AIChatSettings().aiChatURL)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
 

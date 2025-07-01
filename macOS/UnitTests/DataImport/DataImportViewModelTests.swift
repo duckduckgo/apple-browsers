@@ -1805,10 +1805,10 @@ final class DataImportViewModelTests: XCTestCase {
         // GIVEN
         model = DataImportViewModel(importSource: .chrome)
         model.selectedDataTypes = [.bookmarks, .passwords]
-        
+
         // WHEN
         let result = model.dataTypesSelection
-        
+
         // THEN
         XCTAssertEqual(result, .all)
     }
@@ -1817,10 +1817,10 @@ final class DataImportViewModelTests: XCTestCase {
         // GIVEN
         model = DataImportViewModel(importSource: .chrome)
         model.selectedDataTypes = [.bookmarks]
-        
+
         // WHEN
         let result = model.dataTypesSelection
-        
+
         // THEN
         XCTAssertEqual(result, .single(.bookmarks))
     }
@@ -1829,10 +1829,10 @@ final class DataImportViewModelTests: XCTestCase {
         // GIVEN
         model = DataImportViewModel(importSource: .chrome)
         model.selectedDataTypes = [.passwords]
-        
+
         // WHEN
         let result = model.dataTypesSelection
-        
+
         // THEN
         XCTAssertEqual(result, .single(.passwords))
     }
@@ -1841,10 +1841,10 @@ final class DataImportViewModelTests: XCTestCase {
         // GIVEN
         model = DataImportViewModel(importSource: .chrome)
         model.selectedDataTypes = []
-        
+
         // WHEN
         let result = model.dataTypesSelection
-        
+
         // THEN
         XCTAssertEqual(result, .none)
     }

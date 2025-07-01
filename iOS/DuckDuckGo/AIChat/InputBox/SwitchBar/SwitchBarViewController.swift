@@ -70,7 +70,7 @@ class SwitchBarViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseInOut]) {
+        UIView.animate(withDuration: animated ? 0.25 : 0, delay: 0.0, options: [.curveEaseInOut]) {
             self.setExpanded(false)
             self.view.layoutIfNeeded()
         }

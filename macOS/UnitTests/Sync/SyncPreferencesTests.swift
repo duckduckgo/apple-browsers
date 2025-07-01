@@ -184,8 +184,12 @@ final class SyncPreferencesTests: XCTestCase {
     }
 
     func testOnTurnOffSyncThenSyncServiceIsDisconnected() async throws {
+        let expectation = expectation(description: "disonnectCalled")
+        ddgSyncing.spyDisconnectCalled = {
+            expectation.fulfill()
+        }
         syncPreferences.turnOffSync()
-        try await ddgSyncing.$disconnectCalled.async(waitFor: true)
+        await fulfillment(of: [expectation], timeout: 5.0)
     }
 
     // MARK: - SYNC ERRORS
@@ -282,9 +286,13 @@ final class SyncPreferencesTests: XCTestCase {
         XCTAssertNil(syncPreferences.syncPausedButtonAction)
     }
 
-    func test_recoverDevice_callsConnectionController() async throws {
+    func test_recoverDevice_callsConnectionController() async {
+        let expectation = expectation(description: "callsConnectionController")
+        connectionController.syncCodeEnteredCalled = { _, _, _ in
+            expectation.fulfill()
+        }
         syncPreferences.recoverDevice(recoveryCode: testRecoveryCode, fromRecoveryScreen: false, codeSource: .qrCode)
-        try await connectionController.$syncCodeEnteredCalled.async(waitFor: true)
+        await fulfillment(of: [expectation])
     }
 
     func test_controllerDidFindTwoAccountsDuringRecovery_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async throws {

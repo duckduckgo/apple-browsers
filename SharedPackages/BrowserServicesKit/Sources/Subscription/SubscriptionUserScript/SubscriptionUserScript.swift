@@ -134,7 +134,7 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
 
     public let featureName: String = "subscriptions"
     public lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
-        .exact(hostname: aiChatURL.host ?? OriginDomains.duckduckgo)
+        .exact(hostname: aiChatURL.host ?? defaultOriginDomain)
     ])
     public weak var broker: UserScriptMessageBroker?
 

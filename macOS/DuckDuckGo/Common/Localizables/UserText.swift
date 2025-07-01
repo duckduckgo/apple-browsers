@@ -1359,6 +1359,8 @@ struct UserText {
     static let showDataClearingSettings = NSLocalizedString("show.data.clearing.settings",
                                                             value: "Open Data Clearing Settings",
                                                             comment: "Button in Settings. It navigates user to Data Clearing Settings. The Data Clearing string should match the string with the preferences.data-clearing key")
+    static let fireAnimationSectionHeader = NSLocalizedString("fire.animation.section.setting", value: "Fire Animation", comment: "Section header in Data Clearing related to the Fire Animation.")
+    static let showFireAnimationToggleText = NSLocalizedString("fire.animation.toggle.value", value: "Show inferno animation when deleting data", comment: "Checkbox to toggle the fire animation to be on or off")
 
     // MARK: Crash Report
     static let crashReportTitle = NSLocalizedString("crash-report.title", value: "DuckDuckGo Privacy Browser quit unexpectedly.", comment: "Title of the dialog where the user can send a crash report")

@@ -18,6 +18,8 @@
 
 import Foundation
 import PixelKit
+import BrowserServicesKit
+import FeatureFlags
 
 final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
 
@@ -53,6 +55,10 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         }
     }
 
+    var shouldShowDisableFireAnimationSection: Bool {
+        featureFlagger.isFeatureOn(.disableFireAnimation)
+    }
+
     @objc func toggleWarnBeforeClearing() {
         isWarnBeforeClearingEnabled.toggle()
     }
@@ -76,6 +82,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         fireproofDomains: FireproofDomains,
         faviconManager: FaviconManagement,
         windowControllersManager: WindowControllersManagerProtocol,
+        featureFlagger: FeatureFlagger,
         pixelFiring: PixelFiring? = nil
     ) {
         self.persistor = persistor
@@ -83,6 +90,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         self.faviconManager = faviconManager
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
+        self.featureFlagger = featureFlagger
         isLoginDetectionEnabled = persistor.loginDetectionEnabled
         isAutoClearEnabled = persistor.autoClearEnabled
         isWarnBeforeClearingEnabled = persistor.warnBeforeClearingEnabled
@@ -94,6 +102,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
     private let faviconManager: FaviconManagement
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pixelFiring: PixelFiring?
+    private let featureFlagger: FeatureFlagger
 }
 
 protocol FireButtonPreferencesPersistor {

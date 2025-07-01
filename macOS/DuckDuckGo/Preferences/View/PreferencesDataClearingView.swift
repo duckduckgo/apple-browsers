@@ -41,9 +41,12 @@ extension Preferences {
 
                 }
 
-                PreferencePaneSection("Fire Animation") {
-                    PreferencePaneSubSection {
-                        ToggleMenuItem("Show inferno animation when deleting data", isOn: $model.isFireAnimationEnabled)
+                // SECTION 2: Enable/Disable Fire Animation
+                if model.shouldShowDisableFireAnimationSection {
+                    PreferencePaneSection(UserText.fireAnimationSectionHeader) {
+                        PreferencePaneSubSection {
+                            ToggleMenuItem(UserText.showFireAnimationToggleText, isOn: $model.isFireAnimationEnabled)
+                        }
                     }
                 }
 

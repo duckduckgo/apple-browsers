@@ -516,6 +516,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fireproofDomains: fireproofDomains,
             faviconManager: faviconManager,
             windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared
         )
         visualizeFireAnimationDecider = DefaultVisualizeFireAnimationDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)

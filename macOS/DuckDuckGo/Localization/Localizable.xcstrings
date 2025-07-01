@@ -24595,6 +24595,30 @@
         }
       }
     },
+    "fire.animation.section.setting" : {
+      "comment" : "Section header in Data Clearing related to the Fire Animation.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fire Animation"
+          }
+        }
+      }
+    },
+    "fire.animation.toggle.value" : {
+      "comment" : "Checkbox to toggle the fire animation to be on or off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show inferno animation when deleting data"
+          }
+        }
+      }
+    },
     "fire.current-window.description" : {
       "comment" : "Description of the 'Current Window' configuration option for the fire button",
       "extractionState" : "extracted_with_value",
@@ -26455,6 +26479,18 @@
         }
       }
     },
+    "freemium.dbp.menu.item" : {
+      "comment" : "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Personal Information Scan"
+          }
+        }
+      }
+    },
     "general.feedback-form.category.ai-chat" : {
       "comment" : "Description for the feedback form when the issue is related to Duck.ai",
       "extractionState" : "extracted_with_value",
@@ -26467,18 +26503,6 @@
         }
       },
       "shouldTranslate" : false
-    },
-    "freemium.dbp.menu.item" : {
-      "comment" : "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Personal Information Scan"
-          }
-        }
-      }
     },
     "general.feedback-form.category.itr" : {
       "comment" : "Description for the feedback form when the issue is related to Identity Theft Restoration (ITR)",

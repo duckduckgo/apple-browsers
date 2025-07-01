@@ -835,6 +835,11 @@ extension SettingsViewModel {
         urlOpener.open(URL.searchSettings)
     }
 
+    func openAssistSettings() {
+        Pixel.fire(pixel: .settingsOpenAssistSettings)
+        urlOpener.open(URL.assistSettings)
+    }
+
     func openAIChat() {
         urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
     }
@@ -951,6 +956,7 @@ extension SettingsViewModel {
         case restoreFlow
         case duckPlayer
         case aiChat
+        case subscriptionSettings
         // Add other cases as needed
 
         var id: String {
@@ -962,6 +968,7 @@ extension SettingsViewModel {
             case .restoreFlow: return "restoreFlow"
             case .duckPlayer: return "duckPlayer"
             case .aiChat: return "aiChat"
+            case .subscriptionSettings: return "subscriptionSettings"
             // Ensure all cases are covered
             }
         }
@@ -970,7 +977,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat:
+            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .subscriptionSettings:
                 return .navigationLink
             }
         }
@@ -1253,6 +1260,15 @@ extension SettingsViewModel {
         )
     }
 
+    var aiChatSearchInputEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+            }
+        )
+    }
+
     var aiChatVoiceSearchEnabledBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled },
@@ -1287,6 +1303,10 @@ extension SettingsViewModel {
                 self.experimentalAIChatManager.toggleExperimentalTransition()
                 self.state.isExperimentalAIChatTransitionEnabled = self.experimentalAIChatManager.isExperimentalTransitionEnabled
             })
+    }
+
+    func launchAIFeaturesLearnMore() {
+        urlOpener.open(URL.aiFeaturesLearnMore)
     }
 
 }

@@ -264,8 +264,8 @@ extension TabSwitcherViewController {
                            containsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
                            showAIChatButton: aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled)
 
-        topBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
-        topBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
+        titleBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
+        titleBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
         toolbar.items = barsHandler.bottomBarItems
         toolbar.isHidden = barsHandler.isBottomBarHidden
         collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : toolbar.frame.height
@@ -452,11 +452,26 @@ extension TabSwitcherViewController {
             self?.burn(sender: self!.barsHandler.fireButton)
         }
 
-        barsHandler.doneButton.primaryAction = action(UserText.navigationTitleDone) { [weak self] in
-            self?.onDonePressed(self!.barsHandler.doneButton)
+        if interfaceMode == .largeSize || !isJune2025LayoutChangeEnabled {
+            barsHandler.doneButton.primaryAction = action(UserText.navigationTitleDone) { [weak self] in
+                self?.onDonePressed(self!.barsHandler.doneButton)
+            }
+        } else {
+            barsHandler.doneButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.arrowLeft) { [weak self] in
+                self?.onDonePressed(self!.barsHandler.doneButton)
+            }
+            barsHandler.doneButton.accessibilityLabel = UserText.navigationTitleDone
         }
 
-        barsHandler.editButton.title = UserText.actionGenericEdit
+        if isJune2025LayoutChangeEnabled {
+            barsHandler.editButton.image = DesignSystemImages.Glyphs.Size24.menuDotsVertical
+            barsHandler.editButton.title = nil
+        } else {
+            barsHandler.editButton.image = nil
+            barsHandler.editButton.title = UserText.actionGenericEdit
+        }
+
+        barsHandler.editButton.accessibilityLabel = UserText.actionGenericEdit
         barsHandler.editButton.menu = createEditMenu()
 
         barsHandler.selectAllButton.primaryAction = action(UserText.selectAllTabs) { [weak self] in

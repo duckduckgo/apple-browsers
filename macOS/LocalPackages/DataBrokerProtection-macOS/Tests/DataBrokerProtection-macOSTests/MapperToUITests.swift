@@ -519,7 +519,7 @@ extension Array where Element == BrokerProfileQueryData {
         if !didAllQueriesFinished {
             return 0
         } else {
-            return 1 + broker.mirrorSites.filter { $0.shouldWeIncludeMirrorSite() }.count
+            return 1 + broker.mirrorSites.filter { $0.isExtant() }.count
         }
     }
 }

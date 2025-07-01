@@ -76,11 +76,18 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         super.setUp()
         internalUserDeciderStore = MockInternalUserStoring()
         experimentManager = MockExperimentManager()
+
+        // Set environment variable to allow DefaultFeatureFlagger in tests
+        setenv("TESTS_FEATUREFLAGGER_MODE", "1", 1)
     }
 
     override func tearDown() {
         internalUserDeciderStore = nil
         experimentManager = nil
+
+        // Clean up environment variable
+        unsetenv("TESTS_FEATUREFLAGGER_MODE")
+
         super.tearDown()
     }
 
@@ -442,7 +449,7 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
         let internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
         return DefaultFeatureFlagger(internalUserDecider: internalUserDecider, privacyConfigManager: manager, experimentManager: experimentManager)
     }
@@ -453,17 +460,15 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
         let internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
         overrides = CapturingFeatureFlagOverriding()
-        return DefaultFeatureFlagger(
-            internalUserDecider: internalUserDecider,
-            privacyConfigManager: manager,
-            localOverrides: overrides,
-            experimentManager: nil,
-            for: TestFeatureFlag.self
-        )
+        return DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
+                                     privacyConfigManager: manager,
+                                     localOverrides: overrides,
+                                     experimentManager: nil,
+                                     for: TestFeatureFlag.self)
     }
 
     private static func embeddedConfig(autofillState: String = "enabled",

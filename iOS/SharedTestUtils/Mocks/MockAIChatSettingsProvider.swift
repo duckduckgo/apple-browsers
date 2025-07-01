@@ -22,7 +22,6 @@ import Foundation
 import AIChat
 
 public class MockAIChatSettingsProvider: AIChatSettingsProvider {
-
     public var aiChatURL: URL
     public var isAIChatEnabled: Bool
     public var isAIChatAddressBarUserSettingsEnabled: Bool
@@ -31,6 +30,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public var isAIChatVoiceSearchUserSettingsEnabled: Bool
     public var isAIChatTabSwitcherUserSettingsEnabled: Bool
     public var sessionTimerInMinutes: Int
+    public var isAIChatSearchInputUserSettingsEnabled: Bool
 
     public init(aiChatURL: URL = URL(string: "https://example.com")!,
                 isAIChatEnabled: Bool = false,
@@ -40,6 +40,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
                 isAIChatAddressBarShortcutFeatureEnabled: Bool = false,
                 isAIChatVoiceSearchUserSettingsEnabled: Bool = false,
                 isAIChatTabSwitcherUserSettingsEnabled: Bool = false,
+                isAIChatSearchInputUserSettingsEnabled: Bool = false,
                 sessionTimerInMinutes: Int = 60) {
 
         self.aiChatURL = aiChatURL
@@ -49,6 +50,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
         self.isAIChatAddressBarShortcutFeatureEnabled = isAIChatAddressBarShortcutFeatureEnabled
         self.isAIChatVoiceSearchUserSettingsEnabled = isAIChatVoiceSearchUserSettingsEnabled
         self.isAIChatTabSwitcherUserSettingsEnabled = isAIChatTabSwitcherUserSettingsEnabled
+        self.isAIChatSearchInputUserSettingsEnabled = isAIChatSearchInputUserSettingsEnabled
         self.sessionTimerInMinutes = sessionTimerInMinutes
     }
     
@@ -72,4 +74,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
         isAIChatEnabled = enable
     }
 
+    public func enableAIChatSearchInputUserSettings(enable: Bool) {
+        isAIChatSearchInputUserSettingsEnabled = enable
+    }
 }

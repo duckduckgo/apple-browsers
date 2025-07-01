@@ -320,6 +320,7 @@ public extension DesignSystemImages {
             public static var arrowRight: DesignSystemImage { .init(resource: .arrowRight24) }
             public static var arrowUp: DesignSystemImage { .init(resource: .arrowUp24) }
             public static var arrowUpRight: DesignSystemImage { .init(resource: .arrowUpRight24) }
+            public static var assist: DesignSystemImage { .init(resource: .assist24) }
             public static var assistAlt: DesignSystemImage { .init(resource: .assistAlt24) }
             public static var bell: DesignSystemImage { .init(resource: .bell24) }
             public static var bookmark: DesignSystemImage { .init(resource: .bookmark24) }
@@ -395,6 +396,8 @@ public extension DesignSystemImages {
             public static var location: DesignSystemImage { .init(resource: .location24) }
             public static var locationBlocked: DesignSystemImage { .init(resource: .locationBlocked24) }
             public static var locationSolid: DesignSystemImage { .init(resource: .locationSolid24) }
+            public static var menuDotsVertical: DesignSystemImage { .init(resource: .menuDotsVertical24) }
+            public static var menuDotsHorizontal: DesignSystemImage { .init(resource: .menuDotsHorizontal24) }
             public static var menuHamburger: DesignSystemImage { .init(resource: .menuHamburger24) }
             public static var menuHamburgerAlertRecolorable: DesignSystemImage { .init(resource: .menuHamburgerAlertRecolorable24) }
             public static var microphone: DesignSystemImage { .init(resource: .microphone24) }

@@ -439,6 +439,8 @@ extension Pixel {
         case autofillCardsFillCardManualInlineDisplayed
         case autofillCardsFillCardManualInlineConfirmed
         case autofillCardsFillCardManualInlineDismissed
+        case autofillCardsKeyboardFill
+        case autofillCardsKeyboardOpenSettings
         case autofillCardsSaveDisableSnackbarShown
         case autofillCardsSaveDisableSnackbarOpenSettings
         case autofillCardsSettingsEnabled
@@ -1070,6 +1072,9 @@ extension Pixel {
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
 
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
+        case settingsOpenAssistSettings
+
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
         case settingsPresentedFromMenu
 
@@ -1200,6 +1205,8 @@ extension Pixel {
         case aiChatSettingsVoiceTurnedOn
         case aiChatSettingsAddressBarTurnedOff
         case aiChatSettingsAddressBarTurnedOn
+        case aiChatSettingsSearchInputTurnedOff
+        case aiChatSettingsSearchInputTurnedOn
         case aiChatSettingsBrowserMenuTurnedOff
         case aiChatSettingsBrowserMenuTurnedOn
         case aiChatSettingsTabManagerTurnedOff
@@ -1348,6 +1355,7 @@ extension Pixel.Event {
         case .settingsNextStepsAddAppToDock: return "m_settings_next_steps_add_app_to_dock"
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
+        case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -1643,6 +1651,8 @@ extension Pixel.Event {
         case .autofillCardsFillCardManualInlineDisplayed: return "autofill_cards_fill_card_inline_manual_displayed"
         case .autofillCardsFillCardManualInlineConfirmed: return "autofill_cards_fill_card_inline_manual_confirmed"
         case .autofillCardsFillCardManualInlineDismissed: return "autofill_cards_fill_card_inline_manual_dismissed"
+        case .autofillCardsKeyboardFill: return "autofill_cards_keyboard_fill_confirmed"
+        case .autofillCardsKeyboardOpenSettings: return "autofill_cards_keyboard_open_settings"
         case .autofillCardsSaveDisableSnackbarShown: return "autofill_cards_save_disable_snackbar_shown"
         case .autofillCardsSaveDisableSnackbarOpenSettings: return "autofill_cards_save_disable_snackbar_open_settings"
         case .autofillCardsSettingsEnabled: return "autofill_cards_settings_enabled"
@@ -2372,6 +2382,8 @@ extension Pixel.Event {
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
         case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
+        case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
+        case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
 
         case .aiChatOpen: return "m_aichat_open"
         case .aiChatMetricStartNewConversation: return "m_aichat_start_new_conversation"

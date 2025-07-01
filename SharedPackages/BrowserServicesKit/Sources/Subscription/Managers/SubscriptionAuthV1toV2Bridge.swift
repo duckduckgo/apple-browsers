@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Combine
 import Common
 import Networking
 
@@ -33,6 +34,8 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
     func currentSubscriptionFeatures() async -> [Entitlement.ProductName]
     func signOut(notifyUI: Bool) async
     var canPurchase: Bool { get }
+    /// Publisher that emits a boolean value indicating whether the user can purchase.
+    var canPurchasePublisher: AnyPublisher<Bool, Never> { get }
     @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
     func isSubscriptionPresent() -> Bool
     func url(for type: SubscriptionURL) -> URL

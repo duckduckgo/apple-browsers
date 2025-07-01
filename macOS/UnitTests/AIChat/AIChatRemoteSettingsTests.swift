@@ -35,7 +35,7 @@ class AIChatRemoteSettingsTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: embeddedDataProvider,
                                                   localProtection: MockDomainsProtectionStore(),
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
         return AIChatRemoteSettings(privacyConfigurationManager: manager)
     }
 

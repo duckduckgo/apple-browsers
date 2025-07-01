@@ -94,22 +94,57 @@ final class NetworkProtectionSubscriptionEventHandler {
         let isAuthV2Enabled = NSApp.delegateTyped.isAuthV2Enabled
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
-        if hasEntitlements && lastKnownEntitlementsExpired {
-            PixelKit.fire(
-                VPNSubscriptionStatusPixel.vpnFeatureEnabled(
-                    isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
-                    source: source),
-                frequency: .dailyAndCount)
-            lastKnownEntitlementsExpired = false
-        } else if !hasEntitlements && !lastKnownEntitlementsExpired {
-            PixelKit.fire(
-                VPNSubscriptionStatusPixel.vpnFeatureDisabled(
-                    isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
-                    source: source),
-                frequency: .dailyAndCount)
-            lastKnownEntitlementsExpired = true
+        // For source == .clientCheck we only fire pixels if there's an actual change, because they're not guaranteed
+        // to be executed only when there are changes - they'll run at every app launch.
+        //
+        // For source == .notification we assume the notifications are fired on actual changes, so we want to fire
+        // pixels without additiona checks.
+        //
+        switch source {
+        case .clientCheck:
+            if hasEntitlements && lastKnownEntitlementsExpired {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        source: source),
+                    frequency: .dailyAndCount)
+
+                lastKnownEntitlementsExpired = false
+            } else if !hasEntitlements && !lastKnownEntitlementsExpired {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        source: source),
+                    frequency: .dailyAndCount)
+
+                lastKnownEntitlementsExpired = true
+            }
+        case .notification:
+            if hasEntitlements {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        source: source),
+                    frequency: .dailyAndCount)
+
+                if lastKnownEntitlementsExpired {
+                    lastKnownEntitlementsExpired = false
+                }
+            } else if !hasEntitlements {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        source: source),
+                    frequency: .dailyAndCount)
+
+                if !lastKnownEntitlementsExpired {
+                    lastKnownEntitlementsExpired = true
+                }
+            }
         }
     }
 

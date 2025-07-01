@@ -295,7 +295,8 @@ public extension ContentScopeFeatureToggles {
             unknownUsernameCategorization: false,
             partialFormSaves: false,
             passwordVariantCategorization: false,
-            inputFocusApi: false
+            inputFocusApi: false,
+            autocompleteAttributeSupport: false
         )
     }
 }

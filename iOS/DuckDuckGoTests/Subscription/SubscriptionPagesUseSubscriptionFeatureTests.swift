@@ -29,6 +29,7 @@ import OHHTTPStubs
 import OHHTTPStubsSwift
 import os.log
 
+@MainActor
 final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     private struct Constants {
@@ -68,7 +69,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                                                                         externalID: Constants.externalID))
 
         static let mockParams: [String: String] = [:]
-        @MainActor static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
+        static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
 
         static let invalidTokenError = APIServiceError.serverError(statusCode: 401, error: "invalid_token")
     }

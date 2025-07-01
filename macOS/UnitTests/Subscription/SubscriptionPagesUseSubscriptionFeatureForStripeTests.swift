@@ -28,6 +28,7 @@ import PixelKitTestingUtilities
 import os.log
 
 @available(macOS 12.0, *)
+@MainActor
 final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
 
     private struct Constants {
@@ -74,7 +75,7 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
                                                                                                         externalID: Constants.externalID))
 
         static let mockParams: [String: String] = [:]
-        @MainActor static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
+        static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
 
         static let invalidTokenError = APIServiceError.serverError(statusCode: 401, error: "invalid_token")
     }
@@ -112,7 +113,7 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
     var pixelsFired: [String] = []
     var uiEventsHappened: [SubscriptionUIHandlerMock.UIHandlerMockPerformedAction] = []
 
-    @MainActor override func setUpWithError() throws {
+    override func setUpWithError() throws {
         // Mocks
         userDefaults = UserDefaults(suiteName: Constants.userDefaultsSuiteName)!
         userDefaults.removePersistentDomain(forName: Constants.userDefaultsSuiteName)

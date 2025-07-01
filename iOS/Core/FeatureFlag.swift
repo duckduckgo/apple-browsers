@@ -35,6 +35,8 @@ public enum FeatureFlag: String {
     case autofillPartialFormSaves
     case autofillCreditCards
     case autofillCreditCardsOnByDefault
+    case autocompleteAttributeSupport
+    case inputFocusApi
     case incontextSignup
     case autoconsentOnByDefault
     case history
@@ -181,6 +183,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .maliciousSiteProtection,
              .autofillCreditCards,
              .autofillCreditCardsOnByDefault,
+             .autocompleteAttributeSupport,
              .privacyProOnboardingPromotion,
              .duckPlayerNativeUI,
              .removeWWWInCanonicalizationInThreatProtection,
@@ -241,6 +244,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillCreditCards))
         case .autofillCreditCardsOnByDefault:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillCreditCardsOnByDefault))
+        case .autocompleteAttributeSupport:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.autocompleteAttributeSupport))
+        case .inputFocusApi:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.inputFocusApi))
         case .incontextSignup:
             return .remoteReleasable(.feature(.incontextSignup))
         case .autoconsentOnByDefault:

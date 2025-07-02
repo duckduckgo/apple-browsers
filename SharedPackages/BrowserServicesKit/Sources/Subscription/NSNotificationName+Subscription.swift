@@ -46,13 +46,18 @@ public struct EntitlementsDidChangePayload {
         previousEntitlementsKey: previousEntitlements]
     }
 
-    public init(entitlements: [SubscriptionEntitlement]?, previousEntitlements: [SubscriptionEntitlement]?) {
-        self.entitlements = entitlements ?? []
-        self.previousEntitlements = previousEntitlements ?? []
+    public init(entitlements: [SubscriptionEntitlement], previousEntitlements: [SubscriptionEntitlement]) {
+        self.entitlements = entitlements
+        self.previousEntitlements = previousEntitlements
     }
 
-    public init(notificationUserInfo: [AnyHashable: Any]?) {
-        self.entitlements = notificationUserInfo?[entitlementsKey] as? [SubscriptionEntitlement] ?? []
-        self.previousEntitlements = notificationUserInfo?[previousEntitlementsKey] as? [SubscriptionEntitlement] ?? []
+    public init?(notificationUserInfo: [AnyHashable: Any]) {
+        guard let entitlements = notificationUserInfo[entitlementsKey] as? [SubscriptionEntitlement],
+              let previousEntitlements = notificationUserInfo[previousEntitlementsKey] as? [SubscriptionEntitlement] else {
+                  assertionFailure("Missing required payload entitlements")
+                  return nil
+              }
+        self.entitlements = entitlements
+        self.previousEntitlements = previousEntitlements
     }
 }

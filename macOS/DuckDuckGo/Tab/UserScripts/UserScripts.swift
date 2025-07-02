@@ -178,7 +178,8 @@ final class UserScripts: UserScriptsProvider {
             let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
             delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                                  stripePurchaseFlow: stripePurchaseFlow,
-                                                                 uiHandler: Application.appDelegate.subscriptionUIHandler)
+                                                                 uiHandler: Application.appDelegate.subscriptionUIHandler,
+                                                                 aiChatURL: AIChatRemoteSettings().aiChatURL)
         }
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)

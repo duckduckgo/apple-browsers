@@ -134,7 +134,7 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
 
     public let featureName: String = "subscriptions"
     public var messageOriginPolicy: MessageOriginPolicy {
-        var rules: [HostnameMatchingRule] = [.exact(hostname: "duckduckgo.com")]
+        var rules: [HostnameMatchingRule] = [.exact(hostname: defaultOriginDomain)]
         if let debugHost {
             rules.append(.exact(hostname: debugHost))
         }
@@ -143,7 +143,6 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
     public weak var broker: UserScriptMessageBroker?
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
-        print("METHOD: \(methodName)")
         switch MessageName(rawValue: methodName) {
         case .handshake:
             return handler.handshake

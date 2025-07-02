@@ -82,7 +82,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
                 notificationCenter: NotificationCenter = .default,
                 dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
-                featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+                featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+                aiChatURL: URL) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler

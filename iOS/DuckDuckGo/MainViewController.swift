@@ -1939,9 +1939,11 @@ class MainViewController: UIViewController {
     @objc
     private func onEntitlementsChange(_ notification: Notification) {
         Task {
-            let payload = EntitlementsDidChangePayload(notificationUserInfo: notification.userInfo)
-            let hasEntitlements = payload?.entitlements?.contains(.networkProtection) ?? false
-
+            guard let payload = EntitlementsDidChangePayload(notificationUserInfo: notification.userInfo) else {
+                assertionFailure("Missing entitlements are truly unexpected")
+                return
+            }
+            let hasEntitlements = payload.entitlements.contains(.networkProtection)
             let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 

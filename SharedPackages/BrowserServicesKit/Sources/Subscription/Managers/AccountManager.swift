@@ -227,7 +227,7 @@ public final class DefaultAccountManager: AccountManager {
     public func updateCache(with entitlements: [Entitlement]) {
         let cachedEntitlements: [Entitlement] = entitlementsCache.get() ?? []
 
-        if entitlements != cachedEntitlements {
+        if Set(entitlements) != Set(cachedEntitlements) {
             if entitlements.isEmpty {
                 entitlementsCache.reset()
             } else {

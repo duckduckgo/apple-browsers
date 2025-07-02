@@ -70,8 +70,11 @@ final class NetworkProtectionSubscriptionEventHandler {
                     Logger.networkProtection.log("Entitlements did change notification received")
                     guard let self else { return }
 
-                    let payload = EntitlementsDidChangePayload(notificationUserInfo: notification.userInfo)
-                    let hasNetPEntitlement = payload?.entitlements?.contains(.networkProtection) ?? false
+                    guard let payload = EntitlementsDidChangePayload(notificationUserInfo: notification.userInfo) else {
+                        assertionFailure("Missing entitlements are truly unexpected")
+                        return
+                    }
+                    let hasNetPEntitlement = payload.entitlements.contains(.networkProtection)
 
                     Task {
                         await self.handleEntitlementsChange(hasEntitlements: hasNetPEntitlement, source: .notification(sourceObject: notification.object))

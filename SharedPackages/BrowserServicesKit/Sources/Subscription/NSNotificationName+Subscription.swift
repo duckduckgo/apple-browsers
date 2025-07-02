@@ -36,16 +36,16 @@ public extension NSNotification.Name {
 public struct EntitlementsDidChangePayload {
 
     private let entitlementsKey = "entitlements"
-    public let entitlements: [SubscriptionEntitlement]?
+    public let entitlements: [SubscriptionEntitlement]
     public var notificationUserInfo: [AnyHashable: Any] {
-        [entitlementsKey: entitlements ?? []]
+        [entitlementsKey: entitlements]
     }
 
     public init(entitlements: [SubscriptionEntitlement]?) {
-        self.entitlements = entitlements
+        self.entitlements = entitlements ?? []
     }
 
     public init?(notificationUserInfo: [AnyHashable: Any]?) {
-        self.entitlements = notificationUserInfo?[entitlementsKey] as? [SubscriptionEntitlement]
+        self.entitlements = notificationUserInfo?[entitlementsKey] as? [SubscriptionEntitlement] ?? []
     }
 }

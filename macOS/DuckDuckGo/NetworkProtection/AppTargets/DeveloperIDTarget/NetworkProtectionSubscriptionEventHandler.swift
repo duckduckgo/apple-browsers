@@ -42,19 +42,8 @@ final class NetworkProtectionSubscriptionEventHandler {
         self.vpnUninstaller = vpnUninstaller
         self.userDefaults = userDefaults
 
-        checkEntitlements()
         subscribeToEntitlementChanges()
-    }
-
-    @MainActor
-    private var lastKnownEntitlementsExpired: Bool {
-        get {
-            userDefaults.networkProtectionEntitlementsExpired
-        }
-
-        set {
-            userDefaults.networkProtectionEntitlementsExpired = newValue
-        }
+        checkEntitlements()
     }
 
     private func checkEntitlements() {
@@ -69,73 +58,39 @@ final class NetworkProtectionSubscriptionEventHandler {
             .publisher(for: .entitlementsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
-                Logger.networkProtection.log("Entitlements did change notification received")
                 guard let self else { return }
 
                 Task {
-                    let hasEntitlements = await self.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
-                    await self.handleEntitlementsChange(hasEntitlements: hasEntitlements, source: .notification(sourceObject: notification.object))
+                    Logger.networkProtection.log("Entitlements did change notification received")
+                    let payload = EntitlementsDidChangePayload(notificationUserInfo: notification.userInfo)
+                    let hasNetPEntitlement = payload.entitlements.contains(.networkProtection)
+                    await self.handleEntitlementsChange(hasEntitlements: hasNetPEntitlement, source: .notification(sourceObject: notification.object))
                 }
             }
             .store(in: &cancellables)
     }
 
-    @MainActor
     private func handleEntitlementsChange(hasEntitlements: Bool, source: VPNSubscriptionStatusPixel.Source) async {
-        let isAuthV2Enabled = NSApp.delegateTyped.isAuthV2Enabled
+        let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
-        // For source == .clientCheck we only fire pixels if there's an actual change, because they're not guaranteed
-        // to be executed only when there are changes - they'll run at every app launch.
-        //
-        // For source == .notification we assume the notifications are fired on actual changes, so we want to fire
-        // pixels without additional checks.
-        //
-        switch source {
-        case .clientCheck:
-            if hasEntitlements && lastKnownEntitlementsExpired {
-                PixelKit.fire(
-                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
-                        isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
-                        source: source),
-                    frequency: .dailyAndCount)
-
-                lastKnownEntitlementsExpired = false
-            } else if !hasEntitlements && !lastKnownEntitlementsExpired {
-                PixelKit.fire(
-                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
-                        isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
-                        source: source),
-                    frequency: .dailyAndCount)
-
-                lastKnownEntitlementsExpired = true
-            }
-        case .notification:
-            if hasEntitlements {
-                PixelKit.fire(
-                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
-                        isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
-                        source: source),
-                    frequency: .dailyAndCount)
-
-                if lastKnownEntitlementsExpired {
-                    lastKnownEntitlementsExpired = false
-                }
-            } else if !hasEntitlements {
-                PixelKit.fire(
-                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
-                        isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
-                        source: source),
-                    frequency: .dailyAndCount)
-
-                if !lastKnownEntitlementsExpired {
-                    lastKnownEntitlementsExpired = true
-                }
-            }
+        if hasEntitlements {
+            PixelKit.fire(
+                VPNSubscriptionStatusPixel.vpnFeatureEnabled(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    source: source),
+                frequency: .dailyAndCount)
+            UserDefaults.netP.networkProtectionEntitlementsExpired = false
+        } else {
+            PixelKit.fire(
+                VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    source: source),
+                frequency: .dailyAndCount)
+            await tunnelController.stop()
+            UserDefaults.netP.networkProtectionEntitlementsExpired = true
         }
     }
 

@@ -61,7 +61,8 @@ final class DataBrokerProtectionSubscriptionEventHandler {
 
     private func entitlementsDidChange(_ notification: Notification) {
         Task {
-            let hasEntitlements = try await self.authenticationManager.hasValidEntitlement()
+            let payload = EntitlementsDidChangePayload(notificationUserInfo: notification.userInfo)
+            let hasEntitlements = payload.entitlements.contains(.dataBrokerProtection)
             await entitlementsDidChange(hasEntitlements: hasEntitlements)
         }
     }

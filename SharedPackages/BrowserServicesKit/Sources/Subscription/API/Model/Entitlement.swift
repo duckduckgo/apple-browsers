@@ -18,13 +18,12 @@
 
 import Foundation
 
-public struct Entitlement: Codable, Equatable {
+public struct Entitlement: Codable, Equatable, Hashable {
+    public let product: ProductName
 
     public init(product: Entitlement.ProductName) {
         self.product = product
     }
-
-    public let product: ProductName
 
     public enum ProductName: String, Codable {
         case networkProtection = "Network Protection"
@@ -37,12 +36,5 @@ public struct Entitlement: Codable, Equatable {
         public init(from decoder: Decoder) throws {
             self = try Self(rawValue: decoder.singleValueContainer().decode(RawValue.self)) ?? .unknown
         }
-    }
-}
-
-extension Entitlement: Hashable {
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(product)
     }
 }

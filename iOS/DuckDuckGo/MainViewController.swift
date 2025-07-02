@@ -223,7 +223,6 @@ class MainViewController: UIViewController {
 
     private var duckPlayerEntryPointVisible = false
     private var isExperimentalAppearanceEnabled: Bool { themeManager.properties.isExperimentalThemingEnabled }
-    private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -388,7 +387,6 @@ class MainViewController: UIViewController {
         subscribeToEmailProtectionStatusNotifications()
         subscribeToURLInterceptorNotifications()
         subscribeToSettingsDeeplinkNotifications()
-        checkSubscriptionEntitlements()
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
@@ -1904,39 +1902,17 @@ class MainViewController: UIViewController {
         AppDependencyProvider.shared.networkProtectionTunnelController
     }
 
-    func checkSubscriptionEntitlements() {
-        Task {
-            let hasNetPEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
-            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
-
-            guard hasNetPEntitlement == false else {
-                PixelKit.fire(
-                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
-                        isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
-                        source: .clientCheck(sourceObject: self)),
-                    frequency: .dailyAndCount)
-                return
-            }
-
-            PixelKit.fire(
-                VPNSubscriptionStatusPixel.vpnFeatureDisabled(
-                    isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
-                    source: .clientCheck(sourceObject: self)),
-                frequency: .dailyAndCount)
-        }
-    }
-
     @objc
     private func onEntitlementsChange(_ notification: Notification) {
         Task {
-            let hasNetPEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            let payload = EntitlementsDidChangePayload(notificationUserInfo: notification.userInfo)
+            let hasEntitlement = payload.entitlements.contains(.networkProtection)
             let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
-            guard hasNetPEntitlement == false else {
+            guard hasEntitlement == false
+            else {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,

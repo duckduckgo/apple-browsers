@@ -39,9 +39,30 @@ public protocol RemoteBrokerDeliveryFeatureFlagging {
 }
 
 public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
-    enum Error: Swift.Error {
+    enum Error: Swift.Error, CustomNSError {
         case serverError(httpCode: Int?)
         case clientError
+
+        static var errorDomain: String { "RemoteBrokerJSONService" }
+
+         var errorCode: Int {
+             switch self {
+             case .serverError:
+                 return 101
+             case .clientError:
+                 return 102
+             }
+         }
+
+         var errorUserInfo: [String: Any] {
+             switch self {
+             case .clientError:
+                 return [:]
+             case .serverError(httpCode: let code):
+                 guard let code else { return [:] }
+                 return [NSUnderlyingErrorKey: NSError(domain: "HTTPError", code: code)]
+             }
+         }
     }
 
     enum Endpoint {

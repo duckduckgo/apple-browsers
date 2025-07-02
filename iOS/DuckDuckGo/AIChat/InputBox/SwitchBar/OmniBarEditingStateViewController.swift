@@ -473,6 +473,7 @@ extension OmniBarEditingStateViewController {
         daxLogoHostingController?.view.isHidden = canShowSuggestion
 
         if canShowSuggestion {
+            suggestionTrayViewController?.fill()
             suggestionTrayViewController?.show(for: type)
         }
     }

@@ -6762,6 +6762,7 @@
 		9FE7CD562E13BF74006691AB /* UserActivityManager */ = {
 			isa = PBXGroup;
 			children = (
+				9FEBDE1F2E0BF3C900175B8B /* DefaultBrowserPromptUserActivityKeyValueFilesStore.swift */,
 				9FE7CD572E13C40E006691AB /* DefaultBrowserPromptUserActivityManager.swift */,
 			);
 			path = UserActivityManager;
@@ -6775,6 +6776,22 @@
 				9FEBDE212E0BF78F00175B8B /* DefaultBrowserPromptManagerDebugPixelHandler.swift */,
 			);
 			path = EventMappers;
+			sourceTree = "<group>";
+		};
+		9FE7CD642E14DCCC006691AB /* PromptActivity */ = {
+			isa = PBXGroup;
+			children = (
+				9FEBDE1D2E0BEE4D00175B8B /* DefaultBrowserPromptActivityKeyValueFilesStore.swift */,
+			);
+			path = PromptActivity;
+			sourceTree = "<group>";
+		};
+		9FE7CD652E14DCE1006691AB /* UserType */ = {
+			isa = PBXGroup;
+			children = (
+				9FF967AE2E0E242F00E45B54 /* DefaultBrowserPromptUserTypeManager.swift */,
+			);
+			path = UserType;
 			sourceTree = "<group>";
 		};
 		9FF7E9802C22A19800902BE5 /* OnboardingExperiment */ = {
@@ -6802,11 +6819,10 @@
 		9FF967AD2E0E241E00E45B54 /* DefaultBrowserPrompt */ = {
 			isa = PBXGroup;
 			children = (
+				9FE7CD652E14DCE1006691AB /* UserType */,
+				9FE7CD642E14DCCC006691AB /* PromptActivity */,
 				9FE7CD612E14D8F3006691AB /* EventMappers */,
 				9FE7CD562E13BF74006691AB /* UserActivityManager */,
-				9FF967AE2E0E242F00E45B54 /* DefaultBrowserPromptUserTypeManager.swift */,
-				9FEBDE1D2E0BEE4D00175B8B /* DefaultBrowserPromptActivityKeyValueFilesStore.swift */,
-				9FEBDE1F2E0BF3C900175B8B /* DefaultBrowserPromptUserActivityKeyValueFilesStore.swift */,
 				9F454D192E051CBE00B8CC5A /* DefaultBrowserPromptFeatureFlagAdapter.swift */,
 			);
 			path = DefaultBrowserPrompt;

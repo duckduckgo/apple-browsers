@@ -1596,6 +1596,18 @@
         }
       }
     },
+    "aichat.address-bar.ask-button.title" : {
+      "comment" : "Title for button to ask Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask Duck.ai"
+          }
+        }
+      }
+    },
     "aichat.address-bar.close-sidebar-button" : {
       "comment" : "Button to close Duck.ai sidebar",
       "extractionState" : "extracted_with_value",

@@ -1085,10 +1085,6 @@ final class AddressBarButtonsViewController: NSViewController {
         askAIChatButton.imagePosition = .imageLeading
         askAIChatButton.imageScaling = .scaleNone
 
-        // Text
-        let mainText = "Ask Duck.ai"
-        let shortcutText = "⇧⏎"
-
         let attributedTitle = NSMutableAttributedString()
 
         // Configure text truncation required for smoother animation
@@ -1097,22 +1093,25 @@ final class AddressBarButtonsViewController: NSViewController {
             buttonCell.truncatesLastVisibleLine = false
         }
 
-        // Main text in normal color
-        let mainAttributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: visualStyle.colorsProvider.textPrimaryColor,
-            .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)
-        ]
+        askAIChatButton.attributedTitle = {
+            // Main text in normal color
+            let mainAttributes: [NSAttributedString.Key: Any] = [
+                .foregroundColor: visualStyle.colorsProvider.textPrimaryColor,
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)
+            ]
 
-        // Shortcut text in secondary color
-        let shortcutAttributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: visualStyle.colorsProvider.textTertiaryColor,
-            .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)
-        ]
+            // Shortcut text in secondary color
+            let shortcutAttributes: [NSAttributedString.Key: Any] = [
+                .foregroundColor: visualStyle.colorsProvider.textTertiaryColor,
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)
+            ]
 
-        attributedTitle.append(NSAttributedString(string: mainText, attributes: mainAttributes))
-        attributedTitle.append(NSAttributedString(string: " "))
-        attributedTitle.append(NSAttributedString(string: shortcutText, attributes: shortcutAttributes))
-        askAIChatButton.attributedTitle = attributedTitle
+            attributedTitle.append(NSAttributedString(string: UserText.askAIChatButtonTitle, attributes: mainAttributes))
+            attributedTitle.append(NSAttributedString(string: " "))
+            attributedTitle.append(NSAttributedString(string: "⇧↵", attributes: shortcutAttributes))
+
+            return attributedTitle
+        }()
 
         // State and colors
         askAIChatButton.state = .off

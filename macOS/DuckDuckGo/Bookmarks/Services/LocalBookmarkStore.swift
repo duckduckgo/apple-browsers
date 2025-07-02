@@ -871,10 +871,15 @@ final class LocalBookmarkStore: BookmarkStore {
         return (total, favorites)
     }
 
+    /// Adds bookmarks to the favorites folders in the order specified by their indices, de-duping any existing favorites.
     private func addFavoritesInOrder(_ allFavorites: [(bookmark: BookmarkEntity, index: Int?)], in context: NSManagedObjectContext) {
-        let favoritesFolders = BookmarkUtils.fetchFavoritesFolders(for: favoritesDisplayMode, in: context)
         let sortedFavorites = allFavorites.sorted { ($0.index ?? Int.max) < ($1.index ?? Int.max) }.map(\.bookmark)
+
+        let favoritesFolders = BookmarkUtils.fetchFavoritesFolders(for: favoritesDisplayMode, in: context)
+        let existingFavoriteURLs = Set(favoritesFolders.flatMap { $0.favoritesArray }.compactMap { $0.url })
+
         for bookmarkManagedObject in sortedFavorites {
+            guard let url = bookmarkManagedObject.url, !existingFavoriteURLs.contains(url) else { continue }
             bookmarkManagedObject.addToFavorites(folders: favoritesFolders)
         }
     }

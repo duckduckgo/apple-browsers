@@ -32,6 +32,7 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     // Constraint references for dynamic sizing
     private var textEntryBottomConstraint: NSLayoutConstraint?
+    private var containerHeightConstraint: NSLayoutConstraint?
 
     private var cancellables = Set<AnyCancellable>()
     private var isExpanded = false
@@ -58,6 +59,8 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     func setExpanded(_ expanded: Bool) {
         isExpanded = expanded
+
+        containerHeightConstraint?.priority = expanded ? .required : .defaultHigh
     }
 
     func focusTextField() {
@@ -112,12 +115,14 @@ class SwitchBarTextEntryViewController: UIViewController {
         textEntryBottomConstraint?.priority = UILayoutPriority(999)
         textEntryBottomConstraint?.isActive = true
 
+        containerHeightConstraint = containerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 70).withPriority(.defaultHigh)
+        containerHeightConstraint?.isActive = true
+
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: view.topAnchor),
             containerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            containerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 70),
 
             borderOverlayView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: -Metrics.borderWidth),
             borderOverlayView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: Metrics.borderWidth),

@@ -25,9 +25,14 @@ import SubscriptionTestingUtilities
 @MainActor
 final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
 
+    struct EntitlementStatusCallback {
+        let feature: Entitlement.ProductName
+        let hasEntitlement: Bool
+    }
+
     var subscriptionManager: SubscriptionManagerMockV2!
     var wakePublisher: PassthroughSubject<Notification, Never>!
-    var statusCallbacks: [(Entitlement.ProductName, Bool)]!
+    var statusCallbacks: [EntitlementStatusCallback]!
     var cancellables: Set<AnyCancellable>!
 
     override func setUpWithError() throws {
@@ -53,7 +58,7 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
             subscriptionManager: subscriptionManager,
             features: features,
             onEntitlementStatus: { feature, hasEntitlement in
-                self.statusCallbacks.append((feature, hasEntitlement))
+                self.statusCallbacks.append(EntitlementStatusCallback(feature: feature, hasEntitlement: hasEntitlement))
             },
             wakeNotificationPublisher: wakePublisher.eraseToAnyPublisher()
         )
@@ -67,7 +72,7 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
             subscriptionManager: subscriptionManager,
             feature: .networkProtection,
             onEntitlementStatus: { feature, hasEntitlement in
-                self.statusCallbacks.append((feature, hasEntitlement))
+                self.statusCallbacks.append(EntitlementStatusCallback(feature: feature, hasEntitlement: hasEntitlement))
             },
             wakeNotificationPublisher: wakePublisher.eraseToAnyPublisher()
         )
@@ -84,11 +89,14 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
             SubscriptionFeatureV2(entitlement: .networkProtection, isAvailableForUser: true)
         ]
         
+        let expectation = expectation(description: "onEntitlementStatus called")
+        
         let checker = SubscriptionOnWakeEntitlementChecker(
             subscriptionManager: subscriptionManager,
             feature: .networkProtection,
             onEntitlementStatus: { feature, hasEntitlement in
-                self.statusCallbacks.append((feature, hasEntitlement))
+                self.statusCallbacks.append(EntitlementStatusCallback(feature: feature, hasEntitlement: hasEntitlement))
+                expectation.fulfill()
             },
             wakeNotificationPublisher: wakePublisher.eraseToAnyPublisher()
         )
@@ -97,12 +105,15 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
         let notification = Notification(name: Notification.Name("test.wake"))
         wakePublisher.send(notification)
         
-        // Wait for async processing
-        try await Task.sleep(for: .milliseconds(50))
+        // Wait for callback
+        await fulfillment(of: [expectation], timeout: 1.0)
         
         XCTAssertEqual(statusCallbacks.count, 1, "Should receive one callback")
-        XCTAssertEqual(statusCallbacks[0].0, .networkProtection, "Should check network protection feature")
-        XCTAssertEqual(statusCallbacks[0].1, true, "Should report entitlement status")
+        XCTAssertEqual(statusCallbacks[0].feature, .networkProtection, "Should check network protection feature")
+        XCTAssertEqual(statusCallbacks[0].hasEntitlement, true, "Should report entitlement status")
+        
+        // Keep checker alive
+        _ = checker
     }
 
     func testWakeNotificationWithMultipleFeatures() async throws {
@@ -113,11 +124,15 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
         ]
         let features: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection]
         
+        let expectation = expectation(description: "onEntitlementStatus called for multiple features")
+        expectation.expectedFulfillmentCount = 2
+        
         let checker = SubscriptionOnWakeEntitlementChecker(
             subscriptionManager: subscriptionManager,
             features: features,
             onEntitlementStatus: { feature, hasEntitlement in
-                self.statusCallbacks.append((feature, hasEntitlement))
+                self.statusCallbacks.append(EntitlementStatusCallback(feature: feature, hasEntitlement: hasEntitlement))
+                expectation.fulfill()
             },
             wakeNotificationPublisher: wakePublisher.eraseToAnyPublisher()
         )
@@ -126,16 +141,19 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
         let notification = Notification(name: Notification.Name("test.wake"))
         wakePublisher.send(notification)
         
-        // Wait for async processing
-        try await Task.sleep(for: .milliseconds(50))
+        // Wait for both callbacks
+        await fulfillment(of: [expectation], timeout: 1.0)
         
         XCTAssertEqual(statusCallbacks.count, 2, "Should receive callback for each feature")
         
-        let checkedFeatures = Set(statusCallbacks.map { $0.0 })
+        let checkedFeatures = Set(statusCallbacks.map { $0.feature })
         XCTAssertEqual(checkedFeatures, Set(features), "Should check all requested features")
         
         // All should report true based on mock setup
-        XCTAssertTrue(statusCallbacks.allSatisfy { $0.1 }, "All features should report true")
+        XCTAssertTrue(statusCallbacks.allSatisfy { $0.hasEntitlement }, "All features should report true")
+        
+        // Keep checker alive
+        _ = checker
     }
 
     func testWakeNotificationWithDifferentEntitlementStates() async throws {
@@ -147,11 +165,15 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
         
         let features: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection]
         
+        let expectation = expectation(description: "onEntitlementStatus called for both features")
+        expectation.expectedFulfillmentCount = 2
+        
         let checker = SubscriptionOnWakeEntitlementChecker(
             subscriptionManager: subscriptionManager,
             features: features,
             onEntitlementStatus: { feature, hasEntitlement in
-                self.statusCallbacks.append((feature, hasEntitlement))
+                self.statusCallbacks.append(EntitlementStatusCallback(feature: feature, hasEntitlement: hasEntitlement))
+                expectation.fulfill()
             },
             wakeNotificationPublisher: wakePublisher.eraseToAnyPublisher()
         )
@@ -160,19 +182,22 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
         let notification = Notification(name: Notification.Name("test.wake"))
         wakePublisher.send(notification)
         
-        // Wait for async processing
-        try await Task.sleep(for: .milliseconds(50))
+        // Wait for both callbacks
+        await fulfillment(of: [expectation], timeout: 1.0)
         
         XCTAssertEqual(statusCallbacks.count, 2, "Should receive callback for each feature")
         
         // Find the callbacks for each feature
-        let netpCallback = statusCallbacks.first { $0.0 == .networkProtection }
-        let dbpCallback = statusCallbacks.first { $0.0 == .dataBrokerProtection }
+        let netpCallback = statusCallbacks.first { $0.feature == .networkProtection }
+        let dbpCallback = statusCallbacks.first { $0.feature == .dataBrokerProtection }
         
         XCTAssertNotNil(netpCallback)
         XCTAssertNotNil(dbpCallback)
-        XCTAssertTrue(netpCallback!.1, "Network protection should have entitlement")
-        XCTAssertFalse(dbpCallback!.1, "Data broker protection should not have entitlement")
+        XCTAssertTrue(netpCallback!.hasEntitlement, "Network protection should have entitlement")
+        XCTAssertFalse(dbpCallback!.hasEntitlement, "Data broker protection should not have entitlement")
+        
+        // Keep checker alive
+        _ = checker
     }
 
     // MARK: - Multiple Wake Notifications Tests
@@ -183,11 +208,21 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
             SubscriptionFeatureV2(entitlement: .networkProtection, isAvailableForUser: true)
         ]
         
+        let firstWakeExpectation = expectation(description: "First wake notification callback")
+        let secondWakeExpectation = expectation(description: "Second wake notification callback")
+        var callbackCount = 0
+        
         let checker = SubscriptionOnWakeEntitlementChecker(
             subscriptionManager: subscriptionManager,
             feature: .networkProtection,
             onEntitlementStatus: { feature, hasEntitlement in
-                self.statusCallbacks.append((feature, hasEntitlement))
+                self.statusCallbacks.append(EntitlementStatusCallback(feature: feature, hasEntitlement: hasEntitlement))
+                callbackCount += 1
+                if callbackCount == 1 {
+                    firstWakeExpectation.fulfill()
+                } else if callbackCount == 2 {
+                    secondWakeExpectation.fulfill()
+                }
             },
             wakeNotificationPublisher: wakePublisher.eraseToAnyPublisher()
         )
@@ -195,19 +230,22 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
         // Send first wake notification
         let notification1 = Notification(name: Notification.Name("test.wake1"))
         wakePublisher.send(notification1)
-        try await Task.sleep(for: .milliseconds(50))
+        await fulfillment(of: [firstWakeExpectation], timeout: 1.0)
         
         XCTAssertEqual(statusCallbacks.count, 1, "Should receive one callback after first wake")
         
         // Send second wake notification
         let notification2 = Notification(name: Notification.Name("test.wake2"))
         wakePublisher.send(notification2)
-        try await Task.sleep(for: .milliseconds(50))
+        await fulfillment(of: [secondWakeExpectation], timeout: 1.0)
         
         XCTAssertEqual(statusCallbacks.count, 2, "Should receive another callback after second wake")
         
         // Both should report the same status since mock always returns true
-        XCTAssertTrue(statusCallbacks.allSatisfy { $0.1 }, "Both callbacks should report entitlement")
+        XCTAssertTrue(statusCallbacks.allSatisfy { $0.hasEntitlement }, "Both callbacks should report entitlement")
+        
+        // Keep checker alive
+        _ = checker
     }
 
     func testStatelessBehavior() async throws {
@@ -216,11 +254,24 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
             SubscriptionFeatureV2(entitlement: .networkProtection, isAvailableForUser: true)
         ]
         
+        let firstWakeExpectation = expectation(description: "First wake callback")
+        let secondWakeExpectation = expectation(description: "Second wake callback")
+        let thirdWakeExpectation = expectation(description: "Third wake callback")
+        var callbackCount = 0
+        
         let checker = SubscriptionOnWakeEntitlementChecker(
             subscriptionManager: subscriptionManager,
             feature: .networkProtection,
             onEntitlementStatus: { feature, hasEntitlement in
-                self.statusCallbacks.append((feature, hasEntitlement))
+                self.statusCallbacks.append(EntitlementStatusCallback(feature: feature, hasEntitlement: hasEntitlement))
+                callbackCount += 1
+                if callbackCount == 1 {
+                    firstWakeExpectation.fulfill()
+                } else if callbackCount == 2 {
+                    secondWakeExpectation.fulfill()
+                } else if callbackCount == 3 {
+                    thirdWakeExpectation.fulfill()
+                }
             },
             wakeNotificationPublisher: wakePublisher.eraseToAnyPublisher()
         )
@@ -228,27 +279,30 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
         // First wake - has entitlement
         let notification1 = Notification(name: Notification.Name("test.wake1"))
         wakePublisher.send(notification1)
-        try await Task.sleep(for: .milliseconds(50))
+        await fulfillment(of: [firstWakeExpectation], timeout: 1.0)
         
         XCTAssertEqual(statusCallbacks.count, 1)
-        XCTAssertTrue(statusCallbacks[0].1, "First callback should report entitlement")
+        XCTAssertTrue(statusCallbacks[0].hasEntitlement, "First callback should report entitlement")
         
         // Second wake - still has entitlement (no change)
         let notification2 = Notification(name: Notification.Name("test.wake2"))
         wakePublisher.send(notification2)
-        try await Task.sleep(for: .milliseconds(50))
+        await fulfillment(of: [secondWakeExpectation], timeout: 1.0)
         
         XCTAssertEqual(statusCallbacks.count, 2, "Should still receive callback even though status hasn't changed")
-        XCTAssertTrue(statusCallbacks[1].1, "Second callback should still report entitlement")
+        XCTAssertTrue(statusCallbacks[1].hasEntitlement, "Second callback should still report entitlement")
         
         // Third wake - now no entitlement (simulate subscription expiry)
         subscriptionManager.resultFeatures = []
         let notification3 = Notification(name: Notification.Name("test.wake3"))
         wakePublisher.send(notification3)
-        try await Task.sleep(for: .milliseconds(50))
+        await fulfillment(of: [thirdWakeExpectation], timeout: 1.0)
         
         XCTAssertEqual(statusCallbacks.count, 3, "Should receive callback for changed status")
-        XCTAssertFalse(statusCallbacks[2].1, "Third callback should report no entitlement")
+        XCTAssertFalse(statusCallbacks[2].hasEntitlement, "Third callback should report no entitlement")
+        
+        // Keep checker alive
+        _ = checker
     }
 
     // MARK: - Error Handling Tests
@@ -257,11 +311,14 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
         // Test that checker correctly reports false when user has no entitlements
         subscriptionManager.resultFeatures = [] // No entitlements
         
+        let expectation = expectation(description: "onEntitlementStatus called for no entitlement")
+        
         let checker = SubscriptionOnWakeEntitlementChecker(
             subscriptionManager: subscriptionManager,
             feature: .networkProtection,
             onEntitlementStatus: { feature, hasEntitlement in
-                self.statusCallbacks.append((feature, hasEntitlement))
+                self.statusCallbacks.append(EntitlementStatusCallback(feature: feature, hasEntitlement: hasEntitlement))
+                expectation.fulfill()
             },
             wakeNotificationPublisher: wakePublisher.eraseToAnyPublisher()
         )
@@ -270,13 +327,13 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
         let notification = Notification(name: Notification.Name("test.wake"))
         wakePublisher.send(notification)
         
-        // Wait for async processing
-        try await Task.sleep(for: .milliseconds(50))
+        // Wait for callback
+        await fulfillment(of: [expectation], timeout: 1.0)
         
         // Should receive callback with false entitlement status
         XCTAssertEqual(statusCallbacks.count, 1, "Should receive callback")
-        XCTAssertEqual(statusCallbacks[0].0, .networkProtection, "Should check network protection feature")
-        XCTAssertFalse(statusCallbacks[0].1, "Should report no entitlement")
+        XCTAssertEqual(statusCallbacks[0].feature, .networkProtection, "Should check network protection feature")
+        XCTAssertFalse(statusCallbacks[0].hasEntitlement, "Should report no entitlement")
         
         // Keep checker alive until end of test
         _ = checker
@@ -290,11 +347,14 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
             SubscriptionFeatureV2(entitlement: .networkProtection, isAvailableForUser: true)
         ]
         
+        let firstCallbackExpectation = expectation(description: "First callback received")
+        
         var checker: SubscriptionOnWakeEntitlementChecker? = SubscriptionOnWakeEntitlementChecker(
             subscriptionManager: subscriptionManager,
             feature: .networkProtection,
             onEntitlementStatus: { [weak self] feature, hasEntitlement in
-                self?.statusCallbacks.append((feature, hasEntitlement))
+                self?.statusCallbacks.append(EntitlementStatusCallback(feature: feature, hasEntitlement: hasEntitlement))
+                firstCallbackExpectation.fulfill()
             },
             wakeNotificationPublisher: wakePublisher.eraseToAnyPublisher()
         )
@@ -302,17 +362,20 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
         // Send wake notification while checker exists
         let notification1 = Notification(name: Notification.Name("test.wake1"))
         wakePublisher.send(notification1)
-        try await Task.sleep(for: .milliseconds(50))
+        await fulfillment(of: [firstCallbackExpectation], timeout: 1.0)
         
         XCTAssertEqual(statusCallbacks.count, 1, "Should receive callback while checker exists")
         
         // Release checker
+        _ = checker // Silence warning about unused variable
         checker = nil
         
         // Send another wake notification after checker is released
         let notification2 = Notification(name: Notification.Name("test.wake2"))
         wakePublisher.send(notification2)
-        try await Task.sleep(for: .milliseconds(50))
+        
+        // Wait a bit for any potential callbacks (but shouldn't get any)
+        try await Task.sleep(for: .milliseconds(100))
         
         XCTAssertEqual(statusCallbacks.count, 1, "Should not receive callback after checker is deallocated")
     }
@@ -325,7 +388,7 @@ final class SubscriptionOnWakeEntitlementCheckerTests: XCTestCase {
                 subscriptionManager: subscriptionManager,
                 feature: .networkProtection,
                 onEntitlementStatus: { feature, hasEntitlement in
-                    self.statusCallbacks.append((feature, hasEntitlement))
+                    self.statusCallbacks.append(EntitlementStatusCallback(feature: feature, hasEntitlement: hasEntitlement))
                 },
                 wakeNotificationPublisher: wakePublisher.eraseToAnyPublisher()
             )

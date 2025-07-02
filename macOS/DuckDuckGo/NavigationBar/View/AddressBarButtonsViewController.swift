@@ -74,6 +74,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var cancelButton: AddressBarButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
     @IBOutlet weak var aiChatButton: AddressBarMenuButton!
+    @IBOutlet weak var askAIChatButton: AddressBarMenuButton!
 
     @IBOutlet weak var animationWrapperView: NSView!
     var trackerAnimationView1: LottieAnimationView!
@@ -94,6 +95,8 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var cancelButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var aiChatButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var aiChatButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var askAIChatButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var askAIChatButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageButtonLeadingConstraint: NSLayoutConstraint!
@@ -256,6 +259,8 @@ final class AddressBarButtonsViewController: NSViewController {
         bookmarkButton.sendAction(on: .leftMouseDown)
         bookmarkButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         configureAIChatButton()
+        configureAskAIChatButton()
+        configureContextMenuForAIChatButtons()
         privacyEntryPointButton.toolTip = UserText.privacyDashboardTooltip
         setupButtonPaddings()
     }
@@ -409,6 +414,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private func setupButtonsCornerRadius() {
         let cornerRadius = visualStyle.addressBarStyleProvider.addressBarButtonsCornerRadius
         aiChatButton.setCornerRadius(cornerRadius)
+        askAIChatButton.setCornerRadius(cornerRadius)
         bookmarkButton.setCornerRadius(cornerRadius)
         cancelButton.setCornerRadius(cornerRadius)
         permissionButtons.setCornerRadius(cornerRadius)
@@ -423,6 +429,8 @@ final class AddressBarButtonsViewController: NSViewController {
         cancelButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         aiChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         aiChatButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        askAIChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        askAIChatButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         privacyShieldButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         privacyShieldButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         zoomButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
@@ -505,7 +513,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatButtonForSidebar(_ isShowingSidebar: Bool) {
-        configureAIChatButtonMenu(isSidebarOpen: isShowingSidebar)
+        configureContextMenuForAIChatButtons(isSidebarOpen: isShowingSidebar)
+
         if isShowingSidebar {
             aiChatButton.setButtonType(.toggle)
             aiChatButton.state = .on
@@ -531,6 +540,55 @@ final class AddressBarButtonsViewController: NSViewController {
         guard let tabViewModel else { return }
         let isOnboarding = [.onboarding].contains(tabViewModel.tab.content)
         aiChatButton.isEnabled = !isOnboarding
+    }
+
+    // TODO: Clean up
+    private func updateAskAIChatButtonVisibility() {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else {
+            askAIChatButton.isHidden = true
+            return
+        }
+
+        aiChatButton.isHidden = isTextFieldEditorFirstResponder
+        askAIChatButton.isHidden = !isTextFieldEditorFirstResponder
+        //        askAIChatButton.title = "Ask Duck.ai"
+        askAIChatButton.imageHugsTitle = true
+        askAIChatButton.imagePosition = .imageLeading
+        askAIChatButton.imageScaling = .scaleNone
+
+        // Set the button to clip its contents to prevent text overflow during animation
+        askAIChatButton.wantsLayer = true
+        askAIChatButton.layer?.masksToBounds = true
+
+        var shouldAnimate: Bool
+        var targetWidth: CGFloat
+        var alphaValue: CGFloat
+
+        if isTextFieldEditorFirstResponder, let textFieldValue, (textFieldValue.isText || textFieldValue.isSuggestion), !textFieldValue.isEmpty {
+            shouldAnimate = true
+            // Animate width based on text field editor state
+            let size = askAIChatButton.sizeThatFits(CGSizeMake(1000, visualStyle.addressBarStyleProvider.addressBarButtonSize))
+            targetWidth =  max(size.width + 8, visualStyle.addressBarStyleProvider.addressBarButtonSize)
+            alphaValue = 1.0
+        } else {
+            shouldAnimate = false
+            targetWidth = 0
+            alphaValue = 0
+        }
+
+
+        if shouldAnimate {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.25
+                context.allowsImplicitAnimation = true
+                context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+                askAIChatButtonWidthConstraint.animator().constant = targetWidth
+                askAIChatButton.alphaValue = alphaValue
+            }
+        } else {
+            askAIChatButtonWidthConstraint.constant = targetWidth
+            askAIChatButton.alphaValue = alphaValue
+        }
     }
 
     @objc func openAIChatContextMenuAction(_ sender: NSMenuItem) {
@@ -569,42 +627,25 @@ final class AddressBarButtonsViewController: NSViewController {
         guard isViewLoaded else { return }
 
         leadingAIChatDivider.isHidden = aiChatButton.isHidden || bookmarkButton.isHidden
-//    TODO: trailingAIChatDivider is probably unnecessary
-        trailingAIChatDivider.isHidden = true // aiChatButton.isHidden || cancelButton.isHidden
+
+        if featureFlagger.isFeatureOn(.aiChatSidebar) {
+            trailingAIChatDivider.isHidden = true
+        } else {
+            trailingAIChatDivider.isHidden = aiChatButton.isHidden || cancelButton.isHidden
+        }
     }
 
     private func updateButtonsPosition() {
         cancelButton.position = .right
-        aiChatButton.position = cancelButton.isShown ? .center : .right
-        bookmarkButton.position = aiChatButton.isShown ? .center : .right
+        askAIChatButton.position = .center
 
-        // TODO: Find a better way to determine aiChatButton state
-
-        if aiChatButton.position == .center {
-            aiChatButton.title = " Ask Duck.ai" + "  " + "⇧⏎"
-            aiChatButton.imagePosition = .imageLeading
-            aiChatButton.imageHugsTitle = true
-            aiChatButton.backgroundColor = .buttonMouseDown
-//            aiChatButton.normalTintColor = nil
-//            aiChatButton.state = .on
-            aiChatButton.setButtonType(.momentaryPushIn)
-            aiChatButton.state = .off
-            aiChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
-
-            aiChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize + 120
-//            aiChatButton.sizeToFit()
-            aiChatButton.needsDisplay = true
-            aiChatButton.needsLayout = true
-            aiChatButton.isHidden = !(aiChatMenuConfig.shouldDisplayAddressBarShortcut && (textFieldValue?.isText ?? false || textFieldValue?.isSuggestion ?? false))
+        if featureFlagger.isFeatureOn(.aiChatSidebar) {
+            aiChatButton.position = .right
         } else {
-            aiChatButton.title = ""
-            aiChatButton.imagePosition = .imageOverlaps
-            aiChatButton.imageHugsTitle = true
-            aiChatButton.backgroundColor = .clear
-            aiChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
-            updateAIChatButtonVisibility()
-            updateAIChatButtonState()
+            aiChatButton.position = cancelButton.isShown ? .center : .right
         }
+
+        bookmarkButton.position = aiChatButton.isShown ? .center : .right
     }
 
     func openBookmarkPopover(setFavorite: Bool, accessPoint: GeneralPixel.AccessPoint) {
@@ -705,6 +746,7 @@ final class AddressBarButtonsViewController: NSViewController {
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
         updateAIChatButtonVisibility()
+        updateAskAIChatButtonVisibility()
         updateButtonsPosition()
     }
 
@@ -1023,53 +1065,104 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         aiChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
-
-        configureAIChatButtonMenu()
     }
 
-    private func configureAIChatButtonMenu(isSidebarOpen: Bool? = nil) {
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            let shouldShowOpenAIChatButton: Bool = {
-                guard let tabContent = tabViewModel?.tab.content, case .url = tabContent else {
-                    return false
-                }
-                return true
-            }()
+    // TODO: Clean up
+    private func configureAskAIChatButton() {
+        // Create attributed title with different colors
+        let mainText = "Ask Duck.ai"
+        let spacing = NSAttributedString(string: " ")
+        let shortcutText = "⇧⏎"
+        
+        let attributedTitle = NSMutableAttributedString()
+        
+        // Main text in normal color
+        let mainAttributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: visualStyle.colorsProvider.textPrimaryColor,
+            .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)
+        ]
+        attributedTitle.append(NSAttributedString(string: mainText, attributes: mainAttributes))
+        attributedTitle.append(spacing)
 
-            aiChatButton.menu = NSMenu {
-                if shouldShowOpenAIChatButton {
-                    let contextMenuTitle: String = {
-                        if aiChatMenuConfig.openAIChatInSidebar {
-                            return UserText.aiChatOpenNewTabButton
-                        } else {
-                            // Check if sidebar is currently open for this tab
-                            guard let tab = tabViewModel?.tab else {
-                                return UserText.aiChatOpenSidebarButton
-                            }
-                            let isShowingSidebar = isSidebarOpen ?? aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
-                            return isShowingSidebar ? UserText.aiChatCloseSidebarButton : UserText.aiChatOpenSidebarButton
-                        }
-                    }()
+        // Shortcut text in secondary color
+        let shortcutAttributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: visualStyle.colorsProvider.textTertiaryColor,
+            .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)
+        ]
+        attributedTitle.append(NSAttributedString(string: shortcutText, attributes: shortcutAttributes))
 
-                    NSMenuItem(title: contextMenuTitle,
-                               action: #selector(openAIChatContextMenuAction(_:)),
-                               keyEquivalent: "")
-                }
-                NSMenuItem(title: UserText.aiChatAddressBarHideButton,
-                           action: #selector(hideAIChatButtonAction(_:)),
-                           keyEquivalent: "")
-                NSMenuItem.separator()
-                NSMenuItem(title: UserText.aiChatOpenSettingsButton,
-                           action: #selector(openAIChatSettingsContextMenuAction(_:)),
-                           keyEquivalent: "")
-            }
-        } else {
-            aiChatButton.menu = NSMenu {
-                NSMenuItem(title: UserText.aiChatAddressBarHideButton,
-                           action: #selector(hideAIChatButtonAction(_:)),
-                           keyEquivalent: "")
-            }
+        askAIChatButton.attributedTitle = attributedTitle
+
+        let originalImage = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage
+        let paddedImage = originalImage.imageWithLeftPadding(6)
+        askAIChatButton.image = paddedImage
+//        askAIChatButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage
+        askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
+        askAIChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
+        askAIChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.askAIChatButton")
+
+        askAIChatButton.imagePosition = .imageLeading
+        askAIChatButton.imageScaling = .scaleNone
+        askAIChatButton.backgroundColor = .buttonMouseDown
+        askAIChatButton.state = .off
+        askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
+        
+        // Configure text truncation for smoother animation
+        if let buttonCell = askAIChatButton.cell as? NSButtonCell {
+            buttonCell.lineBreakMode = .byClipping
+            buttonCell.truncatesLastVisibleLine = false
         }
+    }
+
+    private func configureContextMenuForAIChatButtons(isSidebarOpen: Bool? = nil) {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else {
+
+            aiChatButton.menu = NSMenu {
+                NSMenuItem(title: UserText.aiChatAddressBarHideButton,
+                           action: #selector(hideAIChatButtonAction(_:)),
+                           keyEquivalent: "")
+            }
+
+            return
+        }
+
+        let shouldShowOpenAIChatButton: Bool = {
+            guard let tabContent = tabViewModel?.tab.content, case .url = tabContent else {
+                return false
+            }
+            return true
+        }()
+
+        let contextMenu = NSMenu {
+            if shouldShowOpenAIChatButton {
+                let contextMenuTitle: String = {
+                    if aiChatMenuConfig.openAIChatInSidebar {
+                        return UserText.aiChatOpenNewTabButton
+                    } else {
+                        // Check if sidebar is currently open for this tab
+                        guard let tab = tabViewModel?.tab else {
+                            return UserText.aiChatOpenSidebarButton
+                        }
+                        let isShowingSidebar = isSidebarOpen ?? aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
+                        return isShowingSidebar ? UserText.aiChatCloseSidebarButton : UserText.aiChatOpenSidebarButton
+                    }
+                }()
+
+                NSMenuItem(title: contextMenuTitle,
+                           action: #selector(openAIChatContextMenuAction(_:)),
+                           keyEquivalent: "")
+            }
+            NSMenuItem(title: UserText.aiChatAddressBarHideButton,
+                       action: #selector(hideAIChatButtonAction(_:)),
+                       keyEquivalent: "")
+            NSMenuItem.separator()
+            NSMenuItem(title: UserText.aiChatOpenSettingsButton,
+                       action: #selector(openAIChatSettingsContextMenuAction(_:)),
+                       keyEquivalent: "")
+        }
+
+        aiChatButton.menu = contextMenu
+        askAIChatButton.menu = contextMenu
     }
 
     private func updatePermissionButtons() {
@@ -1563,5 +1656,24 @@ extension URL {
             }
         }
         return false
+    }
+}
+
+// MARK: - NSImage Extension
+
+extension NSImage {
+
+    func imageWithLeftPadding(_ padding: CGFloat) -> NSImage {
+        let originalSize = self.size
+        let newSize = NSSize(width: originalSize.width + padding, height: originalSize.height)
+
+        let paddedImage = NSImage(size: newSize)
+        paddedImage.lockFocus()
+
+        // Draw the original image offset by the padding amount
+        self.draw(in: NSRect(x: padding, y: 0, width: originalSize.width, height: originalSize.height))
+
+        paddedImage.unlockFocus()
+        return paddedImage
     }
 }

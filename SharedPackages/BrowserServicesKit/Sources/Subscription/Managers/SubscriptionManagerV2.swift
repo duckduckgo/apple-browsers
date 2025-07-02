@@ -280,6 +280,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     public func loadInitialData() async {
         Logger.subscription.log("Loading initial data...")
         do {
+            _ = try? await getTokenContainer(policy: .localValid)
             let subscription = try await getSubscription(cachePolicy: .remoteFirst)
             Logger.subscription.log("Subscription is \(subscription.isActive ? "active" : "not active", privacy: .public)")
         } catch SubscriptionEndpointServiceError.noData {

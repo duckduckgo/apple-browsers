@@ -1907,7 +1907,7 @@ class MainViewController: UIViewController {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
             let payload = EntitlementsDidChangePayload(notificationUserInfo: notification.userInfo)
-            let hasEntitlements = payload.entitlements.contains(.networkProtection)
+            let hasEntitlement = payload.entitlements.contains(.networkProtection)
             let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 

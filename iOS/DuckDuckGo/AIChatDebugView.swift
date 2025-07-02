@@ -59,6 +59,12 @@ private final class AIChatDebugViewModel: ObservableObject {
     @Published var customURL: String {
         didSet {
             debugSettings.customURL = customURL.isEmpty ? nil : customURL
+            // Update the hostname in the UI when URL changes
+            if customURL.isEmpty {
+                enteredHostname = ""
+            } else if let url = URL(string: customURL), let host = url.host {
+                enteredHostname = host
+            }
         }
     }
 

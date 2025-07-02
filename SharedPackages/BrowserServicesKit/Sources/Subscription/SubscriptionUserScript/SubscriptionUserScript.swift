@@ -133,12 +133,17 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
     }
 
     public let featureName: String = "subscriptions"
-    public lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
-        .exact(hostname: aiChatURL.host ?? defaultOriginDomain)
-    ])
+    public var messageOriginPolicy: MessageOriginPolicy {
+        var rules: [HostnameMatchingRule] = [.exact(hostname: "duckduckgo.com")]
+        if let debugHost {
+            rules.append(.exact(hostname: debugHost))
+        }
+        return .only(rules: rules)
+    }
     public weak var broker: UserScriptMessageBroker?
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        print("METHOD: \(methodName)")
         switch MessageName(rawValue: methodName) {
         case .handshake:
             return handler.handshake
@@ -159,23 +164,23 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
         }
     }
 
-    private let aiChatURL: URL
+    private let debugHost: String?
 
     public convenience init(platform: DataModel.Platform,
                             subscriptionManager: any SubscriptionAuthV1toV2Bridge,
                             paidAIChatFlagStatusProvider: @escaping () -> Bool,
                             navigationDelegate: SubscriptionUserScriptNavigationDelegate?,
-                            aiChatURL: URL) {
+                            debugHost: String?) {
         self.init(handler: SubscriptionUserScriptHandler(platform: platform,
                                                          subscriptionManager: subscriptionManager,
                                                          paidAIChatFlagStatusProvider: paidAIChatFlagStatusProvider,
                                                          navigationDelegate: navigationDelegate),
-                  aiChatURL: aiChatURL)
+                  debugHost: debugHost)
     }
 
-    init(handler: SubscriptionUserScriptHandling, aiChatURL: URL) {
+    init(handler: SubscriptionUserScriptHandling, debugHost: String?) {
         self.handler = handler
-        self.aiChatURL = aiChatURL
+        self.debugHost = debugHost
         super.init()
     }
 

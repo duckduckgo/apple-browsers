@@ -61,14 +61,15 @@ final class UserScripts: UserScriptsProvider {
         clickToLoadScript = ClickToLoadUserScript()
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
+        let aiChatDebugURLSettings = AIChatDebugURLSettings()
         aiChatUserScript = AIChatUserScript(handler: AIChatUserScriptHandler(storage: DefaultAIChatPreferencesStorage()),
-                                            urlSettings: AIChatDebugURLSettings())
+                                            urlSettings: aiChatDebugURLSettings)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
             subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
             paidAIChatFlagStatusProvider: { NSApp.delegateTyped.featureFlagger.isFeatureOn(.paidAIChat) },
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
-            aiChatURL: AIChatRemoteSettings().aiChatURL
+            debugHost: aiChatDebugURLSettings.customURLHostname
         )
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled

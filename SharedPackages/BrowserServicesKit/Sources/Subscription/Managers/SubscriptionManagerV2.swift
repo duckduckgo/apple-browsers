@@ -471,6 +471,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
             let newEntitlements = resultTokenContainer.decodedAccessToken.subscriptionEntitlements
             cachedUserEntitlements = newEntitlements
+
             cachedIsUserAuthenticated = true
 
             return resultTokenContainer

@@ -20,7 +20,7 @@ import Foundation
 import Networking
 
 public struct EntitlementsBridging {
-    
+
     public static func v2EntitlementsFrom(v1Entitlements: [Entitlement]) -> [SubscriptionEntitlement] {
         v1Entitlements.map { v1Entitlement in
             switch v1Entitlement.product {

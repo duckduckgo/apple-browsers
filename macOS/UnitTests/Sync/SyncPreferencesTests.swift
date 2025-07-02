@@ -430,22 +430,28 @@ final class SyncPreferencesTests: XCTestCase {
         await fulfillment(of: [codeForDisplayExpectation, stringForQRExpectation], timeout: 5)
     }
 
+    @MainActor
     func test_startPollingForRecoveryKey_whenFeatureFlagOff_usesBase64Code() async {
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
         let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
         connectionController.startConnectModeStub = pairingInfo
 
-        syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+        Task {
+            syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+        }
 
         await waitFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
     }
 
+    @MainActor
     func test_startPollingForRecoveryKey_whenFeatureFlagOn_usesURL() async throws {
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
         let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
         connectionController.startConnectModeStub = pairingInfo
 
-        syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+        Task {
+            syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+        }
 
         await waitFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
     }
@@ -485,7 +491,9 @@ final class SyncPreferencesTests: XCTestCase {
         let mockAccount = SyncAccount.mock
         ddgSyncing.account = mockAccount
 
-        await syncPreferences.syncWithAnotherDevicePressed()
+        Task {
+            await syncPreferences.syncWithAnotherDevicePressed()
+        }
 
         let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
 
@@ -508,7 +516,9 @@ final class SyncPreferencesTests: XCTestCase {
         let stubbedPairingInfo = PairingInfo(base64Code: expectedExchangeCode, deviceName: "")
         connectionController.startExchangeModeStub = stubbedPairingInfo
 
-        await syncPreferences.syncWithAnotherDevicePressed()
+        Task {
+            await syncPreferences.syncWithAnotherDevicePressed()
+        }
 
         let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
 
@@ -528,7 +538,9 @@ final class SyncPreferencesTests: XCTestCase {
         let stubbedPairingInfo = PairingInfo(base64Code: expectedDisplayCode, deviceName: "")
         connectionController.startConnectModeStub = stubbedPairingInfo
 
-        await syncPreferences.enterRecoveryCodePressed()
+        Task {
+            await syncPreferences.enterRecoveryCodePressed()
+        }
 
         let code = try await waitForEnterRecoveryCodeDialog()
 
@@ -547,7 +559,9 @@ final class SyncPreferencesTests: XCTestCase {
         let stubbedPairingInfo = PairingInfo(base64Code: expectedDisplayCode, deviceName: "")
         connectionController.startConnectModeStub = stubbedPairingInfo
 
-        await syncPreferences.enterRecoveryCodePressed()
+        Task {
+            await syncPreferences.enterRecoveryCodePressed()
+        }
 
         let code = try await waitForEnterRecoveryCodeDialog()
 
@@ -564,7 +578,9 @@ final class SyncPreferencesTests: XCTestCase {
         connectionController.startExchangeModeStub = stubbedPairingInfo
         ddgSyncing.account = .mock
 
-        await syncPreferences.syncWithAnotherDevicePressed()
+        Task {
+            await syncPreferences.syncWithAnotherDevicePressed()
+        }
 
         let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
 
@@ -584,7 +600,9 @@ final class SyncPreferencesTests: XCTestCase {
         connectionController.startExchangeModeStub = stubbedPairingInfo
         ddgSyncing.account = .mock
 
-        await syncPreferences.syncWithAnotherDevicePressed()
+        Task {
+            await syncPreferences.syncWithAnotherDevicePressed()
+        }
 
         let codes = try await waitForSyncWithAnotherDeviceDialogCodes()
 

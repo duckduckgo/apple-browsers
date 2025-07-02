@@ -31,7 +31,7 @@ final class DefaultBrowserPromptUserTypeStoreTests {
 
     init() throws {
         storeMock = try MockKeyValueFileStore()
-        sut = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: storeMock, eventMapper: EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent> { _, _, _ ,_ in })
+        sut = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: storeMock, eventMapper: EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent> { _, _, _, _ in })
     }
 
     @Test(
@@ -84,7 +84,7 @@ final class DefaultBrowserPromptUserTypeStoreTests {
         var capturedEvent: DefaultBrowserPromptUserTypeStore.DebugEvent?
         var capturedError: Error?
         storeMock.throwOnRead = error
-        sut = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: storeMock, eventMapper: EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent> { event, error, _ ,_ in
+        sut = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: storeMock, eventMapper: EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent> { event, error, _, _ in
             capturedEvent = event
             capturedError = error
         })
@@ -111,7 +111,7 @@ final class DefaultBrowserPromptUserTypeStoreTests {
         var capturedEvent: DefaultBrowserPromptUserTypeStore.DebugEvent?
         var capturedError: Error?
         storeMock.throwOnSet = error
-        sut = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: storeMock, eventMapper: EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent> { event, error, _ ,_ in
+        sut = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: storeMock, eventMapper: EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent> { event, error, _, _ in
             capturedEvent = event
             capturedError = error
         })

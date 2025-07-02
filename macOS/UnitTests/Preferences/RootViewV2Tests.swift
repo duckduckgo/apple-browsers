@@ -74,7 +74,7 @@ final class RootViewV2Tests: XCTestCase {
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
-            aiChatURLSettings: MockRemoteAISettings()
+            aiChatURLSettings: mockRemoteAISettings
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content

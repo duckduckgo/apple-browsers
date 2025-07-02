@@ -73,6 +73,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
 
     private let featureFlagger: FeatureFlagger
+    private let aiChatURL: URL
 
     public init(subscriptionManager: SubscriptionManagerV2,
                 subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandler = PrivacyProSubscriptionAttributionPixelHandler(),
@@ -88,6 +89,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
         self.uiHandler = uiHandler
+        self.aiChatURL = aiChatURL
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.notificationCenter = notificationCenter
@@ -394,7 +396,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             await uiHandler.showTab(with: .identityTheftRestoration(url))
         case .paidAIChat:
             PixelKit.fire(PrivacyProPixel.privacyProWelcomeAIChat, frequency: .uniqueByName)
-            let aiChatURL = AIChatRemoteSettings().aiChatURL
             await uiHandler.showTab(with: .aiChat(aiChatURL))
         case .unknown:
             break

@@ -116,6 +116,7 @@ final class SyncPreferencesTests: XCTestCase {
         ddgSyncing = nil
         syncPreferences = nil
         pausedStateManager = nil
+        cancellables = nil
         tearDownDatabase()
     }
 
@@ -185,6 +186,7 @@ final class SyncPreferencesTests: XCTestCase {
 
     func testOnTurnOffSyncThenSyncServiceIsDisconnected() async throws {
         let expectation = expectation(description: "disonnectCalled")
+        expectation.assertForOverFulfill = false
         ddgSyncing.spyDisconnectCalled = {
             expectation.fulfill()
         }
@@ -254,15 +256,28 @@ final class SyncPreferencesTests: XCTestCase {
     }
 
     func test_WhenSyncIsTurnedOff_ErrorHandlerSyncDidTurnOffCalled() async throws {
+        let expectation = expectation(description: "errorHandlerSyncDidTurnOffCalled")
+
+        pausedStateManager.spySyncDidTurnOff = {
+            expectation.fulfill()
+        }
+
         syncPreferences.turnOffSync()
 
-        try await pausedStateManager.$syncDidTurnOffCalled.async(waitFor: true)
+        await fulfillment(of: [expectation], timeout: 5.0)
+
     }
 
     func test_WhenAccountRemoved_ErrorHandlerSyncDidTurnOffCalled() async throws {
+        let expectation = expectation(description: "errorHandlerSyncDidTurnOffCalled")
+
+        pausedStateManager.spySyncDidTurnOff = {
+            expectation.fulfill()
+        }
+
         syncPreferences.deleteAccount()
 
-        try await pausedStateManager.$syncDidTurnOffCalled.async(waitFor: true)
+        await fulfillment(of: [expectation], timeout: 5.0)
     }
 
     func test_ErrorHandlerReturnsExpectedSyncBookmarksPausedMetadata() {
@@ -292,7 +307,7 @@ final class SyncPreferencesTests: XCTestCase {
             expectation.fulfill()
         }
         syncPreferences.recoverDevice(recoveryCode: testRecoveryCode, fromRecoveryScreen: false, codeSource: .qrCode)
-        await fulfillment(of: [expectation])
+        await fulfillment(of: [expectation], timeout: 5)
     }
 
     func test_controllerDidFindTwoAccountsDuringRecovery_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async throws {
@@ -319,8 +334,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
 
-        let deviceIDsPublisher = syncPreferences.$devices.map { $0.map { $0.id } }
-        try await deviceIDsPublisher.async(waitFor: ["1", "2"])
+        XCTAssertEqual(syncPreferences.devices.map(\.id), ["1", "2"])
     }
 
     func test_recoverDevice_accountAlreadyExists_oneDevice_endsFlow() async throws {
@@ -334,7 +348,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
 
-        try await managementDialogModel.$currentDialog.async(waitFor: nil)
+        XCTAssertNil(managementDialogModel.currentDialog)
     }
 
     func test_recoverDevice_accountAlreadyExists_twoOrMoreDevices_showsAccountSwitchingMessage() async throws {
@@ -364,6 +378,7 @@ final class SyncPreferencesTests: XCTestCase {
         await fulfillment(of: [loginCalledExpectation], timeout: 5.0)
     }
 
+    @MainActor
     func test_switchAccounts_updatesDevicesWithReturnedDevices() async throws {
         setUpWithSingleDevice(id: "1")
 
@@ -371,9 +386,20 @@ final class SyncPreferencesTests: XCTestCase {
             return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
 
-        syncPreferences.userConfirmedSwitchAccounts(recoveryCode: testRecoveryCode)
-        let deviceIDsPublisher = syncPreferences.$devices.map { $0.map { $0.id } }
-        try await deviceIDsPublisher.async(waitFor: ["1", "2"])
+        let expectation = expectation(description: "received devices")
+        expectation.assertForOverFulfill = false
+
+        syncPreferences.$devices.sink {
+            if $0.map(\.id) == ["1", "2"] {
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        Task {
+            syncPreferences.userConfirmedSwitchAccounts(recoveryCode: testRecoveryCode)
+        }
+
+        await fulfillment(of: [expectation], timeout: 5)
     }
 
     private func setUpWithSingleDevice(id: String)  {
@@ -382,15 +408,36 @@ final class SyncPreferencesTests: XCTestCase {
         syncPreferences.devices = [SyncDevice(RegisteredDevice(id: id, name: "iPhone", type: "iPhone"))]
     }
 
-    func test_startPollingForRecoveryKey_whenFeatureFlagOff_usesBase64Code() async throws {
+    private func waitFor(codeForDisplayOrPasting: String, stringForQR: String) async {
+        let codeForDisplayExpectation = expectation(description: "codeForDisplayOrPasting")
+        let stringForQRExpectation = expectation(description: "stringForQR")
+
+        codeForDisplayExpectation.assertForOverFulfill = false
+        stringForQRExpectation.assertForOverFulfill = false
+
+        syncPreferences.$codeForDisplayOrPasting.sink {
+            if $0 == codeForDisplayOrPasting {
+                codeForDisplayExpectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        syncPreferences.$stringForQR.sink {
+            if $0 == stringForQR {
+                stringForQRExpectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
+        await fulfillment(of: [codeForDisplayExpectation, stringForQRExpectation], timeout: 5)
+    }
+
+    func test_startPollingForRecoveryKey_whenFeatureFlagOff_usesBase64Code() async {
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
         let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
         connectionController.startConnectModeStub = pairingInfo
 
         syncPreferences.startPollingForRecoveryKey(isRecovery: false)
 
-        try await syncPreferences.$codeForDisplayOrPasting.async(waitFor: "test_code")
-        try await syncPreferences.$stringForQR.async(waitFor: "test_code")
+        await waitFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
     }
 
     func test_startPollingForRecoveryKey_whenFeatureFlagOn_usesURL() async throws {
@@ -400,10 +447,10 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncPreferences.startPollingForRecoveryKey(isRecovery: false)
 
-        try await syncPreferences.$codeForDisplayOrPasting.async(waitFor: "test_code")
-        try await syncPreferences.$stringForQR.async(waitFor: pairingInfo.url.absoluteString)
+        await waitFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
     }
 
+    @MainActor
     func test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOff_usesBase64Code() async throws {
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
@@ -411,12 +458,14 @@ final class SyncPreferencesTests: XCTestCase {
         connectionController.startExchangeModeStub = pairingInfo
         ddgSyncing.account = .mock
 
-        await syncPreferences.syncWithAnotherDevicePressed()
+        Task {
+            await syncPreferences.syncWithAnotherDevicePressed()
+        }
 
-        try await syncPreferences.$codeForDisplayOrPasting.async(waitFor: "test_code")
-        try await syncPreferences.$stringForQR.async(waitFor: "test_code")
+        await waitFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
     }
 
+    @MainActor
     func test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOn_usesURL() async throws {
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
@@ -424,10 +473,11 @@ final class SyncPreferencesTests: XCTestCase {
         connectionController.startExchangeModeStub = pairingInfo
         ddgSyncing.account = .mock
 
-        await syncPreferences.syncWithAnotherDevicePressed()
+        Task {
+            await syncPreferences.syncWithAnotherDevicePressed()
+        }
 
-        try await syncPreferences.$codeForDisplayOrPasting.async(waitFor: "test_code")
-        try await syncPreferences.$stringForQR.async(waitFor: pairingInfo.url.absoluteString)
+        await waitFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
     }
 
     func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_usesRecoveryCode() async throws {
@@ -545,25 +595,44 @@ final class SyncPreferencesTests: XCTestCase {
         XCTAssertEqual(syncPreferences.stringForQR, expectedCode)
     }
 
-    func test_startPollingForRecoveryKey_whenError_showsError() async throws {
+    func test_startPollingForRecoveryKey_whenError_showsError() async {
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
         connectionController.startConnectModeError = SyncError.failedToDecryptValue("")
 
+        let expectation = expectation(description: "shouldShowErrorMessage")
+        expectation.assertForOverFulfill = false
+        managementDialogModel.$shouldShowErrorMessage.sink { [weak self] in
+            if $0 {
+                XCTAssertEqual(self?.managementDialogModel.syncErrorMessage?.type, .unableToSyncToOtherDevice)
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
+
         syncPreferences.startPollingForRecoveryKey(isRecovery: false)
 
-        try await managementDialogModel.$shouldShowErrorMessage.async(waitFor: true)
-        try await managementDialogModel.$syncErrorMessage.compactMap { $0 }.map(\.type).async(waitFor: .unableToSyncToOtherDevice)
+        await fulfillment(of: [expectation], timeout: 5)
     }
 
+    @MainActor
     func test_syncWithAnotherDevicePressed_accountExists_whenError_showsError() async throws {
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
         connectionController.startExchangeModeError = SyncError.failedToDecryptValue("")
         ddgSyncing.account = .mock
 
-        await syncPreferences.syncWithAnotherDevicePressed()
+        let expectation = expectation(description: "shouldShowErrorMessage")
+        expectation.assertForOverFulfill = false
+        managementDialogModel.$shouldShowErrorMessage.sink { [weak self] in
+            if $0 {
+                XCTAssertEqual(self?.managementDialogModel.syncErrorMessage?.type, .unableToSyncToOtherDevice)
+                expectation.fulfill()
+            }
+        }.store(in: &cancellables)
 
-        try await managementDialogModel.$shouldShowErrorMessage.async(waitFor: true)
-        try await managementDialogModel.$syncErrorMessage.compactMap { $0 }.map(\.type).async(waitFor: .unableToSyncToOtherDevice)
+        Task {
+            await syncPreferences.syncWithAnotherDevicePressed()
+        }
+
+        await fulfillment(of: [expectation], timeout: 5)
     }
 
     private struct SyncDialogCodes: Equatable {
@@ -578,6 +647,7 @@ final class SyncPreferencesTests: XCTestCase {
     @MainActor
     private func waitForSyncWithAnotherDeviceDialogCodes() async throws -> SyncDialogCodes {
         let expectation = expectation(description: "waitForSyncWithAnotherDeviceDialogCodes")
+        expectation.assertForOverFulfill = false
         var codes: SyncDialogCodes?
         managementDialogModel.$currentDialog
             .sink { dialog in
@@ -600,6 +670,7 @@ final class SyncPreferencesTests: XCTestCase {
     @MainActor
     private func waitForEnterRecoveryCodeDialog() async throws -> String {
         let expectation = expectation(description: "waitForEnterRecoveryCodeDialog")
+        expectation.assertForOverFulfill = false
         var code: String?
         managementDialogModel.$currentDialog.sink {
             if case .enterRecoveryCode(let qrCode) = $0 {

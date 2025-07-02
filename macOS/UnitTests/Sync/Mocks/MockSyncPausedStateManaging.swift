@@ -27,8 +27,6 @@ class MockSyncPausedStateManaging: SyncPausedStateManaging {
 
     var isSyncPausedChangedPublisher = PassthroughSubject<Void, Never>()
 
-    @Published var syncDidTurnOffCalled = false
-
     var isSyncPaused: Bool = false
 
     var isSyncBookmarksPaused: Bool = false
@@ -51,7 +49,10 @@ class MockSyncPausedStateManaging: SyncPausedStateManaging {
         return Self.syncCredentialsPausedData
     }
 
+    var syncDidTurnOffCalled = false
+    var spySyncDidTurnOff = { }
     func syncDidTurnOff() {
         syncDidTurnOffCalled = true
+        spySyncDidTurnOff()
     }
 }

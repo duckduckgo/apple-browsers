@@ -42,7 +42,7 @@ public struct AIChatRequestAuthorizationHandler: AIChatRequestAuthorizationHandl
     @MainActor
     public func shouldAllowRequestWithNavigationAction(_ navigationAction: WKNavigationAction) -> Bool {
         /// If we have debug settings, lets allow all requests since we might have redirects like Duo
-        if debugSettings.messagePolicyHostname?.isEmpty == false || debugSettings.customURL?.isEmpty == false {
+        if debugSettings.messagePolicyHostname?.isEmpty == false {
             return true
         }
         if let url = navigationAction.request.url {

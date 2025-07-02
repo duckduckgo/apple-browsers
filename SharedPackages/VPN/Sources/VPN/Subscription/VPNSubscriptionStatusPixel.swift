@@ -102,7 +102,6 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
             return [
                 "isSubscriptionActive": isSubscriptionActiveString,
                 "authVersion": isAuthV2 ? "v2" : "v1",
-                "trigger": Self.trigger(from: source),
                 "notificationObjectClass": Self.sourceClass(from: source)
             ]
         }
@@ -110,17 +109,6 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
 
     public var error: (any Error)? {
         nil
-    }
-
-    static func trigger(from source: Source) -> String {
-        switch source {
-        case .clientCheck:
-            return "clientCheck"
-        case .clientCheckOnWake:
-            return "clientCheckOnWake"
-        case .notification:
-            return "notification"
-        }
     }
 
     static func sourceClass(from source: Source) -> String {

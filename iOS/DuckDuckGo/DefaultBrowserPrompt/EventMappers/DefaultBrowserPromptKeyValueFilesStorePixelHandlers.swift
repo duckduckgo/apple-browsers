@@ -51,4 +51,13 @@ enum DefaultBrowserPromptKeyValueFilesStorePixelHandlers {
         }
     }
 
+    static let userTypeDebugPixelHandler = EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent> { event, error, _, _ in
+        switch event {
+        case .failedToRetrieveUserType:
+            Logger.defaultBrowserPrompt.error("[Default Browser Prompt] - Failed to Retrieve Default Browser Prompt User Type. Reason: \(error)")
+        case .failedToSaveUserType:
+            Logger.defaultBrowserPrompt.error("[Default Browser Prompt] - Failed to Save Default Browser Prompt User Type. Reason: \(error)")
+        }
+    }
+
 }

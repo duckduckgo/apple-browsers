@@ -6819,9 +6819,9 @@
 		9FF967AD2E0E241E00E45B54 /* DefaultBrowserPrompt */ = {
 			isa = PBXGroup;
 			children = (
+				9FE7CD612E14D8F3006691AB /* EventMappers */,
 				9FE7CD652E14DCE1006691AB /* UserType */,
 				9FE7CD642E14DCCC006691AB /* PromptActivity */,
-				9FE7CD612E14D8F3006691AB /* EventMappers */,
 				9FE7CD562E13BF74006691AB /* UserActivityManager */,
 				9F454D192E051CBE00B8CC5A /* DefaultBrowserPromptFeatureFlagAdapter.swift */,
 			);

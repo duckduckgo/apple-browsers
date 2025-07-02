@@ -21,6 +21,7 @@ import Foundation
 import Core
 import BrowserServicesKit
 import Persistence
+import class Common.EventMapping
 import SetDefaultBrowserCore
 
 final class DefaultBrowserPromptUserTypeManager {
@@ -70,9 +71,11 @@ final class DefaultBrowserPromptUserTypeStore: DefaultBrowserPromptUserTypeStori
     }
 
     private let keyValueFilesStore: ThrowingKeyValueStoring
+    private let eventMapper: EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent>
 
-    init(keyValueFilesStore: ThrowingKeyValueStoring) {
+    init(keyValueFilesStore: ThrowingKeyValueStoring, eventMapper: EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent> = DefaultBrowserPromptKeyValueFilesStorePixelHandlers.userTypeDebugPixelHandler) {
         self.keyValueFilesStore = keyValueFilesStore
+        self.eventMapper = eventMapper
     }
 
     func userType() -> DefaultBrowserPromptUserType? {
@@ -81,7 +84,7 @@ final class DefaultBrowserPromptUserTypeStore: DefaultBrowserPromptUserTypeStori
             return rawValue.flatMap(DefaultBrowserPromptUserType.init)
         } catch {
             // Fire an event
-            Logger.defaultBrowserPrompt.error("[Default Browser Prompt] - Failed to Retrieve Default Browser Prompt User Type. Reason: \(error)")
+            eventMapper.fire(DebugEvent.failedToRetrieveUserType, error: error)
             return nil
         }
     }
@@ -91,7 +94,15 @@ final class DefaultBrowserPromptUserTypeStore: DefaultBrowserPromptUserTypeStori
             try keyValueFilesStore.set(userType.rawValue, forKey: StorageKey.userType)
         } catch {
             // Fire an event
-            Logger.defaultBrowserPrompt.error("[Default Browser Prompt] - Failed to Save Default Browser Prompt User Type. Reason: \(error)")
+            eventMapper.fire(DebugEvent.failedToSaveUserType, error: error)
         }
+    }
+}
+
+extension DefaultBrowserPromptUserTypeStore {
+
+    enum DebugEvent {
+        case failedToRetrieveUserType
+        case failedToSaveUserType
     }
 }

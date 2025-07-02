@@ -25,6 +25,7 @@ import Lottie
 import os.log
 import PrivacyDashboard
 import PixelKit
+import AppKitExtensions
 
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
@@ -35,6 +36,13 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 }
 
 final class AddressBarButtonsViewController: NSViewController {
+
+    private enum Constants {
+        static let askAiChatButtonTrailingPadding: CGFloat = 8
+        static let askAiChatButtonImagePadding: NSEdgeInsets = NSEdgeInsets(top: 0, left: 6, bottom: 0, right: 3)
+        static let askAiChatButtonAnimationDuration: TimeInterval = 4.25
+    }
+
     weak var delegate: AddressBarButtonsViewControllerDelegate?
 
     private let accessibilityPreferences: AccessibilityPreferences
@@ -542,44 +550,44 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.isEnabled = !isOnboarding
     }
 
-    // TODO: Clean up
     private func updateAskAIChatButtonVisibility() {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else {
             askAIChatButton.isHidden = true
             return
         }
 
-        aiChatButton.isHidden = isTextFieldEditorFirstResponder
-        askAIChatButton.isHidden = !isTextFieldEditorFirstResponder
-        //        askAIChatButton.title = "Ask Duck.ai"
-        askAIChatButton.imageHugsTitle = true
-        askAIChatButton.imagePosition = .imageLeading
-        askAIChatButton.imageScaling = .scaleNone
+        func shouldExpandButton() -> Bool {
+            guard isTextFieldEditorFirstResponder,
+                  let textFieldValue,
+                  (textFieldValue.isText || textFieldValue.isSuggestion),
+                  !textFieldValue.isEmpty
+            else {
+                return false
+            }
+            return true
+        }
 
-        // Set the button to clip its contents to prevent text overflow during animation
-        askAIChatButton.wantsLayer = true
-        askAIChatButton.layer?.masksToBounds = true
-
-        var shouldAnimate: Bool
+        var withAnimation: Bool
         var targetWidth: CGFloat
         var alphaValue: CGFloat
 
-        if isTextFieldEditorFirstResponder, let textFieldValue, (textFieldValue.isText || textFieldValue.isSuggestion), !textFieldValue.isEmpty {
-            shouldAnimate = true
-            // Animate width based on text field editor state
-            let size = askAIChatButton.sizeThatFits(CGSizeMake(1000, visualStyle.addressBarStyleProvider.addressBarButtonSize))
-            targetWidth =  max(size.width + 8, visualStyle.addressBarStyleProvider.addressBarButtonSize)
+        aiChatButton.isHidden = isTextFieldEditorFirstResponder
+        askAIChatButton.isHidden = !isTextFieldEditorFirstResponder
+
+        if shouldExpandButton() {
+            withAnimation = true
+            let fittingSize = askAIChatButton.sizeThatFits(CGSizeMake(1000, visualStyle.addressBarStyleProvider.addressBarButtonSize))
+            targetWidth =  max(fittingSize.width + Constants.askAiChatButtonTrailingPadding, visualStyle.addressBarStyleProvider.addressBarButtonSize)
             alphaValue = 1.0
         } else {
-            shouldAnimate = false
+            withAnimation = false
             targetWidth = 0
             alphaValue = 0
         }
 
-
-        if shouldAnimate {
+        if withAnimation {
             NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.25
+                context.duration = Constants.askAiChatButtonAnimationDuration
                 context.allowsImplicitAnimation = true
                 context.timingFunction = CAMediaTimingFunction(name: .easeIn)
                 askAIChatButtonWidthConstraint.animator().constant = targetWidth
@@ -1094,13 +1102,14 @@ final class AddressBarButtonsViewController: NSViewController {
         askAIChatButton.attributedTitle = attributedTitle
 
         let originalImage = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage
-        let paddedImage = originalImage.imageWithLeftPadding(6)
+        let paddedImage = originalImage.imageWithPadding(Constants.askAiChatButtonImagePadding)
         askAIChatButton.image = paddedImage
-//        askAIChatButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage
+
         askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         askAIChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         askAIChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.askAIChatButton")
 
+        askAIChatButton.imageHugsTitle = true
         askAIChatButton.imagePosition = .imageLeading
         askAIChatButton.imageScaling = .scaleNone
         askAIChatButton.backgroundColor = .buttonMouseDown
@@ -1656,24 +1665,5 @@ extension URL {
             }
         }
         return false
-    }
-}
-
-// MARK: - NSImage Extension
-
-extension NSImage {
-
-    func imageWithLeftPadding(_ padding: CGFloat) -> NSImage {
-        let originalSize = self.size
-        let newSize = NSSize(width: originalSize.width + padding, height: originalSize.height)
-
-        let paddedImage = NSImage(size: newSize)
-        paddedImage.lockFocus()
-
-        // Draw the original image offset by the padding amount
-        self.draw(in: NSRect(x: padding, y: 0, width: originalSize.width, height: originalSize.height))
-
-        paddedImage.unlockFocus()
-        return paddedImage
     }
 }

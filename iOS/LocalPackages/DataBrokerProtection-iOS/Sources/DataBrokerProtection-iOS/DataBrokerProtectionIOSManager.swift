@@ -93,7 +93,8 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                   unknownUsernameCategorization: false,
                                                   partialFormSaves: false,
                                                   passwordVariantCategorization: false,
-                                                  inputFocusApi: false)
+                                                  inputFocusApi: false,
+                                                  autocompleteAttributeSupport: false)
         let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
                                                             sessionKey: UUID().uuidString,
                                                             messageSecret: UUID().uuidString,
@@ -333,15 +334,4 @@ extension DataBrokerProtectionIOSManager: DBPUIViewModelDelegate {
         try database.matchRemovedByUser(id)
     }
 
-}
-
-extension DataBrokerProtectionIOSManager {
-
-    public static var isDBPStaticallyEnabled: Bool {
-#if DEBUG || ALPHA
-        return true
-#else
-        return false
-#endif
-    }
 }

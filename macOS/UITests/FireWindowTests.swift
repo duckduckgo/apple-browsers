@@ -18,24 +18,23 @@
 
 import XCTest
 
-class FireWindowTests: XCTestCase {
+class FireWindowTests: UITestCase {
     private var app: XCUIApplication!
     private var settingsGeneralButton: XCUIElement!
     private var reopenAllWindowsFromLastSessionPreference: XCUIElement!
 
     override class func setUp() {
+        super.setUp()
         UITests.firstRun()
     }
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
+        app = XCUIApplication.setUp()
 
         settingsGeneralButton = app.buttons["PreferencesSidebar.generalButton"]
         reopenAllWindowsFromLastSessionPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"]
 
-        app.launch()
         app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window
     }
 

@@ -26,12 +26,6 @@ import os.log
 import DataBrokerProtectionCore
 import Subscription
 
-private struct EditablePartialProfile {
-    var names: [DBPUIUserProfileName] = []
-    var birthYear: DBPUIBirthYear?
-    var addresses: [DBPUIUserProfileAddress] = []
-}
-
 public protocol DBPUIViewModelDelegate: AnyObject {
     func isUserAuthenticated() -> Bool
     func getUserProfile() throws -> DataBrokerProtectionProfile?
@@ -51,7 +45,7 @@ public final class DBPUIViewModel {
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
-    private var editablePartialProfile: EditablePartialProfile
+    private var editablePartialProfile: DBPUIEditablePartialProfile
 
     public init(delegate: DBPUIViewModelDelegate,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
@@ -95,7 +89,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
     }
     
     public func saveProfile() async throws {
-        guard let profile = DataBrokerProtectionProfile(fromEditablePartialProfile: editablePartialProfile) else {
+        guard let profile = DataBrokerProtectionProfile(from: editablePartialProfile) else {
             assertionFailure("Couldn't save profile")
             return
         }
@@ -107,7 +101,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
             let profile = try delegate?.getUserProfile()
 
             guard let profile = profile else { return nil }
-            return DBPUIUserProfile(fromDataBrokerProtectionProfile: profile)
+            return DBPUIUserProfile(from: profile)
         } catch {
             return nil
         }
@@ -117,7 +111,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
         try delegate?.deleteAllUserProfileData()
 
         // Clear the in memory data
-        editablePartialProfile = EditablePartialProfile()
+        editablePartialProfile = DBPUIEditablePartialProfile()
     }
 
     public func addNameToCurrentUserProfile(_ name: DBPUIUserProfileName) -> Bool {
@@ -164,7 +158,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
             return DBPUIInitialScanState.emptyInitialScanState()
         }
     }
-    
+
     public func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         do {
             let allQueryData = try delegate?.getAllBrokerProfileQueryData() ?? []
@@ -212,88 +206,5 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
 
     public func applyVPNBypassSetting(_ bypass: Bool) async {
         // No op, we don't have a VPN bypass on iOS
-    }
-}
-
-extension EditablePartialProfile {
-
-    init(from profile: DataBrokerProtectionProfile) {
-        let names = profile.names.map { DBPUIUserProfileName(first: $0.firstName, middle: $0.middleName, last: $0.lastName, suffix: $0.suffix) }
-        let addresses = profile.addresses.map { DBPUIUserProfileAddress(street: $0.street, city: $0.city, state: $0.state, zipCode: $0.zipCode) }
-        let birthYear = DBPUIBirthYear(year: profile.birthYear)
-        self.init(names: names, birthYear: birthYear, addresses: addresses)
-    }
-
-    mutating func addName(_ name: DBPUIUserProfileName) -> Bool {
-        guard !name.requiredComponentsAreBlank() else { return false }
-
-        // Duplicates not allowed
-        guard names.firstIndex(where: { $0 == name }) == nil else { return false }
-
-        names.append(name)
-        return true
-    }
-
-    mutating func setNameAtIndex(_ nameAtIndex: DBPUINameAtIndex) -> Bool {
-        guard nameAtIndex.index < names.count else {
-            assertionFailure("Attempted to set name at index \(nameAtIndex.index) but only have \(names.count) names")
-            return false
-        }
-
-        names[nameAtIndex.index] = nameAtIndex.name
-        return true
-    }
-
-    mutating func removeNameAtIndex(_ index: Int) -> Bool {
-        guard index < names.count else {
-            assertionFailure("Attempted to remove name at index \(index) but only have \(names.count) names")
-            return false
-        }
-
-        names.remove(at: index)
-        return true
-    }
-
-    mutating func addAddress(_ address: DBPUIUserProfileAddress) -> Bool {
-        guard !address.requiredComponentsAreBlank() else { return false }
-
-        // Duplicates not allowed
-        guard addresses.firstIndex(of: address) == nil else { return false }
-
-        addresses.append(address)
-        return true
-    }
-
-    mutating func setAddressAtIndex(_ addressAtIndex: DBPUIAddressAtIndex) -> Bool {
-        guard addressAtIndex.index < addresses.count else {
-            assertionFailure("Attempted to set address at index \(addressAtIndex.index) but only have \(addresses.count) addresses")
-            return false
-        }
-
-        addresses[addressAtIndex.index] = addressAtIndex.address
-        return true
-    }
-
-    mutating func removeAddressAtIndex(_ index: Int) -> Bool {
-        guard index < addresses.count else {
-            assertionFailure("Attempted to remove address at index \(index) but only have \(addresses.count) addresses")
-            return false
-        }
-
-        addresses.remove(at: index)
-        return true
-    }
-}
-
-private extension DataBrokerProtectionProfile {
-    init?(fromEditablePartialProfile profile: EditablePartialProfile) {
-        guard let birthYear = profile.birthYear else {
-            assertionFailure("No birth year specified")
-            return nil
-        }
-
-        let names = profile.names.map { Name(firstName: $0.first, lastName: $0.last, middleName: $0.middle, suffix: $0.suffix) }
-        let addresses = profile.addresses.map { Address(city: $0.city, state: $0.state, street: $0.street, zipCode: $0.zipCode) }
-        self.init(names: names, addresses: addresses, phones: [], birthYear: birthYear.year)
     }
 }

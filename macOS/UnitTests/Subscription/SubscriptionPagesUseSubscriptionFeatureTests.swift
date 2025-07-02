@@ -30,6 +30,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 
 @available(macOS 12.0, *)
+@MainActor
 final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     private struct Constants {
@@ -107,7 +108,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     var pixelsFired: [String] = []
     var uiEventsHappened: [SubscriptionUIHandlerMock.UIHandlerMockPerformedAction] = []
 
-    @MainActor override func setUpWithError() throws {
+    override func setUpWithError() throws {
         // Mocks
         userDefaults = UserDefaults(suiteName: Constants.userDefaultsSuiteName)!
         userDefaults.removePersistentDomain(forName: Constants.userDefaultsSuiteName)
@@ -116,7 +117,9 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                             appVersion: "1.0.0",
                             defaultHeaders: [:],
                             defaults: userDefaults) { pixelName, _, _, _, _, _ in
-            self.pixelsFired.append(pixelName)
+            Task { @MainActor in
+                self.pixelsFired.append(pixelName)
+            }
         }
         pixelKit.clearFrequencyHistoryForAllPixels()
         PixelKit.setSharedForTesting(pixelKit: pixelKit)
@@ -1121,7 +1124,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     // MARK: - Free Trials
 
-    @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialOptionsAvailable_ReturnsFreeTrialOptions() async throws {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
@@ -1144,7 +1146,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(subscriptionOptionsResult, freeTrialOptions)
     }
 
-    @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialReturnsNil_ReturnsRegularOptions() async throws {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
@@ -1161,7 +1162,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(subscriptionOptionsResult, Constants.subscriptionOptions)
     }
 
-    @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOff_AndFreeTrialOptionsAvailable_ReturnsRegularOptions() async throws {
         // Given
         subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true

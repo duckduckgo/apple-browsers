@@ -49,7 +49,7 @@ final class FeatureFlagLocalOverridesTests: XCTestCase {
         super.setUp()
 
         // Set environment variable to allow DefaultFeatureFlagger in tests
-        setenv("UITEST_FEATUREFLAGGER_MODE", "1", 1)
+        setenv("TESTS_FEATUREFLAGGER_MODE", "1", 1)
 
         internalUserDeciderStore = MockInternalUserStoring()
         internalUserDeciderStore.isInternalUser = true
@@ -69,7 +69,7 @@ final class FeatureFlagLocalOverridesTests: XCTestCase {
 
     override func tearDown() {
         // Clean up environment variable
-        unsetenv("UITEST_FEATUREFLAGGER_MODE")
+        unsetenv("TESTS_FEATUREFLAGGER_MODE")
 
         super.tearDown()
     }

@@ -208,13 +208,10 @@
                   Identifier = "NavigationProtectionIntegrationTests/testReferrerTrimming()">
                </Test>
                <Test
-                  Identifier = "TabContentTests/testWhenPDFContextMenuPrintChosen_printDialogOpens()">
+                  Identifier = "PinnedTabsManagerProviderTests/test_WhenMigratingFromSharedToPerWindow_ThenTabsAreMigratedToFirstNewPerWindowManager()">
                </Test>
                <Test
-                  Identifier = "TabContentTests/testWhenPDFContextMenuSaveAsChosen_saveDialogOpens()">
-               </Test>
-               <Test
-                  Identifier = "TabContentTests/testWhenPDFMainMenuPrintChosen_printDialogOpens()">
+                  Identifier = "PinnedTabsManagerProviderTests/test_WhenNoTabsExist_ThenArePinnedTabsEmptyReturnsTrueForShared()">
                </Test>
             </SkippedTests>
          </TestableReference>

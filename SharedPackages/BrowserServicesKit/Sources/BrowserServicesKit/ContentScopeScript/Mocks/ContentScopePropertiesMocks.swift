@@ -30,5 +30,6 @@ extension ContentScopeFeatureToggles {
                                                          unknownUsernameCategorization: true,
                                                          partialFormSaves: true,
                                                          passwordVariantCategorization: true,
-                                                         inputFocusApi: true)
+                                                         inputFocusApi: true,
+                                                         autocompleteAttributeSupport: true)
 }

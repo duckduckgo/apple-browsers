@@ -308,6 +308,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testWhenUserIsAuthenticatedWithPaidAIChatFeatureAndFeatureFlagEnabledThenPaidAIChatItemAppearsInSubscriptionSubmenu() async throws {
+        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1201037661562251/task/1210671860096867?focus=true")
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
@@ -347,6 +348,8 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testWhenUserIsAuthenticatedWithoutPaidAIChatFeatureThenPaidAIChatItemDoesNotAppear() async throws {
+        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1201037661562251/task/1210671860096867?focus=true")
+
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = []

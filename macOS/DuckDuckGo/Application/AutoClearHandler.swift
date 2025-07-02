@@ -22,14 +22,17 @@ import Foundation
 
 final class AutoClearHandler {
 
-    private let preferences: DataClearingPreferences
+    private let dataClearingPreferences: DataClearingPreferences
+    private let startupPreferences: StartupPreferences
     private let fireViewModel: FireViewModel
     private let stateRestorationManager: AppStateRestorationManager
 
-    init(preferences: DataClearingPreferences,
+    init(dataClearingPreferences: DataClearingPreferences,
+         startupPreferences: StartupPreferences,
          fireViewModel: FireViewModel,
          stateRestorationManager: AppStateRestorationManager) {
-        self.preferences = preferences
+        self.dataClearingPreferences = dataClearingPreferences
+        self.startupPreferences = startupPreferences
         self.fireViewModel = fireViewModel
         self.stateRestorationManager = stateRestorationManager
     }
@@ -44,9 +47,9 @@ final class AutoClearHandler {
 
     @MainActor
     func handleAppTermination() -> NSApplication.TerminateReply? {
-        guard preferences.isAutoClearEnabled else { return nil }
+        guard dataClearingPreferences.isAutoClearEnabled else { return nil }
 
-        if preferences.isWarnBeforeClearingEnabled {
+        if dataClearingPreferences.isWarnBeforeClearingEnabled {
             switch confirmAutoClear() {
             case .alertFirstButtonReturn:
                 // Clear and Quit
@@ -55,7 +58,6 @@ final class AutoClearHandler {
             case .alertSecondButtonReturn:
                 // Quit without Clearing Data
                 appTerminationHandledCorrectly = true
-                restoreTabsOnStartup = true
                 return .terminateNow
             default:
                 // Cancel
@@ -96,30 +98,11 @@ final class AutoClearHandler {
     @MainActor
     @discardableResult
     func burnOnStartIfNeeded() -> Bool {
-        let shouldBurnOnStart = preferences.isAutoClearEnabled && !appTerminationHandledCorrectly
+        let shouldBurnOnStart = dataClearingPreferences.isAutoClearEnabled && !appTerminationHandledCorrectly
         guard shouldBurnOnStart else { return false }
 
         fireViewModel.fire.burnAll()
         return true
-    }
-
-    // MARK: - Burn without Clearing Data
-
-    @UserDefaultsWrapper(key: .restoreTabsOnStartup, defaultValue: false)
-    private var restoreTabsOnStartup: Bool
-
-    @MainActor
-    @discardableResult
-    func restoreTabsIfNeeded() -> Bool {
-        let isAutoClearEnabled = preferences.isAutoClearEnabled
-        let restoreTabsOnStartup = restoreTabsOnStartup
-        self.restoreTabsOnStartup = false
-        if isAutoClearEnabled && restoreTabsOnStartup {
-            stateRestorationManager.restoreLastSessionState(interactive: false, includeRegularTabs: true)
-            return true
-        }
-
-        return false
     }
 
 }

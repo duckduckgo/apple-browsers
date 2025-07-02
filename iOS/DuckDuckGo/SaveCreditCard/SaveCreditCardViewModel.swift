@@ -86,6 +86,8 @@ final class SaveCreditCardViewModel {
     
     func save() {
         guard let card = try? saveCreditCard(creditCard, with: AutofillSecureVaultFactory) else {
+            // ensure prompt is dismissed if card can't be saved
+            delegate?.saveCreditCardViewModelCancel(self)
             return
         }
         Pixel.fire(pixel: .autofillCardsSaveCardInlineConfirmed)
@@ -96,6 +98,10 @@ final class SaveCreditCardViewModel {
     private func saveCreditCard(_ creditCard: SecureVaultModels.CreditCard, with factory: AutofillVaultFactory) throws -> SecureVaultModels.CreditCard? {
         do {
             let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+            guard try vault.existingCardForAutofill(matching: creditCard) == nil else {
+                return nil
+            }
+
             let cardId = try vault.storeCreditCard(creditCard)
             if let newCard = try vault.creditCardFor(id: cardId) {
                 return newCard

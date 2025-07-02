@@ -19,11 +19,11 @@
 
 import UIKit
 import BrowserServicesKit
+import Core
 import SwiftUI
 
 protocol SaveCreditCardViewControllerDelegate: AnyObject {
     func saveCreditCardViewController(_ viewController: SaveCreditCardViewController, didSaveCreditCard card: SecureVaultModels.CreditCard)
-    func saveCreditCardViewControllerDidCancel(_ viewController: SaveCreditCardViewController)
     func saveCreditCardViewControllerConfirmKeepUsing(_ viewController: SaveCreditCardViewController)
 }
 
@@ -55,17 +55,26 @@ class SaveCreditCardViewController: UIViewController {
         
         let controller = UIHostingController(rootView: SaveCreditCardView(viewModel: viewModel))
         controller.view.backgroundColor = .clear
+        presentationController?.delegate = self
         installChildViewController(controller)
+    }
+}
+
+extension SaveCreditCardViewController: UISheetPresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        Pixel.fire(pixel: .autofillCardsSaveCardInlineDismissed)
     }
 }
 
 extension SaveCreditCardViewController: SaveCreditCardViewModelDelegate {
     func saveCreditCardViewModelDidSave(_ viewModel: SaveCreditCardViewModel, creditCard: SecureVaultModels.CreditCard) {
-        delegate?.saveCreditCardViewController(self, didSaveCreditCard: creditCard)
+        dismiss(animated: true)
+        
+        self.delegate?.saveCreditCardViewController(self, didSaveCreditCard: creditCard)
     }
     
     func saveCreditCardViewModelCancel(_ viewModel: SaveCreditCardViewModel) {
-        delegate?.saveCreditCardViewControllerDidCancel(self)
+        dismiss(animated: true)
     }
     
     func saveCreditCardViewModelConfirmKeepUsing(_ viewModel: SaveCreditCardViewModel) {

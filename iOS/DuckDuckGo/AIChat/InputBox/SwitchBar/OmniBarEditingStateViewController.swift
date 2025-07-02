@@ -109,10 +109,15 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         self.view.backgroundColor = UIColor(designSystemColor: .background)
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        transitionAnimator.animateAppearance()
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        transitionAnimator.animateAppearance()
     }
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
@@ -378,9 +383,9 @@ extension OmniBarEditingStateViewController {
         controller.view.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            controller.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            controller.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            controller.view.topAnchor.constraint(equalTo: switchBarVC.view.bottomAnchor),
+            controller.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 6),
+            controller.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -6),
+            controller.view.topAnchor.constraint(equalTo: switchBarVC.view.bottomAnchor, constant: 4),
         ])
 
         controller.autocompleteDelegate = self

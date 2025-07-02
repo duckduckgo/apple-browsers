@@ -134,6 +134,9 @@ final class DuckPlayerViewModel: ObservableObject {
     /// - `true` when device is in landscape orientation
     /// - `false` when device is in portrait orientation
     @Published var isLandscape: Bool = false
+    
+    /// Indicates whether the webview is currently loading content
+    @Published var isLoading: Bool = true
 
     // MARK: - Private Properties
     private var timestampUpdateTimer: Timer?

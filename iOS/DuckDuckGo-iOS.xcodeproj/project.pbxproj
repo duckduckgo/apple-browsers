@@ -771,7 +771,6 @@
 		85F21DC621145DD5002631A6 /* global.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8512BCBF2061B6110085E862 /* global.swift */; };
 		85F2FFCD2211F615006BB258 /* MainViewController+KeyCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F2FFCC2211F615006BB258 /* MainViewController+KeyCommands.swift */; };
 		85F2FFCF2211F8E5006BB258 /* TabSwitcherViewController+KeyCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F2FFCE2211F8E5006BB258 /* TabSwitcherViewController+KeyCommands.swift */; };
-		85F90B812E141E9700B50CB9 /* SettingsCell_Previews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F90B802E141E9100B50CB9 /* SettingsCell_Previews.swift */; };
 		85F90B832E141FF200B50CB9 /* SettingsCellDemoDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F90B822E141FE500B50CB9 /* SettingsCellDemoDebugView.swift */; };
 		85F98F92296F32BD00742F4A /* SyncSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F98F91296F32BD00742F4A /* SyncSettingsViewController.swift */; };
 		85F98F98296F4CB100742F4A /* SyncAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85F98F97296F4CB100742F4A /* SyncAssets.xcassets */; };
@@ -2641,7 +2640,6 @@
 		85F2FFCC2211F615006BB258 /* MainViewController+KeyCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+KeyCommands.swift"; sourceTree = "<group>"; };
 		85F2FFCE2211F8E5006BB258 /* TabSwitcherViewController+KeyCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabSwitcherViewController+KeyCommands.swift"; sourceTree = "<group>"; };
 		85F2FFFF2215C17B006BB258 /* FindInPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindInPage.swift; sourceTree = "<group>"; };
-		85F90B802E141E9100B50CB9 /* SettingsCell_Previews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCell_Previews.swift; sourceTree = "<group>"; };
 		85F90B822E141FE500B50CB9 /* SettingsCellDemoDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCellDemoDebugView.swift; sourceTree = "<group>"; };
 		85F98F91296F32BD00742F4A /* SyncSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsViewController.swift; sourceTree = "<group>"; };
 		85F98F97296F4CB100742F4A /* SyncAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SyncAssets.xcassets; sourceTree = "<group>"; };
@@ -7578,7 +7576,6 @@
 		D6E83C3B2B1F27BA006C8AFB /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				85F90B802E141E9100B50CB9 /* SettingsCell_Previews.swift */,
 				1DEAADFA2BA71E9A00E25A97 /* SettingsDescriptionView.swift */,
 				D6E83C472B20C812006C8AFB /* SettingsHostingController.swift */,
 				1DDF401F2BA049FA006850D9 /* SettingsRootView.swift */,
@@ -10126,7 +10123,6 @@
 				CBD79F4D2D130F6500DBB45A /* Simulated.swift in Sources */,
 				6F922EDF2D8C5AFA0062DFC1 /* UpdatedOmniBarSearchView.swift in Sources */,
 				37A6A8FE2AFD0208008580A3 /* FaviconsFetcherOnboarding.swift in Sources */,
-				85F90B812E141E9700B50CB9 /* SettingsCell_Previews.swift in Sources */,
 				F1CA3C3B1F045B65005FADB3 /* Authenticator.swift in Sources */,
 				F1D4472D2D9EB2470085809A /* AuthV2PixelHandler.swift in Sources */,
 				CBD4F13D279EBFA000B20FD7 /* HomeMessageCollectionViewCell.swift in Sources */,

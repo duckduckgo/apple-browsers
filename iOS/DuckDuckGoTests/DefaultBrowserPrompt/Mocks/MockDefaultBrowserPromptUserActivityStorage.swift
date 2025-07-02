@@ -23,17 +23,12 @@ import SetDefaultBrowserCore
 final class MockDefaultBrowserPromptUserActivityStore: DefaultBrowserPromptUserActivityStorage {
     private(set) var didCallSaveActivity: Bool = false
     private(set) var capturedSaveActivity: DefaultBrowserPromptUserActivity?
-    private(set) var didCallDeleteActivity: Bool = false
 
     var activityToReturn: DefaultBrowserPromptUserActivity = .init()
 
     func save(_ activity: DefaultBrowserPromptUserActivity) {
         didCallSaveActivity = true
         capturedSaveActivity = activity
-    }
-
-    func deleteActivity() {
-        didCallDeleteActivity = true
     }
 
     func currentActivity() -> DefaultBrowserPromptUserActivity {

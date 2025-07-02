@@ -170,7 +170,7 @@ final class DefaultBrowserPromptDebugViewModel: ObservableObject {
         promptActivityStore.isPromptPermanentlyDismissed = false
         promptActivityStore.lastModalShownDate = nil
         promptActivityStore.modalShownOccurrences = 0
-        userActivityStore.deleteActivity()
+        userActivityStore.save(DefaultBrowserPromptUserActivity(numberOfActiveDays: 0, lastActiveDate: currentDateDebugStore.simulatedTodayDate))
         updateUI()
     }
 

@@ -30,9 +30,6 @@ protocol DefaultBrowserPromptUserActivityStorage: AnyObject {
     /// - Parameter activity: The user activity data to be saved.
     func save(_ activity: DefaultBrowserPromptUserActivity)
 
-    /// Removes all stored user activity data.
-    func deleteActivity()
-
     /// Retrieves the currently stored user activity data.
     ///
     /// - Returns: The current user activity data. If no activity has been saved, return an empty `DefaultBrowserPromptUserActivity`.
@@ -77,14 +74,6 @@ final class DefaultBrowserPromptUserActivityKeyValueFilesStore: DefaultBrowserPr
         }
     }
     
-    func deleteActivity() {
-        do {
-            try keyValueFilesStore.set(nil, forKey: StorageKey.userActivity)
-        } catch {
-            eventMapper.fire(.failedToDeleteActivity, error: error)
-        }
-    }
-    
     func currentActivity() -> DefaultBrowserPromptUserActivity {
         do {
             guard let data = try keyValueFilesStore.object(forKey: StorageKey.userActivity) as? Data else { return .empty }
@@ -104,7 +93,6 @@ extension DefaultBrowserPromptUserActivityKeyValueFilesStore {
     enum DebugEvent {
         case failedToRetrieveActivity
         case failedToSaveActivity
-        case failedToDeleteActivity
     }
 
 }

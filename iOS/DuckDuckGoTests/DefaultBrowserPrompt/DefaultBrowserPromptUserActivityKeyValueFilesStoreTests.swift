@@ -45,24 +45,6 @@ struct DefaultBrowserPromptUserActivityKeyValueFilesStoreTests {
         #expect(decodedActivity.lastActiveDate == now)
     }
 
-    @Test("Check Activity Is Deleted Correctly")
-    func whenActivityIsDeletedThenItIsRemovedFromStorage() throws {
-        // GIVEN
-        let now = Date(timeIntervalSince1970: 1751005822) // 27 June 2025 6:30:22 AM GMT
-        let activity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 2, lastActiveDate: now)
-        let encodedActivity = try encodeActivity(activity)
-        let storageMock = try MockKeyValueFileStore()
-        storageMock.underlyingDict = [DefaultBrowserPromptUserActivityKeyValueFilesStore.StorageKey.userActivity: encodedActivity]
-        let sut = DefaultBrowserPromptUserActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { _, _, _, _ in })
-        #expect(!storageMock.underlyingDict.isEmpty)
-
-        // WHEN
-        sut.deleteActivity()
-
-        // THEN
-        #expect(storageMock.underlyingDict.isEmpty)
-    }
-
     @Test("Check Activity Is Retrieved Correctly")
     func whenActivityIsRetrievedThenItIsRetrievedFromStorage() throws {
         // GIVEN
@@ -112,27 +94,6 @@ struct DefaultBrowserPromptUserActivityKeyValueFilesStoreTests {
 
         // THEN
         #expect(capturedEvent == .failedToSaveActivity)
-        #expect(capturedError as? NSError == expectedError)
-    }
-
-    @Test("Check Deleting Activity Send The Right Event When Fail")
-    func whenDeletingActivityFailsThenAnErrorEventIsSent() throws {
-        // GIVEN
-        let storageMock = try MockKeyValueFileStore()
-        let expectedError = NSError(domain: #function, code: 0, userInfo: nil)
-        storageMock.throwOnSet = expectedError
-        var capturedEvent: DefaultBrowserPromptUserActivityKeyValueFilesStore.DebugEvent?
-        var capturedError: Error?
-        let sut = DefaultBrowserPromptUserActivityKeyValueFilesStore(keyValueFilesStore: storageMock, eventMapper: .init { event, error, _, _ in
-            capturedEvent = event
-            capturedError = error
-        })
-
-        // WHEN
-        sut.deleteActivity()
-
-        // THEN
-        #expect(capturedEvent == .failedToDeleteActivity)
         #expect(capturedError as? NSError == expectedError)
     }
 

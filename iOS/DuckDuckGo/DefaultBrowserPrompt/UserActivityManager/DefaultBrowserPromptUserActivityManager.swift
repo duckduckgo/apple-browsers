@@ -76,6 +76,8 @@ final class DefaultBrowserPromptUserActivityManager: DefaultBrowserPromptUserAct
     }
 
     func resetNumberOfActiveDays() {
-        store.deleteActivity()
+        let currentActivity = store.currentActivity()
+        let newActivity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 0, lastActiveDate: currentActivity.lastActiveDate)
+        store.save(newActivity)
     }
 }

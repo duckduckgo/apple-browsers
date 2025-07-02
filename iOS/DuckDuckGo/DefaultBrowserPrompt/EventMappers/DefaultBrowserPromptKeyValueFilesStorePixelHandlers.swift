@@ -29,8 +29,6 @@ enum DefaultBrowserPromptKeyValueFilesStorePixelHandlers {
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Retrieve Current Activity: \(error)")
         case .failedToSaveActivity:
             Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Save Current Activity: \(error)")
-        case .failedToDeleteActivity:
-            Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Delete Current Activity: \(error)")
         }
     }
 

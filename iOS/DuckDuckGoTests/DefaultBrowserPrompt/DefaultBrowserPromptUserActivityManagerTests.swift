@@ -108,13 +108,16 @@ struct DefaultBrowserPromptUserActivityMonitorTests {
     @Test("Check Number Of Active Days Is Reset")
     func testWhenResetNumberOfActiveDaysIsCalledThenAskStoreToDeleteActivity() {
         // GIVEN
-        #expect(!storeMock.didCallDeleteActivity)
+        storeMock.activityToReturn = .init(numberOfActiveDays: 10, lastActiveDate: Self.today)
+        #expect(!storeMock.didCallSaveActivity)
 
         // WHEN
         sut.resetNumberOfActiveDays()
 
         // THEN
-        #expect(storeMock.didCallDeleteActivity)
+        #expect(storeMock.didCallSaveActivity)
+        #expect(storeMock.capturedSaveActivity?.lastActiveDate == Self.today)
+        #expect(storeMock.capturedSaveActivity?.numberOfActiveDays == 0)
     }
 
 }

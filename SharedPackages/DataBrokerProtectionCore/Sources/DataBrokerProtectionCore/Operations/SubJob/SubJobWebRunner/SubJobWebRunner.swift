@@ -34,6 +34,7 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     var cookieHandler: CookieHandler { get }
     var stageCalculator: StageDurationCalculator { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
+    var executionConfig: BrokerJobExecutionConfig { get }
 
     var webViewHandler: WebViewHandler? { get set }
     var actionsHandler: ActionsHandler? { get }
@@ -184,7 +185,7 @@ public extension SubJobWebRunning {
         if let handler = handler { // This help us swapping up the WebViewHandler on tests
             self.webViewHandler = handler
         } else {
-            self.webViewHandler = await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig, prefs: prefs, delegate: self, isFakeBroker: isFakeBroker)
+            self.webViewHandler = await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig, prefs: prefs, delegate: self, isFakeBroker: isFakeBroker, executionConfig: executionConfig)
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)

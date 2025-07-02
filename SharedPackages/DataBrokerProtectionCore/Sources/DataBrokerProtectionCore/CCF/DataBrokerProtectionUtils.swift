@@ -28,8 +28,8 @@ final class DataBrokerUserContentController: WKUserContentController {
     var dataBrokerUserScripts: DataBrokerUserScript?
 
     @MainActor
-    init(with privacyConfigurationManager: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate) {
-        dataBrokerUserScripts = DataBrokerUserScript(privacyConfig: privacyConfigurationManager, prefs: prefs, delegate: delegate)
+    init(with privacyConfigurationManager: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, executionConfig: BrokerJobExecutionConfig) {
+        dataBrokerUserScripts = DataBrokerUserScript(privacyConfig: privacyConfigurationManager, prefs: prefs, delegate: delegate, executionConfig: executionConfig)
 
         super.init()
 
@@ -72,12 +72,12 @@ final class DataBrokerUserScript: UserScriptsProvider {
     let contentScopeUserScriptIsolated: ContentScopeUserScript
     var dataBrokerFeature: DataBrokerProtectionFeature
 
-    init(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate) {
+    init(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, executionConfig: BrokerJobExecutionConfig) {
         contentScopeUserScriptIsolated = ContentScopeUserScript(privacyConfig.withDataBrokerProtectionFeatureOverride,
                                                                 properties: prefs,
                                                                 isIsolated: true,
                                                                 privacyConfigurationJSONGenerator: nil)
-        dataBrokerFeature = DataBrokerProtectionFeature(delegate: delegate)
+        dataBrokerFeature = DataBrokerProtectionFeature(delegate: delegate, executionConfig: executionConfig)
         dataBrokerFeature.broker = contentScopeUserScriptIsolated.broker
         contentScopeUserScriptIsolated.registerSubfeature(delegate: dataBrokerFeature)
     }
@@ -134,10 +134,10 @@ extension WKUserContentController {
 extension WKWebViewConfiguration {
 
     @MainActor
-    func applyDataBrokerConfiguration(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate) {
+    func applyDataBrokerConfiguration(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, executionConfig: BrokerJobExecutionConfig) {
         setURLSchemeHandler(WebViewSchemeHandler(), forURLScheme: WebViewSchemeHandler.dataBrokerProtectionScheme)
         preferences.isFraudulentWebsiteWarningEnabled = false
-        let userContentController = DataBrokerUserContentController(with: privacyConfig, prefs: prefs, delegate: delegate)
+        let userContentController = DataBrokerUserContentController(with: privacyConfig, prefs: prefs, delegate: delegate, executionConfig: executionConfig)
         self.userContentController = userContentController
      }
 }

@@ -91,6 +91,7 @@ public protocol BrokerProfileJobQueueManaging {
                                                  jobDependencies: BrokerProfileJobDependencyProviding,
                                                  errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                  completion: (() -> Void)?)
+    func stop()
 
     func execute(_ command: DataBrokerProtectionQueueManagerDebugCommand)
     var debugRunningStatusString: String { get }
@@ -184,6 +185,10 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
                       jobDependencies: operationDependencies,
                       errorHandler: errorHandler,
                       completion: completion)
+    }
+
+    public func stop() {
+        jobQueue.cancelAllOperations()
     }
 }
 

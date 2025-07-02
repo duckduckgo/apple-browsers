@@ -23,7 +23,6 @@ import BrowserServicesKit
 import Subscription
 import Persistence
 import DDGSync
-import SetDefaultBrowserUI
 
 @MainActor
 protocol URLHandling {
@@ -62,11 +61,9 @@ final class MainCoordinator {
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          didFinishLaunchingStartTime: CFAbsoluteTime,
-         keyValueStore: ThrowingKeyValueStoring
-    ) throws {
+         keyValueStore: ThrowingKeyValueStoring) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-        
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           privacyProDataReporter: reportingService.privacyProDataReporter)
@@ -107,8 +104,7 @@ final class MainCoordinator {
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
                                         themeManager: ThemeManager.shared,
-                                        keyValueStore: keyValueStore
-        )
+                                        keyValueStore: keyValueStore)
     }
 
     func start() {

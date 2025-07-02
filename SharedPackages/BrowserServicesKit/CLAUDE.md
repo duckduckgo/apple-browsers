@@ -6,10 +6,6 @@ BrowserServicesKit is the core shared library that provides essential browser fu
 ## Purpose
 This package serves as the foundation for DuckDuckGo's browser applications, ensuring consistent behavior and code reuse across platforms while maintaining privacy as the primary focus.
 
-## Quick Links
-- [Subscription Module](Sources/Subscription/SUBSCRIPTION.md)
-- [iOS Integration](../../iOS/CLAUDE.md)
-- [macOS Integration](../../macOS/CLAUDE.md)
 
 ## Key Components
 
@@ -117,7 +113,7 @@ This package serves as the foundation for DuckDuckGo's browser applications, ens
   - Subscription management
   - Purchase validation
   - Feature gating
-  - [Detailed Subscription Documentation](Sources/Subscription/SUBSCRIPTION.md)
+  - @Sources/Subscription/CLAUDE.md
 
 ## Architecture
 

@@ -18,7 +18,8 @@ The DuckDuckGo iOS browser provides privacy-focused web browsing on iPhone and i
 - **Privacy Dashboard**: Visual representation of blocked trackers
 - **Fire Button**: Quick data clearing functionality
 - **Bookmarks & History**: Local storage of user data
-- **Subscription Features**: Premium features including VPN, Personal Information Removal, and Identity Theft Restoration - [See Subscription Documentation](DuckDuckGo/Subscription/SUBSCRIPTION.md)
+- **Subscription Features**: Premium features including VPN, Personal Information Removal, and Identity Theft Restoration
+  - @DuckDuckGo/Subscription/CLAUDE.md
 
 #### App Extensions
 - `AutofillCredentialProvider/` - Password and credential autofill
@@ -102,6 +103,5 @@ The iOS app heavily relies on [BrowserServicesKit](../SharedPackages/BrowserServ
 
 ### Related Documentation
 - [BrowserServicesKit Documentation](../SharedPackages/BrowserServicesKit/CLAUDE.md)
-- [iOS Subscription Features](DuckDuckGo/Subscription/SUBSCRIPTION.md)
 - [Main Repository README](../README.md)
 - [Contributing Guidelines](../CONTRIBUTING.md)

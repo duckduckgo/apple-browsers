@@ -20,7 +20,8 @@ The DuckDuckGo macOS browser is a native desktop application providing privacy-f
 - **Privacy Dashboard**: Detailed tracker blocking information
 - **Fire Button**: Instant data clearing
 - **AI Chat**: Integrated AI assistant functionality
-- **Subscription Features**: Premium features including VPN, Personal Information Removal, and Identity Theft Restoration - [See Subscription Documentation](DuckDuckGo/Subscription/SUBSCRIPTION.md)
+- **Subscription Features**: Premium features including VPN, Personal Information Removal, and Identity Theft Restoration
+  - @DuckDuckGo/Subscription/CLAUDE.md
 
 #### Feature Organization
 The macOS app is organized into feature-specific directories:
@@ -130,6 +131,5 @@ The macOS app extensively uses [BrowserServicesKit](../SharedPackages/BrowserSer
 
 ### Related Documentation
 - [BrowserServicesKit Documentation](../SharedPackages/BrowserServicesKit/CLAUDE.md)
-- [macOS Subscription Features](DuckDuckGo/Subscription/SUBSCRIPTION.md)
 - [Main Repository README](../README.md)
 - [Contributing Guidelines](../CONTRIBUTING.md)

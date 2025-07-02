@@ -926,6 +926,8 @@ extension Pixel {
         case siteNotWorkingShown
         case siteNotWorkingWebsiteIsBroken
 
+        // MARK: - Default Browser
+
         // Set As Default Browser Debug Pixels
         // Privacy Triage: https://app.asana.com/0/1206329551987282/1209505775591500
 
@@ -941,6 +943,28 @@ extension Pixel {
 
         /// Fired when a generic error is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
         case debugSetAsDefaultBrowserUnknownFailure
+
+        // Default Browser Prompt Pixels
+        // Privacy Triage:
+
+        case debugDefaultBrowserPromptFailedToRetrieveCurrentActivity
+        case debugDefaultBrowserPromptFailedToSaveCurrentActivity
+        case debugDefaultBrowserPromptFailedToDeleteCurrentActivity
+
+        case debugDefaultBrowserPromptFailedToRetrieveLastModalShownDate
+        case debugDefaultBrowserPromptFailedToSaveLastModalShownDate
+        case debugDefaultBrowserPromptFailedToRetrieveModalShownOccurrences
+        case debugDefaultBrowserPromptFailedToSaveModalShownOccurrences
+        case debugDefaultBrowserPromptFailedToRetrievePermanentlyDismissedPrompt
+        case debugDefaultBrowserPromptFailedToSavePermanentlyDismissedPrompt
+
+        case debugDefaultBrowserPromptFailedToRetrieveUserType
+        case debugDefaultBrowserPromptFailedToSaveUserType
+
+        case defaultBrowserPromptModalShown
+        case defaultBrowserPromptModalClosedButtonTapped
+        case defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped
+        case defaultBrowserPromptModalDoNotAskAgainButtonTapped
 
         // MARK: History
         case historyStoreLoadFailed
@@ -1958,6 +1982,25 @@ extension Pixel.Event {
         case .debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached"
         case .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached-no-persisted-result"
         case .debugSetAsDefaultBrowserUnknownFailure: return "m_debug_set-default-browser_failure-unknown-error"
+
+        case .debugDefaultBrowserPromptFailedToRetrieveCurrentActivity: return "m_debug_set-as-default-prompt_failed-to-retrieve-current-activity"
+        case .debugDefaultBrowserPromptFailedToSaveCurrentActivity: return "m_debug_set-as-default-prompt_failed-to-save-current-activity"
+        case .debugDefaultBrowserPromptFailedToDeleteCurrentActivity: return "m_debug_set-as-default-prompt_failed-to-delete-current-activity"
+
+        case .debugDefaultBrowserPromptFailedToRetrieveLastModalShownDate: return "m_debug_set-as-default-prompt_failed-to-retrieve-last-modal-shown-date"
+        case .debugDefaultBrowserPromptFailedToSaveLastModalShownDate: return "m_debug_set-as-default-prompt_failed-to-save-last-modal-shown-date"
+        case .debugDefaultBrowserPromptFailedToRetrieveModalShownOccurrences: return "m_debug_set-as-default-prompt_failed-to-retrieve-modal-shown-occurrences"
+        case .debugDefaultBrowserPromptFailedToSaveModalShownOccurrences: return "m_debug_set-as-default-prompt_failed-to-save-modal-shown-occurrences"
+        case .debugDefaultBrowserPromptFailedToRetrievePermanentlyDismissedPrompt: return "m_debug_set-as-default-prompt_failed-to-retrieve-permanently-dismissed-prompt"
+        case .debugDefaultBrowserPromptFailedToSavePermanentlyDismissedPrompt: return "m_debug_set-as-default-prompt_failed-to-save-permanently-dismissed-prompt"
+
+        case .debugDefaultBrowserPromptFailedToRetrieveUserType: return "m_debug_set-as-default-prompt_failed-to-retrieve-user-type"
+        case .debugDefaultBrowserPromptFailedToSaveUserType: return "m_debug_set-as-default-prompt_failed-to-save-user-type"
+
+        case .defaultBrowserPromptModalShown: return "m_set-as-default-prompt_modal-shown"
+        case .defaultBrowserPromptModalClosedButtonTapped: return "m_set-as-default-prompt_modal-closed-button-action"
+        case .defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped: return "m_set-as-default-prompt_modal-set-as-default-browser-button-action"
+        case .defaultBrowserPromptModalDoNotAskAgainButtonTapped: return "m_set-as-default-prompt_modal-do-not-ask-again-button-action"
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
         case .debugWebViewNotInVisibleTabHierarchy: return "m_debug_webview_not_in_visible_tab_hierarchy"

@@ -18,7 +18,8 @@
 //
 
 import Foundation
-import Common
+import class Common.EventMapping
+import class Core.DailyPixel
 import SetDefaultBrowserCore
 
 final class DefaultBrowserPromptManagerDebugPixelHandler: EventMapping<DefaultBrowserManagerDebugEvent>, DefaultBrowserPromptEventMapping {
@@ -27,13 +28,13 @@ final class DefaultBrowserPromptManagerDebugPixelHandler: EventMapping<DefaultBr
         super.init { event, error, _, _ in
             switch event {
             case .successfulResult:
-                Logger.defaultBrowserPrompt.debug("[Default Browser] - Default Browser API Successful Result")
+                DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserSuccessfulResult)
             case .rateLimitReached:
-                Logger.defaultBrowserPrompt.debug("[Default Browser] - Default Browser API Rate Limit Reached")
+                DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure)
             case .rateLimitReachedNoExistingResultPersisted:
-                Logger.defaultBrowserPrompt.debug("[Default Browser] - Default Browser API Rate Limit Reached. No Persisted Result.")
+                DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure)
             case .unknownError:
-                Logger.defaultBrowserPrompt.debug("[Default Browser] - Default Browser API Unknown Error \(error)")
+                DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserUnknownFailure)
             }
         }
     }

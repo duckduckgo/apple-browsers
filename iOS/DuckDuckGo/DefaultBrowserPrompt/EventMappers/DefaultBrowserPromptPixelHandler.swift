@@ -19,21 +19,25 @@
 
 import Foundation
 import Common
+import Core
 import SetDefaultBrowserCore
 
 final class DefaultBrowserPromptPixelHandler: EventMapping<DefaultBrowserPromptEvent>, DefaultBrowserPromptEventMapping {
+    private let pixelFiring: PixelFiring.Type
 
-    public init() {
+    public init(pixelFiring: PixelFiring.Type = Pixel.self) {
+        self.pixelFiring = pixelFiring
+
         super.init { event, _, _, _ in
             switch event {
-            case .modalShown:
-                Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Modal shown")
+            case let .modalShown(numberOfModalShown):
+                pixelFiring.fire(.defaultBrowserPromptModalShown, withAdditionalParameters: Self.parameters(forNumberOfModalsShown: numberOfModalShown))
             case .modalDismissed:
-                Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Modal Dismissed")
+                pixelFiring.fire(.defaultBrowserPromptModalClosedButtonTapped, withAdditionalParameters: [:])
             case .modalDismissedPermanently:
-                Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Modal Dismissed Permanently")
-            case .modalActioned:
-                Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Set Default Browser Tapped")
+                pixelFiring.fire(.defaultBrowserPromptModalDoNotAskAgainButtonTapped, withAdditionalParameters: [:])
+            case let .modalActioned(numberOfModalShown):
+                pixelFiring.fire(.defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped, withAdditionalParameters: Self.parameters(forNumberOfModalsShown: numberOfModalShown))
             }
         }
     }
@@ -41,6 +45,13 @@ final class DefaultBrowserPromptPixelHandler: EventMapping<DefaultBrowserPromptE
     @available(*, unavailable, message: "Use init() instead")
     override init(mapping: @escaping EventMapping<DefaultBrowserPromptEvent>.Mapping) {
         fatalError("Use init()")
+    }
+
+    private static func parameters(forNumberOfModalsShown value: Int) -> [String: String] {
+        let value = value > 10 ? "10+" : String(value)
+        return [
+            PixelParameters.defaultBrowserPromptNumberOfModalsShown: value
+        ]
     }
 
 }

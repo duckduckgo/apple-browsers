@@ -1281,6 +1281,7 @@
 		9FE7CD5C2E14C6CD006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD5B2E14C6BA006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift */; };
 		9FE7CD5E2E14C81A006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD5D2E14C80B006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift */; };
 		9FE7CD632E14D90E006691AB /* DefaultBrowserPromptKeyValueFilesStorePixelHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD622E14D900006691AB /* DefaultBrowserPromptKeyValueFilesStorePixelHandlers.swift */; };
+		9FE7CD672E14F03B006691AB /* DefaultBrowserPromptPixelHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD662E14F02B006691AB /* DefaultBrowserPromptPixelHandlerTests.swift */; };
 		9FEA222E2C324ECD006B03BF /* ViewVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEA222D2C324ECD006B03BF /* ViewVisibility.swift */; };
 		9FEA22322C3270BD006B03BF /* TimerInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEA22312C3270BD006B03BF /* TimerInterface.swift */; };
 		9FEBDE1E2E0BEE6800175B8B /* DefaultBrowserPromptActivityKeyValueFilesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEBDE1D2E0BEE4D00175B8B /* DefaultBrowserPromptActivityKeyValueFilesStore.swift */; };
@@ -3434,6 +3435,7 @@
 		9FE7CD5B2E14C6BA006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserActivityManagerTests.swift; sourceTree = "<group>"; };
 		9FE7CD5D2E14C80B006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserPromptUserActivityStorage.swift; sourceTree = "<group>"; };
 		9FE7CD622E14D900006691AB /* DefaultBrowserPromptKeyValueFilesStorePixelHandlers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptKeyValueFilesStorePixelHandlers.swift; sourceTree = "<group>"; };
+		9FE7CD662E14F02B006691AB /* DefaultBrowserPromptPixelHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptPixelHandlerTests.swift; sourceTree = "<group>"; };
 		9FEA222D2C324ECD006B03BF /* ViewVisibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewVisibility.swift; sourceTree = "<group>"; };
 		9FEA22312C3270BD006B03BF /* TimerInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerInterface.swift; sourceTree = "<group>"; };
 		9FEBDE1D2E0BEE4D00175B8B /* DefaultBrowserPromptActivityKeyValueFilesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptActivityKeyValueFilesStore.swift; sourceTree = "<group>"; };
@@ -6838,6 +6840,7 @@
 				9FF967BA2E0E703C00E45B54 /* DefaultBrowserPromptUserActivityKeyValueFilesStoreTests.swift */,
 				9FF967BE2E0E7F4F00E45B54 /* DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift */,
 				9FE7CD5B2E14C6BA006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift */,
+				9FE7CD662E14F02B006691AB /* DefaultBrowserPromptPixelHandlerTests.swift */,
 			);
 			path = DefaultBrowserPrompt;
 			sourceTree = "<group>";
@@ -10591,6 +10594,7 @@
 				987130C7294AAB9F00AB05E0 /* MenuBookmarksViewModelTests.swift in Sources */,
 				9F1C69212D7FEA5C0072F97D /* OnboardingManager+SetDefaultBrowserPipVideoExperimentTests.swift in Sources */,
 				9FFDA83D2DFA8F6F007923F7 /* MockAudioSessionManager.swift in Sources */,
+				9FE7CD672E14F03B006691AB /* DefaultBrowserPromptPixelHandlerTests.swift in Sources */,
 				858650D32469BFAD00C36F8A /* DaxDialogTests.swift in Sources */,
 				C111F9512DC3CC2D00FABCA8 /* SaveCreditCardViewModelTests.swift in Sources */,
 				31C138B227A4097800FFD4B2 /* DownloadTestsHelper.swift in Sources */,

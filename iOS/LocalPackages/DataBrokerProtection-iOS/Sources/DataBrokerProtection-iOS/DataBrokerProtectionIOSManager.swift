@@ -162,8 +162,8 @@ public final class DataBrokerProtectionIOSManager {
     public static var shared: DataBrokerProtectionIOSManager?
 
     public let database: DataBrokerProtectionRepository
-    private let queueManager: BrokerProfileJobQueueManager
-    private let jobDependencies: BrokerProfileJobDependencies
+    private let queueManager: BrokerProfileJobQueueManaging
+    private let jobDependencies: BrokerProfileJobDependencyProviding
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let iOSPixelsHandler: EventMapping<IOSPixels>
@@ -199,8 +199,14 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
-    init(queueManager: BrokerProfileJobQueueManager,
-         jobDependencies: BrokerProfileJobDependencies,
+    /// Number of jobs to justify scheduling a background task right away
+    private let minOverdueJobsForBackgroundTask = 10
+
+    /// Maximum amount of time without a background task being scheduled
+    private let maxSchedulingInterval: TimeInterval = .hours(48)
+
+    init(queueManager: BrokerProfileJobQueueManaging,
+         jobDependencies: BrokerProfileJobDependencyProviding,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          iOSPixelsHandler: EventMapping<IOSPixels>,
@@ -228,6 +234,26 @@ public final class DataBrokerProtectionIOSManager {
         registerBackgroundTaskHandler()
     }
 
+    func calculateEarliestBeginDate(from date: Date = .init()) async throws -> Date {
+        let allBrokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()
+
+        let overdueJobs = BrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(
+            brokerProfileQueriesData: allBrokerProfileQueryData,
+            jobType: .all,
+            priorityDate: date
+        ).sortedByEarliestPreferredRunDateFirst()
+
+        if overdueJobs.count >= minOverdueJobsForBackgroundTask {
+            return date
+        }
+
+        let mostRecentScanDate = allBrokerProfileQueryData.compactMap(\.scanJobData.lastRunDate).max()
+        let mostRecentOptOutDate = allBrokerProfileQueryData.flatMap(\.optOutJobData).compactMap(\.lastRunDate).max()
+        let mostRecentRunDate = max(mostRecentScanDate ?? .distantPast, mostRecentOptOutDate ?? .distantPast)
+
+        return min(date, mostRecentRunDate.addingTimeInterval(maxSchedulingInterval))
+    }
+
     private func registerBackgroundTaskHandler() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundJobIdentifier, using: nil) { task in
             self.handleBGProcessingTask(task: task)
@@ -241,9 +267,11 @@ public final class DataBrokerProtectionIOSManager {
                 return
             }
             
-            let request = BGProcessingTaskRequest(identifier: "com.duckduckgo.app.dbp.backgroundProcessing")
+            let request = BGProcessingTaskRequest(identifier: Self.backgroundJobIdentifier)
             request.requiresNetworkConnectivity = true
-            
+            let earliestBeginDate = try await calculateEarliestBeginDate()
+            request.earliestBeginDate = earliestBeginDate
+
 #if !targetEnvironment(simulator)
             do {
                 try BGTaskScheduler.shared.submit(request)

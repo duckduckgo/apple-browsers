@@ -233,7 +233,8 @@ public final class DefaultAccountManager: AccountManager {
             } else {
                 entitlementsCache.set(entitlements)
             }
-            NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
+            let payload = EntitlementsDidChangePayload(entitlements: EntitlementsBridging.v2EntitlementsFrom(v1Entitlements: entitlements))
+            NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: payload.notificationUserInfo)
         }
     }
 

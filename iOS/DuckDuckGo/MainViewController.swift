@@ -1905,8 +1905,10 @@ class MainViewController: UIViewController {
     @objc
     private func onEntitlementsChange(_ notification: Notification) {
         Task {
+            let payload = EntitlementsDidChangePayload(notificationUserInfo: notification.userInfo)
+            let hasNetPEntitlement = payload?.entitlements?.contains(.networkProtection) ?? false
+
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            let hasNetPEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
             let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 

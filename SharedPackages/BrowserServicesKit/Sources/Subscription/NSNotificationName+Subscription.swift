@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Networking
 
 public extension NSNotification.Name {
 
@@ -30,4 +31,21 @@ public extension NSNotification.Name {
     static let subscriptionDidChange = Notification.Name("com.duckduckgo.subscription.SubscriptionDidChange")
     static let availableAppStoreProductsDidChange = Notification.Name("com.duckduckgo.subscription.AvailableAppStoreProductsDidChange")
     static let expiredRefreshTokenDetected = Notification.Name("com.duckduckgo.subscription.ExpiredRefreshTokenDetected")
+}
+
+public struct EntitlementsDidChangePayload {
+
+    private let entitlementsKey = "entitlements"
+    public let entitlements: [SubscriptionEntitlement]?
+    public var notificationUserInfo: [AnyHashable: Any] {
+        [entitlementsKey: entitlements ?? []]
+    }
+
+    public init(entitlements: [SubscriptionEntitlement]?) {
+        self.entitlements = entitlements
+    }
+
+    public init?(notificationUserInfo: [AnyHashable: Any]?) {
+        self.entitlements = notificationUserInfo?[entitlementsKey] as? [SubscriptionEntitlement]
+    }
 }

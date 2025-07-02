@@ -74,20 +74,20 @@ class OmniBarEditingStateAnimator {
         topSwitchBarConstraint?.isActive = true
         transitionDelegate.switchBarVC.setExpanded(false)
         transitionDelegate.switchBarVC.view.alpha = 0.0
-//        transitionDelegate.rootView.alpha = 0.0
+        transitionDelegate.rootView.alpha = 0.0
         transitionDelegate.rootView.backgroundColor = .clear
 
         transitionDelegate.rootView.layoutIfNeeded()
 
         // Create animators
-        let fadeAnimatorDuration = 0.15
+        let fadeAnimatorDuration = 0.2
         let backgroundFadeAnimator = UIViewPropertyAnimator(duration: fadeAnimatorDuration, curve: .easeIn) {
             transitionDelegate.switchBarVC.view.alpha = 1.0
+            transitionDelegate.rootView.alpha = 1.0
             transitionDelegate.rootView.backgroundColor = UIColor(designSystemColor: .background)
-//            transitionDelegate.rootView.alpha = 1.0
         }
 
-        let expandAnimator = UIViewPropertyAnimator(duration: 0.6, dampingRatio: 0.65) {
+        let expandAnimator = UIViewPropertyAnimator(duration: 0.55, dampingRatio: 0.65) {
             transitionDelegate.switchBarVC.setExpanded(true)
             heightConstraint.isActive = false
 
@@ -102,7 +102,6 @@ class OmniBarEditingStateAnimator {
 
         // Start animations
         backgroundFadeAnimator.startAnimation()
-//        expandAnimator.startAnimation(afterDelay: fadeAnimatorDuration)
     }
 
     private func bottomPositionAppearance() {
@@ -150,13 +149,10 @@ class OmniBarEditingStateAnimator {
             transitionDelegate.rootView.layoutIfNeeded()
         }
 
-        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: 0.15, curve: .easeInOut) {
+        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: 0.15, curve: .easeIn) {
             transitionDelegate.rootView.alpha = 0.0
             transitionDelegate.switchBarVC.view.alpha = 0.0
         }
-
-//        let fadeOutAnimator = UIViewPropertyAnimator(duration: 0.15, curve: .easeIn) {
-//        }
 
         backgroundFadeAnimator.addCompletion { _ in
             completion?()
@@ -164,7 +160,6 @@ class OmniBarEditingStateAnimator {
 
         // Start animations
         collapseAnimator.startAnimation()
-//        fadeOutAnimator.startAnimation()
         backgroundFadeAnimator.startAnimation(afterDelay: collapseDuration * 0.6)
     }
 

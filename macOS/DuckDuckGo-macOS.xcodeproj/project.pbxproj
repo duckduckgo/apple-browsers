@@ -241,6 +241,12 @@
 		1E5921C52CF47A0F00E15CCA /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 1E5921C42CF47A0F00E15CCA /* FeatureFlags */; };
 		1E5FA8A62DD394EB0082FA72 /* DuckDuckGoUserAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF0E5112AD25A2600FFEC9E /* DuckDuckGoUserAgent.swift */; };
 		1E5FA8A72DD394EB0082FA72 /* DuckDuckGoUserAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF0E5112AD25A2600FFEC9E /* DuckDuckGoUserAgent.swift */; };
+		1E6783F02E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
+		1E6783F12E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
+		1E6783F22E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
+		1E6783F32E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
+		1E6783F52E156DA200AE465A /* AppStoreInfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783F42E156DA200AE465A /* AppStoreInfoPlist.xcstrings */; };
+		1E6783F72E156DA200AE465A /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783F62E156DA200AE465A /* InfoPlist.xcstrings */; };
 		1E7E2E9029029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7E2E8F29029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift */; };
 		1E7E2E942902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7E2E932902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift */; };
 		1E8995E02DCD05280093EFBA /* PreferencesSectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8995DF2DCD05280093EFBA /* PreferencesSectionTests.swift */; };
@@ -3986,6 +3992,9 @@
 		1E4EDA272DE9ED2D0019B6E8 /* AIChatSidebarProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSidebarProvider.swift; sourceTree = "<group>"; };
 		1E4EDA2D2DE9ED710019B6E8 /* AIChatSidebarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSidebarViewController.swift; sourceTree = "<group>"; };
 		1E559BB02BBCA9F1002B4AF6 /* RedirectNavigationResponder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedirectNavigationResponder.swift; sourceTree = "<group>"; };
+		1E6783EF2E156DA200AE465A /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = Localizable.xcstrings; path = DuckDuckGo/NetworkProtection/NetworkExtensionTargets/NetworkExtensionAndNotificationTargets/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
+		1E6783F42E156DA200AE465A /* AppStoreInfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = AppStoreInfoPlist.xcstrings; path = NetworkProtectionSystemExtension/AppStoreInfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
+		1E6783F62E156DA200AE465A /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = InfoPlist.xcstrings; path = NetworkProtectionSystemExtension/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
 		1E7E2E8F29029A2A00C01B54 /* ContentBlockingRulesUpdateObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBlockingRulesUpdateObserver.swift; sourceTree = "<group>"; };
 		1E7E2E932902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardPermissionHandler.swift; sourceTree = "<group>"; };
 		1E862A882A9FC01200F84D4B /* SubscriptionUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SubscriptionUI; sourceTree = "<group>"; };
@@ -7116,6 +7125,8 @@
 				7B122A8B2DE4701800B84F63 /* NetPAppStoreInfoPlist.xcstrings */,
 				4B25376E2A11BF8B00610219 /* Info.plist */,
 				84C63D872DF178AF001E5EE3 /* NetworkProtectionInfoPlist.xcstrings */,
+				1E6783F42E156DA200AE465A /* AppStoreInfoPlist.xcstrings */,
+				1E6783F62E156DA200AE465A /* InfoPlist.xcstrings */,
 				4B25376F2A11BF8B00610219 /* main.swift */,
 				7B2E52242A5FEC09000C6D39 /* NetworkProtectionAgentNotificationsPresenter.swift */,
 				4B25376D2A11BF6D00610219 /* NetworkProtectionSystemExtension.entitlements */,
@@ -7308,6 +7319,7 @@
 			children = (
 				4B4D607C2A0B29FA00BCD287 /* UserText+NetworkProtectionExtensions.swift */,
 				1EC711572D035BC30009EB5C /* NetworkProtectionLocalizable.xcstrings */,
+				1E6783EF2E156DA200AE465A /* Localizable.xcstrings */,
 			);
 			path = NetworkExtensionAndNotificationTargets;
 			sourceTree = "<group>";
@@ -11870,6 +11882,7 @@
 			files = (
 				1EC711582D035BC30009EB5C /* NetworkProtectionLocalizable.xcstrings in Resources */,
 				4B4BEC482A11B61F001D9AC5 /* Assets.xcassets in Resources */,
+				1E6783F22E156DA200AE465A /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -11886,6 +11899,7 @@
 			files = (
 				1EC7115A2D035BC30009EB5C /* NetworkProtectionLocalizable.xcstrings in Resources */,
 				1D85BCCA2BA982FC0065BA04 /* NetPAppExInfoPlist.xcstrings in Resources */,
+				1E6783F32E156DA200AE465A /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -11895,6 +11909,8 @@
 			files = (
 				84C63D882DF178AF001E5EE3 /* NetworkProtectionInfoPlist.xcstrings in Resources */,
 				1EC711592D035BC30009EB5C /* NetworkProtectionLocalizable.xcstrings in Resources */,
+				1E6783F72E156DA200AE465A /* InfoPlist.xcstrings in Resources */,
+				1E6783F12E156DA200AE465A /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -11902,8 +11918,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1E6783F52E156DA200AE465A /* AppStoreInfoPlist.xcstrings in Resources */,
 				7B122A932DE4701800B84F63 /* NetPAppStoreInfoPlist.xcstrings in Resources */,
 				7BC3E4392D6DF502009787CD /* NetworkProtectionLocalizable.xcstrings in Resources */,
+				1E6783F02E156DA200AE465A /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

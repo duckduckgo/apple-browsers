@@ -690,7 +690,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // This is a known issue in Xcode 26 betas 1 and 2, if the issue is fixed in beta 3 onward then this can be removed
         nw_tls_create_options()
 #endif
-        
+
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
         Configuration.setURLProvider(AppConfigurationURLProvider(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,

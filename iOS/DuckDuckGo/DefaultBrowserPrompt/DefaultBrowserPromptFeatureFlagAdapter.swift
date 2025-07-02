@@ -36,7 +36,7 @@ final class DefaultBrowserPromptFeatureFlagAdapter: DefaultBrowserPromptFeatureF
         featureFlagger.isFeatureOn(FeatureFlag.scheduledSetDefaultBrowserPrompts)
     }
 
-    public var featureSettings: [String: Any] {
+    public var defaultBrowserPromptFeatureSettings: [String: Any] {
         privacyConfigurationManager.privacyConfig.settings(for: .setAsDefaultAndAddToDock)
     }
 }

@@ -49,7 +49,7 @@ struct DefaultBrowserPromptFeatureFlagAdapterTests {
         let sut = DefaultBrowserPromptFeatureFlagAdapter(featureFlagger: featureFlaggerMock, privacyConfigurationManager: privacyConfigurationManagerMock)
 
         // WHEN
-        let result = sut.featureSettings
+        let result = sut.defaultBrowserPromptFeatureSettings
 
         // THEN
         #expect(result.count == 1)

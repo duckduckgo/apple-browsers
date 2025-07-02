@@ -27,7 +27,7 @@ public protocol DefaultBrowserPromptFeatureFlagProvider {
 
 public protocol DefaultBrowserPromptFeatureFlagSettingsProvider {
     // A dictionary representing the settings for the feature.
-    var featureSettings: [String: Any] { get }
+    var defaultBrowserPromptFeatureSettings: [String: Any] { get }
 }
 
 /// An enum representing the different settings for Set Default Browser Prompts feature flag.
@@ -88,7 +88,7 @@ extension DefaultBrowserPromptFeatureFlag: DefaultBrowserPromptFeatureFlagger {
     }
 
     private func getSettings(_ value: DefaultBrowserPromptFeatureSettings) -> Int {
-        settingsProvider.featureSettings[value.rawValue] as? Int ?? value.defaultValue
+        settingsProvider.defaultBrowserPromptFeatureSettings[value.rawValue] as? Int ?? value.defaultValue
     }
 
 }

@@ -192,17 +192,17 @@ final class DefaultBrowserPromptDebugViewModel: ObservableObject {
             let message: String
             if promptActivityStore.hasSeenFirstModal {
                 if userTypeDebugStore.userType()?.isNewOrReturningUser == true && !promptActivityStore.hasSeenSecondModal {
-                    let numberOfActiveDays = featureFlagger.featureSettings[DefaultBrowserPromptFeatureSettings.secondModalDelayDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.secondModalDelayDays.defaultValue
+                    let numberOfActiveDays = featureFlagger.defaultBrowserPromptFeatureSettings[DefaultBrowserPromptFeatureSettings.secondModalDelayDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.secondModalDelayDays.defaultValue
                     message = "Next Modal Will Show After \(numberOfActiveDays) Active Days"
                 } else if userTypeDebugStore.userType()?.isNewOrReturningUser == true && promptActivityStore.hasSeenSecondModal {
-                    let numberOfActiveDays = featureFlagger.featureSettings[DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.defaultValue
+                    let numberOfActiveDays = featureFlagger.defaultBrowserPromptFeatureSettings[DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.defaultValue
                     message = "Next Modal Will Show After \(numberOfActiveDays) Active Days"
                 } else {
-                    let numberOfActiveDays = featureFlagger.featureSettings[DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.defaultValue
+                    let numberOfActiveDays = featureFlagger.defaultBrowserPromptFeatureSettings[DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.defaultValue
                     message = "Next Modal Will Show After \(numberOfActiveDays) Active Days"
                 }
             } else {
-                let setting = featureFlagger.featureSettings[DefaultBrowserPromptFeatureSettings.firstModalDelayDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.firstModalDelayDays.defaultValue
+                let setting = featureFlagger.defaultBrowserPromptFeatureSettings[DefaultBrowserPromptFeatureSettings.firstModalDelayDays.rawValue] as? Int ?? DefaultBrowserPromptFeatureSettings.firstModalDelayDays.defaultValue
                 let firstModalWillShowDate = localStatisticsStore.installDate.flatMap { $0.addingTimeInterval(.days(setting)) }
                 let formattedWillShowDate = firstModalWillShowDate.flatMap { Self.dateFormatter.string(from: $0) } ?? "N/A"
                 message = "First Modal Will Show: \(formattedWillShowDate)"

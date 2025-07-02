@@ -222,35 +222,27 @@ internal class ChromiumDataImporter: DataImporter {
         let updatedOtherBookmarks = bookmarks.topLevelFolders.otherBookmarks.map(processBookmarkOrFolder)
         let updatedSyncedBookmarks = bookmarks.topLevelFolders.syncedBookmarks.map(processBookmarkOrFolder)
 
-        // Find shortcuts that don't have matching bookmarks
+        // Find shortcuts that don't have matching bookmarks and add them to bookmark bar
         let existingBookmarkURLs = collectAllBookmarkURLs(from: bookmarks)
         let uniqueShortcuts = shortcuts.filter { shortcut in
-            guard let urlString = shortcut.urlString else { return false }
+            guard let urlString = shortcut.urlString else {
+                return false
+            }
             return !existingBookmarkURLs.contains(urlString)
         }
-
-        // Add unique shortcuts to otherBookmarks
-        let finalOtherBookmarks: ImportedBookmarks.BookmarkOrFolder?
-        if let otherBookmarks = updatedOtherBookmarks {
-            let existingChildren = otherBookmarks.children ?? []
+        let mergedBookmarkBar: ImportedBookmarks.BookmarkOrFolder? = {
+            guard !uniqueShortcuts.isEmpty else {
+                return updatedBookmarkBar
+            }
+            let existingChildren = updatedBookmarkBar?.children ?? []
             let newChildren = existingChildren + uniqueShortcuts
-            finalOtherBookmarks = ImportedBookmarks.BookmarkOrFolder.folder(
-                name: otherBookmarks.name,
-                children: newChildren
-            )
-        } else if !uniqueShortcuts.isEmpty {
-            // Create otherBookmarks folder if it doesn't exist and we have shortcuts to add
-            finalOtherBookmarks = ImportedBookmarks.BookmarkOrFolder.folder(
-                name: UserText.otherBookmarksImportedFolderTitle,
-                children: uniqueShortcuts
-            )
-        } else {
-            finalOtherBookmarks = updatedOtherBookmarks
-        }
+            return ImportedBookmarks.BookmarkOrFolder.folder(name: updatedBookmarkBar?.name ?? "",
+                                                             children: newChildren)
+        }()
 
         let updatedTopLevelFolders = ImportedBookmarks.TopLevelFolders(
-            bookmarkBar: updatedBookmarkBar,
-            otherBookmarks: finalOtherBookmarks,
+            bookmarkBar: mergedBookmarkBar,
+            otherBookmarks: updatedOtherBookmarks,
             syncedBookmarks: updatedSyncedBookmarks
         )
 

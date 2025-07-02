@@ -113,20 +113,17 @@ extension NSImage {
             width: originalSize.width + padding.left + padding.right,
             height: originalSize.height + padding.top + padding.bottom
         )
-
-        let paddedImage = NSImage(size: newSize)
-        paddedImage.lockFocus()
-
-        // Draw the original image offset by the padding amounts
-        self.draw(in: NSRect(
-            x: padding.left,
-            y: padding.bottom,
-            width: originalSize.width,
-            height: originalSize.height
-        ))
-
-        paddedImage.unlockFocus()
-        return paddedImage
+        
+        return NSImage(size: newSize, flipped: false) { rect in
+            // Draw the original image offset by the padding amounts
+            self.draw(in: NSRect(
+                x: padding.left,
+                y: padding.bottom,
+                width: originalSize.width,
+                height: originalSize.height
+            ))
+            return true
+        }
     }
 
     /// Creates a new image with uniform padding on all sides

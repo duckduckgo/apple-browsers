@@ -40,7 +40,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private enum Constants {
         static let askAiChatButtonTrailingPadding: CGFloat = 8
         static let askAiChatButtonImagePadding: NSEdgeInsets = NSEdgeInsets(top: 0, left: 6, bottom: 0, right: 3)
-        static let askAiChatButtonAnimationDuration: TimeInterval = 4.25
+        static let askAiChatButtonAnimationDuration: TimeInterval = 0.25
     }
 
     weak var delegate: AddressBarButtonsViewControllerDelegate?
@@ -1079,7 +1079,7 @@ final class AddressBarButtonsViewController: NSViewController {
         // Image and its styling
         let originalImage = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage
         let paddedImage = originalImage.imageWithPadding(Constants.askAiChatButtonImagePadding)
-        askAIChatButton.image = paddedImage
+        askAIChatButton.image = originalImage
 
         askAIChatButton.imageHugsTitle = true
         askAIChatButton.imagePosition = .imageLeading

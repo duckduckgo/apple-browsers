@@ -7070,55 +7070,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Tabs und Browserdaten automatisch löschen, wenn DuckDuckGo beendet wird"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Automatically clear tabs and browsing data when DuckDuckGo quits"
+            "value" : "Automatically delete tabs and browsing data when DuckDuckGo quits"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Borra automáticamente las pestañas y los datos de navegación cuando se cierra DuckDuckGo"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Effacer automatiquement les onglets et les données de navigation lorsque DuckDuckGo se ferme"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Cancella automaticamente schede e dati di navigazione quando chiudi DuckDuckGo"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Tabbladen en browsegegevens automatisch wissen wanneer DuckDuckGo stopt"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Automatycznie czyść karty i dane przeglądania przy wychodzeniu z DuckDuckGo"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Limpar automaticamente os separadores e os dados de navegação quando o DuckDuckGo fecha"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Автоматически закрывать вкладки и стирать данные о посещении сайтов при завершении работы DuckDuckGo."
           }
         }
@@ -24602,7 +24602,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Fire Animation"
+            "value" : "Animation"
           }
         }
       }
@@ -76902,55 +76902,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Warne mich, dass Tabs und Daten beim Beenden gelöscht werden"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Warn me that tabs and data will be cleared when quitting"
+            "value" : "Warn me that tabs and data will be deleted when quitting"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Advertirme de que las pestañas y los datos se borrarán al salir"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "M'avertir que les onglets et les données seront effacés à la fermeture"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Avvisa prima di cancellare schede e dati all'uscita"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Waarschuwen dat tabbladen en gegevens worden gewist bij het afsluiten"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ostrzegaj, że karty i dane zostaną wyczyszczone przy wychodzeniu"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Avisar-me que os separadores e os dados serão limpos ao sair"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Показывать предупреждение о сбросе вкладок и данных при выходе"
           }
         }

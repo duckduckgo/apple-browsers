@@ -44,6 +44,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
     @Published
     var isFireAnimationEnabled: Bool {
         didSet {
+            pixelFiring?.fire(GeneralPixel.fireAnimationSetting(enabled: isFireAnimationEnabled))
             persistor.isFireAnimationEnabled = isFireAnimationEnabled
         }
     }

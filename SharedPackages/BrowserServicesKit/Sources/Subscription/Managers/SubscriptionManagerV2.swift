@@ -449,7 +449,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             // Send notification when entitlements change
             if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedEntitlements, newEntitlements) {
                 Logger.subscription.debug("Entitlements changed - New \(newEntitlements) Old \(String(describing: currentCachedEntitlements))")
-                let payload = EntitlementsDidChangePayload(entitlements: newEntitlements)
+                let payload = EntitlementsDidChangePayload(entitlements: newEntitlements, previousEntitlements: currentCachedEntitlements ?? [])
                 NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: payload.notificationUserInfo)
             }
 

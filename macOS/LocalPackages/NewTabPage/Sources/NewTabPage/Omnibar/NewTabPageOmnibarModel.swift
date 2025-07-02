@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-
 public final class NewTabPageOmnibarModel {
 
     public init() {}

@@ -45,7 +45,7 @@ public struct EntitlementsDidChangePayload {
         self.entitlements = entitlements ?? []
     }
 
-    public init?(notificationUserInfo: [AnyHashable: Any]?) {
+    public init(notificationUserInfo: [AnyHashable: Any]?) {
         self.entitlements = notificationUserInfo?[entitlementsKey] as? [SubscriptionEntitlement] ?? []
     }
 }

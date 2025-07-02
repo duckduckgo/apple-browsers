@@ -949,7 +949,6 @@ extension Pixel {
 
         case debugDefaultBrowserPromptFailedToRetrieveCurrentActivity
         case debugDefaultBrowserPromptFailedToSaveCurrentActivity
-        case debugDefaultBrowserPromptFailedToDeleteCurrentActivity
 
         case debugDefaultBrowserPromptFailedToRetrieveLastModalShownDate
         case debugDefaultBrowserPromptFailedToSaveLastModalShownDate
@@ -1985,7 +1984,6 @@ extension Pixel.Event {
 
         case .debugDefaultBrowserPromptFailedToRetrieveCurrentActivity: return "m_debug_set-as-default-prompt_failed-to-retrieve-current-activity"
         case .debugDefaultBrowserPromptFailedToSaveCurrentActivity: return "m_debug_set-as-default-prompt_failed-to-save-current-activity"
-        case .debugDefaultBrowserPromptFailedToDeleteCurrentActivity: return "m_debug_set-as-default-prompt_failed-to-delete-current-activity"
 
         case .debugDefaultBrowserPromptFailedToRetrieveLastModalShownDate: return "m_debug_set-as-default-prompt_failed-to-retrieve-last-modal-shown-date"
         case .debugDefaultBrowserPromptFailedToSaveLastModalShownDate: return "m_debug_set-as-default-prompt_failed-to-save-last-modal-shown-date"

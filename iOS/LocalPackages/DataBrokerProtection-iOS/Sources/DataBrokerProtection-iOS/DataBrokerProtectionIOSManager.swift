@@ -57,18 +57,6 @@ public class DataBrokerProtectionIOSManagerProvider {
 
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
 
-    private static func makeSecureVault(pixelKit: PixelKit,
-                                        sharedPixelsHandler: DataBrokerProtectionSharedPixelsHandler) -> () -> (any DataBrokerProtectionSecureVault)? {
-        return {
-            let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
-            let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
-
-            let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
-
-            return try? vaultFactory.makeVault(reporter: reporter)
-        }
-    }
-
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                   featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
@@ -100,14 +88,22 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                             featureToggles: features)
 
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
 
-        let localBrokerService = LocalBrokerJSONService(vaultMaker: makeSecureVault(pixelKit: pixelKit, sharedPixelsHandler: sharedPixelsHandler),
-                                                        pixelHandler: sharedPixelsHandler)
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker,
-                                                    pixelHandler: sharedPixelsHandler,
-                                                    vaultMaker: makeSecureVault(pixelKit: pixelKit, sharedPixelsHandler: sharedPixelsHandler),
-                                                    localBrokerService: localBrokerService)
+        let vault: DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>
+        do {
+            vault = try vaultFactory.makeVault(reporter: reporter)
+        } catch {
+            assertionFailure("Failed to make secure storage vault")
+            return nil
+        }
+
+        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
 
         let operationQueue = OperationQueue()
         let jobProvider = BrokerProfileJobProvider()

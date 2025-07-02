@@ -59,11 +59,13 @@ final class LocalBookmarkStore: BookmarkStore {
     init(
         contextProvider: @escaping () -> NSManagedObjectContext,
         favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.desktop),
-        preFormFactorSpecificFavoritesOrder: [String]? = nil
+        preFormFactorSpecificFavoritesOrder: [String]? = nil,
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
     ) {
         self.contextProvider = contextProvider
         self.preFormFactorSpecificFavoritesOrder = preFormFactorSpecificFavoritesOrder
         self.favoritesDisplayMode = favoritesDisplayMode
+        self.featureFlagger = featureFlagger
 
         migrateToFormFactorSpecificFavoritesFolders()
         removeInvalidBookmarkEntities()
@@ -86,6 +88,7 @@ final class LocalBookmarkStore: BookmarkStore {
     private(set) var favoritesDisplayMode: FavoritesDisplayMode
     private(set) var didMigrateToFormFactorSpecificFavorites: Bool = false
     private var preFormFactorSpecificFavoritesOrder: [String]?
+    private let featureFlagger: FeatureFlagger
 
     private let contextProvider: () -> NSManagedObjectContext
 
@@ -770,9 +773,9 @@ final class LocalBookmarkStore: BookmarkStore {
         var total = BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
 
         var parent = root
-        var makeFavorties = true
+        var shouldImportRootBookmarksAsFavorites = !featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport)
         if root.children?.count != 0 {
-            makeFavorties = false
+            shouldImportRootBookmarksAsFavorites = false
             parent = BookmarkEntity.makeFolder(title: "\(UserText.bookmarkImportedFromFolder) \(importSourceName)",
                                                parent: root,
                                                context: context)
@@ -781,7 +784,7 @@ final class LocalBookmarkStore: BookmarkStore {
         if let bookmarksBar = bookmarks.topLevelFolders.bookmarkBar?.children {
             let result = recursivelyCreateEntities(from: bookmarksBar,
                                                    parent: parent,
-                                                   markBookmarksAsFavorite: makeFavorties,
+                                                   markBookmarksAsFavorite: shouldImportRootBookmarksAsFavorites,
                                                    in: context)
 
             total += result
@@ -800,7 +803,6 @@ final class LocalBookmarkStore: BookmarkStore {
             }
             let result = recursivelyCreateEntities(from: children,
                                                    parent: folderParent,
-                                                   markBookmarksAsFavorite: false,
                                                    in: context)
 
             total += result
@@ -844,7 +846,6 @@ final class LocalBookmarkStore: BookmarkStore {
             if let children = bookmarkOrFolder.children {
                 let result = recursivelyCreateEntities(from: children,
                                                        parent: bookmarkManagedObject,
-                                                       markBookmarksAsFavorite: false,
                                                        in: context)
 
                 total += result

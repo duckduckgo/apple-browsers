@@ -51,7 +51,6 @@ final class NetworkProtectionSubscriptionEventHandler {
         get {
             userDefaults.networkProtectionEntitlementsExpired
         }
-
         set {
             userDefaults.networkProtectionEntitlementsExpired = newValue
         }
@@ -85,7 +84,7 @@ final class NetworkProtectionSubscriptionEventHandler {
             }
             .store(in: &cancellables)
     }
-
+    
     @MainActor
     private func handleEntitlementsChange(hasEntitlements: Bool, source: VPNSubscriptionStatusPixel.Source) async {
         let isAuthV2Enabled = NSApp.delegateTyped.isAuthV2Enabled

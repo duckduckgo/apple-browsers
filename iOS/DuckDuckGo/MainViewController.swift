@@ -118,7 +118,7 @@ class MainViewController: UIViewController {
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
 
-    @UserDefaultsWrapper(key: .networkProtectionEntitlementsExpired, defaultValue: false)
+    @UserDefaultsWrapper(key: .networkProtectionEntitlementsExpired, defaultValue: true)
     private var lastKnownEntitlementsExpired: Bool
 
     private var localUpdatesCancellable: AnyCancellable?

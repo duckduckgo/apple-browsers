@@ -371,8 +371,6 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
     }
 
     public func fetchAllDataBrokers() throws -> [DataBroker] {
-        let vault = try requireVault(context: "DataBrokerProtectionDatabase.fetchAllDataBrokers")
-
         do {
             return try vault.fetchAllBrokers()
         } catch {

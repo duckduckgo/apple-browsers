@@ -280,6 +280,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     public func loadInitialData() async {
         Logger.subscription.log("Loading initial data...")
         do {
+            _ = try? await getTokenContainer(policy: .localValid)
             let subscription = try await getSubscription(cachePolicy: .remoteFirst)
             Logger.subscription.log("Subscription is \(subscription.isActive ? "active" : "not active", privacy: .public)")
         } catch SubscriptionEndpointServiceError.noData {
@@ -445,10 +446,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             // Send notification when entitlements change
             if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedEntitlements, newEntitlements) {
                 Logger.subscription.debug("Entitlements changed - New \(newEntitlements) Old \(String(describing: currentCachedEntitlements))")
-
-                // TMP: Convert to Entitlement (authV1)
-                let entitlements = newEntitlements.map { $0.entitlement }
-                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
+                let payload = EntitlementsDidChangePayload(entitlements: newEntitlements)
+                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: payload.notificationUserInfo)
             }
 
             return resultTokenContainer

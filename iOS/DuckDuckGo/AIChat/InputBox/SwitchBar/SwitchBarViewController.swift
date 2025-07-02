@@ -41,6 +41,7 @@ class SwitchBarViewController: UIViewController {
 
     private var collapsedStateConstraint: NSLayoutConstraint?
     private var expandedStateConstraint: NSLayoutConstraint?
+    private var segmentedControlBottomConstraint: NSLayoutConstraint?
     private var segmentedControlTopConstraint: NSLayoutConstraint?
 
     private var isExpanded = false
@@ -127,10 +128,12 @@ class SwitchBarViewController: UIViewController {
 
         if isExpanded {
             collapsedStateConstraint?.isActive = false
+            segmentedControlBottomConstraint?.isActive = false
             segmentedControlTopConstraint?.isActive = true
             expandedStateConstraint?.isActive = true
         } else {
             expandedStateConstraint?.isActive = false
+            segmentedControlBottomConstraint?.isActive = true
             segmentedControlTopConstraint?.isActive = false
             collapsedStateConstraint?.isActive = true
         }
@@ -146,11 +149,11 @@ class SwitchBarViewController: UIViewController {
         collapsedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
         expandedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: Constants.textEntryViewTopPadding)
         
+        segmentedControlBottomConstraint = segmentedControl.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: -Constants.textEntryViewTopPadding)
         segmentedControlTopConstraint = segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
 
         // Create bottom constraint with lower priority to avoid conflicts with parent constraints
-        let textEntryBottomConstraint = textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-        textEntryBottomConstraint.priority = UILayoutPriority(999) // High priority but not required
+        let textEntryBottomConstraint = textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).withPriority(.init(999))
 
         NSLayoutConstraint.activate([
             segmentedControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),

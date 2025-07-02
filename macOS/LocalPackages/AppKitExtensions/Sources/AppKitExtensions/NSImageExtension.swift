@@ -103,33 +103,4 @@ extension NSImage {
 
         return NSImage(cgImage: downsampledCGImage, size: NSSize(width: 1, height: 1))
     }
-
-    /// Creates a new image with padding on all sides
-    /// - Parameter padding: The edge insets specifying padding for top, left, bottom, and right
-    /// - Returns: A new NSImage with the specified padding
-    public func imageWithPadding(_ padding: NSEdgeInsets) -> NSImage {
-        let originalSize = self.size
-        let newSize = NSSize(
-            width: originalSize.width + padding.left + padding.right,
-            height: originalSize.height + padding.top + padding.bottom
-        )
-        
-        return NSImage(size: newSize, flipped: false) { rect in
-            // Draw the original image offset by the padding amounts
-            self.draw(in: NSRect(
-                x: padding.left,
-                y: padding.bottom,
-                width: originalSize.width,
-                height: originalSize.height
-            ))
-            return true
-        }
-    }
-
-    /// Creates a new image with uniform padding on all sides
-    /// - Parameter padding: The uniform padding amount for all sides
-    /// - Returns: A new NSImage with the specified uniform padding
-    public func imageWithPadding(_ padding: CGFloat) -> NSImage {
-        return imageWithPadding(NSEdgeInsets(top: padding, left: padding, bottom: padding, right: padding))
-    }
 }

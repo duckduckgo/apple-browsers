@@ -38,8 +38,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 final class AddressBarButtonsViewController: NSViewController {
 
     private enum Constants {
-        static let askAiChatButtonTrailingPadding: CGFloat = 8
-        static let askAiChatButtonImagePadding: NSEdgeInsets = NSEdgeInsets(top: 0, left: 6, bottom: 0, right: 3)
+        static let askAiChatButtonHorizontalPadding: CGFloat = 16
         static let askAiChatButtonAnimationDuration: TimeInterval = 0.25
     }
 
@@ -577,7 +576,8 @@ final class AddressBarButtonsViewController: NSViewController {
         if shouldExpandButton() {
             withAnimation = true
             let fittingSize = askAIChatButton.sizeThatFits(CGSizeMake(1000, visualStyle.addressBarStyleProvider.addressBarButtonSize))
-            targetWidth =  max(fittingSize.width + Constants.askAiChatButtonTrailingPadding, visualStyle.addressBarStyleProvider.addressBarButtonSize)
+            targetWidth = max(fittingSize.width + Constants.askAiChatButtonHorizontalPadding,
+                               visualStyle.addressBarStyleProvider.addressBarButtonSize)
             alphaValue = 1.0
         } else {
             withAnimation = false
@@ -1077,15 +1077,13 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func configureAskAIChatButton() {
         // Image and its styling
-        let originalImage = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage
-        let paddedImage = originalImage.imageWithPadding(Constants.askAiChatButtonImagePadding)
-        askAIChatButton.image = originalImage
+        askAIChatButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage
 
         askAIChatButton.imageHugsTitle = true
         askAIChatButton.imagePosition = .imageLeading
         askAIChatButton.imageScaling = .scaleNone
 
-        let attributedTitle = NSMutableAttributedString()
+        let attributedTitle = NSMutableAttributedString(string: " ")
 
         // Configure text truncation required for smoother animation
         if let buttonCell = askAIChatButton.cell as? NSButtonCell {
@@ -1487,6 +1485,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 self?.setupAnimationViews()
                 self?.updatePrivacyEntryPointIcon()
                 self?.updateZoomButtonVisibility()
+                self?.configureAskAIChatButton()
             }
             .store(in: &cancellables)
     }

@@ -108,6 +108,7 @@ struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
         }
 
         if newScanPreferredRunDate != currentScanPreferredRunDate {
+            Logger.dataBrokerProtection.log("🏴‍☠️ DATE UPDATE: Scan preferredRunDate changing from \(String(describing: currentScanPreferredRunDate), privacy: .public) to \(String(describing: newScanPreferredRunDate), privacy: .public)")
             try updatePreferredRunDate(newScanPreferredRunDate,
                                        brokerId: brokerId,
                                        profileQueryId: profileQueryId,
@@ -136,6 +137,7 @@ struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
         }
 
         if newOptOutPreferredDate != currentOptOutPreferredRunDate {
+            Logger.dataBrokerProtection.log("🏴‍☠️ DATE UPDATE: Opt-out preferredRunDate changing from \(String(describing: currentOptOutPreferredRunDate), privacy: .public) to \(String(describing: newOptOutPreferredDate), privacy: .public)")
             try updatePreferredRunDate(newOptOutPreferredDate,
                                        brokerId: brokerId,
                                        profileQueryId: profileQueryId,
@@ -174,6 +176,6 @@ struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
             throw error
         }
 
-        Logger.dataBrokerProtection.log("Updating preferredRunDate on operation with brokerId \(brokerId.description, privacy: .public) and profileQueryId \(profileQueryId.description, privacy: .public)")
+        Logger.dataBrokerProtection.log("🏴‍☠️ DATE UPDATE: Updated preferredRunDate to \(String(describing: date), privacy: .public) for brokerId: \(brokerId, privacy: .public), profileQueryId: \(profileQueryId, privacy: .public), extractedProfileId: \(String(describing: extractedProfileId), privacy: .public)")
     }
 }

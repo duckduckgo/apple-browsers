@@ -276,7 +276,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
         case .newTabPageOmnibar:
-            return .internalOnly()
+            return .disabled
         }
     }
 }

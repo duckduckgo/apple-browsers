@@ -43,8 +43,9 @@ private struct PickerWrapper: View {
     var body: some View {
         ImageSegmentedPickerView(
             items: state.items,
-            selectedItem: $state.selectedItem
+            selectedItem: $state.selectedItem,
         )
+        .frame(width: 250)
         .onChange(of: state.selectedItem) { newItem in
             state.onSelectionChanged(newItem)
         }
@@ -78,13 +79,13 @@ class SwitchBarViewController: UIViewController {
     private let pickerItems = [
         ImageSegmentedPickerItem(
             text: "Search",
-            selectedImage: Image(systemName: "magnifyingglass"),
-            unselectedImage: Image(systemName: "magnifyingglass")
+            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch),
+            unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch)
         ),
         ImageSegmentedPickerItem(
             text: "Duck.ai",
-            selectedImage: Image(systemName: "brain.head.profile"),
-            unselectedImage: Image(systemName: "brain.head.profile")
+            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat),
+            unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat)
         )
     ]
     private var pickerState: PickerState?

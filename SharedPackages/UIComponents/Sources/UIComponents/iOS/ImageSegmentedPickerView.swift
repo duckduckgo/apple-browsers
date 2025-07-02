@@ -34,8 +34,8 @@ public struct ImageSegmentedPickerConfiguration {
         font: Font = .system(size: 16, weight: .medium),
         selectedTextColor: Color = .init(designSystemColor: .textPrimary),
         unselectedTextColor: Color = .init(designSystemColor: .textPrimary),
-        backgroundColor: Color = .init(designSystemColor: .background),
-        selectedBackgroundColor: Color = .blue
+        backgroundColor: Color = .init(designSystemColor: .surface),
+        selectedBackgroundColor: Color = .init(designSystemColor: .background),
     ) {
         self.font = font
         self.selectedTextColor = selectedTextColor
@@ -81,7 +81,7 @@ public struct ImageSegmentedPickerView: View {
                     .fill(configuration.selectedBackgroundColor)
                     .frame(width: geometry.size.width / CGFloat(items.count), height: Constants.innerHeight)
                     .offset(x: currentOffset)
-                    .shadow(color: Color.black.opacity(0.15), radius: 1, x: 0, y: 0.5)
+                    .shadow(color: Color.black.opacity(0.10), radius: 0.5, x: 0, y: 0.5)
                     .onAppear {
                         currentOffset = selectedOffset(geometry: geometry)
                     }

@@ -37,7 +37,7 @@ final class DefaultBrowserPromptActivityKeyValueFilesStore: DefaultBrowserPrompt
 
     init(
         keyValueFilesStore: ThrowingKeyValueStoring,
-        eventMapper: EventMapping<DefaultBrowserPromptActivityKeyValueFilesStore.DebugEvent> = DefaultBrowserPromptTypeKeyValueFilesStoreEventMapper()
+        eventMapper: EventMapping<DefaultBrowserPromptActivityKeyValueFilesStore.DebugEvent> = DefaultBrowserPromptKeyValueFilesStorePixelHandlers.promptTypeDebugPixelHandler
     ) {
         self.keyValueFilesStore = keyValueFilesStore
         self.eventMapper = eventMapper
@@ -104,33 +104,6 @@ extension DefaultBrowserPromptActivityKeyValueFilesStore {
         case failedToSaveValue(Value)
     }
 
-    final class DefaultBrowserPromptTypeKeyValueFilesStoreEventMapper: EventMapping<DefaultBrowserPromptActivityKeyValueFilesStore.DebugEvent>, DefaultBrowserPromptEventMapping {
-
-        public init() {
-            super.init { event, error, _, _ in
-                switch event {
-                case let .failedToRetrieveValue(.lastModalShownDate(error)):
-                    Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Retrieve Last Modal Shown Date: \(error)")
-                case let .failedToSaveValue(.lastModalShownDate(error)):
-                    Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Save Last Modal Shown Date: \(error)")
-                case let .failedToRetrieveValue(.modalShownOccurrences(error)):
-                    Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Retrieve Modal Shown Occurrences: \(error)")
-                case let .failedToSaveValue(.modalShownOccurrences(error)):
-                    Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Save Modal Shown Occurrences: \(error)")
-                case let .failedToRetrieveValue(.permanentlyDismissPrompt(error)):
-                    Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Retrieve Permanently Dismissed Prompt: \(error)")
-                case let .failedToSaveValue(.permanentlyDismissPrompt(error)):
-                    Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Save Permanently Dismissed Prompt: \(error)")
-                }
-            }
-        }
-
-        @available(*, unavailable, message: "Use init() instead")
-        override init(mapping: @escaping EventMapping<DefaultBrowserPromptActivityKeyValueFilesStore.DebugEvent>.Mapping) {
-            fatalError("Use init()")
-        }
-
-    }
 }
 
 // MARK: - Helpers

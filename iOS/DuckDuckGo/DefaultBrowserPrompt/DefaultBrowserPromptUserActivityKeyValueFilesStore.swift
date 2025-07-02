@@ -62,7 +62,7 @@ final class DefaultBrowserPromptUserActivityKeyValueFilesStore: DefaultBrowserPr
 
     init(
         keyValueFilesStore: ThrowingKeyValueStoring,
-        eventMapper: EventMapping<DefaultBrowserPromptUserActivityKeyValueFilesStore.DebugEvent> = DefaultBrowserPromptUserActivityKeyValueFilesStore.Mapper()
+        eventMapper: EventMapping<DefaultBrowserPromptUserActivityKeyValueFilesStore.DebugEvent> = DefaultBrowserPromptKeyValueFilesStorePixelHandlers.userActivityDebugPixelHandler
     ) {
         self.keyValueFilesStore = keyValueFilesStore
         self.eventMapper = eventMapper
@@ -105,27 +105,6 @@ extension DefaultBrowserPromptUserActivityKeyValueFilesStore {
         case failedToRetrieveActivity
         case failedToSaveActivity
         case failedToDeleteActivity
-    }
-
-    final class Mapper: EventMapping<DefaultBrowserPromptUserActivityKeyValueFilesStore.DebugEvent> {
-
-        public init() {
-            super.init { event, error, _, _ in
-                switch event {
-                case .failedToRetrieveActivity:
-                    Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Retrieve Current Activity: \(error)")
-                case .failedToSaveActivity:
-                    Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Save Current Activity: \(error)")
-                case .failedToDeleteActivity:
-                    Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Failed To Delete Current Activity: \(error)")
-                }
-            }
-        }
-
-        @available(*, unavailable, message: "Use init() instead")
-        override init(mapping: @escaping EventMapping<DefaultBrowserPromptUserActivityKeyValueFilesStore.DebugEvent>.Mapping) {
-            fatalError("Use init()")
-        }
     }
 
 }

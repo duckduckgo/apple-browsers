@@ -1,5 +1,5 @@
 //
-//  MockDefaultBrowserPromptUserActivityStore.swift
+//  MockDefaultBrowserPromptUserActivityStorage.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -18,26 +18,25 @@
 //
 
 import SetDefaultBrowserCore
+@testable import DuckDuckGo
 
-public final class MockDefaultBrowserPromptUserActivityStore: DefaultBrowserPromptUserActivityStorage {
-    public private(set) var didCallSaveActivity: Bool = false
-    public private(set) var capturedSaveActivity: DefaultBrowserPromptUserActivity?
-    public private(set) var didCallDeleteActivity: Bool = false
+final class MockDefaultBrowserPromptUserActivityStore: DefaultBrowserPromptUserActivityStorage {
+    private(set) var didCallSaveActivity: Bool = false
+    private(set) var capturedSaveActivity: DefaultBrowserPromptUserActivity?
+    private(set) var didCallDeleteActivity: Bool = false
 
-    public var activityToReturn: DefaultBrowserPromptUserActivity = .init()
+    var activityToReturn: DefaultBrowserPromptUserActivity = .init()
 
-    public init() {}
-
-    public func save(_ activity: DefaultBrowserPromptUserActivity) {
+    func save(_ activity: DefaultBrowserPromptUserActivity) {
         didCallSaveActivity = true
         capturedSaveActivity = activity
     }
-    
-    public func deleteActivity() {
+
+    func deleteActivity() {
         didCallDeleteActivity = true
     }
-    
-    public func currentActivity() -> DefaultBrowserPromptUserActivity {
+
+    func currentActivity() -> DefaultBrowserPromptUserActivity {
         activityToReturn
     }
 }

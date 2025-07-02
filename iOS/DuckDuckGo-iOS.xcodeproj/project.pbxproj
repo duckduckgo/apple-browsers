@@ -1277,6 +1277,9 @@
 		9FE08BD62C2A60CD001D5EBC /* MetricBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE08BD52C2A60CD001D5EBC /* MetricBuilder.swift */; };
 		9FE08BDA2C2A86D0001D5EBC /* URLOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE08BD92C2A86D0001D5EBC /* URLOpener.swift */; };
 		9FE08BDC2C2A88FA001D5EBC /* OnboardingIntroViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE08BDB2C2A88FA001D5EBC /* OnboardingIntroViewController.swift */; };
+		9FE7CD592E13C40E006691AB /* DefaultBrowserPromptUserActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD572E13C40E006691AB /* DefaultBrowserPromptUserActivityManager.swift */; };
+		9FE7CD5C2E14C6CD006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD5B2E14C6BA006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift */; };
+		9FE7CD5E2E14C81A006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FE7CD5D2E14C80B006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift */; };
 		9FEA222E2C324ECD006B03BF /* ViewVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEA222D2C324ECD006B03BF /* ViewVisibility.swift */; };
 		9FEA22322C3270BD006B03BF /* TimerInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEA22312C3270BD006B03BF /* TimerInterface.swift */; };
 		9FEBDE1E2E0BEE6800175B8B /* DefaultBrowserPromptActivityKeyValueFilesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEBDE1D2E0BEE4D00175B8B /* DefaultBrowserPromptActivityKeyValueFilesStore.swift */; };
@@ -3426,6 +3429,9 @@
 		9FE08BD52C2A60CD001D5EBC /* MetricBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricBuilder.swift; sourceTree = "<group>"; };
 		9FE08BD92C2A86D0001D5EBC /* URLOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLOpener.swift; sourceTree = "<group>"; };
 		9FE08BDB2C2A88FA001D5EBC /* OnboardingIntroViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroViewController.swift; sourceTree = "<group>"; };
+		9FE7CD572E13C40E006691AB /* DefaultBrowserPromptUserActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserActivityManager.swift; sourceTree = "<group>"; };
+		9FE7CD5B2E14C6BA006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptUserActivityManagerTests.swift; sourceTree = "<group>"; };
+		9FE7CD5D2E14C80B006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserPromptUserActivityStorage.swift; sourceTree = "<group>"; };
 		9FEA222D2C324ECD006B03BF /* ViewVisibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewVisibility.swift; sourceTree = "<group>"; };
 		9FEA22312C3270BD006B03BF /* TimerInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerInterface.swift; sourceTree = "<group>"; };
 		9FEBDE1D2E0BEE4D00175B8B /* DefaultBrowserPromptActivityKeyValueFilesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptActivityKeyValueFilesStore.swift; sourceTree = "<group>"; };
@@ -6751,6 +6757,14 @@
 			path = MetricBuilder;
 			sourceTree = "<group>";
 		};
+		9FE7CD562E13BF74006691AB /* UserActivityManager */ = {
+			isa = PBXGroup;
+			children = (
+				9FE7CD572E13C40E006691AB /* DefaultBrowserPromptUserActivityManager.swift */,
+			);
+			path = UserActivityManager;
+			sourceTree = "<group>";
+		};
 		9FF7E9802C22A19800902BE5 /* OnboardingExperiment */ = {
 			isa = PBXGroup;
 			children = (
@@ -6776,6 +6790,7 @@
 		9FF967AD2E0E241E00E45B54 /* DefaultBrowserPrompt */ = {
 			isa = PBXGroup;
 			children = (
+				9FE7CD562E13BF74006691AB /* UserActivityManager */,
 				9FF967AE2E0E242F00E45B54 /* DefaultBrowserPromptUserTypeManager.swift */,
 				9FEBDE232E0BFB7300175B8B /* DefaultBrowserPromptPixelHandler.swift */,
 				9FEBDE212E0BF78F00175B8B /* DefaultBrowserPromptManagerDebugPixelHandler.swift */,
@@ -6795,6 +6810,7 @@
 				9FF967B82E0E6AD900E45B54 /* DefaultBrowserPromptFeatureFlagAdapterTests.swift */,
 				9FF967BA2E0E703C00E45B54 /* DefaultBrowserPromptUserActivityKeyValueFilesStoreTests.swift */,
 				9FF967BE2E0E7F4F00E45B54 /* DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift */,
+				9FE7CD5B2E14C6BA006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift */,
 			);
 			path = DefaultBrowserPrompt;
 			sourceTree = "<group>";
@@ -6802,6 +6818,7 @@
 		9FF967B52E0E31C700E45B54 /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
+				9FE7CD5D2E14C80B006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift */,
 				9FF967B62E0E31CC00E45B54 /* MockDefaultBrowserPromptUserTypeStoring.swift */,
 			);
 			path = Mocks;
@@ -9732,6 +9749,7 @@
 				8590CB612684D0600089F6BF /* CookieDebugViewController.swift in Sources */,
 				319A37152829A55F0079FBCE /* AutofillListItemTableViewCell.swift in Sources */,
 				6F8496412BC3D8EE00ADA54E /* OnboardingButtonsView.swift in Sources */,
+				9FE7CD592E13C40E006691AB /* DefaultBrowserPromptUserActivityManager.swift in Sources */,
 				CB3C78892D06D3A700A7E4ED /* Foreground.swift in Sources */,
 				CB3C788A2D06D3A700A7E4ED /* Background.swift in Sources */,
 				C1AD33342DBAD1DD003B80A4 /* SaveCreditCardViewController.swift in Sources */,
@@ -10626,6 +10644,7 @@
 				98E563F42DE8B32D00E6E75F /* AppSettingsMock.swift in Sources */,
 				9FF967BF2E0E7F5200E45B54 /* DefaultBrowserPromptActivityKeyValueFilesStoreTests.swift in Sources */,
 				98E564A22DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,
+				9FE7CD5C2E14C6CD006691AB /* DefaultBrowserPromptUserActivityManagerTests.swift in Sources */,
 				98E563F72DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift in Sources */,
 				98E563F82DE8B32D00E6E75F /* MockOmniBar.swift in Sources */,
 				98E563F92DE8B32D00E6E75F /* MockUsageSegmentation.swift in Sources */,
@@ -10633,6 +10652,7 @@
 				98E563FB2DE8B32D00E6E75F /* MockURLOpener.swift in Sources */,
 				98E563FC2DE8B32D00E6E75F /* MockPrivacyDataReporter.swift in Sources */,
 				98E563FD2DE8B32D00E6E75F /* OnboardingManagerMock.swift in Sources */,
+				9FE7CD5E2E14C81A006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift in Sources */,
 				56A3CDE52DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */,
 				98E563FF2DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				98E564002DE8B32D00E6E75F /* MockTimer.swift in Sources */,

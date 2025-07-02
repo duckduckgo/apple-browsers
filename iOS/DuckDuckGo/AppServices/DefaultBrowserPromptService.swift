@@ -26,13 +26,17 @@ import SetDefaultBrowserUI
 
 @MainActor
 final class DefaultBrowserPromptService {
-    let presenter: DefaultBrowserPromptPresenting
+    private weak var presentingController: UIViewController?
+    private let userActivityManager: DefaultBrowserPromptUserActivityRecorder & DefaultBrowserPromptUserActivityManager
+    private let presenter: DefaultBrowserPromptPresenting
 
     init(
+        presentingController: UIViewController,
         featureFlagger: FeatureFlagger,
         privacyConfigManager: PrivacyConfigurationManaging,
         keyValueFilesStore: ThrowingKeyValueStoring
     ) {
+        self.presentingController = presentingController
 
 #if DEBUG || REVIEW
         let debugDateProvider = DefaultBrowserPromptDebugDateProvider()
@@ -48,6 +52,7 @@ final class DefaultBrowserPromptService {
         let checkDefaultBrowserInfoStorage = DefaultBrowserInfoStore()
         let promptTypeKeyValueFilesStore = DefaultBrowserPromptActivityKeyValueFilesStore(keyValueFilesStore: keyValueFilesStore)
         let userActivityStore = DefaultBrowserPromptUserActivityKeyValueFilesStore(keyValueFilesStore: keyValueFilesStore)
+        userActivityManager = DefaultBrowserPromptUserActivityManager(store: userActivityStore, dateProvider: defaultBrowserDateProvider)
         let checkDefaultBrowserPixelHandler = DefaultBrowserPromptManagerDebugPixelHandler()
         let promptActivityPixelHandler = DefaultBrowserPromptPixelHandler()
 
@@ -56,7 +61,7 @@ final class DefaultBrowserPromptService {
             featureFlagSettingsProvider: featureFlagAdapter,
             promptActivityStore: promptTypeKeyValueFilesStore,
             userTypeProviding: userTypeManager,
-            userActivityStore: userActivityStore,
+            userActivityManager: userActivityManager,
             checkDefaultBrowserContextStorage: checkDefaultBrowserInfoStorage,
             checkDefaultBrowserDebugEventMapper: checkDefaultBrowserPixelHandler,
             promptUserInteractionEventMapper: promptActivityPixelHandler,
@@ -66,9 +71,16 @@ final class DefaultBrowserPromptService {
         )
     }
 
-    func presentDefaultBrowserPrompt(from vc: UIViewController) {
+    func resume() {
+        // Application has been launched or brought back from foreground.
+        Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Record User Activity If Needed.")
+        userActivityManager.recordActivity()
+    }
+
+    func presentDefaultBrowserPromptIfNeeded() {
+        guard let presentingController else { return }
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Presenting default browser prompt.")
-        presenter.tryPresentDefaultModalPrompt(from: vc)
+        presenter.tryPresentDefaultModalPrompt(from: presentingController)
     }
 }
 

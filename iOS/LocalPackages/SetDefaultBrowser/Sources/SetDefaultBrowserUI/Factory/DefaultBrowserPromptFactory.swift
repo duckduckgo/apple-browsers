@@ -28,7 +28,7 @@ public enum DefaultBrowserPromptFactory {
         featureFlagSettingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider,
         promptActivityStore: DefaultBrowserPromptStorage,
         userTypeProviding: DefaultBrowserPromptUserTypeProviding,
-        userActivityStore: DefaultBrowserPromptUserActivityStorage,
+        userActivityManager: DefaultBrowserPromptUserActivityManaging,
         checkDefaultBrowserContextStorage: DefaultBrowserContextStorage,
         checkDefaultBrowserDebugEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>,
         promptUserInteractionEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>,
@@ -42,11 +42,6 @@ public enum DefaultBrowserPromptFactory {
             featureFlagProvider: featureFlagProvider
         )
 
-        let userActivityMonitor = DefaultBrowserPromptUserActivityMonitor(
-            store: userActivityStore,
-            dateProvider: currentDateProvider
-        )
-
         let defaultBrowserManager = DefaultBrowserManager(
             defaultBrowserInfoStore: checkDefaultBrowserContextStorage,
             defaultBrowserEventMapper: checkDefaultBrowserDebugEventMapper
@@ -56,7 +51,7 @@ public enum DefaultBrowserPromptFactory {
             featureFlagger: featureFlagger,
             store: promptActivityStore,
             userTypeProvider: userTypeProviding,
-            userActivityProvider: userActivityMonitor,
+            userActivityProvider: userActivityManager,
             defaultBrowserManager: defaultBrowserManager,
             installDateProvider: installDateProvider,
             dateProvider: currentDateProvider
@@ -65,7 +60,7 @@ public enum DefaultBrowserPromptFactory {
         let coordinator = DefaultBrowserPromptCoordinator(
             isOnboardingCompleted: isOnboardingCompletedProvider,
             promptStore: promptActivityStore,
-            userActivityManager: userActivityMonitor,
+            userActivityManager: userActivityManager,
             promptTypeDecider: promptTypeDecider,
             urlOpener: UIApplication.shared,
             eventMapper: promptUserInteractionEventMapper,

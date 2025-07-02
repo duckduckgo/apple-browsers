@@ -105,6 +105,7 @@ struct Foreground: ForegroundHandling {
             /// This is called when the **app is ready to handle user interactions** after data clear and authentication are complete.
             onAppReadyForInteractions: {
                 /* ... */
+                services.defaultBrowserPromptService.presentDefaultBrowserPromptIfNeeded()
             }
         )
 
@@ -117,6 +118,7 @@ struct Foreground: ForegroundHandling {
         services.syncService.resume()
         services.remoteMessagingService.resume()
         services.statisticsService.resume()
+        services.defaultBrowserPromptService.resume()
 
         appDependencies.mainCoordinator.onForeground()
     }

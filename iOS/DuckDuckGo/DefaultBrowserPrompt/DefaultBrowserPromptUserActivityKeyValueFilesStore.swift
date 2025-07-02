@@ -22,6 +22,23 @@ import Persistence
 import class Common.EventMapping
 import SetDefaultBrowserCore
 
+protocol DefaultBrowserPromptUserActivityStorage: AnyObject {
+    // Persists the provided user activity data to storage.
+    ///
+    /// This method will overwrite any existing activity data with the new data provided.
+    ///
+    /// - Parameter activity: The user activity data to be saved.
+    func save(_ activity: DefaultBrowserPromptUserActivity)
+
+    /// Removes all stored user activity data.
+    func deleteActivity()
+
+    /// Retrieves the currently stored user activity data.
+    ///
+    /// - Returns: The current user activity data. If no activity has been saved, return an empty `DefaultBrowserPromptUserActivity`.
+    func currentActivity() -> DefaultBrowserPromptUserActivity
+}
+
 final class DefaultBrowserPromptUserActivityKeyValueFilesStore: DefaultBrowserPromptUserActivityStorage {
 
     enum StorageKey {

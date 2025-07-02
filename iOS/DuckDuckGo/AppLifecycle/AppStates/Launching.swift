@@ -90,8 +90,6 @@ struct Launching: LaunchingHandling {
                                                             privacyConfigurationManager: privacyConfigurationManager)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
-        // Set Default Browser Prompt Service to display SAD prompts to active users.
-        let defaultBrowserPromptService = DefaultBrowserPromptService(featureFlagger: featureFlagger, privacyConfigManager: privacyConfigurationManager, keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -112,11 +110,12 @@ struct Launching: LaunchingHandling {
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
                                               didFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-                                              defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter
         )
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
+
+        let mainController = mainCoordinator.controller
 
         syncService.presenter = mainCoordinator.controller
         let vpnService = VPNService(mainCoordinator: mainCoordinator)
@@ -128,6 +127,13 @@ struct Launching: LaunchingHandling {
         let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
+        // Set Default Browser Prompt Service to display SAD prompts to active users.
+        let defaultBrowserPromptService = DefaultBrowserPromptService(
+            presentingController: mainCoordinator.controller,
+            featureFlagger: featureFlagger,
+            privacyConfigManager: privacyConfigurationManager,
+            keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -149,7 +155,8 @@ struct Launching: LaunchingHandling {
                                crashCollectionService: crashCollectionService,
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
                                statisticsService: statisticsService,
-                               keyValueFileStoreService: appKeyValueFileStoreService
+                               keyValueFileStoreService: appKeyValueFileStoreService,
+                               defaultBrowserPromptService: defaultBrowserPromptService
         )
 
         // MARK: - Final Configuration

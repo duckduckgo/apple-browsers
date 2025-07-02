@@ -31,6 +31,7 @@ protocol AppearancePreferencesPersistor {
     var showFullURL: Bool { get set }
     var currentThemeName: String { get set }
     var favoritesDisplayMode: String? { get set }
+    var isOmnibarVisible: Bool { get set }
     var isFavoriteVisible: Bool { get set }
     var isProtectionsReportVisible: Bool { get set }
     var isContinueSetUpVisible: Bool { get set }
@@ -48,7 +49,13 @@ protocol AppearancePreferencesPersistor {
 struct AppearancePreferencesUserDefaultsPersistor: AppearancePreferencesPersistor {
 
     enum Key: String {
+        case newTabPageIsOmnibarVisible = "new-tab-page.omnibar.is-visible"
         case newTabPageIsProtectionsReportVisible = "new-tab-page.protections-report.is-visible"
+    }
+
+    var isOmnibarVisible: Bool {
+        get { (try? keyValueStore.object(forKey: Key.newTabPageIsOmnibarVisible.rawValue) as? Bool) ?? true }
+        set { try? keyValueStore.set(newValue, forKey: Key.newTabPageIsOmnibarVisible.rawValue) }
     }
 
     var isProtectionsReportVisible: Bool {
@@ -249,6 +256,12 @@ final class AppearancePreferences: ObservableObject {
         }
     }
 
+    @Published var isOmnibarVisible: Bool {
+        didSet {
+            persistor.isOmnibarVisible = isOmnibarVisible
+        }
+    }
+
     @Published var isFavoriteVisible: Bool {
         didSet {
             persistor.isFavoriteVisible = isFavoriteVisible
@@ -400,6 +413,7 @@ final class AppearancePreferences: ObservableObject {
         currentThemeName = .init(rawValue: persistor.currentThemeName) ?? .systemDefault
         showFullURL = persistor.showFullURL
         favoritesDisplayMode = persistor.favoritesDisplayMode.flatMap(FavoritesDisplayMode.init) ?? .default
+        isOmnibarVisible = persistor.isOmnibarVisible
         isFavoriteVisible = persistor.isFavoriteVisible
         isProtectionsReportVisible = persistor.isProtectionsReportVisible
         showBookmarksBar = persistor.showBookmarksBar

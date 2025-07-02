@@ -24,9 +24,11 @@ import UserScriptActionsManager
 import WebKit
 
 public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
+    var isOmnibarVisible: Bool { get set }
     var isFavoritesVisible: Bool { get set }
     var isProtectionsReportVisible: Bool { get set }
 
+    var isOmnibarVisiblePublisher: AnyPublisher<Bool, Never> { get }
     var isFavoritesVisiblePublisher: AnyPublisher<Bool, Never> { get }
     var isProtectionsReportVisiblePublisher: AnyPublisher<Bool, Never> { get }
 }
@@ -62,7 +64,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         self.eventMapper = eventMapper
         super.init()
 
-        Publishers.Merge(
+        Publishers.Merge3(
+            sectionsVisibilityProvider.isOmnibarVisiblePublisher,
             sectionsVisibilityProvider.isFavoritesVisiblePublisher,
             sectionsVisibilityProvider.isProtectionsReportVisiblePublisher
         )

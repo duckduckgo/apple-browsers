@@ -1075,52 +1075,51 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
     }
 
-    // TODO: Clean up
     private func configureAskAIChatButton() {
-        // Create attributed title with different colors
+        // Image and its styling
+        let originalImage = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage
+        let paddedImage = originalImage.imageWithPadding(Constants.askAiChatButtonImagePadding)
+        askAIChatButton.image = paddedImage
+
+        askAIChatButton.imageHugsTitle = true
+        askAIChatButton.imagePosition = .imageLeading
+        askAIChatButton.imageScaling = .scaleNone
+
+        // Text
         let mainText = "Ask Duck.ai"
-        let spacing = NSAttributedString(string: " ")
         let shortcutText = "⇧⏎"
-        
+
         let attributedTitle = NSMutableAttributedString()
-        
+
+        // Configure text truncation required for smoother animation
+        if let buttonCell = askAIChatButton.cell as? NSButtonCell {
+            buttonCell.lineBreakMode = .byClipping
+            buttonCell.truncatesLastVisibleLine = false
+        }
+
         // Main text in normal color
         let mainAttributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: visualStyle.colorsProvider.textPrimaryColor,
             .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)
         ]
-        attributedTitle.append(NSAttributedString(string: mainText, attributes: mainAttributes))
-        attributedTitle.append(spacing)
 
         // Shortcut text in secondary color
         let shortcutAttributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: visualStyle.colorsProvider.textTertiaryColor,
             .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)
         ]
-        attributedTitle.append(NSAttributedString(string: shortcutText, attributes: shortcutAttributes))
 
+        attributedTitle.append(NSAttributedString(string: mainText, attributes: mainAttributes))
+        attributedTitle.append(NSAttributedString(string: " "))
+        attributedTitle.append(NSAttributedString(string: shortcutText, attributes: shortcutAttributes))
         askAIChatButton.attributedTitle = attributedTitle
 
-        let originalImage = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage
-        let paddedImage = originalImage.imageWithPadding(Constants.askAiChatButtonImagePadding)
-        askAIChatButton.image = paddedImage
-
+        // State and colors
+        askAIChatButton.state = .off
+        askAIChatButton.backgroundColor = .buttonMouseDown
         askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         askAIChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         askAIChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.askAIChatButton")
-
-        askAIChatButton.imageHugsTitle = true
-        askAIChatButton.imagePosition = .imageLeading
-        askAIChatButton.imageScaling = .scaleNone
-        askAIChatButton.backgroundColor = .buttonMouseDown
-        askAIChatButton.state = .off
-        askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
-        
-        // Configure text truncation for smoother animation
-        if let buttonCell = askAIChatButton.cell as? NSButtonCell {
-            buttonCell.lineBreakMode = .byClipping
-            buttonCell.truncatesLastVisibleLine = false
-        }
     }
 
     private func configureContextMenuForAIChatButtons(isSidebarOpen: Bool? = nil) {

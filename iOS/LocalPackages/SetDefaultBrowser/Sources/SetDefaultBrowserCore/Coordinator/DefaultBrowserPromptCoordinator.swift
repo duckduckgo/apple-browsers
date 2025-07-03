@@ -83,12 +83,12 @@ extension DefaultBrowserPromptCoordinator: DefaultBrowserPromptCoordinating {
         }
 
         // Set prompt seen
-//        guard let prompt = promptTypeDecider.promptType() else { return nil }
+        guard let prompt = promptTypeDecider.promptType() else { return nil }
 
         setPromptSeen()
         resetUserActivity()
 
-        return DefaultBrowserPromptPresentationType(.firstModal)
+        return DefaultBrowserPromptPresentationType(prompt)
     }
 
     package func setDefaultBrowserAction() {

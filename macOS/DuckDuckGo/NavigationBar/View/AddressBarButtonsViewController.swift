@@ -560,13 +560,13 @@ final class AddressBarButtonsViewController: NSViewController {
         func shouldExpandButton() -> Bool {
             guard isTextFieldEditorFirstResponder,
                   let textFieldValue,
-                  !textFieldValue.isEmpty
+                  !textFieldValue.isEmpty,
+                  (textFieldValue.isUserTyped || textFieldValue.isSuggestion)
             else {
                 return false
             }
             return true
         }
-
 
         var targetWidth: CGFloat
 

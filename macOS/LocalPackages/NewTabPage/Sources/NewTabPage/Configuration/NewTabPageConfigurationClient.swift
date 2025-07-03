@@ -102,6 +102,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
             .init(id: .nextSteps),
+            .init(id: .omnibar),
             .init(id: .favorites),
             .init(id: .protections)
         ]
@@ -109,6 +110,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     private func fetchWidgetConfigs() -> [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] {
         [
+            .init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible),
             .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
             .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible)
         ]
@@ -153,6 +155,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     @objc private func toggleVisibility(_ sender: NSMenuItem) {
         switch sender.representedObject as? NewTabPageDataModel.WidgetId {
+        case .omnibar:
+            sectionsVisibilityProvider.isOmnibarVisible.toggle()
         case .favorites:
             sectionsVisibilityProvider.isFavoritesVisible.toggle()
         case .protections:
@@ -192,6 +196,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         }
         for widgetConfig in widgetConfigs {
             switch widgetConfig.id {
+            case .omnibar:
+                sectionsVisibilityProvider.isOmnibarVisible = widgetConfig.visibility.isVisible
             case .favorites:
                 sectionsVisibilityProvider.isFavoritesVisible = widgetConfig.visibility.isVisible
             case .protections:

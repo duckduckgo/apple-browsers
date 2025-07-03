@@ -198,7 +198,7 @@ extension DataImportViewController: UIDocumentPickerDelegate {
             viewModel.handleFileSelection(selectedFileURL, type: fileType)
 
             switch fileType {
-            case .zip:
+            case .zip, .json:
                 Pixel.fire(pixel: .importInstructionsFileSelectedZip, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
             case .csv:
                 Pixel.fire(pixel: .importInstructionsFileSelectedCsv, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])

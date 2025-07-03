@@ -216,21 +216,23 @@ final class DataImportViewModel: ObservableObject {
         switch type {
         case .zip:
             do {
-               let contents = try ImportArchiveReader().readContents(from: url)
+                let contents = try ImportArchiveReader().readContents(from: url, featureFlagger: AppDependencyProvider.shared.featureFlagger)
 
                 switch contents.type {
-                case .both:
-                    delegate?.dataImportViewModelDidRequestPresentDataPicker(self, contents: contents)
                 case .passwordsOnly:
                     importZipArchive(from: contents, for: [.passwords])
                 case .bookmarksOnly:
                     importZipArchive(from: contents, for: [.bookmarks])
+                case .creditCardsOnly:
+                    importZipArchive(from: contents, for: [.creditCards])
                 case .none:
                     DispatchQueue.main.async { [weak self] in
                         self?.isLoading = false
                         ActionMessageView.present(message: UserText.dataImportFailedNoDataInZipErrorMessage)
                     }
                     Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
+                default:
+                    delegate?.dataImportViewModelDidRequestPresentDataPicker(self, contents: contents)
                 }
             } catch {
                 DispatchQueue.main.async { [weak self] in
@@ -312,7 +314,7 @@ final class DataImportViewModel: ObservableObject {
         case .html:
             fileName = UserText.dataImportFileTypeHtml
             Pixel.fire(pixel: .importResultBookmarksParsing, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
-        case .zip:
+        case .zip, .json:
             fileName = UserText.dataImportFileTypeZip
             Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
         }

@@ -37,6 +37,8 @@ extension DataImportPreview {
             return Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmarksOpen)
         case .passwords:
             return Image(uiImage: DesignSystemImages.Glyphs.Size24.key)
+        case .creditCards:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.creditCard)
         }
     }
 
@@ -46,6 +48,8 @@ extension DataImportPreview {
             return UserText.zipContentSelectionBookmarks
         case .passwords:
             return UserText.zipContentSelectionPasswords
+        case .creditCards:
+            return UserText.zipContentSelectionCreditCards
         }
     }
 }
@@ -58,7 +62,7 @@ final class ZipContentSelectionViewModel: ObservableObject {
         didSet {
             guard contentHeight != oldValue else { return }
             delegate?.zipContentSelectionViewModelDidResizeContent(self,
-                                                                   contentHeight: max(contentHeight, 360))
+                                                                   contentHeight: max(contentHeight, 380))
         }
     }
 

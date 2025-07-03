@@ -26,7 +26,7 @@ protocol OmniBarEditingStateTransitionDelegate: AnyObject {
     var switchBarVC: SwitchBarViewController { get }
 }
 
-class OmniBarEditingStateAnimator {
+final class OmniBarEditingStateAnimator {
 
     weak var transitionDelegate: OmniBarEditingStateTransitionDelegate?
 
@@ -160,7 +160,7 @@ class OmniBarEditingStateAnimator {
 
         // Start animations
         collapseAnimator.startAnimation()
-        backgroundFadeAnimator.startAnimation(afterDelay: collapseDuration * 0.6)
+        backgroundFadeAnimator.startAnimation(afterDelay: collapseDuration * 0.85)
     }
 
     private func bottomPositionDismissal(_ completion: (() -> Void)?) {

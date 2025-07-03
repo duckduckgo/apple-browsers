@@ -20,6 +20,7 @@ import Foundation
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
+import Combine
 
 @MainActor
 class AutoClearHandlerTests: XCTestCase {
@@ -103,6 +104,9 @@ class AutoClearHandlerTests: XCTestCase {
 }
 
 final class MockVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
+    var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> = Just(true)
+        .eraseToAnyPublisher()
+
     var shouldShowFireAnimation: Bool {
         return false
     }

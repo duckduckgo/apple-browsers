@@ -144,7 +144,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
         tld: tld,
         fireCoordinator: fireCoordinator,
-        keyValueStore: keyValueStore
+        keyValueStore: keyValueStore,
+        visualizeFireAnimationDecider: visualizeFireAnimationDecider
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(

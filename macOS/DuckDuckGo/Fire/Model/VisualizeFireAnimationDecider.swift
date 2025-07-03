@@ -17,9 +17,11 @@
 //
 import BrowserServicesKit
 import FeatureFlags
+import Combine
 
 protocol VisualizeFireAnimationDecider {
     var shouldShowFireAnimation: Bool { get }
+    var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> { get }
 }
 
 final class DefaultVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
@@ -38,5 +40,19 @@ final class DefaultVisualizeFireAnimationDecider: VisualizeFireAnimationDecider 
         } else {
             return true
         }
+    }
+
+    var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> {
+        dataClearingPreferences.$isFireAnimationEnabled
+            .map { [weak self] isFireAnimationEnabled in
+                guard let self = self else { return true }
+                
+                if self.featureFlagger.isFeatureOn(.disableFireAnimation) {
+                    return isFireAnimationEnabled
+                } else {
+                    return true
+                }
+            }
+            .eraseToAnyPublisher()
     }
 }

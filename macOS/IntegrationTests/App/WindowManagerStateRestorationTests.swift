@@ -19,6 +19,7 @@
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
+import Combine
 
 final class WindowManagerStateRestorationTests: XCTestCase {
 
@@ -122,6 +123,8 @@ private extension Tab {
 }
 
 final class MockVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
+    var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> = Just(true).eraseToAnyPublisher()
+
     var shouldShowFireAnimation: Bool {
         return false
     }

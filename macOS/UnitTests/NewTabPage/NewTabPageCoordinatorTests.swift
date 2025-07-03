@@ -93,6 +93,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),
             keyValueStore: keyValueStore,
             notificationCenter: notificationCenter,
+            visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider(),
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }

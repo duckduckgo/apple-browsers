@@ -50,13 +50,7 @@ final class FireViewController: NSViewController {
     @IBOutlet weak var progressIndicatorWrapperBG: NSView!
     private var fireAnimationView: LottieAnimationView?
     private var fireAnimationViewLoadingTask: Task<(), Never>?
-    private(set) lazy var fireIndicatorVisibilityManager: FireIndicatorVisibilityManager = {
-        let duration = visualizeFireAnimationDecider.shouldShowFireAnimation ? 1.0 : 2.0
-        return FireIndicatorVisibilityManager(
-            { [weak self] in self?.view.superview },
-            presentationDuration: duration
-        )
-    }()
+    private(set) lazy var fireIndicatorVisibilityManager = FireIndicatorVisibilityManager { [weak self] in self?.view.superview }
 
     static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel, visualizeFireAnimationDecider: VisualizeFireAnimationDecider) -> FireViewController {
         NSStoryboard(name: "Fire", bundle: nil).instantiateInitialController { coder in
@@ -289,11 +283,9 @@ private actor FireAnimationViewLoader {
  */
 final class FireIndicatorVisibilityManager {
     var view: () -> NSView?
-    private let presentationDuration: TimeInterval
 
-    init(_ view: @escaping () -> NSView?, presentationDuration: TimeInterval = 1) {
+    init(_ view: @escaping () -> NSView?) {
         self.view = view
-        self.presentationDuration = presentationDuration
     }
 
     func updateVisibility(_ shouldShow: Bool) {
@@ -305,10 +297,10 @@ final class FireIndicatorVisibilityManager {
             if let fireIndicatorDialogPresentedAt {
                 let presentationDuration = Date().timeIntervalSince(fireIndicatorDialogPresentedAt)
                 self.fireIndicatorDialogPresentedAt = nil
-                if presentationDuration > self.presentationDuration {
+                if presentationDuration > Self.fireIndicatorPresentationDuration {
                     view()?.isHidden = true
                 } else {
-                    let remainingPresentationTime = self.presentationDuration - presentationDuration
+                    let remainingPresentationTime = Self.fireIndicatorPresentationDuration - presentationDuration
                     timer = Timer.scheduledTimer(withTimeInterval: remainingPresentationTime, repeats: false) { [weak self] _ in
                         self?.view()?.isHidden = true
                     }
@@ -321,4 +313,5 @@ final class FireIndicatorVisibilityManager {
 
     private var fireIndicatorDialogPresentedAt: Date?
     private var timer: Timer?
+    private static let fireIndicatorPresentationDuration = TimeInterval.seconds(1)
 }

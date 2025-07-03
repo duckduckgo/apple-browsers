@@ -45,6 +45,7 @@ final class NewTabPageCoordinator {
         keyValueStore: ThrowingKeyValueStoring,
         legacyKeyValueStore: KeyValueStoring = UserDefaultsWrapper<Any>.sharedDefaults,
         notificationCenter: NotificationCenter = .default,
+        visualizeFireAnimationDecider: VisualizeFireAnimationDecider,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
 
@@ -52,8 +53,10 @@ final class NewTabPageCoordinator {
         let protectionsReportModel = NewTabPageProtectionsReportModel(
             privacyStats: privacyStats,
             keyValueStore: keyValueStore,
+            burnAnimationSettingChanges: visualizeFireAnimationDecider.shouldShowFireAnimationPublisher,
+            showBurnAnimation: visualizeFireAnimationDecider.shouldShowFireAnimation,
             getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
-            getLegacyActiveFeedSetting: settingsMigrator.activeFeed
+            getLegacyActiveFeedSetting: settingsMigrator.activeFeed,
         )
 
         actionsManager = NewTabPageActionsManager(

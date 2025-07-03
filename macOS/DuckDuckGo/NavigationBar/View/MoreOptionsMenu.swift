@@ -177,7 +177,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                    authenticationStateProvider: subscriptionManager,
                                                    internalUserDecider: internalUserDecider,
-                                                   moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
+                                                   moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider,
+                                                   featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
 #endif // FEEDBACK
@@ -797,16 +798,19 @@ final class FeedbackSubMenu: NSMenu {
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let authenticationStateProvider: any SubscriptionAuthenticationStateProvider
     private let internalUserDecider: InternalUserDecider
+    private let featureFlagger: FeatureFlagger
 
     init(targetting target: AnyObject,
          tabCollectionViewModel: TabCollectionViewModel,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          authenticationStateProvider: any SubscriptionAuthenticationStateProvider,
          internalUserDecider: InternalUserDecider,
-         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
+         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding,
+         featureFlagger: FeatureFlagger) {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.authenticationStateProvider = authenticationStateProvider
         self.internalUserDecider = internalUserDecider
+        self.featureFlagger = featureFlagger
         super.init(title: UserText.sendFeedback)
         updateMenuItems(with: tabCollectionViewModel, targetting: target, moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
     }
@@ -837,7 +841,7 @@ final class FeedbackSubMenu: NSMenu {
         if authenticationStateProvider.isUserAuthenticated {
             addItem(.separator())
 
-            let sendPProFeedbackItem = NSMenuItem(title: UserText.sendPProFeedback,
+            let sendPProFeedbackItem = NSMenuItem(title: UserText.sendSubscriptionFeedback(isSubscriptionRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding)),
                                                   action: #selector(sendPrivacyProFeedback(_:)),
                                                   keyEquivalent: "")
                 .targetting(self)

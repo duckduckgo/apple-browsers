@@ -23881,55 +23881,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Hilf mit, Privacy Pro zu verbessern"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Help Improve Privacy Pro"
+            "value" : "Help Improve DuckDuckGo Subscription"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ayudar a mejorar Privacy Pro"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Aidez-nous à améliorer Privacy Pro"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Aiuta a migliorare Privacy Pro"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Help Privacy Pro te verbeteren"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Pomóż ulepszyć Privacy Pro"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ajuda a melhorar o Privacy Pro"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Помогите нам улучшить Privacy Pro"
           }
         }
@@ -64588,7 +64588,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Feedback von Privacy Pro senden"
           }
         },
@@ -64600,44 +64600,56 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Enviar comentarios sobre Privacy Pro"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Envoyer des commentaires sur Privacy Pro"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Invia feedback su Privacy Pro"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Feedback sturen naar Privacy Pro"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wyślij opinię na temat Privacy Pro"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Enviar feedback sobre o Privacy Pro"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Отправить отзыв о Privacy Pro"
+          }
+        }
+      }
+    },
+    "send.subscription.feedback" : {
+      "comment" : "Menu with feedback commands",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Send Subscription Feedback"
           }
         }
       }

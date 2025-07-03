@@ -80,7 +80,12 @@ extension UserText {
 
     // MARK: - Feedback Form
 
-    static let feedbackFormTitle = NSLocalizedString("feedback-form.title", value: "Help Improve Privacy Pro", comment: "Title for each screen of the feedback form")
+    static func feedbackFormTitle(isSubscriptionRebrandingEnabled: Bool) -> String {
+        if isSubscriptionRebrandingEnabled {
+            return NSLocalizedString("feedback-form.title", value: "Help Improve DuckDuckGo Subscription", comment: "Title for each screen of the feedback form")
+        }
+        return NSLocalizedString("feedback-form.title", value: "Help Improve Privacy Pro", comment: "Title for each screen of the feedback form")
+    }
 
     static let generalFeedbackFormCategorySelect = NSLocalizedString("general.feedback-form.category.select-feature", value: "Select a category", comment: "Title for the feature selection state of the general feedback form")
 

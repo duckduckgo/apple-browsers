@@ -2990,7 +2990,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Upgrades Duck.ai with advanced AI models."
+            "value" : "Chat privately with advanced AI models exclusive to subscribers."
           }
         }
       },
@@ -3003,7 +3003,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Duck.ai Pro"
+            "value" : "Duck.ai"
           }
         }
       },

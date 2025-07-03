@@ -415,7 +415,6 @@ final class SyncPreferencesTests: XCTestCase {
         codeForDisplayExpectation.assertForOverFulfill = false
         stringForQRExpectation.assertForOverFulfill = false
 
-
         syncPreferences.$codeForDisplayOrPasting.sink {
             if $0 == codeForDisplayOrPasting {
                 codeForDisplayExpectation.fulfill()

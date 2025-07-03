@@ -158,7 +158,7 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
         return stubStartPairingMode
     }
 
-    var syncCodeEnteredCalled: (String, Bool, SyncCodeSource) -> Void =  { _, _, _ in }
+    var syncCodeEnteredCalled: (String, Bool, SyncCodeSource) -> Void = { _, _, _ in }
     var spySyncCodeEnteredCode: String?
     var spySyncCodeEnteredCanScanURLBarcodes: Bool?
     var spySyncCodeEnteredCodeSource: SyncCodeSource?
@@ -171,7 +171,7 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
         return stubSyncCodeEntered
     }
 
-    var loginAndShowDeviceConnectedCalled: (SyncCode.RecoveryKey, Bool) -> Void =  { _, _ in }
+    var loginAndShowDeviceConnectedCalled: (SyncCode.RecoveryKey, Bool) -> Void = { _, _ in }
     var spyLoginAndShowDeviceConnectedRecoveryKey: SyncCode.RecoveryKey?
     var spyLoginAndShowDeviceConnectedIsRecovery: Bool?
     var stubLoginAndShowDeviceConnectedError: Error?

@@ -118,6 +118,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
+        DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
     }
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {

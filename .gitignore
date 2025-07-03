@@ -60,3 +60,6 @@ tmp
 .windsurf/
 /buildServer.json
 default.profraw
+
+# Claude
+.claude/

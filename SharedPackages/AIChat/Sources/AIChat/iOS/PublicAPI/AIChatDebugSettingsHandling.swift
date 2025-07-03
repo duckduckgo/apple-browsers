@@ -21,10 +21,13 @@ import Foundation
 
 public protocol AIChatDebugSettingsHandling {
     var messagePolicyHostname: String? { get set }
+    var customURL: String? { get set }
+    func reset()
 }
 
-public struct AIChatDebugSettings: AIChatDebugSettingsHandling {
-    private let userDefaultsKey = "aichat.debug.messagePolicyHostname"
+public class AIChatDebugSettings: AIChatDebugSettingsHandling {
+    private let hostnameUserDefaultsKey = "aichat.debug.messagePolicyHostname"
+    private let customURLUserDefaultsKey = "aichat.debug.customURL"
     private let userDefault: UserDefaults
 
     public init(userDefault: UserDefaults = .standard) {
@@ -33,16 +36,35 @@ public struct AIChatDebugSettings: AIChatDebugSettingsHandling {
 
     public var messagePolicyHostname: String? {
         get {
-            let value = userDefault.string(forKey: userDefaultsKey)
+            let value = userDefault.string(forKey: hostnameUserDefaultsKey)
             return value?.isEmpty == true ? nil : value
         }
         set {
             if let newValue = newValue, !newValue.isEmpty {
-                userDefault.set(newValue, forKey: userDefaultsKey)
+                userDefault.set(newValue, forKey: hostnameUserDefaultsKey)
             } else {
-                userDefault.removeObject(forKey: userDefaultsKey)
+                userDefault.removeObject(forKey: hostnameUserDefaultsKey)
             }
         }
+    }
+
+    public var customURL: String? {
+        get {
+            let value = userDefault.string(forKey: customURLUserDefaultsKey)
+            return value?.isEmpty == true ? nil : value
+        }
+        set {
+            if let newValue = newValue, !newValue.isEmpty {
+                userDefault.set(newValue, forKey: customURLUserDefaultsKey)
+            } else {
+                userDefault.removeObject(forKey: customURLUserDefaultsKey)
+            }
+        }
+    }
+
+    public func reset() {
+        messagePolicyHostname = nil
+        customURL = nil
     }
 }
 #endif

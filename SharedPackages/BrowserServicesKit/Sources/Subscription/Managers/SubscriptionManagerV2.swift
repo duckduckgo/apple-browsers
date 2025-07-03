@@ -647,7 +647,7 @@ extension SubscriptionEntitlement {
 
 fileprivate extension UserDefaults {
 
-    static let isUserAuthenticatedKey = "com.duckduckgo.subscription.isUserAuthenticated"
+    private static let isUserAuthenticatedKey = "com.duckduckgo.subscription.isUserAuthenticated"
     var isUserAuthenticated: Bool {
         get {
             return bool(forKey: Self.isUserAuthenticatedKey)
@@ -657,17 +657,25 @@ fileprivate extension UserDefaults {
         }
     }
 
-    static let userEntitlementsKey = "com.duckduckgo.subscription.userEntitlements"
+    private static let userEntitlementsKey = "com.duckduckgo.subscription.userEntitlements"
     var userEntitlements: [SubscriptionEntitlement] {
         get {
             guard let data = self.data(forKey: Self.userEntitlementsKey) else {
                 return []
             }
-            let entitlements = try? JSONDecoder().decode([SubscriptionEntitlement].self, from: data)
-            return entitlements ?? []
+            guard let entitlements = try? JSONDecoder().decode([SubscriptionEntitlement].self, from: data) else {
+                assertionFailure("Error decoding user entitlements")
+                Logger.subscription.fault("Error decoding user entitlements")
+                return []
+            }
+            return entitlements
         }
         set {
-            let data = try? JSONEncoder().encode(newValue)
+            guard let data = try? JSONEncoder().encode(newValue)  else {
+                assertionFailure("Error encoding user entitlements")
+                Logger.subscription.fault("Error encoding user entitlements")
+                return
+            }
             self.set(data, forKey: Self.userEntitlementsKey)
         }
     }

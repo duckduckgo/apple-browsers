@@ -328,7 +328,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         subscriptionManagerV2.confirmPurchaseResponse = .success(SubscriptionMockFactory.appleSubscription)
         subscriptionManagerV2.resultSubscription = SubscriptionMockFactory.appleSubscription
 
-        let freeiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
+        let freemiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -336,7 +336,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         // Then
         XCTAssertNil(result)
-        XCTAssertEqual(subscriptionSuccessPixelHandler.origin, freeiumOrigin)
+        XCTAssertEqual(subscriptionSuccessPixelHandler.origin, freemiumOrigin)
     }
 
     @MainActor
@@ -351,7 +351,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         subscriptionManagerV2.confirmPurchaseResponse = .success(SubscriptionMockFactory.appleSubscription)
         subscriptionManagerV2.resultSubscription = SubscriptionMockFactory.appleSubscription
 
-        let freeiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
+        let freemiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -359,6 +359,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         // Then
         XCTAssertNil(result)
-        XCTAssertNotEqual(subscriptionSuccessPixelHandler.origin, freeiumOrigin)
+        XCTAssertNotEqual(subscriptionSuccessPixelHandler.origin, freemiumOrigin)
     }
 }

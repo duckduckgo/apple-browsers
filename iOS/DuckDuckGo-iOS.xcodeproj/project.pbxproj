@@ -2188,6 +2188,7 @@
 		4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNWidget.swift; sourceTree = "<group>"; };
 		4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNWaitlistUserText.swift; sourceTree = "<group>"; };
 		4BC21A2C272388BD00229F0E /* RunLoopExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunLoopExtensionTests.swift; sourceTree = "<group>"; };
+		4BC5E8602E174B6A00391C19 /* DesignResourcesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKit; path = ../SharedPackages/DesignResourcesKit; sourceTree = SOURCE_ROOT; };
 		4BCBE45D2BA7E81F00FC75A1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4BCBE45F2BA7E87100FC75A1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4BCD14662B05B682000B1E4C /* NetworkProtectionTermsAndConditionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionTermsAndConditionsStore.swift; sourceTree = "<group>"; };
@@ -4808,6 +4809,7 @@
 				311F87622DB1556B0011DFB3 /* AIChat */,
 				31D49A3C2DC294E500262F26 /* UIComponents */,
 				BB631D142DE0D8B70099977D /* DesignResourcesKitIcons */,
+				4BC5E8602E174B6A00391C19 /* DesignResourcesKit */,
 			);
 			path = LocalPackages;
 			sourceTree = "<group>";
@@ -5598,7 +5600,6 @@
 				31E69A60280F4BAD00478327 /* LocalPackages */,
 				84E341931E2F7EFB00BDBA6F /* Products */,
 				85A313962028E78A00327D00 /* release_notes.txt */,
-				9876DF292DEEE0FD00E30713 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -6200,13 +6201,6 @@
 				987130C2294AAB9E00AB05E0 /* BookmarksTestHelpers.swift */,
 			);
 			name = BSK;
-			sourceTree = "<group>";
-		};
-		9876DF292DEEE0FD00E30713 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 		98A54A8222AFCB2C00E541F4 /* Instruments */ = {

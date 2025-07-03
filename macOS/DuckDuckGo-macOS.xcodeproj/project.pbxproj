@@ -4547,6 +4547,7 @@
 		4BBF0916282DD6EF00EE1418 /* TemporaryFileHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporaryFileHandlerTests.swift; sourceTree = "<group>"; };
 		4BBF09222830812900EE1418 /* FileSystemDSL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemDSL.swift; sourceTree = "<group>"; };
 		4BBF0924283083EC00EE1418 /* FileSystemDSLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemDSLTests.swift; sourceTree = "<group>"; };
+		4BC5E8612E174B7D00391C19 /* DesignResourcesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKit; path = ../SharedPackages/DesignResourcesKit; sourceTree = SOURCE_ROOT; };
 		4BD18EFF283F0BC500058124 /* BookmarksBarViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksBarViewController.swift; sourceTree = "<group>"; };
 		4BD18F04283F151F00058124 /* BookmarksBar.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = BookmarksBar.storyboard; sourceTree = "<group>"; };
 		4BDFA4AD27BF19E500648192 /* ToggleableScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleableScrollView.swift; sourceTree = "<group>"; };
@@ -6668,6 +6669,7 @@
 				7B76E6852AD5D77600186A84 /* XPCHelper */,
 				31D49A392DC2948D00262F26 /* UIComponents */,
 				7BB9F8E72DFC1AB700741690 /* VPN */,
+				4BC5E8612E174B7D00391C19 /* DesignResourcesKit */,
 			);
 			path = LocalPackages;
 			sourceTree = "<group>";

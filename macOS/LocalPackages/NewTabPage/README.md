@@ -23,7 +23,7 @@ To ensure that multiple NTP tabs stay in sync and don't affect browser performan
 
 To ensure code maintainability, `NewTabPageUserScript` messages are handled by multiple _user script clients_ that subclass `NewTabPageUserScriptClient` class. User script clients are organized per feature, i.e. favorites client, protection stats client, remote messaging client, customization client, etc.
 
-`NewTabPageActionsManager` is an aggregator of multiple `NewTabPageUserScriptClient` instances that connect to multiple `NewTabPageUserScript` instances. It is a subclass of `UserScriptActionsManager` (available from `UserScriptActionsManager` module), that abstracts this behavior for reuse in other special pages, as needed (e.g. settings page, whenever that gets implemented in HTML).
+`NewTabPageActionsManager` is an aggregator of multiple `NewTabPageUserScriptClient` instances that connect to multiple `NewTabPageUserScript` instances. It is a subclass of `UserScriptActionsManager` (available from `UserScriptActionsManager` module), that abstracts this behavior for reuse in other special pages, as needed (e.g. settings page, whenever that gets implemented in HTML). Each user script can forward actions to the respective user script client, and each client is able to push data to all user scripts, or just one user script if needed.
 
 At any given time in a running application there is:
 * 1 instance of `NewTabPageActionsManager` in the application

@@ -23,6 +23,10 @@ import DesignResourcesKit
 
 // MARK: - Configuration
 
+/// Configuration options for customizing the appearance of an `ImageSegmentedPickerView`.
+///
+/// Use this structure to define the visual properties of the segmented picker,
+/// including fonts, colors, and backgrounds.
 public struct ImageSegmentedPickerConfiguration {
     public var font: Font
     public var selectedTextColor: Color
@@ -30,12 +34,20 @@ public struct ImageSegmentedPickerConfiguration {
     public var backgroundColor: Color
     public var selectedBackgroundColor: Color
 
+    /// Creates a new configuration for the image segmented picker.
+    ///
+    /// - Parameters:
+    ///   - font: The font for text labels. Defaults to system font with size 16 and medium weight.
+    ///   - selectedTextColor: The text color for selected items. Defaults to primary text color.
+    ///   - unselectedTextColor: The text color for unselected items. Defaults to primary text color.
+    ///   - backgroundColor: The picker's background color. Defaults to backdrop color.
+    ///   - selectedBackgroundColor: The selected indicator's background color. Defaults to tertiary background color.
     public init(
         font: Font = .system(size: 16, weight: .medium),
         selectedTextColor: Color = .init(designSystemColor: .textPrimary),
         unselectedTextColor: Color = .init(designSystemColor: .textPrimary),
         backgroundColor: Color = .init(designSystemColor: .backdrop),
-        selectedBackgroundColor: Color = .init(designSystemColor: .backgroundTertiary),
+        selectedBackgroundColor: Color = .init(designSystemColor: .backgroundTertiary)
     ) {
         self.font = font
         self.selectedTextColor = selectedTextColor
@@ -47,6 +59,33 @@ public struct ImageSegmentedPickerConfiguration {
 
 // MARK: - Main View
 
+/// A segmented picker view that displays items with images and text labels.
+///
+/// This view creates a horizontal segmented control where each segment contains
+/// an image and text. The selected segment is highlighted with a sliding background
+/// indicator that animates between selections.
+///
+/// Example usage:
+/// ```swift
+/// @State private var selectedItem: ImageSegmentedPickerItem
+/// let items = [
+///     ImageSegmentedPickerItem(
+///         text: "List",
+///         selectedImage: Image(systemName: "list.bullet"),
+///         unselectedImage: Image(systemName: "list.bullet")
+///     ),
+///     ImageSegmentedPickerItem(
+///         text: "Grid",
+///         selectedImage: Image(systemName: "square.grid.2x2.fill"),
+///         unselectedImage: Image(systemName: "square.grid.2x2")
+///     )
+/// ]
+///
+/// ImageSegmentedPickerView(
+///     items: items,
+///     selectedItem: $selectedItem
+/// )
+/// ```
 public struct ImageSegmentedPickerView: View {
     private enum Constants {
         static let outterHeight: CGFloat = 44
@@ -60,7 +99,12 @@ public struct ImageSegmentedPickerView: View {
 
     @State private var currentOffset: CGFloat = 0
 
-    // Public initializer with default configuration
+    /// Creates a new image segmented picker view.
+    ///
+    /// - Parameters:
+    ///   - items: An array of items to display in the picker.
+    ///   - selectedItem: A binding to the currently selected item.
+    ///   - configuration: The configuration for customizing the picker's appearance. Defaults to `ImageSegmentedPickerConfiguration()`.
     public init(
         items: [ImageSegmentedPickerItem],
         selectedItem: Binding<ImageSegmentedPickerItem>,
@@ -133,16 +177,13 @@ public struct ImageSegmentedPickerView: View {
         let buttonWidth = geometry.size.width / CGFloat(items.count)
         let selectorWidth = buttonWidth - (Constants.innerHorizontalPadding * 2)
 
-        // Calculate the actual position of the blue rectangle
         let selectorCenter = currentOffset + (geometry.size.width / 2)
         let selectorLeft = selectorCenter - (selectorWidth / 2)
         let selectorRight = selectorCenter + (selectorWidth / 2)
 
-        // Calculate the position of this item
         let itemLeft = CGFloat(itemIndex) * buttonWidth
         let itemRight = itemLeft + buttonWidth
 
-        // Check if there's any overlap between the selector and the item
         return selectorLeft < itemRight && selectorRight > itemLeft
     }
 }
@@ -174,12 +215,22 @@ private struct CustomPickerButton: View {
 
 // MARK: - Data Model
 
+/// Represents an item in an `ImageSegmentedPickerView`.
+///
+/// Each item contains text and images for both selected and unselected states.
+/// The picker automatically switches between these images based on the selection state.
 public struct ImageSegmentedPickerItem: Identifiable, Hashable {
     public let id = UUID()
     public let text: String
     public let selectedImage: Image
     public let unselectedImage: Image
 
+    /// Creates a new picker item.
+    ///
+    /// - Parameters:
+    ///   - text: The text label for the item.
+    ///   - selectedImage: The image to display when selected.
+    ///   - unselectedImage: The image to display when not selected.
     public init(text: String, selectedImage: Image, unselectedImage: Image) {
         self.text = text
         self.selectedImage = selectedImage
@@ -199,6 +250,10 @@ public struct ImageSegmentedPickerItem: Identifiable, Hashable {
 // MARK: - View Modifiers for Convenience
 
 public extension ImageSegmentedPickerView {
+    /// Sets the font for the picker's text labels.
+    ///
+    /// - Parameter font: The font to apply to text labels.
+    /// - Returns: A picker view with the updated font configuration.
     func pickerFont(_ font: Font) -> ImageSegmentedPickerView {
         var modifiedConfiguration = configuration
         modifiedConfiguration.font = font
@@ -209,6 +264,12 @@ public extension ImageSegmentedPickerView {
         )
     }
 
+    /// Sets the text colors for selected and unselected states.
+    ///
+    /// - Parameters:
+    ///   - selected: The color for selected item text.
+    ///   - unselected: The color for unselected item text.
+    /// - Returns: A picker view with the updated text color configuration.
     func pickerTextColors(selected: Color, unselected: Color) -> ImageSegmentedPickerView {
         var modifiedConfiguration = configuration
         modifiedConfiguration.selectedTextColor = selected
@@ -220,6 +281,12 @@ public extension ImageSegmentedPickerView {
         )
     }
 
+    /// Sets the background colors for the picker and selected indicator.
+    ///
+    /// - Parameters:
+    ///   - background: The overall background color of the picker.
+    ///   - selectedBackground: The background color of the selected item indicator.
+    /// - Returns: A picker view with the updated background color configuration.
     func pickerBackgroundColors(background: Color, selectedBackground: Color) -> ImageSegmentedPickerView {
         var modifiedConfiguration = configuration
         modifiedConfiguration.backgroundColor = background

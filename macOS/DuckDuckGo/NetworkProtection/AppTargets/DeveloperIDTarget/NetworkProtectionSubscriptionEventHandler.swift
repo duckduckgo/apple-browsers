@@ -1,5 +1,5 @@
 //
-//  NetworkProtectionSubscriptionEventHandler.swift
+//  VPNSubscriptionEventsHandler.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -26,7 +26,7 @@ import NetworkProtectionUI
 import PixelKit
 import os.log
 
-final class NetworkProtectionSubscriptionEventHandler {
+final class VPNSubscriptionEventsHandler {
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let tunnelController: TunnelController
     private let vpnUninstaller: VPNUninstalling
@@ -67,7 +67,8 @@ final class NetworkProtectionSubscriptionEventHandler {
     }
 
     private func subscribeToWakeNotifications() {
-        NotificationCenter.default.publisher(for: NSWorkspace.didWakeNotification)
+        NSWorkspace.shared.notificationCenter
+            .publisher(for: NSWorkspace.didWakeNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 Logger.networkProtection.log("System wake notification received, checking entitlements")

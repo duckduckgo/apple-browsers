@@ -1798,12 +1798,12 @@ class MainViewController: UIViewController {
                     let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
                     let isSubscriptionActive = try? await self.subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
-                    if hasEntitlement && true && self.lastKnownEntitlementsExpired {
+                    if hasEntitlement && self.lastKnownEntitlementsExpired {
                         PixelKit.fire(
                             VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                                 isSubscriptionActive: isSubscriptionActive,
                                 isAuthV2Enabled: isAuthV2Enabled,
-                                trigger: .clientCheckOnWake),
+                                trigger: .clientForegrounded),
                             frequency: .dailyAndCount)
 
                         self.lastKnownEntitlementsExpired = false
@@ -1812,7 +1812,7 @@ class MainViewController: UIViewController {
                             VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                                 isSubscriptionActive: isSubscriptionActive,
                                 isAuthV2Enabled: isAuthV2Enabled,
-                                trigger: .clientCheckOnWake),
+                                trigger: .clientForegrounded),
                             frequency: .dailyAndCount)
 
                         self.lastKnownEntitlementsExpired = true

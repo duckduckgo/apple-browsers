@@ -97,10 +97,14 @@ class SwitchBarViewController: UIViewController {
             .sink { [weak self] newState in
                 guard let self = self else { return }
                 
-                // Update the picker state to match the new toggle state
                 let targetItem = newState == .search ? self.pickerItems[0] : self.pickerItems[1]
                 if self.pickerState?.selectedItem.text != targetItem.text {
-                    self.pickerState?.selectedItem = targetItem
+                    // Disable animations when updating picker state
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        self.pickerState?.selectedItem = targetItem
+                    }
                 }
                 
                 self.updateLayouts()
@@ -123,9 +127,12 @@ class SwitchBarViewController: UIViewController {
     private func setupViews() {
         view.backgroundColor = UIColor.systemBackground
 
+        let currentToggleState = switchBarHandler.currentToggleState
+        let initialSelection = currentToggleState == .search ? pickerItems[0] : pickerItems[1]
+        
         let state = PickerState(
             items: pickerItems,
-            initialSelection: pickerItems[0],
+            initialSelection: initialSelection,
             onSelectionChanged: { [weak self] selectedItem in
                 self?.segmentedPickerSelectionChanged(selectedItem)
             }

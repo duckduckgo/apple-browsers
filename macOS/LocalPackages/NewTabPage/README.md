@@ -53,20 +53,7 @@ Each of the directories contains these files:
 ### User script client
 User script client code is overall very easy and repetitive between various clients. Its features are:
 * It must subclass `NewTabPageUserScriptClient`
-* It must define messages supported by this script client. Typically it's done by defining `MessageName` enum within the script client type. Message names specific to a given feature are usually prefixed by `feature-name_`.
-    * **Important:** _Message_ name refers to all types of messages that are exchanged with the website: requests, subscriptions notifications
-```swift
-public final class NewTabPagePrivacyStatsClient: NewTabPageUserScriptClient {
-
-    // ... other definitions
-
-    enum MessageName: String, CaseIterable {
-        case getData = "stats_getData"
-        case onDataUpdate = "stats_onDataUpdate"
-        case showLess = "stats_showLess"
-        case showMore = "stats_showMore"
-    }
-```
+* It must define messages supported by this script client.
 * It must override `registerMessageHandlers(for:)` and define handlers for each message as private functions.
 
 #### User script messages

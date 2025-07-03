@@ -15,11 +15,7 @@ disabled_rules:
   - static_over_final_class
 
 opt_in_rules:
-  - closure_end_indentation
-  - closure_spacing
-  - colon
   - overridden_super_call
-  - fatal_error_message
   - file_header
 
 analyzer_rules:

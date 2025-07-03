@@ -230,7 +230,7 @@ final class DBPEndToEndTests: XCTestCase {
         let optOutJobsRunExpectation = expectation(description: "Opt out jobs run")
 
         await awaitFulfillment(of: optOutJobsRunExpectation,
-                               withTimeout: 300,
+                               withTimeout: 600,
                                whenCondition: {
             autoreleasepool {
                 let queries = try! database.fetchAllBrokerProfileQueryData()

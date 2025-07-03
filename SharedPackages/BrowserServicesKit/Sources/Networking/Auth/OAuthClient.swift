@@ -310,7 +310,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
 
         let task = Task {
-            defer { Task { clearTask() } }
+            defer { Task { migrationOngoingTask = nil } }
 
             guard !isUserAuthenticated else {
                 throw OAuthClientError.authMigrationNotPerformed
@@ -335,10 +335,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
         migrationOngoingTask = task
         return try await task.value
-    }
-
-    private func clearTask() {
-        migrationOngoingTask = nil
     }
 
     public func adopt(tokenContainer: TokenContainer) {

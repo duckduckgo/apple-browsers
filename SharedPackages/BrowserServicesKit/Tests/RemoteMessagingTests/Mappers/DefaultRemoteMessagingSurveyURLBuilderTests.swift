@@ -17,12 +17,30 @@
 //
 
 import XCTest
+import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import RemoteMessagingTestsUtils
 @testable import Subscription
 @testable import RemoteMessaging
 
 class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
+
+    private var standardDefaults: UserDefaults!
+    private var autofillUsageStore: AutofillUsageStore!
+    private let testStandardName = "remote-messaging-survey-url-builder-tests"
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+
+        standardDefaults = UserDefaults(suiteName: testStandardName)!
+        autofillUsageStore = AutofillUsageStore(standardUserDefaults: standardDefaults, appGroupUserDefaults: nil)
+    }
+
+    override func tearDownWithError() throws {
+        standardDefaults.removePersistentDomain(forName: testStandardName)
+
+        try super.tearDownWithError()
+    }
 
     func testAddingATBParameter() {
         let builder = buildRemoteMessagingSurveyURLBuilder(atb: "v456-7")
@@ -72,12 +90,77 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?param=test&vpn_first_used=10&vpn_last_used=5")
     }
 
+    func testAddingLastSearchStateNoneWhenNoLastSearchDate() {
+        let builder = buildRemoteMessagingSurveyURLBuilder(lastSearchDate: nil)
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.lastSearchState], to: baseURL)
+        XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?last_search_state=none")
+    }
+
+    func testAddingLastSearchStateNoneWhenLastSearchExactlyEightDaysAgo() {
+        let eightDaysAgo = Calendar.current.date(byAdding: .day, value: -8, to: Date())!
+        let builder = buildRemoteMessagingSurveyURLBuilder(lastSearchDate: eightDaysAgo)
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.lastSearchState], to: baseURL)
+        XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?last_search_state=none")
+    }
+
+    func testAddingLastSearchStateDayWhenLastSearchIsToday() {
+        let builder = buildRemoteMessagingSurveyURLBuilder(lastSearchDate: Date())
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.lastSearchState], to: baseURL)
+        XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?last_search_state=day")
+    }
+
+    func testAddingLastSearchStateDayWhenLastSearchWasYesterday() {
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let builder = buildRemoteMessagingSurveyURLBuilder(lastSearchDate: yesterday)
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.lastSearchState], to: baseURL)
+        XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?last_search_state=day")
+    }
+
+    func testAddingLastSearchStateWeekWhenLastSearchWithin2To6DaysAgo() {
+        let threeDaysAgo = Calendar.current.date(byAdding: .day, value: -3, to: Date())!
+        let builder = buildRemoteMessagingSurveyURLBuilder(lastSearchDate: threeDaysAgo)
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.lastSearchState], to: baseURL)
+        XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?last_search_state=week")
+    }
+
+    func testAddingLastSearchStateWeekWhenLastSearchWasSixDaysAgo() {
+        let sixDaysAgo = Calendar.current.date(byAdding: .day, value: -6, to: Date())!
+        let builder = buildRemoteMessagingSurveyURLBuilder(lastSearchDate: sixDaysAgo)
+        let baseURL = URL(string: "https://duckduckgo.com")!
+        let finalURL = builder.add(parameters: [.lastSearchState], to: baseURL)
+        XCTAssertEqual(finalURL.absoluteString, "https://duckduckgo.com?last_search_state=week")
+    }
+
+    func testRefreshLastSearchState_noParamPresent_returnsUnchangedURL() {
+        let raw = "https://duckduckgo.com?atb=v1"
+        let refreshed = DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState(in: raw, lastSearchDate: Date())
+        XCTAssertEqual(refreshed, raw)
+    }
+
+    func testRefreshLastSearchState_existingParam_updatesValue() {
+        let raw = "https://duckduckgo.com?last_search_state=none&foo=bar"
+        let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: Date())!
+        let refreshed = DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState(in: raw, lastSearchDate: twoDaysAgo)
+
+        let components = URLComponents(string: refreshed)!
+        let state = components.queryItems?.first(where: { $0.name == "last_search_state" })?.value
+        XCTAssertEqual(state, "week")
+
+        XCTAssertTrue(components.queryItems!.contains { $0.name == "foo" && $0.value == "bar"})
+    }
+
     private func buildRemoteMessagingSurveyURLBuilder(
         atb: String = "v123-4",
         variant: String = "var",
         vpnDaysSinceActivation: Int = 2,
         vpnDaysSinceLastActive: Int = 1,
-        locale: Locale = Locale(identifier: "en_US")
+        locale: Locale = Locale(identifier: "en_US"),
+        lastSearchDate: Date? = nil
     ) -> DefaultRemoteMessagingSurveyURLBuilder {
 
         let mockStatisticsStore = MockStatisticsStore()
@@ -98,11 +181,15 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
                                            status: .autoRenewable,
                                            activeOffers: [])
 
+        standardDefaults.set(lastSearchDate, forKey: AutofillUsageStore.Keys.autofillSearchDauDateKey)
+
         return DefaultRemoteMessagingSurveyURLBuilder(
             statisticsStore: mockStatisticsStore,
             vpnActivationDateStore: vpnActivationDateStore,
             subscription: subscription,
-            localeIdentifier: locale.identifier)
+            localeIdentifier: locale.identifier,
+            autofillUsageStore: autofillUsageStore
+        )
     }
 
 }

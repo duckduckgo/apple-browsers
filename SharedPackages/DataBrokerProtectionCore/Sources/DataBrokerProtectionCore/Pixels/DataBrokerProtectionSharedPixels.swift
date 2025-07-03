@@ -86,7 +86,6 @@ public enum DataBrokerProtectionSharedPixels {
         public static let calculatedOrphanedRecords = "calculated-orphaned-records"
         public static let actionTypeKey = "action_type"
         public static let keystoreField = "keystore_field"
-        public static let stopReason = "reason"
 
 // This should never ever go to production and only exists for internal testing
 #if os(iOS)

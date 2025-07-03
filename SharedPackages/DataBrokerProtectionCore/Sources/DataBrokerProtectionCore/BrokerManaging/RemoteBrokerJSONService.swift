@@ -42,30 +42,27 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     enum Error: Swift.Error, CustomNSError {
         case serverError(httpCode: Int?)
         case clientError
-        case vaultNotAvailable
 
         static var errorDomain: String { "RemoteBrokerJSONService" }
 
-        var errorCode: Int {
-            switch self {
-            case .serverError:
-                return 101
-            case .clientError:
-                return 102
-            case .vaultNotAvailable:
-                return 103
-            }
-        }
+         var errorCode: Int {
+             switch self {
+             case .serverError:
+                 return 101
+             case .clientError:
+                 return 102
+             }
+         }
 
-        var errorUserInfo: [String: Any] {
-            switch self {
-            case .clientError, .vaultNotAvailable:
-                return [:]
-            case .serverError(httpCode: let code):
-                guard let code else { return [:] }
-                return [NSUnderlyingErrorKey: NSError(domain: "HTTPError", code: code)]
-            }
-        }
+         var errorUserInfo: [String: Any] {
+             switch self {
+             case .clientError:
+                 return [:]
+             case .serverError(httpCode: let code):
+                 guard let code else { return [:] }
+                 return [NSUnderlyingErrorKey: NSError(domain: "HTTPError", code: code)]
+             }
+         }
     }
 
     enum Endpoint {
@@ -128,10 +125,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
     private let settings: DataBrokerProtectionSettings
-
-    public var vault: (any DataBrokerProtectionSecureVault)?
-    public let vaultMaker: () -> (any DataBrokerProtectionSecureVault)?
-
+    public let vault: any DataBrokerProtectionSecureVault
     private let fileManager: ZipArchiveHandling
     private let urlSession: URLSession
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
@@ -140,7 +134,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     public init(featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
                 settings: DataBrokerProtectionSettings,
-                vaultMaker: @escaping () -> (any DataBrokerProtectionSecureVault)?,
+                vault: any DataBrokerProtectionSecureVault,
                 fileManager: ZipArchiveHandling = FileManager.default,
                 urlSession: URLSession = .shared,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
@@ -148,14 +142,12 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 localBrokerProvider: BrokerJSONFallbackProvider?) {
         self.featureFlagger = featureFlagger
         self.settings = settings
-        self.vaultMaker = vaultMaker
+        self.vault = vault
         self.fileManager = fileManager
         self.urlSession = urlSession
         self.authenticationManager = authenticationManager
         self.pixelHandler = pixelHandler
         self.localBrokerProvider = localBrokerProvider
-
-        self.vault = makeSecureVault()
     }
 
     // MARK: - Local fallback
@@ -226,8 +218,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     func checkForBrokerJSONUpdatesFromMainConfig(_ mainConfig: MainConfig, eTag: String) async throws {
-        let vault = try requireVault()
-
         let eTagMapping = mainConfig.jsonETags.current
         let incomingBrokerJSONs = BrokerJSON.from(payload: eTagMapping)
         let savedBrokerJSONs = try vault.fetchAllBrokers().map { BrokerJSON(fileName: $0.url.appendingPathExtension("json"), eTag: $0.eTag) }

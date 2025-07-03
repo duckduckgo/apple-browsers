@@ -62,7 +62,7 @@ final class PrivacyDashboardViewController: NSViewController {
         guard height > Constants.initialContentHeight else { return }
         preferredMaxHeight = height
     }
-    var sizeDelegate: PrivacyDashboardViewControllerSizeDelegate?
+    weak var sizeDelegate: PrivacyDashboardViewControllerSizeDelegate?
     private weak var tabViewModel: TabViewModel?
 
     private let privacyDashboardEvents = EventMapping<PrivacyDashboardEvents> { event, _, parameters, _ in
@@ -343,7 +343,7 @@ extension PrivacyDashboardViewController {
             throw BrokenSiteReportError.failedToFetchTheCurrentURL
         }
         let blockedTrackerDomains = currentTab.privacyInfo?.trackerInfo.trackersBlocked.compactMap { $0.domain } ?? []
-        let installedSurrogates = currentTab.privacyInfo?.trackerInfo.installedSurrogates.map {$0} ?? []
+        let installedSurrogates = currentTab.privacyInfo?.trackerInfo.installedSurrogates.map { $0 } ?? []
         let ampURL = currentTab.linkProtection?.lastAMPURLString ?? ""
         let urlParametersRemoved = currentTab.linkProtection?.urlParametersRemoved ?? false
 

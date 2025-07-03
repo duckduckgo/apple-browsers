@@ -142,7 +142,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private func buildContentBlockerRulesConfig() -> ContentBlockerUserScriptConfig {
 
         let tdsName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
-        let trackerData = contentBlockingManager.currentRules.first(where: { $0.name == tdsName})?.trackerData
+        let trackerData = contentBlockingManager.currentRules.first(where: { $0.name == tdsName })?.trackerData
 
         let ctlTrackerData = (contentBlockingManager.currentRules.first(where: {
             $0.name == DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName

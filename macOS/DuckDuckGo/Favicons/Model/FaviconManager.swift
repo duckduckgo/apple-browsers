@@ -191,7 +191,7 @@ final class FaviconManager: FaviconManagement {
         let newFaviconLoaded = !newFavicons.isEmpty
         let currentSmallFaviconUrl = referenceCache.getFaviconUrl(for: documentURL, sizeCategory: .small)
         let currentMediumFaviconUrl = referenceCache.getFaviconUrl(for: documentURL, sizeCategory: .medium)
-        let cachedFaviconUrls = cachedFavicons.map {$0.url}
+        let cachedFaviconUrls = cachedFavicons.map { $0.url }
         let faviconsOutdated: Bool = {
             if let currentSmallFaviconUrl = currentSmallFaviconUrl, !cachedFaviconUrls.contains(currentSmallFaviconUrl) {
                 return true

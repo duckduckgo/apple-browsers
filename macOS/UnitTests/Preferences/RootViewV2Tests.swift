@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import DuckDuckGo_Privacy_Browser
-import Subscription
-@testable import SubscriptionUI
-import SubscriptionTestingUtilities
 import Combine
+import Subscription
+import SubscriptionTestingUtilities
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
+@testable import SubscriptionUI
 
 @MainActor
 final class RootViewV2Tests: XCTestCase {
@@ -58,7 +59,7 @@ final class RootViewV2Tests: XCTestCase {
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
             aiChatURLSettings: MockRemoteAISettings(),
-            showTab: {_ in },
+            showTab: { _ in },
             )
 
         // Then

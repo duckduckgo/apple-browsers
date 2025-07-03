@@ -19,20 +19,11 @@ disabled_rules:
   - static_over_final_class
   - non_optional_string_data_conversion
   - mark
+  - redundant_sendable
 
 opt_in_rules:
   - file_header
-  - closure_end_indentation
-  - closure_spacing
-  - colon
-  - single_test_class
-  - fatal_error_message
-  # - unhandled_throwing_task
-  # - weak_delegate
-  # - empty_count
-  # - modifier_order
   # - explicit_init
-  # - xct_specific_matcher
 
 custom_rules:
   explicit_non_final_class:

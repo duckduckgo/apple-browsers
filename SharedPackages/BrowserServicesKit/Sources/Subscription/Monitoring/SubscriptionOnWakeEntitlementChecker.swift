@@ -16,17 +16,24 @@
 //  limitations under the License.
 //
 
-import AppKit
 import Combine
 import Foundation
 import Common
 import os.log
 
-/// A reusable class that checks subscription entitlements when the system wakes from sleep.
-/// This can be used across different targets that need to verify subscription entitlements after wake events.
-/// Reports current entitlement status via callback on every wake - parent decides how to handle state changes.
+#if os(macOS)
+import AppKit
+#endif
+#if os(iOS)
+import UIKit
+#endif
+
+/// A cross-platform class that checks subscription entitlements when the system/app becomes active.
+///
+/// On macOS: responds to system wake events. On iOS: responds to app foreground events.
+/// Reports current entitlement status via callback on every activation - parent decides how to handle state changes.
 public final class SubscriptionOnWakeEntitlementChecker {
-    
+
     public typealias StatusHandler = (
         _ feature: Entitlement.ProductName,
         _ hasEntitlement: Bool
@@ -34,7 +41,7 @@ public final class SubscriptionOnWakeEntitlementChecker {
 
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let features: [Entitlement.ProductName]
-    private let wakeNotificationPublisher: AnyPublisher<Notification, Never>
+    private let wakeNotificationPublisher: AnyPublisher<Void, Never>
     private let onEntitlementStatus: StatusHandler
     private var cancellables = Set<AnyCancellable>()
     
@@ -44,35 +51,26 @@ public final class SubscriptionOnWakeEntitlementChecker {
     ///   - subscriptionManager: The subscription manager to use for entitlement checks
     ///   - features: The features/entitlements to check (e.g., [.networkProtection, .dataBrokerProtection])
     ///   - onEntitlementStatus: Callback invoked with current entitlement status on wake
-    ///   - wakeNotificationPublisher: Publisher for wake notifications (defaults to system wake notifications)
+    ///   - wakeNotificationPublisher: Publisher for wake/activation notifications
     public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
                 features: [Entitlement.ProductName],
                 onEntitlementStatus: @escaping StatusHandler,
-                wakeNotificationPublisher: AnyPublisher<Notification, Never> = NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification).eraseToAnyPublisher()) {
+                wakeNotificationPublisher: AnyPublisher<Void, Never>) {
         self.subscriptionManager = subscriptionManager
         self.features = features
         self.onEntitlementStatus = onEntitlementStatus
         self.wakeNotificationPublisher = wakeNotificationPublisher
-        
+
         subscribeToSystemWakeNotifications()
     }
 
-    /// Convenience initializer for single feature.
-    public convenience init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-                           feature: Entitlement.ProductName,
-                           onEntitlementStatus: @escaping StatusHandler,
-                           wakeNotificationPublisher: AnyPublisher<Notification, Never> = NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification).eraseToAnyPublisher()) {
-        self.init(subscriptionManager: subscriptionManager,
-                  features: [feature],
-                  onEntitlementStatus: onEntitlementStatus,
-                  wakeNotificationPublisher: wakeNotificationPublisher)
-    }
+
 
     private func subscribeToSystemWakeNotifications() {
         wakeNotificationPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                Logger.subscription.log("System did wake notification received, performing entitlements check for \(self?.features.count ?? 0) features")
+            .sink { [weak self] _ in
+                Logger.subscription.log("System activation event received, performing entitlements check for \(self?.features.count ?? 0) features")
                 guard let self else {
                     return
                 }
@@ -96,4 +94,56 @@ public final class SubscriptionOnWakeEntitlementChecker {
         // Report current entitlement status to parent - parent decides how to handle changes
         onEntitlementStatus(feature, hasEntitlement)
     }
-} 
+}
+
+#if os(macOS)
+// MARK: - macOS Convenience Initializers
+extension SubscriptionOnWakeEntitlementChecker {
+    
+    /// Convenience initializer for macOS with default system wake notification publisher.
+    ///
+    /// - Parameters:
+    ///   - subscriptionManager: The subscription manager to use for entitlement checks
+    ///   - features: The features/entitlements to check (e.g., [.networkProtection, .dataBrokerProtection])
+    ///   - onEntitlementStatus: Callback invoked with current entitlement status on wake
+    public convenience init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+                           features: [Entitlement.ProductName],
+                           onEntitlementStatus: @escaping StatusHandler) {
+        self.init(subscriptionManager: subscriptionManager,
+                  features: features,
+                  onEntitlementStatus: onEntitlementStatus,
+                  wakeNotificationPublisher: NSWorkspace.shared.notificationCenter
+                    .publisher(for: NSWorkspace.didWakeNotification)
+                    .map { _ in () }
+                    .eraseToAnyPublisher())
+    }
+    
+
+}
+#endif
+
+#if os(iOS)
+// MARK: - iOS Convenience Initializers
+extension SubscriptionOnWakeEntitlementChecker {
+    
+    /// Convenience initializer for iOS with default app foreground notification publisher.
+    ///
+    /// - Parameters:
+    ///   - subscriptionManager: The subscription manager to use for entitlement checks
+    ///   - features: The features/entitlements to check (e.g., [.networkProtection, .dataBrokerProtection])
+    ///   - onEntitlementStatus: Callback invoked with current entitlement status when app enters foreground
+    public convenience init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+                           features: [Entitlement.ProductName],
+                           onEntitlementStatus: @escaping StatusHandler) {
+        self.init(subscriptionManager: subscriptionManager,
+                  features: features,
+                  onEntitlementStatus: onEntitlementStatus,
+                  wakeNotificationPublisher: NotificationCenter.default
+                    .publisher(for: UIApplication.willEnterForegroundNotification)
+                    .map { _ in () }
+                    .eraseToAnyPublisher())
+    }
+    
+
+}
+#endif

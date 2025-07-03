@@ -39,7 +39,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private enum Constants {
         static let askAiChatButtonHorizontalPadding: CGFloat = 16
-        static let askAiChatButtonAnimationDuration: TimeInterval = 0.25
+        static let askAiChatButtonAnimationDuration: TimeInterval = 0.1
     }
 
     weak var delegate: AddressBarButtonsViewControllerDelegate?
@@ -549,6 +549,8 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.isEnabled = !isOnboarding
     }
 
+    private var isAskAIChatButtonExpanded: Bool = false
+
     private func updateAskAIChatButtonVisibility() {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else {
             askAIChatButton.isHidden = true
@@ -558,7 +560,6 @@ final class AddressBarButtonsViewController: NSViewController {
         func shouldExpandButton() -> Bool {
             guard isTextFieldEditorFirstResponder,
                   let textFieldValue,
-                  (textFieldValue.isText || textFieldValue.isSuggestion),
                   !textFieldValue.isEmpty
             else {
                 return false
@@ -566,36 +567,40 @@ final class AddressBarButtonsViewController: NSViewController {
             return true
         }
 
-        var withAnimation: Bool
+
         var targetWidth: CGFloat
-        var alphaValue: CGFloat
 
         aiChatButton.isHidden = isTextFieldEditorFirstResponder
         askAIChatButton.isHidden = !isTextFieldEditorFirstResponder
 
         if shouldExpandButton() {
-            withAnimation = true
+            guard !isAskAIChatButtonExpanded else {
+                // Ignore any subsequent calls
+                return
+            }
+
+            isAskAIChatButtonExpanded = true
+
+            self.askAIChatButton.imagePosition = .imageLeading
             let fittingSize = askAIChatButton.sizeThatFits(CGSizeMake(1000, visualStyle.addressBarStyleProvider.addressBarButtonSize))
             targetWidth = max(fittingSize.width + Constants.askAiChatButtonHorizontalPadding,
                                visualStyle.addressBarStyleProvider.addressBarButtonSize)
-            alphaValue = 1.0
-        } else {
-            withAnimation = false
-            targetWidth = 0
-            alphaValue = 0
-        }
 
-        if withAnimation {
             NSAnimationContext.runAnimationGroup { context in
-                context.duration = Constants.askAiChatButtonAnimationDuration
                 context.allowsImplicitAnimation = true
-                context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+                context.duration = Constants.askAiChatButtonAnimationDuration
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+
+                askAIChatButton.animator().layer?.backgroundColor = visualStyle.colorsProvider.buttonMouseOverColor.cgColor
                 askAIChatButtonWidthConstraint.animator().constant = targetWidth
-                askAIChatButton.alphaValue = alphaValue
             }
         } else {
-            askAIChatButtonWidthConstraint.constant = targetWidth
-            askAIChatButton.alphaValue = alphaValue
+            isAskAIChatButtonExpanded = false
+
+            askAIChatButton.imagePosition = .imageOnly
+            askAIChatButton.layer?.backgroundColor = NSColor.clear.cgColor
+
+            askAIChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         }
     }
 
@@ -1112,11 +1117,11 @@ final class AddressBarButtonsViewController: NSViewController {
         }()
 
         // State and colors
-        askAIChatButton.state = .off
-        askAIChatButton.backgroundColor = .buttonMouseDown
-        askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
-        askAIChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
-        askAIChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.askAIChatButton")
+//        askAIChatButton.state = .off
+//        askAIChatButton.backgroundColor = .buttonMouseDown
+//        askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
+//        askAIChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
+//        askAIChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.askAIChatButton")
     }
 
     private func configureContextMenuForAIChatButtons(isSidebarOpen: Bool? = nil) {

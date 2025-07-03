@@ -1860,11 +1860,10 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Duck.ai Pro"
+            "value" : "Duck.ai"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "subscription.preferences.button.view.plans" : {
       "comment" : "Button for viewing subscription plans on expired subscription",
@@ -2413,11 +2412,10 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open Duck.ai Pro"
+            "value" : "Open Duck.ai"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "subscription.preferences.personal.information.removal.title" : {
       "comment" : "Title of the preferences pane for Personal Information Removal",
@@ -2612,60 +2610,60 @@
       }
     },
     "subscription.preferences.purchase.free-trial.button" : {
-      "comment" : "Button to open a page where user can learn more and try a free trial subscription",
-      "extractionState" : "stale",
+      "comment" : "Button to open a page where user can learn more and purchase the subscription",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro kostenlos testen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Try Privacy Pro Free"
+            "value" : "Try DuckDuckGo Subscription Free"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Prueba Privacy Pro gratis"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Essayer Privacy Pro gratuitement"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Prova Privacy Pro gratis"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Probeer Privacy Pro gratis"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wypróbuj Privacy Pro bezpłatnie"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Experimentar o Privacy Pro gratuitamente"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Попробуйте Privacy Pro бесплатно"
           }
         }
@@ -2993,8 +2991,7 @@
             "value" : "Chat privately with advanced AI models exclusive to subscribers."
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "subscription.preferences.services.paid.ai.chat.title" : {
       "comment" : "Title for the duck.ai premium listed in the subscription preferences pane",
@@ -3006,8 +3003,7 @@
             "value" : "Duck.ai"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "subscription.preferences.services.personal.information.removal.button.title" : {
       "comment" : "Title for the Personal Information Removal service button to open its settings",
@@ -4663,8 +4659,7 @@
             "value" : "Deux protections haut de gamme dans un seul abonnement."
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "subscription.preferences.subscription.inactive.row.caption.deprecated" : {
       "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
@@ -4742,8 +4737,7 @@
             "value" : "Trois protections haut de gamme en un seul abonnement."
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "subscription.preferences.subscription.inactive.us.caption.deprecated" : {
       "comment" : "Caption for the subscription preferences pane when the subscription is inactive",

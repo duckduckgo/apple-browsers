@@ -126,6 +126,16 @@ enum PreferencesSectionIdentifier: Hashable, CaseIterable {
         }
     }
 
+    @MainActor
+    func displayName(isSubscriptionRebrandingOn: Bool) -> String? {
+        switch self {
+        case .privacyPro:
+            return UserText.subscriptionSettingsHeader(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn)
+        default:
+            return displayName
+        }
+    }
+
 }
 
 enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIterable {

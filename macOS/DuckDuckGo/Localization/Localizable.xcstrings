@@ -26477,8 +26477,7 @@
             "value" : "Duck.ai"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "general.feedback-form.category.itr" : {
       "comment" : "Description for the feedback form when the issue is related to Identity Theft Restoration (ITR)",
@@ -44711,8 +44710,7 @@
             "value" : "Unable to access the subscription Duck.ai models"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "paid-duck-ai.feedback-form.category.login-third-party-browser" : {
       "comment" : "Description for the feedback form when there is an issue with logging into Duck.ai",
@@ -44724,8 +44722,7 @@
             "value" : "Can’t log in to Duck.ai with my subscription"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "paid-duck-ai.feedback-form.category.select-category" : {
       "comment" : "Title for the category selection state of the paid duck.ai feedback form",
@@ -44737,8 +44734,7 @@
             "value" : "Select a category"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "paid-duck-ai.feedback-form.category.something-else" : {
       "comment" : "Description for the feedback form when the user has an issue not categorized in other options",
@@ -44750,8 +44746,7 @@
             "value" : "Other Duck.ai feedback"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "passsword.management.all-items" : {
       "comment" : "Used as title for the Autofill All Items option",
@@ -59943,8 +59938,7 @@
             "value" : "Duck.ai"
           }
         }
-      },
-      "shouldTranslate" : false
+      }
     },
     "preferences.personalInformationRemoval" : {
       "comment" : "Title of the option to show the Personal Information Removal preferences",
@@ -60722,6 +60716,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Всегда включено"
+          }
+        }
+      }
+    },
+    "preferences.subscription.header" : {
+      "comment" : "The section header in Preferences representing subscription features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo Subscription"
           }
         }
       }

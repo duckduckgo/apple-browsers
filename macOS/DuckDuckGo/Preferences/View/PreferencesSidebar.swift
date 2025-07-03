@@ -24,10 +24,11 @@ extension Preferences {
 
     struct SidebarSectionHeader: View {
         let section: PreferencesSectionIdentifier
+        let isSubscriptionRebrandingOn: Bool
 
         var body: some View {
             Group {
-                if let name = section.displayName {
+                if let name = section.displayName(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn) {
                     Text(name)
                         .padding(.horizontal, 16)
                         .padding(.bottom, 3)
@@ -135,7 +136,7 @@ extension Preferences {
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(model.sections) { section in
-                            SidebarSectionHeader(section: section.id)
+                            SidebarSectionHeader(section: section.id, isSubscriptionRebrandingOn: model.isSubscriptionRebrandingEnabled)
                             sidebarSection(section, settingsIconProvider: model.settingsIconProvider)
                         }
                     }.padding(.bottom, 16)

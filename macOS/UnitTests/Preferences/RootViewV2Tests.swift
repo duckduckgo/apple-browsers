@@ -57,6 +57,7 @@ final class RootViewV2Tests: XCTestCase {
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
+            featureFlagger: MockFeatureFlagger(),
             showTab: {_ in },
             )
 
@@ -72,7 +73,8 @@ final class RootViewV2Tests: XCTestCase {
         let rootView = Preferences.RootViewV2(
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
-            subscriptionUIHandler: subscriptionUIHandler
+            subscriptionUIHandler: subscriptionUIHandler,
+            featureFlagger: MockFeatureFlagger(),
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -103,7 +105,8 @@ final class RootViewV2Tests: XCTestCase {
         let rootView = Preferences.RootViewV2(
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
-            subscriptionUIHandler: subscriptionUIHandler
+            subscriptionUIHandler: subscriptionUIHandler,
+            featureFlagger: MockFeatureFlagger(),
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content

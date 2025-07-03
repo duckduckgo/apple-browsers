@@ -20,7 +20,6 @@ import AppKit
 import BrowserServicesKit
 import Foundation
 import PixelKit
-import CryptoKit
 
 internal class ChromiumDataImporter: DataImporter {
 

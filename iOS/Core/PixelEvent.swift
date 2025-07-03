@@ -945,24 +945,36 @@ extension Pixel {
         case debugSetAsDefaultBrowserUnknownFailure
 
         // Default Browser Prompt Pixels
-        // Privacy Triage:
+        // Privacy Triage: https://app.asana.com/1/137249556945/project/69071770703008/task/1210702713778212
 
+        /// Fired when it is not possible to retrieve from the persistence store the number of active days for a user.
         case debugDefaultBrowserPromptFailedToRetrieveCurrentActivity
+        /// Fired when it is not possible to save in the persistence store the number of active days of users.
         case debugDefaultBrowserPromptFailedToSaveCurrentActivity
-
+        /// Fired when it is not possible to retrieve from the persistence store the date when last modal was shown.
         case debugDefaultBrowserPromptFailedToRetrieveLastModalShownDate
+        /// Fired when it is not possible to save  in the persistence store the date when last modal was shown.
         case debugDefaultBrowserPromptFailedToSaveLastModalShownDate
+        /// Fired when it is not possible to retrieve from the persistence store the number of modal shown.
         case debugDefaultBrowserPromptFailedToRetrieveModalShownOccurrences
+        /// Fired when it is not possible to save in the persistence store the number of modal shown.
         case debugDefaultBrowserPromptFailedToSaveModalShownOccurrences
+        /// Fired when it is not possible to retrieve from the persistence store the flag indicating whether the modal was permanently dismissed.
         case debugDefaultBrowserPromptFailedToRetrievePermanentlyDismissedPrompt
+        /// Fired when it is not possible to save in the persistence store the flag indicating whether the modal was permanently dismissed.
         case debugDefaultBrowserPromptFailedToSavePermanentlyDismissedPrompt
-
+        /// Fired when it is not possible to retrieve from the persistence store the type of user.
         case debugDefaultBrowserPromptFailedToRetrieveUserType
+        /// Fired when it is not possible to save from the persistence store the type of user.
         case debugDefaultBrowserPromptFailedToSaveUserType
 
+        /// Fired when the SAD modal sheet appears on screen.
         case defaultBrowserPromptModalShown
+        /// Fired when the “Close” button of the SAD modal sheet is tapped.
         case defaultBrowserPromptModalClosedButtonTapped
+        /// Fired when the “Set As Default Browser" button of the SAD modal sheet is tapped.
         case defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped
+        ///Fired when the “Don’t ask again” button of the SAD modal sheet is tapped.
         case defaultBrowserPromptModalDoNotAskAgainButtonTapped
 
         // MARK: History
@@ -1977,6 +1989,8 @@ extension Pixel.Event {
         case .tabInteractionStateRestorationTime(let aggregation):
             return "m_d_tab-interaction-state_restoration-time-\(aggregation)"
 
+            // MARK: Default Browser Pixels
+
         case .debugSetAsDefaultBrowserSuccessfulResult: return "m_debug_set-default-browser_successful-result"
         case .debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached"
         case .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached-no-persisted-result"
@@ -1999,6 +2013,8 @@ extension Pixel.Event {
         case .defaultBrowserPromptModalClosedButtonTapped: return "m_set-as-default-prompt_modal-closed-button-action"
         case .defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped: return "m_set-as-default-prompt_modal-set-as-default-browser-button-action"
         case .defaultBrowserPromptModalDoNotAskAgainButtonTapped: return "m_set-as-default-prompt_modal-do-not-ask-again-button-action"
+
+            // MARK: Debug Web View
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
         case .debugWebViewNotInVisibleTabHierarchy: return "m_debug_webview_not_in_visible_tab_hierarchy"

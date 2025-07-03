@@ -46,15 +46,19 @@ The de facto initializer for `NewTabPageActionsManager` is implemented in `NewTa
 The `NewTabPage` Swift module is organized into feature subdirectories, e.g. `CustomBackground`, `Favorites`, `NextStepCards`, etc.
 
 Each of the directories contains these files:
-* user script client (e.g. `NewTabPageFavoritesClient`)
-* the model providing data for the client (e.g. `NewTabPageFavoritesModel`)
-* a feature-specific extension of `NewTabPageDataModel` enum. This contains the definitions of data structures that are used by the user script client (types received from FE in WebKit messages and types expected by FE in message responses).
+* user script client (e.g. `NewTabPageFavoritesClient.swift`),
+* the model providing data for the client (e.g. `NewTabPageFavoritesModel.swift`),
+* a feature-specific extension of `NewTabPageDataModel` enum (e.g. `NewTabPageDataModel+Favorites.swift`). This contains the definitions of data structures that are used by the user script client (types received from FE in WebKit messages and types expected by FE in message responses),
+* additional files as needed.
+
+## New Tab Page Feature structure
 
 ### User script client
 User script client code is overall very easy and repetitive between various clients. Its features are:
-* It must subclass `NewTabPageUserScriptClient`
-* It must define messages supported by this script client.
+* It must subclass `NewTabPageUserScriptClient`,
+* It must define messages supported by this script client,
 * It must override `registerMessageHandlers(for:)` and define handlers for each message as private functions.
+User script client is typically initialized with the model, and can accept other feature-specific parameters (such as  configuration parameters).
 
 #### User script messages
 Messages are typically defined in a `MessageName` enum within the script client type. Message names specific to a given feature are usually prefixed by a feature name and an underscore, e.g. `activity_getData`.
@@ -87,4 +91,87 @@ public final class NewTabPagePrivacyStatsClient: NewTabPageUserScriptClient {
         ])
     }
 
+```
+
+#### Message handlers
+Message handlers typically call the model to perform actions (for _notification_ messages), or query it for data to be returned to FE (for _request_ messages). Sometimes they wrap/unwrap business logic data structures in request/response data structures used by the messaging layer.
+
+Example:
+```swift
+@MainActor
+private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+    let expansion: NewTabPageUserScript.WidgetConfig.Expansion = favoritesModel.isViewExpanded ? .expanded : .collapsed
+    return NewTabPageUserScript.WidgetConfig(animation: .viewTransitions, expansion: expansion)
+}
+
+@MainActor
+private func setConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+    guard let config: NewTabPageUserScript.WidgetConfig = DecodableHelper.decode(from: params) else {
+        return nil
+    }
+    favoritesModel.isViewExpanded = config.expansion == .expanded
+    return nil
+}
+```
+
+Note the use of `DecodableHelper` (from BSK's Common module) to conveniently convert `params` into a data structure conforming to `Decodable` protocol.
+
+#### Sending messages from native to FE
+If the script client supports receiving notifications from the native layer, it may set up subscriptions to send messages to FE in response to events. Usually that's done by subscribing to Combine publishers exposed by the model.
+
+Example:
+```swift
+public init(favoritesModel: NewTabPageFavoritesModel<FavoriteType, ActionHandler>, preferredFaviconSize: Int) {
+    self.favoritesModel = favoritesModel
+    self.preferredFaviconSize = preferredFaviconSize
+    super.init()
+
+    favoritesModel.$favorites.dropFirst()
+        .sink { [weak self] favorites in
+            Task { @MainActor in
+                self?.notifyDataUpdated(favorites)
+            }
+        }
+        .store(in: &cancellables)
+}
+
+@MainActor
+private func notifyDataUpdated(_ favorites: [NewTabPageFavorite]) {
+    let favorites = favoritesModel.favorites.map {
+        NewTabPageDataModel.Favorite($0, preferredFaviconSize: preferredFaviconSize)
+    }
+    pushMessage(named: MessageName.onDataUpdate.rawValue, params: NewTabPageDataModel.FavoritesData(favorites: favorites))
+}
+```
+
+### User script client's model
+
+The model is a class that interacts with the actual app logic. Its structure is feature-specific and depends on the set of functionalities supported by the NTP widget. Usually a model is initialized with one or more parameters of protocol types that provide functionalities, for example:
+* a protocol that provides data from the native app,
+* a protocol that provides widget settings storage (e.g. widget visibility),
+* a protocol that forwards actions to be handled by the native app.
+
+These protocols are implemented in the browser app code where the model is initialized and fed into `NewTabPageActionsManager`.
+
+Example:
+```swift
+public protocol NewTabPageRecentActivityProviding: AnyObject {
+    func refreshActivity() -> [NewTabPageDataModel.DomainActivity]
+    var activityPublisher: AnyPublisher<[NewTabPageDataModel.DomainActivity], Never> { get }
+}
+
+public protocol NewTabPageRecentActivityVisibilityProviding: AnyObject {
+    var isRecentActivityVisible: Bool { get }
+}
+
+public final class NewTabPageRecentActivityModel {
+
+    let activityProvider: NewTabPageRecentActivityProviding
+    let actionsHandler: RecentActivityActionsHandling
+
+    public init(activityProvider: NewTabPageRecentActivityProviding, actionsHandler: RecentActivityActionsHandling) {
+        self.activityProvider = activityProvider
+        self.actionsHandler = actionsHandler
+    }
+}
 ```

@@ -280,7 +280,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
         case .disableFireAnimation:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
             return .disabled
         }

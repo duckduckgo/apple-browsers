@@ -79,6 +79,7 @@ public enum PrivacyFeature: String {
     case intentionallyLocalOnlyFeatureForTests
     case tabCrashRecovery
     case delayedWebviewPresentation
+    case disableFireAnimation
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

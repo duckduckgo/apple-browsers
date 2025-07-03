@@ -347,7 +347,7 @@ final class Fire {
             if pinnedTabsManagerProvider.pinnedTabsMode == .shared || tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
                 newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
             }
-        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _,):
+        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _, ):
             newWindowDroppingPoint = NSApp.keyWindow?.frame.droppingPoint
             mainWindowControllers.forEach {
                 if pinnedTabsManagerProvider.pinnedTabsMode == .shared || $0.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
@@ -362,12 +362,10 @@ final class Fire {
         // Open a new window in case there is none
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            if self.windowControllerManager.mainWindowControllers.count == 0 {
+            /// When we are burning on exit we do not need to open a new window.
+            if self.windowControllerManager.mainWindowControllers.count == 0 && !isBurnOnExit {
                 if case let .allWindows(_, _, customURL) = entity, let customURL {
-                    /// When we are burning on exit we do not need to open a new window.
-                    if !isBurnOnExit {
-                        WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false, droppingPoint: newWindowDroppingPoint)
-                    }
+                    WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false, droppingPoint: newWindowDroppingPoint)
                 } else {
                     WindowsManager.openNewWindow(droppingPoint: newWindowDroppingPoint)
                 }

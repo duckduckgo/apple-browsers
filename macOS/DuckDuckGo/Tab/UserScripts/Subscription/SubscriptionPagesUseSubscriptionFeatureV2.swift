@@ -73,6 +73,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
 
     private let featureFlagger: FeatureFlagger
+    private let aiChatURL: URL
 
     public init(subscriptionManager: SubscriptionManagerV2,
                 subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandler = PrivacyProSubscriptionAttributionPixelHandler(),
@@ -82,11 +83,13 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
                 notificationCenter: NotificationCenter = .default,
                 dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
-                featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+                featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+                aiChatURL: URL) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
         self.uiHandler = uiHandler
+        self.aiChatURL = aiChatURL
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.notificationCenter = notificationCenter
@@ -393,7 +396,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             await uiHandler.showTab(with: .identityTheftRestoration(url))
         case .paidAIChat:
             PixelKit.fire(PrivacyProPixel.privacyProWelcomeAIChat, frequency: .uniqueByName)
-            let aiChatURL = URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!
             await uiHandler.showTab(with: .aiChat(aiChatURL))
         case .unknown:
             break

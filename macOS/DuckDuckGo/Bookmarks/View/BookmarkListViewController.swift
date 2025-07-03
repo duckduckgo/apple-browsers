@@ -740,7 +740,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     @objc func onImportClicked(_ sender: NSButton) {
-        DataImportView().show()
+        DataImportView(isDataTypePickerExpanded: true).show()
     }
 
     private func showManageBookmarks() {

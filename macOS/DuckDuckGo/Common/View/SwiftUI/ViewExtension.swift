@@ -99,7 +99,7 @@ extension EnvironmentValues {
     @available(macOS, obsoleted: 12.0, message: "This extension needs to be removed as it‘s no longer necessary.")
     var dismiss: DismissAction {
         DismissAction {
-            if \EnvironmentValues.presentationMode as? WritableKeyPath != nil {
+            if \EnvironmentValues.presentationMode is WritableKeyPath {
                 presentationMode.wrappedValue.dismiss()
             } else {
                 self[LegacyDismissAction.self]()

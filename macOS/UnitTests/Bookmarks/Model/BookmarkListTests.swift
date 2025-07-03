@@ -262,7 +262,7 @@ final class BookmarkListTests: XCTestCase {
         let items = bookmarkList.lowercasedItemsDict[lowercasedKey]
 
         XCTAssertNotNil(items)
-        XCTAssert(items?.contains(where: { $0.id == bookmark1.id || $0.id == bookmark2.id}) ?? false)
+        XCTAssert(items?.contains(where: { $0.id == bookmark1.id || $0.id == bookmark2.id }) ?? false)
     }
 
 }

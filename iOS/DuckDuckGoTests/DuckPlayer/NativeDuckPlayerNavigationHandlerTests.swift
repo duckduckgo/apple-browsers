@@ -534,6 +534,34 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         XCTAssertTrue(mockDuckPlayer.loadNativeDuckPlayerVideoCalled)
     }
 
+    func testSERPPillPrevention_ButSERPToDuckPlayerNavigationStillWorks() {
+        // Given
+        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        playerSettings.nativeUISERPEnabled = true
+        
+        // Navigate to SERP first
+        let serpURL = URL(string: "https://duckduckgo.com/?q=youtube+test")!
+        mockWebView.navigate(to: serpURL)
+        
+        // Test 1: Verify pill does NOT show on SERP via handleURLChange
+        playerSettings.nativeUIYoutubeMode = .ask
+        let urlChangeResult = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: serpURL)
+        XCTAssertEqual(urlChangeResult, .notHandled(.invalidURL), "SERP pages should not trigger pill via URL change")
+        XCTAssertFalse(sut.isDuckPlayerPillPresented, "Pill should NOT be presented on SERP pages")
+        XCTAssertEqual(sut.referrer, .serp, "Referrer should be set to SERP")
+        
+        // Test 2: Verify DuckPlayer DOES work when navigating from SERP to YouTube
+        let youtubeURL = URL(string: "https://www.youtube.com/watch?v=testVideo123")!
+        let request = URLRequest(url: youtubeURL)
+        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
+        
+        let delegateResult = sut.handleDelegateNavigation(navigationAction: navigationAction, webView: mockWebView)
+        XCTAssertTrue(delegateResult, "Navigation from SERP to YouTube should be handled")
+        XCTAssertEqual(sut.lastHandledVideoID, "testVideo123", "Video ID should be captured")
+        XCTAssertTrue(mockDuckPlayer.loadNativeDuckPlayerVideoCalled, "DuckPlayer should be loaded for SERP navigation")
+    }
+
     func testHandleDelegateNavigation_WhenOnSERPAndDuckPlayerDisabled_LoadsYoutubePage() async {
         // Given
         mockFeatureFlagger.enabledFeatures = [.duckPlayer]
@@ -604,6 +632,57 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         let differentVideoURL = URL(string: "https://www.youtube.com/watch?v=\(differentVideoID)#settings")!
         let result4 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURLWithHashtag, newURL: differentVideoURL)
         XCTAssertNotEqual(result4, .notHandled(.isYoutubeInternalNavigation))
+    }
+
+    func testHandleURLChange_WhenNavigatingToSERPPage_ShouldNotPresentPill() {
+        // Given
+        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        
+        // Test with various SERP URLs - none should trigger DuckPlayer pill
+        let serpURLs = [
+            URL(string: "https://duckduckgo.com/?q=test+search")!,
+            URL(string: "https://duckduckgo.com/?q=youtube+videos")!,
+            URL(string: "https://duckduckgo.com/?q=any+search&ia=web")!
+        ]
+        
+        for serpURL in serpURLs {
+            // Set the webView to simulate being on a SERP page
+            mockWebView.navigate(to: serpURL)
+            
+            // Test with .ask mode
+            playerSettings.nativeUIYoutubeMode = .ask
+            sut.lastHandledVideoID = nil
+            let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: serpURL)
+            
+            // Then - pill should NOT be presented on SERP pages
+            XCTAssertEqual(result, .notHandled(.invalidURL), "Should not handle SERP pages: \(serpURL)")
+            XCTAssertFalse(sut.isDuckPlayerPillPresented, "Pill should NOT be presented on SERP pages: \(serpURL)")
+            XCTAssertFalse(sut.isDuckPlayerPresented, "Player should NOT be presented on SERP pages: \(serpURL)")
+            XCTAssertFalse(mockDuckPlayer.presentPillCalled, "presentPill should NOT be called for SERP pages: \(serpURL)")
+            XCTAssertNil(sut.lastHandledVideoID, "lastHandledVideoID should remain nil for SERP pages: \(serpURL)")
+            XCTAssertEqual(sut.referrer, .serp, "Referrer should be correctly set to SERP for: \(serpURL)")
+            
+            // Reset state for .auto mode test
+            mockDuckPlayer.presentPillCalled = false
+            mockDuckPlayer.loadNativeDuckPlayerVideoCalled = false
+            sut.lastHandledVideoID = nil
+            
+            // Test with .auto mode
+            playerSettings.nativeUIYoutubeMode = .auto
+            let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: serpURL)
+            
+            // Then - pill should NOT be presented on SERP pages even in auto mode
+            XCTAssertEqual(resultAuto, .notHandled(.invalidURL), "Should not handle SERP pages in auto mode: \(serpURL)")
+            XCTAssertFalse(sut.isDuckPlayerPillPresented, "Pill should NOT be presented on SERP pages in auto mode: \(serpURL)")
+            XCTAssertFalse(sut.isDuckPlayerPresented, "Player should NOT be presented on SERP pages in auto mode: \(serpURL)")
+            XCTAssertFalse(mockDuckPlayer.presentPillCalled, "presentPill should NOT be called for SERP pages in auto mode: \(serpURL)")
+            XCTAssertFalse(mockDuckPlayer.loadNativeDuckPlayerVideoCalled, "loadNativeDuckPlayerVideo should NOT be called for SERP pages in auto mode: \(serpURL)")
+            XCTAssertNil(sut.lastHandledVideoID, "lastHandledVideoID should remain nil for SERP pages in auto mode: \(serpURL)")
+            
+            // Reset mock calls for next iteration
+            mockDuckPlayer.presentPillCalled = false
+            mockDuckPlayer.loadNativeDuckPlayerVideoCalled = false
+        }
     }
 
     func testHandleURLChange_WhenAskOrAutoMode_EmitsURLChangedEvent() {

@@ -344,8 +344,14 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Dismiss the DuckPlayer Pill
         dismissDuckPlayerPill(reset: true, animated: true, programatic: true)
 
+        // Never present DuckPlayer pill on DuckDuckGo search pages (SERP)
+        guard let url = newURL, !url.isDuckDuckGoSearch else {
+            lastHandledVideoID = nil
+            return .notHandled(.invalidURL)
+        }
+
         // Never present DuckPlayer for non-YouTube URLs
-        guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
+        guard let (videoID, _) = url.youtubeVideoParams else {
             lastHandledVideoID = nil
             return .notHandled(.invalidURL)
         }

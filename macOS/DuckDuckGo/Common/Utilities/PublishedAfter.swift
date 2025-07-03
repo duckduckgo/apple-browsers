@@ -37,9 +37,9 @@ struct PublishedAfter<Value> {
 
     @available(*, unavailable, message: "@PublishedAfter is only available on properties of classes")
     var wrappedValue: Value {
-        get { fatalError() }
+        get { fatalError("@PublishedAfter is only available on properties of classes") }
         // swiftlint:disable unused_setter_value
-        set { fatalError() }
+        set { fatalError("@PublishedAfter is only available on properties of classes") }
         // swiftlint:enable unused_setter_value
     }
 

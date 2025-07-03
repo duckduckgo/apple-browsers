@@ -25,6 +25,7 @@ import BrowserServicesKit
 import PixelKit
 import Subscription
 import SubscriptionUI
+import AIChat
 
 enum Preferences {
 
@@ -286,11 +287,13 @@ enum Preferences {
         let subscriptionUIHandler: SubscriptionUIHandling
         let visualStyle: VisualStyleProviding
         let showTab: @MainActor (Tab.TabContent) -> Void
+        let aiChatURLSettings: AIChatRemoteSettingsProvider
 
         init(
             model: PreferencesSidebarModel,
             subscriptionManager: SubscriptionManagerV2,
             subscriptionUIHandler: SubscriptionUIHandling,
+            aiChatURLSettings: AIChatRemoteSettingsProvider,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
         ) {
@@ -299,6 +302,7 @@ enum Preferences {
             self.subscriptionUIHandler = subscriptionUIHandler
             self.showTab = showTab
             self.visualStyle = visualStyle
+            self.aiChatURLSettings = aiChatURLSettings
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -451,7 +455,7 @@ enum Preferences {
                      switch event {
                      case .openAIC:
                          PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettings)
-                         let aiChatURL = URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!
+                         let aiChatURL = aiChatURLSettings.aiChatURL
                          showTab(.url(aiChatURL, source: .ui))
                      case .openURL(let url):
                          openURL(subscriptionURL: url)

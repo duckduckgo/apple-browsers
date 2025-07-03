@@ -493,7 +493,7 @@ extension DuckPlayer {
 #else
 
 extension DuckPlayer {
-    static func mock(withMode mode: DuckPlayerMode = .enabled) -> DuckPlayer { fatalError() }
+    static func mock(withMode mode: DuckPlayerMode = .enabled) -> DuckPlayer { fatalError("Not implemented in RELEASE") }
 }
 
 #endif

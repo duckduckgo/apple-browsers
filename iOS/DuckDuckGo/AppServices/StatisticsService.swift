@@ -33,8 +33,13 @@ final class StatisticsService {
     // MARK: - Resume
 
     func resume() {
+        let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion",
+                                                            application: UIApplication.shared)
         statisticsLoader.load {
             NotificationCenter.default.post(name: .didLoadStatisticsOnForeground, object: nil)
+            DispatchQueue.main.async {
+                backgroundAssertion.release()
+            }
         }
     }
 

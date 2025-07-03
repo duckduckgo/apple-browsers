@@ -30,7 +30,7 @@ open class EventMapping<Event> {
         eventMapper = mapping
     }
 
-    public func fire(_ event: Event, error: Error? = nil, parameters: [String: String]? = nil, onComplete: @escaping (Error?) -> Void = {_ in }) {
+    public func fire(_ event: Event, error: Error? = nil, parameters: [String: String]? = nil, onComplete: @escaping (Error?) -> Void = { _ in }) {
         eventMapper(event, error, parameters, onComplete)
     }
 }

@@ -198,7 +198,7 @@ private struct CustomPickerButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 (isSelected ? item.selectedImage : item.unselectedImage)
                     .font(configuration.font)
                     .foregroundColor(isSelected ? configuration.selectedTextColor : configuration.unselectedTextColor)

@@ -225,7 +225,7 @@ private struct PickerWrapper: View {
             items: state.items,
             selectedItem: $state.selectedItem,
         )
-        .frame(width: 250)
+        .frame(width: 230)
         .onChange(of: state.selectedItem) { newItem in
             state.onSelectionChanged(newItem)
         }

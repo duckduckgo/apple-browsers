@@ -109,7 +109,8 @@ internal class ChromiumDataImporter: DataImporter {
 
             let bookmarksSummary = bookmarkResult.map { bookmarks in
                 if featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport) {
-                    let mergedBookmarks = mergeShortcutsWithBookmarks(bookmarks)
+                    let newTabShortcuts = fetchShortcutsAsFavorites()
+                    let mergedBookmarks = FavoritesUtils.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: newTabShortcuts)
                     return bookmarkImporter.importBookmarks(mergedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: false)
                 } else {
                     return bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true)
@@ -183,87 +184,6 @@ internal class ChromiumDataImporter: DataImporter {
         } catch {
             return []
         }
-    }
-
-    private func mergeShortcutsWithBookmarks(_ bookmarks: ImportedBookmarks) -> ImportedBookmarks {
-        guard featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport) else {
-            return bookmarks
-        }
-
-        let shortcuts = fetchShortcutsAsFavorites()
-        guard !shortcuts.isEmpty else {
-            return bookmarks
-        }
-
-        // Recursively process bookmarks to mark matching URLs as favorites
-        func processBookmarkOrFolder(_ item: ImportedBookmarks.BookmarkOrFolder) -> ImportedBookmarks.BookmarkOrFolder {
-            var updatedItem = item
-
-            if !item.isFolder, let shortcut = shortcuts.first(where: { $0.urlString == item.urlString }) {
-                updatedItem.isDDGFavorite = true
-                updatedItem.favoritesIndex = shortcut.favoritesIndex
-            }
-
-            if item.isFolder, let children = item.children {
-                let updatedChildren = children.map(processBookmarkOrFolder)
-                updatedItem = ImportedBookmarks.BookmarkOrFolder.folder(
-                    name: item.name,
-                    children: updatedChildren
-                )
-            }
-
-            return updatedItem
-        }
-
-        let updatedBookmarkBar = bookmarks.topLevelFolders.bookmarkBar.map(processBookmarkOrFolder)
-        let updatedOtherBookmarks = bookmarks.topLevelFolders.otherBookmarks.map(processBookmarkOrFolder)
-        let updatedSyncedBookmarks = bookmarks.topLevelFolders.syncedBookmarks.map(processBookmarkOrFolder)
-
-        // Find shortcuts that don't have matching bookmarks and add them to bookmark bar
-        let existingBookmarkURLs = collectAllBookmarkURLs(from: bookmarks)
-        let uniqueShortcuts = shortcuts.filter { shortcut in
-            guard let urlString = shortcut.urlString else {
-                return false
-            }
-            return !existingBookmarkURLs.contains(urlString)
-        }
-        let mergedBookmarkBar: ImportedBookmarks.BookmarkOrFolder? = {
-            guard !uniqueShortcuts.isEmpty else {
-                return updatedBookmarkBar
-            }
-            let existingChildren = updatedBookmarkBar?.children ?? []
-            let newChildren = existingChildren + uniqueShortcuts
-            return ImportedBookmarks.BookmarkOrFolder.folder(name: updatedBookmarkBar?.name ?? "",
-                                                             children: newChildren)
-        }()
-
-        let updatedTopLevelFolders = ImportedBookmarks.TopLevelFolders(
-            bookmarkBar: mergedBookmarkBar,
-            otherBookmarks: updatedOtherBookmarks,
-            syncedBookmarks: updatedSyncedBookmarks
-        )
-
-        return ImportedBookmarks(topLevelFolders: updatedTopLevelFolders)
-    }
-
-    private func collectAllBookmarkURLs(from bookmarks: ImportedBookmarks) -> Set<String> {
-        var urls = Set<String>()
-
-        func collectFromFolder(_ folder: ImportedBookmarks.BookmarkOrFolder?) {
-            guard let folder = folder else { return }
-
-            if let urlString = folder.urlString {
-                urls.insert(urlString)
-            }
-
-            folder.children?.forEach(collectFromFolder)
-        }
-
-        collectFromFolder(bookmarks.topLevelFolders.bookmarkBar)
-        collectFromFolder(bookmarks.topLevelFolders.otherBookmarks)
-        collectFromFolder(bookmarks.topLevelFolders.syncedBookmarks)
-
-        return urls
     }
 
     func requiresKeychainPassword(for selectedDataTypes: Set<DataImport.DataType>) -> Bool {

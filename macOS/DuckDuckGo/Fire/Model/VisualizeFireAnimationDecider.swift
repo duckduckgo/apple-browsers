@@ -46,7 +46,7 @@ final class DefaultVisualizeFireAnimationDecider: VisualizeFireAnimationDecider 
         dataClearingPreferences.$isFireAnimationEnabled
             .map { [weak self] isFireAnimationEnabled in
                 guard let self = self else { return true }
-                
+
                 if self.featureFlagger.isFeatureOn(.disableFireAnimation) {
                     return isFireAnimationEnabled
                 } else {

@@ -64,7 +64,7 @@ final class FireViewController: NSViewController {
 
     init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
           fireViewModel: FireViewModel,
-          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle, 
+          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
           visualizeFireAnimationDecider: VisualizeFireAnimationDecider) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.fireViewModel = fireViewModel

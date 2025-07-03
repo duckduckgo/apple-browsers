@@ -131,7 +131,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     ///
     /// - Parameter webView: The `WKWebView` whose URL is used to determine the referrer.
     private func setReferrer(webView: WKWebView) {
-        
+
         guard let url = webView.url, url.absoluteString.isEmpty == false else { return }
 
         // SERP as a referrer

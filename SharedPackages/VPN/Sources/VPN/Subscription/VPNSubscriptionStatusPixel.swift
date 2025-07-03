@@ -35,6 +35,7 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
 
     public enum Source {
         case clientCheck(sourceObject: Any?)
+        case clientCheckOnWake(sourceObject: Any?)
         case notification(sourceObject: Any?)
     }
 
@@ -53,6 +54,8 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
         switch source {
         case .clientCheck:
             return "m_mac_vpn_subs_client_check_"
+        case .clientCheckOnWake:
+            return "m_mac_vpn_subs_client_check_on_wake_"
         case .notification:
             return "m_mac_vpn_subs_notification_"
         }
@@ -60,6 +63,8 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
         switch source {
         case .clientCheck:
             return "m_vpn_subs_client_check_"
+        case .clientCheckOnWake:
+            return "m_vpn_subs_client_check_on_wake_"
         case .notification:
             return "m_vpn_subs_notification_"
         }
@@ -111,6 +116,8 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
         switch source {
         case .clientCheck:
             return "clientCheck"
+        case .clientCheckOnWake:
+            return "clientCheckOnWake"
         case .notification:
             return "notification"
         }
@@ -119,6 +126,7 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
     static func sourceClass(from source: Source) -> String {
         switch source {
         case .clientCheck(let sourceObject),
+                .clientCheckOnWake(let sourceObject),
                 .notification(let sourceObject):
             guard let sourceObject else {
                 return "nil"

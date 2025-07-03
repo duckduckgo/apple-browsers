@@ -32,6 +32,20 @@ final class NetworkProtectionSubscriptionEventHandler {
     private let vpnUninstaller: VPNUninstalling
     private let userDefaults: UserDefaults
     private var cancellables = Set<AnyCancellable>()
+    private lazy var wakeEntitlementChecker: SubscriptionOnWakeEntitlementChecker = {
+        return SubscriptionOnWakeEntitlementChecker(
+            subscriptionManager: subscriptionManager,
+            feature: .networkProtection,
+            onEntitlementStatus: { [weak self] _, hasEntitlement in
+                guard let self else { return }
+                Task {
+                    await self.handleEntitlementsChange(
+                        hasEntitlements: hasEntitlement, 
+                        source: .clientCheckOnWake(sourceObject: self.wakeEntitlementChecker)
+                    )
+                }
+            })
+    }()
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          tunnelController: TunnelController,
@@ -42,8 +56,11 @@ final class NetworkProtectionSubscriptionEventHandler {
         self.vpnUninstaller = vpnUninstaller
         self.userDefaults = userDefaults
 
-        subscribeToEntitlementChanges()
         checkEntitlements()
+        subscribeToEntitlementChangeNotifications()
+        
+        // Initialize lazy property to start wake monitoring
+        _ = wakeEntitlementChecker
     }
 
     @MainActor
@@ -98,7 +115,7 @@ final class NetworkProtectionSubscriptionEventHandler {
         // pixels without additiona checks.
         //
         switch source {
-        case .clientCheck:
+        case .clientCheck, .clientCheckOnWake:
             if hasEntitlements && lastKnownEntitlementsExpired {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(

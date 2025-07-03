@@ -22,6 +22,9 @@ disabled_rules:
 opt_in_rules:
   - file_header
   - explicit_init
+  - weak_delegate
+  - fatal_error_message
+  - single_test_class
 
 custom_rules:
   explicit_non_final_class:

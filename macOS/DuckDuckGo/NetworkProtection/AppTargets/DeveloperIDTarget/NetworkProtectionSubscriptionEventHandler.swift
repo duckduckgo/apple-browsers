@@ -62,18 +62,18 @@ final class NetworkProtectionSubscriptionEventHandler {
     private func checkEntitlements() {
         Task {
             let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
-            await handleEntitlementsChange(hasEntitlements: hasEntitlement, source: .clientCheck(sourceObject: self))
+            await handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheck)
         }
     }
 
     private func subscribeToWakeNotifications() {
-        NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification)
+        NotificationCenter.default.publisher(for: NSWorkspace.didWakeNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 Logger.networkProtection.log("System wake notification received, checking entitlements")
                 Task {
                     let hasEntitlement = await self?.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection) ?? false
-                    await self?.handleEntitlementsChange(hasEntitlements: hasEntitlement, source: .clientCheckOnWake(sourceObject: self))
+                    await self?.handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheckOnWake)
                 }
             }
             .store(in: &cancellables)
@@ -94,32 +94,33 @@ final class NetworkProtectionSubscriptionEventHandler {
                         Logger.subscription.fault("Missing entitlements payload")
                         return
                     }
-                    let hasNetPEntitlement = payload.entitlements.contains(.networkProtection)
-                    await self.handleEntitlementsChange(hasEntitlements: hasNetPEntitlement, source: .notification(sourceObject: notification.object))
+
+                    let hasEntitlements = payload.entitlements.contains(.networkProtection)
+                    await self.handleEntitlementsChange(hasEntitlements: hasEntitlements, trigger: .notification(sourceObject: notification.object))
                 }
             }
             .store(in: &cancellables)
     }
 
     @MainActor
-    private func handleEntitlementsChange(hasEntitlements: Bool, source: VPNSubscriptionStatusPixel.Source) async {
+    private func handleEntitlementsChange(hasEntitlements: Bool, trigger: VPNSubscriptionStatusPixel.Trigger) async {
         let isAuthV2Enabled = NSApp.delegateTyped.isAuthV2Enabled
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
-        // For source == .clientCheck we only fire pixels if there's an actual change, because they're not guaranteed
+        // For trigger == .clientCheck we only fire pixels if there's an actual change, because they're not guaranteed
         // to be executed only when there are changes - they'll run at every app launch.
         //
-        // For source == .notification we assume the notifications are fired on actual changes, so we want to fire
+        // For trigger == .notification we assume the notifications are fired on actual changes, so we want to fire
         // pixels without additiona checks.
         //
-        switch source {
+        switch trigger {
         case .clientCheck, .clientCheckOnWake:
             if hasEntitlements && lastKnownEntitlementsExpired {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
-                        source: source),
+                        trigger: trigger),
                     frequency: .dailyAndCount)
 
                 lastKnownEntitlementsExpired = false
@@ -128,7 +129,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                     VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
-                        source: source),
+                        trigger: trigger),
                     frequency: .dailyAndCount)
 
                 lastKnownEntitlementsExpired = true
@@ -139,7 +140,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
-                        source: source),
+                        trigger: trigger),
                     frequency: .dailyAndCount)
 
                 if lastKnownEntitlementsExpired {
@@ -150,7 +151,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                     VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
-                        source: source),
+                        trigger: trigger),
                     frequency: .dailyAndCount)
 
                 if !lastKnownEntitlementsExpired {
@@ -190,7 +191,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                 VPNSubscriptionStatusPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    source: .notification(sourceObject: notification.object)),
+                    trigger: .notification(sourceObject: notification.object)),
                 frequency: .dailyAndCount)
             userDefaults.networkProtectionEntitlementsExpired = false
         }
@@ -207,7 +208,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                 VPNSubscriptionStatusPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    source: .notification(sourceObject: notification.object)),
+                    trigger: .notification(sourceObject: notification.object)),
                 frequency: .dailyAndCount)
 
             try? await vpnUninstaller.uninstall(removeSystemExtension: false, showNotification: true)

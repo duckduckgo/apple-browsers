@@ -22,36 +22,36 @@ import Subscription
 public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustomPrefix {
     case vpnFeatureEnabled(isSubscriptionActive: Bool?,
                     isAuthV2Enabled: Bool,
-                    source: Source)
+                    trigger: Trigger)
     case vpnFeatureDisabled(isSubscriptionActive: Bool?,
                      isAuthV2Enabled: Bool,
-                     source: Source)
+                     trigger: Trigger)
     case signedIn(isSubscriptionActive: Bool?,
                   isAuthV2Enabled: Bool,
-                  source: Source)
+                  trigger: Trigger)
     case signedOut(isSubscriptionActive: Bool?,
                    isAuthV2Enabled: Bool,
-                   source: Source)
+                   trigger: Trigger)
 
-    public enum Source {
-        case clientCheck(sourceObject: Any?)
-        case clientCheckOnWake(sourceObject: Any?)
+    public enum Trigger {
+        case clientCheck
+        case clientCheckOnWake
         case notification(sourceObject: Any?)
     }
 
     public var namePrefix: String {
-        let source: Source = {
+        let trigger: Trigger = {
             switch self {
-            case .vpnFeatureEnabled(_, _, let source),
-                    .vpnFeatureDisabled(_, _, let source),
-                    .signedIn(_, _, let source),
-                    .signedOut(_, _, let source):
-                return source
+            case .vpnFeatureEnabled(_, _, let trigger),
+                    .vpnFeatureDisabled(_, _, let trigger),
+                    .signedIn(_, _, let trigger),
+                    .signedOut(_, _, let trigger):
+                return trigger
             }
         }()
 
 #if os(macOS)
-        switch source {
+        switch trigger {
         case .clientCheck:
             return "m_mac_vpn_subs_client_check_"
         case .clientCheckOnWake:
@@ -60,7 +60,7 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
             return "m_mac_vpn_subs_notification_"
         }
 #elseif os(iOS)
-        switch source {
+        switch trigger {
         case .clientCheck:
             return "m_vpn_subs_client_check_"
         case .clientCheckOnWake:
@@ -86,10 +86,10 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
 
     public var parameters: [String: String]? {
         switch self {
-        case .signedIn(let isSubscriptionActive, let isAuthV2, let source),
-                .signedOut(let isSubscriptionActive, let isAuthV2, let source),
-                .vpnFeatureEnabled(let isSubscriptionActive, let isAuthV2, let source),
-                .vpnFeatureDisabled(let isSubscriptionActive, let isAuthV2, let source):
+        case .signedIn(let isSubscriptionActive, let isAuthV2, let trigger),
+                .signedOut(let isSubscriptionActive, let isAuthV2, let trigger),
+                .vpnFeatureEnabled(let isSubscriptionActive, let isAuthV2, let trigger),
+                .vpnFeatureDisabled(let isSubscriptionActive, let isAuthV2, let trigger):
 
             let isSubscriptionActiveString = {
                 guard let isSubscriptionActive else {
@@ -102,7 +102,7 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
             return [
                 "isSubscriptionActive": isSubscriptionActiveString,
                 "authVersion": isAuthV2 ? "v2" : "v1",
-                "notificationObjectClass": Self.sourceClass(from: source)
+                "notificationObjectClass": Self.sourceClass(from: trigger)
             ]
         }
     }
@@ -111,11 +111,11 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
         nil
     }
 
-    static func sourceClass(from source: Source) -> String {
-        switch source {
-        case .clientCheck(let sourceObject),
-                .clientCheckOnWake(let sourceObject),
-                .notification(let sourceObject):
+    static func sourceClass(from trigger: Trigger) -> String {
+        switch trigger {
+        case .clientCheck, .clientCheckOnWake:
+            return "none"
+        case .notification(let sourceObject):
             guard let sourceObject else {
                 return "nil"
             }

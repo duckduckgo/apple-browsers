@@ -14293,7 +14293,7 @@
 			repositoryURL = "https://github.com/duckduckgo/DesignResourcesKit";
 			requirement = {
 				kind = revision;
-				revision = 86166003319366ab52da4d8c99b42e4713307111;
+				revision = c065f3d042a63fa8b1b9c1067f15c2301824a350;
 			};
 		};
 		F486D2EF25069482002D07D7 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {

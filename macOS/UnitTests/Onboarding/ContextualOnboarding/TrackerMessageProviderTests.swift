@@ -43,6 +43,12 @@ final class TrackerMessageProviderTests: XCTestCase {
         trackerMessageProvider = TrackerMessageProvider(entityProviding: mockEntityProvider)
     }
 
+    override func tearDown() {
+        mockEntityProvider = nil
+        trackerMessageProvider = nil
+        super.tearDown()
+    }
+
     func testTrackersType_WhenDomainIsGoogle_ReturnsMajorTracker() {
         let expectedMessage: String = "Heads up! I can’t stop Google from seeing your activity on google.com.\n\nBut browse with me, and I can reduce what Google knows about you overall by blocking their trackers on lots of other sites."
         let protectionStatus = ProtectionStatus(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false)

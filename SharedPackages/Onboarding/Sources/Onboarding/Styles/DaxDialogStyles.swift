@@ -56,7 +56,7 @@ public extension OnboardingStyles {
                 .padding()
                 .frame(minWidth: 0, maxWidth: maxWidth, maxHeight: maxHeight)
                 .background(backgroundColor(isPressed: configuration.isPressed, isHovered: isHovered))
-                .cornerRadius(8)
+                .cornerRadius(12)
                 .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
                 .onHover { hovering in
                     #if os(macOS)

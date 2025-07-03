@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import Combine
 import UserScript
 import WebKit
 import XCTest
@@ -95,6 +96,13 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didOpenChat = false
     var didGetHandoffData = false
 
+    var didRecordChat = false
+    var didRestoreChat = false
+    var didRemoveChat = false
+
+    var didSubmitAIChatNativePrompt = false
+    var aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
+
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
 
     init(messageHandling: any AIChatMessageHandling = MockAIChatMessageHandling()) {
@@ -130,22 +138,41 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         didGetHandoffData = true
         return nil
     }
+
+    func recordChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didRecordChat = true
+        return nil
+    }
+
+    func restoreChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didRestoreChat = true
+        return nil
+    }
+
+    func removeChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didRemoveChat = true
+        return nil
+    }
+
+    func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
+        didSubmitAIChatNativePrompt = true
+    }
+
+    var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> {
+        aiChatNativePromptSubject.eraseToAnyPublisher()
+    }
 }
 
-private final class AIChatMockDebugSettings: AIChatDebugURLSettingsRepresentable {
+final class AIChatMockDebugSettings: AIChatDebugURLSettingsRepresentable {
     var customURLHostname: String?
     var customURL: String?
     func reset() { }
 }
 
 private final class MockAIChatMessageHandling: AIChatMessageHandling {
-    var payloadHandler: AIChat.AIChatPayloadHandler
-
-    init(payloadHandler: AIChat.AIChatPayloadHandler = AIChatPayloadHandler()) {
-        self.payloadHandler = payloadHandler
-    }
-
     func getDataForMessageType(_ type: DuckDuckGo_Privacy_Browser.AIChatMessageType) -> (any Encodable)? {
         nil
     }
+
+    func setData(_ data: Any?, forMessageType type: DuckDuckGo_Privacy_Browser.AIChatMessageType) {}
 }

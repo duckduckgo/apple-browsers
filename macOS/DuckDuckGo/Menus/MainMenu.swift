@@ -74,7 +74,7 @@ final class MainMenu: NSMenu {
     let manageBookmarksMenuItem = NSMenuItem(title: UserText.mainMenuHistoryManageBookmarks, action: #selector(MainViewController.showManageBookmarks), keyEquivalent: [.command, .option, "b"])
         .withAccessibilityIdentifier("MainMenu.manageBookmarksMenuItem")
     var bookmarksMenuToggleBookmarksBarMenuItem = NSMenuItem(title: "BookmarksBarMenuPlaceholder", action: #selector(MainViewController.toggleBookmarksBarFromMenu), keyEquivalent: "B")
-    let importBookmarksMenuItem = NSMenuItem(title: UserText.importBookmarks, action: #selector(AppDelegate.openImportBrowserDataWindow))
+    let importBookmarksMenuItem = NSMenuItem(title: UserText.importBookmarks, action: #selector(AppDelegate.openImportBookmarksWindow))
     let bookmarksMenu = NSMenu(title: UserText.bookmarks)
     let favoritesMenu = NSMenu(title: UserText.favorites)
 
@@ -244,6 +244,9 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: UserText.mainMenuEditDelete, action: #selector(NSText.delete))
             NSMenuItem(title: UserText.mainMenuEditSelectAll, action: #selector(NSText.selectAll), keyEquivalent: "a")
+
+            NSMenuItem(title: "", action: #selector(MainViewController.summarize), keyEquivalent: [.command, .shift, "\r"])
+                .hidden()
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.mainMenuEditFind) {

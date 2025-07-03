@@ -106,6 +106,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210410403692636?focus=true
     case aiChatSidebar
 
+    /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1210012162616039?focus=true
+    case aiChatTextSummarization
+
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case osSupportForceUnsupportedMessage
 
@@ -117,6 +120,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210493210455717?focus=true
     case shortHistoryMenu
+
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1210625630564796?focus=true
+    case newTabPageOmnibar
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -168,7 +174,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport,
 				.aiChatSidebar,
-                .shortHistoryMenu:
+                .aiChatTextSummarization,
+                .shortHistoryMenu,
+                .newTabPageOmnibar:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -257,6 +265,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
             return .internalOnly()
+        case .aiChatTextSummarization:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:
@@ -265,6 +275,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
+        case .newTabPageOmnibar:
+            return .disabled
         }
     }
 }

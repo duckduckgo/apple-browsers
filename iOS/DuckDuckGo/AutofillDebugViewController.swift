@@ -107,17 +107,16 @@ class AutofillDebugViewController: UITableViewController {
                 ActionMessageView.present(message: "Credit Cards added")
             } else if cell.tag == Row.resetAutofillSettings.rawValue {
                 let autofillPixelReporter = AutofillPixelReporter(
-                        standardUserDefaults: .standard,
-                        appGroupUserDefaults: UserDefaults(suiteName: "\(Global.groupIdPrefix).autofill"),
+                        usageStore: AutofillUsageStore(),
                         autofillEnabled: AppUserDefaults().autofillCredentialsEnabled,
                         eventMapping: EventMapping<AutofillPixelEvent> { _, _, _, _ in })
                 autofillPixelReporter.resetStoreDefaults()
-                
+
                 autofillSaveModalRejectionCount = 0
                 autofillSaveModalDisablePromptShown = false
                 autofillFirstTimeUser = true
                 _ = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager.deleteAllNeverPromptWebsites()
-                
+
                 autofillCreditCardsSaveModalRejectionCount = 0
                 autofillCreditCardsSaveModalDisablePromptShown = false
                 autofillCreditCardsFirstTimeUser = true

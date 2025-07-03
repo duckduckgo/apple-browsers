@@ -32,15 +32,18 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
     private let vpnActivationDateStore: VPNActivationDateProviding
     private let subscription: PrivacyProSubscription?
     private let localeIdentifier: String
+    private let autofillUsageStore: AutofillUsageStore?
 
     public init(statisticsStore: StatisticsStore,
                 vpnActivationDateStore: VPNActivationDateProviding,
                 subscription: PrivacyProSubscription?,
-                localeIdentifier: String = Locale.current.identifier) {
+                localeIdentifier: String = Locale.current.identifier,
+                autofillUsageStore: AutofillUsageStore?) {
         self.statisticsStore = statisticsStore
         self.vpnActivationDateStore = vpnActivationDateStore
         self.subscription = subscription
         self.localeIdentifier = localeIdentifier
+        self.autofillUsageStore = autofillUsageStore
     }
 
     // swiftlint:disable:next cyclomatic_complexity
@@ -77,6 +80,8 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
                    let daysSinceInstall = Calendar.current.numberOfDaysBetween(installDate, and: Date()) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysSinceInstall)))
                 }
+            case .lastSearchState:
+                queryItems.append(URLQueryItem(name: parameter.rawValue, value: Self.searchState(lastSearchDate: autofillUsageStore?.searchDauDate)))
             case .locale:
                 let formattedLocale = LocaleMatchingAttribute.localeIdentifierAsJsonFormat(localeIdentifier)
                 queryItems.append(URLQueryItem(name: parameter.rawValue, value: formattedLocale))
@@ -132,6 +137,45 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
         return identifier
     }
 
+    private static func searchState(lastSearchDate: Date?) -> String {
+        guard let lastSearchDate = lastSearchDate else {
+            return "none"
+        }
+
+        let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: Date())
+        let startOfLast = calendar.startOfDay(for: lastSearchDate)
+        let daysApart = calendar
+            .dateComponents([.day], from: startOfLast, to: startOfToday)
+            .day ?? Int.max
+
+        switch daysApart {
+        case 0...1:
+            return "day"
+        case 2...7:
+            return "week"
+        default:
+            return "none"
+        }
+    }
+
+    public static func refreshLastSearchState(in urlString: String, lastSearchDate: Date?) -> String {
+        guard var comps = URLComponents(string: urlString),
+              let items = comps.queryItems,
+              items.contains(where: { $0.name == RemoteMessagingSurveyActionParameter.lastSearchState.rawValue }) else {
+            return urlString
+        }
+
+        let filtered = items.filter { $0.name != RemoteMessagingSurveyActionParameter.lastSearchState.rawValue }
+
+        let updatedState = Self.searchState(lastSearchDate: lastSearchDate)
+
+        comps.queryItems = filtered + [
+            URLQueryItem(name: RemoteMessagingSurveyActionParameter.lastSearchState.rawValue, value: updatedState)
+        ]
+
+        return comps.url?.absoluteString ?? urlString
+    }
 }
 
 extension PrivacyProSubscription {

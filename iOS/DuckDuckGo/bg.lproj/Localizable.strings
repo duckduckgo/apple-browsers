@@ -59,10 +59,7 @@
 "action.title.downloads" = "Изтеглени файлове";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "Чат с изкуствен интелект";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "AI Chat";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Редактиране на отметка";
@@ -159,6 +156,9 @@
 
 /* No comment provided by engineer. */
 "addWidget.title" = "На едно докосване от любимите уебсайтове.";
+
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "Функции с изкуствен интелект";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Съществуващите отметки няма да бъдат дублирани.";
@@ -267,15 +267,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Отключване на DuckDuckGo.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Сигурни ли сте, че искате да изтриете всички отметки? Това действие не може да бъде отменено.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete this chat? This cannot be undone." = "Наистина ли искате да изтриете този чат? Това действие не може да бъде отменено.";
-
-/* No comment provided by engineer. */
-"Ask anything..." = "Попитайте нещо...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Влизане";
@@ -1210,9 +1201,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Отстраняване на грешки";
 
-/* No comment provided by engineer. */
-"Delete All" = "Изтриване на всички";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "устройство";
 
@@ -1297,8 +1285,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Функционалността на Duck Player е засегната от последните промени в YouTube. Работим за отстраняване на тези проблеми и оценяваме вашето разбиране.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai е незадължителна функция, чрез която можете да разговаряте анонимно с популярни AI чат модели от трети страни. Чатовете не се използват за обучение на AI.\n[Научете повече](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "Функциите на DuckDuckGo AI са поверителни и незадължителни. Вашите данни не се използват за обучение на изкуствен интелект.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Адресна лента";
@@ -1312,7 +1300,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Гласово търсене";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Научете повече";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -2258,7 +2249,7 @@
 "new.tab.page.settings.title" = "Персонализиране на страницата с нов раздел";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Чат с изкуствен интелект";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Отметки";
@@ -2657,7 +2648,10 @@
 "settings.address.full.url" = "Показване на пълния адрес на сайта";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Бързи Връзки";
+"settings.aichat.shortcuts" = "Преки пътища за Duck.ai";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Настройки за Assist при търсене";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Винаги включено";
@@ -2735,13 +2729,19 @@
 "settings.emailProtection.description" = "Блокирайте имейл тракерите и скрийте своя адрес";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Активиране на Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Поверителен чат с популярни AI модели на трети страни";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Активиране на Email Protection";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Активиране на гласово търсене";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Изберете колко често искате да се появяват отговори, подпомагани от изкуствен интелект, в търсенето";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Споделяне на отзив";
@@ -2806,6 +2806,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Политика за поверителност и Условия за ползване";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Включва нашите функции VPN и Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Включва нашите функции VPN, Personal Information Removal и Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Прегледи с продължително натискане";
 
@@ -2866,17 +2872,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Настройки на абонамент";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Включва нашите функции VPN и Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Защитете връзката и самоличността си с Privacy Pro";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free" = "Изпробвайте Privacy Pro безплатно";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Включва нашите функции VPN, Personal Information Removal и Identity Theft Restoration.";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2943,9 +2943,6 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Кой уебсайт е повреден?";
-
-/* No comment provided by engineer. */
-"Stop generating..." = "Спиране на генерирането...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Запазено име на хост: %@";

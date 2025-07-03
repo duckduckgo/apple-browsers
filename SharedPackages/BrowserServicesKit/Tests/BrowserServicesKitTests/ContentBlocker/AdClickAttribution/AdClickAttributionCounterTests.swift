@@ -90,7 +90,7 @@ class AdClickAttributionCounterTests: XCTestCase {
     func testWhenTimeIntervalHasPassedAndCounterIsZeroThenCurrentTimeIsReset() {
         let interval: Double = 60 * 60
         let mockStore = MockKeyValueStore()
-        let counter = AdClickAttributionCounter(store: mockStore, sendInterval: interval) {_ in }
+        let counter = AdClickAttributionCounter(store: mockStore, sendInterval: interval) { _ in }
 
         var storedDate: Date? { mockStore.object(forKey: AdClickAttributionCounter.Constant.lastSendAtKey) as? Date }
 

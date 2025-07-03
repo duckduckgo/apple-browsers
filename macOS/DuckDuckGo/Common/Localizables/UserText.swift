@@ -376,6 +376,7 @@ struct UserText {
     static let printMenuItem = NSLocalizedString("print.menu.item", value: "Print…", comment: "Menu item title")
     static let newWindowMenuItem = NSLocalizedString("new.window.menu.item", value: "New Window", comment: "Menu item title")
     static let newBurnerWindowMenuItem = NSLocalizedString("new.burner.window.menu.item", value: "New Fire Window", comment: "Menu item title")
+    static let deleteBrowsingDataMenuItem = NSLocalizedString("delete.browsing.data.menu.item", value: "Delete Browsing Data…", comment: "Menu item title")
 
     static let fireDialogFireproofSites = NSLocalizedString("fire.dialog.fireproof.sites", value: "Fireproof sites won't be cleared", comment: "Category of domains in fire button dialog")
     static let fireDialogClearSites = NSLocalizedString("fire.dialog.clear.sites", value: "Selected sites will be cleared", comment: "Category of domains in fire button dialog")
@@ -457,6 +458,9 @@ struct UserText {
     static let searchAssistSettings = NSLocalizedString("duckai.search-assist-settings", value: "Search Assist Settings", comment: "The section name in preferences for Search Assist Settings")
     static let searchAssistSettingsDescription = NSLocalizedString("duckai.search-assist-settings.description", value: "Choose how often you want AI-Assisted answers to appear in your searches", comment: "Description of the section in Settings")
     static let searchAssistSettingsLink = NSLocalizedString("duckai.search-assist-settings.link", value: "Open Search Assist Settings", comment: "Button to open the Search Assist Settings")
+    static let aiChatSidebarTitle = NSLocalizedString("aichat.sidebar.title", value: "Duck.ai", comment: "Title for the Duck.ai sidebar")
+    static let aiChatSidebarExpandButtonTooltip = NSLocalizedString("aichat.sidebar.expand-button.tooltip", value: "Expand", comment: "Tooltip for button to open duck.ai chat from sidebar in a full tab")
+    static let aiChatSidebarCloseButtonTooltip = NSLocalizedString("aichat.sidebar.close-button.tooltip", value: "Close", comment: "Tooltip for button to close the sidebar with the duck.ai chat")
 
     // Duck Player Preferences
     static let duckPlayerSettingsTitle = NSLocalizedString("duck-player.title", value: "Duck Player", comment: "Private YouTube Player settings title")
@@ -574,6 +578,10 @@ struct UserText {
     static let importDataSourceTitle = NSLocalizedString("import.browser.data.source.title", value: "Where do you want to import from?", comment: "Import Browser Data title for option to choose source browser to import from")
     static let importDataSubtitle = NSLocalizedString("import.browser.data.source.subtitle", value: "Access and manage your passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Subtitle explaining where users can find imported passwords.")
     static let importDataSuccessTitle = NSLocalizedString("import.browser.data.success.title", value: "Import complete!", comment: "message about Passwords and or bookmarks Data Import completion")
+    static let importDataImportTypeTitleCollapsedAll = NSLocalizedString("import.browser.data.import-type.title.collapsed.all", value: "Import all available data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
+    static let importDataImportTypeTitleSelected = NSLocalizedString("import.browser.data.import-type.title.collapsed", value: "Import selected data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
+    static let importDataImportTypeSubtitleBookmarksAndPasswords = NSLocalizedString("import.browser.data.import-type.subtitle.bookmarks.and.passwords", value: "Bookmarks and passwords", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
+    static let importDataImportTypeSubtitleNone = NSLocalizedString("import.browser.data.import-type.subtitle.none", value: "None", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
 
     static let exportLogins = NSLocalizedString("export.logins.data", value: "Export Passwords…", comment: "Opens Export Logins Data dialog")
     static let exportBookmarks = NSLocalizedString("export.bookmarks.menu.item", value: "Export Bookmarks…", comment: "Export bookmarks menu item")
@@ -885,7 +893,7 @@ struct UserText {
     }
 
     static let importLoginsPasswords = NSLocalizedString("import.logins.passwords", value: "Passwords", comment: "Title text for the Passwords import option")
-    static let importLoginsPasswordsExplainer = NSLocalizedString("import.logins.passwords.explainer", value: "Passwords are encrypted. Viewing them or filling out forms requires Touch ID or a password. Nobody but you can see your passwords, not even us. Find Passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage.")
+    static let importLoginsPasswordsExplainer = NSLocalizedString("import.logins.passwords.explainer2", value: "Passwords are encrypted. Nobody but you can see your passwords, not even us. Find Passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage.")
     static let importLoginsPasswordsExplainerAutolockOff = NSLocalizedString("import.logins.passwords.explainer.autolock.off", value: "Passwords are encrypted. We recommend setting up Auto-lock to keep your passwords even more secure. Set it up in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage when autolock is disabled")
 
     static let importBookmarksButtonTitle = NSLocalizedString("bookmarks.import.button.title", value: "Import", comment: "Button text to open bookmark import dialog")
@@ -1350,7 +1358,7 @@ struct UserText {
     static let warnBeforeQuitDialogHeader = NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
     static let warnBeforeQuitDialogCheckboxMessage = NSLocalizedString("warn.before.quit.dialog.checkbox.message", value: "Warn me every time", comment: "A label after checkbox to configure the warning before clearing data on the application termination.")
     static let disableAutoClearToEnableSessionRestore = NSLocalizedString("disable.auto.clear.to.enable.session.restore",
-                                                                          value: "Disable auto-clear on quit to turn on session restore.",
+                                                                          value: "Your session won't be restored if data is deleted when exiting.",
                                                                           comment: "Information label in Settings. It tells user that to enable session restoration setting they have to disable burn on quit. Auto-Clear should match the string with 'auto.clear' key")
     static let showDataClearingSettings = NSLocalizedString("show.data.clearing.settings",
                                                             value: "Open Data Clearing Settings",
@@ -1522,57 +1530,31 @@ struct UserText {
     static let syncPromoSidePanelTitle = NSLocalizedString("sync.promo.passwords.side.panel.title", value: "Setup", comment: "Title for the Sync Promotion in passwords side panel")
     static let syncPromoSidePanelSubtitle = NSLocalizedString("sync.promo.passwords.side.panel.subtitle", value: "Sync & Backup", comment: "Subtitle for the Sync Promotion in passwords side panel")
 
-    // Key: "freemium.pir.menu.item"
-    // Comment: "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu"
-    static let freemiumDBPOptionsMenuItem = "Free Personal Information Scan"
+    static let freemiumDBPOptionsMenuItem = NSLocalizedString("freemium.dbp.menu.item", value: "Personal Information Scan", comment: "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu")
 
-    // Key: "home.page.promotion.freemium.dbp.title"
-    // Comment: "Title for the Freemium DBP Home Page Promotion"
-    static let homePagePromotionFreemiumDBPTitle = "Personal Information Removal"
+    static let homePagePromotionFreemiumDBPTitle = NSLocalizedString("home.page.promotion.freemium.dbp.title", value: "Personal Information Removal", comment: "Title for the Freemium DBP Home Page Promotion")
 
-    // Key: "home.page.promotion.freemium.dbp.description.markdown"
-    // Comment: "Markdown Description for the Freemium DBP Home Page Promotion"
-    static let homePagePromotionFreemiumDBPDescriptionMarkdown = "Find out which sites are selling **your info.**"
+    static let homePagePromotionFreemiumDBPDescriptionMarkdown = NSLocalizedString("home.page.promotion.freemium.dbp.description.markdown", value: "Find out which sites are selling **your info.**", comment: "Markdown Description for the Freemium DBP Home Page Promotion. Please make sure to keep **STRING** intact.")
 
-    // Key: "home.page.promotion.freemium.dbp.description"
-    // Comment: "Description for the Freemium DBP Home Page Promotion"
-    static let homePagePromotionFreemiumDBPDescription = "Find out which sites are selling your info."
+    static let homePagePromotionFreemiumDBPDescription = NSLocalizedString("home.page.promotion.freemium.dbp.description", value: "Find out which sites are selling your info.", comment: "Description for the Freemium DBP Home Page Promotion")
 
-    // Key: "home.page.promotion.freemium.dbp.button.title"
-    // Comment: "Title for the Freemium DBP Home Page Promotion Button"
-    static let homePagePromotionFreemiumDBPButtonTitle = "Free Scan"
+    static let homePagePromotionFreemiumDBPButtonTitle = NSLocalizedString("home.page.promotion.freemium.dbp.button.title", value: "Free Scan", comment: "Title for the Freemium DBP Home Page Promotion Button")
 
-    // Key: "home.page.promotion.freemium.dbp.post.scan.engagement.result.single.match.description"
-    // Comment: "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When Only One Record is Found"
-    static let homePagePromotionFreemiumDBPPostScanEngagementResultSingleMatchDescription = "Your free personal info scan found 1 record about you on 1 site."
+    static let homePagePromotionFreemiumDBPPostScanEngagementResultSingleMatchDescription = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.result.single.match.description", value: "Your free personal info scan found 1 record about you on 1 site.", comment: "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When Only One Record is Found")
 
-    /// Generates Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on a single broker site.
-    /// Key: "home.page.promotion.freemium.dbp.post.scan.engagement.result.single.broker.description"
-    ///
-    /// - Parameter resultCount: The number of records found.
-    /// - Returns: A formatted string indicating the number of records found on 1 site.
     static func homePagePromotionFreemiumDBPPostScanEngagementResultSingleBrokerDescription(resultCount: Int) -> String {
-        String(format: "Your free personal info scan found %d records about you on 1 site.", resultCount)
+        let localized = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.result.single.broker.description", value: "Your free personal info scan found %d records about you on 1 site.", comment: "Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on a single broker site")
+        return String(format: localized, resultCount)
     }
 
-    /// Generates Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on multiple broker sites.
-    /// Key: "home.page.promotion.freemium.dbp.post.scan.engagement.result.plural.description"
-    ///
-    /// - Parameters:
-    ///   - resultCount: The number of records found.
-    ///   - brokerCount: The number of broker sites where records were found.
-    /// - Returns: A formatted string indicating the number of records found on multiple sites.
     static func homePagePromotionFreemiumDBPPostScanEngagementResultPluralDescription(resultCount: Int, brokerCount: Int) -> String {
-        String(format: "Your free personal info scan found %d records about you on %d different sites.", resultCount, brokerCount)
+        let localized = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.result.plural.description", value: "Your free personal info scan found %d records about you on %d different sites.", comment: "Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on multiple broker sites")
+        return String(format: localized, resultCount, brokerCount)
     }
 
-    // Key: "home.page.promotion.freemium.dbp.post.scan.engagement.no.results.description"
-    // Comment: "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When There Are No Results"
-    static let homePagePromotionFreemiumDBPPostScanEngagementNoResultsDescription = "Good news, your free personal info scan didn't find any records about you. We'll keep checking periodically."
+    static let homePagePromotionFreemiumDBPPostScanEngagementNoResultsDescription = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.no.results.description", value: "Good news, your free personal info scan didn't find any records about you. We'll keep checking periodically.", comment: "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When There Are No Results")
 
-    // Key: "home.page.promotion.freemium.dbp.post.scan.engagement.button.title"
-    // Comment: "Title for the Freemium DBP Home Page Post Scan Engagement Promotion Button"
-    static let homePagePromotionFreemiumDBPPostScanEngagementButtonTitle = "View Results"
+    static let homePagePromotionFreemiumDBPPostScanEngagementButtonTitle = NSLocalizedString("home.page.promotion.freemium.dbp.post.scan.engagement.button.title", value: "View Results", comment: "Title for the Freemium DBP Home Page Post Scan Engagement Promotion Button")
 
     static let removeSuggestionTooltip = NSLocalizedString("remove.suggestion.tooltip", value: "Remove from browsing history", comment: "Tooltip for the button which removes the history entry from the history")
 

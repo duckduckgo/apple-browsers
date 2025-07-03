@@ -340,7 +340,7 @@ public struct UserDefaultsWrapper<T> {
 
     @available(*, unavailable, message: "Cannot use overload with `defaultValue` for an Optional Value")
     public init<Wrapped>(key: DefaultsKey, defaultValue: Wrapped, defaults: UserDefaults? = nil) where T == Wrapped? {
-        fatalError()
+        fatalError("init(key:defaultValue:defaults:) cannot be used with Optional<Wrapped>")
     }
 
     public init<RawValue>(key: DefaultsKey, defaultValue: T, defaults: UserDefaults? = nil) where T: RawRepresentable<RawValue> {

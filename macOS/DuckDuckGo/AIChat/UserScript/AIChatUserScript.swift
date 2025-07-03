@@ -17,15 +17,24 @@
 //
 
 import AIChat
+import Combine
 import Common
 import Foundation
 import UserScript
+import WebKit
 
 final class AIChatUserScript: NSObject, Subfeature {
     public let handler: AIChatUserScriptHandling
     public let featureName: String = "aiChat"
     weak var broker: UserScriptMessageBroker?
+    weak var webView: WKWebView?
     private(set) var messageOriginPolicy: MessageOriginPolicy
+
+    private var cancellables: Set<AnyCancellable> = []
+
+    public func with(broker: UserScriptMessageBroker) {
+        self.broker = broker
+    }
 
     init(handler: AIChatUserScriptHandling, urlSettings: AIChatDebugURLSettingsRepresentable) {
         self.handler = handler
@@ -42,6 +51,21 @@ final class AIChatUserScript: NSObject, Subfeature {
             rules.append(.exact(hostname: customURLHostname))
         }
         self.messageOriginPolicy = .only(rules: rules)
+        super.init()
+
+        handler.aiChatNativePromptPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] prompt in
+                self?.submitAIChatNativePrompt(prompt)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
+        guard let webView else {
+            return
+        }
+        broker?.push(method: AIChatUserScriptMessages.submitAIChatNativePrompt.rawValue, params: prompt, for: self, into: webView)
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -58,6 +82,12 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.openAIChat
         case .getAIChatNativeHandoffData:
             return handler.getAIChatNativeHandoffData
+        case .recordChat:
+            return handler.recordChat
+        case .restoreChat:
+            return handler.restoreChat
+        case .removeChat:
+            return handler.removeChat
         default:
             return nil
         }

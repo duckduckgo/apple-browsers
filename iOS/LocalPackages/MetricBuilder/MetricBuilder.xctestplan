@@ -1,0 +1,33 @@
+{
+  "configurations" : [
+    {
+      "id" : "AA1EF041-B9D4-40BB-B758-64B4E08FBCC4",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : {
+      "targets" : [
+        {
+          "containerPath" : "container:",
+          "identifier" : "MetricBuilder",
+          "name" : "MetricBuilder"
+        }
+      ]
+    },
+    "testRepetitionMode" : "retryOnFailure"
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "MetricBuilderTests",
+        "name" : "MetricBuilderTests"
+      }
+    }
+  ],
+  "version" : 1
+}

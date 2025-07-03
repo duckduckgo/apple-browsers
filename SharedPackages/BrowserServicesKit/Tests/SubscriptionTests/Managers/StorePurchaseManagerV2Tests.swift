@@ -20,6 +20,7 @@ import XCTest
 @testable import Subscription
 import SubscriptionTestingUtilities
 import StoreKit
+import Combine
 
 final class StorePurchaseManagerV2Tests: XCTestCase {
 
@@ -464,6 +465,82 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         XCTAssertFalse(concreteSut.availableProducts[0].isEligibleForFreeTrial)
         XCTAssertFalse(concreteSut.availableProducts[1].isEligibleForFreeTrial)
     }
+
+    // MARK: - Publisher Tests
+
+    func testAreProductsAvailablePublisherEmitsTrueWhenProductsBecomeAvailable() async {
+        // Given
+        let expectation = expectation(description: "Publisher should emit true")
+        var receivedValue: Bool?
+        let cancellable = sut.areProductsAvailablePublisher
+            .dropFirst() // Drop initial `false` value
+            .sink { value in
+                receivedValue = value
+                expectation.fulfill()
+            }
+
+        // When
+        mockProductFetcher.mockProducts = [createMonthlyProduct()]
+        await sut.updateAvailableProducts()
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 1)
+        XCTAssertEqual(receivedValue, true)
+        cancellable.cancel()
+    }
+
+    func testAreProductsAvailablePublisherEmitsFalseWhenProductsBecomeUnavailable() async {
+        // Given
+        // Set initial state to have products
+        mockProductFetcher.mockProducts = [createMonthlyProduct()]
+        await sut.updateAvailableProducts()
+
+        let expectation = expectation(description: "Publisher should emit false")
+        var receivedValue: Bool?
+        let cancellable = sut.areProductsAvailablePublisher
+            .dropFirst() // Drop initial `true` value
+            .sink { value in
+                receivedValue = value
+                expectation.fulfill()
+            }
+
+        // When
+        mockProductFetcher.mockProducts = []
+        await sut.updateAvailableProducts()
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 1)
+        XCTAssertEqual(receivedValue, false)
+        cancellable.cancel()
+    }
+
+    func testAreProductsAvailablePublisherEmitsCorrectSequenceOnChanges() async {
+        // Given
+        var receivedValues: [Bool] = []
+        let expectation = expectation(description: "Publisher should emit two values")
+        expectation.expectedFulfillmentCount = 2
+
+        let cancellable = sut.areProductsAvailablePublisher
+            .dropFirst() // Drop initial `false` value
+            .sink { value in
+                receivedValues.append(value)
+                expectation.fulfill()
+            }
+
+        // When
+        // 1. Products become available
+        mockProductFetcher.mockProducts = [createMonthlyProduct()]
+        await sut.updateAvailableProducts()
+
+        // 2. Products become unavailable
+        mockProductFetcher.mockProducts = []
+        await sut.updateAvailableProducts()
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 1)
+        XCTAssertEqual(receivedValues, [true, false])
+        cancellable.cancel()
+    }
 }
 
 private final class MockProductFetcher: ProductFetching {
@@ -582,7 +659,7 @@ private class MockFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags
 
     init(enabledFeatures: Set<SubscriptionFeatureFlags> = []) {
         self.enabledFeatures = enabledFeatures
-        super.init(mapping: {_ in true})
+        super.init(mapping: { _ in true })
     }
 
     override func isFeatureOn(_ feature: SubscriptionFeatureFlags) -> Bool {

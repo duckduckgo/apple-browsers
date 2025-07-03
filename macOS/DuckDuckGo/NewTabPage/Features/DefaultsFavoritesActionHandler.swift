@@ -37,7 +37,7 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
 
     @MainActor
     func open(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, setBurner: Bool?, in window: NSWindow?) {
-        NewTabPageLinkOpener.open(url, source: .bookmark, setBurner: setBurner, sender: sender, target: target, sourceWindow: window)
+        NewTabPageLinkOpener.open(url, source: .bookmark(isFavorite: true), setBurner: setBurner, sender: sender, target: target, sourceWindow: window)
     }
 
     func copyLink(_ favorite: Bookmark) {

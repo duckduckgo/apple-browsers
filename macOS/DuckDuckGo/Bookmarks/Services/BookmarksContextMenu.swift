@@ -295,7 +295,7 @@ extension BookmarksContextMenu: BookmarkMenuItemSelectors {
             return
         }
 
-        windowControllersManager.show(url: bookmark.urlObject, source: .bookmark, newTab: true, selected: nil /* depending on the setting */)
+        windowControllersManager.show(url: bookmark.urlObject, source: .bookmark(isFavorite: bookmark.isFavorite), newTab: true, selected: nil /* depending on the setting */)
     }
 
     @MainActor
@@ -318,7 +318,7 @@ extension BookmarksContextMenu: BookmarkMenuItemSelectors {
             return
         }
         let burnerMode: BurnerMode = BurnerMode(isBurner: burningWindow)
-        let tabCollection = TabCollection(tabs: [Tab(content: .contentFromURL(urlObject, source: .bookmark), burnerMode: burnerMode)])
+        let tabCollection = TabCollection(tabs: [Tab(content: .contentFromURL(urlObject, source: .bookmark(isFavorite: bookmark.isFavorite)), burnerMode: burnerMode)])
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, burnerMode: burnerMode)
         windowControllersManager.openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode)
     }

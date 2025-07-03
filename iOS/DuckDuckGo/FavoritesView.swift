@@ -75,7 +75,7 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
             }
         }
         // Prevent the content to leak out of bounds while collapsing
-        .clipped()
+        .clipShape(Rectangle())
         .padding(0)
     }
 

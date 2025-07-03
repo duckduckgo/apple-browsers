@@ -87,10 +87,12 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
 
     init(pinnedTabsManagerProvider: PinnedTabsManagerProviding,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-         internalUserDecider: InternalUserDecider) {
+         internalUserDecider: InternalUserDecider,
+         featureFlagger: FeatureFlagger) {
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.internalUserDecider = internalUserDecider
+        self.featureFlagger = featureFlagger
     }
 
     /**
@@ -101,6 +103,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     private(set) var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let internalUserDecider: InternalUserDecider
+    private let featureFlagger: FeatureFlagger
 
     weak var lastKeyMainWindowController: MainWindowController? {
         didSet {
@@ -231,7 +234,7 @@ extension WindowControllersManager {
         guard let url = bookmark.urlObject else { return }
 
         // Call updated openBookmark
-        open(url, source: .bookmark, target: nil, event: event)
+        open(url, source: .bookmark(isFavorite: bookmark.isFavorite), target: nil, event: event)
     }
 
     /// Opens a history entry in a tab, respecting the current modifier keys when deciding where to open the URL.
@@ -434,7 +437,7 @@ extension WindowControllersManager {
 
     /// Shows the Privacy Pro feedback modal
     func showShareFeedbackModal(source: UnifiedFeedbackSource = .default) {
-        let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source)
+        let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source, featureFlagger: featureFlagger)
         let feedbackFormWindowController = feedbackFormViewController.wrappedInWindowController()
 
         guard let feedbackFormWindow = feedbackFormWindowController.window else {
@@ -563,7 +566,7 @@ extension WindowControllersManager: OnboardingNavigating {
 
     @MainActor
     func showImportDataView() {
-        DataImportView(title: UserText.importDataTitleOnboarding).show()
+        DataImportView(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false).show()
     }
 
     @MainActor

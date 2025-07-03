@@ -22,6 +22,7 @@ import SwiftUI
 import PixelKit
 import Networking
 import Subscription
+import BrowserServicesKit
 
 protocol UnifiedFeedbackFormViewModelDelegate: AnyObject {
     func feedbackViewModelDismissedView(_ viewModel: UnifiedFeedbackFormViewModel)
@@ -102,6 +103,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             case .vpn: defaultCategory = .vpn
             case .pir: defaultCategory = .pir
             case .itr: defaultCategory = .itr
+            case .duckAi: defaultCategory = .duckAi
             default: defaultCategory = .prompt
             }
             selectedCategory = defaultCategory.rawValue
@@ -133,6 +135,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         case .vpn: return VPNFeedbackSubcategory.prompt.rawValue
         case .pir: return PIRFeedbackSubcategory.prompt.rawValue
         case .itr: return ITRFeedbackSubcategory.prompt.rawValue
+        case .duckAi: return PaidAIChatFeedbackSubcategory.prompt.rawValue
         }
     }
 
@@ -155,6 +158,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private let dbpMetadataCollector: any UnifiedMetadataCollector
     private let defaultMetadataCollector: any UnifiedMetadataCollector
     private let feedbackSender: any UnifiedFeedbackSender
+    private let featureFlagger: FeatureFlagger
 
     let source: UnifiedFeedbackSource
     private(set) var availableCategories: [UnifiedFeedbackCategory] = [.selectFeature, .subscription]
@@ -165,6 +169,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
          dbpMetadataCollector: any UnifiedMetadataCollector,
          defaultMetadataCollector: any UnifiedMetadataCollector = EmptyMetadataCollector(),
          feedbackSender: any UnifiedFeedbackSender = DefaultFeedbackSender(),
+         featureFlagger: FeatureFlagger,
          source: UnifiedFeedbackSource = .default) {
         self.viewState = .feedbackPending
 
@@ -174,6 +179,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         self.dbpMetadataCollector = dbpMetadataCollector
         self.defaultMetadataCollector = defaultMetadataCollector
         self.feedbackSender = feedbackSender
+        self.featureFlagger = featureFlagger
         self.source = source
 
         Task {
@@ -184,6 +190,9 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             }
             if features.contains(.dataBrokerProtection) {
                 availableCategories.append(.pir)
+            }
+            if features.contains(.paidAIChat) && featureFlagger.isFeatureOn(.paidAIChat) {
+                availableCategories.append(.duckAi)
             }
             if features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal) {
                 availableCategories.append(.itr)
@@ -237,6 +246,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
             case .vpn: return VPNFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .pir: return PIRFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             case .itr: return ITRFeedbackSubcategory(rawValue: selectedSubcategory)?.url
+            case .duckAi: return PaidAIChatFeedbackSubcategory(rawValue: selectedSubcategory)?.url
             }
         }()
 

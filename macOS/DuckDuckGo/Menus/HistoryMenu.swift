@@ -45,7 +45,7 @@ final class HistoryMenu: NSMenu {
     )
     private let showHistorySeparator = NSMenuItem.separator()
     private let clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryClearAllHistory,
-                                                     action: #selector(MainViewController.clearAllHistory),
+                                                     action: #selector(AppDelegate.clearAllHistory),
                                                      keyEquivalent: [.command, .shift, .backspace])
         .withAccessibilityIdentifier("HistoryMenu.clearAllHistory")
     private let clearAllHistorySeparator = NSMenuItem.separator()

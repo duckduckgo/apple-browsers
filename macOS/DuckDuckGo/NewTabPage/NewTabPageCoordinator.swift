@@ -33,6 +33,7 @@ final class NewTabPageCoordinator {
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
+        faviconManager: FaviconManagement,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryCoordinating,
         contentBlocking: ContentBlockingProtocol,
@@ -44,7 +45,8 @@ final class NewTabPageCoordinator {
         keyValueStore: ThrowingKeyValueStoring,
         legacyKeyValueStore: KeyValueStoring = UserDefaultsWrapper<Any>.sharedDefaults,
         notificationCenter: NotificationCenter = .default,
-        fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
+        fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) },
+        featureFlagger: FeatureFlagger
     ) {
 
         let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: legacyKeyValueStore)
@@ -59,6 +61,7 @@ final class NewTabPageCoordinator {
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
             bookmarkManager: bookmarkManager,
+            faviconManager: faviconManager,
             contentBlocking: contentBlocking,
             activeRemoteMessageModel: activeRemoteMessageModel,
             historyCoordinator: historyCoordinator,
@@ -67,7 +70,8 @@ final class NewTabPageCoordinator {
             protectionsReportModel: protectionsReportModel,
             freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
             tld: tld,
-            fire: { @MainActor in fireCoordinator.fireViewModel.fire }
+            fire: { @MainActor in fireCoordinator.fireViewModel.fire },
+            featureFlagger: featureFlagger
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

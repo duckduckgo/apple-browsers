@@ -31,6 +31,9 @@ protocol AIChatTabOpening {
 
     @MainActor
     func openNewAIChatTab(withPayload payload: AIChatPayload)
+
+    @MainActor
+    func openNewAIChatTab(withChatRestorationData data: AIChatRestorationData)
 }
 
 extension AIChatTabOpening {
@@ -96,6 +99,16 @@ struct AIChatTabOpener: AIChatTabOpening {
 
         let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
         newAIChatTab.aiChat?.setAIChatNativeHandoffData(payload: payload)
+
+        tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
+    }
+
+    @MainActor
+    func openNewAIChatTab(withChatRestorationData data: AIChatRestorationData) {
+        guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+
+        let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
+        newAIChatTab.aiChat?.setAIChatRestorationData(data: data)
 
         tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
     }

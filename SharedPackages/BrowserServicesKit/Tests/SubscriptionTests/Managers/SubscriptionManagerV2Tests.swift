@@ -40,6 +40,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         super.setUp()
 
         mockOAuthClient = MockOAuthClient()
+        mockOAuthClient.migrateV1TokenResponseError = OAuthClientError.authMigrationNotPerformed
         mockSubscriptionEndpointService = SubscriptionEndpointServiceMockV2()
         mockStorePurchaseManager = StorePurchaseManagerMockV2()
         mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMockV2()
@@ -106,8 +107,8 @@ class SubscriptionManagerV2Tests: XCTestCase {
             productId: "testProduct",
             name: "Test Subscription",
             billingPeriod: .monthly,
-            startedAt: Date().addingTimeInterval(-30 * 24 * 60 * 60), // 30 days ago
-            expiresOrRenewsAt: Date().addingTimeInterval(-1), // expired
+            startedAt: Date().addingTimeInterval(.days(-30)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(-1)), // expired
             platform: .apple,
             status: .expired,
             activeOffers: []
@@ -344,5 +345,59 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
         // Then
         XCTAssertFalse(result)
+    }
+
+    // MARK: - Tests for canPurchasePublisher
+
+    func testCanPurchasePublisherEmitsValuesFromStorePurchaseManager() async throws {
+        // Given
+        let expectation = expectation(description: "Publisher should emit value")
+        var receivedValue: Bool?
+
+        // When
+        let cancellable = subscriptionManager.canPurchasePublisher
+            .sink { value in
+                receivedValue = value
+                expectation.fulfill()
+            }
+
+        // Simulate store purchase manager emitting a value
+        mockStorePurchaseManager.areProductsAvailableSubject.send(true)
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 0.5)
+        XCTAssertTrue(receivedValue ?? false)
+
+        // Clean up
+        cancellable.cancel()
+    }
+
+    func testCanPurchasePublisherEmitsMultipleValues() async throws {
+        // Given
+        let expectation1 = expectation(description: "Publisher should emit first value")
+        let expectation2 = expectation(description: "Publisher should emit second value")
+        var receivedValues: [Bool] = []
+
+        // When
+        let cancellable = subscriptionManager.canPurchasePublisher
+            .sink { value in
+                receivedValues.append(value)
+                if receivedValues.count == 1 {
+                    expectation1.fulfill()
+                } else if receivedValues.count == 2 {
+                    expectation2.fulfill()
+                }
+            }
+
+        // Simulate store purchase manager emitting multiple values
+        mockStorePurchaseManager.areProductsAvailableSubject.send(true)
+        mockStorePurchaseManager.areProductsAvailableSubject.send(false)
+
+        // Then
+        await fulfillment(of: [expectation1, expectation2], timeout: 0.5)
+        XCTAssertEqual(receivedValues, [true, false])
+
+        // Clean up
+        cancellable.cancel()
     }
 }

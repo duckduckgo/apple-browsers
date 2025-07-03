@@ -46,8 +46,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
         )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
-            appearancePreferences: appearancePreferences,
-            dataClearingPreferences: dataClearingPreferences
+            appearancePreferences: appearancePreferences
         )
 
         updating = UserContentUpdating(contentBlockerRulesManager: rulesManager,
@@ -208,7 +207,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 extension UserContentControllerNewContent {
 
     func rules(withName name: String) -> WKContentRuleList? {
-        rulesUpdate.rules.first(where: { $0.name == name})?.rulesList
+        rulesUpdate.rules.first(where: { $0.name == name })?.rulesList
     }
 
     var isValid: Bool {

@@ -39,7 +39,7 @@ public struct OnboardingBorderedButton<Content: View>: View {
         }
         .buttonStyle(OnboardingStyles.ListButtonStyle(maxHeight: maxHeight))
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: 12)
                 .inset(by: 0.5)
                 .stroke(.blue, lineWidth: 1)
         )

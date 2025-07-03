@@ -41,6 +41,8 @@ extension ContentScopeFeatureToggles {
             unknownUsernameCategorization: featureFlagger.isFeatureOn(.autofillUnknownUsernameCategorization) && isAutofillEnabledInSettings,
             partialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves) && isAutofillEnabledInSettings,
             passwordVariantCategorization: featureFlagger.isFeatureOn(.autofillPasswordVariantCategorization) && isAutofillEnabledInSettings,
-            inputFocusApi: featureFlagger.isFeatureOn(.autofillCreditCards) && isCreditCardAutofillEnabledInSettings)
+            inputFocusApi: featureFlagger.isFeatureOn(.autofillCreditCards) && isCreditCardAutofillEnabledInSettings,
+            autocompleteAttributeSupport: featureFlagger.isFeatureOn(.autocompleteAttributeSupport)
+        )
     }
 }

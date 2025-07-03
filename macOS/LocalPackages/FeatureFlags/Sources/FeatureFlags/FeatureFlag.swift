@@ -123,6 +123,8 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1210625630564796?focus=true
     case newTabPageOmnibar
+
+    case subscriptionRebranding
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -176,7 +178,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 				.aiChatSidebar,
                 .aiChatTextSummarization,
                 .shortHistoryMenu,
-                .newTabPageOmnibar:
+                .newTabPageOmnibar,
+                .subscriptionRebranding:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -276,6 +279,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
         case .newTabPageOmnibar:
+            return .disabled
+        case .subscriptionRebranding:
             return .disabled
         }
     }

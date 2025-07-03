@@ -1511,6 +1511,12 @@ struct UserText {
     // Key: "preferences.subscription"
     // Comment: "Show subscription preferences"
     static let subscription = "Privacy Pro"
+    static func purchaseSubscriptionPaneTitle(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("subscription.side.pane.subscription.inactive", value: "Subscribe to DuckDuckGo", comment: "Settings Side Pane item for the DuckDuckGo Subscription")
+        }
+        return "Privacy Pro"
+    }
 
     static let purchasingSubscriptionTitle = NSLocalizedString("subscription.progress.view.purchasing.subscription", value: "Purchase in progress...", comment: "Progress view title when starting the purchase")
     static let restoringSubscriptionTitle = NSLocalizedString("subscription.progress.view.restoring.subscription", value: "Restoring subscription...", comment: "Progress view title when restoring past subscription purchase")

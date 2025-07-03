@@ -2845,55 +2845,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Hilfe bei der Wiederherstellung gestohlener Konten und finanzieller Verluste im Falle eines Identitätsdiebstahls."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Get help restoring stolen accounts and financial losses in the event of identity theft."
+            "value" : "Restore stolen accounts and financial losses in the event of identity theft."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Obtén ayuda para restaurar cuentas robadas y pérdidas económicas en caso de robo de identidad."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Obtenez de l'aide pour restituer les comptes volés et les pertes financières en cas d'usurpation d'identité."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ottieni aiuto per ripristinare gli account rubati e le perdite finanziarie in caso di furto di identità."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Krijg hulp bij het herstellen van gestolen accounts en financiële verliezen in geval van identiteitsdiefstal."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Otrzymaj pomoc dotyczącą przywracania skradzionych kont i rekompensaty strat finansowych w przypadku kradzieży tożsamości."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Obtém ajuda para restaurar contas roubadas e perdas financeiras em caso de roubo de identidade."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Помощь по возврату учетных записей и денежных средств в случае «кражи личности»."
           }
         }
@@ -4437,55 +4437,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Brauchst du Hilfe mit Privacy Pro?"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Need help with Privacy Pro?"
+            "value" : "Need help with your DuckDuckGo subscription?"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "¿Necesitas ayuda con Privacy Pro?"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Besoin d'aide pour l'utilisation de Privacy Pro ?"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Hai bisogno di aiuto con Privacy Pro?"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Hulp nodig met Privacy Pro?"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Potrzebujesz pomocy z Privacy Pro?"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Precisas de ajuda com o Privacy Pro?"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Нужна помощь с Privacy Pro?"
           }
         }
@@ -4497,55 +4497,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Erhalte Antworten auf häufig gestellte Fragen oder kontaktiere den Privacy-Pro-Support über unsere Hilfeseiten. Die Verfügbarkeit von Funktionen variiert je nach Land."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Get answers to frequently asked questions or contact Privacy Pro support from our help pages. Feature availability varies by country."
+            "value" : "Get answers to frequently asked questions or contact subscription support from our help pages. Feature availability varies by country."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Obtén respuestas a las preguntas más frecuentes o ponte en contacto con el servicio de asistencia de Privacy Pro en nuestras páginas de ayuda. La disponibilidad de las funciones varía según el país."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Trouvez les réponses aux questions fréquemment posées ou contactez l'assistance de Privacy Pro sur nos pages d'aide. La disponibilité des fonctionnalités varie selon les pays."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ottieni risposte alle domande frequenti o contatta l'assistenza di Privacy Pro dalle nostre pagine di assistenza. La disponibilità delle funzioni varia in base al paese."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Krijg antwoorden op veelgestelde vragen of neem contact op met de klantenservice van Privacy Pro via onze hulppagina's. De beschikbaarheid van functies verschilt per land."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Uzyskaj odpowiedzi na często zadawane pytania lub skontaktuj się z pomocą techniczną Privacy Pro na naszych stronach pomocy. Dostępność funkcji różni się w zależności od kraju."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Obtém respostas a perguntas frequentes ou contacta o apoio técnico do Privacy Pro a partir das nossas páginas de ajuda. A disponibilidade das funcionalidades varia consoante o país."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "На страницах справки вы найдете ответы на распространенные вопросы, а также контакты поддержки Privacy Pro. Доступность функций зависит от страны."
           }
         }

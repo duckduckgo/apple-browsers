@@ -129,6 +129,12 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
         for menuItem in params.visibilityMenuItems {
             switch menuItem.id {
+            case .omnibar:
+                let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = menuItem.id
+                item.state = sectionsVisibilityProvider.isOmnibarVisible ? .on : .off
+                menu.addItem(item)
             case .favorites:
                 let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
                 item.target = self

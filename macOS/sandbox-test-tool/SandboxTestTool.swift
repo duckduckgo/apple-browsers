@@ -32,7 +32,7 @@ struct SandboxTestTool {
 @objc(SandboxTestToolApp)
 final class SandboxTestToolApp: NSApplication {
 
-    private var _delegate: SandboxTestToolAppDelegate!
+    private var _delegate: SandboxTestToolAppDelegate! // swiftlint:disable:this weak_delegate
 
     override init() {
         // swizzle `startAccessingSecurityScopedResource` and `stopAccessingSecurityScopedResource`

@@ -120,6 +120,8 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 ///
 public final class SubscriptionUserScript: NSObject, Subfeature {
 
+    private let defaultOriginDomain = "duckduckgo.com"
+
     public enum MessageName: String, CaseIterable, Codable {
         case handshake
         case subscriptionDetails
@@ -131,7 +133,13 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
     }
 
     public let featureName: String = "subscriptions"
-    public let messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: "duckduckgo.com")])
+    public var messageOriginPolicy: MessageOriginPolicy {
+        var rules: [HostnameMatchingRule] = [.exact(hostname: defaultOriginDomain)]
+        if let debugHost {
+            rules.append(.exact(hostname: debugHost))
+        }
+        return .only(rules: rules)
+    }
     public weak var broker: UserScriptMessageBroker?
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -155,18 +163,24 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
         }
     }
 
+    private let debugHost: String?
+
     public convenience init(platform: DataModel.Platform,
                             subscriptionManager: any SubscriptionAuthV1toV2Bridge,
                             paidAIChatFlagStatusProvider: @escaping () -> Bool,
-                            navigationDelegate: SubscriptionUserScriptNavigationDelegate?) {
+                            navigationDelegate: SubscriptionUserScriptNavigationDelegate?,
+                            debugHost: String?) {
         self.init(handler: SubscriptionUserScriptHandler(platform: platform,
                                                          subscriptionManager: subscriptionManager,
                                                          paidAIChatFlagStatusProvider: paidAIChatFlagStatusProvider,
-                                                         navigationDelegate: navigationDelegate))
+                                                         navigationDelegate: navigationDelegate),
+                  debugHost: debugHost)
     }
 
-    init(handler: SubscriptionUserScriptHandling) {
+    init(handler: SubscriptionUserScriptHandling, debugHost: String?) {
         self.handler = handler
+        self.debugHost = debugHost
+        super.init()
     }
 
     let handler: SubscriptionUserScriptHandling

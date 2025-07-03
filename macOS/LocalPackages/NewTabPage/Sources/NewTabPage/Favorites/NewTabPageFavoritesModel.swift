@@ -140,7 +140,7 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
          * optimizing it because it's fast enough and we shouldn't have too big arrays
          * of favorites, and indexing favorites by UUID on each refresh could be too much.
          */
-        guard let favorite = favorites.first(where: { $0.id == bookmarkID}) else { return }
+        guard let favorite = favorites.first(where: { $0.id == bookmarkID }) else { return }
 
         let menu = NSMenu {
             if let url = favorite.urlObject {

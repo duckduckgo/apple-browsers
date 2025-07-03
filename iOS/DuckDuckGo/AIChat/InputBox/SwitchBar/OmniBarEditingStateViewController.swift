@@ -107,6 +107,7 @@ final class OmniBarEditingStateViewController: UIViewController {
         super.viewDidAppear(animated)
 
         animateAppearance()
+        DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
     }
 
     private func animateAppearance() {

@@ -771,6 +771,7 @@
 		85F21DC621145DD5002631A6 /* global.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8512BCBF2061B6110085E862 /* global.swift */; };
 		85F2FFCD2211F615006BB258 /* MainViewController+KeyCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F2FFCC2211F615006BB258 /* MainViewController+KeyCommands.swift */; };
 		85F2FFCF2211F8E5006BB258 /* TabSwitcherViewController+KeyCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F2FFCE2211F8E5006BB258 /* TabSwitcherViewController+KeyCommands.swift */; };
+		85F90B832E141FF200B50CB9 /* SettingsCellDemoDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F90B822E141FE500B50CB9 /* SettingsCellDemoDebugView.swift */; };
 		85F98F92296F32BD00742F4A /* SyncSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F98F91296F32BD00742F4A /* SyncSettingsViewController.swift */; };
 		85F98F98296F4CB100742F4A /* SyncAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85F98F97296F4CB100742F4A /* SyncAssets.xcassets */; };
 		8C4724502217A14B004C9B2D /* TabViewControllerLongPressBookmarkExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C47244F2217A14B004C9B2D /* TabViewControllerLongPressBookmarkExtension.swift */; };
@@ -800,6 +801,7 @@
 		9830A06325ED0DB900DB64DE /* BrowsingMenu.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9830A06225ED0DB900DB64DE /* BrowsingMenu.xcassets */; };
 		9833913727AC400800DAF119 /* AppTrackerDataSetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9833913627AC400800DAF119 /* AppTrackerDataSetProvider.swift */; };
 		9838059F2228208E00385F1A /* PositiveFeedbackViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9838059E2228208E00385F1A /* PositiveFeedbackViewController.swift */; };
+		983AB2312E12CFBF00F0223F /* QRunInBackgroundAssertion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 983AB2302E12CFBE00F0223F /* QRunInBackgroundAssertion.swift */; };
 		983C52E42C2C050B007B5747 /* BookmarksStateRepair.swift in Sources */ = {isa = PBXBuildFile; fileRef = 983C52E32C2C050B007B5747 /* BookmarksStateRepair.swift */; };
 		983C52E72C2C0ACB007B5747 /* BookmarkStateRepairTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 983C52E52C2C0ABA007B5747 /* BookmarkStateRepairTests.swift */; };
 		983D71B12A286E810072E26D /* SyncDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 983D71B02A286E810072E26D /* SyncDebugViewController.swift */; };
@@ -2639,6 +2641,7 @@
 		85F2FFCC2211F615006BB258 /* MainViewController+KeyCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+KeyCommands.swift"; sourceTree = "<group>"; };
 		85F2FFCE2211F8E5006BB258 /* TabSwitcherViewController+KeyCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabSwitcherViewController+KeyCommands.swift"; sourceTree = "<group>"; };
 		85F2FFFF2215C17B006BB258 /* FindInPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindInPage.swift; sourceTree = "<group>"; };
+		85F90B822E141FE500B50CB9 /* SettingsCellDemoDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCellDemoDebugView.swift; sourceTree = "<group>"; };
 		85F98F91296F32BD00742F4A /* SyncSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsViewController.swift; sourceTree = "<group>"; };
 		85F98F97296F4CB100742F4A /* SyncAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SyncAssets.xcassets; sourceTree = "<group>"; };
 		8C47244F2217A14B004C9B2D /* TabViewControllerLongPressBookmarkExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerLongPressBookmarkExtension.swift; sourceTree = "<group>"; };
@@ -2722,6 +2725,7 @@
 		983A4B8F251EABEA00F3EDF1 /* et */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = et; path = et.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		983A4B90251EABEA00F3EDF1 /* et */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = et; path = et.lproj/Localizable.strings; sourceTree = "<group>"; };
 		983A4B91251EABEA00F3EDF1 /* et */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = et; path = et.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		983AB2302E12CFBE00F0223F /* QRunInBackgroundAssertion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRunInBackgroundAssertion.swift; sourceTree = "<group>"; };
 		983C52E32C2C050B007B5747 /* BookmarksStateRepair.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksStateRepair.swift; sourceTree = "<group>"; };
 		983C52E52C2C0ABA007B5747 /* BookmarkStateRepairTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStateRepairTests.swift; sourceTree = "<group>"; };
 		983D71B02A286E810072E26D /* SyncDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDebugViewController.swift; sourceTree = "<group>"; };
@@ -3980,10 +3984,6 @@
 		F4F7F10825813FE200045D62 /* 02_Water_swirl_really_small.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = 02_Water_swirl_really_small.json; sourceTree = "<group>"; };
 		F4F7F10925813FE200045D62 /* 03_Airstream_divided_by_four.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = 03_Airstream_divided_by_four.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		9D5776E02DE8EDE4009AB536 /* DataBrokerProtection */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DataBrokerProtection; sourceTree = "<group>"; };
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		0202565F298818B100E694E7 /* Frameworks */ = {
@@ -5644,7 +5644,6 @@
 				CB258D1129A4F1BB00DEBA24 /* Configuration */,
 				B652DF02287C01EE00C12A9C /* ContentBlocking */,
 				37CF915E2BB4735F00BADCAE /* Crashes */,
-				9D5776E02DE8EDE4009AB536 /* DataBrokerProtection */,
 				C1C23C242D4C0C4F00B6BDF6 /* DataImport */,
 				9FF967AD2E0E241E00E45B54 /* DefaultBrowserPrompt */,
 				D6E0C1812B7A2B0700D5E1E9 /* DesktopDownloads */,
@@ -5859,38 +5858,39 @@
 		858566F1252E55AE007501B8 /* Debug */ = {
 			isa = PBXGroup;
 			children = (
-				564441A02D4D2089003C53B8 /* FeatureFlagsDebugSettings */,
-				C1047CA32CA59BDC00B916FD /* Autofill */,
-				6FB1FE9C2C24D4060075B68B /* NewTabPageSectionsDebugView */,
-				9F9A922F2C86AACB001D036D /* OnboardingDebugView */,
-				853807912D6E638000CE1455 /* AlertPlaygroundView.swift */,
-				857917E12D806C1900E23CDC /* BulkGeneratorView.swift */,
-				858566E7252E4F56007501B8 /* Debug.storyboard */,
-				D6F93E3B2B4FFA97004C268D /* SubscriptionDebugViewController.swift */,
-				8590CB602684D0600089F6BF /* CookieDebugViewController.swift */,
 				31206F6F2D3804E800A95D76 /* AIChatDebugView.swift */,
-				F1849C6F2D6E3D17000589A4 /* DiagnosticReport.swift */,
+				853807912D6E638000CE1455 /* AlertPlaygroundView.swift */,
+				C1047CA32CA59BDC00B916FD /* Autofill */,
+				98A860EE2C4682E00077FE4D /* BookmarksDebugViewController.swift */,
+				857917E12D806C1900E23CDC /* BulkGeneratorView.swift */,
+				4B0295182537BC6700E00CEF /* ConfigurationDebugViewController.swift */,
+				CBFCB30D2B2CD47800253E9E /* ConfigurationURLDebugViewController.swift */,
+				56BE17D42DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift */,
+				8590CB602684D0600089F6BF /* CookieDebugViewController.swift */,
+				F1849C712D6E3D4C000589A4 /* CrashDebugScreen.swift */,
+				9DB4A2C62DCA609400DBE00C /* DataBrokerProtectionDebugViewController.swift */,
+				858566E7252E4F56007501B8 /* Debug.storyboard */,
+				8590CB68268A4E190089F6BF /* DebugEtagStorage.swift */,
 				F1849C672D6E3C98000589A4 /* DebugScreen.swift */,
 				F1849C682D6E3C98000589A4 /* DebugScreensViewController.swift */,
 				F1849C692D6E3C98000589A4 /* DebugScreensViewModel.swift */,
-				65BD16382D8DA439000795DE /* DuckPlayerDebugSettingsView.swift */,
-				F1849C712D6E3D4C000589A4 /* CrashDebugScreen.swift */,
 				F1849C6A2D6E3C98000589A4 /* DebugScreensViewModel+Screens.swift */,
-				56BE17D42DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift */,
-				6F72353C2D3EBCB000710C07 /* WebViewStateRestorationDebugView.swift */,
-				4B0295182537BC6700E00CEF /* ConfigurationDebugViewController.swift */,
-				858566FA252E55D6007501B8 /* ImageCacheDebugViewController.swift */,
-				8590CB68268A4E190089F6BF /* DebugEtagStorage.swift */,
+				F1849C6F2D6E3D17000589A4 /* DiagnosticReport.swift */,
+				65BD16382D8DA439000795DE /* DuckPlayerDebugSettingsView.swift */,
+				564441A02D4D2089003C53B8 /* FeatureFlagsDebugSettings */,
 				1EDE39D12705D4A100C99C72 /* FileSizeDebugViewController.swift */,
-				983D71B02A286E810072E26D /* SyncDebugViewController.swift */,
 				C18ED43B2AB8364400BF3805 /* FileTextPreviewDebugViewController.swift */,
+				851624C62B96389D002D5CD7 /* HistoryDebugViewController.swift */,
+				858566FA252E55D6007501B8 /* ImageCacheDebugViewController.swift */,
 				F46FEC5627987A5F0061D9DF /* KeychainItemsDebugViewController.swift */,
 				EE72CA842A862D000043B5B3 /* NetworkProtectionDebugViewController.swift */,
-				9DB4A2C62DCA609400DBE00C /* DataBrokerProtectionDebugViewController.swift */,
-				CBFCB30D2B2CD47800253E9E /* ConfigurationURLDebugViewController.swift */,
-				851624C62B96389D002D5CD7 /* HistoryDebugViewController.swift */,
-				98A860EE2C4682E00077FE4D /* BookmarksDebugViewController.swift */,
+				6FB1FE9C2C24D4060075B68B /* NewTabPageSectionsDebugView */,
+				9F9A922F2C86AACB001D036D /* OnboardingDebugView */,
 				37C696762C4957940073E131 /* RemoteMessagingDebugViewController.swift */,
+				85F90B822E141FE500B50CB9 /* SettingsCellDemoDebugView.swift */,
+				D6F93E3B2B4FFA97004C268D /* SubscriptionDebugViewController.swift */,
+				983D71B02A286E810072E26D /* SyncDebugViewController.swift */,
+				6F72353C2D3EBCB000710C07 /* WebViewStateRestorationDebugView.swift */,
 			);
 			name = Debug;
 			sourceTree = "<group>";
@@ -8051,6 +8051,7 @@
 		F143C3191E4A99DD00CFDE3A /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				983AB2302E12CFBE00F0223F /* QRunInBackgroundAssertion.swift */,
 				6F9857332CD27F98001BE9A0 /* BoolFileMarker.swift */,
 				9FCFCD7D2C6AF52A006EB7A0 /* LaunchOptionsHandler.swift */,
 				B603974829C19F6F00902A34 /* Assertions.swift */,
@@ -8689,9 +8690,6 @@
 				8512EA5C24ED30D30073EE19 /* PBXTargetDependency */,
 				02FFD7BC2A1FC8BE007BD7D1 /* PBXTargetDependency */,
 				C1EF5B2D2CC0457B002980E6 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				9D5776E02DE8EDE4009AB536 /* DataBrokerProtection */,
 			);
 			name = DuckDuckGo;
 			packageProductDependencies = (
@@ -10349,6 +10347,7 @@
 				7B16810C2D10CF44005EAE24 /* WidgetVPNIntents.swift in Sources */,
 				317CA3432CFF82E100F88848 /* SettingsAIFeaturesView.swift in Sources */,
 				9F7CFF7F2C8A94F70012833E /* OnboardingView+AddressBarPositionContent.swift in Sources */,
+				85F90B832E141FF200B50CB9 /* SettingsCellDemoDebugView.swift in Sources */,
 				985892522260B1B200EEB31B /* ProgressView.swift in Sources */,
 				85BA585A1F3506AE00C6E8CA /* AppSettings.swift in Sources */,
 				65BA72D12D79F2E600E442E0 /* DuckPlayerEntryPillView.swift in Sources */,
@@ -11138,6 +11137,7 @@
 				31B2F1132C92FEF500CD30E3 /* MarketplaceAdPostbackUpdater.swift in Sources */,
 				4BE2756827304F57006B20B0 /* URLRequestExtension.swift in Sources */,
 				85BA79911F6FF75000F59015 /* ContentBlockerStoreConstants.swift in Sources */,
+				983AB2312E12CFBF00F0223F /* QRunInBackgroundAssertion.swift in Sources */,
 				85E242172AB1B54D000F3E28 /* ReturnUserMeasurement.swift in Sources */,
 				85BDC3142434D8F80053DB07 /* DebugUserScript.swift in Sources */,
 				85011867290028C400BDEE27 /* BookmarksDatabase.swift in Sources */,
@@ -14265,7 +14265,7 @@
 			repositoryURL = "https://github.com/duckduckgo/apple-toolbox.git";
 			requirement = {
 				kind = exactVersion;
-				version = 3.1.4;
+				version = 3.2.1;
 			};
 		};
 		C14882EB27F211A000D59F0C /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
@@ -14289,7 +14289,7 @@
 			repositoryURL = "https://github.com/duckduckgo/DesignResourcesKit";
 			requirement = {
 				kind = exactVersion;
-				version = 5.0.0;
+				version = 5.1.0;
 			};
 		};
 		F486D2EF25069482002D07D7 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {

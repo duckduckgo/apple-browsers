@@ -93,6 +93,9 @@ extension DebugScreensViewModel {
             .view(title: "Remote Messaging", { _ in
                 RemoteMessagingDebugRootView()
             }),
+            .view(title: "Settings Cells Demo", { _ in
+                SettingsCellDemoDebugView()
+            }),
             .view(title: "Vanilla Web View", { d in
                 let configuration = WKWebViewConfiguration()
                 configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()

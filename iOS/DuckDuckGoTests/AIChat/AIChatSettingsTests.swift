@@ -22,6 +22,7 @@ import XCTest
 @testable import DuckDuckGo
 import BrowserServicesKit
 import Combine
+import AIChat
 
 class AIChatSettingsTests: XCTestCase {
 
@@ -29,6 +30,7 @@ class AIChatSettingsTests: XCTestCase {
     private var mockUserDefaults: UserDefaults!
     private var mockNotificationCenter: NotificationCenter!
     private var mockFeatureFlagger: FeatureFlagger!
+    private var mockAIChatDebugSettings: MockAIChatDebugSettings!
 
     override func setUp() {
         super.setUp()
@@ -36,6 +38,7 @@ class AIChatSettingsTests: XCTestCase {
         mockUserDefaults = UserDefaults(suiteName: "TestDefaults")
         mockNotificationCenter = NotificationCenter()
         mockFeatureFlagger = MockFeatureFlagger()
+        mockAIChatDebugSettings = MockAIChatDebugSettings()
     }
 
     override func tearDown() {
@@ -49,6 +52,7 @@ class AIChatSettingsTests: XCTestCase {
 
     func testAIChatURLReturnsDefaultWhenRemoteSettingsMissing() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
                                       userDefaults: mockUserDefaults,
                                       notificationCenter: mockNotificationCenter)
 
@@ -60,6 +64,7 @@ class AIChatSettingsTests: XCTestCase {
 
     func testAIChatURLReturnsRemoteSettingWhenAvailable() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
                                       userDefaults: mockUserDefaults,
                                       notificationCenter: mockNotificationCenter)
 
@@ -71,8 +76,21 @@ class AIChatSettingsTests: XCTestCase {
         XCTAssertEqual(settings.aiChatURL, URL(string: remoteURL))
     }
 
+    func testAIChatURLReturnsOverriddenSettingWhenAvailable() {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      userDefaults: mockUserDefaults,
+                                      notificationCenter: mockNotificationCenter)
+
+        let override = "https://override.com/ai-chat"
+        mockAIChatDebugSettings.customURL = override
+
+        XCTAssertEqual(settings.aiChatURL, URL(string: override))
+    }
+
     func testEnableAIChatBrowsingMenuUserSettings() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
                                       userDefaults: mockUserDefaults,
                                       notificationCenter: mockNotificationCenter)
 
@@ -85,6 +103,7 @@ class AIChatSettingsTests: XCTestCase {
 
     func testEnableAIChatAddressBarUserSettings() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
                                       userDefaults: mockUserDefaults,
                                       notificationCenter: mockNotificationCenter)
 
@@ -97,6 +116,7 @@ class AIChatSettingsTests: XCTestCase {
 
     func testNotificationPostedWhenSettingsChange() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
                                       userDefaults: mockUserDefaults,
                                       notificationCenter: mockNotificationCenter)
 
@@ -111,4 +131,10 @@ class AIChatSettingsTests: XCTestCase {
         mockNotificationCenter.removeObserver(observer)
     }
 
+}
+
+final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {
+    var messagePolicyHostname: String?
+    var customURL: String?
+    func reset() {}
 }

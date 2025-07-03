@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/apple-toolbox.git",
       "state" : {
-        "revision" : "ebdfb5f41a3cfe6d1570b42fbc6368da5be1f45e",
-        "version" : "3.1.4"
+        "revision" : "579eb1d65c7f221094856269fc0e457a1c2a6660",
+        "version" : "3.2.1"
       }
     },
     {
@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "revision" : "30b5b64058780a65c50762dfcd12952346a1da49",
-        "version" : "10.2.0"
+        "revision" : "144965a993714b67dc6429b6c344e4b7db9c722c",
+        "version" : "10.4.0"
       }
     },
     {
@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "c504edade04adc0535ecf1b4636cbb17e81b78ad",
-        "version" : "18.0.0"
+        "revision" : "7532135989abb6ddbde48632b7222e0abed7d253",
+        "version" : "18.1.0"
       }
     },
     {
@@ -248,8 +248,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlang/swift-syntax",
       "state" : {
-        "revision" : "64889f0c732f210a935a0ad7cda38f77f876262d",
-        "version" : "509.1.1"
+        "revision" : "0687f71944021d616d34d922343dcef086855920",
+        "version" : "600.0.1"
       }
     },
     {

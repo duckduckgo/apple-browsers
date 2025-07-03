@@ -18,7 +18,7 @@
 
 import Foundation
 
-public struct Entitlement: Codable, Equatable {
+public struct Entitlement: Codable, Equatable, Hashable {
     public let product: ProductName
 
     public enum ProductName: String, Codable {

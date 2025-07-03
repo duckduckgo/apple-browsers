@@ -101,7 +101,7 @@ public class BookmarkFormFactorFavoritesMigration: BookmarkFormFactorFavoritesMi
             }
 
             for uuid in orderedUUIDs {
-                if let fav = favorites.first(where: { $0.uuid == uuid}) {
+                if let fav = favorites.first(where: { $0.uuid == uuid }) {
                     fav.addToFavorites(favoritesRoot: favoritesFolder)
                 }
             }

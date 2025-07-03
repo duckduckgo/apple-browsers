@@ -252,7 +252,7 @@ final class Fire {
                 self.dispatchGroup = nil
                 // Only close windows at the end if we didn't close them at the beginning
                 if !shouldCloseWindowsFirst {
-                    self.closeWindows(entity: entity)
+                    self.closeWindows(entity: entity, isBurnOnExit: isBurnOnExit)
                 }
 
                 self.burningData = nil

@@ -34,7 +34,7 @@ private struct Constants {
     static let shadowRadius: CGFloat = 3
     static let shadowOffset: CGSize = CGSize(width: 0, height: 4)
     static let mainButtonHeight: CGFloat = 40
-    static let buttonCornerRadius: CGFloat = 8
+    static let buttonCornerRadius: CGFloat = 12
     static let primingImageName: String = "DuckPlayer-PrimingAnimation"
     static let imageWidth: CGFloat = 150
     static let imageHeight: CGFloat = 150

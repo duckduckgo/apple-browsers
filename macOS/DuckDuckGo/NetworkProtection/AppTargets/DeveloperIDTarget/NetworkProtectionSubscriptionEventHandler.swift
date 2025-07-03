@@ -51,7 +51,6 @@ final class NetworkProtectionSubscriptionEventHandler {
         get {
             userDefaults.networkProtectionEntitlementsExpired
         }
-
         set {
             userDefaults.networkProtectionEntitlementsExpired = newValue
         }

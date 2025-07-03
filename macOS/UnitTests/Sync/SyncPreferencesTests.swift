@@ -408,26 +408,32 @@ final class SyncPreferencesTests: XCTestCase {
         syncPreferences.devices = [SyncDevice(RegisteredDevice(id: id, name: "iPhone", type: "iPhone"))]
     }
 
-    private func waitFor(codeForDisplayOrPasting: String, stringForQR: String) async {
+    private func expectationsFor(codeForDisplayOrPasting: String, stringForQR: String) -> [XCTestExpectation] {
         let codeForDisplayExpectation = expectation(description: "codeForDisplayOrPasting")
         let stringForQRExpectation = expectation(description: "stringForQR")
 
         codeForDisplayExpectation.assertForOverFulfill = false
         stringForQRExpectation.assertForOverFulfill = false
 
-        syncPreferences.$codeForDisplayOrPasting.sink {
+
+        syncPreferences.$codeForDisplayOrPasting.print("TEST DEBUG 4").sink {
+            print("TEST DEBUG 6")
             if $0 == codeForDisplayOrPasting {
+                print("TEST DEBUG 7")
                 codeForDisplayExpectation.fulfill()
             }
         }.store(in: &cancellables)
 
-        syncPreferences.$stringForQR.sink {
+        syncPreferences.$stringForQR.print("TEST DEBUG 5").sink {
+            print("TEST DEBUG 8")
             if $0 == stringForQR {
+                print("TEST DEBUG 9")
                 stringForQRExpectation.fulfill()
             }
         }.store(in: &cancellables)
 
-        await fulfillment(of: [codeForDisplayExpectation, stringForQRExpectation], timeout: 5)
+        print("TEST DEBUG 3")
+        return [codeForDisplayExpectation, stringForQRExpectation]
     }
 
     @MainActor
@@ -436,11 +442,16 @@ final class SyncPreferencesTests: XCTestCase {
         let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
         connectionController.startConnectModeStub = pairingInfo
 
-        Task {
-            syncPreferences.startPollingForRecoveryKey(isRecovery: false)
-        }
+        print("TEST DEBUG 1")
 
-        await waitFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
+        let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
+
+        syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+
+        print("TEST DEBUG 2")
+
+        await fulfillment(of: expectations, timeout: 5)
+        print("TEST DEBUG 10")
     }
 
     @MainActor
@@ -449,11 +460,11 @@ final class SyncPreferencesTests: XCTestCase {
         let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
         connectionController.startConnectModeStub = pairingInfo
 
-        Task {
-            syncPreferences.startPollingForRecoveryKey(isRecovery: false)
-        }
+        let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
 
-        await waitFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
+        syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+
+        await fulfillment(of: expectations, timeout: 5)
     }
 
     @MainActor
@@ -464,11 +475,11 @@ final class SyncPreferencesTests: XCTestCase {
         connectionController.startExchangeModeStub = pairingInfo
         ddgSyncing.account = .mock
 
-        Task {
-            await syncPreferences.syncWithAnotherDevicePressed()
-        }
+        let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
 
-        await waitFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
+        await syncPreferences.syncWithAnotherDevicePressed()
+
+        await fulfillment(of: expectations, timeout: 5)
     }
 
     @MainActor
@@ -479,11 +490,11 @@ final class SyncPreferencesTests: XCTestCase {
         connectionController.startExchangeModeStub = pairingInfo
         ddgSyncing.account = .mock
 
-        Task {
-            await syncPreferences.syncWithAnotherDevicePressed()
-        }
+        let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
 
-        await waitFor(codeForDisplayOrPasting: "test_code", stringForQR: pairingInfo.url.absoluteString)
+        await syncPreferences.syncWithAnotherDevicePressed()
+
+        await fulfillment(of: expectations, timeout: 5)
     }
 
     func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_usesRecoveryCode() async throws {

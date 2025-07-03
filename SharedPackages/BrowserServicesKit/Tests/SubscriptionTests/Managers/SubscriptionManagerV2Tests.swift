@@ -40,6 +40,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         super.setUp()
 
         mockOAuthClient = MockOAuthClient()
+        mockOAuthClient.migrateV1TokenResponseError = OAuthClientError.authMigrationNotPerformed
         mockSubscriptionEndpointService = SubscriptionEndpointServiceMockV2()
         mockStorePurchaseManager = StorePurchaseManagerMockV2()
         mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMockV2()
@@ -106,8 +107,8 @@ class SubscriptionManagerV2Tests: XCTestCase {
             productId: "testProduct",
             name: "Test Subscription",
             billingPeriod: .monthly,
-            startedAt: Date().addingTimeInterval(-30 * 24 * 60 * 60), // 30 days ago
-            expiresOrRenewsAt: Date().addingTimeInterval(-1), // expired
+            startedAt: Date().addingTimeInterval(.days(-30)),
+            expiresOrRenewsAt: Date().addingTimeInterval(.days(-1)), // expired
             platform: .apple,
             status: .expired,
             activeOffers: []

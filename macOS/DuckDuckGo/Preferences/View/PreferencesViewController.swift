@@ -33,6 +33,7 @@ final class PreferencesViewController: NSViewController {
     let model: PreferencesSidebarModel
     let tabCollectionViewModel: TabCollectionViewModel
     let privacyConfigurationManager: PrivacyConfigurationManaging
+    let aiChatRemoteSettings: AIChatRemoteSettingsProvider
     private var selectedTabContentCancellable: AnyCancellable?
     private var selectedPreferencePaneCancellable: AnyCancellable?
 
@@ -51,6 +52,7 @@ final class PreferencesViewController: NSViewController {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagger = featureFlagger
+        self.aiChatRemoteSettings = aiChatRemoteSettings
         model = PreferencesSidebarModel(privacyConfigurationManager: privacyConfigurationManager,
                                         featureFlagger: featureFlagger,
                                         syncService: syncService,
@@ -82,7 +84,8 @@ final class PreferencesViewController: NSViewController {
             let prefRootView = Preferences.RootViewV2(model: model,
                                                       subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
                                                       subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
-                                                      featureFlagger: featureFlagger)
+                                                      featureFlagger: featureFlagger.
+                                                      aiChatURLSettings: aiChatRemoteSettings)
             let host = NSHostingView(rootView: prefRootView)
             view.addAndLayout(host)
         }

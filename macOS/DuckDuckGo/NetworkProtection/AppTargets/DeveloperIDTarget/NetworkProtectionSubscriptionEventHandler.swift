@@ -43,6 +43,7 @@ final class NetworkProtectionSubscriptionEventHandler {
         self.userDefaults = userDefaults
 
         subscribeToEntitlementChanges()
+        checkEntitlements()
     }
 
     @MainActor
@@ -56,37 +57,33 @@ final class NetworkProtectionSubscriptionEventHandler {
         }
     }
 
-    private func subscribeToEntitlementChanges() {
+    private func checkEntitlements() {
         Task {
             let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
-            Task {
-                await handleEntitlementsChange(hasEntitlements: hasEntitlement, source: .clientCheck(sourceObject: self))
-            }
-
-            NotificationCenter.default
-                .publisher(for: .entitlementsDidChange)
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] notification in
-                    Logger.networkProtection.log("Entitlements did change notification received")
-                    guard let self else {
-                        return
-                    }
-
-                    guard let entitlements = notification.userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] as? [Entitlement] else {
-                        assertionFailure("Missing entitlements are truly unexpected")
-                        return
-                    }
-
-                    let hasEntitlements = entitlements.contains { entitlement in
-                        entitlement.product == .networkProtection
-                    }
-
-                    Task {
-                        await self.handleEntitlementsChange(hasEntitlements: hasEntitlements, source: .notification(sourceObject: notification.object))
-                    }
-                }
-                .store(in: &cancellables)
+            await handleEntitlementsChange(hasEntitlements: hasEntitlement, source: .clientCheck(sourceObject: self))
         }
+    }
+
+    private func subscribeToEntitlementChanges() {
+        NotificationCenter.default
+            .publisher(for: .entitlementsDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self else { return }
+
+                Task {
+                    Logger.networkProtection.log("Entitlements did change notification received")
+                    guard let userInfo = notification.userInfo,
+                          let payload = EntitlementsDidChangePayload(notificationUserInfo: userInfo) else {
+                        assertionFailure("Missing entitlements payload")
+                        Logger.subscription.fault("Missing entitlements payload")
+                        return
+                    }
+                    let hasNetPEntitlement = payload.entitlements.contains(.networkProtection)
+                    await self.handleEntitlementsChange(hasEntitlements: hasNetPEntitlement, source: .notification(sourceObject: notification.object))
+                }
+            }
+            .store(in: &cancellables)
     }
 
     @MainActor

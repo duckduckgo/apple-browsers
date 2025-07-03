@@ -1272,6 +1272,12 @@ Take back control of your personal information with the browser designed for dat
     public static let settingsAboutSection = NSLocalizedString("settings.about.section", value: "About", comment: "Settings section title for About DuckDuckGo")
     public static let settingsFeedback = NSLocalizedString("settings.feedback", value: "Share Feedback", comment: "Settings cell for Feedback")
     public static let settingsBrowserFeedback = NSLocalizedString("settings.browser.feedback", value: "Browser Feedback", comment: "Settings cell for Browser Feedback")
+    public static func settingsSubscriptionFeedback(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("settings.subscription.feedback", value: "DuckDuckGo Subscription", comment: "Settings cell for Subscription Feedback")
+        }
+        return NSLocalizedString("settings.subscription.feedback.deprecated", value: "Privacy Pro", comment: "Settings cell for Subscription Feedback")
+    }
     public static let duckduckgoOnOtherPlatforms = NSLocalizedString("settings.duckduckgo.on.other.platforms", value: "DuckDuckGo on Other Platforms", comment: "Settings cell to link users to other products by DuckDuckGo")
 
     // General Section

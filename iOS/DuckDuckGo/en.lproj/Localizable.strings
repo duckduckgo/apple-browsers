@@ -2803,6 +2803,12 @@ Take back control of your personal information with the browser designed for dat
 /* Subscription expired tittle message */
 "settings.subscription.expired.title" = "Your Privacy Pro subscription expired";
 
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "DuckDuckGo Subscription";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback.deprecated" = "Privacy Pro";
+
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "If your identity is stolen, we'll help restore it";
 

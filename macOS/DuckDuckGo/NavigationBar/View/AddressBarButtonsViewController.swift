@@ -1115,13 +1115,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
             return attributedTitle
         }()
-
-        // State and colors
-//        askAIChatButton.state = .off
-//        askAIChatButton.backgroundColor = .buttonMouseDown
-//        askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
-//        askAIChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
-//        askAIChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.askAIChatButton")
     }
 
     private func configureContextMenuForAIChatButtons(isSidebarOpen: Bool? = nil) {

@@ -84,7 +84,7 @@ final class PreferencesViewController: NSViewController {
             let prefRootView = Preferences.RootViewV2(model: model,
                                                       subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
                                                       subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
-                                                      featureFlagger: featureFlagger.
+                                                      featureFlagger: featureFlagger,
                                                       aiChatURLSettings: aiChatRemoteSettings)
             let host = NSHostingView(rootView: prefRootView)
             view.addAndLayout(host)

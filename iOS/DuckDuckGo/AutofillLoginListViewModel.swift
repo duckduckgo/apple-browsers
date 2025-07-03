@@ -27,7 +27,7 @@ import DDGSync
 import PrivacyDashboard
 import os.log
 
-final class AutofillLoginListViewModel: ObservableObject {
+class AutofillLoginListViewModel: ObservableObject {
     
     enum ViewState {
         case authLocked
@@ -63,7 +63,6 @@ final class AutofillLoginListViewModel: ObservableObject {
     private var currentTabUid: String?
     private let secureVault: (any AutofillSecureVault)?
     private let privacyConfig: PrivacyConfiguration
-    private let keyValueStore: KeyValueStoringDictionaryRepresentable
     private var cachedDeletedCredentials: SecureVaultModels.WebsiteCredentials?
     private let autofillDomainNameUrlMatcher = AutofillDomainNameUrlMatcher()
     private let autofillDomainNameUrlSort = AutofillDomainNameUrlSort()
@@ -90,13 +89,7 @@ final class AutofillLoginListViewModel: ObservableObject {
 
     private lazy var autofillSurveyManager: AutofillSurveyManaging = AutofillSurveyManager()
 
-    internal lazy var breakageReporter = BrokenSiteReporter(pixelHandler: { [weak self] _ in
-        if let currentTabUid = self?.currentTabUid {
-            NotificationCenter.default.post(name: .autofillFailureReport, object: self, userInfo: [UserInfoKeys.tabUid: currentTabUid])
-        }
-        self?.updateData()
-        self?.showBreakageReporter = false
-    }, keyValueStoring: keyValueStore, storageConfiguration: .autofillConfig)
+    internal lazy var breakageReporter = createBreakageReporter()
 
     @Published private(set) var viewState: AutofillLoginListViewModel.ViewState = .authLocked
     @Published private(set) var sections = [AutofillLoginListSectionType]() {
@@ -125,7 +118,6 @@ final class AutofillLoginListViewModel: ObservableObject {
          currentTabUrl: URL? = nil,
          currentTabUid: String? = nil,
          privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig,
-         keyValueStore: KeyValueStoringDictionaryRepresentable = UserDefaults.standard,
          syncService: DDGSyncing,
          locale: Locale = Locale.current) {
         self.appSettings = appSettings
@@ -134,7 +126,6 @@ final class AutofillLoginListViewModel: ObservableObject {
         self.currentTabUrl = currentTabUrl
         self.currentTabUid = currentTabUid
         self.privacyConfig = privacyConfig
-        self.keyValueStore = keyValueStore
         self.syncService = syncService
         self.locale = locale
 
@@ -256,6 +247,16 @@ final class AutofillLoginListViewModel: ObservableObject {
 
     func resetNeverPromptWebsites() {
         _ = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager.deleteAllNeverPromptWebsites()
+    }
+
+    func createBreakageReporter() -> BrokenSiteReporter {
+        BrokenSiteReporter(pixelHandler: { [weak self] _ in
+            if let currentTabUid = self?.currentTabUid {
+                NotificationCenter.default.post(name: .autofillFailureReport, object: self, userInfo: [UserInfoKeys.tabUid: currentTabUid])
+            }
+            self?.updateData()
+            self?.showBreakageReporter = false
+        }, keyValueStoring: UserDefaults.standard, storageConfiguration: .autofillConfig)        
     }
 
     func createBreakageReporterAlert() -> UIAlertController? {

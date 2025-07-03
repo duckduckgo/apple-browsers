@@ -26,6 +26,7 @@ import Combine
 @testable import BrowserServicesKit
 @testable import Common
 @testable import PersistenceTestingUtils
+import PrivacyDashboard
 
 class AutofillLoginListViewModelTests: XCTestCase {
 
@@ -122,7 +123,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: accountIdToDelete, title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date())
         ]
 
-        let model = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
         let tableContentsToDelete = model.tableContentsToDelete(accountId: accountIdToDelete)
         XCTAssertEqual(tableContentsToDelete.sectionsToDelete.count, 1)
         XCTAssertEqual(tableContentsToDelete.rowsToDelete.count, 0)
@@ -136,7 +137,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
         ]
 
-        let model = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
         let tableContentsToDelete = model.tableContentsToDelete(accountId: accountIdToDelete)
         XCTAssertEqual(tableContentsToDelete.sectionsToDelete.count, 0)
         XCTAssertEqual(tableContentsToDelete.rowsToDelete.count, 1)
@@ -149,7 +150,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: accountIdToDelete, title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
         ]
 
-        let model = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, currentTabUrl: URL(string: "https://\(testDomain)"), syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, currentTabUrl: URL(string: "https://\(testDomain)"), syncService: syncService)
         let tableContentsToDelete = model.tableContentsToDelete(accountId: accountIdToDelete)
         XCTAssertEqual(tableContentsToDelete.sectionsToDelete.count, 2)
         XCTAssertEqual(tableContentsToDelete.rowsToDelete.count, 0)
@@ -164,7 +165,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
         ]
 
-        let model = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, currentTabUrl: URL(string: "https://\(testDomain)"), syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, currentTabUrl: URL(string: "https://\(testDomain)"), syncService: syncService)
         let tableContentsToDelete = model.tableContentsToDelete(accountId: accountIdToDelete)
         XCTAssertEqual(tableContentsToDelete.sectionsToDelete.count, 1)
         XCTAssertEqual(tableContentsToDelete.rowsToDelete.count, 1)
@@ -179,7 +180,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
         ]
 
-        let model = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, currentTabUrl: URL(string: "https://\(testDomain)"), syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, currentTabUrl: URL(string: "https://\(testDomain)"), syncService: syncService)
         let tableContentsToDelete = model.tableContentsToDelete(accountId: accountIdToDelete)
         XCTAssertEqual(tableContentsToDelete.sectionsToDelete.count, 0)
         XCTAssertEqual(tableContentsToDelete.rowsToDelete.count, 2)
@@ -191,8 +192,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "", domain: "testsite2.com", created: Date(), lastUpdated: Date()),
             SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
         ]
-        let model
-                = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
         XCTAssertEqual(model.sections.count, 1)
         XCTAssertEqual(model.rowsInSection(0), 3)
 
@@ -207,8 +207,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "", domain: "testsite2.com", created: Date(), lastUpdated: Date()),
             SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
         ]
-        let model
-                = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
         XCTAssertEqual(model.sections.count, 1)
         XCTAssertEqual(model.rowsInSection(0), 3)
 
@@ -226,8 +225,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
         vault.storedAccounts = [
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date())
         ]
-        let model
-                = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
         XCTAssertEqual(model.sections.count, 1)
         XCTAssertEqual(model.rowsInSection(0), 1)
 
@@ -248,8 +246,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
         ]
         let testDomain = "testsite.com"
-        let model
-                = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, currentTabUrl: URL(string: "https://\(testDomain)"), privacyConfig: makePrivacyConfig(from: configDisabled), syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, currentTabUrl: URL(string: "https://\(testDomain)"), privacyConfig: makePrivacyConfig(from: configDisabled), syncService: syncService)
         XCTAssertEqual(model.sections.count, 2)
         XCTAssertEqual(model.rowsInSection(0), 1)
         XCTAssertEqual(model.rowsInSection(1), 3)
@@ -269,8 +266,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
         vault.storedAccounts = [
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date())
         ]
-        let model
-                = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
 
         XCTAssertEqual(model.sections.count, 1)
 
@@ -283,8 +279,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
         vault.storedAccounts = [
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date())
         ]
-        let model
-                = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
 
         XCTAssertEqual(model.sections.count, 1)
 
@@ -305,8 +300,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date()),
             SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "", domain: "testsite2.com", created: Date(), lastUpdated: Date()),
         ]
-        let model
-                = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
 
         model.isEditing = true
         model.accountsCountPublisher.sink { count in
@@ -327,8 +321,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
             _ = try vault.storeWebsiteCredentials(SecureVaultModels.WebsiteCredentials(account: account, password: nil))
         }
 
-        let model
-                = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
         XCTAssertEqual(model.sections.count, 1)
         XCTAssertEqual(model.rowsInSection(0), 1)
         XCTAssertEqual(vault.storedAccounts.count, 1)
@@ -353,8 +346,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
             _ = try vault.storeWebsiteCredentials(SecureVaultModels.WebsiteCredentials(account: account, password: nil))
         }
 
-        let model
-                = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
         XCTAssertEqual(model.sections.count, 1)
         XCTAssertEqual(model.rowsInSection(0), 3)
         XCTAssertEqual(vault.storedAccounts.count, 3)
@@ -376,13 +368,12 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
         ]
 
-        let model = AutofillLoginListViewModel(appSettings: appSettings,
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                tld: tld,
                                                secureVault: vault,
                                                currentTabUrl: URL(string: "https://\(testDomain)"),
                                                currentTabUid: "1",
                                                privacyConfig: makePrivacyConfig(from: configDisabled),
-                                               keyValueStore: MockKeyValueStore(),
                                                syncService: syncService)
 
         XCTAssertFalse(model.shouldShowBreakageReporter())
@@ -395,13 +386,12 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
         ]
 
-        let model = AutofillLoginListViewModel(appSettings: appSettings,
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                tld: tld,
                                                secureVault: vault,
                                                currentTabUrl: nil,
                                                currentTabUid: "1",
                                                privacyConfig: makePrivacyConfig(from: configEnabled),
-                                               keyValueStore: MockKeyValueStore(),
                                                syncService: syncService)
 
         XCTAssertFalse(model.shouldShowBreakageReporter())
@@ -414,13 +404,12 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "not-testsites.com", created: Date(), lastUpdated: Date())
         ]
 
-        let model = AutofillLoginListViewModel(appSettings: appSettings,
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                tld: tld,
                                                secureVault: vault,
                                                currentTabUrl: URL(string: "https://\(testDomain)"),
                                                currentTabUid: "1",
                                                privacyConfig: makePrivacyConfig(from: configEnabled),
-                                               keyValueStore: MockKeyValueStore(),
                                                syncService: syncService)
 
         XCTAssertFalse(model.shouldShowBreakageReporter())
@@ -433,13 +422,12 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
         ]
 
-        let model = AutofillLoginListViewModel(appSettings: appSettings,
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                tld: tld,
                                                secureVault: vault,
                                                currentTabUrl: URL(string: "https://\(testDomain)"),
                                                currentTabUid: "1",
                                                privacyConfig: makePrivacyConfig(from: configEnabled),
-                                               keyValueStore: MockKeyValueStore(),
                                                syncService: syncService)
 
         XCTAssertFalse(model.shouldShowBreakageReporter())
@@ -455,13 +443,12 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
         ]
 
-        let model = AutofillLoginListViewModel(appSettings: appSettings,
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                tld: tld,
                                                secureVault: vault,
                                                currentTabUrl: URL(string: "https://\(testDomain)"),
                                                currentTabUid: "1",
                                                privacyConfig: makePrivacyConfig(from: configEnabled),
-                                               keyValueStore: MockKeyValueStore(),
                                                syncService: syncService)
 
         let identifier = currentTabUrl!.privacySafeDomainIdentifier
@@ -478,13 +465,12 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
         ]
 
-        let model = AutofillLoginListViewModel(appSettings: appSettings,
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                tld: tld,
                                                secureVault: vault,
                                                currentTabUrl: currentTabUrl,
                                                currentTabUid: "1",
                                                privacyConfig: makePrivacyConfig(from: configEnabled),
-                                               keyValueStore: MockKeyValueStore(),
                                                syncService: syncService)
 
         XCTAssertTrue(model.shouldShowBreakageReporter())
@@ -498,13 +484,12 @@ class AutofillLoginListViewModelTests: XCTestCase {
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
         ]
 
-        let model = AutofillLoginListViewModel(appSettings: appSettings,
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                tld: tld,
                                                secureVault: vault,
                                                currentTabUrl: URL(string: "https://\(testDomain)"),
                                                currentTabUid: "1",
                                                privacyConfig: makePrivacyConfig(from: configEnabled),
-                                               keyValueStore: MockKeyValueStore(),
                                                syncService: syncService)
 
         let identifier = currentTabUrl!.privacySafeDomainIdentifier
@@ -519,7 +504,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
 
     func testWhenLocaleIsNotEnglishThenNoSurveyIsReturned() {
         let nonEnglishLocale = Locale(identifier: "es")
-        let model = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, locale: nonEnglishLocale)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, locale: nonEnglishLocale)
 
         XCTAssertNil(model.getSurveyToPresent())
     }
@@ -532,20 +517,20 @@ class AutofillLoginListViewModelTests: XCTestCase {
         for account in vault.storedAccounts {
             _ = try vault.storeWebsiteCredentials(SecureVaultModels.WebsiteCredentials(account: account, password: nil))
         }
-        let model = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
 
         XCTAssertNil(model.getSurveyToPresent())
     }
 
     func testWhenIsEditingThenNoSurveyIsReturned() {
-        let model = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService)
         model.isEditing = true
 
         XCTAssertNil(model.getSurveyToPresent())
     }
 
     func testWhenSurveyConfigIsDisabledThenNoSurveyIsReturned() {
-        let model = AutofillLoginListViewModel(appSettings: appSettings,
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                tld: tld,
                                                secureVault: vault,
                                                privacyConfig: makePrivacyConfig(from: configDisabled),
@@ -555,7 +540,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
     }
 
     func testWhenAllConditionsAreMetThenSurveyIsReturnedAndWhenDismissedNotSurveyIsReturned() {
-        let model = AutofillLoginListViewModel(appSettings: appSettings,
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                tld: tld,
                                                secureVault: vault,
                                                privacyConfig: makePrivacyConfig(from: configEnabled),
@@ -688,5 +673,16 @@ class AutofillLoginListItemViewModelTests: XCTestCase {
                                                    autofillDomainNameUrlSort: autofillDomainNameUrlSort)
         // Diacritics should be grouped with the root letter (in most cases), and grouping should be case insensative
         XCTAssertEqual(result.count, 1)
+    }
+}
+
+class MockAutofillLoginListViewModel: AutofillLoginListViewModel {
+
+    override func createBreakageReporter() -> BrokenSiteReporter {
+        return BrokenSiteReporter(
+            pixelHandler: { _ in },
+            keyValueStoring: MockKeyValueStore(),
+            storageConfiguration: .autofillConfig
+        )
     }
 }

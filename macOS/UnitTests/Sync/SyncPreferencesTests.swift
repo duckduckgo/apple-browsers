@@ -416,23 +416,17 @@ final class SyncPreferencesTests: XCTestCase {
         stringForQRExpectation.assertForOverFulfill = false
 
 
-        syncPreferences.$codeForDisplayOrPasting.print("TEST DEBUG 4").sink {
-            print("TEST DEBUG 6")
+        syncPreferences.$codeForDisplayOrPasting.sink {
             if $0 == codeForDisplayOrPasting {
-                print("TEST DEBUG 7")
                 codeForDisplayExpectation.fulfill()
             }
         }.store(in: &cancellables)
 
-        syncPreferences.$stringForQR.print("TEST DEBUG 5").sink {
-            print("TEST DEBUG 8")
+        syncPreferences.$stringForQR.sink {
             if $0 == stringForQR {
-                print("TEST DEBUG 9")
                 stringForQRExpectation.fulfill()
             }
         }.store(in: &cancellables)
-
-        print("TEST DEBUG 3")
         return [codeForDisplayExpectation, stringForQRExpectation]
     }
 
@@ -442,16 +436,11 @@ final class SyncPreferencesTests: XCTestCase {
         let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
         connectionController.startConnectModeStub = pairingInfo
 
-        print("TEST DEBUG 1")
-
         let expectations = self.expectationsFor(codeForDisplayOrPasting: "test_code", stringForQR: "test_code")
 
         syncPreferences.startPollingForRecoveryKey(isRecovery: false)
 
-        print("TEST DEBUG 2")
-
         await fulfillment(of: expectations, timeout: 5)
-        print("TEST DEBUG 10")
     }
 
     @MainActor

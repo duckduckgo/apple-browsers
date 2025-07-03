@@ -1,9 +1,10 @@
 # NewTabPage
 
-## Purpose
+## Introduction
+
 This module provides resources used for communication between the New Tab Page user script and the native code of the macOS browser app.
 
-## New Tab Page in the macOS browser
+### New Tab Page in the macOS browser
 macOS New Tab Page (NTP) is a special page in the macOS browser. It's an HTML website served from C-S-S. It's composed of _widgets_ that display various data, such as remote messages, favorites, privacy protection stats, "Next Steps" onboarding, etc. It uses native<>FE messaging for displaying data and passing actions to the native side.
 
 ### NTP requirements and performance considerations
@@ -13,10 +14,9 @@ macOS New Tab Page (NTP) is a special page in the macOS browser. It's an HTML we
 * NTP user script, because it's accessing various user data, shouldn't be exposed to any websites other than the New Tab Page.
 * Because NTP user script combines multiple widgets, it exposes a large number of messages. Handling it in a single Swift class would make it difficult to maintain going forward.
 
-## NewTabPageActionsManager and NewTabPageUserScriptClients
+## NewTabPageActionsManager and script clients
 
 To ensure that multiple NTP tabs stay in sync and don't affect browser performance, the following solutions are in place:
-
 * New Tab Page uses a dedicated web view, other than the regular browsing web view. That web view uses a custom configuration with just 1 user script loaded (`NewTabPageUserScript`). The browser displays NTP web view when on NTP, but whenever navigating away from NTP it switches to the regular browsing web view.
     * There is a single web view per window, and as many NTP web views per app as there are open windows.
 * All NTP user scripts (of which there are as many as NTP web views) are connected to a single data source, called `NewTabPageActionsManager`.
@@ -26,12 +26,11 @@ To ensure code maintainability, `NewTabPageUserScript` messages are handled by m
 `NewTabPageActionsManager` is an aggregator of multiple `NewTabPageUserScriptClient` instances that connect to multiple `NewTabPageUserScript` instances. It is a subclass of `UserScriptActionsManager` (available from `UserScriptActionsManager` module), that abstracts this behavior for reuse in other special pages, as needed (e.g. settings page, whenever that gets implemented in HTML). Each user script can forward actions to the respective user script client, and each client is able to push data to all user scripts, or just one user script if needed.
 
 At any given time in a running application there is:
-* 1 instance of `NewTabPageActionsManager` in the application
-* 1 set of `NewTabPageUserScriptClient` instances (1 instance per feature)
+* 1 instance of `NewTabPageActionsManager` in the application,
+* 1 set of `NewTabPageUserScriptClient` instances (1 instance per feature),
 * as many `NewTabPageUserScript` instances as there are windows – all user scripts are registered with the actions manager.
 
-## NewTabPageActionsManager initialization
-
+### NewTabPageActionsManager initialization
 _(The code described here exists in the app target)_
 
 `NewTabPageActionsManager` is owned by `NewTabPageCoordinator` that is lazily instantiated in `AppDelegate`. The coordinator's job is only to own the actions manager and to send a daily "new tab page shown" pixel when NTP comes on screen.
@@ -45,3 +44,60 @@ The de facto initializer for `NewTabPageActionsManager` is implemented in `NewTa
 ## Module structure
 
 The `NewTabPage` Swift module is organized into feature subdirectories, e.g. `CustomBackground`, `Favorites`, `NextStepCards`, etc.
+
+Each of the directories contains these files:
+* user script client (e.g. `NewTabPageFavoritesClient`)
+* the model providing data for the client (e.g. `NewTabPageFavoritesModel`)
+* a feature-specific extension of `NewTabPageDataModel` enum. This contains the definitions of data structures that are used by the user script client (types received from FE in WebKit messages and types expected by FE in message responses).
+
+### User script client
+User script client code is overall very easy and repetitive between various clients. Its features are:
+* It must subclass `NewTabPageUserScriptClient`
+* It must define messages supported by this script client. Typically it's done by defining `MessageName` enum within the script client type. Message names specific to a given feature are usually prefixed by `feature-name_`.
+    * **Important:** _Message_ name refers to all types of messages that are exchanged with the website: requests, subscriptions notifications
+```swift
+public final class NewTabPagePrivacyStatsClient: NewTabPageUserScriptClient {
+
+    // ... other definitions
+
+    enum MessageName: String, CaseIterable {
+        case getData = "stats_getData"
+        case onDataUpdate = "stats_onDataUpdate"
+        case showLess = "stats_showLess"
+        case showMore = "stats_showMore"
+    }
+```
+* It must override `registerMessageHandlers(for:)` and define handlers for each message as private functions.
+
+#### User script messages
+Messages are typically defined in a `MessageName` enum within the script client type. Message names specific to a given feature are usually prefixed by a feature name and an underscore, e.g. `activity_getData`.
+
+There are three types of messages (the distinction follows https://www.jsonrpc.org/specification):
+* _requests_ – message is sent from FE to native and requires a response,
+* _notifications_ – message is sent from FE to native and does not expect a response,
+* _subscriptions_ – message is sent from native to FE.
+
+**Important:** _Message_ name refers to all 3 types of messages that are exchanged with the website, but of course only requests and notifications need to have handlers registered. This means that not all cases of the enum will be used in `registerMessageHandlers(for:)`.
+
+Example implementation:
+```swift
+public final class NewTabPagePrivacyStatsClient: NewTabPageUserScriptClient {
+
+    // ... other definitions
+
+    enum MessageName: String, CaseIterable {
+        case getData = "stats_getData"
+        case onDataUpdate = "stats_onDataUpdate"
+        case showLess = "stats_showLess"
+        case showMore = "stats_showMore"
+    }
+
+    public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
+        userScript.registerMessageHandlers([
+            MessageName.getData.rawValue: { [weak self] in try await self?.getData(params: $0, original: $1) },
+            MessageName.showLess.rawValue: { [weak self] in try await self?.showLess(params: $0, original: $1) },
+            MessageName.showMore.rawValue: { [weak self] in try await self?.showMore(params: $0, original: $1) }
+        ])
+    }
+
+```

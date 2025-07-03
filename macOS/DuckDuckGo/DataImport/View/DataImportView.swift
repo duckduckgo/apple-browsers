@@ -292,7 +292,9 @@ struct DataImportView: ModalView {
     private func passwordsExplainerView() -> some View {
         HStack(alignment: .top, spacing: 8) {
             (
-                Text(verbatim: "\(Image(.lockSolid16)) ").baselineOffset(-1.0)
+                Text(Image(.lockSolid16)).baselineOffset(-1.0)
+                +
+                Text(verbatim: " ")
                 +
                 Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
             )

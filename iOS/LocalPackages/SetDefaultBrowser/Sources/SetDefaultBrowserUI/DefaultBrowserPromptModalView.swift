@@ -39,12 +39,12 @@ struct DefaultBrowserPromptModalView: View {
                 .padding(.horizontal, Metrics.Header.horizontalPadding.build(v: verticalSizeClass, h: horizontalSizeClass))
                 .ignoresSafeArea(edges: .horizontal)
 
-            Spacer(minLength: Metrics.Container.spacerMinLength)
+            Spacer(minLength: Metrics.Container.topSpacerMinLength)
 
             Content()
                 .padding(.horizontal, horizontalPadding)
 
-            Spacer(minLength: Metrics.Container.spacerMinLength)
+            Spacer(minLength: Metrics.Container.bottomSpacerMinLength)
 
             Footer(setDefaultBrowserAction: setAsDefaultAction, doNotAskAgainAction: doNotAskAgainAction)
                 .padding(.horizontal, horizontalPadding)
@@ -83,7 +83,7 @@ private extension DefaultBrowserPromptModalView {
         var body: some View {
             let imageSize = Metrics.Content.imageSize.build(v: verticalSizeClass, h: horizontalSizeClass)
 
-            VStack(spacing: Metrics.Content.itemsVerticalSpacing) {
+            VStack(spacing: Metrics.Content.itemsVerticalSpacing.build(v: verticalSizeClass, h: horizontalSizeClass)) {
                 Image(.deviceMobileDefault128)
                     .resizable()
                     .scaledToFit()
@@ -100,6 +100,7 @@ private extension DefaultBrowserPromptModalView {
                 .foregroundStyle(Color.primary)
                 .opacity(0.84)
                 .multilineTextAlignment(.center)
+                .minimumScaleFactor(0.7)
             }
         }
 
@@ -134,9 +135,10 @@ private enum Metrics {
 
     enum Container {
         static let itemsVerticalSpacing: CGFloat = 0
-        static let spacerMinLength: CGFloat = 0
+        static let topSpacerMinLength: CGFloat = 0
+        static let bottomSpacerMinLength: CGFloat = 10
         static let topPadding: CGFloat = 16
-        static let horizontalPadding = MetricBuilder<CGFloat>(iPhone: 24, iPad: 92)
+        static let horizontalPadding = MetricBuilder<CGFloat>(iPhone: 24, iPad: 92).iPhone(landscape: 10)
     }
 
     enum Header {
@@ -146,7 +148,7 @@ private enum Metrics {
     }
 
     enum Content {
-        static let itemsVerticalSpacing: CGFloat = 24
+        static let itemsVerticalSpacing = MetricBuilder<CGFloat>(default: 24).iPhone(landscape: 20)
         static let titleFontSize: CGFloat = 28
         static let kerning: CGFloat = 0.38
         static let messageFontSize: CGFloat = 16

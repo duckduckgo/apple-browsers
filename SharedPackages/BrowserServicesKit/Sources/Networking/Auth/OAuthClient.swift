@@ -304,14 +304,14 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     /// Tries to retrieve the v1 auth token stored locally, if present performs a migration to v2
     public func migrateV1Token() async throws {
-        
+
         if let task = migrationOngoingTask {
             return try await task.value
         }
 
         let task = Task {
             defer { Task { clearTask() } }
-            
+
             guard !isUserAuthenticated else {
                 throw OAuthClientError.authMigrationNotPerformed
             }

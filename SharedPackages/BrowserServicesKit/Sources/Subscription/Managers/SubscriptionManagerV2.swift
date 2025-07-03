@@ -454,7 +454,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 Logger.subscription.debug("Logout detected")
                 NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
             default:
-                break
+                Logger.subscription.debug("Login state unchanged - Current: \(currentCachedIsAuthenticated), new: \(newValue)")
             }
         }
     }

@@ -111,6 +111,10 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.paidAIChat)
     }
 
+    var isSubscriptionRebrandingEnabled: Bool {
+        featureFlagger.isFeatureOn(.subscriptionRebranding)
+    }
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 

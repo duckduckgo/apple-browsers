@@ -1306,17 +1306,45 @@ Take back control of your personal information with the browser designed for dat
     public static let settingsAutoLockDescription = NSLocalizedString("settings.autolock.description", value: "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.", comment: "Section footer Autolock description")
     
     // Subscription Section
-    public static let settingsPProSection = NSLocalizedString("settings.ppro", value: "Privacy Pro", comment: "Product name for the subscription bundle")
+    public static func settingsSubscriptionSection(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("settings.subscription.Section", value: "DuckDuckGo Subscription", comment: "Product name for the subscription bundle")
+        }
+        return NSLocalizedString("settings.ppro", value: "Privacy Pro", comment: "Product name for the subscription bundle")
+    }
     public static let settingsPProSectionFooter = NSLocalizedString("settings.ppro.footer", value: "Privacy Policy and Terms of Service", comment: "Title for Link in the Footer of Privacy Pro section")
-    public static let settingsPProSubscribe = NSLocalizedString("settings.subscription.subscribe", value: "Protect your connection and identity with Privacy Pro", comment: "Call to action title for Privacy Pro settings")
-    public static let settingsPProUSDescription = NSLocalizedString("settings.PPro.us.description", value:"Includes our VPN, Personal Information Removal, and Identity Theft Restoration.", comment: "Privacy pro description subtitle in settings")
-    public static let settingsSubscriptionUSDescription = NotLocalizedString("settings.subscription.us.description", value:"Includes our VPN, Duck.ai Pro, Personal Information Removal, and Identity Theft Restoration.", comment: "Privacy pro description subtitle in settings")
-    public static let settingsPProROWDescription = NSLocalizedString("settings.PPro.row.description", value:"Includes our VPN and Identity Theft Restoration.", comment: "Privacy Pro description subtitle in settings")
-    public static let settingsSubscriptionROWDescription = NotLocalizedString("settings.subscription.row.description", value:"Includes our VPN, Duck.ai Pro, and Identity Theft Restoration.", comment: "Privacy Pro description subtitle in settings")
+    public static func settingsSubscription(isPaidAIChatEnabled: Bool) -> String {
+        if isPaidAIChatEnabled {
+            return NSLocalizedString("settings.subscription.subscribe.title", value: "Secure your Wi-Fi, and chat privately with advanced AI models", comment: "Call to action title for Privacy Pro settings")
+        }
+        return NSLocalizedString("settings.subscription.subscribe.title.no.ai.chat", value: "Secure your Wi-Fi, and protect identity", comment: "Call to action title for Privacy Pro settings")
+    }
+    public static func settingsSubscriptionDescription(isPaidAIChatEnabled: Bool, isUS: Bool) -> String {
+        switch (isPaidAIChatEnabled, isUS) {
+        case (true, true):
+            return NSLocalizedString("settings.subscription.us.description", value:"Subscribers get our VPN, advanced AI models in Duck.ai, Personal Information Removal, and Identity Theft Restoration.", comment: "Privacy pro description subtitle in settings")
+        case (true, false):
+            return NSLocalizedString("settings.subscription.row.description", value:"Subscribers get our VPN, advanced AI models in Duck.ai, and Identity Theft Restoration.", comment: "Privacy pro description subtitle in settings")
+        case (false, true):
+            return NSLocalizedString("settings.subscription.description.no.duck.ai", value:"Subscribers get our VPN, Personal Information Removal, and Identity Theft Restoration.", comment: "Privacy pro description subtitle in settings")
+        case (false, false):
+            return NSLocalizedString("settings.subscription.row.description.no.duck.ai", value:"Subscribers get our VPN and Identity Theft Restoration.", comment: "Privacy pro description subtitle in settings")
+        }
+    }
     public static let settingsPProActivating = NSLocalizedString("settings.subscription.activating", value:"Activating", comment: "Privacy pro description subtitle in settings when the is activating")
 
-    public static let settingsPProLearnMore = NSLocalizedString("settings.subscription.learn.more", value: "Get Privacy Pro", comment: "Get Privacy Pro button text for privacy pro")
-    public static let settingsPProTryFree = NSLocalizedString("settings.subscription.try.free", value: "Try Privacy Pro Free", comment: "Try Privacy Pro Free button text for privacy pro")
+    public static func getSubscriptionButton(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("settings.subscription.subscribe", value: "Subscribe to DuckDuckGo", comment: "Subscribe to DuckDuckGo button text")
+        }
+        return NSLocalizedString("settings.subscription.learn.more", value: "Get Privacy Pro", comment: "Get Privacy Pro button text for privacy pro")
+    }
+    public static func trySubscriptionButton(isSubscriptionRebrandingOn: Bool) -> String {
+        if isSubscriptionRebrandingOn {
+            return NSLocalizedString("settings.subscription.try.free", value: "Try DuckDuckGo Subscription Free", comment: "Try DuckDuckGo Subscription Free button text")
+        }
+        return NSLocalizedString("settings.subscription.try.free.no.ai.chat", value: "Try Privacy Pro Free", comment: "Try Privacy Pro Free button text for privacy pro")
+    }
     public static let settingsPProIHaveASubscription = NSLocalizedString("settings.subscription.existing.subscription", value: "I Have a Subscription", comment: "I have a Subscription button text for privacy pro")
     
     public static let settingsPProManageSubscription = NSLocalizedString("settings.subscription.manage", value: "Subscription Settings", comment: "Subscription Settings button text for privacy pro")

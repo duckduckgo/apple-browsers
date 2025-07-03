@@ -143,6 +143,8 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209304767941984?focus=true
     case scheduledSetDefaultBrowserPrompts
+
+    case subscriptionRebranding
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -195,6 +197,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
              .experimentalSwitcherBarTransition,
+             .subscriptionRebranding,
              .june2025TabManagerLayoutChanges:
             return true
         case .showSettingsCompleteSetupSection:
@@ -336,6 +339,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
         case .scheduledSetDefaultBrowserPrompts:
             return .internalOnly()
+        case .subscriptionRebranding:
+            return .disabled
         }
     }
 }

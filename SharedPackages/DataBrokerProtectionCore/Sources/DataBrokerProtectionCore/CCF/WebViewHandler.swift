@@ -57,7 +57,6 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
     init(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, isFakeBroker: Bool = false, executionConfig: BrokerJobExecutionConfig) {
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
-        
         let configuration = WKWebViewConfiguration()
         configuration.applyDataBrokerConfiguration(privacyConfig: privacyConfig, prefs: prefs, delegate: delegate, executionConfig: executionConfig)
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")

@@ -23,7 +23,6 @@ public struct BrokerJobExecutionConfig {
     public struct Constants {
         /// Minimum time interval between consecutive jobs for the same broker
         public static let defaultIntervalBetweenSameBrokerJobs: TimeInterval = .seconds(2)
-        
         /// Maximum time allowed for a scan job to complete
         #if os(iOS)
         public static let defaultScanJobTimeout: TimeInterval = .minutes(4)
@@ -43,10 +42,8 @@ public struct BrokerJobExecutionConfig {
 
         /// Interval for checking if a CSS action should be cancelled
         public static let defaultCssActionCancellationCheckInterval: TimeInterval = .seconds(1)
-        
         /// Number of concurrent jobs allowed for different brokers
         public static let defaultConcurrentJobsDifferentBrokers: Int = 2
-        
         /// Number of concurrent jobs allowed during manual scans
         public static let defaultConcurrentJobsOnManualScans: Int = 6
     }

@@ -35,7 +35,11 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
 
     public enum Trigger {
         case clientCheck
+#if os(macOS)
         case clientCheckOnWake
+#elseif os(iOS)
+        case clientForegrounded
+#endif
         case notification(sourceObject: Any?)
     }
 
@@ -63,8 +67,8 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
         switch trigger {
         case .clientCheck:
             return "m_vpn_subs_client_check_"
-        case .clientCheckOnWake:
-            return "m_vpn_subs_client_check_on_wake_"
+        case .clientForegrounded:
+            return "m_vpn_subs_client_foregrounded_"
         case .notification:
             return "m_vpn_subs_notification_"
         }
@@ -113,8 +117,15 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
 
     static func sourceClass(from trigger: Trigger) -> String {
         switch trigger {
-        case .clientCheck, .clientCheckOnWake:
+        case .clientCheck:
             return "none"
+#if os(macOS)
+        case .clientCheckOnWake:
+            return "none"
+#elseif os(iOS)
+        case .clientForegrounded:
+            return "none"
+#endif
         case .notification(let sourceObject):
             guard let sourceObject else {
                 return "nil"

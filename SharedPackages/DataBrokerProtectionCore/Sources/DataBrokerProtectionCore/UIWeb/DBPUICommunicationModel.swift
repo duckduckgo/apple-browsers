@@ -311,7 +311,7 @@ extension DBPUIDataBrokerProfileMatch {
         self.init(id: extractedProfile.id,
                   dataBroker: DBPUIDataBroker(name: dataBrokerName, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
                   name: extractedProfile.fullName ?? "No name",
-                  addresses: extractedProfile.addresses?.map {DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
+                  addresses: extractedProfile.addresses?.map { DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
                   alternativeNames: extractedProfile.alternativeNames ?? [String](),
                   relatives: extractedProfile.relatives ?? [String](),
                   foundDate: foundDate.timeIntervalSince1970,

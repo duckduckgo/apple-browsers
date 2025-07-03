@@ -325,7 +325,7 @@ final class FirePopoverViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] selected in
                 guard let self = self else { return }
-                let selectionIndexPaths = Set(selected.map {IndexPath(item: $0, section: self.firePopoverViewModel.selectableSectionIndex)})
+                let selectionIndexPaths = Set(selected.map { IndexPath(item: $0, section: self.firePopoverViewModel.selectableSectionIndex) })
                 self.collectionView.selectionIndexPaths = selectionIndexPaths
                 self.updateInfoLabel()
             }

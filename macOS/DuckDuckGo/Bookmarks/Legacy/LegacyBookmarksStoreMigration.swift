@@ -148,7 +148,7 @@ public class LegacyBookmarksStoreMigration {
 
             for oldFavorite in oldFavorites {
 
-                if let favoriteIndex = favoritesToAdd.firstIndex(where: { $0.title == oldFavorite.titleEncrypted as? String && $0.url == (oldFavorite.urlEncrypted as? URL)?.absoluteString}) {
+                if let favoriteIndex = favoritesToAdd.firstIndex(where: { $0.title == oldFavorite.titleEncrypted as? String && $0.url == (oldFavorite.urlEncrypted as? URL)?.absoluteString }) {
                     let favorite = favoritesToAdd[favoriteIndex]
                     favorite.addToFavorites(favoritesRoot: newFavoritesRoot)
                     favoritesToAdd.remove(at: favoriteIndex)

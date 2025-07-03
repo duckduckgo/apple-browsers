@@ -239,7 +239,7 @@ final class DBPEndToEndTests: XCTestCase {
             let queries = try! database.fetchAllBrokerProfileQueryData()
             let optOutJobs = queries.flatMap { $0.optOutJobData }
             let events = optOutJobs.flatMap { $0.historyEvents }
-            let optOutsRequested = events.filter{ $0.type == .optOutRequested }
+            let optOutsRequested = events.filter { $0.type == .optOutRequested }
             return optOutsRequested.count > 0
         })
         print("Stage 5 passed: We finish running the opt out jobs")
@@ -294,7 +294,7 @@ final class DBPEndToEndTests: XCTestCase {
                 let queries = try! database.fetchAllBrokerProfileQueryData()
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 let events = optOutJobs.flatMap { $0.historyEvents }
-                let optOutsConfirmed = events.filter{ $0.type == .optOutConfirmed }
+                let optOutsConfirmed = events.filter { $0.type == .optOutConfirmed }
                 return optOutsConfirmed.count > 0
             }
         })

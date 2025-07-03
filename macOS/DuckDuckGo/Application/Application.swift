@@ -23,7 +23,7 @@ import Foundation
 @objc(Application)
 final class Application: NSApplication {
 
-    public static var appDelegate: AppDelegate!
+    public static var appDelegate: AppDelegate! // swiftlint:disable:this weak_delegate
 
     override init() {
         super.init()

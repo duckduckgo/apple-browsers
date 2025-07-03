@@ -79,7 +79,7 @@ struct BookmarkList {
             itemsDict[bookmark.url] = (itemsDict[bookmark.url] ?? []) + [bookmark]
         }
 
-        self.favoriteBookmarksOrdered = favorites.compactMap({$0 as? Bookmark}).map(IdentifiableBookmark.init(from:))
+        self.favoriteBookmarksOrdered = favorites.compactMap({ $0 as? Bookmark }).map(IdentifiableBookmark.init(from:))
         self.allBookmarkURLsOrdered = keysOrdered
         self.itemsDict = itemsDict
         self.topLevelEntities = topLevelEntities

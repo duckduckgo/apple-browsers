@@ -57,7 +57,7 @@ final class RootViewV2Tests: XCTestCase {
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
-            showTab: {_ in },
+            showTab: { _ in },
             )
 
         // Then

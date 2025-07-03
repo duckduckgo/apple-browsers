@@ -125,7 +125,7 @@ final class MapperToUITests: XCTestCase {
         XCTAssertEqual(result.scanProgress.currentScans, brokerProfileQueryData.legacyCurrentScans)
         XCTAssertEqual(result.scanProgress.currentScans, expected.completeBrokerScansCount)
         XCTAssertEqual(result.scanProgress.scannedBrokers.count, expected.count)
-        XCTAssertEqual(result.scanProgress.scannedBrokers.map{ $0.name }.sorted(), expected.map(\.name))
+        XCTAssertEqual(result.scanProgress.scannedBrokers.map { $0.name }.sorted(), expected.map(\.name))
     }
 
     func testWhenScansHaveDeprecatedProfileQueries_thenThoseAreNotTakenIntoAccount() {
@@ -147,7 +147,7 @@ final class MapperToUITests: XCTestCase {
         XCTAssertEqual(result.scanProgress.currentScans, brokerProfileQueryData.legacyCurrentScans)
         XCTAssertEqual(result.scanProgress.currentScans, expected.completeBrokerScansCount)
         XCTAssertEqual(result.scanProgress.scannedBrokers.count, expected.count)
-        XCTAssertEqual(result.scanProgress.scannedBrokers.map{ $0.name }.sorted(), expected.map(\.name))
+        XCTAssertEqual(result.scanProgress.scannedBrokers.map { $0.name }.sorted(), expected.map(\.name))
         XCTAssertEqual(result.resultsFound.count, 1)
     }
 
@@ -171,7 +171,7 @@ final class MapperToUITests: XCTestCase {
         XCTAssertEqual(result.scanProgress.currentScans, brokerProfileQueryData.legacyCurrentScans)
         XCTAssertEqual(result.scanProgress.currentScans, expected.completeBrokerScansCount)
         XCTAssertEqual(result.scanProgress.scannedBrokers.count, expected.count)
-        XCTAssertEqual(result.scanProgress.scannedBrokers.map{ $0.name }.sorted(), expected.map(\.name))
+        XCTAssertEqual(result.scanProgress.scannedBrokers.map { $0.name }.sorted(), expected.map(\.name))
         XCTAssertEqual(result.resultsFound.count, 1)
     }
 
@@ -279,7 +279,7 @@ final class MapperToUITests: XCTestCase {
 
         XCTAssertEqual(result.scanProgress.currentScans, 2)
         XCTAssertEqual(result.scanProgress.scannedBrokers.count, result.scanProgress.currentScans)
-        XCTAssertEqual(result.scanProgress.scannedBrokers.map{ $0.name }.sorted(), ["Broker #1", "mirror"])
+        XCTAssertEqual(result.scanProgress.scannedBrokers.map { $0.name }.sorted(), ["Broker #1", "mirror"])
     }
 
     func testWhenMirrorSiteIsInRemovedPeriod_thenItShouldNotBeAddedToScannedBrokersCurrentScans() {
@@ -298,7 +298,7 @@ final class MapperToUITests: XCTestCase {
 
         XCTAssertEqual(result.scanProgress.currentScans, 1)
         XCTAssertEqual(result.scanProgress.scannedBrokers.count, result.scanProgress.currentScans)
-        XCTAssertEqual(result.scanProgress.scannedBrokers.map{ $0.name }.sorted(), ["Broker #2"])
+        XCTAssertEqual(result.scanProgress.scannedBrokers.map { $0.name }.sorted(), ["Broker #2"])
     }
 
     func testWhenMirrorSiteIsNotInRemovedPeriod_thenMatchIsAdded() {

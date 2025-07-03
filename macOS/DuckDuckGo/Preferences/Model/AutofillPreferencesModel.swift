@@ -121,8 +121,8 @@ final class AutofillPreferencesModel: ObservableObject {
         self.passwordManager = passwordManager
     }
 
-    func openImportBrowserDataWindow() {
-        NSApp.sendAction(#selector(AppDelegate.openImportBrowserDataWindow(_:)), to: nil, from: nil)
+    func openImportPasswordsWindow() {
+        NSApp.sendAction(#selector(AppDelegate.openImportPasswordsWindow(_:)), to: nil, from: nil)
     }
 
     func openExportLogins() {

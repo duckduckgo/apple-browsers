@@ -170,7 +170,7 @@ New: \(subscription.debugDescription, privacy: .public)
         cacheSerialQueue.sync {
             let expiryDate = subscription.expiresOrRenewsAt
 #if DEBUG
-            // In DEBUG the subscription duration is just a a couple of minutes, we want to avoid the cache to be immediately invalidated
+            // In DEBUG the subscription duration is just a few minutes, we want to avoid the cache to be immediately invalidated
             let isInTheFuture = false
 #else
             let isInTheFuture = expiryDate.isInTheFuture()
@@ -182,14 +182,9 @@ New: \(subscription.debugDescription, privacy: .public)
                 Logger.subscriptionEndpointService.debug("Subscription cache set with default expiration date")
                 subscriptionCache.set(subscription)
             }
-            Logger.subscriptionEndpointService.debug("Notifying subscription changed")
             Task { @MainActor in
+                Logger.subscriptionEndpointService.debug("Notifying subscription changed")
                 NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: subscription])
-                // TMP: Convert to Entitlement (authV1)
-                if let features = subscription.features {
-                    let entitlements = features.map { $0.entitlement }
-                    NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
-                }
             }
         }
     }

@@ -24,14 +24,16 @@ import Common
 @MainActor
 struct DataImportView: ModalView {
 
+    private let isDataTypePickerExpanded: Bool
     @Environment(\.dismiss) private var dismiss
 
     @State var model: DataImportViewModel
     let title: String
 
-    init(model: DataImportViewModel = DataImportViewModel(), title: String = UserText.importDataTitle) {
+    init(model: DataImportViewModel = DataImportViewModel(), title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool) {
         self._model = State(initialValue: model)
         self.title = title
+        self.isDataTypePickerExpanded = isDataTypePickerExpanded
     }
 
     struct ProgressState {
@@ -65,8 +67,6 @@ struct DataImportView: ModalView {
                     .padding(.bottom, 8)
             }
 
-            Divider()
-
             viewFooter()
                 .padding(.top, 16)
                 .padding(.bottom, 16)
@@ -79,81 +79,136 @@ struct DataImportView: ModalView {
 #endif
         }
         .font(.system(size: 13))
-        .frame(width: 512)
+        .frame(width: 420)
         .fixedSize()
     }
 
+    @ViewBuilder
     private func viewHeader() -> some View {
-        return VStack(alignment: .leading, spacing: 0) {
-            // If there are no errors show summary success header
-            if case .summary = model.screen, !model.hasAnySummaryError {
-                VStack(alignment: .leading) {
-                    Image(.success96)
-                    Text(UserText.importDataSuccessTitle)
-                        .foregroundColor(.primary)
-                        .font(.system(size: 17, weight: .bold))
-                }
-                .padding(.bottom, 16)
-            } else if case .shortcuts = model.screen {
-                Text(UserText.importDataShortcutsTitle)
-                    .font(.title2.weight(.semibold))
-                    .padding(.bottom, 24)
-
-            } else {
-                // If screen is not the first screen where the user choose the type of import they want to do show the generic title.
-                // Otherwise show the injected title.
-                let title = model.screen == .profileAndDataTypesPicker ? self.title : UserText.importDataTitle
-
-                Text(title)
-                    .font(.title2.weight(.semibold))
-                    .padding(.bottom, 24)
-
-                Text(UserText.importDataSourceTitle)
-                    .padding(.bottom, 16)
-
-                // browser to import data from picker popup
-                if case .feedback = model.screen {} else {
-                    DataImportSourcePicker(importSources: model.availableImportSources, selectedSource: model.importSource) { importSource in
-                        model.update(with: importSource)
-                    }
-                    .disabled(model.isImportSourcePickerDisabled)
-                    .padding(.bottom, 16)
-                }
-            }
+        switch model.screen {
+        case .summary where !model.hasAnySummaryError:
+            summarySuccessHeader
+        case .shortcuts:
+            shortcutsHeader
+        default:
+            defaultHeader
         }
     }
 
+    @ViewBuilder
+    private var summarySuccessHeader: some View {
+        VStack(alignment: .leading) {
+            Image(.success96)
+            Text(UserText.importDataSuccessTitle)
+                .foregroundColor(.primary)
+                .font(.system(size: 17, weight: .bold))
+        }
+        .padding(.bottom, 16)
+    }
+
+    private var shortcutsHeader: some View {
+        Text(UserText.importDataShortcutsTitle)
+            .font(.title2.weight(.semibold))
+            .padding(.bottom, 20)
+    }
+
+    @ViewBuilder
+    private var defaultHeader: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // If screen is not the first screen where the user choose the type of import they want to do show the generic title.
+            // Otherwise show the injected title.
+            let title = model.screen == .profileAndDataTypesPicker ? self.title : UserText.importDataTitle
+
+            Text(title)
+                .font(.title2.weight(.semibold))
+                .padding(.bottom, 20)
+        }
+    }
+
+    @ViewBuilder var importSourcePicker: some View {
+        // browser to import data from picker popup
+        DataImportSourcePicker(importSources: model.availableImportSources, selectedSource: model.importSource) { importSource in
+            model.update(with: importSource)
+        }
+        .padding(.bottom, 8)
+        .disabled(model.isImportSourcePickerDisabled)
+    }
+
+    @ViewBuilder
     private func viewBody() -> some View {
         VStack(alignment: .leading, spacing: 0) {
             // body
             switch model.screen {
             case .profileAndDataTypesPicker:
+                profileAndDataTypesPickerBody
+            case .moreInfo:
+                // you will be asked for your keychain password blah blah...
+                moreInfoBody
+            case .getReadPermission(let url):
+                // give request to Safari folder, select Bookmarks.plist using open panel
+                getReadPermissionBody(url: url)
+            case .fileImport(let dataType, let summaryTypes):
+                fileImportBody(dataType: dataType, summaryTypes: summaryTypes)
+            case .summary(let dataTypes, let isFileImport):
+                DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: isFileImport)
+            case .feedback:
+                feedbackBody
+            case .shortcuts(let dataTypes):
+                DataImportShortcutsView(dataTypes: dataTypes)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var profileAndDataTypesPickerBody: some View {
+        importPickerPanel {
+            VStack(alignment: .leading, spacing: 8) {
                 // Browser Profile picker
                 if model.browserProfiles?.validImportableProfiles.count ?? 0 > 1 {
                     DataImportProfilePicker(profileList: model.browserProfiles,
                                             selectedProfile: $model.selectedProfile)
+                    .padding(.bottom, 8)
                     .disabled(model.isImportSourcePickerDisabled)
-                    .padding(.bottom, 24)
                 }
 
-                // Bookmarks/Passwords checkboxes
-                DataImportTypePicker(viewModel: $model)
+                DataImportTypePicker(viewModel: $model, isDataTypePickerExpanded: isDataTypePickerExpanded)
                     .disabled(model.isImportSourcePickerDisabled)
+                .padding(.top, 8)
+            }
+        }
+        passwordsExplainerView().padding(.top, 12)
+    }
 
-                passwordsExplainerView().padding(.top, 20)
+    @ViewBuilder
+    private var moreInfoBody: some View {
+        importPickerPanel {
+            BrowserImportMoreInfoView(source: model.importSource)
+        }
+    }
 
-            case .moreInfo:
-                // you will be asked for your keychain password blah blah...
-                BrowserImportMoreInfoView(source: model.importSource)
+    @ViewBuilder
+    private var feedbackBody: some View {
+        importSourceDataTitle
+        VStack(alignment: .leading, spacing: 0) {
+            DataImportSummaryView(model)
+                .padding(.bottom, 20)
+            ReportFeedbackView(model: $model.reportModel)
+        }
+    }
 
-            case .getReadPermission(let url):
-                // give request to Safari folder, select Bookmarks.plist using open panel
-                RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
+    @ViewBuilder
+    private func getReadPermissionBody(url: URL) -> some View {
+        importPickerPanel {
+            RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
+                model.initiateImport()
+            }
+        }
+    }
 
-                    model.initiateImport()
-                }
-
-            case .fileImport(let dataType, summary: let summaryTypes):
+    @ViewBuilder
+    private func fileImportBody(dataType: DataImport.DataType, summaryTypes: Set<DataImport.DataType>) -> some View {
+        importPickerPanel {
+            VStack(alignment: .leading, spacing: 0) {
                 if !summaryTypes.isEmpty {
                     DataImportSummaryView(model, dataTypes: summaryTypes)
                         .padding(.bottom, 24)
@@ -162,10 +217,8 @@ struct DataImportView: ModalView {
                 // if no data to import
                 if model.summary(for: dataType)?.isEmpty == true
                     || model.error(for: dataType)?.errorType == .noData {
-
                     DataImportNoDataView(source: model.importSource, dataType: dataType)
                         .padding(.bottom, 24)
-
                 // if browser importer failed - display error message
                 } else if model.error(for: dataType) != nil {
                     DataImportErrorView(source: model.importSource, dataType: dataType)
@@ -178,24 +231,31 @@ struct DataImportView: ModalView {
                 } onFileDrop: { url in
                     model.initiateImport(fileURL: url)
                 }
-
-                if dataType == .passwords {
-                    passwordsExplainerView().padding(.top, 20)
-                }
-
-            case .summary(let dataTypes, let isFileImport):
-                DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: isFileImport)
-
-            case .feedback:
-                DataImportSummaryView(model)
-                .padding(.bottom, 20)
-
-                ReportFeedbackView(model: $model.reportModel)
-
-            case .shortcuts(let dataTypes):
-                DataImportShortcutsView(dataTypes: dataTypes)
             }
         }
+        if dataType == .passwords {
+            passwordsExplainerView().padding(.top, 20)
+        }
+    }
+
+    private func importPickerPanel<Content: View>(_ content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            importSourceDataTitle
+            importSourcePicker
+            content()
+        }
+        .frame(idealWidth: .infinity, maxWidth: .infinity, alignment: .topLeading)
+        .padding(12)
+        .background(Color.surfaceSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.decorationTertiary, lineWidth: 1)
+        )
+    }
+
+    private var importSourceDataTitle: some View {
+        Text(UserText.importDataSourceTitle)
     }
 
     private func progressView(_ progress: TaskProgress<DataImportViewModel, Never, DataImportProgressEvent>) -> some View {
@@ -231,16 +291,17 @@ struct DataImportView: ModalView {
 
     private func passwordsExplainerView() -> some View {
         HStack(alignment: .top, spacing: 8) {
-            Image(.lockColor16)
-            Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
-                .font(.system(size: 12))
-                .foregroundColor(.secondary)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
+            (
+                Text(Image(.lockSolid16)).baselineOffset(-1.0)
+                +
+                Text(verbatim: " ")
+                +
+                Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
+            )
+            .font(.system(size: 10))
+            .foregroundColor(.secondary)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .frame(idealWidth: .infinity, maxWidth: .infinity, alignment: .topLeading)
-        .padding(14)
-        .background(Color.blackWhite1)
-        .roundedBorder()
     }
 
     private func handleImportProgress(_ progress: TaskProgress<DataImportViewModel, Never, DataImportProgressEvent>) async {
@@ -584,7 +645,7 @@ extension DataImportViewModel {
 
 #Preview {
     VStack(alignment: .leading, spacing: 0) { @MainActor in
-        DataImportView(model: ._mockPreviewViewModel())
+        DataImportView(model: ._mockPreviewViewModel(), isDataTypePickerExpanded: false)
             // swiftlint:disable:next force_cast
             .environment(\EnvironmentValues.presentationMode as! WritableKeyPath,
                           Binding<PresentationMode> {

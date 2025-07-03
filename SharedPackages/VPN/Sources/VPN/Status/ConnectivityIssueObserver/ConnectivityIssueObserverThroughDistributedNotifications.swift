@@ -49,7 +49,6 @@ public class ConnectivityIssueObserverThroughDistributedNotifications: Connectiv
     }
 
     private func start() {
-        // swiftlint:disable:next unused_capture_list
         distributedNotificationCenter.publisher(for: .issuesStarted).sink { [weak self] _ in
             guard let self else { return }
 
@@ -57,7 +56,6 @@ public class ConnectivityIssueObserverThroughDistributedNotifications: Connectiv
             subject.send(true)
         }.store(in: &cancellables)
 
-        // swiftlint:disable:next unused_capture_list
         distributedNotificationCenter.publisher(for: .issuesResolved).sink { [weak self] _ in
             guard let self else { return }
 

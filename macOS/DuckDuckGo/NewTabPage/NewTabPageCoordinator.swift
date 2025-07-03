@@ -46,6 +46,7 @@ final class NewTabPageCoordinator {
         legacyKeyValueStore: KeyValueStoring = UserDefaultsWrapper<Any>.sharedDefaults,
         notificationCenter: NotificationCenter = .default,
         visualizeFireAnimationDecider: VisualizeFireAnimationDecider,
+        featureFlagger: FeatureFlagger,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
 
@@ -72,7 +73,8 @@ final class NewTabPageCoordinator {
             protectionsReportModel: protectionsReportModel,
             freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
             tld: tld,
-            fire: { @MainActor in fireCoordinator.fireViewModel.fire }
+            fire: { @MainActor in fireCoordinator.fireViewModel.fire },
+            featureFlagger: featureFlagger
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

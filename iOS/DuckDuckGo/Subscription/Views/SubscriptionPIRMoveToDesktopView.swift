@@ -40,7 +40,7 @@ struct SubscriptionPIRMoveToDesktopView: View {
         static let titleMaxWidth = 200.0
         static let headerPadding = 5.0
         static let generalSpacing = 20.0
-        static let cornerRadius = 10.0
+        static let cornerRadius = 12.0
         static let windowsIcon = "Platform-Windows-16-subscriptions"
         static let macOSIcon = "Platform-Apple-16-subscriptions"
     }

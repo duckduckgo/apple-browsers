@@ -76,7 +76,6 @@ struct SyncPromoView: View {
                     Button {
                         viewModel.dismissButtonAction?()
                     } label: {
-                        #warning("ICONS image size changed from 24 -> 16")
                         Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
                             .foregroundColor(.primary)
                     }

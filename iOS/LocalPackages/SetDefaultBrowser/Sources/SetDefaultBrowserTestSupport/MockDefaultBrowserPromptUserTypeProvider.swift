@@ -1,7 +1,8 @@
 //
-//  String+StaticString.swift
+//  MockDefaultBrowserPromptUserTypeProvider.swift
+//  DuckDuckGo
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,12 +17,16 @@
 //  limitations under the License.
 //
 
-import Foundation
+import SetDefaultBrowserCore
 
-extension String {
-    init(_ staticString: StaticString) {
-        self = staticString.withUTF8Buffer {
-            String(decoding: $0, as: UTF8.self)
-        }
+public final class MockDefaultBrowserPromptUserTypeProvider: DefaultBrowserPromptUserTypeProviding {
+    public init() {}
+
+    public private(set) var didCallCurrentUserType = false
+    public var userType: DefaultBrowserPromptUserType? = .new
+
+    public func currentUserType() -> DefaultBrowserPromptUserType? {
+        didCallCurrentUserType = true
+        return userType
     }
 }

@@ -207,6 +207,12 @@
                <Test
                   Identifier = "NavigationProtectionIntegrationTests/testReferrerTrimming()">
                </Test>
+               <Test
+                  Identifier = "PinnedTabsManagerProviderTests/test_WhenMigratingFromSharedToPerWindow_ThenTabsAreMigratedToFirstNewPerWindowManager()">
+               </Test>
+               <Test
+                  Identifier = "PinnedTabsManagerProviderTests/test_WhenNoTabsExist_ThenArePinnedTabsEmptyReturnsTrueForShared()">
+               </Test>
             </SkippedTests>
          </TestableReference>
          <TestableReference

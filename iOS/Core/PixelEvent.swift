@@ -1221,6 +1221,7 @@ extension Pixel {
         case aiChatMetricOpenHistory
         case aiChatMetricOpenMostRecentHistoryChat
         case aiChatMetricSentPromptOngoingChat
+        case aiChatInternalSwitchBarDisplayed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -2391,6 +2392,7 @@ extension Pixel.Event {
         case .aiChatMetricOpenHistory: return "m_aichat_open_history"
         case .aiChatMetricOpenMostRecentHistoryChat: return "m_aichat_open_most_recent_history_chat"
         case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
+        case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

@@ -118,6 +118,9 @@ class MainViewController: UIViewController {
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
 
+    @UserDefaultsWrapper(key: .networkProtectionEntitlementsExpired, defaultValue: true)
+    private var lastKnownEntitlementsExpired: Bool
+
     private var localUpdatesCancellable: AnyCancellable?
     private var syncUpdatesCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
@@ -223,6 +226,7 @@ class MainViewController: UIViewController {
 
     private var duckPlayerEntryPointVisible = false
     private var isExperimentalAppearanceEnabled: Bool { themeManager.properties.isExperimentalThemingEnabled }
+    private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -390,6 +394,8 @@ class MainViewController: UIViewController {
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
+
+        checkSubscriptionEntitlements()
 
         findInPageView.delegate = self
         findInPageBottomLayoutConstraint.constant = 0
@@ -786,13 +792,15 @@ class MainViewController: UIViewController {
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
         keyboardHeight = keyboardFrameInView.height
 
-        findInPageBottomLayoutConstraint.constant = intersection.height
-
-        let y = self.view.frame.height - intersection.height
-        let frame = self.findInPageView.frame
-        UIView.animate(withDuration: duration, delay: 0, options: animationCurve, animations: {
-            self.findInPageView.frame = CGRect(x: 0, y: y - frame.height, width: frame.width, height: frame.height)
-        }, completion: nil)
+        // On iPad the keyboard will change even if using the hardware keyboard and we don't want FIP to move in that case.
+        if intersection.height < 1.0 || intersection.height > (isPad ? 50 : 0) {
+            findInPageBottomLayoutConstraint.constant = intersection.height
+            let y = self.view.frame.height - intersection.height
+            let frame = self.findInPageView.frame
+            UIView.animate(withDuration: duration, delay: 0, options: animationCurve, animations: {
+                self.findInPageView.frame = CGRect(x: 0, y: y - frame.height, width: frame.width, height: frame.height)
+            }, completion: nil)
+        }
 
         if self.appSettings.currentAddressBarPosition.isBottom {
             let intersection = safeAreaFrame.intersection(keyboardFrameInView)
@@ -1425,7 +1433,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth, useActiveShadow: isExperimentalAppearanceEnabled)
+            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32, useActiveShadow: isExperimentalAppearanceEnabled)
         } else {
             self.suggestionTrayController?.fill()
         }
@@ -1902,31 +1910,73 @@ class MainViewController: UIViewController {
         AppDependencyProvider.shared.networkProtectionTunnelController
     }
 
+    func checkSubscriptionEntitlements() {
+        Task {
+            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            let hasEntitlements = (try? await subscriptionManager.isEnabled(feature: .networkProtection)) ?? false
+            
+            if hasEntitlements && lastKnownEntitlementsExpired {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        source: .clientCheck(sourceObject: self)),
+                    frequency: .dailyAndCount)
+                
+                lastKnownEntitlementsExpired = false
+            } else if !hasEntitlements && !lastKnownEntitlementsExpired {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        source: .clientCheck(sourceObject: self)),
+                    frequency: .dailyAndCount)
+                
+                lastKnownEntitlementsExpired = true
+            }
+        }
+    }
+
     @objc
     private func onEntitlementsChange(_ notification: Notification) {
         Task {
-            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            guard let userInfo = notification.userInfo,
+                  let payload = EntitlementsDidChangePayload(notificationUserInfo: userInfo) else {
+                assertionFailure("Missing entitlements payload")
+                Logger.subscription.fault("Missing entitlements payload")
+                return
+            }
+            let hasEntitlement = payload.entitlements.contains(.networkProtection)
             let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            let hasEntitlements = (try? await subscriptionManager.isEnabled(feature: .networkProtection)) ?? false
 
-            guard let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
-                      hasEntitlement == false
-            else {
+            if hasEntitlements {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureEnabled(
                         isSubscriptionActive: isSubscriptionActive,
                         isAuthV2Enabled: isAuthV2Enabled,
                         source: .notification(sourceObject: notification.object)),
                     frequency: .dailyAndCount)
-                return
-            }
 
-            PixelKit.fire(
-                VPNSubscriptionStatusPixel.vpnFeatureDisabled(
-                    isSubscriptionActive: isSubscriptionActive,
-                    isAuthV2Enabled: isAuthV2Enabled,
-                    source: .notification(sourceObject: notification.object)),
-                frequency: .dailyAndCount)
+                if lastKnownEntitlementsExpired {
+                    lastKnownEntitlementsExpired = false
+                }
+
+                return
+            } else {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        source: .notification(sourceObject: notification.object)),
+                    frequency: .dailyAndCount)
+
+                if !lastKnownEntitlementsExpired {
+                    lastKnownEntitlementsExpired = true
+                }
+            }
 
             if await networkProtectionTunnelController.isInstalled {
                 tunnelDefaults.enableEntitlementMessaging()
@@ -2481,7 +2531,7 @@ extension MainViewController: OmniBarDelegate {
     private func shareCurrentURLFromAddressBar() {
         Pixel.fire(pixel: .addressBarShare)
         guard let link = currentTab?.link else { return }
-        currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButton)
+        currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.shareButton)
     }
 
     private func openAIChatFromAddressBar() {

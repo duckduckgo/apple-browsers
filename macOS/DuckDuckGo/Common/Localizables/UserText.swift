@@ -578,6 +578,10 @@ struct UserText {
     static let importDataSourceTitle = NSLocalizedString("import.browser.data.source.title", value: "Where do you want to import from?", comment: "Import Browser Data title for option to choose source browser to import from")
     static let importDataSubtitle = NSLocalizedString("import.browser.data.source.subtitle", value: "Access and manage your passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Subtitle explaining where users can find imported passwords.")
     static let importDataSuccessTitle = NSLocalizedString("import.browser.data.success.title", value: "Import complete!", comment: "message about Passwords and or bookmarks Data Import completion")
+    static let importDataImportTypeTitleCollapsedAll = NSLocalizedString("import.browser.data.import-type.title.collapsed.all", value: "Import all available data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
+    static let importDataImportTypeTitleSelected = NSLocalizedString("import.browser.data.import-type.title.collapsed", value: "Import selected data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
+    static let importDataImportTypeSubtitleBookmarksAndPasswords = NSLocalizedString("import.browser.data.import-type.subtitle.bookmarks.and.passwords", value: "Bookmarks and passwords", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
+    static let importDataImportTypeSubtitleNone = NSLocalizedString("import.browser.data.import-type.subtitle.none", value: "None", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
 
     static let exportLogins = NSLocalizedString("export.logins.data", value: "Export Passwords…", comment: "Opens Export Logins Data dialog")
     static let exportBookmarks = NSLocalizedString("export.bookmarks.menu.item", value: "Export Bookmarks…", comment: "Export bookmarks menu item")
@@ -889,7 +893,7 @@ struct UserText {
     }
 
     static let importLoginsPasswords = NSLocalizedString("import.logins.passwords", value: "Passwords", comment: "Title text for the Passwords import option")
-    static let importLoginsPasswordsExplainer = NSLocalizedString("import.logins.passwords.explainer", value: "Passwords are encrypted. Viewing them or filling out forms requires Touch ID or a password. Nobody but you can see your passwords, not even us. Find Passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage.")
+    static let importLoginsPasswordsExplainer = NSLocalizedString("import.logins.passwords.explainer2", value: "Passwords are encrypted. Nobody but you can see your passwords, not even us. Find Passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage.")
     static let importLoginsPasswordsExplainerAutolockOff = NSLocalizedString("import.logins.passwords.explainer.autolock.off", value: "Passwords are encrypted. We recommend setting up Auto-lock to keep your passwords even more secure. Set it up in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage when autolock is disabled")
 
     static let importBookmarksButtonTitle = NSLocalizedString("bookmarks.import.button.title", value: "Import", comment: "Button text to open bookmark import dialog")

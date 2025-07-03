@@ -97,8 +97,13 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         super.setUp()
         testNotificationCenter = TestNotificationCenter()
         mockHostViewController = MockDuckPlayerHosting()
-        mockHostViewController.webView = WKWebView(frame: .zero, configuration: .nonPersistent())
+        let mockWebView = MockWebView(frame: .zero, configuration: .nonPersistent())
+        mockHostViewController.webView = mockWebView
         mockHostViewController.persistentBottomBarHeight = 44.0 // Set a standard address bar height
+        
+        // Set default YouTube watch URL for tests (required for new presentPill safeguard)
+        let defaultYouTubeURL = URL(string: "https://www.youtube.com/watch?v=defaultTestVideo")!
+        mockWebView.setCurrentURL(defaultYouTubeURL)
 
         // Initialize the content bottom constraint
         let dummyView = UIView()
@@ -1764,49 +1769,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertNotNil(sut.playerViewModel, "Player view model should exist and handle its own cleanup via dismissPublisher")
     }
 
-    @MainActor
-    func testRoundedPageSheetStyling_AppliesCorrectAppearance() {
-        // Given
-        let videoID = "test123"
-        let source: DuckPlayer.VideoNavigationSource = .youtube
-        mockDuckPlayerSettings.welcomeMessageShown = true
-
-        // When
-        _ = sut.presentDuckPlayer(
-            videoID: videoID,
-            source: source,
-            in: mockHostViewController,
-            title: nil,
-            timestamp: nil
-        )
-
-        // Then
-        guard let roundedSheetController = mockHostViewController.presentedViewController as? RoundedPageSheetContainerViewController else {
-            XCTFail("Should present RoundedPageSheetContainerViewController")
-            return
-        }
-        
-        // Force view loading to trigger viewDidLoad and setup methods
-        _ = roundedSheetController.view
-
-        // Verify background view exists and is configured
-        XCTAssertEqual(roundedSheetController.backgroundView.backgroundColor, .black, "Background should be black")
-
-        // Verify content view controller background
-        guard let hostingController = roundedSheetController.contentViewController as? UIHostingController<DuckPlayerView> else {
-            XCTFail("Content controller should be UIHostingController<DuckPlayerView>")
-            return
-        }
-
-        XCTAssertEqual(hostingController.view.backgroundColor, .black, "Hosting controller background should be black")
-
-        // Verify the content view has rounded corners applied
-        // Note: Rounded corners are applied in the container's setupContentViewController method
-        XCTAssertEqual(hostingController.view.layer.cornerRadius, 20, "Content view should have 20pt corner radius")
-        XCTAssertEqual(hostingController.view.layer.maskedCorners, [.layerMinXMinYCorner, .layerMaxXMinYCorner],
-                      "Should mask top corners only")
-        XCTAssertTrue(hostingController.view.clipsToBounds, "Should clip to bounds for rounded corners")
-    }
 
     @MainActor
     func testInteractiveDismissal_WithPanGesture() {
@@ -2271,6 +2233,60 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         // Then - Should NOT receive timestamp update when hostView is nil
         XCTAssertTrue(receivedTimestamps.isEmpty, "Should not receive timestamp updates when hostView is nil")
+    }
+    
+    // MARK: - Additional SERP Protection Tests
+
+    @MainActor
+    func testPresentPill_WhenWebViewURLIsNotYouTubeWatch_ShouldNotPresentPill() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = 100
+        mockDuckPlayerSettings.primingMessagePresented = true
+        mockDuckPlayerSettings.nativeUIYoutubeMode = .ask
+        
+        // Set webView URL to a non-YouTube watch URL (like a SERP page)
+        let serpURL = URL(string: "https://duckduckgo.com/?q=test+search")!
+        guard let mockWebView = mockHostViewController.webView as? MockWebView else {
+            XCTFail("Expected MockWebView")
+            return
+        }
+        mockWebView.setCurrentURL(serpURL)
+        
+        // When
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        
+        // Then - pill should NOT be presented
+        XCTAssertNil(sut.containerViewModel, "Container view model should not be created when webView URL is not YouTube watch")
+        XCTAssertNil(sut.containerViewController, "Container view controller should not be created when webView URL is not YouTube watch")
+        XCTAssertEqual(sut.state.videoID, nil, "Video ID should not be set when pill is not presented")
+        XCTAssertEqual(mockHostViewController.view.subviews.count, 1, "No pill view should be added to host view")
+    }
+    
+    @MainActor
+    func testPresentPill_WhenWebViewURLIsYouTubeWatch_ShouldPresentPill() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = 100
+        mockDuckPlayerSettings.primingMessagePresented = true
+        mockDuckPlayerSettings.nativeUIYoutubeMode = .ask
+        
+        // Set webView URL to a YouTube watch URL
+        let youtubeURL = URL(string: "https://www.youtube.com/watch?v=\(videoID)")!
+        guard let mockWebView = mockHostViewController.webView as? MockWebView else {
+            XCTFail("Expected MockWebView")
+            return
+        }
+        mockWebView.setCurrentURL(youtubeURL)
+        
+        // When
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        
+        // Then - pill SHOULD be presented
+        XCTAssertNotNil(sut.containerViewModel, "Container view model should be created when webView URL is YouTube watch")
+        XCTAssertNotNil(sut.containerViewController, "Container view controller should be created when webView URL is YouTube watch")
+        XCTAssertEqual(sut.state.videoID, videoID, "Video ID should be set when pill is presented")
+        XCTAssertEqual(mockHostViewController.view.subviews.count, 2, "Pill view should be added to host view")
     }
     
 }

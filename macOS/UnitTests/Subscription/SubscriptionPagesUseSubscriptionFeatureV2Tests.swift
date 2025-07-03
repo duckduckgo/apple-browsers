@@ -96,7 +96,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
                                                         notificationCenter: mockNotificationCenter,
                                                         dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
-                                                        featureFlagger: mockFeatureFlagger)
+                                                        featureFlagger: mockFeatureFlagger,
+                                                        aiChatURL: URL.duckDuckGo)
     }
 
     // MARK: - Free Trials

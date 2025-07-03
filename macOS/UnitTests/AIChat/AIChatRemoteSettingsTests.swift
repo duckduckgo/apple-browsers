@@ -25,18 +25,20 @@ import BrowserServicesKit
 class AIChatRemoteSettingsTests: XCTestCase {
     var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
     var aiChatRemoteSettings: AIChatRemoteSettings!
+    var debugURLProvider: AIChatDebugURLSettingsRepresentable!
 
     private func setupAIChatRemoteSettings(with config: MockConfig) -> AIChatRemoteSettings {
         let embeddedDataProvider = MockEmbeddedDataProvider()
         embeddedDataProvider.embeddedDataEtag = "12345"
         embeddedDataProvider.embeddedData = config.embeddedData
+        debugURLProvider = AIChatMockDebugSettings()
 
         let manager = PrivacyConfigurationManager(fetchedETag: nil,
                                                   fetchedData: nil,
                                                   embeddedDataProvider: embeddedDataProvider,
                                                   localProtection: MockDomainsProtectionStore(),
                                                   internalUserDecider: MockInternalUserDecider())
-        return AIChatRemoteSettings(privacyConfigurationManager: manager)
+        return AIChatRemoteSettings(privacyConfigurationManager: manager, debugURLSettings: debugURLProvider)
     }
 
     func testValidRemoteURL_ThenConfigUsesRemoteURL() {
@@ -44,6 +46,15 @@ class AIChatRemoteSettingsTests: XCTestCase {
         config.embeddedData = config.configWithSettings
         aiChatRemoteSettings = setupAIChatRemoteSettings(with: config)
         XCTAssertEqual(config.aiChatURL, aiChatRemoteSettings.aiChatURL.absoluteString)
+    }
+
+    func testValidCustomURL_ThenConfigUsesCustomURL() {
+        var config = MockConfig()
+        config.embeddedData = config.configWithSettings
+        aiChatRemoteSettings = setupAIChatRemoteSettings(with: config)
+        let customURL = "https://example.com"
+        debugURLProvider.customURL = customURL
+        XCTAssertEqual(customURL, aiChatRemoteSettings.aiChatURL.absoluteString)
     }
 
     func testInvalidRemoteURL_ThenConfigUsesDefaultURL() {

@@ -505,8 +505,13 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     @MainActor
     // swiftlint:disable:next cyclomatic_complexity
     func presentPill(for videoID: String, in hostViewController: DuckPlayerHosting, timestamp: TimeInterval?) {
-        
+
         if duckPlayerSettings.nativeUIYoutubeMode == .never {
+            return
+        }
+        
+        // Check if webView exists and has a non-YouTube watch URL
+        if let webView = hostViewController.webView, let url = webView.url, !url.isYoutubeWatch {
             return
         }
 

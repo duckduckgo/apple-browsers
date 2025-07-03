@@ -37,31 +37,6 @@ public class DataBrokerProtectionAgentManagerProvider {
 
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
-    private static var vaultInitializationFailureReported = false
-
-    private static func makeSecureVault(pixelKit: PixelKit,
-                                        sharedPixelsHandler: DataBrokerProtectionSharedPixelsHandler,
-                                        pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>) -> () -> (any DataBrokerProtectionSecureVault)? {
-        return {
-            let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
-            let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-            let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
-
-            do {
-                let vault = try vaultFactory.makeVault(reporter: reporter)
-                if vaultInitializationFailureReported {
-                    pixelHandler.fire(.backgroundAgentSetUpSecureVaultInitSucceeded)
-                    vaultInitializationFailureReported = false
-                }
-                return vault
-            } catch {
-                pixelHandler.fire(.backgroundAgentSetUpFailedSecureVaultInitFailed(error: error))
-                vaultInitializationFailureReported = true
-                return nil
-            }
-        }
-    }
-
     public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                     configurationManager: DefaultConfigurationManager,
                                     privacyConfigurationManager: DBPPrivacyConfigurationManager,
@@ -95,29 +70,36 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                   unknownUsernameCategorization: false,
                                                   partialFormSaves: false,
                                                   passwordVariantCategorization: false,
-                                                  inputFocusApi: false)
+                                                  inputFocusApi: false,
+                                                  autocompleteAttributeSupport: false)
         let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
                                                             sessionKey: UUID().uuidString,
                                                             messageSecret: UUID().uuidString,
                                                             featureToggles: features)
 
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
-        let vaultMaker: () -> (any DataBrokerProtectionSecureVault)? = {
-            makeSecureVault(pixelKit: pixelKit, sharedPixelsHandler: sharedPixelsHandler, pixelHandler: pixelHandler)()
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+
+        let vault: DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>
+        do {
+            vault = try vaultFactory.makeVault(reporter: reporter)
+        } catch let error {
+            pixelHandler.fire(.backgroundAgentSetUpFailedSecureVaultInitFailed(error: error))
+            return nil
         }
-        let localBrokerService = LocalBrokerJSONService(vaultMaker: vaultMaker,
-                                                        pixelHandler: sharedPixelsHandler)
+
+        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
         let brokerUpdater = RemoteBrokerJSONService(featureFlagger: remoteBrokerDeliveryFeatureFlagger,
                                                     settings: dbpSettings,
-                                                    vaultMaker: vaultMaker,
+                                                    vault: vault,
                                                     authenticationManager: authenticationManager,
                                                     pixelHandler: sharedPixelsHandler,
                                                     localBrokerProvider: localBrokerService)
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker,
-                                                    pixelHandler: sharedPixelsHandler,
-                                                    vaultMaker: vaultMaker,
-                                                    localBrokerService: brokerUpdater)
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let jobQueue = OperationQueue()

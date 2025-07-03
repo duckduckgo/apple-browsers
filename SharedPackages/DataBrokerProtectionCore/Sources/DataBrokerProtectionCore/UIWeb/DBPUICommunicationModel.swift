@@ -138,7 +138,7 @@ public struct DBPUIUserProfile: Codable {
 }
 
 public extension DBPUIUserProfile {
-    init(fromDataBrokerProtectionProfile profile: DataBrokerProtectionProfile) {
+    init(from profile: DataBrokerProtectionProfile) {
         names = profile.names.map { DBPUIUserProfileName(first: $0.firstName, middle: $0.middleName, last: $0.lastName, suffix: $0.suffix) }
         addresses = profile.addresses.map { DBPUIUserProfileAddress(street: $0.street, city: $0.city, state: $0.state, zipCode: $0.zipCode) }
         birthYear = profile.birthYear
@@ -311,7 +311,7 @@ extension DBPUIDataBrokerProfileMatch {
         self.init(id: extractedProfile.id,
                   dataBroker: DBPUIDataBroker(name: dataBrokerName, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
                   name: extractedProfile.fullName ?? "No name",
-                  addresses: extractedProfile.addresses?.map {DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
+                  addresses: extractedProfile.addresses?.map { DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
                   alternativeNames: extractedProfile.alternativeNames ?? [String](),
                   relatives: extractedProfile.relatives ?? [String](),
                   foundDate: foundDate.timeIntervalSince1970,

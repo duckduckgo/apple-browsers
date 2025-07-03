@@ -3408,23 +3408,19 @@ extension TabViewController: SaveLoginViewControllerDelegate {
     }
     
     func saveLoginViewController(_ viewController: SaveLoginViewController, didSaveCredentials credentials: SecureVaultModels.WebsiteCredentials) {
-        viewController.dismiss(animated: true)
         saveCredentials(credentials, withSuccessMessage: UserText.autofillLoginSavedToastMessage)
     }
     
     func saveLoginViewController(_ viewController: SaveLoginViewController, didUpdateCredentials credentials: SecureVaultModels.WebsiteCredentials) {
-        viewController.dismiss(animated: true)
         saveCredentials(credentials, withSuccessMessage: UserText.autofillLoginUpdatedToastMessage)
     }
     
     func saveLoginViewControllerDidCancel(_ viewController: SaveLoginViewController) {
-        viewController.dismiss(animated: true)
         saveLoginPromptLastDismissed = Date()
         saveLoginPromptIsPresenting = false
     }
 
     func saveLoginViewController(_ viewController: SaveLoginViewController, didRequestNeverPromptForWebsite domain: String) {
-        viewController.dismiss(animated: true)
         saveLoginPromptLastDismissed = Date()
         saveLoginPromptIsPresenting = false
 
@@ -3455,7 +3451,6 @@ extension TabViewController: SaveLoginViewControllerDelegate {
 
 extension TabViewController: SaveCreditCardViewControllerDelegate {
     func saveCreditCardViewController(_ viewController: SaveCreditCardViewController, didSaveCreditCard card: SecureVaultModels.CreditCard) {
-        viewController.dismiss(animated: true)
         let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
         ActionMessageView.present(message: UserText.autofillCreditCardSavedToastMessage,
                                   actionTitle: UserText.autofillLoginSaveToastActionButton,
@@ -3464,10 +3459,6 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
             guard let self = self else { return }
             self.delegate?.tab(self, didRequestSettingsToCreditCards: card, source: .viewSavedCreditCardPrompt)
         })
-    }
-    
-    func saveCreditCardViewControllerDidCancel(_ viewController: SaveCreditCardViewController) {
-        viewController.dismiss(animated: true)
     }
     
     func saveCreditCardViewControllerConfirmKeepUsing(_ viewController: SaveCreditCardViewController) {

@@ -29,15 +29,16 @@ final class SubscriptionUserScriptTests: XCTestCase {
 
     override func setUp() async throws {
         handler = MockSubscriptionUserScriptHandler()
-        userScript = SubscriptionUserScript(handler: handler)
+        userScript = SubscriptionUserScript(handler: handler, debugHost: nil)
     }
 
     func testThatPublicInitializerSetsUpHandlerWithCorrectArguments() throws {
         let subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
         userScript = SubscriptionUserScript(platform: .ios,
-                                          subscriptionManager: subscriptionManager,
-                                          paidAIChatFlagStatusProvider: { false },
-                                          navigationDelegate: nil)
+                                            subscriptionManager: subscriptionManager,
+                                            paidAIChatFlagStatusProvider: { false },
+                                            navigationDelegate: nil,
+                                            debugHost: nil)
         let messageHandler = try XCTUnwrap(userScript.handler as? SubscriptionUserScriptHandler)
         XCTAssertEqual(messageHandler.platform, .ios)
         XCTAssertIdentical(messageHandler.subscriptionManager as AnyObject, subscriptionManager)

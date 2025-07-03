@@ -25,7 +25,7 @@ final class BookmarksHTMLImporterTests: XCTestCase {
     var underlyingBookmarkImporter: MockBookmarkImporter!
 
     override func setUpWithError() throws {
-        underlyingBookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _ in
+        underlyingBookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _ in
             .init(successful: 0, duplicates: 0, failed: 0)
         })
     }
@@ -48,7 +48,7 @@ final class BookmarksHTMLImporterTests: XCTestCase {
     }
 
     func testWhenValidBookmarksFileIsLoadedThenBookmarksImportIsSuccessful() async {
-        underlyingBookmarkImporter.importBookmarks = { (_, _) in
+        underlyingBookmarkImporter.importBookmarks = { (_, _, _) in
             .init(successful: 42, duplicates: 2, failed: 3)
         }
 
@@ -60,7 +60,7 @@ final class BookmarksHTMLImporterTests: XCTestCase {
     }
 
     func testWhenInvalidBookmarksFileIsLoadedThenBookmarksImportReturnsFailure() async {
-        underlyingBookmarkImporter.importBookmarks = { (_, _) in
+        underlyingBookmarkImporter.importBookmarks = { (_, _, _) in
             .init(successful: 0, duplicates: 0, failed: 0)
         }
 

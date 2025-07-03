@@ -59,13 +59,11 @@ final class LocalBookmarkStore: BookmarkStore {
     init(
         contextProvider: @escaping () -> NSManagedObjectContext,
         favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.desktop),
-        preFormFactorSpecificFavoritesOrder: [String]? = nil,
-        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
+        preFormFactorSpecificFavoritesOrder: [String]? = nil
     ) {
         self.contextProvider = contextProvider
         self.preFormFactorSpecificFavoritesOrder = preFormFactorSpecificFavoritesOrder
         self.favoritesDisplayMode = favoritesDisplayMode
-        self.featureFlagger = featureFlagger
 
         migrateToFormFactorSpecificFavoritesFolders()
         removeInvalidBookmarkEntities()
@@ -88,7 +86,6 @@ final class LocalBookmarkStore: BookmarkStore {
     private(set) var favoritesDisplayMode: FavoritesDisplayMode
     private(set) var didMigrateToFormFactorSpecificFavorites: Bool = false
     private var preFormFactorSpecificFavoritesOrder: [String]?
-    private let featureFlagger: FeatureFlagger
 
     private let contextProvider: () -> NSManagedObjectContext
 
@@ -718,7 +715,7 @@ final class LocalBookmarkStore: BookmarkStore {
     /// 2. **Safari:** Create a root level "Imported Favorites" folder to store bookmarks from the bookmarks bar, and all other bookmarks go at the root level.
     /// 3. **Chrome:** Put all bookmarks at the root level, except for Other Bookmarks which go in a root level "Other Bookmarks" folder.
     /// 4. **Firefox:** Put all bookmarks at the root level, except for Other Bookmarks which go in a root level "Other Bookmarks" folder.
-    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource) -> BookmarksImportSummary {
+    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool = true) -> BookmarksImportSummary {
         var total = BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
 
         do {
@@ -733,6 +730,7 @@ final class LocalBookmarkStore: BookmarkStore {
                 total += createEntitiesFromBookmarks(allFolders: allFolders,
                                                      bookmarks: bookmarks,
                                                      importSourceName: source.importSourceName,
+                                                     markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault,
                                                      in: context)
             }
 
@@ -762,6 +760,7 @@ final class LocalBookmarkStore: BookmarkStore {
     private func createEntitiesFromBookmarks(allFolders: [BookmarkEntity],
                                              bookmarks: ImportedBookmarks,
                                              importSourceName: String,
+                                             markRootBookmarksAsFavoritesByDefault: Bool,
                                              in context: NSManagedObjectContext) -> BookmarksImportSummary {
 
         guard let root = bookmarksRoot(in: context) else {
@@ -773,9 +772,9 @@ final class LocalBookmarkStore: BookmarkStore {
         var total = BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
 
         var parent = root
-        var shouldImportRootBookmarksAsFavorites = !featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport)
+        var markFavorites = markRootBookmarksAsFavoritesByDefault
         if root.children?.count != 0 {
-            shouldImportRootBookmarksAsFavorites = false
+            markFavorites = false
             parent = BookmarkEntity.makeFolder(title: "\(UserText.bookmarkImportedFromFolder) \(importSourceName)",
                                                parent: root,
                                                context: context)
@@ -787,7 +786,7 @@ final class LocalBookmarkStore: BookmarkStore {
         if let bookmarksBar = bookmarks.topLevelFolders.bookmarkBar?.children {
             let (result, favorites) = recursivelyCreateEntitiesAndCollectFavorites(from: bookmarksBar,
                                                                                    parent: parent,
-                                                                                   markBookmarksAsFavorite: shouldImportRootBookmarksAsFavorites,
+                                                                                   markBookmarksAsFavorite: markFavorites,
                                                                                    in: context)
             total += result
             allFavorites.append(contentsOf: favorites)

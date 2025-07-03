@@ -108,8 +108,12 @@ internal class ChromiumDataImporter: DataImporter {
                                                    fraction: passwordsFraction + dataTypeFraction * 0.5))
 
             let bookmarksSummary = bookmarkResult.map { bookmarks in
-                let mergedBookmarks = mergeShortcutsWithBookmarks(bookmarks)
-                return bookmarkImporter.importBookmarks(mergedBookmarks, source: .thirdPartyBrowser(source))
+                if featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport) {
+                    let mergedBookmarks = mergeShortcutsWithBookmarks(bookmarks)
+                    return bookmarkImporter.importBookmarks(mergedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: false)
+                } else {
+                    return bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true)
+                }
             }
 
             if case .success = bookmarksSummary {

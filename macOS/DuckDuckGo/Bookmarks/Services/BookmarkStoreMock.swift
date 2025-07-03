@@ -206,9 +206,9 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
     }
 
     var importBookmarksCalled = false
-    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource) -> BookmarksImportSummary {
+    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool = true) -> BookmarksImportSummary {
         importBookmarksCalled = true
-        return store?.importBookmarks(bookmarks, source: source) ?? BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
+        return store?.importBookmarks(bookmarks, source: source, markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault) ?? BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
     }
 
     var saveBookmarksInNewFolderNamedCalled = false

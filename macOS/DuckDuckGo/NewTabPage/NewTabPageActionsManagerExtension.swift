@@ -41,7 +41,8 @@ extension NewTabPageActionsManager {
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
         tld: TLD,
         fire: @escaping () async -> Fire,
-        keyValueStore: KeyValueStoring = UserDefaults.standard
+        keyValueStore: KeyValueStoring = UserDefaults.standard,
+        featureFlagger: FeatureFlagger
     ) {
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
         let favoritesModel = NewTabPageFavoritesModel(
@@ -76,7 +77,7 @@ extension NewTabPageActionsManager {
             )
         )
 
-        self.init(scriptClients: [
+        var scriptClients: [NewTabPageUserScriptClient] = [
             NewTabPageConfigurationClient(
                 sectionsVisibilityProvider: appearancePreferences,
                 customBackgroundProvider: customizationProvider,
@@ -100,7 +101,13 @@ extension NewTabPageActionsManager {
             NewTabPageProtectionsReportClient(model: protectionsReportModel),
             NewTabPagePrivacyStatsClient(model: privacyStatsModel),
             NewTabPageRecentActivityClient(model: recentActivityModel)
-        ])
+        ]
+
+        if featureFlagger.isFeatureOn(.newTabPageOmnibar) {
+            scriptClients.append(NewTabPageOmnibarClient(model: NewTabPageOmnibarModel()))
+        }
+
+        self.init(scriptClients: scriptClients)
     }
 }
 

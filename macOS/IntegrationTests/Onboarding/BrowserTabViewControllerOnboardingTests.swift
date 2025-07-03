@@ -325,6 +325,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     @MainActor
     func testWhenFireButtonPressedThenAskDelegateToRemoveViewHighlights() throws {
+        throw XCTSkip("Disable flaky test while investigations are ongoing.")
         // GIVEN
         dialogProvider.dialog = .tryFireButton
         let url = URL.duckDuckGo

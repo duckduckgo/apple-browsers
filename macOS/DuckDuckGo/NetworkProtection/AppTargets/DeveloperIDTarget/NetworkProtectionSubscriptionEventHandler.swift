@@ -129,7 +129,7 @@ final class NetworkProtectionSubscriptionEventHandler {
                 if lastKnownEntitlementsExpired {
                     lastKnownEntitlementsExpired = false
                 }
-            } else if !hasEntitlements {
+            } else {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                         isSubscriptionActive: isSubscriptionActive,

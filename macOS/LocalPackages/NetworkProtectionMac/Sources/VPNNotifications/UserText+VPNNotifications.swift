@@ -28,7 +28,7 @@ final class UserText {
     // MARK: - Connection Interrupted
 
     static let vpnConnectionInterruptedNotificationSubtitle = NSLocalizedString("vpn.interrupted.notification.subtitle", value: "Attempting to reconnect now...", comment: "The subtitle of the notification shown when DuckDuckGo VPN's connection is interrupted")
-    static let vpnConnectionInterruptedNotificationTitle = NSLocalizedString("network.protection.interrupted.notification.title", value: "DuckDuckGo VPN was interrupted", comment: "The title of the notification shown when DuckDuckGo VPN's connection is interrupted")
+    static let vpnConnectionInterruptedNotificationTitle = NSLocalizedString("vpn.interrupted.notification.title", value: "DuckDuckGo VPN was interrupted", comment: "The title of the notification shown when DuckDuckGo VPN's connection is interrupted")
 
     // MARK: - Connection Success
 

@@ -19,6 +19,7 @@
 import AppLauncher
 import Foundation
 import VPN
+import VPNNotifications
 
 /// A convenience class for making notification presenters.
 ///

@@ -19,46 +19,6 @@
 import Foundation
 import BrowserServicesKit
 
-private actor SyncConnectionState {
-    private var _isCodeHandlingInFlight: Bool = false
-    private var _exchanger: RemoteKeyExchanging?
-    private var _connector: RemoteConnecting?
-    
-    func setCodeHandlingInFlight(_ value: Bool) {
-        _isCodeHandlingInFlight = value
-    }
-    
-    func isCodeHandlingInFlight() -> Bool {
-        return _isCodeHandlingInFlight
-    }
-    
-    func setExchanger(_ exchanger: RemoteKeyExchanging?) {
-        _exchanger = exchanger
-    }
-    
-    func getExchanger() -> RemoteKeyExchanging? {
-        return _exchanger
-    }
-    
-    func setConnector(_ connector: RemoteConnecting?) {
-        _connector = connector
-    }
-    
-    func getConnector() -> RemoteConnecting? {
-        return _connector
-    }
-    
-    func stopConnectMode() {
-        _connector?.stopPolling()
-        _connector = nil
-    }
-    
-    func stopExchangeMode() {
-        _exchanger?.stopPolling()
-        _exchanger = nil
-    }
-}
-
 @MainActor
 public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerWillBeginTransmittingRecoveryKey() async
@@ -121,13 +81,53 @@ public protocol SyncConnectionControlling {
     func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool
 }
 
+private actor SyncConnectionState {
+    private var _isCodeHandlingInFlight: Bool = false
+    private var _exchanger: RemoteKeyExchanging?
+    private var _connector: RemoteConnecting?
+
+    func setCodeHandlingInFlight(_ value: Bool) {
+        _isCodeHandlingInFlight = value
+    }
+
+    func isCodeHandlingInFlight() -> Bool {
+        return _isCodeHandlingInFlight
+    }
+
+    func setExchanger(_ exchanger: RemoteKeyExchanging?) {
+        _exchanger = exchanger
+    }
+
+    func getExchanger() -> RemoteKeyExchanging? {
+        return _exchanger
+    }
+
+    func setConnector(_ connector: RemoteConnecting?) {
+        _connector = connector
+    }
+
+    func getConnector() -> RemoteConnecting? {
+        return _connector
+    }
+
+    func stopConnectMode() {
+        _connector?.stopPolling()
+        _connector = nil
+    }
+
+    func stopExchangeMode() {
+        _exchanger?.stopPolling()
+        _exchanger = nil
+    }
+}
+
 public class SyncConnectionController: SyncConnectionControlling {
     private let deviceName: String
     private let deviceType: String
     private let syncService: DDGSyncing
     private let dependencies: SyncDependencies
 
-    weak var delegate: SyncConnectionControllerDelegate?
+    private weak var delegate: SyncConnectionControllerDelegate?
 
     private let state = SyncConnectionState()
 
@@ -274,8 +274,8 @@ public class SyncConnectionController: SyncConnectionControlling {
                 await delegate?.controllerDidError(.failedToTransmitExchangeRecoveryKey, underlyingError: error, setupRole: .sharer)
             }
 
-            await delegate?.controllerDidFinishTransmittingRecoveryKey()
-            await (await state.getExchanger())?.stopPolling()
+            delegate?.controllerDidFinishTransmittingRecoveryKey()
+            (await state.getExchanger())?.stopPolling()
         }
     }
 
@@ -293,7 +293,7 @@ public class SyncConnectionController: SyncConnectionControlling {
                 return
             }
 
-            await delegate?.controllerDidReceiveRecoveryKey()
+            delegate?.controllerDidReceiveRecoveryKey()
 
             do {
                 try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false, setupRole: .sharer)

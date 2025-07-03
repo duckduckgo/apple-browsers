@@ -23,37 +23,7 @@ import Combine
 import DesignResourcesKitIcons
 import UIComponents
 
-// Helper class to manage picker state
-private class PickerState: ObservableObject {
-    @Published var selectedItem: ImageSegmentedPickerItem
-    let items: [ImageSegmentedPickerItem]
-    let onSelectionChanged: (ImageSegmentedPickerItem) -> Void
-    
-    init(items: [ImageSegmentedPickerItem], initialSelection: ImageSegmentedPickerItem, onSelectionChanged: @escaping (ImageSegmentedPickerItem) -> Void) {
-        self.items = items
-        self.selectedItem = initialSelection
-        self.onSelectionChanged = onSelectionChanged
-    }
-}
-
-// Wrapper view to handle the binding
-private struct PickerWrapper: View {
-    @ObservedObject var state: PickerState
-    
-    var body: some View {
-        ImageSegmentedPickerView(
-            items: state.items,
-            selectedItem: $state.selectedItem,
-        )
-        .frame(width: 250)
-        .onChange(of: state.selectedItem) { newItem in
-            state.onSelectionChanged(newItem)
-        }
-    }
-}
-
 class SwitchBarViewController: UIViewController {
-
     private struct Constants {
         static let segmentedControlHeight: CGFloat = 36
         static let segmentedControlTopPadding: CGFloat = 20
@@ -153,7 +123,6 @@ class SwitchBarViewController: UIViewController {
     private func setupViews() {
         view.backgroundColor = UIColor.systemBackground
 
-        // Setup ImageSegmentedPickerView with state management
         let state = PickerState(
             items: pickerItems,
             initialSelection: pickerItems[0],
@@ -231,7 +200,34 @@ class SwitchBarViewController: UIViewController {
 
     // MARK: - Actions
     private func segmentedPickerSelectionChanged(_ selectedItem: ImageSegmentedPickerItem) {
-        let newMode: TextEntryMode = selectedItem.text == "Search" ? .search : .aiChat
+        let newMode: TextEntryMode = pickerItems.first == selectedItem ? .search : .aiChat
         switchBarHandler.setToggleState(newMode)
+    }
+}
+
+private class PickerState: ObservableObject {
+    @Published var selectedItem: ImageSegmentedPickerItem
+    let items: [ImageSegmentedPickerItem]
+    let onSelectionChanged: (ImageSegmentedPickerItem) -> Void
+
+    init(items: [ImageSegmentedPickerItem], initialSelection: ImageSegmentedPickerItem, onSelectionChanged: @escaping (ImageSegmentedPickerItem) -> Void) {
+        self.items = items
+        self.selectedItem = initialSelection
+        self.onSelectionChanged = onSelectionChanged
+    }
+}
+
+private struct PickerWrapper: View {
+    @ObservedObject var state: PickerState
+
+    var body: some View {
+        ImageSegmentedPickerView(
+            items: state.items,
+            selectedItem: $state.selectedItem,
+        )
+        .frame(width: 250)
+        .onChange(of: state.selectedItem) { newItem in
+            state.onSelectionChanged(newItem)
+        }
     }
 }

@@ -51,7 +51,7 @@ final class OmniBarEditingStateAnimator {
     func animateAppearance() {
         guard let transitionDelegate else { return }
 
-        guard let expectedStartFrame = transitionDelegate.expectedStartFrame else {
+        guard var expectedStartFrame = transitionDelegate.expectedStartFrame else {
             transitionDelegate.switchBarVC.setExpanded(true)
             return
         }
@@ -108,7 +108,7 @@ final class OmniBarEditingStateAnimator {
 
         guard let transitionDelegate else { return }
 
-        topSwitchBarConstraint = transitionDelegate.switchBarVC.view.topAnchor.constraint(equalTo: transitionDelegate.rootView.safeAreaLayoutGuide.topAnchor, constant: 80)
+        topSwitchBarConstraint = transitionDelegate.switchBarVC.view.topAnchor.constraint(equalTo: transitionDelegate.rootView.safeAreaLayoutGuide.topAnchor, constant: 100)
         topSwitchBarConstraint?.isActive = true
         transitionDelegate.switchBarVC.setExpanded(true)
         transitionDelegate.switchBarVC.view.alpha = 0.0
@@ -116,10 +116,9 @@ final class OmniBarEditingStateAnimator {
         transitionDelegate.rootView.layoutIfNeeded()
 
         // Create animators
-        let animator = UIViewPropertyAnimator(duration: 0.3, dampingRatio: 0.75) {
-            transitionDelegate.rootView.backgroundColor = UIColor(designSystemColor: .background)
+        let animator = UIViewPropertyAnimator(duration: 0.55, dampingRatio: 0.65) {
             transitionDelegate.switchBarVC.view.alpha = 1.0
-            self.topSwitchBarConstraint?.constant = 20
+            self.topSwitchBarConstraint?.constant = 16
 
             transitionDelegate.rootView.layoutIfNeeded()
         }
@@ -168,8 +167,7 @@ final class OmniBarEditingStateAnimator {
         guard let transitionDelegate else { return }
 
         let animator = UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
-            transitionDelegate.rootView.backgroundColor = .clear
-            transitionDelegate.switchBarVC.view.alpha = 0.0
+            transitionDelegate.rootView.alpha = 0.0
             self.topSwitchBarConstraint?.constant = 80
 
             transitionDelegate.rootView.layoutIfNeeded()

@@ -110,7 +110,7 @@ struct BookmarksDebugRootView: View {
         }
         .alert(Text(verbatim: "Confirm Delete"), isPresented: $showingDestructiveAlert) {
             Button(role: .cancel) {} label: { Text(verbatim: "Cancel") }
-            Button( role: .destructive) {
+            Button(role: .destructive) {
                 model.deleteAll()
             } label: {
                 Text(verbatim: "Delete")

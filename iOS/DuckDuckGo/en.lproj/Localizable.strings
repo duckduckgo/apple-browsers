@@ -1141,6 +1141,9 @@
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import complete!";
 
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Credit Cards";
+
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Duplicates Skipped";
 
@@ -3508,6 +3511,9 @@ https://duckduckgo.com/windows";
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Continue";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Credit Cards";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Passwords";

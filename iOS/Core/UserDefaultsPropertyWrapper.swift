@@ -136,7 +136,6 @@ public struct UserDefaultsWrapper<T> {
         case syncCurrentBookmarksPausedError = "sync.current-bookmarks-paused-error"
         case syncCurrentCredentialsPausedError = "sync.current-credentials-paused-error"
 
-        case networkProtectionEntitlementsExpired = "com.duckduckgo.network-protection.entitlements.expired"
         case networkProtectionDebugOptionAlwaysOnDisabled = "com.duckduckgo.network-protection.always-on.disabled"
         case networkProtectionWaitlistTermsAndConditionsAccepted = "com.duckduckgo.ios.vpn.terms-and-conditions-accepted"
 

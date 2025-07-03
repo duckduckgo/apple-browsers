@@ -1485,7 +1485,7 @@
 		4B2D065F2A11D2D700DE1F49 /* DuckDuckGo VPN.app in Embed Login Items */ = {isa = PBXBuildFile; fileRef = 4B2D06392A11CFBB00DE1F49 /* DuckDuckGo VPN.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4B2D067F2A1334D700DE1F49 /* NetworkProtectionUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4B2D067E2A1334D700DE1F49 /* NetworkProtectionUI */; };
 		4B2E7D6326FF9D6500D2DB17 /* PrintingUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2E7D6226FF9D6500D2DB17 /* PrintingUserScript.swift */; };
-		4B2F565C2B38F93E001214C0 /* NetworkProtectionSubscriptionEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2F565B2B38F93E001214C0 /* NetworkProtectionSubscriptionEventHandler.swift */; };
+		4B2F565C2B38F93E001214C0 /* VPNSubscriptionEventsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2F565B2B38F93E001214C0 /* VPNSubscriptionEventsHandler.swift */; };
 		4B379C1527BD91E3008A968E /* QuartzIdleStateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B379C1427BD91E3008A968E /* QuartzIdleStateProvider.swift */; };
 		4B379C1E27BDB7FF008A968E /* DeviceAuthenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B379C1D27BDB7FF008A968E /* DeviceAuthenticator.swift */; };
 		4B379C2227BDBA29008A968E /* LocalAuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B379C2127BDBA29008A968E /* LocalAuthenticationService.swift */; };
@@ -1781,7 +1781,7 @@
 		4BBF09232830812900EE1418 /* FileSystemDSL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBF09222830812900EE1418 /* FileSystemDSL.swift */; };
 		4BBF0925283083EC00EE1418 /* FileSystemDSLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBF0924283083EC00EE1418 /* FileSystemDSLTests.swift */; };
 		4BC99DF12D77AF28000E0527 /* BrowserServicesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC99DF02D77AF28000E0527 /* BrowserServicesKit */; };
-		4BCBE4552BA7E16600FC75A1 /* NetworkProtectionSubscriptionEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2F565B2B38F93E001214C0 /* NetworkProtectionSubscriptionEventHandler.swift */; };
+		4BCBE4552BA7E16600FC75A1 /* VPNSubscriptionEventsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2F565B2B38F93E001214C0 /* VPNSubscriptionEventsHandler.swift */; };
 		4BCBE4562BA7E16900FC75A1 /* DataBrokerProtectionSubscriptionEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB5789712B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift */; };
 		4BCBE4582BA7E17800FC75A1 /* SubscriptionUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4BCBE4572BA7E17800FC75A1 /* SubscriptionUI */; };
 		4BD18F01283F0BC500058124 /* BookmarksBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD18EFF283F0BC500058124 /* BookmarksBarViewController.swift */; };
@@ -4377,7 +4377,7 @@
 		4B2D06642A132F3A00DE1F49 /* NetworkProtectionAppExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NetworkProtectionAppExtension.entitlements; sourceTree = "<group>"; };
 		4B2D06692A13318400DE1F49 /* DuckDuckGo VPN App Store.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "DuckDuckGo VPN App Store.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B2E7D6226FF9D6500D2DB17 /* PrintingUserScript.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrintingUserScript.swift; sourceTree = "<group>"; };
-		4B2F565B2B38F93E001214C0 /* NetworkProtectionSubscriptionEventHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkProtectionSubscriptionEventHandler.swift; sourceTree = "<group>"; };
+		4B2F565B2B38F93E001214C0 /* VPNSubscriptionEventsHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VPNSubscriptionEventsHandler.swift; sourceTree = "<group>"; };
 		4B379C1427BD91E3008A968E /* QuartzIdleStateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuartzIdleStateProvider.swift; sourceTree = "<group>"; };
 		4B379C1D27BDB7FF008A968E /* DeviceAuthenticator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAuthenticator.swift; sourceTree = "<group>"; };
 		4B379C2127BDBA29008A968E /* LocalAuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAuthenticationService.swift; sourceTree = "<group>"; };
@@ -7245,7 +7245,7 @@
 			isa = PBXGroup;
 			children = (
 				7BA7CC4D2AD11F6F0042E5CE /* NetworkProtectionIPCTunnelController.swift */,
-				4B2F565B2B38F93E001214C0 /* NetworkProtectionSubscriptionEventHandler.swift */,
+				4B2F565B2B38F93E001214C0 /* VPNSubscriptionEventsHandler.swift */,
 			);
 			path = DeveloperIDTarget;
 			sourceTree = "<group>";
@@ -13343,7 +13343,7 @@
 				C13909F02B85FD4E001626ED /* AutofillActionExecutor.swift in Sources */,
 				F1FD5B682C2B0AAA0040FA0D /* SubscriptionPagesUseSubscriptionFeature.swift in Sources */,
 				3706FC82293F65D500E42796 /* PermissionAuthorizationPopover.swift in Sources */,
-				4BCBE4552BA7E16600FC75A1 /* NetworkProtectionSubscriptionEventHandler.swift in Sources */,
+				4BCBE4552BA7E16600FC75A1 /* VPNSubscriptionEventsHandler.swift in Sources */,
 				37F9AEB22D131705007FD19B /* NewTabPageLinkOpener.swift in Sources */,
 				BB960BCD2DD77A0B002C46DD /* SettingsIconsProviding.swift in Sources */,
 				371209312C233D69003ADF3D /* RemoteMessagingStoreErrorHandling.swift in Sources */,
@@ -14483,7 +14483,7 @@
 				37AFCE9227DB8CAD00471A10 /* PreferencesAboutView.swift in Sources */,
 				BB7BA64D2D11FC170020B47E /* TabBarRemoteMessagePresenting.swift in Sources */,
 				F1D042A12BFBB4DD00A31506 /* DataBrokerProtectionSettings+Environment.swift in Sources */,
-				4B2F565C2B38F93E001214C0 /* NetworkProtectionSubscriptionEventHandler.swift in Sources */,
+				4B2F565C2B38F93E001214C0 /* VPNSubscriptionEventsHandler.swift in Sources */,
 				9826B0A02747DF3D0092F683 /* ContentBlocking.swift in Sources */,
 				4B379C2227BDBA29008A968E /* LocalAuthenticationService.swift in Sources */,
 				37CEFCA92A6737A2001EF741 /* CredentialsCleanupErrorHandling.swift in Sources */,

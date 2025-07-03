@@ -25,7 +25,7 @@ import SetDefaultBrowserCore
 final class DefaultBrowserPromptManagerDebugPixelHandler: EventMapping<DefaultBrowserManagerDebugEvent>, DefaultBrowserPromptEventMapping {
 
     public init() {
-        super.init { event, error, _, _ in
+        super.init { event, _, _, _ in
             switch event {
             case .successfulResult:
                 DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserSuccessfulResult)

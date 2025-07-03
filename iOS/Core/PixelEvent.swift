@@ -974,7 +974,7 @@ extension Pixel {
         case defaultBrowserPromptModalClosedButtonTapped
         /// Fired when the “Set As Default Browser" button of the SAD modal sheet is tapped.
         case defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped
-        ///Fired when the “Don’t ask again” button of the SAD modal sheet is tapped.
+        /// Fired when the “Don’t ask again” button of the SAD modal sheet is tapped.
         case defaultBrowserPromptModalDoNotAskAgainButtonTapped
 
         // MARK: History

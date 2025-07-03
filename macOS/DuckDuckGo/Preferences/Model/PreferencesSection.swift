@@ -228,6 +228,17 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         }
     }
 
+    /// Returns the display name with context-aware rebranding support
+    @MainActor
+    func displayName(isSubscriptionRebrandingOn: Bool) -> String {
+        switch self {
+        case .privacyPro:
+            return UserText.purchaseSubscriptionPaneTitle(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn)
+        default:
+            return displayName
+        }
+    }
+
     func preferenceIconName(for settingsIconProvider: SettingsIconsProviding) -> NSImage {
         switch self {
         case .defaultBrowser:

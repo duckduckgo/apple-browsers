@@ -2545,63 +2545,75 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro kaufen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Get Privacy Pro"
+            "value" : "Subscribe to DuckDuckGo"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Conseguir Privacy Pro"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Obtenir Privacy Pro"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ottieni Privacy Pro"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro kopen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Uzyskaj Privacy Pro"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Obter Privacy Pro"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Перейти на Privacy Pro"
+          }
+        }
+      }
+    },
+    "subscription.preferences.purchase.button.deprecated" : {
+      "comment" : "Button to open a page where user can learn more and purchase the subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get Privacy Pro"
           }
         }
       }
     },
     "subscription.preferences.purchase.free-trial.button" : {
       "comment" : "Button to open a page where user can learn more and try a free trial subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2659,61 +2671,73 @@
         }
       }
     },
+    "subscription.preferences.purchase.free-trial.button.deprecated" : {
+      "comment" : "Button to open a page where user can learn more and try a free trial subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Privacy Pro Free"
+          }
+        }
+      }
+    },
     "subscription.preferences.purchase.subscription.title" : {
       "comment" : "Title of the preferences pane for purchase subscription",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Privacy Pro"
+            "value" : "DuckDuckGo Subscription"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Privacy Pro"
           }
         }
@@ -4557,56 +4581,68 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Schütze deine Verbindung und Identität mit Privacy Pro"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Protect your connection and identity with Privacy Pro"
+            "value" : "Secure your Wi-Fi, and chat privately with advanced AI models"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Protege tu conexión e identidad con Privacy Pro"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Protégez votre connexion et votre identité avec Privacy Pro"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Proteggi la tua connessione e la tua identità con Privacy Pro"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Bescherm je verbinding en identiteit met Privacy Pro"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Chroń połączenie i tożsamość dzięki subskrypcji Privacy Pro"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Protege a tua ligação e identidade com o Privacy Pro"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Тариф Privacy Pro для защиты соединения и личных данных"
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.inactive.header.no.duck.ai" : {
+      "comment" : "Header for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Secure your Wi-Fi and protect your identity"
           }
         }
       }
@@ -4618,7 +4654,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Two premium protections and Duck.ai Pro in one subscription."
+            "value" : "Subscribers get our VPN, advanced AI models in Duck.ai, and Identity Theft Restoration."
           }
         },
         "fr" : {
@@ -4636,55 +4672,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Zwei Premium-Schutzmaßnahmen in einem Abonnement."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Two premium protections in one subscription."
+            "value" : "Subscribers get our VPN and Identity Theft Restoration."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dos protecciones prémium en una sola suscripción."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Deux protections haut de gamme dans un seul abonnement."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Due protezioni premium in un unico abbonamento."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Twee premiumbeveiligingen in één abonnement."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dwa zabezpieczenia premium w jednej subskrypcji."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duas proteções premium numa só subscrição."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Два вида премиум-защиты по одной подписке."
           }
         }
@@ -4697,7 +4733,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Three premium protections and Duck.ai Pro in one subscription."
+            "value" : "Subscribers get our VPN, advanced AI models in Duck.ai, Personal Information Removal, and Identity Theft Restoration."
           }
         },
         "fr" : {
@@ -4711,7 +4747,7 @@
     },
     "subscription.preferences.subscription.inactive.us.caption.deprecated" : {
       "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4765,6 +4801,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Три вида премиум-защиты по одной подписке."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.inactive.us.caption.no.duck.ai" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscribers get our VPN, Personal Information Removal, and Identity Theft Restoration."
           }
         }
       }

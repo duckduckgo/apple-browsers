@@ -37,6 +37,7 @@ final class PreferencesViewController: NSViewController {
     private var selectedPreferencePaneCancellable: AnyCancellable?
 
     private var bitwardenManager: BWManagement = BWManager.shared
+    private let featureFlagger: FeatureFlagger
 
     init(
         syncService: DDGSyncing,
@@ -49,6 +50,7 @@ final class PreferencesViewController: NSViewController {
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.featureFlagger = featureFlagger
         model = PreferencesSidebarModel(privacyConfigurationManager: privacyConfigurationManager,
                                         featureFlagger: featureFlagger,
                                         syncService: syncService,
@@ -79,7 +81,8 @@ final class PreferencesViewController: NSViewController {
         } else {
             let prefRootView = Preferences.RootViewV2(model: model,
                                                       subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
-                                                      subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)
+                                                      subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
+                                                      featureFlagger: featureFlagger)
             let host = NSHostingView(rootView: prefRootView)
             view.addAndLayout(host)
         }

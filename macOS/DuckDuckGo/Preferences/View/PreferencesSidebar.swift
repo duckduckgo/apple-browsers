@@ -45,6 +45,7 @@ extension Preferences {
         let isEnabled: Bool
         let action: () -> Void
         let settingsIconProvider: SettingsIconsProviding
+        let isSubscriptionRebrandingOn: Bool
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
 
         init(pane: PreferencePaneIdentifier,
@@ -52,6 +53,7 @@ extension Preferences {
              isEnabled: Bool = true,
              status: PrivacyProtectionStatus?,
              settingsIconProvider: SettingsIconsProviding,
+             isSubscriptionRebrandingOn: Bool,
              action: @escaping () -> Void) {
             self.pane = pane
             self.isSelected = isSelected
@@ -59,6 +61,7 @@ extension Preferences {
             self.action = action
             self.protectionStatus = status ?? PrivacyProtectionStatus()
             self.settingsIconProvider = settingsIconProvider
+            self.isSubscriptionRebrandingOn = isSubscriptionRebrandingOn
         }
 
         var body: some View {
@@ -70,7 +73,7 @@ extension Preferences {
                             $0.grayscale(1.0).opacity(0.5)
                         }
 
-                    Text(pane.displayName).font(PreferencesUI_macOS.Const.Fonts.sideBarItem)
+                    Text(pane.displayName(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn)).font(PreferencesUI_macOS.Const.Fonts.sideBarItem)
                         .if(!isEnabled) {
                             $0.opacity(0.5)
                         }
@@ -154,9 +157,11 @@ extension Preferences {
                                 isSelected: model.selectedPane == pane,
                                 isEnabled: model.isSidebarItemEnabled(for: pane),
                                 status: model.protectionStatus(for: pane),
-                                settingsIconProvider: settingsIconProvider) {
-                    model.selectPane(pane)
-                }
+                                settingsIconProvider: settingsIconProvider,
+                                isSubscriptionRebrandingOn: model.isSubscriptionRebrandingEnabled,
+                                action: {
+                                    model.selectPane(pane)
+                                })
             }
             if section != model.sections.last {
                 Color(NSColor.separatorColor)

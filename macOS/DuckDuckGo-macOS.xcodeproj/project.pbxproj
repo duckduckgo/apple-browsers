@@ -10907,16 +10907,17 @@
 				CBCCF59F2996681700C02DFE /* Assert Xcode version */,
 				378E2798296F6D1D00FCADA2 /* Validate PRODUCT_NAME */,
 				3706FA79293F65D500E42796 /* Check Embedded Config URLs */,
+				6A8856B31B2BC5078B61ED81 /* Run swiftlint */,
 				3706FA7A293F65D500E42796 /* Sources */,
 				3706FCA6293F65D500E42796 /* Frameworks */,
 				3706FCB1293F65D500E42796 /* Resources */,
 				7BC3E4672D6E03BA009787CD /* Make /Applications symlink, remove app on Clean build */,
 				4BBA2D272B6AC09D00F6A470 /* Embed Login Items */,
-				6A8856B31B2BC5078B61ED81 /* Run swiftlint */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				84F0B5C52E1409070026F17F /* PBXTargetDependency */,
 				4BBA2D2B2B6AD01E00F6A470 /* PBXTargetDependency */,
 				4BBA2D292B6ACD4D00F6A470 /* PBXTargetDependency */,
 				4B5F14FE2A1529230060320F /* PBXTargetDependency */,
@@ -11433,16 +11434,17 @@
 			buildPhases = (
 				CBCCF59E299667B700C02DFE /* Assert Xcode version */,
 				3705272528992C8A000C06A2 /* Check Embedded Config URLs */,
+				28003FDBDB96625F1630CFF2 /* Run swiftlint */,
 				AA585D7A248FD31100E9A3E2 /* Sources */,
 				AA585D7B248FD31100E9A3E2 /* Frameworks */,
 				AA585D7C248FD31100E9A3E2 /* Resources */,
 				B6F2C8722A7A4C7D000498CF /* Make /Applications symlink, remove app on Clean build */,
 				4B2D065D2A11D2AE00DE1F49 /* Embed Login Items */,
-				28003FDBDB96625F1630CFF2 /* Run swiftlint */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				84F0B5C32E1409000026F17F /* PBXTargetDependency */,
 				8417B7CF2D958D5E00C0A379 /* PBXTargetDependency */,
 				7BC3E4312D6DF235009787CD /* PBXTargetDependency */,
 				7BC3E42F2D6DF1F6009787CD /* PBXTargetDependency */,
@@ -15822,6 +15824,14 @@
 			isa = PBXTargetDependency;
 			productRef = 8417B7CE2D958D5E00C0A379 /* InputFilesChecker */;
 		};
+		84F0B5C32E1409000026F17F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 84F0B5C22E1409000026F17F /* SwiftLintTool */;
+		};
+		84F0B5C52E1409070026F17F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 84F0B5C42E1409070026F17F /* SwiftLintTool */;
+		};
 		9D84E3FB2CD4E66F0046CD8B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = B6EC37E729B5DA2A001ACE79 /* tests-server */;
@@ -16877,7 +16887,7 @@
 			repositoryURL = "https://github.com/duckduckgo/apple-toolbox.git";
 			requirement = {
 				kind = exactVersion;
-				version = 3.1.4;
+				version = 3.2.1;
 			};
 		};
 		F1D43AF12B98E47800BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */ = {
@@ -17695,6 +17705,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B65CD8C92B316DF100A595BB /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
 			productName = InlineSnapshotTesting;
+		};
+		84F0B5C22E1409000026F17F /* SwiftLintTool */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B6F997B92B8F352500476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */;
+			productName = SwiftLintTool;
+		};
+		84F0B5C42E1409070026F17F /* SwiftLintTool */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B6F997B92B8F352500476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */;
+			productName = SwiftLintTool;
 		};
 		85F592DD2DE1E9FE00117D5E /* DesignResourcesKitIcons */ = {
 			isa = XCSwiftPackageProductDependency;

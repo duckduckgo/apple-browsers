@@ -680,7 +680,7 @@ final class BrowserTabViewController: NSViewController {
                             .filter { $0 == true }
                             .asVoid(),
                         tabViewModel.tab.navigationStatePublisher.compactMap { $0 }
-                            .filter{ $0 >= .started }
+                            .filter { $0 >= .started }
                             .asVoid()
                     )
                     // take the first such event and move forward.

@@ -29,6 +29,11 @@ on:
         required: false
         default: false
         type: boolean
+      skip-asana:
+        description: "Skip Asana task creation on tests failure"
+        required: false
+        type: boolean
+        default: true
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -193,7 +198,7 @@ jobs:
         pixel-name: m_ci_apple_status_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}
 
     - name: Fetch latest commit author and PR reviewers
-      if: always() && github.ref_name == 'main'
+      if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
       id: fetch_commit_author
       uses: ./.github/actions/fetch-commit-info
       with:
@@ -293,7 +298,7 @@ jobs:
     name: Create Asana Task
     needs: [unit-tests, shellcheck, release-build]
 
-    if: failure() && github.ref_name == 'main' && github.run_attempt == 1
+    if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
 
     runs-on: ubuntu-latest
 
@@ -314,7 +319,7 @@ jobs:
     name: Close Asana Task
     needs: [unit-tests, shellcheck, release-build]
 
-    if: success() && github.ref_name == 'main' && github.run_attempt > 1
+    if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true
 
     runs-on: ubuntu-latest
 

@@ -141,6 +141,7 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
         }
     }
 
+    @MainActor
     private func newWindowPolicy(for navigationAction: WKNavigationAction) -> NavigationDecision? {
         if let newWindowPolicy = self.decideNewWindowPolicy(for: navigationAction) {
             return newWindowPolicy

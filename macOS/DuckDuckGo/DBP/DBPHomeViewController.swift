@@ -57,7 +57,8 @@ final class DBPHomeViewController: NSViewController {
                                                   unknownUsernameCategorization: false,
                                                   partialFormSaves: false,
                                                   passwordVariantCategorization: false,
-                                                  inputFocusApi: false)
+                                                  inputFocusApi: false,
+                                                  autocompleteAttributeSupport: false)
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
         let sessionKey = UUID().uuidString

@@ -45,7 +45,6 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences,
-            dataClearingPreferences: dataClearingPreferences
         )
 
         userScript = AutoconsentUserScript(

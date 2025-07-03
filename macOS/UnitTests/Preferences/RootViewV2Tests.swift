@@ -57,6 +57,7 @@ final class RootViewV2Tests: XCTestCase {
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
             subscriptionUIHandler: subscriptionUIHandler,
+            aiChatURLSettings: MockRemoteAISettings(),
             showTab: {_ in },
             )
 
@@ -67,12 +68,13 @@ final class RootViewV2Tests: XCTestCase {
 
     func testPaidAIChatViewModel_OpenAIChat() throws {
         let expectation = expectation(description: "Wait for showTab to be called")
-
+        let mockRemoteAISettings = MockRemoteAISettings()
         // Given
         let rootView = Preferences.RootViewV2(
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
-            subscriptionUIHandler: subscriptionUIHandler
+            subscriptionUIHandler: subscriptionUIHandler,
+            aiChatURLSettings: mockRemoteAISettings
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -88,7 +90,7 @@ final class RootViewV2Tests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
         XCTAssertTrue(showTabCalled, "Should call showTab")
         if case .url(let url, _, let source) = showTabContent {
-            XCTAssertEqual(url.absoluteString, AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)
+            XCTAssertEqual(url.absoluteString, mockRemoteAISettings.aiChatURL.absoluteString)
             XCTAssertEqual(source, .ui)
         } else {
             XCTFail("Expected URL tab content")
@@ -103,7 +105,8 @@ final class RootViewV2Tests: XCTestCase {
         let rootView = Preferences.RootViewV2(
             model: sidebarModel,
             subscriptionManager: subscriptionManager,
-            subscriptionUIHandler: subscriptionUIHandler
+            subscriptionUIHandler: subscriptionUIHandler,
+            aiChatURLSettings: MockRemoteAISettings()
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content

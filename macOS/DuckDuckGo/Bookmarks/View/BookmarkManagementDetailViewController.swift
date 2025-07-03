@@ -123,11 +123,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         let metrics = BookmarksSearchAndSortMetrics()
+        let navigationEngagementMetrics = BookmarksNavigationEngagementMetrics()
         let sortViewModel = SortBookmarksViewModel(manager: bookmarkManager, metrics: metrics, origin: .manager)
         self.sortBookmarksViewModel = sortViewModel
         self.visualStyle = visualStyle
         self.managementDetailViewModel = BookmarkManagementDetailViewModel(bookmarkManager: bookmarkManager,
                                                                            metrics: metrics,
+                                                                           navigationEngagementMetrics: navigationEngagementMetrics,
                                                                            mode: bookmarkManager.sortMode)
         super.init(nibName: nil, bundle: nil)
     }
@@ -464,6 +466,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         managementDetailViewModel.onBookmarkTapped()
 
         if let bookmark = entity as? Bookmark {
+            managementDetailViewModel.onNavigateToBookmark(bookmark)
             Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
         } else if let folder = entity as? BookmarkFolder {
             clearSearch()
@@ -702,10 +705,14 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
             return
         }
 
-        let tabs = bookmarks.compactMap { $0.urlObject }.map {
-            Tab(content: .url($0, source: .bookmark),
-                shouldLoadInBackground: true,
-                burnerMode: tabCollection.burnerMode)
+        let tabs = bookmarks.compactMap { bookmark -> Tab? in
+            guard let url = bookmark.urlObject else {
+                return nil
+            }
+
+            return Tab(content: .url(url, source: .bookmark(isFavorite: bookmark.isFavorite)),
+                       shouldLoadInBackground: true,
+                       burnerMode: tabCollection.burnerMode)
         }
         tabCollection.append(tabs: tabs, andSelect: true)
     }

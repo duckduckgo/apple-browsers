@@ -54,6 +54,8 @@ class TabSnapshotExtensionTests: XCTestCase {
         mockWebViewSnapshotRenderer = nil
         mockViewSnapshotRenderer = nil
         mockTabSnapshotStore = nil
+        mockWebViewPublisher = nil
+        mockContentPublisher = nil
         super.tearDown()
     }
 

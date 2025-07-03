@@ -159,8 +159,24 @@ jobs:
           name: build-log.txt
           path: SharedPackages/BrowserServicesKit/build-log.txt
 
+      - name: Wait for crash reports to be generated
+        if: failure()
+        run: |
+          sleep 30
+          ls -l ~/Library/Logs/DiagnosticReports
+
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "bsk-crash-reports-macOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/xctest-*.ips
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Fetch latest commit author and PR reviewers
-        if: always() && github.ref_name == 'main'
+        if: failure() && github.ref_name == 'main' && github.run_attempt == 1
         id: fetch_commit_author
         uses: ./.github/actions/fetch-commit-info
         with:
@@ -290,6 +306,22 @@ jobs:
         with:
           name: ios-build-log.txt
           path: SharedPackages/BrowserServicesKit/ios-build-log.txt
+
+      - name: Wait for crash reports to be generated
+        if: failure()
+        run: |
+          sleep 30
+          ls -l ~/Library/Logs/DiagnosticReports
+
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "bsk-crash-reports-iOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/xctest-*.ips
+          retention-days: 7
+          if-no-files-found: ignore
 
   create-asana-task:
     name: Create Asana Task

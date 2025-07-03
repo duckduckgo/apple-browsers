@@ -37,6 +37,11 @@ final class DuckPlayerTests: XCTestCase {
         )
     }
 
+    override func tearDown() {
+        duckPlayer = nil
+        super.tearDown()
+    }
+
     func testThatImageForFaviconViewReturnsHardcodedFaviconForDuckPlayer() {
         let duckPlayerFaviconView = FaviconView(url: duckPlayerURL())
         let otherFaviconView = FaviconView(url: URL(string: "http://example.com")!)

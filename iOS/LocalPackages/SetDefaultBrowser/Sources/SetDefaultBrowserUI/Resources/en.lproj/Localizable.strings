@@ -1,0 +1,5 @@
+"setDefaultBrowser.modal.title" = "Let DuckDuckGo protect more of what you do online";
+"setDefaultBrowser.modal.message"= "Make us your default browser so all site links open in DuckDuckGo";
+"setDefaultBrowser.modal.cta.cancel" = "Close";
+"setDefaultBrowser.cta.primary.title" = "Set As Default Browser";
+"setDefaultBrowser.cta.secondary.title" = "Don’t Ask Again";

@@ -30,6 +30,7 @@ extension NewTabPageActionsManager {
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
+        faviconManager: FaviconManagement,
         duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
         contentBlocking: ContentBlockingProtocol,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
@@ -40,12 +41,14 @@ extension NewTabPageActionsManager {
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
         tld: TLD,
         fire: @escaping () async -> Fire,
-        keyValueStore: KeyValueStoring = UserDefaults.standard
+        keyValueStore: KeyValueStoring = UserDefaults.standard,
+        featureFlagger: FeatureFlagger
     ) {
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
         let favoritesModel = NewTabPageFavoritesModel(
             actionsHandler: DefaultFavoritesActionsHandler(bookmarkManager: bookmarkManager),
             favoritesPublisher: favoritesPublisher,
+            faviconsDidLoadPublisher: faviconManager.faviconsLoadedPublisher.filter({$0}).asVoid().eraseToAnyPublisher(),
             getLegacyIsViewExpandedSetting: UserDefaultsWrapper<Bool>(key: .homePageShowAllFavorites, defaultValue: true).wrappedValue
         )
 
@@ -74,7 +77,7 @@ extension NewTabPageActionsManager {
             )
         )
 
-        self.init(scriptClients: [
+        var scriptClients: [NewTabPageUserScriptClient] = [
             NewTabPageConfigurationClient(
                 sectionsVisibilityProvider: appearancePreferences,
                 customBackgroundProvider: customizationProvider,
@@ -98,7 +101,13 @@ extension NewTabPageActionsManager {
             NewTabPageProtectionsReportClient(model: protectionsReportModel),
             NewTabPagePrivacyStatsClient(model: privacyStatsModel),
             NewTabPageRecentActivityClient(model: recentActivityModel)
-        ])
+        ]
+
+        if featureFlagger.isFeatureOn(.newTabPageOmnibar) {
+            scriptClients.append(NewTabPageOmnibarClient(model: NewTabPageOmnibarModel()))
+        }
+
+        self.init(scriptClients: scriptClients)
     }
 }
 

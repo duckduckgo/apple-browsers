@@ -36,8 +36,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     private var mockUIHandler: SubscriptionUIHandlerMock!
     private var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
-    private var mockFreemiumDBPExperimentManager: MockFreemiumDBPExperimentManager!
-    private var mockPixelHandler: MockFreemiumDBPExperimentPixelHandler!
+    private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockNotificationCenter: NotificationCenter!
 
@@ -85,8 +84,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true,
                                                                                   usesUnifiedFeedbackForm: false)
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
-        mockFreemiumDBPExperimentManager = MockFreemiumDBPExperimentManager()
-        mockPixelHandler = MockFreemiumDBPExperimentPixelHandler()
+        mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockFeatureFlagger = MockFeatureFlagger()
         mockNotificationCenter = NotificationCenter()
 
@@ -96,10 +94,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                         uiHandler: mockUIHandler,
                                                         subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
                                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
-                                                        freemiumDBPPixelExperimentManager: mockFreemiumDBPExperimentManager,
                                                         notificationCenter: mockNotificationCenter,
-                                                        freemiumDBPExperimentPixelHandler: mockPixelHandler,
-                                                        featureFlagger: mockFeatureFlagger)
+                                                        dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
+                                                        featureFlagger: mockFeatureFlagger,
+                                                        aiChatURL: URL.duckDuckGo)
     }
 
     // MARK: - Free Trials
@@ -107,7 +105,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialOptionsAvailable_ReturnsFreeTrialOptions() async throws {
         // Given
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
         mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
         let freeTrialOptions = SubscriptionOptionsV2(
@@ -130,7 +128,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialReturnsNil_ReturnsRegularOptions() async throws {
         // Given
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
         mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
         mockStorePurchaseManager.freeTrialSubscriptionOptionsResult = nil
@@ -147,7 +145,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     @MainActor
     func testGetSubscriptionOptions_FreeTrialFlagOff_AndFreeTrialOptionsAvailable_ReturnsRegularOptions() async throws {
         // Given
-        mockFeatureFlagger.isFeatureOn = { _ in false }
         mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
 
         let freeTrialOptions = SubscriptionOptionsV2(
@@ -182,7 +179,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
-        XCTAssertTrue(featureValue.useDuckAiPro)
+        XCTAssertTrue(featureValue.usePaidDuckAi)
     }
 
     func testGetFeatureConfig_WhenPaidAIChatDisabled_ReturnsCorrectConfig() async throws {
@@ -200,7 +197,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
-        XCTAssertFalse(featureValue.useDuckAiPro)
+        XCTAssertFalse(featureValue.usePaidDuckAi)
     }
 
     // MARK: - Feature Selection Tests

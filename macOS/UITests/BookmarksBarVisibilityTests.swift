@@ -38,8 +38,7 @@ class BookmarksBarVisibilityTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
+        app = XCUIApplication.setUp()
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
 
@@ -50,7 +49,6 @@ class BookmarksBarVisibilityTests: UITestCase {
         skipOnboardingMenuItem = app.menuItems["MainMenu.skipOnboarding"]
         bookmarksBarPromptPopover = app.popovers.containing(NSPredicate(format: "title == %@", "Show Bookmarks Bar?")).element
 
-        app.launch()
         resetBookmarks()
         skipOnboarding()
         app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Close all windows

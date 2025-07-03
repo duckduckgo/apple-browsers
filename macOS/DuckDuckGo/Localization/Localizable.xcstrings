@@ -7119,7 +7119,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Автоматически закрывает вкладки и стирает данные о посещении сайтов при завершении работы DuckDuckGo."
+            "value" : "Автоматически закрывать вкладки и стирать данные о посещении сайтов при завершении работы DuckDuckGo."
           }
         }
       }
@@ -17881,55 +17881,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Deaktiviere das automatische Löschen beim Beenden, um die Sitzungswiederherstellung einzuschalten."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Disable auto-clear on quit to turn on session restore."
+            "value" : "Your session won't be restored if data is deleted when exiting."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Desactiva el borrado automático al salir para activar Restaurar sesión."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Désactivez l'effacement automatique à la fermeture pour activer la restauration de session."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Disabilita la cancellazione automatica all'uscita per attivare il ripristino della sessione."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Schakel automatisch wissen uit wanneer u stopt om het herstellen van de sessie in te schakelen."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wyłącz automatyczne czyszczenie przy wychodzeniu, aby włączyć przywracanie sesji."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Desativa a limpeza automática ao sair para ativar a restauração da sessão."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Чтобы активировать восстановление сеанса, отключите автоочистку данных при выходе."
           }
         }
@@ -26468,6 +26468,18 @@
       },
       "shouldTranslate" : false
     },
+    "freemium.dbp.menu.item" : {
+      "comment" : "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Personal Information Scan"
+          }
+        }
+      }
+    },
     "general.feedback-form.category.itr" : {
       "comment" : "Description for the feedback form when the issue is related to Identity Theft Restoration (ITR)",
       "extractionState" : "extracted_with_value",
@@ -29256,6 +29268,114 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ни одного трекера не найдено"
+          }
+        }
+      }
+    },
+    "home.page.promotion.freemium.dbp.button.title" : {
+      "comment" : "Title for the Freemium DBP Home Page Promotion Button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Free Scan"
+          }
+        }
+      }
+    },
+    "home.page.promotion.freemium.dbp.description" : {
+      "comment" : "Description for the Freemium DBP Home Page Promotion",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Find out which sites are selling your info."
+          }
+        }
+      }
+    },
+    "home.page.promotion.freemium.dbp.description.markdown" : {
+      "comment" : "Markdown Description for the Freemium DBP Home Page Promotion. Please make sure to keep **STRING** intact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Find out which sites are selling **your info.**"
+          }
+        }
+      }
+    },
+    "home.page.promotion.freemium.dbp.post.scan.engagement.button.title" : {
+      "comment" : "Title for the Freemium DBP Home Page Post Scan Engagement Promotion Button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "View Results"
+          }
+        }
+      }
+    },
+    "home.page.promotion.freemium.dbp.post.scan.engagement.no.results.description" : {
+      "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When There Are No Results",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Good news, your free personal info scan didn't find any records about you. We'll keep checking periodically."
+          }
+        }
+      }
+    },
+    "home.page.promotion.freemium.dbp.post.scan.engagement.result.plural.description" : {
+      "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on multiple broker sites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your free personal info scan found %1$d records about you on %2$d different sites."
+          }
+        }
+      }
+    },
+    "home.page.promotion.freemium.dbp.post.scan.engagement.result.single.broker.description" : {
+      "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on a single broker site",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your free personal info scan found %d records about you on 1 site."
+          }
+        }
+      }
+    },
+    "home.page.promotion.freemium.dbp.post.scan.engagement.result.single.match.description" : {
+      "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When Only One Record is Found",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your free personal info scan found 1 record about you on 1 site."
+          }
+        }
+      }
+    },
+    "home.page.promotion.freemium.dbp.title" : {
+      "comment" : "Title for the Freemium DBP Home Page Promotion",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Personal Information Removal"
           }
         }
       }

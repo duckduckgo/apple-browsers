@@ -205,7 +205,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
                                               size: self.imageContainer.bounds.size)
                 self.homeScreenSnapshot?.frame = self.imageContainer.bounds
             }
-            
+
             if tab.viewed {
                 UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.3) {
                     self.imageView.alpha = 0

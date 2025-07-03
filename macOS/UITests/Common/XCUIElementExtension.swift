@@ -63,6 +63,38 @@ extension XCUIElement {
         }
     }
 
+    func pasteURL(_ url: URL, pressingEnter: Bool = true) {
+        // Store current pasteboard contents
+        let originalTypes = NSPasteboard.general.types ?? []
+        var originalContents: [NSPasteboard.PasteboardType: Data] = [:]
+
+        for type in originalTypes {
+            if let data = NSPasteboard.general.data(forType: type) {
+                originalContents[type] = data
+            }
+        }
+
+        defer {
+            // Restore original pasteboard contents
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.declareTypes(originalTypes, owner: nil)
+            for (type, data) in originalContents {
+                NSPasteboard.general.setData(data, forType: type)
+            }
+        }
+
+        let urlString = url.absoluteString
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.declareTypes([.URL, .string], owner: nil)
+        (url as NSURL).write(to: NSPasteboard.general)
+        NSPasteboard.general.setString(urlString, forType: .string)
+
+        self.typeKey("v", modifierFlags: [.command])
+        if pressingEnter {
+            self.typeText("\r")
+        }
+    }
+
     /// Check for the existence of the address bar and type a URL into it if it passes. Although it doesn't really make sense to restrict its usage to
     /// the address bar, it is only foreseen and recommended for use with the address bar.
     /// - Parameters:

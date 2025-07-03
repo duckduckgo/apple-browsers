@@ -42,10 +42,12 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
             }
             let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
 
-            let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker,
-                                                        pixelHandler: sharedPixelsHandler,
-                                                        vaultMaker: { try? vaultFactory.makeVault(reporter: nil) },
-                                                        localBrokerService: localBrokerService)
+            let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+            guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
+                fatalError("Failed to make secure storage vault")
+            }
+
+            let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
 
             self.dataManager = DataBrokerProtectionDataManager(database: database)
             self.tables = [DataBrokerDatabaseBrowserData.Table]()

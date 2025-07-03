@@ -16,10 +16,11 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import BrowserServicesKit
 import Combine
-import AIChat
+import PixelKit
 
 /// Represents an event of hiding or showing an AI Chat tab sidebar.
 ///
@@ -55,6 +56,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     private let aiChatTabOpener: AIChatTabOpening
     private let featureFlagger: FeatureFlagger
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let pixelFiring: PixelFiring?
     private let sidebarPresenceWillChangeSubject = PassthroughSubject<AIChatSidebarPresenceChange, Never>()
 
     private var cancellables = Set<AnyCancellable>()
@@ -64,13 +66,15 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         sidebarProvider: AIChatSidebarProviding = AIChatSidebarProvider(),
         aiChatTabOpener: AIChatTabOpening,
         featureFlagger: FeatureFlagger,
-        windowControllersManager: WindowControllersManagerProtocol
+        windowControllersManager: WindowControllersManagerProtocol,
+        pixelFiring: PixelFiring?
     ) {
         self.sidebarHost = sidebarHost
         self.sidebarProvider = sidebarProvider
         self.aiChatTabOpener = aiChatTabOpener
         self.featureFlagger = featureFlagger
         self.windowControllersManager = windowControllersManager
+        self.pixelFiring = pixelFiring
 
         sidebarPresenceWillChangePublisher = sidebarPresenceWillChangeSubject.eraseToAnyPublisher()
         self.sidebarHost.aiChatSidebarHostingDelegate = self
@@ -83,6 +87,17 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
                 else { return }
 
                 self?.handleAIChatHandoff(with: payload)
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .aiChatSummarizationRequest)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard sidebarHost.isInKeyWindow,
+                      let request = notification.object as? AIChatSummarizationRequest
+                else { return }
+
+                self?.handleAIChatSummarizationRequest(request)
             }
             .store(in: &cancellables)
     }
@@ -149,6 +164,33 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         } else {
             // If sidebar is open then pass the payload to a new AIChat tab
             aiChatTabOpener.openNewAIChatTab(withPayload: payload)
+        }
+    }
+
+    private func handleAIChatSummarizationRequest(_ request: AIChatSummarizationRequest) {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+        guard let currentTabID = sidebarHost.currentTabID else { return }
+
+        let isShowingSidebar = sidebarProvider.isShowingSidebar(for: currentTabID)
+
+        let promptText = """
+            You are an expert summarizer AI. Your purpose is to read the provided text and generate a concise, accurate, and easy-to-understand summary. Summarize the following text in a neutral, encyclopedic tone. The summary should be a single paragraph and should not exceed 50 words. Use the same language as the original text.
+            <text>
+            \(request.text)
+            </text>
+            """
+
+        let prompt = AIChatNativePrompt.queryPrompt(promptText, autoSubmit: true)
+        pixelFiring?.fire(AIChatPixel.aiChatSummarizeText(source: request.source), frequency: .dailyAndStandard)
+
+        if !isShowingSidebar {
+            AIChatPromptHandler.shared.setData(prompt)
+
+            // If not showing the sidebar open it with the summarization prompt
+            updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
+        } else {
+            let sidebarViewController = sidebarProvider.sidebar(for: currentTabID).sidebarViewController
+            sidebarViewController.setAIChatPrompt(prompt)
         }
     }
 }

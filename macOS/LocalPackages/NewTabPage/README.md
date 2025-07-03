@@ -30,3 +30,18 @@ At any given time in a running application there is:
 * 1 set of `NewTabPageUserScriptClient` instances (1 instance per feature)
 * as many `NewTabPageUserScript` instances as there are windows – all user scripts are registered with the actions manager.
 
+## NewTabPageActionsManager initialization
+
+_(The code described here exists in the app target)_
+
+`NewTabPageActionsManager` is owned by `NewTabPageCoordinator` that is lazily instantiated in `AppDelegate`. The coordinator's job is only to own the actions manager and to send a daily "new tab page shown" pixel when NTP comes on screen.
+
+The actions manager is then used in `BrowserTabViewController` that instantiates and owns a `NewTabPageWebViewModel` instance.
+
+The model manages a web view for displaying NTP, initializes `NewTabPageUserScript`, configures the web view and adds the user script to it. As an extra security measure, the model sets up web view so that navigations outside of the new tab page are blocked (they are performed in a browsing view anyway).
+
+The de facto initializer for `NewTabPageActionsManager` is implemented in `NewTabPageActionsManagerExtension.swift`. It takes a number of app-owned objects as parameters, sets up user script clients and calls the designated `.init(scriptClients:)` initializer.
+
+## Module structure
+
+The `NewTabPage` Swift module is organized into feature subdirectories, e.g. `CustomBackground`, `Favorites`, `NextStepCards`, etc.

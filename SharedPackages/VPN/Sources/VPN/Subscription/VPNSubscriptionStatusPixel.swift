@@ -68,7 +68,7 @@ public enum VPNSubscriptionStatusPixel: PixelKitEventV2, PixelKitEventWithCustom
         case .clientCheck:
             return "m_vpn_subs_client_check_"
         case .clientForegrounded:
-            return "m_vpn_subs_client_foregrounded_"
+            return "m_vpn_subs_client_check_on_foreground_"
         case .notification:
             return "m_vpn_subs_notification_"
         }

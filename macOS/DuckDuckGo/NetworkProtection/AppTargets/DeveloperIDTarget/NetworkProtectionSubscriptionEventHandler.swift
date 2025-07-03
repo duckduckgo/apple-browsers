@@ -32,20 +32,7 @@ final class NetworkProtectionSubscriptionEventHandler {
     private let vpnUninstaller: VPNUninstalling
     private let userDefaults: UserDefaults
     private var cancellables = Set<AnyCancellable>()
-    private lazy var wakeEntitlementChecker: SubscriptionOnWakeEntitlementChecker = {
-        return SubscriptionOnWakeEntitlementChecker(
-            subscriptionManager: subscriptionManager,
-            feature: .networkProtection,
-            onEntitlementStatus: { [weak self] _, hasEntitlement in
-                guard let self else { return }
-                Task {
-                    await self.handleEntitlementsChange(
-                        hasEntitlements: hasEntitlement, 
-                        source: .clientCheckOnWake(sourceObject: self.wakeEntitlementChecker)
-                    )
-                }
-            })
-    }()
+
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          tunnelController: TunnelController,
@@ -57,10 +44,8 @@ final class NetworkProtectionSubscriptionEventHandler {
         self.userDefaults = userDefaults
 
         checkEntitlements()
-        subscribeToEntitlementChangeNotifications()
-        
-        // Initialize lazy property to start wake monitoring
-        _ = wakeEntitlementChecker
+        subscribeToWakeNotifications()
+        subscribeToEntitlementChanges()
     }
 
     @MainActor
@@ -79,6 +64,19 @@ final class NetworkProtectionSubscriptionEventHandler {
             let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
             await handleEntitlementsChange(hasEntitlements: hasEntitlement, source: .clientCheck(sourceObject: self))
         }
+    }
+
+    private func subscribeToWakeNotifications() {
+        NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didWakeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Logger.networkProtection.log("System wake notification received, checking entitlements")
+                Task {
+                    let hasEntitlement = await self?.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection) ?? false
+                    await self?.handleEntitlementsChange(hasEntitlements: hasEntitlement, source: .clientCheckOnWake(sourceObject: self))
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func subscribeToEntitlementChanges() {

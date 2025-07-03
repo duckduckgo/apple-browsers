@@ -132,6 +132,8 @@ class MainViewController: UIViewController {
     private var vpnCancellables = Set<AnyCancellable>()
     private var feedbackCancellable: AnyCancellable?
     private var aiChatCancellables = Set<AnyCancellable>()
+    
+
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let subscriptionCookieManager: SubscriptionCookieManaging
@@ -1783,6 +1785,41 @@ class MainViewController: UIViewController {
                     self?.onVPNStatusDidChange(notification)
                 }.store(in: &vpnCancellables)
         }
+        
+        // Subscribe to app foreground events to check entitlements
+        NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Logger.networkProtection.log("App foreground notification received, checking entitlements")
+                Task {
+                    let hasEntitlement = (try? await self?.subscriptionManager.isEnabled(feature: .networkProtection)) ?? false
+                    let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+                    let isSubscriptionActive = try? await self?.subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+
+                    if let self = self {
+                        if hasEntitlement && self.lastKnownEntitlementsExpired {
+                            PixelKit.fire(
+                                VPNSubscriptionStatusPixel.vpnFeatureEnabled(
+                                    isSubscriptionActive: isSubscriptionActive,
+                                    isAuthV2Enabled: isAuthV2Enabled,
+                                    source: .clientCheckOnWake(sourceObject: self)),
+                                frequency: .dailyAndCount)
+
+                            self.lastKnownEntitlementsExpired = false
+                        } else if !hasEntitlement && !self.lastKnownEntitlementsExpired {
+                            PixelKit.fire(
+                                VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                                    isSubscriptionActive: isSubscriptionActive,
+                                    isAuthV2Enabled: isAuthV2Enabled,
+                                    source: .clientCheckOnWake(sourceObject: self)),
+                                frequency: .dailyAndCount)
+
+                            self.lastKnownEntitlementsExpired = true
+                        }
+                    }
+                }
+            }
+            .store(in: &vpnCancellables)
 
         NotificationCenter.default.publisher(for: .accountDidSignIn)
             .receive(on: DispatchQueue.main)

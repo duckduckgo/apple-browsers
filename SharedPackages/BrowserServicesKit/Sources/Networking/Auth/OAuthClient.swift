@@ -310,7 +310,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
 
         let task = Task {
-            defer { Task { migrationOngoingTask = nil } }
+            defer { migrationOngoingTask = nil }
 
             guard !isUserAuthenticated else {
                 throw OAuthClientError.authMigrationNotPerformed

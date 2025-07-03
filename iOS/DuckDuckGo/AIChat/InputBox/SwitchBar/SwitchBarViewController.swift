@@ -79,12 +79,12 @@ class SwitchBarViewController: UIViewController {
     private let pickerItems = [
         ImageSegmentedPickerItem(
             text: "Search",
-            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch),
+            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearchGradientColor),
             unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.findSearch)
         ),
         ImageSegmentedPickerItem(
             text: "Duck.ai",
-            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat),
+            selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChatGradientColor),
             unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat)
         )
     ]

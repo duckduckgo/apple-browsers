@@ -34,8 +34,8 @@ public struct ImageSegmentedPickerConfiguration {
         font: Font = .system(size: 16, weight: .medium),
         selectedTextColor: Color = .init(designSystemColor: .textPrimary),
         unselectedTextColor: Color = .init(designSystemColor: .textPrimary),
-        backgroundColor: Color = .init(designSystemColor: .surface),
-        selectedBackgroundColor: Color = .init(designSystemColor: .background),
+        backgroundColor: Color = .init(designSystemColor: .backdrop),
+        selectedBackgroundColor: Color = .init(designSystemColor: .backgroundTertiary),
     ) {
         self.font = font
         self.selectedTextColor = selectedTextColor
@@ -49,8 +49,8 @@ public struct ImageSegmentedPickerConfiguration {
 
 public struct ImageSegmentedPickerView: View {
     private enum Constants {
-        static let outterHeight: CGFloat = 36
-        static let innerHeight: CGFloat = 32
+        static let outterHeight: CGFloat = 44
+        static let innerHeight: CGFloat = 40
         static let innerHorizontalPadding: CGFloat = 2
     }
 

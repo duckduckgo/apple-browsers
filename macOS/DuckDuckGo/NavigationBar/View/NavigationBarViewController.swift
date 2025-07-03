@@ -1735,7 +1735,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedPaidAIChat(_ menu: NSMenu) {
-        let aiChatURL = URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!
+        let aiChatURL = AIChatRemoteSettings().aiChatURL
         showTab(.aiChat(aiChatURL))
     }
 

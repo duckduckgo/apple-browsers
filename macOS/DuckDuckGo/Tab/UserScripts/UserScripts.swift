@@ -61,13 +61,15 @@ final class UserScripts: UserScriptsProvider {
         clickToLoadScript = ClickToLoadUserScript()
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
+        let aiChatDebugURLSettings = AIChatDebugURLSettings()
         aiChatUserScript = AIChatUserScript(handler: AIChatUserScriptHandler(storage: DefaultAIChatPreferencesStorage()),
-                                            urlSettings: AIChatDebugURLSettings())
+                                            urlSettings: aiChatDebugURLSettings)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
             subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
             paidAIChatFlagStatusProvider: { NSApp.delegateTyped.featureFlagger.isFeatureOn(.paidAIChat) },
-            navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator
+            navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
+            debugHost: aiChatDebugURLSettings.customURLHostname
         )
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
@@ -176,7 +178,8 @@ final class UserScripts: UserScriptsProvider {
             let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
             delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                                  stripePurchaseFlow: stripePurchaseFlow,
-                                                                 uiHandler: Application.appDelegate.subscriptionUIHandler)
+                                                                 uiHandler: Application.appDelegate.subscriptionUIHandler,
+                                                                 aiChatURL: AIChatRemoteSettings().aiChatURL)
         }
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)

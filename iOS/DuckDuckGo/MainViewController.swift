@@ -792,13 +792,15 @@ class MainViewController: UIViewController {
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
         keyboardHeight = keyboardFrameInView.height
 
-        findInPageBottomLayoutConstraint.constant = intersection.height
-
-        let y = self.view.frame.height - intersection.height
-        let frame = self.findInPageView.frame
-        UIView.animate(withDuration: duration, delay: 0, options: animationCurve, animations: {
-            self.findInPageView.frame = CGRect(x: 0, y: y - frame.height, width: frame.width, height: frame.height)
-        }, completion: nil)
+        // On iPad the keyboard will change even if using the hardware keyboard and we don't want FIP to move in that case.
+        if intersection.height < 1.0 || intersection.height > (isPad ? 50 : 0) {
+            findInPageBottomLayoutConstraint.constant = intersection.height
+            let y = self.view.frame.height - intersection.height
+            let frame = self.findInPageView.frame
+            UIView.animate(withDuration: duration, delay: 0, options: animationCurve, animations: {
+                self.findInPageView.frame = CGRect(x: 0, y: y - frame.height, width: frame.width, height: frame.height)
+            }, completion: nil)
+        }
 
         if self.appSettings.currentAddressBarPosition.isBottom {
             let intersection = safeAreaFrame.intersection(keyboardFrameInView)

@@ -170,7 +170,7 @@ class SyncOperationTests: XCTestCase {
 
         var payloadCount = 3
 
-        for body in bodies.compactMap({$0}) {
+        for body in bodies.compactMap({ $0 }) {
             do {
                 let payload = try JSONDecoder.snakeCaseKeys.decode(BookmarksPayload.self, from: body.gunzipped())
                 XCTAssertEqual(payload, bookmarks)

@@ -32,7 +32,6 @@ public protocol BrokerProfileJobErrorDelegate: AnyObject {
     func dataBrokerOperationDidError(_ error: Error, withBrokerName brokerName: String?, version: String?)
 }
 
-// swiftlint:disable explicit_non_final_class
 public class BrokerProfileJob: Operation, @unchecked Sendable {
 
     private let dataBrokerID: Int64
@@ -206,7 +205,6 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         Logger.dataBrokerProtection.log("Finished operation: \(self.id.uuidString, privacy: .public)")
     }
 }
-// swiftlint:enable explicit_non_final_class
 
 private extension Array where Element == BrokerJobData {
     /// Filters jobs based on their preferred run date:

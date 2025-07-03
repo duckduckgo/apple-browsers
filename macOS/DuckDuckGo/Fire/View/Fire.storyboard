@@ -573,6 +573,7 @@ Gw
                         <outlet property="contentHeightConstraint" destination="hbg-4i-hjT" id="mC2-Ot-onY"/>
                         <outlet property="detailsWrapperView" destination="6vZ-d2-qnR" id="TKb-Ux-TIk"/>
                         <outlet property="detailsWrapperViewHeightContraint" destination="sJt-dl-rlH" id="7pa-Kc-9xB"/>
+                        <outlet property="fireGraphic" destination="acV-lE-jVh" id="ohy-AE-nhl"/>
                         <outlet property="fireWindowDescriptionLabel" destination="Oiy-AY-h7p" id="hTv-fB-980"/>
                         <outlet property="headerWrapperView" destination="3Jn-h4-fXL" id="P5R-o0-Fdg"/>
                         <outlet property="infoLabel" destination="YMk-Hq-WfZ" id="JHL-r4-1VT"/>
@@ -706,6 +707,7 @@ DQ
                     </view>
                     <connections>
                         <outlet property="descriptionLabel" destination="AsC-eN-HNp" id="Vt8-1Y-TYi"/>
+                        <outlet property="fireGraphic" destination="wWB-fA-JGV" id="HNM-1d-ZwS"/>
                         <outlet property="gotItButton" destination="vOP-zm-6FL" id="G4K-3X-MyR"/>
                         <outlet property="titleLabel" destination="cPr-2R-bkx" id="eu8-df-l3z"/>
                     </connections>

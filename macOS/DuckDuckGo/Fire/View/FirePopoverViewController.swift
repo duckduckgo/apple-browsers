@@ -45,6 +45,7 @@ final class FirePopoverViewController: NSViewController {
     private let fireViewModel: FireViewModel
     private var firePopoverViewModel: FirePopoverViewModel
     private let historyCoordinating: HistoryCoordinating
+    private let visualStyle: VisualStyleProviding
 
     @IBOutlet weak var closeTabsLabel: NSTextField!
     @IBOutlet weak var openFireWindowsTitleLabel: NSTextField!
@@ -70,6 +71,7 @@ final class FirePopoverViewController: NSViewController {
     @IBOutlet weak var cancelButton: NSButton!
     @IBOutlet weak var closeBurnerWindowButton: NSButton!
     @IBOutlet weak var burnerWindowButton: NSImageView!
+    @IBOutlet weak var fireGraphic: NSImageView!
 
     private var viewModelCancellable: AnyCancellable?
     private var selectedCancellable: AnyCancellable?
@@ -84,9 +86,11 @@ final class FirePopoverViewController: NSViewController {
           historyCoordinating: HistoryCoordinating = NSApp.delegateTyped.historyCoordinator,
           fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
           faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager,
-          tld: TLD = NSApp.delegateTyped.tld) {
+          tld: TLD = NSApp.delegateTyped.tld,
+          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.fireViewModel = fireViewModel
         self.historyCoordinating = historyCoordinating
+        self.visualStyle = visualStyle
         self.firePopoverViewModel = FirePopoverViewModel(fireViewModel: fireViewModel,
                                                          tabCollectionViewModel: tabCollectionViewModel,
                                                          historyCoordinating: historyCoordinating,
@@ -121,6 +125,8 @@ final class FirePopoverViewController: NSViewController {
 
         subscribeToViewModel()
         subscribeToSelected()
+
+        fireGraphic.image = visualStyle.iconsProvider.fireInfoGraphic
     }
 
     override func viewWillAppear() {
@@ -325,7 +331,7 @@ final class FirePopoverViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] selected in
                 guard let self = self else { return }
-                let selectionIndexPaths = Set(selected.map {IndexPath(item: $0, section: self.firePopoverViewModel.selectableSectionIndex)})
+                let selectionIndexPaths = Set(selected.map { IndexPath(item: $0, section: self.firePopoverViewModel.selectableSectionIndex) })
                 self.collectionView.selectionIndexPaths = selectionIndexPaths
                 self.updateInfoLabel()
             }

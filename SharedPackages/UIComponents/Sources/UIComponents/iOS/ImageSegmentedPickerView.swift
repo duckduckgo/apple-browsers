@@ -88,8 +88,8 @@ public struct ImageSegmentedPickerConfiguration {
 /// ```
 public struct ImageSegmentedPickerView: View {
     private enum Constants {
-        static let outterHeight: CGFloat = 44
-        static let innerHeight: CGFloat = 40
+        static let outerHeight: CGFloat = 40
+        static let innerHeight: CGFloat = 36
         static let innerHorizontalPadding: CGFloat = 2
     }
 
@@ -118,14 +118,14 @@ public struct ImageSegmentedPickerView: View {
     public var body: some View {
         GeometryReader { geometry in
             ZStack {
-                RoundedRectangle(cornerRadius: Constants.outterHeight / 2)
+                RoundedRectangle(cornerRadius: Constants.outerHeight / 2)
                     .fill(configuration.backgroundColor)
 
                 RoundedRectangle(cornerRadius: Constants.innerHeight / 2)
                     .fill(configuration.selectedBackgroundColor)
                     .frame(width: geometry.size.width / CGFloat(items.count), height: Constants.innerHeight)
                     .offset(x: currentOffset)
-                    .shadow(color: Color.black.opacity(0.10), radius: 0.5, x: 0, y: 0.5)
+                    .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 0.5, x: 0, y: 0.5)
                     .onAppear {
                         currentOffset = selectedOffset(geometry: geometry)
                     }
@@ -150,7 +150,7 @@ public struct ImageSegmentedPickerView: View {
                 }
             }
         }
-        .frame(height: Constants.outterHeight)
+        .frame(height: Constants.outerHeight)
     }
 
     private func selectedOffset(geometry: GeometryProxy) -> CGFloat {

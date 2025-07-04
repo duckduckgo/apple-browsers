@@ -183,13 +183,13 @@ final class VPNSubscriptionEventsHandler {
     }
 
     private func handleAccountDidSignIn(_ notification: Notification) {
-        Task {
+        Task { @MainActor in
             guard subscriptionManager.isUserAuthenticated else {
                 assertionFailure("[NetP Subscription] AccountManager signed in but token could not be retrieved")
                 return
             }
 
-            let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
+            let isAuthV2Enabled = NSApp.delegateTyped.isAuthV2Enabled
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
             PixelKit.fire(
@@ -200,7 +200,7 @@ final class VPNSubscriptionEventsHandler {
                 frequency: .dailyAndCount)
 
             /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
-            userDefaults.networkProtectionEntitlementsExpired = false
+            lastKnownEntitlementsExpired = false
         }
     }
 

@@ -2792,7 +2792,16 @@ Take back control of your personal information with the browser designed for dat
 "settings.subscription.DBP.title" = "Personal Information Removal";
 
 /* Privacy pro description subtitle in settings */
-"settings.subscription.description.no.duck.ai" = "Subscribers get our VPN, Personal Information Removal, and Identity Theft Restoration.";
+"settings.subscription.description.no.duck.ai.row" = "Subscribers get our VPN and Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "Subscribers get our VPN, Personal Information Removal, and Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "Subscribers get our VPN, advanced AI models in Duck.ai, and Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "Subscribers get our VPN, advanced AI models in Duck.ai, Personal Information Removal, and Identity Theft Restoration.";
 
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "I Have a Subscription";
@@ -2821,17 +2830,11 @@ Take back control of your personal information with the browser designed for dat
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Subscription Settings";
 
-/* Privacy pro description subtitle in settings */
-"settings.subscription.row.description" = "Subscribers get our VPN, advanced AI models in Duck.ai, and Identity Theft Restoration.";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.row.description.no.duck.ai" = "Subscribers get our VPN and Identity Theft Restoration.";
-
 /* Product name for the subscription bundle */
 "settings.subscription.Section" = "DuckDuckGo Subscription";
 
 /* Subscribe to DuckDuckGo button text */
-"settings.subscription.subscribe" = "Subscribe to DuckDuckGo";
+"settings.subscription.subscribe.button" = "Subscribe to DuckDuckGo";
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe.title" = "Secure your Wi-Fi, and chat privately with advanced AI models";
@@ -2840,13 +2843,10 @@ Take back control of your personal information with the browser designed for dat
 "settings.subscription.subscribe.title.no.ai.chat" = "Secure your Wi-Fi, and protect identity";
 
 /* Try DuckDuckGo Subscription Free button text */
-"settings.subscription.try.free" = "Try DuckDuckGo Subscription Free";
+"settings.subscription.try.free.button" = "Try DuckDuckGo Subscription Free";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free.no.ai.chat" = "Try Privacy Pro Free";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Subscribers get our VPN, advanced AI models in Duck.ai, Personal Information Removal, and Identity Theft Restoration.";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";

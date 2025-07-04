@@ -21,44 +21,27 @@
 import PackageDescription
 
 let package = Package(
-    name: "CommonObjCExtensions",
+    name: "ObjCTestsExtensions",
     platforms: [
         .macOS("11.4")
     ],
     products: [
-        // Products define the executables and libraries a package produces, and make them visible to other packages.
-        .library(name: "BWIntegration", targets: ["BWIntegration"]),
-        .library(name: "CommonObjCExtensions", targets: ["CommonObjCExtensions"]),
+        .library(name: "NoARCObjCTestsExtensions", targets: ["NoARCObjCTestsExtensions"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/OpenSSL-XCFramework", exact: "3.3.2000")
     ],
     targets: [
         .target(
-            name: "BWIntegration",
-            dependencies: [
-                .product(name: "OpenSSL", package: "OpenSSL-XCFramework")
-            ],
-            sources: [
-                "BWEncryption.m",
-                "BWEncryptionOutput.m",
-            ],
-            publicHeadersPath: "include",
-            cSettings: [
-                .headerSearchPath("include")
-            ]
-        ),
-        .target(
-            name: "CommonObjCExtensions",
+            name: "NoARCObjCTestsExtensions",
             dependencies: [],
             sources: [
-                "NSException+Catch.m",
-                "NSObject+performSelector.m",
+                "NSObject+AutoreleaseTracking.m",
             ],
             publicHeadersPath: "include",
             cSettings: [
                 .headerSearchPath("include"),
+                .unsafeFlags(["-fno-objc-arc"], .when(platforms: [.macOS]))
             ]
-        )
+        ),
     ]
 )

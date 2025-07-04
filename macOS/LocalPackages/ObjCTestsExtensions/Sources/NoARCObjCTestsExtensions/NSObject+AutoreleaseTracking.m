@@ -16,6 +16,16 @@
 //  limitations under the License.
 //
 
+/**
+ * @file NSObject+AutoreleaseTracking.m
+ * @brief Implementation of autorelease tracking for debugging memory leaks.
+ *
+ * This file implements the autorelease tracking system that helps debug memory
+ * leaks by creating tracker objects that are autoreleased alongside tracked
+ * objects. The tracker objects maintain malloc stack traces that can be used
+ * to identify where autorelease calls were made.
+ */
+
 #import "NSObject+AutoreleaseTracking.h"
 #import <objc/runtime.h>
 #import <AppKit/AppKit.h>
@@ -67,22 +77,7 @@ static IMP originalAutoreleaseIMP = NULL;
     AutoreleaseTracker *tracker = [[AutoreleaseTracker alloc] initWithObject:self];
     ((id (*)(id, SEL))originalAutoreleaseIMP)(tracker, @selector(autorelease)); // autorelease
 
-    // Add to trackers array
-//    [[self autoreleaseTrackers] addObject:tracker];
-
-//    [tracker release];
-
     return result;
 }
-
-//- (NSMutableArray<AutoreleaseTracker *> *)autoreleaseTrackers {
-//    NSMutableArray *trackers = objc_getAssociatedObject(self, AutoreleaseTrackersKey);
-//    if (!trackers) {
-//        trackers = [[NSMutableArray alloc] init];
-//        objc_setAssociatedObject(self, AutoreleaseTrackersKey, trackers, OBJC_ASSOCIATION_RETAIN);
-//        [trackers release];
-//    }
-//    return trackers;
-//}
 
 @end 

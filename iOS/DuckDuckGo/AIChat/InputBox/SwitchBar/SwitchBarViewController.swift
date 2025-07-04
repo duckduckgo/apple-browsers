@@ -39,7 +39,6 @@ class SwitchBarViewController: UIViewController {
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
     
-    private var segmentedControlBottomConstraint: NSLayoutConstraint?
     private var segmentedControlTopConstraint: NSLayoutConstraint?
 
     private var isExpanded = false
@@ -154,13 +153,7 @@ class SwitchBarViewController: UIViewController {
     func setExpanded(_ isExpanded: Bool) {
         self.isExpanded = isExpanded
 
-        if isExpanded {
-            segmentedControlBottomConstraint?.isActive = false
-            segmentedControlTopConstraint?.isActive = true
-        } else {
-            segmentedControlBottomConstraint?.isActive = true
-            segmentedControlTopConstraint?.isActive = false
-        }
+        segmentedControlTopConstraint?.isActive = isExpanded
 
         backButton.alpha = isExpanded ? 1 : 0
         segmentedPickerHostingController?.view.alpha = isExpanded ? 1 : 0
@@ -172,7 +165,6 @@ class SwitchBarViewController: UIViewController {
 
         guard let segmentedPickerView = segmentedPickerHostingController?.view else { return }
 
-        segmentedControlBottomConstraint = segmentedPickerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: -Constants.textEntryViewTopPadding)
         segmentedControlTopConstraint = segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
 
         NSLayoutConstraint.activate([

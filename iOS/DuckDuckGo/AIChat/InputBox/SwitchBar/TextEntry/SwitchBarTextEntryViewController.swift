@@ -60,7 +60,7 @@ class SwitchBarTextEntryViewController: UIViewController {
     func setExpanded(_ expanded: Bool) {
         isExpanded = expanded
 
-        containerHeightConstraint?.priority = expanded ? .required : .defaultHigh
+        containerHeightConstraint?.isActive = expanded
     }
 
     func focusTextField() {
@@ -115,7 +115,7 @@ class SwitchBarTextEntryViewController: UIViewController {
         textEntryBottomConstraint?.priority = UILayoutPriority(999)
         textEntryBottomConstraint?.isActive = true
 
-        containerHeightConstraint = containerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 70).withPriority(.defaultHigh)
+        containerHeightConstraint = containerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 70)
         containerHeightConstraint?.isActive = true
 
         NSLayoutConstraint.activate([

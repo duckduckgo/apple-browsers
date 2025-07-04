@@ -111,4 +111,14 @@ extension NSObject {
         ensureObjectDeallocated(after: timeout, do: .assert)
     }
 
+    public func value(forIvar name: String) -> Any? {
+        guard let ivar = class_getInstanceVariable(object_getClass(self), name) else { return nil }
+        return object_getIvar(self, ivar)
+    }
+
+    public func setValue(_ value: Any?, forIvar name: String) {
+        guard let ivar = class_getInstanceVariable(object_getClass(self), name) else { return }
+        return object_setIvar(self, ivar, value)
+    }
+
 }

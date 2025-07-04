@@ -53,11 +53,13 @@ let package = Package(
             dependencies: [],
             sources: [
                 "NSException+Catch.m",
-                "NSObject+performSelector.m"
+                "NSObject+performSelector.m",
+                "NSObject+AutoreleaseTracking.m"
             ],
             publicHeadersPath: "include",
             cSettings: [
-                .headerSearchPath("include")
+                .headerSearchPath("include"),
+                .unsafeFlags(["-fno-objc-arc"], .when(platforms: [.macOS]))
             ]
         )
     ]

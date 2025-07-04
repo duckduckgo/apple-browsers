@@ -26,18 +26,23 @@ final class ContextualDaxDialogFactoryIntegrationTests: XCTestCase {
     private var delegate: CapturingOnboardingNavigationDelegate!
     private var fireCoordinator: FireCoordinator!
 
-    @MainActor override func setUpWithError() throws {
-        try super.setUpWithError()
+    @MainActor override func setUp() {
         fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
         factory = DefaultContextualDaxDialogViewFactory(fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
     }
 
-    @MainActor override func tearDownWithError() throws {
-        factory = nil
-        delegate = nil
-        fireCoordinator = nil
-        try super.tearDownWithError()
+    @MainActor override func tearDown() {
+        autoreleasepool {
+            factory = nil
+            delegate = nil
+            fireCoordinator = nil
+
+            WindowsManager.closeWindows()
+            for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
+                Application.appDelegate.windowControllersManager.unregister(controller)
+            }
+        }
     }
 
     @MainActor func testWhenMakeViewForTryFireButtonThenOnboardingTryFireButtonDialogViewCreatedAndOnActionExpectedActionOccurs() throws {
@@ -48,7 +53,6 @@ final class ContextualDaxDialogFactoryIntegrationTests: XCTestCase {
 
         // WHEN
         let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: {}, onFireButtonPressed: {})
-
         // THEN
         let view = try XCTUnwrap(find(OnboardingFireDialog.self, in: result))
 
@@ -60,7 +64,6 @@ final class ContextualDaxDialogFactoryIntegrationTests: XCTestCase {
         let expectation = self.expectation(description: "Wait for FirePopover to appear")
         self.waitForPopoverToAppear(expectation: expectation)
         wait(for: [expectation], timeout: 3.0)
-        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window?.close()
     }
 
     @MainActor private func waitForPopoverToAppear(expectation: XCTestExpectation) {

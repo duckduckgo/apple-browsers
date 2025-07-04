@@ -36,6 +36,7 @@ final class SyncPromoManagerTests: XCTestCase {
         syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
     }
 
+    @MainActor
     override func tearDownWithError() throws {
         UserDefaultsWrapper<Any>.clearAll()
         syncService = nil

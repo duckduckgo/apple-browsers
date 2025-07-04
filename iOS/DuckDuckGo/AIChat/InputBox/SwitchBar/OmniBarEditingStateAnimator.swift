@@ -114,10 +114,10 @@ final class OmniBarEditingStateAnimator {
         let collapseAnimator = UIViewPropertyAnimator(duration: Constants.TopTransition.collapseDuration,
                                                       dampingRatio: Constants.TopTransition.collapseDampingRatio) {
             transitionDelegate.switchBarVC.setExpanded(false)
-            transitionDelegate.switchBarVC.view.alpha = 0.2
-            transitionDelegate.logoView?.alpha = 0
-
             self.switchBarHeightConstraint?.isActive = true
+            
+            transitionDelegate.switchBarVC.view.alpha = 0.5
+            transitionDelegate.logoView?.alpha = 0.5
 
             transitionDelegate.rootView.layoutIfNeeded()
         }
@@ -198,7 +198,7 @@ final class OmniBarEditingStateAnimator {
             static let collapseDuration: TimeInterval = 0.4
             static let collapseDampingRatio: CGFloat = 0.7
             static let fadeOutDuration: TimeInterval = 0.15
-            static let fadeOutDelay: TimeInterval = collapseDuration * 0.85
+            static let fadeOutDelay: TimeInterval = collapseDuration * 0.65
         }
     }
 }

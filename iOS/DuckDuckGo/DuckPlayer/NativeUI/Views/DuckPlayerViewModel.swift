@@ -177,8 +177,15 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Handles navigation requests to external URLs
     /// - Parameter url: The URL to navigate to
     func handleYouTubeNavigation(_ url: URL) {
-        // Always send navigation request - let the presenter handle dismissal and navigation
-        youtubeNavigationRequestPublisher.send(url)
+        // Check if tapped video is the same as currently playing
+        if let tappedVideoID = url.youtubeVideoParams?.videoID,
+           tappedVideoID == videoID {
+            // Same video - just dismiss DuckPlayer with current timestamp to preserve playback position
+            dismissPublisher.send(currentTimeStamp)
+        } else {
+            // Different video/URL - navigate to the URL
+            youtubeNavigationRequestPublisher.send(url)
+        }
     }
 
     /// Opens the current video in the YouTube app or website

@@ -217,6 +217,53 @@ final class DuckPlayerViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testHandleYouTubeNavigation_SameVideo_SendsCurrentTimestamp() {
+        // Given
+        let currentTimestamp: TimeInterval = 45.5 // 45.5 seconds into the video
+        viewModel.currentTimeStamp = currentTimestamp
+        
+        let sameVideoURL = URL(string: "https://www.youtube.com/watch?v=\(viewModel.videoID)")!
+        let expectation = XCTestExpectation(description: "Dismiss publisher emitted with current timestamp")
+        var receivedTimestamp: TimeInterval?
+
+        viewModel.dismissPublisher
+            .sink { timestamp in
+                receivedTimestamp = timestamp
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        viewModel.handleYouTubeNavigation(sameVideoURL)
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedTimestamp, currentTimestamp, "Should preserve current playback position when tapping same video")
+    }
+
+    @MainActor
+    func testHandleYouTubeNavigation_DifferentVideo_SendsNavigationRequest() {
+        // Given
+        let differentVideoURL = URL(string: "https://www.youtube.com/watch?v=differentVideoID")!
+        let expectation = XCTestExpectation(description: "Navigation request publisher emitted for different video")
+        var receivedURL: URL?
+
+        viewModel.youtubeNavigationRequestPublisher
+            .sink { url in
+                receivedURL = url
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        viewModel.handleYouTubeNavigation(differentVideoURL)
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedURL, differentVideoURL, "Should send navigation request for different video")
+    }
+
+    @MainActor
     func testSettingsRequestPublisher_OnOpenSettings() {
         // Given
         let expectation = XCTestExpectation(description: "Settings request publisher emitted")

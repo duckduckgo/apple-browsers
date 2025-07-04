@@ -38,7 +38,7 @@ final class DefaultBrowserPromptService {
     ) {
         self.presentingController = presentingController
 
-#if DEBUG || REVIEW
+#if DEBUG || ALPHA
         let debugDateProvider = DefaultBrowserPromptDebugDateProvider()
         let defaultBrowserDateProvider: () -> Date = { debugDateProvider.simulatedTodayDate }
 #else

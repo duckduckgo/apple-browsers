@@ -122,6 +122,8 @@ final class VPNSubscriptionEventsHandler {
                         isAuthV2Enabled: isAuthV2Enabled,
                         trigger: trigger),
                     frequency: .dailyAndCount)
+
+                lastKnownEntitlementsExpired = false
             } else if !hasEntitlements && !lastKnownEntitlementsExpired {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureDisabled(
@@ -129,6 +131,8 @@ final class VPNSubscriptionEventsHandler {
                         isAuthV2Enabled: isAuthV2Enabled,
                         trigger: trigger),
                     frequency: .dailyAndCount)
+
+                lastKnownEntitlementsExpired = true
             }
         case .notification:
             if hasEntitlements {

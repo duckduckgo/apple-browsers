@@ -43,12 +43,7 @@ extension XCTestCase {
             guard let view = ref.view else { return nil }
 
             autoreleasepool {
-                if view.className.contains("NSMenu")
-                    || view.className.contains("NSNextStep")
-                    || view.className.hasPrefix("_")
-                    || (view.className.hasPrefix("WK") && !(view is WKWebView))
-                    || view.className.contains("NSTextView")
-                    || view.window?.className.contains("NSMenu") == true
+                if view.window?.className.contains("NSMenu") == true
                     || view.window?.className.contains("TUINSWindow") == true {
 
                     objToDeinit = nil
@@ -204,18 +199,18 @@ extension TestRunHelper: XCTestObservation {
 #if CI
                 fatalError("Test timed out waiting for deallocation: \(unfulfilledExpectations)")
 #else
-//                breakByRaisingSigInt("""
-//                Test timed out waiting for deallocation: \(unfulfilledExpectations)"
-//
-//                To exorcise the issue:
-//                  1. Wrap setUp and tearDown method contents in autoreleasepool {} to ensure proper cleanup
-//                  2. Enable MallocStackLogging in the Tests scheme for detailed stack traces in Memory Browser
-//                  3. Use AutoreleaseTracker with malloc stack trace option to debug retain cycles in Memory Browser (see NSObject+AutoreleaseTracking.m)
-//                  4. Check Memory Browser for retained objects after test completion
-//                  5. Consider adding autoreleasepool {} around heavy object creation in tests
-//                  6. Use Instruments > Allocations to track object lifecycle
-//                  7. Disable this check and add breakpoints in dealloc methods to verify cleanup timing
-//                """)
+                breakByRaisingSigInt("""
+                Test timed out waiting for deallocation: \(unfulfilledExpectations)"
+
+                To exorcise the issue:
+                  1. Wrap setUp and tearDown method contents in autoreleasepool {} to ensure proper cleanup
+                  2. Enable MallocStackLogging in the Tests scheme for detailed stack traces in Memory Browser
+                  3. Use AutoreleaseTracker with malloc stack trace option to debug retain cycles in Memory Browser (see NSObject+AutoreleaseTracking.m)
+                  4. Check Memory Browser for retained objects after test completion
+                  5. Consider adding autoreleasepool {} around heavy object creation in tests
+                  6. Use Instruments > Allocations to track object lifecycle
+                  7. Disable this check and add breakpoints in dealloc methods to verify cleanup timing
+                """)
 #endif
             }
             XCTWaiter(delegate: waiter).wait(for: testCase.deallocExpectations(), timeout: 3)
@@ -321,10 +316,19 @@ extension NSView {
 
     @objc dynamic func swizzled_initWithFrame(frame: CGRect) -> NSView {
         let view = swizzled_initWithFrame(frame: frame)
-        if let observer = view.value(forIvar: "_antialiasThresholdChangedNotificationObserver") {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        TestRunHelper.shared.registerView(view)
+
+        if !(view.className.contains("NSMenu")
+             || view.className.contains("NSNextStep")
+             || view.className.hasPrefix("_")
+             || (view.className.hasPrefix("WK") && !(view is WKWebView))
+             || view.className.contains("NSTextView")) {
+
+                if let observer = view.value(forIvar: "_antialiasThresholdChangedNotificationObserver") {
+                    NotificationCenter.default.removeObserver(observer)
+                }
+
+                TestRunHelper.shared.registerView(view)
+            }
 
         return view
     }

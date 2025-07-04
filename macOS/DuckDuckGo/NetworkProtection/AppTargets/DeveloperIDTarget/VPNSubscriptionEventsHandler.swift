@@ -33,7 +33,6 @@ final class VPNSubscriptionEventsHandler {
     private let userDefaults: UserDefaults
     private var cancellables = Set<AnyCancellable>()
 
-
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          tunnelController: TunnelController,
          vpnUninstaller: VPNUninstalling,

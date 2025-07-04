@@ -1749,6 +1749,11 @@ class MainViewController: UIViewController {
         NotificationCenter.default.publisher(for: .settingsDeepLinkNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
+                if let presentedViewController = self?.presentedViewController {
+                    if !(presentedViewController is SettingsUINavigationController) {
+                        presentedViewController.dismiss(animated: true)
+                    }
+                }
                 switch notification.object as? SettingsViewModel.SettingsDeepLinkSection {
                 
                 case .duckPlayer:

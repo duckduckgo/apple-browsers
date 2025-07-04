@@ -120,6 +120,7 @@ struct Foreground: ForegroundHandling {
         services.defaultBrowserPromptService.resume()
 
         appDependencies.mainCoordinator.onForeground()
+        services.defaultBrowserPromptService.presentDefaultBrowserPromptIfNeeded()
     }
 
     private func configureAppearance() {

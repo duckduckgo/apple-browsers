@@ -123,7 +123,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
         switchBarVC.unfocusTextField()
-        setLogoVisibility(.hidden)
 
         dismissAnimated()
     }

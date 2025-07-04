@@ -186,11 +186,19 @@ enum UserText {
     static let removeFromThisDeviceButton = NSLocalizedString("subscription.preferences.remove.from.this.device.button", bundle: Bundle.module, value: "Remove From This Device", comment: "Button to remove subscription from this device")
 
     // MARK: Preferences when subscription is inactive
-    static func preferencesSubscriptionInactiveHeader(isPaidAIChatEnabled: Bool) -> String {
-        if isPaidAIChatEnabled {
-            return NSLocalizedString("subscription.preferences.subscription.inactive.header", bundle: Bundle.module, value: "Secure your Wi-Fi, and chat privately with advanced AI models", comment: "Header for the subscription preferences pane when the subscription is inactive")
+    static func preferencesSubscriptionInactiveHeader(region: SubscriptionRegion, isPaidAIChatEnabled: Bool) -> String {
+        switch region {
+        case .usa:
+            if isPaidAIChatEnabled {
+                return NSLocalizedString("subscription.preferences.subscription.inactive.header.us", bundle: Bundle.module, value: "Secure your Wi-Fi, and chat privately with advanced AI models", comment: "Header for the subscription preferences pane when the subscription is inactive")
+            }
+            return NSLocalizedString("subscription.preferences.subscription.inactive.header.no.duck.ai.us", bundle: Bundle.module, value: "Protect your connection and identity with three premium protections in one subscription.", comment: "Header for the subscription preferences pane when the subscription is inactive")
+        case .restOfWorld:
+            if isPaidAIChatEnabled {
+                return NSLocalizedString("subscription.preferences.subscription.inactive.header", bundle: Bundle.module, value: "Secure your Wi-Fi, and chat privately with advanced AI models", comment: "Header for the subscription preferences pane when the subscription is inactive")
+            }
+            return NSLocalizedString("subscription.preferences.subscription.inactive.header.no.duck.ai", bundle: Bundle.module, value: "Protect your connection and identity with two premium protections in one subscription.", comment: "Header for the subscription preferences pane when the subscription is inactive")
         }
-        return NSLocalizedString("subscription.preferences.subscription.inactive.header.no.duck.ai", bundle: Bundle.module, value: "Secure your Wi-Fi and protect your identity", comment: "Header for the subscription preferences pane when the subscription is inactive")
     }
     static func preferencesSubscriptionInactiveCaption(region: SubscriptionRegion, isPaidAIChatEnabled: Bool) -> String {
         switch region {
@@ -216,7 +224,7 @@ enum UserText {
     static let haveSubscriptionButton = NSLocalizedString("subscription.preferences.i.have.a.subscription.button", bundle: Bundle.module, value: "I Have a Subscription", comment: "Button enabling user to activate a subscription user bought earlier or on another device")
     static func purchaseFreeTrialButton(isSubscriptionRebrandingEnabled: Bool) -> String {
         if isSubscriptionRebrandingEnabled {
-            return NSLocalizedString("subscription.preferences.purchase.free-trial.button", bundle: Bundle.module, value: "Try DuckDuckGo Subscription Free", comment: "Button to open a page where user can learn more and purchase the subscription")
+            return NSLocalizedString("subscription.preferences.purchase.free-trial.button", bundle: Bundle.module, value: "Try Free", comment: "Button to open a page where user can learn more and purchase the subscription")
         }
         return NSLocalizedString("subscription.preferences.purchase.free-trial.button.deprecated", bundle: Bundle.module, value: "Try Privacy Pro Free", comment: "Button to open a page where user can learn more and try a free trial subscription")
     }

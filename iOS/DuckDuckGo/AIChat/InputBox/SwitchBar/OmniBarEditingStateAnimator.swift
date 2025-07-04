@@ -96,7 +96,6 @@ final class OmniBarEditingStateAnimator {
 
         // Schedule animations
         backgroundFadeAnimator.addCompletion { _ in
-            transitionDelegate.switchBarVC.focusTextField()
             expandAnimator.startAnimation()
         }
 
@@ -121,11 +120,6 @@ final class OmniBarEditingStateAnimator {
             self.topSwitchBarConstraint?.constant = 16
 
             transitionDelegate.rootView.layoutIfNeeded()
-        }
-
-        // Schedule animations
-        animator.addCompletion { _ in
-            transitionDelegate.switchBarVC.focusTextField()
         }
 
         // Start animations

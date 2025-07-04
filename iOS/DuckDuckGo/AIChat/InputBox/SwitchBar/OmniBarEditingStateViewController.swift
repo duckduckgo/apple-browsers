@@ -113,6 +113,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         super.viewWillAppear(animated)
 
         transitionAnimator.animateAppearance()
+        switchBarVC.focusTextField()
     }
 
     override func viewDidAppear(_ animated: Bool) {

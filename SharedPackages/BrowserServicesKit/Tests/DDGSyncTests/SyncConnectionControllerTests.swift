@@ -46,35 +46,35 @@ final class MockRemoteExchangeRecovering: RemoteExchangeRecovering {
 // MARK: - Delegate Mock
 
 final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelegate {
-    @Published var didBeginTransmittingRecoveryKeyCalled = false
-    @Published var didFinishTransmittingRecoveryKeyCalled = false
-    @Published var didReceiveRecoveryKeyCalled = false
-    @Published var didRecognizeScannedCodeCalled = false
-    @Published var didCreateSyncAccountCalled = false
-    @Published var didCompleteAccountConnectionValue: Bool?
-    @Published var didCompleteLoginDevices: [RegisteredDevice]?
-    @Published var didFindTwoAccountsDuringRecoveryCalled: SyncCode.RecoveryKey?
-    @Published var didErrorCalled: Bool = false
+    var didBeginTransmittingRecoveryKeyCalled = { }
+    var didFinishTransmittingRecoveryKeyCalled = { }
+    var didReceiveRecoveryKeyCalled = { }
+    var didRecognizeScannedCodeCalled = { }
+    var didCreateSyncAccountCalled = { }
+    var didCompleteAccountConnectionValue: Bool?
+    var didCompleteLoginDevices: [RegisteredDevice]?
+    var didFindTwoAccountsDuringRecoveryCalled: SyncCode.RecoveryKey?
+    var didErrorCalled = { }
     var didErrorErrors: (error: SyncConnectionError, underlyingError: Error?)?
 
     func controllerWillBeginTransmittingRecoveryKey() async {
-        didBeginTransmittingRecoveryKeyCalled = true
+        didBeginTransmittingRecoveryKeyCalled()
     }
 
     func controllerDidFinishTransmittingRecoveryKey() {
-        didFinishTransmittingRecoveryKeyCalled = true
+        didFinishTransmittingRecoveryKeyCalled()
     }
 
     func controllerDidReceiveRecoveryKey() {
-        didReceiveRecoveryKeyCalled = true
+        didReceiveRecoveryKeyCalled()
     }
 
     func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
-        didRecognizeScannedCodeCalled = true
+        didRecognizeScannedCodeCalled()
     }
 
     func controllerDidCreateSyncAccount() {
-        didCreateSyncAccountCalled = true
+        didCreateSyncAccountCalled()
     }
 
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
@@ -90,7 +90,7 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     }
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
-        didErrorCalled = true
+        didErrorCalled()
         didErrorErrors = (error, underlyingError)
     }
 }
@@ -136,52 +136,59 @@ final class SyncConnectionControllerTests: XCTestCase {
         let mockRemoteKeyExchanger: MockRemoteKeyExchanging = .init()
         dependencies.createRemoteKeyExchangerStub = mockRemoteKeyExchanger
         mockRemoteKeyExchanger.code = expectedExchangeCode
-        let pairingInfo = try await controller.startExchangeMode()
+        let pairingInfo = try controller.startExchangeMode()
 
         XCTAssertEqual(pairingInfo.base64Code, expectedExchangeCode)
         XCTAssertEqual(pairingInfo.deviceName, Self.deviceName)
     }
 
+    @MainActor
     func test_startExchangeMode_pollSucceeds_transmitsRecoveryKey() async throws {
-        throw XCTSkip("Flakey test")
         // Mock exchanger creation
         givenExchangerPollForPublicKeySucceeds()
 
         let exchangeRecoveryKeyTransmitter = MockExchangeRecoveryKeyTransmitting()
         dependencies.createExchangeRecoveryKeyTransmitterStub = exchangeRecoveryKeyTransmitter
 
-        _ = try await controller.startExchangeMode()
+        let expectation = self.expectation(description: "Exchanger poll completes")
+        delegate.didFinishTransmittingRecoveryKeyCalled = {
+            expectation.fulfill()
+        }
 
-        let publisher = await delegate.$didFinishTransmittingRecoveryKeyCalled
-        try await waitForPublisher(publisher, timeout: 5, toEmit: true)
+        _ = try controller.startExchangeMode()
+
+        await fulfillment(of: [expectation], timeout: 5)
 
         XCTAssertEqual(exchangeRecoveryKeyTransmitter.sendCalled, 1)
     }
 
+    @MainActor
     func test_startExchangeMode_pollSucceeds_stopsExchangerPolling() async throws {
-        throw XCTSkip("This is failing on CI but passing locally.")
         let remoteExchanger = MockRemoteKeyExchanging()
         givenExchangerPollForPublicKeySucceeds(remoteExchanger)
 
         let exchangeRecoveryKeyTransmitter = MockExchangeRecoveryKeyTransmitting()
         dependencies.createExchangeRecoveryKeyTransmitterStub = exchangeRecoveryKeyTransmitter
 
-        _ = try await controller.startExchangeMode()
+        let expectation = self.expectation(description: "Exchanger poll completes")
+        delegate.didFinishTransmittingRecoveryKeyCalled = {
+            expectation.fulfill()
+        }
 
-        let publisher = await delegate.$didFinishTransmittingRecoveryKeyCalled
-        try await waitForPublisher(publisher, timeout: 5, toEmit: true)
+        _ = try controller.startExchangeMode()
+
+        await fulfillment(of: [expectation], timeout: 5)
 
         XCTAssertEqual(remoteExchanger.stopPollingCalled, 1)
     }
 
     func test_startExchangeMode_pollFails_sendsError() async throws {
-        throw XCTSkip("Flakey test")
         // Mock exchanger creation
         let remoteExchanger = MockRemoteKeyExchanging()
         dependencies.createRemoteKeyExchangerStub = remoteExchanger
         remoteExchanger.pollForPublicKeyError = SyncError.unableToDecodeResponse("")
 
-        _ = try await controller.startExchangeMode()
+        _ = try controller.startExchangeMode()
 
         let error = try await waitForError()
 
@@ -189,7 +196,6 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     func test_startExchangeMode_recoveryKeyTransmitFails_sendsError() async throws {
-        throw XCTSkip("Flakey test")
         // Mock exchanger creation
         givenExchangerPollForPublicKeySucceeds()
 
@@ -197,7 +203,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.createExchangeRecoveryKeyTransmitterStub = exchangeRecoveryKeyTransmitter
         exchangeRecoveryKeyTransmitter.sendError = SyncError.unableToDecodeResponse("")
 
-        _ = try await controller.startExchangeMode()
+        _ = try controller.startExchangeMode()
 
         let error = try await waitForError()
 
@@ -218,26 +224,29 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.createRemoteConnectorStub = mockRemoteConnector
         mockRemoteConnector.code = expectedConnectorCode
 
-        let pairingInfo = try await controller.startConnectMode()
+        let pairingInfo = try controller.startConnectMode()
 
         XCTAssertEqual(pairingInfo.base64Code, expectedConnectorCode)
         XCTAssertEqual(pairingInfo.deviceName, Self.deviceName)
     }
 
+    @MainActor
     func test_startConnectMode_pollSucceeds_informsDelegate() async throws {
-        throw XCTSkip("Flakey test")
         let remoteConnector = MockRemoteConnecting()
         dependencies.createRemoteConnectorStub = remoteConnector
         remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: "", primaryKey: Data())
 
-        _ = try await controller.startConnectMode()
+        let expectation = self.expectation(description: "Exchanger poll completes")
+        delegate.didReceiveRecoveryKeyCalled = {
+            expectation.fulfill()
+        }
 
-        let publisher = await delegate.$didReceiveRecoveryKeyCalled
-        try await waitForPublisher(publisher, timeout: 5, toEmit: true)
+        _ = try controller.startConnectMode()
+
+        await fulfillment(of: [expectation], timeout: 5)
     }
 
     func test_startConnectMode_pollSucceeds_logsIn() async throws {
-        throw XCTSkip("Flakey test")
         let remoteConnector = MockRemoteConnecting()
         let userId = "TestUserId"
         remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: userId, primaryKey: Data())
@@ -245,20 +254,26 @@ final class SyncConnectionControllerTests: XCTestCase {
         let mockAccountManager = AccountManagingMock()
         dependencies.account = mockAccountManager
 
-        _ = try await controller.startConnectMode()
+        let expectation = self.expectation(description: "Exchanger poll completes")
+        var spiedKey: SyncCode.RecoveryKey?
+        mockAccountManager.loginSpy = { recoveryKey, _, _ in
+            spiedKey = recoveryKey
+            expectation.fulfill()
+        }
 
-        try await waitForPublisher(mockAccountManager.$loginCalled, timeout: 5, toEmit: true)
+        _ = try controller.startConnectMode()
 
-        XCTAssertEqual(mockAccountManager.loginSpy?.recoveryKey.userId, userId)
+        await fulfillment(of: [expectation], timeout: 5)
+
+        XCTAssertEqual(spiedKey?.userId, userId)
     }
 
     func test_startConnectMode_pollingFails_sendsError() async throws {
-        throw XCTSkip("Flakey test")
         let remoteConnector = MockRemoteConnecting()
         remoteConnector.pollForRecoveryKeyError = SyncError.failedToPrepareForConnect("")
         dependencies.createRemoteConnectorStub = remoteConnector
 
-        _ = try await controller.startConnectMode()
+        _ = try controller.startConnectMode()
 
         let error = try await waitForError()
 
@@ -266,7 +281,6 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     func test_startConnectMode_loginFails_sendsError() async throws {
-        throw XCTSkip("Flakey test")
         let remoteConnector = MockRemoteConnecting()
         dependencies.createRemoteConnectorStub = remoteConnector
         remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: "", primaryKey: Data())
@@ -275,7 +289,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.account = mockAccountManager
         mockAccountManager.loginError = SyncError.failedToDecryptValue("")
 
-        _ = try await controller.startConnectMode()
+        _ = try controller.startConnectMode()
 
         let error = try await waitForError()
 
@@ -298,31 +312,34 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(result, false)
     }
 
-    func test_startPairingMode_withInvalidCode_returnsFailure() async {
+    @MainActor
+    func test_startPairingMode_withInvalidCode_returnsFailure() async throws {
         let result = await controller.startPairingMode(PairingInfo(base64Code: "invalid_base64", deviceName: "Test"))
-        let didError = await delegate.didErrorCalled
-        let errorType = await delegate.didErrorErrors?.error
+        let error = delegate.didErrorErrors?.error
 
         XCTAssertEqual(result, false)
-        XCTAssertTrue(didError)
-        XCTAssertEqual(errorType, .unableToRecognizeCode)
+        XCTAssertEqual(error, .unableToRecognizeCode)
     }
 
+    @MainActor
     func test_startPairingMode_withValidExchangeCode_notifiesDelegate() async {
-        _ = await controller.startPairingMode(PairingInfo(base64Code: Self.validExchangeCode, deviceName: "Test"))
-        let didRecognizeCode = await delegate.didRecognizeScannedCodeCalled
+        let expectation = self.expectation(description: "Exchanger poll completes")
+        delegate.didRecognizeScannedCodeCalled = {
+            expectation.fulfill()
+        }
 
-        XCTAssertTrue(didRecognizeCode)
+        _ = await controller.startPairingMode(PairingInfo(base64Code: Self.validExchangeCode, deviceName: "Test"))
+
+        await fulfillment(of: [expectation], timeout: 5)
     }
 
-    func test_startPairingMode_withRecoveryCode_returnsFailure() async {
+    @MainActor
+    func test_startPairingMode_withRecoveryCode_returnsFailure() async throws {
         let result = await controller.startPairingMode(createPairingInfo(code: Self.validRecoveryCode))
-        let didError = await delegate.didErrorCalled
-        let errorType = await delegate.didErrorErrors?.error
+        let error = delegate.didErrorErrors?.error
 
         XCTAssertEqual(result, false)
-        XCTAssertTrue(didError)
-        XCTAssertEqual(errorType, .unableToRecognizeCode)
+        XCTAssertEqual(error, .unableToRecognizeCode)
     }
 
     // MARK: - startPairingMode exchange
@@ -336,18 +353,17 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(mockExchangePublicKeyTransmitter.sendGeneratedExchangeInfoCalled, 1)
     }
 
-    func test_startPairingMode_withExchangeCode_whenTransmitFails_notifiesError() async {
+    @MainActor
+    func test_startPairingMode_withExchangeCode_whenTransmitFails_notifiesError() async throws {
         let mockExchangePublicKeyTransmitter = MockExchangePublicKeyTransmitting()
         mockExchangePublicKeyTransmitter.sendGeneratedExchangeInfoError = SyncError.unableToDecodeResponse("")
         dependencies.createExchangePublicKeyTransmitterStub = mockExchangePublicKeyTransmitter
 
         await controller.startPairingMode(createPairingInfo(code: Self.validExchangeCode))
 
-        let didError = await delegate.didErrorCalled
-        let errorType = await delegate.didErrorErrors?.error
+        let error = delegate.didErrorErrors?.error
 
-        XCTAssertTrue(didError)
-        XCTAssertEqual(errorType, .failedToTransmitExchangeKey)
+        XCTAssertEqual(error, .failedToTransmitExchangeKey)
     }
 
     func test_startPairingMode_withExchangeCode_createsExchangeRecoverer() async {
@@ -366,25 +382,32 @@ final class SyncConnectionControllerTests: XCTestCase {
 
     // MARK: - startPairingMode connect
 
-    func test_startPairingMode_withConnectCode_whenNoAccount_createsAccount() async {
+    @MainActor
+    func test_startPairingMode_withConnectCode_whenNoAccount_createsAccount() async throws {
         let mockAccountManager = AccountManagingMock()
         dependencies.account = mockAccountManager
 
+        let expectation = self.expectation(description: "Exchanger poll completes")
+        delegate.didCreateSyncAccountCalled = {
+            expectation.fulfill()
+        }
+
         await controller.startPairingMode(createPairingInfo(code: Self.validConnectCode))
 
-        let didCreateAccount = await delegate.didCreateSyncAccountCalled
-        XCTAssertTrue(didCreateAccount)
+        await fulfillment(of: [expectation], timeout: 5)
     }
 
+    @MainActor
     func test_startPairingMode_withConnectCode_whenAccountCreationThrows_notifiesError() async throws {
-        throw XCTSkip("Flakey test")
         let mockAccountManager = AccountManagingMock()
         mockAccountManager.createAccountError = SyncError.failedToDecryptValue("")
         dependencies.account = mockAccountManager
 
-        await controller.startPairingMode(createPairingInfo(code: Self.validConnectCode))
+        Task {
+            await controller.startPairingMode(createPairingInfo(code: Self.validConnectCode))
+        }
 
-        let error = try? await waitForError()
+        let error = try await waitForError()
         XCTAssertEqual(error, .failedToCreateAccount)
     }
 
@@ -397,19 +420,19 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(mockRecoveryKeyTransmitter.sendCalled, 1)
     }
 
+    @MainActor
     func test_startPairingMode_withConnectCode_whenTransmitFails_notifiesError() async throws {
-        throw XCTSkip("Flakey test")
         let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
         mockRecoveryKeyTransmitter.sendError = SyncError.unableToDecodeResponse("")
         dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
 
         await controller.startPairingMode(createPairingInfo(code: Self.validConnectCode))
 
-        let error = try? await waitForError()
+        let error = delegate.didErrorErrors?.error
         XCTAssertEqual(error, .failedToTransmitConnectRecoveryKey)
     }
 
-    func test_startPairingMode_withConnectCode_whenSuccessful_notifiesCompletion() async {
+    func test_startPairingMode_withConnectCode_whenSuccessful_notifiesCompletion() async throws {
         let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
         dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
 
@@ -429,29 +452,38 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(result, false)
     }
 
-    func test_syncCodeEntered_withInvalidCode_returnsFailure() async {
+    @MainActor
+    func test_syncCodeEntered_withInvalidCode_returnsFailure() async throws {
         let result = await controller.syncCodeEntered(code: "invalid_base64", canScanURLBarcodes: true, codeSource: .pastedCode)
-        let didError = await delegate.didErrorCalled
-        let errorType = await delegate.didErrorErrors?.error
+        let error = delegate.didErrorErrors?.error
 
         XCTAssertEqual(result, false)
-        XCTAssertTrue(didError)
-        XCTAssertEqual(errorType, .unableToRecognizeCode)
+        XCTAssertEqual(error, .unableToRecognizeCode)
     }
 
+    @MainActor
     func test_syncCodeEntered_withValidExchangeCode_notifiesDelegate() async {
-        await controller.syncCodeEntered(code: Self.validExchangeCode, canScanURLBarcodes: true, codeSource: .pastedCode)
-        let didRecognizeCode = await delegate.didRecognizeScannedCodeCalled
+        let expectation = self.expectation(description: "Exchanger poll completes")
+        delegate.didRecognizeScannedCodeCalled = {
+            expectation.fulfill()
+        }
 
-        XCTAssertTrue(didRecognizeCode)
+        await controller.syncCodeEntered(code: Self.validExchangeCode, canScanURLBarcodes: true, codeSource: .pastedCode)
+
+        await fulfillment(of: [expectation], timeout: 5)
     }
 
+    @MainActor
     func test_syncCodeEntered_withValidURL_extractsAndUsesCode() async {
+        let expectation = self.expectation(description: "Exchanger poll completes")
+        delegate.didRecognizeScannedCodeCalled = {
+            expectation.fulfill()
+        }
+
         let url = "https://duckduckgo.com/sync/pairing/#&code=\(Self.validExchangeCode)&deviceName=TestDevice"
         await controller.syncCodeEntered(code: url, canScanURLBarcodes: true, codeSource: .pastedCode)
-        let didRecognizeCode = await delegate.didRecognizeScannedCodeCalled
 
-        XCTAssertTrue(didRecognizeCode)
+        await fulfillment(of: [expectation], timeout: 5)
     }
 
     // MARK: - syncCodeEntered exchange
@@ -465,18 +497,16 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(mockExchangePublicKeyTransmitter.sendGeneratedExchangeInfoCalled, 1)
     }
 
-    func test_syncCodeEntered_withExchangeCode_whenTransmitFails_notifiesError() async {
+    @MainActor
+    func test_syncCodeEntered_withExchangeCode_whenTransmitFails_notifiesError() async throws {
         let mockExchangePublicKeyTransmitter = MockExchangePublicKeyTransmitting()
         mockExchangePublicKeyTransmitter.sendGeneratedExchangeInfoError = SyncError.unableToDecodeResponse("")
         dependencies.createExchangePublicKeyTransmitterStub = mockExchangePublicKeyTransmitter
 
         await controller.syncCodeEntered(code: Self.validExchangeCode, canScanURLBarcodes: true, codeSource: .pastedCode)
 
-        let didError = await delegate.didErrorCalled
-        let errorType = await delegate.didErrorErrors?.error
-
-        XCTAssertTrue(didError)
-        XCTAssertEqual(errorType, .failedToTransmitExchangeKey)
+        let error = delegate.didErrorErrors?.error
+        XCTAssertEqual(error, .failedToTransmitExchangeKey)
     }
 
     func test_syncCodeEntered_withExchangeCode_createsExchangeRecoverer() async {
@@ -510,7 +540,8 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertNotNil(devices)
     }
 
-    func test_syncCodeEntered_withExchangeCode_whenRecoveryKeyPollFails_notifiesError() async {
+    @MainActor
+    func test_syncCodeEntered_withExchangeCode_whenRecoveryKeyPollFails_notifiesError() async throws {
         let mockExchangePublicKeyTransmitter = MockExchangePublicKeyTransmitting()
         let exchangeInfo = ExchangeInfo(keyId: "test", publicKey: Data(), secretKey: Data())
         mockExchangePublicKeyTransmitter.sendGeneratedExchangeInfoStub = exchangeInfo
@@ -522,14 +553,13 @@ final class SyncConnectionControllerTests: XCTestCase {
 
         await controller.syncCodeEntered(code: Self.validExchangeCode, canScanURLBarcodes: true, codeSource: .pastedCode)
 
-        let didError = await delegate.didErrorCalled
-        let errorType = await delegate.didErrorErrors?.error
+        let error = delegate.didErrorErrors?.error
 
-        XCTAssertTrue(didError)
-        XCTAssertEqual(errorType, .failedToFetchExchangeRecoveryKey)
+        XCTAssertEqual(error, .failedToFetchExchangeRecoveryKey)
     }
 
-    func test_syncCodeEntered_withExchangeCode_whenLoginFails_notifiesError() async {
+    @MainActor
+    func test_syncCodeEntered_withExchangeCode_whenLoginFails_notifiesError() async throws {
         let mockExchangePublicKeyTransmitter = MockExchangePublicKeyTransmitting()
         let exchangeInfo = ExchangeInfo(keyId: "test", publicKey: Data(), secretKey: Data())
         mockExchangePublicKeyTransmitter.sendGeneratedExchangeInfoStub = exchangeInfo
@@ -546,11 +576,9 @@ final class SyncConnectionControllerTests: XCTestCase {
 
         await controller.syncCodeEntered(code: Self.validExchangeCode, canScanURLBarcodes: true, codeSource: .pastedCode)
 
-        let didError = await delegate.didErrorCalled
-        let errorType = await delegate.didErrorErrors?.error
+        let error = delegate.didErrorErrors?.error
 
-        XCTAssertTrue(didError)
-        XCTAssertEqual(errorType, .failedToLogIn)
+        XCTAssertEqual(error, .failedToLogIn)
     }
 
     // MARK: - syncCodeEntered recovery
@@ -564,18 +592,17 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertTrue(mockAccountManager.loginCalled)
     }
 
-    func test_syncCodeEntered_withRecoveryCode_whenLoginFails_notifiesError() async {
+    @MainActor
+    func test_syncCodeEntered_withRecoveryCode_whenLoginFails_notifiesError() async throws {
         let mockAccountManager = AccountManagingMock()
         mockAccountManager.loginError = SyncError.failedToDecryptValue("")
         dependencies.account = mockAccountManager
 
         await controller.syncCodeEntered(code: Self.validRecoveryCode, canScanURLBarcodes: true, codeSource: .pastedCode)
 
-        let didError = await delegate.didErrorCalled
-        let errorType = await delegate.didErrorErrors?.error
+        let error = delegate.didErrorErrors?.error
 
-        XCTAssertTrue(didError)
-        XCTAssertEqual(errorType, .failedToLogIn)
+        XCTAssertEqual(error, .failedToLogIn)
     }
 
     func test_syncCodeEntered_withRecoveryCode_whenAccountExists_notifiesTwoAccounts() async {
@@ -592,25 +619,32 @@ final class SyncConnectionControllerTests: XCTestCase {
 
     // MARK: - syncCodeEntered connect
 
+    @MainActor
     func test_syncCodeEntered_withConnectCode_whenNoAccount_createsAccount() async {
+        let expectation = self.expectation(description: "Exchanger poll completes")
+        delegate.didCreateSyncAccountCalled = {
+            expectation.fulfill()
+        }
+
         let mockAccountManager = AccountManagingMock()
         dependencies.account = mockAccountManager
 
         await controller.syncCodeEntered(code: Self.validConnectCode, canScanURLBarcodes: true, codeSource: .pastedCode)
 
-        let didCreateAccount = await delegate.didCreateSyncAccountCalled
-        XCTAssertTrue(didCreateAccount)
+        await fulfillment(of: [expectation], timeout: 5)
     }
 
+    @MainActor
     func test_syncCodeEntered_withConnectCode_whenAccountCreationThrows_notifiesError() async throws {
-        throw XCTSkip("Flakey test")
         let mockAccountManager = AccountManagingMock()
         mockAccountManager.createAccountError = SyncError.failedToDecryptValue("")
         dependencies.account = mockAccountManager
 
-        await controller.syncCodeEntered(code: Self.validConnectCode, canScanURLBarcodes: true, codeSource: .pastedCode)
+        Task {
+            await controller.syncCodeEntered(code: Self.validConnectCode, canScanURLBarcodes: true, codeSource: .pastedCode)
+        }
 
-        let error = try? await waitForError()
+        let error = try await waitForError()
         XCTAssertEqual(error, .failedToCreateAccount)
     }
 
@@ -623,124 +657,40 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertEqual(mockRecoveryKeyTransmitter.sendCalled, 1)
     }
 
+    @MainActor
     func test_syncCodeEntered_withConnectCode_whenTransmitFails_notifiesError() async throws {
-        throw XCTSkip("Flakey test")
         let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
         mockRecoveryKeyTransmitter.sendError = SyncError.unableToDecodeResponse("")
         dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
 
         await controller.syncCodeEntered(code: Self.validConnectCode, canScanURLBarcodes: true, codeSource: .pastedCode)
 
-        let error = try? await waitForError()
+        let error = delegate.didErrorErrors?.error
         XCTAssertEqual(error, .failedToTransmitConnectRecoveryKey)
     }
 
+    @MainActor
     func test_syncCodeEntered_withConnectCode_whenSuccessful_notifiesCompletion() async {
         let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
         dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
 
         await controller.syncCodeEntered(code: Self.validConnectCode, canScanURLBarcodes: true, codeSource: .pastedCode)
 
-        let didComplete = await delegate.didCompleteAccountConnectionValue
+        let didComplete = delegate.didCompleteAccountConnectionValue
         XCTAssertNotNil(didComplete)
     }
 
+    enum TestError: Error {
+        case nilValue
+    }
+
+    @MainActor
     private func waitForError() async throws -> SyncConnectionError? {
-        let publisher = await delegate.$didErrorCalled
-        try await waitForPublisher(publisher, timeout: 5, toEmit: true)
-        let errors = await delegate.didErrorErrors
-        return try XCTUnwrap(errors).error
-    }
-}
-
-//
-//  CombineTestHelpers.swift
-//
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//  http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-//
-
-/*
- Code based on snippet from https://www.swiftbysundell.com/articles/unit-testing-combine-based-swift-code/
- */
-public extension XCTestCase {
-    func waitForPublisher<T: Publisher>(
-        _ publisher: T,
-        timeout: TimeInterval = 10,
-        waitForFinish: Bool = true,
-        file: StaticString = #file,
-        line: UInt = #line
-    ) async throws -> T.Output {
-        // This time, we use Swift's Result type to keep track
-        // of the result of our Combine pipeline:
-        var result: Result<T.Output, Error>?
-        let expectation = self.expectation(description: "Awaiting publisher")
-        expectation.assertForOverFulfill = false
-
-        let cancellable = publisher.sink(
-            receiveCompletion: { completion in
-                switch completion {
-                case .failure(let error):
-                    result = .failure(error)
-                case .finished:
-                    break
-                }
-
-                expectation.fulfill()
-            },
-            receiveValue: { value in
-                result = .success(value)
-                if !waitForFinish {
-                    expectation.fulfill()
-                }
-            }
-        )
-
-        // Just like before, we await the expectation that we
-        // created at the top of our test, and once done, we
-        // also cancel our cancellable to avoid getting any
-        // unused variable warnings:
-        await fulfillment(of: [expectation], timeout: timeout)
-        cancellable.cancel()
-
-        // Here we pass the original file and line number that
-        // our utility was called at, to tell XCTest to report
-        // any encountered errors at that original call site:
-        let unwrappedResult = try XCTUnwrap(
-            result,
-            "Awaited publisher did not produce any output",
-            file: file,
-            line: line
-        )
-
-        return try unwrappedResult.get()
-    }
-
-    @discardableResult
-    func waitForPublisher<T: Publisher>(
-        _ publisher: T,
-        timeout: TimeInterval = 10,
-        file: StaticString = #file,
-        line: UInt = #line,
-        toEmit value: T.Output
-    ) async throws -> T.Output where T.Output: Equatable {
-        try await waitForPublisher(
-            publisher.first {
-                value == $0
-            },
-            timeout: timeout,
-            waitForFinish: false
-        )
+        let expectation = expectation(description: "didError called")
+        delegate.didErrorCalled = {
+            expectation.fulfill()
+        }
+        await fulfillment(of: [expectation], timeout: 5)
+        return try XCTUnwrap(delegate.didErrorErrors?.error)
     }
 }

@@ -19,18 +19,19 @@
 
 import Foundation
 import Testing
+import class Common.EventMapping
 import PersistenceTestingUtils
 import SetDefaultBrowserCore
 @testable import DuckDuckGo
 
 @Suite("Default Browser Prompt - User Type Store")
-struct DefaultBrowserPromptUserTypeStoreTests {
+final class DefaultBrowserPromptUserTypeStoreTests {
     private var storeMock: MockKeyValueFileStore
     private var sut: DefaultBrowserPromptUserTypeStore
 
     init() throws {
         storeMock = try MockKeyValueFileStore()
-        sut = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: storeMock)
+        sut = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: storeMock, eventMapper: EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent> { _, _, _, _ in })
     }
 
     @Test(
@@ -76,4 +77,50 @@ struct DefaultBrowserPromptUserTypeStoreTests {
         #expect(try storeMock.object(forKey: DefaultBrowserPromptUserTypeStore.StorageKey.userType) as? String == userType.rawValue)
     }
 
+    @Test("Check When User Cannot Be Retrieved Then Send Correct Event")
+    func whenUserCannotBeRetrievedThenSendEvent() {
+        // GIVEN
+        let error = NSError(domain: #file, code: 0, userInfo: nil)
+        var capturedEvent: DefaultBrowserPromptUserTypeStore.DebugEvent?
+        var capturedError: Error?
+        storeMock.throwOnRead = error
+        sut = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: storeMock, eventMapper: EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent> { event, error, _, _ in
+            capturedEvent = event
+            capturedError = error
+        })
+
+        // WHEN
+        _ = sut.userType()
+
+        // THEN
+        #expect(capturedEvent == .failedToRetrieveUserType)
+        #expect(capturedError as NSError? == error)
+    }
+
+    @Test(
+        "Check When User Cannot Be Saved Then Send Correct Event",
+        arguments: [
+            DefaultBrowserPromptUserType.existing,
+            .returning,
+            .new,
+        ]
+    )
+    func whenUserCannotBeSavedThenSendEvent(userType: DefaultBrowserPromptUserType) {
+        // GIVEN
+        let error = NSError(domain: #file, code: 0, userInfo: nil)
+        var capturedEvent: DefaultBrowserPromptUserTypeStore.DebugEvent?
+        var capturedError: Error?
+        storeMock.throwOnSet = error
+        sut = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: storeMock, eventMapper: EventMapping<DefaultBrowserPromptUserTypeStore.DebugEvent> { event, error, _, _ in
+            capturedEvent = event
+            capturedError = error
+        })
+
+        // WHEN
+        sut.save(userType: userType)
+
+        // THEN
+        #expect(capturedEvent == .failedToSaveUserType)
+        #expect(capturedError as NSError? == error)
+    }
 }

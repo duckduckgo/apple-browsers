@@ -41,5 +41,6 @@ struct AppServices {
     let maliciousSiteProtectionService: MaliciousSiteProtectionService
     let statisticsService: StatisticsService
     let keyValueFileStoreService: AppKeyValueFileStoreService
+    let defaultBrowserPromptService: DefaultBrowserPromptService
 
 }

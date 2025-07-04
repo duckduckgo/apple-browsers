@@ -1,5 +1,5 @@
 //
-//  DefaultBrowsePromptUserActivityMonitor.swift
+//  DefaultBrowserPromptUserActivityManager.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -20,14 +20,20 @@
 import Foundation
 import class UIKit.UIApplication
 import Combine
+import SetDefaultBrowserCore
+
+@MainActor
+protocol DefaultBrowserPromptUserActivityRecorder {
+    func recordActivity()
+}
 
 /// A monitor that measures user activity for the SAD prompt feature.
 ///
 /// This class observes application lifecycle events to automatically measure when users
 /// are active and stores this information to the provided store.
 @MainActor
-package final class DefaultBrowsePromptUserActivityMonitor: DefaultBrowserPromptUserActivityManaging {
-    private let store: DefaultBrowsePromptUserActivityStorage
+final class DefaultBrowserPromptUserActivityManager: DefaultBrowserPromptUserActivityRecorder, DefaultBrowserPromptUserActivityManaging {
+    private let store: DefaultBrowserPromptUserActivityStorage
     private let dateProvider: () -> Date
     private let calendar: Calendar
 
@@ -41,38 +47,17 @@ package final class DefaultBrowsePromptUserActivityMonitor: DefaultBrowserPrompt
     ///   - store: The storage implementation used to persist activity data.
     ///   - dateProvider: A closure that provides the current date. Defaults to `Date.init`. This parameter is primarily useful for testing.
     ///   - calendar: The calendar used for date calculations. Defaults to `.current`, which uses the user's system calendar settings.
-    package init(
-        store: DefaultBrowsePromptUserActivityStorage,
+    init(
+        store: DefaultBrowserPromptUserActivityStorage,
         dateProvider: @escaping () -> Date = Date.init,
         calendar: Calendar = .current
     ) {
         self.store = store
         self.dateProvider = dateProvider
         self.calendar = calendar
-        setupNotifications()
     }
 
-    package func numberOfActiveDays() -> Int {
-        store.currentActivity().numberOfActiveDays
-    }
-
-    package func resetNumberOfActiveDays() {
-        store.deleteActivity()
-    }
-}
-
-// MARK: - Private
-
-private extension DefaultBrowsePromptUserActivityMonitor {
-
-    func setupNotifications() {
-        notificationCancellable = NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
-            .sink { [weak self] _ in
-                self?.handleDidBecomeActiveNotification()
-            }
-    }
-
-    func handleDidBecomeActiveNotification() {
+    func recordActivity() {
         let today = calendar.startOfDay(for: dateProvider())
 
         var currentActivity = store.currentActivity()
@@ -82,8 +67,17 @@ private extension DefaultBrowsePromptUserActivityMonitor {
             return
         }
 
-        currentActivity.numberOfActiveDays += 1
-        currentActivity.lastActiveDate = today
-        store.save(currentActivity)
+        let newActivity = DefaultBrowserPromptUserActivity(numberOfActiveDays: currentActivity.numberOfActiveDays + 1, lastActiveDate: today)
+        store.save(newActivity)
+    }
+
+    func numberOfActiveDays() -> Int {
+        store.currentActivity().numberOfActiveDays
+    }
+
+    func resetNumberOfActiveDays() {
+        let currentActivity = store.currentActivity()
+        let newActivity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 0, lastActiveDate: currentActivity.lastActiveDate)
+        store.save(newActivity)
     }
 }

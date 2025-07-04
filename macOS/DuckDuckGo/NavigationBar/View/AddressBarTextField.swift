@@ -864,7 +864,7 @@ extension AddressBarTextField {
                 return userTyped
             case .url(urlString: _, url: _, userTyped: let userTyped):
                 return userTyped
-            case .suggestion(_):
+            case .suggestion:
                 return false
             }
         }

@@ -561,7 +561,7 @@ final class AddressBarButtonsViewController: NSViewController {
             guard isTextFieldEditorFirstResponder,
                   let textFieldValue,
                   !textFieldValue.isEmpty,
-                  (textFieldValue.isUserTyped || textFieldValue.isSuggestion)
+                  textFieldValue.isUserTyped || textFieldValue.isSuggestion
             else {
                 return false
             }
@@ -582,7 +582,7 @@ final class AddressBarButtonsViewController: NSViewController {
             isAskAIChatButtonExpanded = true
 
             self.askAIChatButton.imagePosition = .imageLeading
-            let fittingSize = askAIChatButton.sizeThatFits(CGSizeMake(1000, visualStyle.addressBarStyleProvider.addressBarButtonSize))
+            let fittingSize = askAIChatButton.sizeThatFits(CGSize(width: 1000, height: visualStyle.addressBarStyleProvider.addressBarButtonSize))
             targetWidth = max(fittingSize.width + Constants.askAiChatButtonHorizontalPadding,
                                visualStyle.addressBarStyleProvider.addressBarButtonSize)
 

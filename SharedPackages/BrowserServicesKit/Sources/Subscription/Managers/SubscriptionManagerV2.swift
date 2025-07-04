@@ -441,10 +441,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             let currentCachedIsAuthenticated = self.userDefaults.isUserAuthenticated
             self.userDefaults.isUserAuthenticated = newValue
 
-            if newValue == false {
-                self.cachedUserEntitlements = []
-            }
-
             // Send notification when the login changes
             switch (currentCachedIsAuthenticated, newValue) {
             case (false, true):
@@ -455,6 +451,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
             default:
                 Logger.subscription.debug("Login state unchanged - Current: \(currentCachedIsAuthenticated), new: \(newValue)")
+            }
+
+            if newValue == false {
+                self.cachedUserEntitlements = []
             }
         }
     }

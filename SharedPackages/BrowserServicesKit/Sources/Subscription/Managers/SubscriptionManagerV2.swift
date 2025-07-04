@@ -423,7 +423,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         set {
             let currentCachedUserEntitlements = self.userDefaults.userEntitlements
             self.userDefaults.userEntitlements = newValue
-            
+
             // Send notification when entitlements change
             if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedUserEntitlements, newValue) {
                 Logger.subscription.debug("Entitlements changed - New \(String(describing: newValue)) Old \(String(describing: currentCachedUserEntitlements))")
@@ -432,7 +432,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             }
         }
     }
-    
+
     var cachedIsUserAuthenticated: Bool {
         get {
             userDefaults.isUserAuthenticated
@@ -440,11 +440,11 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         set {
             let currentCachedIsAuthenticated = self.userDefaults.isUserAuthenticated
             self.userDefaults.isUserAuthenticated = newValue
-            
+
             if newValue == false {
                 self.cachedUserEntitlements = []
             }
-            
+
             // Send notification when the login changes
             switch (currentCachedIsAuthenticated, newValue) {
             case (false, true):

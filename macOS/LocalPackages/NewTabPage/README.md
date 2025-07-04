@@ -1,5 +1,24 @@
 # NewTabPage
 
+Table of contents:
+* [Introduction](#introduction)
+    * [New Tab Page in the macOS browser](#new-tab-page-in-the-macos-browser)
+    * [NTP requirements and performance considerations](#ntp-requirements-and-performance-considerations)
+* [NewTabPageActionsManager and script clients](#newtabpageactionsmanager-and-script-clients)
+    * [NewTabPageActionsManager initialization](#newtabpageactionsmanager-initialization)
+* [Module structure](#module-structure)
+* [New Tab Page Feature structure](#new-tab-page-feature-structure)
+    * [User script client](#user-script-client)
+        * [User script messages](#user-script-messages)
+        * [Message handlers](#message-handlers)
+        * [Sending messages from native to FE](#sending-messages-from-native-to-fe)
+    * [User script client's model](#user-script-clients-model)
+* [User script clients overview](#user-script-clients-overview)
+    * [Configuration client](#configuration-client)
+    * [Protections Report client](#protections-report-client)
+* [How to add new user script client](#how-to-add-new-user-script-client)
+    * [If the widget availability needs to be configurable](#if-the-widget-availability-needs-to-be-configurable)
+
 ## Introduction
 
 This module provides resources used for communication between the New Tab Page user script and the native code of the macOS browser app.
@@ -51,7 +70,7 @@ Each of the directories contains these files:
 * a feature-specific extension of `NewTabPageDataModel` enum (e.g. `NewTabPageDataModel+Favorites.swift`). This contains the definitions of data structures that are used by the user script client (types received from FE in WebKit messages and types expected by FE in message responses),
 * additional files as needed.
 
-## New Tab Page Feature structure <a name="feature_structure"></a>
+## New Tab Page Feature structure
 
 ### User script client
 User script client code is overall very easy and repetitive between various clients. Its features are:
@@ -209,7 +228,7 @@ Protections Report widget is composed of two sub-widgets. Its own UI is the trac
 
 1. Create a new subdirectory in the `Sources/NewTabPage` directory of the package called after the feature you're adding (e.g. Favorites).
 2. Add `NewTabPage<Feature>Client.swift` replacing `<Feature>` with the feature name.
-3. Implement `NewTabPage<Feature>Client` class, subclassing `NewTabPageUserScriptClient`. See [New Tab Page Feature structure](#feature_structure) for details.
+3. Implement `NewTabPage<Feature>Client` class, subclassing `NewTabPageUserScriptClient`. See [New Tab Page Feature structure](#new-tab-page-feature-structure) for details.
 4. If your client represents NTP's top-level widget, you need to register it in the Configuration client.
     * Add the new widget type to `NewTabPageDataModel.WidgetId` (`NewTabPageDataModel+Configuration.swift`).
     * Update the array returned from `NewTabPageConfigurationClient.fetchWidgets()` to include the new widget.

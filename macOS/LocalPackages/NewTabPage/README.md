@@ -206,7 +206,7 @@ Most of the New Tab Page script clients represent individual NTP widgets, but th
 * Omnibar - for the Search / Duck.ai Omnibar (_WIP_),
 * PrivacyStats - for the Privacy Stats widget (Protections Report summary),
 * ProtectionsReport - for the Protections Report widget,
-* RecentActivity - for the Recent Activity wigdet (Protections Report details),
+* RecentActivity - for the Recent Activity widget (Protections Report details),
 * RMF - for remote messages.
 
 ### Configuration client

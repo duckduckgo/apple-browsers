@@ -173,10 +173,6 @@ struct DuckPlayerWebView: UIViewRepresentable {
            contentScopeUserScripts = nil
        }
 
-       private func handleYoutubeURL(_ url: URL) {
-           Logger.duckplayer.debug("Detected YouTube URL: \(url.absoluteString)")
-           viewModel?.handleYouTubeNavigation(url)
-       }
 
        @MainActor
       func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -193,21 +189,9 @@ struct DuckPlayerWebView: UIViewRepresentable {
               return
           }
 
-          // Handle YouTube navigation attempts
-          if url.isYoutube {
-              // Check if tapped video is different from currently playing video
-              let currentVideoID = viewModel?.videoID
-              let tappedVideoID = url.youtubeVideoParams?.videoID
-              
-              if currentVideoID != nil && currentVideoID == tappedVideoID {
-                  // Same video - just hide DuckPlayer
-                  viewModel?.dismissPublisher.send(0)
-              } else {
-                  // Different video - hide DuckPlayer AND navigate to URL
-                  handleYoutubeURL(url)
-              }
-          } else {
-              Logger.duckplayer.log("[DuckPlayer] Blocked navigation to non YouTube domain: \(url.absoluteString)")
+          // Handle navigation attempts to external URLs
+          if !url.isDuckPlayer && !url.absoluteString.contains("about:blank") {
+              viewModel?.handleYouTubeNavigation(url)
           }
 
           // Cancel all navigation outside of youtube-nocookie.com
@@ -217,8 +201,8 @@ struct DuckPlayerWebView: UIViewRepresentable {
        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
            // Prevent automatic opening of URLs in browser
            if let url = navigationAction.request.url {
-               if url.isYoutube {
-                   handleYoutubeURL(url)
+               if !url.isDuckPlayer {
+                   viewModel?.handleYouTubeNavigation(url)
                } else {
                    Logger.duckplayer.log("[DuckPlayer] Blocked window creation for: \(url.absoluteString)")
                }

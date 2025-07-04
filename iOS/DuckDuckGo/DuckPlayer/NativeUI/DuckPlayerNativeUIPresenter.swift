@@ -725,8 +725,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // Subscribe to Navigation Request Publisher
         viewModel.youtubeNavigationRequestPublisher
-            .sink { [weak self, weak roundedSheetController] videoID in
-                let url: URL = .youtube(videoID)
+            .sink { [weak self, weak roundedSheetController] url in
                 navigationRequest.send(url)
 
                 Task { @MainActor in

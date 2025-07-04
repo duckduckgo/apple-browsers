@@ -1092,7 +1092,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         }.store(in: &cancellables)
         
         // Simulate YouTube navigation request
-        sut.playerViewModel?.youtubeNavigationRequestPublisher.send(videoID)
+        sut.playerViewModel?.youtubeNavigationRequestPublisher.send(URL.youtube(videoID))
         
         // Then
         XCTAssertNotNil(receivedURL)
@@ -1208,7 +1208,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertNotNil(sut.playerViewModel)
         
         // When - Simulate navigation away which triggers cleanup
-        sut.playerViewModel?.youtubeNavigationRequestPublisher.send(videoID)
+        sut.playerViewModel?.youtubeNavigationRequestPublisher.send(URL.youtube(videoID))
         
         // Wait for cleanup delay
         let expectation = XCTestExpectation(description: "Player cleanup")

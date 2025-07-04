@@ -155,11 +155,11 @@ final class DuckPlayerViewModelTests: XCTestCase {
         let expectedVideoID = "navigatedVideoID"
         let testURL = URL(string: "https://www.youtube.com/watch?v=\(expectedVideoID)")!
         let expectation = XCTestExpectation(description: "YouTube navigation request publisher emitted")
-        var receivedVideoID: String?
+        var receivedURL: URL?
 
         viewModel.youtubeNavigationRequestPublisher
-            .sink { videoID in
-                receivedVideoID = videoID
+            .sink { url in
+                receivedURL = url
                 expectation.fulfill()
             }
             .store(in: &cancellables)
@@ -169,18 +169,18 @@ final class DuckPlayerViewModelTests: XCTestCase {
 
         // Then
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertEqual(receivedVideoID, expectedVideoID, "Publisher should emit the correct video ID from the URL")
+        XCTAssertEqual(receivedURL, testURL, "Publisher should emit the URL that was passed in")
     }
 
     @MainActor
     func testYoutubeNavigationRequestPublisher_OnOpenInYouTube() {
         // Given
         let expectation = XCTestExpectation(description: "YouTube navigation request publisher emitted")
-        var receivedVideoID: String?
+        var receivedURL: URL?
 
         viewModel.youtubeNavigationRequestPublisher
-            .sink { videoID in
-                receivedVideoID = videoID
+            .sink { url in
+                receivedURL = url
                 expectation.fulfill()
             }
             .store(in: &cancellables)
@@ -190,7 +190,30 @@ final class DuckPlayerViewModelTests: XCTestCase {
 
         // Then
         wait(for: [expectation], timeout: 1.0)
-        XCTAssertEqual(receivedVideoID, viewModel.videoID, "Publisher should emit the viewModel's video ID")
+        let expectedURL = URL.youtube(viewModel.videoID)
+        XCTAssertEqual(receivedURL, expectedURL, "Publisher should emit the YouTube URL for the viewModel's video ID")
+    }
+
+    @MainActor
+    func testYoutubeNavigationRequestPublisher_OnHandleNonYouTubeNavigation() {
+        // Given
+        let testURL = URL(string: "https://duckduckgo.com/privacy")!
+        let expectation = XCTestExpectation(description: "Navigation request publisher emitted for non-YouTube URL")
+        var receivedURL: URL?
+
+        viewModel.youtubeNavigationRequestPublisher
+            .sink { url in
+                receivedURL = url
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        viewModel.handleYouTubeNavigation(testURL)
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedURL, testURL, "Publisher should emit any URL that was passed in, not just YouTube URLs")
     }
 
     @MainActor

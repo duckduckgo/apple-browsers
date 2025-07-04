@@ -197,7 +197,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
           if url.isYoutube {
               handleYouTubeWatchURL(url)
           } else {
-              Logger.duckplayer.log("[DuckPlayer] Blocked navigation to YouTube domain: \(url.absoluteString)")
+              Logger.duckplayer.log("[DuckPlayer] Blocked navigation to non YouTube domain: \(url.absoluteString)")
           }
 
           // Cancel all navigation outside of youtube-nocookie.com

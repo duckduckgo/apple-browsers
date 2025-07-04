@@ -25,12 +25,9 @@
  * and where `[object autorelease]` calls are made. Each tracker is autoreleased
  * alongside the object it tracks, allowing for debugging of autorelease pools.
  */
-@interface AutoreleaseTracker : NSObject
-
-/**
- * @brief Weak reference to the tracked object.
- */
-@property (nonatomic, weak, readonly) NSObject *object;
+@interface AutoreleaseTracker : NSObject {
+    NSObject *_object;
+}
 
 /**
  * @brief Initialize a tracker with the given object.

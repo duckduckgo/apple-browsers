@@ -2622,7 +2622,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Try DuckDuckGo Subscription Free"
+            "value" : "Try Free"
           }
         },
         "es" : {
@@ -4573,7 +4573,7 @@
     },
     "subscription.preferences.subscription.inactive.header" : {
       "comment" : "Header for the subscription preferences pane when the subscription is inactive",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4631,14 +4631,26 @@
         }
       }
     },
-    "subscription.preferences.subscription.inactive.header.no.duck.ai" : {
+    "subscription.preferences.subscription.inactive.header.no.duck.ai.us" : {
       "comment" : "Header for the subscription preferences pane when the subscription is inactive",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Secure your Wi-Fi and protect your identity"
+            "value" : "Protect your connection and identity with one subscription."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.inactive.header.us" : {
+      "comment" : "Header for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Secure your Wi-Fi, and chat privately with advanced AI models"
           }
         }
       }

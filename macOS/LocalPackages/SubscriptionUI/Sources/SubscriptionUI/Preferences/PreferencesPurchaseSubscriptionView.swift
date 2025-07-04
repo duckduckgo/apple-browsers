@@ -59,7 +59,7 @@ public struct PreferencesPurchaseSubscriptionView: View {
                 .cornerRadius(4)
 
             VStack(alignment: .leading, spacing: 8) {
-                TextMenuItemHeader(UserText.preferencesSubscriptionInactiveHeader(region: model.subscriptionStorefrontRegion, isPaidAIChatEnabled: model.isPaidAIChatEnabled))
+                TextMenuItemHeader(UserText.preferencesSubscriptionInactiveHeader(isPaidAIChatEnabled: model.isPaidAIChatEnabled))
                 TextMenuItemCaption(UserText.preferencesSubscriptionInactiveCaption(region: model.subscriptionStorefrontRegion, isPaidAIChatEnabled: model.isPaidAIChatEnabled))
 
                 let purchaseButtonText = model.isUserEligibleForFreeTrial ? UserText.purchaseFreeTrialButton(isSubscriptionRebrandingEnabled: model.isSubscriptionRebrandingEnabled) : UserText.purchaseButton(isSubscriptionRebrandingEnabled: model.isSubscriptionRebrandingEnabled)

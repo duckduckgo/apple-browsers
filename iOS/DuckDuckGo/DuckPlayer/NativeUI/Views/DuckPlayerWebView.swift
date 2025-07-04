@@ -194,9 +194,9 @@ struct DuckPlayerWebView: UIViewRepresentable {
           }
 
           // Handle YouTube navigation attempts (from logo, links, etc)
-          if url.isYoutubeWatch {
+          if url.isYoutube {
               handleYouTubeWatchURL(url)
-          } else if url.isYoutubeWatch == true {
+          } else {
               Logger.duckplayer.log("[DuckPlayer] Blocked navigation to YouTube domain: \(url.absoluteString)")
           }
 

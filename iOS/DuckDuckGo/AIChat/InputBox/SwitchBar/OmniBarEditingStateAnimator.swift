@@ -24,6 +24,7 @@ protocol OmniBarEditingStateTransitionDelegate: AnyObject {
     var expectedStartFrame: CGRect? { get }
     var isTopBarPosition: Bool { get }
     var switchBarVC: SwitchBarViewController { get }
+    var logoView: UIView? { get }
 }
 
 final class OmniBarEditingStateAnimator {
@@ -116,6 +117,8 @@ final class OmniBarEditingStateAnimator {
                 let heightConstraint = transitionDelegate.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height)
                 heightConstraint.isActive = true
             }
+            transitionDelegate.switchBarVC.view.alpha = 0.2
+            transitionDelegate.logoView?.alpha = 0
 
             transitionDelegate.rootView.layoutIfNeeded()
         }
@@ -193,7 +196,7 @@ final class OmniBarEditingStateAnimator {
             static let fadeInDuration: TimeInterval = 0.2
             static let expandDuration: TimeInterval = 0.55
             static let expandDampingRatio: CGFloat = 0.65
-            static let collapseDuration: TimeInterval = 0.3
+            static let collapseDuration: TimeInterval = 0.4
             static let collapseDampingRatio: CGFloat = 0.7
             static let fadeOutDuration: TimeInterval = 0.15
             static let fadeOutDelay: TimeInterval = collapseDuration * 0.85

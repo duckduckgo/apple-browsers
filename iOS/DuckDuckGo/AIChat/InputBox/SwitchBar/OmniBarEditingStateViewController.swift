@@ -63,6 +63,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     var rootView: UIView { view }
+    var logoView: UIView? { daxLogoHostingController?.view }
 
     private var cancellables = Set<AnyCancellable>()
     private let switchBarHandler: SwitchBarHandling

@@ -223,3 +223,15 @@ Protections Report widget is composed of two sub-widgets. Its own UI is the trac
         * Update `toggleVisibility()` to support toggling visibility of the new widget from the context menu.
         * Update `widgetsSetConfig()` to support toggling visibility of the new widget from the customization sidebar.
 
+### If the widget availability needs to be configurable
+
+If the widget is only meant to be available to some users (e.g. it's kept behind a feature flag, or there's a logic external to NTP that decides the availability), you need to define a new protocol called `NewTabPageSectionsAvailabilityProviding`. This protocol has previously been in use but it was deleted since it wasn't needed anymore. See [this commit in the monorepo](https://github.com/duckduckgo/apple-browsers/blob/06bcac0a5bcbdfad69ee64ace4973e5b19485375/macOS/LocalPackages/NewTabPage/Sources/NewTabPage/Configuration/NewTabPageConfigurationClient.swift) for reference.
+
+The `NewTabPageSectionsAvailabilityProviding` protocol should define a read-only boolean property called `is<Widget>Available`.
+
+Update `NewTabPageConfigurationClient` the following way:
+1. Add `private let sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding` and inject it via the initializer.
+2. Update `fetchWidgets()` to declare a variable widgets array and conditionally append your widget to the array based on the availability returned by the availability provider.
+3. Update `fetchWidgetConfigs()` in a similar way – conditionally append your widget config to the array based on the availability returned by the availability provider.
+
+As the last step, implement the availability provider on the app side and feed it to the Configuration client.

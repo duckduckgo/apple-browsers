@@ -652,6 +652,6 @@ private extension NSAttributedString {
     static let releaseNotesTrustedIndicator = trustedIndicatorAttributedString(with: .releaseNotesIndicator,
                                                                                title: UserText.releaseNotesTitle)
     static let aiChatTrustedIndicator = trustedIndicatorAttributedString(with: .aiChatPreferences,
-                                                                         title: "Duck.ai")
+                                                                         title: UserText.aiChatAddressBarTrustedIndicator)
 
 }

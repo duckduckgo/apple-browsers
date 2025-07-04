@@ -251,6 +251,7 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToAIChatSidebarPresenter()
         setupButtonsCornerRadius()
         setupButtonsSize()
+        setupButtonIcons()
 
         bookmarkButton.sendAction(on: .leftMouseDown)
         bookmarkButton.normalTintColor = visualStyle.colorsProvider.iconsColor

@@ -51,7 +51,7 @@ Each of the directories contains these files:
 * a feature-specific extension of `NewTabPageDataModel` enum (e.g. `NewTabPageDataModel+Favorites.swift`). This contains the definitions of data structures that are used by the user script client (types received from FE in WebKit messages and types expected by FE in message responses),
 * additional files as needed.
 
-## New Tab Page Feature structure
+## New Tab Page Feature structure <a name="feature_structure"></a>
 
 ### User script client
 User script client code is overall very easy and repetitive between various clients. Its features are:
@@ -204,3 +204,22 @@ Configuration client does not represent any widget, and instead it provides API 
 ### Protections Report client
 
 Protections Report widget is composed of two sub-widgets. Its own UI is the tracker blocking summary and a segmented control. The control allows to switch between Privacy Stats (called _Summary_ in the UI) and Recent Activity (called _Details_), where each of them has a separate user script client.
+
+## How to add new user script client
+
+1. Create a new subdirectory in the `Sources/NewTabPage` directory of the package called after the feature you're adding (e.g. Favorites).
+2. Add `NewTabPage<Feature>Client.swift` replacing `<Feature>` with the feature name.
+3. Implement `NewTabPage<Feature>Client` class, subclassing `NewTabPageUserScriptClient`. See [New Tab Page Feature structure](#feature_structure) for details.
+4. If your client represents NTP's top-level widget, you need to register it in the Configuration client.
+    * Add the new widget type to `NewTabPageDataModel.WidgetId` (`NewTabPageDataModel+Configuration.swift`).
+    * Update the array returned from `NewTabPageConfigurationClient.fetchWidgets()` to include the new widget.
+        * The ordering of that array is not important, but by convention the widgets should be listed in order in which they appear on the New Tab Page.
+5. If your client widget supports adjustable visibility:
+    * Update `NewTabPageSectionsVisibilityProviding` protocol and add  `is<Widget>Visible` and `is<Widget>VisiblePublisher` API, similar to how it's done for Favorites and Protections Report.
+    * In `NewTabPageConfigurationClient`:
+        * Update subscription in the initializer that calls `notifyWidgetConfigsDidChange()` to include the newly defined publisher.
+        * Update the array returned from `fetchWidgetConfigs()` to return configuration for the new widget (similar to Favorites and Protections Report).
+        * Update `showContextMenu()` to include the menu option for the new widget (follow definitions for existing widgets).
+        * Update `toggleVisibility()` to support toggling visibility of the new widget from the context menu.
+        * Update `widgetsSetConfig()` to support toggling visibility of the new widget from the customization sidebar.
+

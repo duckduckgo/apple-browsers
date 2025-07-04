@@ -51,7 +51,7 @@ final class OmniBarEditingStateAnimator {
     func animateAppearance() {
         guard let transitionDelegate else { return }
 
-        guard var expectedStartFrame = transitionDelegate.expectedStartFrame else {
+        guard let expectedStartFrame = transitionDelegate.expectedStartFrame else {
             transitionDelegate.switchBarVC.setExpanded(true)
             return
         }
@@ -80,14 +80,14 @@ final class OmniBarEditingStateAnimator {
         transitionDelegate.rootView.layoutIfNeeded()
 
         // Create animators
-        let fadeAnimatorDuration = 0.2
-        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: fadeAnimatorDuration, curve: .easeIn) {
+        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: Constants.TopTransition.fadeInDuration, curve: .easeIn) {
             transitionDelegate.switchBarVC.view.alpha = 1.0
             transitionDelegate.rootView.alpha = 1.0
             transitionDelegate.rootView.backgroundColor = UIColor(designSystemColor: .background)
         }
 
-        let expandAnimator = UIViewPropertyAnimator(duration: 0.55, dampingRatio: 0.65) {
+        let expandAnimator = UIViewPropertyAnimator(duration: Constants.TopTransition.expandDuration,
+                                                    dampingRatio: Constants.TopTransition.expandDampingRatio) {
             transitionDelegate.switchBarVC.setExpanded(true)
             heightConstraint.isActive = false
 
@@ -103,37 +103,15 @@ final class OmniBarEditingStateAnimator {
         backgroundFadeAnimator.startAnimation()
     }
 
-    private func bottomPositionAppearance() {
-
-        guard let transitionDelegate else { return }
-
-        topSwitchBarConstraint = transitionDelegate.switchBarVC.view.topAnchor.constraint(equalTo: transitionDelegate.rootView.safeAreaLayoutGuide.topAnchor, constant: 100)
-        topSwitchBarConstraint?.isActive = true
-        transitionDelegate.switchBarVC.setExpanded(true)
-        transitionDelegate.switchBarVC.view.alpha = 0.0
-
-        transitionDelegate.rootView.layoutIfNeeded()
-
-        // Create animators
-        let animator = UIViewPropertyAnimator(duration: 0.55, dampingRatio: 0.65) {
-            transitionDelegate.switchBarVC.view.alpha = 1.0
-            self.topSwitchBarConstraint?.constant = 16
-
-            transitionDelegate.rootView.layoutIfNeeded()
-        }
-
-        // Start animations
-        animator.startAnimation()
-    }
-
     private func topPositionDismissal(_ completion: (() -> Void)?) {
 
         guard let transitionDelegate else { return }
 
         // Create animators
-        let collapseDuration: TimeInterval = 0.3
-        let collapseAnimator = UIViewPropertyAnimator(duration: collapseDuration, dampingRatio: 0.7) {
+        let collapseAnimator = UIViewPropertyAnimator(duration: Constants.TopTransition.collapseDuration,
+                                                      dampingRatio: Constants.TopTransition.collapseDampingRatio) {
             transitionDelegate.switchBarVC.setExpanded(false)
+            
             if let expectedStartFrame = transitionDelegate.expectedStartFrame {
                 let heightConstraint = transitionDelegate.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height)
                 heightConstraint.isActive = true
@@ -142,7 +120,7 @@ final class OmniBarEditingStateAnimator {
             transitionDelegate.rootView.layoutIfNeeded()
         }
 
-        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: 0.15, curve: .easeIn) {
+        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: Constants.TopTransition.fadeOutDuration, curve: .easeIn) {
             transitionDelegate.rootView.alpha = 0.0
             transitionDelegate.switchBarVC.view.alpha = 0.0
         }
@@ -153,24 +131,72 @@ final class OmniBarEditingStateAnimator {
 
         // Start animations
         collapseAnimator.startAnimation()
-        backgroundFadeAnimator.startAnimation(afterDelay: collapseDuration * 0.85)
+        backgroundFadeAnimator.startAnimation(afterDelay: Constants.TopTransition.fadeOutDelay)
+    }
+
+    private func bottomPositionAppearance() {
+
+        guard let transitionDelegate else { return }
+
+        topSwitchBarConstraint = transitionDelegate.switchBarVC.view.topAnchor.constraint(equalTo: transitionDelegate.rootView.safeAreaLayoutGuide.topAnchor,
+                                                                                          constant: Constants.BottomTransition.yOffset)
+        topSwitchBarConstraint?.isActive = true
+        transitionDelegate.switchBarVC.setExpanded(true)
+        transitionDelegate.rootView.alpha = 0.0
+
+        transitionDelegate.rootView.layoutIfNeeded()
+
+        // Create animators
+        let animator = UIViewPropertyAnimator(duration: Constants.BottomTransition.appearanceDuration,
+                                              dampingRatio: Constants.BottomTransition.appearanceDampingRatio) {
+            transitionDelegate.rootView.alpha = 1.0
+            self.topSwitchBarConstraint?.constant = Constants.BottomTransition.finalYOffset
+
+            transitionDelegate.rootView.layoutIfNeeded()
+        }
+
+        // Start animations
+        animator.startAnimation()
     }
 
     private func bottomPositionDismissal(_ completion: (() -> Void)?) {
 
         guard let transitionDelegate else { return }
 
-        let animator = UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
-            transitionDelegate.rootView.alpha = 0.0
-            self.topSwitchBarConstraint?.constant = 80
+        let animator = UIViewPropertyAnimator(duration: Constants.BottomTransition.dismissDuration, curve: .easeInOut) {
+            self.topSwitchBarConstraint?.constant = Constants.BottomTransition.yOffset
 
             transitionDelegate.rootView.layoutIfNeeded()
         }
+
+        animator.addAnimations({
+            transitionDelegate.rootView.alpha = 0.0
+        }, delayFactor: 0.5)
 
         animator.addCompletion { _ in
             completion?()
         }
 
         animator.startAnimation()
+    }
+
+    private struct Constants {
+        struct BottomTransition {
+            static let yOffset: CGFloat = 150
+            static let finalYOffset: CGFloat = 16
+            static let dismissDuration: TimeInterval = 0.25
+            static let appearanceDuration: TimeInterval = 0.55
+            static let appearanceDampingRatio: CGFloat = 0.65
+        }
+
+        struct TopTransition {
+            static let fadeInDuration: TimeInterval = 0.2
+            static let expandDuration: TimeInterval = 0.55
+            static let expandDampingRatio: CGFloat = 0.65
+            static let collapseDuration: TimeInterval = 0.3
+            static let collapseDampingRatio: CGFloat = 0.7
+            static let fadeOutDuration: TimeInterval = 0.15
+            static let fadeOutDelay: TimeInterval = collapseDuration * 0.85
+        }
     }
 }

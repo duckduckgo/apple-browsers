@@ -726,10 +726,8 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Subscribe to Navigation Request Publisher
         viewModel.youtubeNavigationRequestPublisher
             .sink { [weak self, weak roundedSheetController] videoID in
-                if source != .youtube {
-                    let url: URL = .youtube(videoID)
-                    navigationRequest.send(url)
-                }
+                let url: URL = .youtube(videoID)
+                navigationRequest.send(url)
 
                 Task { @MainActor in
                     await withCheckedContinuation { continuation in

@@ -173,8 +173,8 @@ struct DuckPlayerWebView: UIViewRepresentable {
            contentScopeUserScripts = nil
        }
 
-       private func handleYouTubeWatchURL(_ url: URL) {
-           Logger.duckplayer.debug("Detected YouTube watch URL: \(url.absoluteString)")
+       private func handleYoutubeURL(_ url: URL) {
+           Logger.duckplayer.debug("Detected YouTube URL: \(url.absoluteString)")
            viewModel?.handleYouTubeNavigation(url)
        }
 
@@ -193,9 +193,19 @@ struct DuckPlayerWebView: UIViewRepresentable {
               return
           }
 
-          // Handle YouTube navigation attempts (from logo, links, etc)
+          // Handle YouTube navigation attempts
           if url.isYoutube {
-              handleYouTubeWatchURL(url)
+              // Check if tapped video is different from currently playing video
+              let currentVideoID = viewModel?.videoID
+              let tappedVideoID = url.youtubeVideoParams?.videoID
+              
+              if currentVideoID != nil && currentVideoID == tappedVideoID {
+                  // Same video - just hide DuckPlayer
+                  viewModel?.dismissPublisher.send(0)
+              } else {
+                  // Different video - hide DuckPlayer AND navigate to URL
+                  handleYoutubeURL(url)
+              }
           } else {
               Logger.duckplayer.log("[DuckPlayer] Blocked navigation to non YouTube domain: \(url.absoluteString)")
           }
@@ -207,8 +217,8 @@ struct DuckPlayerWebView: UIViewRepresentable {
        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
            // Prevent automatic opening of URLs in browser
            if let url = navigationAction.request.url {
-               if url.isYoutubeWatch {
-                   handleYouTubeWatchURL(url)
+               if url.isYoutube {
+                   handleYoutubeURL(url)
                } else {
                    Logger.duckplayer.log("[DuckPlayer] Blocked window creation for: \(url.absoluteString)")
                }

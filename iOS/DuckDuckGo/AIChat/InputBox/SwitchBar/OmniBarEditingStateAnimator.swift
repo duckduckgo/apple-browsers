@@ -32,6 +32,7 @@ final class OmniBarEditingStateAnimator {
     weak var transitionDelegate: OmniBarEditingStateTransitionDelegate?
 
     private var topSwitchBarConstraint: NSLayoutConstraint?
+    private var switchBarHeightConstraint: NSLayoutConstraint?
 
     func animateDismissal(_ completion: (() -> Void)? = nil) {
 
@@ -58,20 +59,21 @@ final class OmniBarEditingStateAnimator {
         }
 
         if transitionDelegate.isTopBarPosition {
-            let heightConstraint = transitionDelegate.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height)
-            heightConstraint.isActive = true
-            topPositionAppearance(expectedStartFrame: expectedStartFrame, heightConstraint: heightConstraint)
+            switchBarHeightConstraint = transitionDelegate.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height)
+            switchBarHeightConstraint?.isActive = true
+            topPositionAppearance(expectedStartFrame: expectedStartFrame)
         } else {
             bottomPositionAppearance()
         }
 
     }
 
-    private func topPositionAppearance(expectedStartFrame: CGRect, heightConstraint: NSLayoutConstraint) {
+    private func topPositionAppearance(expectedStartFrame: CGRect) {
 
         guard let transitionDelegate else { return }
 
-        topSwitchBarConstraint = transitionDelegate.switchBarVC.view.topAnchor.constraint(equalTo: transitionDelegate.rootView.topAnchor, constant: expectedStartFrame.minY)
+        topSwitchBarConstraint = transitionDelegate.switchBarVC.view.topAnchor.constraint(equalTo: transitionDelegate.rootView.topAnchor,
+                                                                                          constant: expectedStartFrame.minY)
         topSwitchBarConstraint?.isActive = true
         transitionDelegate.switchBarVC.setExpanded(false)
         transitionDelegate.switchBarVC.view.alpha = 0.0
@@ -90,7 +92,7 @@ final class OmniBarEditingStateAnimator {
         let expandAnimator = UIViewPropertyAnimator(duration: Constants.TopTransition.expandDuration,
                                                     dampingRatio: Constants.TopTransition.expandDampingRatio) {
             transitionDelegate.switchBarVC.setExpanded(true)
-            heightConstraint.isActive = false
+            self.switchBarHeightConstraint?.isActive = false
 
             transitionDelegate.rootView.layoutIfNeeded()
         }
@@ -112,13 +114,10 @@ final class OmniBarEditingStateAnimator {
         let collapseAnimator = UIViewPropertyAnimator(duration: Constants.TopTransition.collapseDuration,
                                                       dampingRatio: Constants.TopTransition.collapseDampingRatio) {
             transitionDelegate.switchBarVC.setExpanded(false)
-            
-            if let expectedStartFrame = transitionDelegate.expectedStartFrame {
-                let heightConstraint = transitionDelegate.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height)
-                heightConstraint.isActive = true
-            }
             transitionDelegate.switchBarVC.view.alpha = 0.2
             transitionDelegate.logoView?.alpha = 0
+
+            self.switchBarHeightConstraint?.isActive = true
 
             transitionDelegate.rootView.layoutIfNeeded()
         }

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -485,6 +485,7 @@
 		6FD8E51E2C5B84DE00345670 /* NewTabPageIntroMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD8E51D2C5B84DE00345670 /* NewTabPageIntroMessageView.swift */; };
 		6FD8E5202C5BA23200345670 /* NewTabPageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD8E51F2C5BA23200345670 /* NewTabPageViewModel.swift */; };
 		6FD8E5222C5BA5C400345670 /* NewTabPageIntroMessageConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD8E5212C5BA5C400345670 /* NewTabPageIntroMessageConfiguration.swift */; };
+		6FDA11232E142502008D8ABA /* OmniBarEditingStateAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FDA11222E1424FB008D8ABA /* OmniBarEditingStateAnimator.swift */; };
 		6FDA1FB32B59584400AC962A /* AddressDisplayHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FDA1FB22B59584400AC962A /* AddressDisplayHelper.swift */; };
 		6FDC64012C92F4A300DB71B3 /* NewTabPageIntroDataStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FDC64002C92F4A300DB71B3 /* NewTabPageIntroDataStoring.swift */; };
 		6FDC64032C92F4D600DB71B3 /* NewTabPageSettingsPersistentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FDC64022C92F4D600DB71B3 /* NewTabPageSettingsPersistentStore.swift */; };
@@ -2371,6 +2372,7 @@
 		6FD8E51D2C5B84DE00345670 /* NewTabPageIntroMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageIntroMessageView.swift; sourceTree = "<group>"; };
 		6FD8E51F2C5BA23200345670 /* NewTabPageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageViewModel.swift; sourceTree = "<group>"; };
 		6FD8E5212C5BA5C400345670 /* NewTabPageIntroMessageConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageIntroMessageConfiguration.swift; sourceTree = "<group>"; };
+		6FDA11222E1424FB008D8ABA /* OmniBarEditingStateAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarEditingStateAnimator.swift; sourceTree = "<group>"; };
 		6FDA1FB22B59584400AC962A /* AddressDisplayHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressDisplayHelper.swift; sourceTree = "<group>"; };
 		6FDC64002C92F4A300DB71B3 /* NewTabPageIntroDataStoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageIntroDataStoring.swift; sourceTree = "<group>"; };
 		6FDC64022C92F4D600DB71B3 /* NewTabPageSettingsPersistentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSettingsPersistentStore.swift; sourceTree = "<group>"; };
@@ -5293,6 +5295,7 @@
 			isa = PBXGroup;
 			children = (
 				6FCF65132DF8481400C7F35F /* OmniBarEditingStateViewController.swift */,
+				6FDA11222E1424FB008D8ABA /* OmniBarEditingStateAnimator.swift */,
 				315E14AE2DF77C7B00419C8A /* TextEntry */,
 				31550CD62E0D89EA006FA55B /* NavigationActionBarViewModel.swift */,
 				31BEC1842E0D81C7005CE284 /* NavigationActionBarView.swift */,
@@ -9968,6 +9971,7 @@
 				85058366219AE9EA00ED4EDB /* HomePageConfiguration.swift in Sources */,
 				1E9529A12C4E748B006E80D4 /* UINavigationControllerExtension.swift in Sources */,
 				6F2331662DD4D046004D102D /* TabSwitcherStaticButton.swift in Sources */,
+				6FDA11232E142502008D8ABA /* OmniBarEditingStateAnimator.swift in Sources */,
 				EE0153E12A6EABE0002A8B26 /* NetworkProtectionConvenienceInitialisers.swift in Sources */,
 				C17B595B2A03AAD30055F2D1 /* PasswordGenerationPromptView.swift in Sources */,
 				98AA92B32456FBE100ED4B9E /* SearchFieldContainerView.swift in Sources */,

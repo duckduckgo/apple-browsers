@@ -59,10 +59,7 @@
 "action.title.downloads" = "Nedlastinger";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "KI-chat";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Ny AI-chat";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Rediger bokmerke";
@@ -159,6 +156,9 @@
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Ett trykk til favorittnettstedene dine.";
+
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "AI-funksjoner";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Eksisterende bokmerker blir ikke duplisert.";
@@ -267,15 +267,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Lås opp DuckDuckGo.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Er du sikker på at du vil slette alle bokmerkene? Denne handlingen kan ikke angres.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete this chat? This cannot be undone." = "Er du sikker på at du vil slette denne chatten? Dette kan ikke angres.";
-
-/* No comment provided by engineer. */
-"Ask anything..." = "Spør om hva som helst ...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Logg inn";
@@ -1210,9 +1201,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Feilsøke";
 
-/* No comment provided by engineer. */
-"Delete All" = "Slett alt";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "enhet";
 
@@ -1297,8 +1285,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Players funksjonalitet har blitt påvirket av nylige endringer i YouTube. Vi jobber med å løse disse problemene og setter pris på forståelsen din.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai er en valgfri funksjon der du kan chatte anonymt med populære tredjeparts AI-chat-modeller. Chattene dine brukes ikke til å trene AI.\n[Finn ut mer](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "AI-funksjonene i DuckDuckGo er private og valgfrie. Dataene dine brukes ikke til å trene AI.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adressefelt";
@@ -1312,7 +1300,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Talesøk";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Finn ut mer";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -2258,7 +2249,7 @@
 "new.tab.page.settings.title" = "Tilpass ny faneside";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "KI-chat";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Bokmerker";
@@ -2657,7 +2648,10 @@
 "settings.address.full.url" = "Vis fullstendig nettstedsadresse";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Snarveier";
+"settings.aichat.shortcuts" = "Duck.ai-snarveier";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Innstillinger for Search Assist";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alltid på";
@@ -2735,13 +2729,19 @@
 "settings.emailProtection.description" = "Blokker e-postsporere og skjul adressen din";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Aktiver Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Chat privat med populære tredjeparts AI-modeller";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Aktiver e-postbeskyttelse";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Aktiver talesøk";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Velg hvor ofte du vil at AI-assisterte svar skal vises i søkene dine";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Del tilbakemelding";
@@ -2806,6 +2806,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Personvernerklæring og vilkår for bruk";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Inkluderer vår VPN og Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Inkluderer vår VPN, Personal Information Removal og Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Forhåndsvisning ved å trykke og holde";
 
@@ -2866,17 +2872,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonnementsinnstillinger";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Inkluderer vår VPN og Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Beskytt tilkoblingen og identiteten din med Privacy Pro";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free" = "Prøv Privacy Pro gratis";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Inkluderer vår VPN, Personal Information Removal og Identity Theft Restoration.";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2943,9 +2943,6 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Hvilket nettsted fungerer ikke?";
-
-/* No comment provided by engineer. */
-"Stop generating..." = "Slutt å generere ...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagret vertsnavn: %@";

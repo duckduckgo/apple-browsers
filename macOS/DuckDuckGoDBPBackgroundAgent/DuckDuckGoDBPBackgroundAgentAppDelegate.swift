@@ -31,7 +31,7 @@ import Configuration
 
 @objc(Application)
 final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
-    private let _delegate: DuckDuckGoDBPBackgroundAgentAppDelegate
+    private let _delegate: DuckDuckGoDBPBackgroundAgentAppDelegate // swiftlint:disable:this weak_delegate
 
     override init() {
         Logger.dbpBackgroundAgent.log("🟢 Starting: \(NSRunningApplication.current.processIdentifier, privacy: .public)")

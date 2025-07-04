@@ -59,7 +59,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
             to: server,
             excludeLocalNetworks: expectedExcludeLocalNetworks,
             dnsSettings: .ddg(blockRiskyDomains: false)
-        ) {_ in }
+        ) { _ in }
         guard let spyGenerateTunnelConfiguration = deviceManager.spyGenerateTunnelConfiguration else {
             XCTFail("attemptRecovery not called")
             return
@@ -123,7 +123,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
             to: .mockRegisteredServer,
             excludeLocalNetworks: false,
             dnsSettings: .ddg(blockRiskyDomains: false)
-        ) {_ in }
+        ) { _ in }
 
         XCTAssertEqual(startedCount, 1)
     }
@@ -308,7 +308,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
             to: .mockRegisteredServer,
             excludeLocalNetworks: false,
             dnsSettings: .ddg(blockRiskyDomains: false)
-        ) {_ in }
+        ) { _ in }
     }
 
     func attemptRecoveryWithConfigUpdateFailure() async {

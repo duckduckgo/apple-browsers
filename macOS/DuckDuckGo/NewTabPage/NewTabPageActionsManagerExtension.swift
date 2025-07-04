@@ -48,7 +48,7 @@ extension NewTabPageActionsManager {
         let favoritesModel = NewTabPageFavoritesModel(
             actionsHandler: DefaultFavoritesActionsHandler(bookmarkManager: bookmarkManager),
             favoritesPublisher: favoritesPublisher,
-            faviconsDidLoadPublisher: faviconManager.faviconsLoadedPublisher.filter({$0}).asVoid().eraseToAnyPublisher(),
+            faviconsDidLoadPublisher: faviconManager.faviconsLoadedPublisher.filter({ $0 }).asVoid().eraseToAnyPublisher(),
             getLegacyIsViewExpandedSetting: UserDefaultsWrapper<Bool>(key: .homePageShowAllFavorites, defaultValue: true).wrappedValue
         )
 

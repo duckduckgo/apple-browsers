@@ -43,7 +43,7 @@ struct DefaultBrowserPromptFeatureFlaggerTests {
     @Test("Check Remote Subfeature Settings Are Returned Correctly")
     func checkRemoteSettingsAreReturnedCorrectly() throws {
         // GIVEN
-        mockFeatureFlagSettingsProvider.featureSettings = [
+        mockFeatureFlagSettingsProvider.defaultBrowserPromptFeatureSettings = [
             DefaultBrowserPromptFeatureSettings.firstModalDelayDays.rawValue: 2,
             DefaultBrowserPromptFeatureSettings.secondModalDelayDays.rawValue: 4,
             DefaultBrowserPromptFeatureSettings.subsequentModalRepeatIntervalDays.rawValue: 6
@@ -64,7 +64,7 @@ struct DefaultBrowserPromptFeatureFlaggerTests {
     @Test("Check Subfeature Settings Default Value Are Returned When Remote Settings Not Set")
     func checkDefaultSettingsAreReturnedWhenRemoteSettingsAreNotSet() throws {
         // GIVEN
-        mockFeatureFlagSettingsProvider.featureSettings = [:]
+        mockFeatureFlagSettingsProvider.defaultBrowserPromptFeatureSettings = [:]
         let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider, featureFlagProvider: mockFeatureFlagProvider)
 
         // WHEN

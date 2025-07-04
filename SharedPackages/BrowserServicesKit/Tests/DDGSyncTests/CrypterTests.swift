@@ -57,8 +57,8 @@ class CrypterTests: XCTestCase {
 
     func testWhenDecryptingNoneBase64ThenErrorIsThrown() throws {
         let storage = SecureStorageStub()
-        let primaryKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_PRIMARY_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max )}))
-        let secretKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_SECRET_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max )}))
+        let primaryKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_PRIMARY_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max ) }))
+        let secretKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_SECRET_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max ) }))
         try storage.persistAccount(SyncAccount(deviceId: "deviceId",
                                                deviceName: "deviceName",
                                                deviceType: "deviceType",
@@ -76,8 +76,8 @@ class CrypterTests: XCTestCase {
 
     func testWhenDecryptingGarbageBase64DataThenErrorIsThrown() throws {
         let storage = SecureStorageStub()
-        let primaryKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_PRIMARY_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max )}))
-        let secretKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_SECRET_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max )}))
+        let primaryKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_PRIMARY_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max ) }))
+        let secretKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_SECRET_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max ) }))
         try storage.persistAccount(SyncAccount(deviceId: "deviceId",
                                                deviceName: "deviceName",
                                                deviceType: "deviceType",
@@ -95,8 +95,8 @@ class CrypterTests: XCTestCase {
 
     func testWhenEncryptingValueThenItIsBase64AndCanBeDecrypted() throws {
         let storage = SecureStorageStub()
-        let primaryKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_PRIMARY_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max )}))
-        let secretKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_SECRET_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max )}))
+        let primaryKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_PRIMARY_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max ) }))
+        let secretKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_SECRET_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max ) }))
         try storage.persistAccount(SyncAccount(deviceId: "deviceId",
                                                deviceName: "deviceName",
                                                deviceType: "deviceType",
@@ -118,8 +118,8 @@ class CrypterTests: XCTestCase {
 
     func testWhenDecryptingEmptyStringThenEmptyStringIsReturned() throws {
         let storage = SecureStorageStub()
-        let primaryKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_PRIMARY_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max )}))
-        let secretKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_SECRET_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max )}))
+        let primaryKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_PRIMARY_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max ) }))
+        let secretKey = Data([UInt8]((0 ..< DDGSYNCCRYPTO_SECRET_KEY_SIZE.rawValue).map { _ in UInt8.random(in: 0 ..< UInt8.max ) }))
         try storage.persistAccount(SyncAccount(deviceId: "deviceId",
                                                deviceName: "deviceName",
                                                deviceType: "deviceType",

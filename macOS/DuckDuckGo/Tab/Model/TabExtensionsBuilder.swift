@@ -208,11 +208,14 @@ private final class TabExtensionLazyLoader<T> {
     fileprivate var state: State
 
     var value: T {
-        if case .none(let makeTabExtension) = state {
-            state = .some(makeTabExtension())
+        switch state {
+        case .none(let makeTabExtension):
+            let value = makeTabExtension()
+            state = .some(value)
+            return value
+        case .some(let value):
+            return value
         }
-        guard case .some(let value) = state else { fatalError() }
-        return value
     }
 
     init<Extension: TabExtension>(_ makeTabExtension: @escaping () -> Extension) where Extension.PublicProtocol == T {

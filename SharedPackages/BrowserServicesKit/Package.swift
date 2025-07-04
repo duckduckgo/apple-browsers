@@ -337,6 +337,7 @@ let package = Package(
             name: "SecureStorage",
             dependencies: [
                 "Common",
+                "PixelKit",
                 .product(name: "GRDB", package: "GRDB.swift"),
             ],
             swiftSettings: [
@@ -371,6 +372,9 @@ let package = Package(
         ),
         .target(
             name: "PixelKit",
+            dependencies: [
+                "Common"
+            ],
             exclude: [
                 "README.md"
             ],

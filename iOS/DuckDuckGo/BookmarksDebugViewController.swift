@@ -39,33 +39,45 @@ struct BookmarksDebugRootView: View {
     @State private var showingDestructiveAlert = false
     @State private var showingConvertAlert = false
 
-    var body: some View {
-        List {
+    @ViewBuilder func toolsSection() -> some View {
+        Section {
+            SettingsCellView(label: "Make Favorites", subtitle: "Convert all bookmarks to favorites. Restart the app after running this.", action: {
+                showingConvertAlert = true
+            }, isButton: true)
+        } header: {
+            Text(verbatim: "Tools")
+        }
+    }
 
-            Section("Tools") {
-                SettingsCellView(label: "Make Favorites", subtitle: "Convert all bookmarks to favorites. Restart the app after running this.", action: {
-                    showingConvertAlert = true
-                }, isButton: true)
-            }
-
-            Section("Bookmarks") {
-                ForEach(model.bookmarks, id: \.id) { entry in
-                    VStack(alignment: .leading) {
-                        Text(entry.title ?? "empty!")
-                            .font(.system(size: 16))
-                        Text("Is unified fav: " + (entry.isFavorite(on: .unified) ? "true" : "false") )
+    @ViewBuilder func itemsSection() -> some View {
+        Section {
+            ForEach(model.bookmarks, id: \.id) { entry in
+                VStack(alignment: .leading) {
+                    Text(entry.title ?? "empty!")
+                        .font(.system(size: 16))
+                    Text("Is unified fav: " + (entry.isFavorite(on: .unified) ? "true" : "false") )
+                        .font(.system(size: 12))
+                    Text("Is mobile fav: " + (entry.isFavorite(on: .mobile) ? "true" : "false") )
+                        .font(.system(size: 12))
+                    Text("Is desktop fav: " + (entry.isFavorite(on: .desktop) ? "true" : "false") )
+                        .font(.system(size: 12))
+                    ForEach(model.bookmarkAttributes, id: \.self) { attr in
+                        Text(entry.formattedValue(for: attr))
                             .font(.system(size: 12))
-                        Text("Is mobile fav: " + (entry.isFavorite(on: .mobile) ? "true" : "false") )
-                            .font(.system(size: 12))
-                        Text("Is desktop fav: " + (entry.isFavorite(on: .desktop) ? "true" : "false") )
-                            .font(.system(size: 12))
-                        ForEach(model.bookmarkAttributes, id: \.self) { attr in
-                            Text(entry.formattedValue(for: attr))
-                                .font(.system(size: 12))
-                        }
                     }
                 }
             }
+        } header: {
+            Text(verbatim: "Bookmarks")
+        }
+    }
+
+    var body: some View {
+        List {
+
+            toolsSection()
+
+            itemsSection()
         }
         .navigationTitle("\(model.bookmarks.count) Bookmarks")
         .toolbar {
@@ -73,30 +85,38 @@ struct BookmarksDebugRootView: View {
                 Button {
                     showingDestructiveAlert = true
                 } label: {
-                    Text("Delete All")
+                    Text(verbatim: "Delete All")
                 }
             }
         }
-        .alert("Operation Complete", isPresented: $model.showingOperationComplete) {
-            Button("Done", role: .cancel) {}
+        .alert(Text(verbatim: "Operation Complete"), isPresented: $model.showingOperationComplete) {
+            Button(role: .cancel) {
+
+            } label: {
+                Text(verbatim: "Done")
+            }
         } message: {
             Text(model.operationCompleteMessage)
         }
-        .alert("Confirm", isPresented: $showingConvertAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Convert", role: .destructive) {
+        .alert(Text(verbatim: "Confirm"), isPresented: $showingConvertAlert) {
+            Button(role: .cancel) { } label: { Text(verbatim: "Cancel") }
+            Button(role: .destructive) {
                 model.convertAllBookmarksToFavorites()
+            } label: {
+                Text(verbatim: "Convert")
             }
         } message: {
-            Text("Are you sure you want to convert all bookmarks to favorites?")
+            Text(verbatim: "Are you sure you want to convert all bookmarks to favorites?")
         }
-        .alert("Confirm Delete", isPresented: $showingDestructiveAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
+        .alert(Text(verbatim: "Confirm Delete"), isPresented: $showingDestructiveAlert) {
+            Button(role: .cancel) {} label: { Text(verbatim: "Cancel") }
+            Button(role: .destructive) {
                 model.deleteAll()
+            } label: {
+                Text(verbatim: "Delete")
             }
         } message: {
-            Text("Are you sure you want to delete all bookmarks? This action cannot be undone.")
+            Text(verbatim: "Are you sure you want to delete all bookmarks? This action cannot be undone.")
         }
     }
 

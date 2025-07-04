@@ -100,7 +100,7 @@ public final class BookmarksProvider: DataProvider {
             let bookmarks = BookmarkUtils.fetchModifiedBookmarks(context)
             syncableBookmarks = bookmarks.compactMap { bookmarkEntity in
                 do {
-                    return try Syncable(bookmark: bookmarkEntity, encryptedUsing: { try crypter.encryptAndBase64Encode($0, using: encryptionKey)})
+                    return try Syncable(bookmark: bookmarkEntity, encryptedUsing: { try crypter.encryptAndBase64Encode($0, using: encryptionKey) })
                 } catch {
                     if case Syncable.SyncableBookmarkError.validationFailed = error {
                         Logger.bookmarks.error("Validation failed for bookmark \(bookmarkEntity.uuid ?? "") with title: \(bookmarkEntity.title.flatMap { String($0.prefix(100)) } ?? "")")

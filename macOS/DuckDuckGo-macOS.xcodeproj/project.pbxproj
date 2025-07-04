@@ -2426,10 +2426,6 @@
 		98779A0129999B64005D8EB6 /* Bookmark.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 987799FC29999B64005D8EB6 /* Bookmark.xcdatamodeld */; };
 		98A95D88299A2DF900B9B81A /* BookmarkMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A95D87299A2DF900B9B81A /* BookmarkMigrationTests.swift */; };
 		98EB5D1027516A4800681FE6 /* AppPrivacyConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98EB5D0F27516A4800681FE6 /* AppPrivacyConfigurationTests.swift */; };
-		9D0668C92CD4F04600D6C9EA /* FireproofDomainsStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6BBF1712744CE36004F850E /* FireproofDomainsStoreMock.swift */; };
-		9D0668CA2CD4F04D00D6C9EA /* SuggestionLoadingMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0F3DB6261A566C0077F2D9 /* SuggestionLoadingMock.swift */; };
-		9D0668CB2CD4F06200D6C9EA /* CapturingOnboardingNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560C6ECF2CCA5C6000D411E2 /* CapturingOnboardingNavigationDelegate.swift */; };
-		9D0668CC2CD4F06900D6C9EA /* FindInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560C6ED52CCA5CE100D411E2 /* FindInView.swift */; };
 		9D84E42C2CD4E66F0046CD8B /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4072CD4E66F0046CD8B /* Common */; };
 		9D84E42D2CD4E66F0046CD8B /* PixelKitTestingUtilities in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4042CD4E66F0046CD8B /* PixelKitTestingUtilities */; };
 		9D84E42E2CD4E66F0046CD8B /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4022CD4E66F0046CD8B /* SnapshotTesting */; };
@@ -2437,7 +2433,6 @@
 		9D84E4302CD4E66F0046CD8B /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E3FF2CD4E66F0046CD8B /* OHHTTPStubs */; };
 		9D84E4312CD4E66F0046CD8B /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 9D84E4012CD4E66F0046CD8B /* OHHTTPStubsSwift */; };
 		9D84E43E2CD4E6B40046CD8B /* DBPEndToEndTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D84E3F32CD4E6660046CD8B /* DBPEndToEndTests.swift */; };
-		9D84E4432CD4EE5C0046CD8B /* CoreDataEncryptionTesting.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 4B11060325903E570039B979 /* CoreDataEncryptionTesting.xcdatamodeld */; };
 		9D9AE8692AA76CDC0026E7DC /* LoginItem+NetworkProtection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE8682AA76CDC0026E7DC /* LoginItem+NetworkProtection.swift */; };
 		9D9AE86B2AA76CF90026E7DC /* LoginItemsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE86A2AA76CF90026E7DC /* LoginItemsManager.swift */; };
 		9D9AE86C2AA76D1B0026E7DC /* LoginItemsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D9AE86A2AA76CF90026E7DC /* LoginItemsManager.swift */; };
@@ -14110,12 +14105,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9D0668CB2CD4F06200D6C9EA /* CapturingOnboardingNavigationDelegate.swift in Sources */,
-				9D0668CA2CD4F04D00D6C9EA /* SuggestionLoadingMock.swift in Sources */,
-				9D84E4432CD4EE5C0046CD8B /* CoreDataEncryptionTesting.xcdatamodeld in Sources */,
 				9D84E43E2CD4E6B40046CD8B /* DBPEndToEndTests.swift in Sources */,
-				9D0668C92CD4F04600D6C9EA /* FireproofDomainsStoreMock.swift in Sources */,
-				9D0668CC2CD4F06900D6C9EA /* FindInView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

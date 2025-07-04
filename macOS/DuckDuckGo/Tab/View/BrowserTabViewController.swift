@@ -897,6 +897,10 @@ final class BrowserTabViewController: NSViewController {
             adjustFirstResponderAfterAddingContentViewIfNeeded()
         }
 
+        if let tabID = tabViewModel?.tab.uuid {
+            aiChatSidebarHostingDelegate?.sidebarHostDidSelectTab(with: tabID)
+        }
+
         switch tabViewModel?.tab.content {
         case .bookmarks:
             removeAllTabContent()
@@ -955,10 +959,6 @@ final class BrowserTabViewController: NSViewController {
         if shouldReplaceWebView(for: tabViewModel) {
             removeAllTabContent(includingWebView: true)
             changeWebView(tabViewModel: tabViewModel)
-
-            if let tabID = tabViewModel?.tab.uuid {
-                aiChatSidebarHostingDelegate?.sidebarHostDidSelectTab(with: tabID)
-            }
         }
     }
 

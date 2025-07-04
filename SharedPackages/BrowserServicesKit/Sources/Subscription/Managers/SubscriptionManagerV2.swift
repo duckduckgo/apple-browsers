@@ -416,19 +416,29 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         return (try? oAuthClient.currentTokenContainer())?.decodedAccessToken.email
     }
 
+    private let notificationOperationQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.qualityOfService = .background
+        queue.maxConcurrentOperationCount = 1
+        queue.name = "com.SubscriptionManagerV2.notificationOperationQueue"
+        return queue
+    }()
+
     var cachedUserEntitlements: [SubscriptionEntitlement] {
         get {
             userDefaults.userEntitlements
         }
         set {
-            let currentCachedUserEntitlements = userDefaults.userEntitlements
-            userDefaults.userEntitlements = newValue
+            self.notificationOperationQueue.addOperation {
+                let currentCachedUserEntitlements = self.userDefaults.userEntitlements
+                self.userDefaults.userEntitlements = newValue
 
-            // Send notification when entitlements change
-            if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedUserEntitlements, newValue) {
-                Logger.subscription.debug("Entitlements changed - New \(String(describing: newValue)) Old \(String(describing: currentCachedUserEntitlements))")
-                let payload = EntitlementsDidChangePayload(entitlements: newValue)
-                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: payload.notificationUserInfo)
+                // Send notification when entitlements change
+                if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedUserEntitlements, newValue) {
+                    Logger.subscription.debug("Entitlements changed - New \(String(describing: newValue)) Old \(String(describing: currentCachedUserEntitlements))")
+                    let payload = EntitlementsDidChangePayload(entitlements: newValue)
+                    NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: payload.notificationUserInfo)
+                }
             }
         }
     }
@@ -438,23 +448,25 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             userDefaults.isUserAuthenticated
         }
         set {
-            let currentCachedIsAuthenticated = userDefaults.isUserAuthenticated
-            userDefaults.isUserAuthenticated = newValue
+            self.notificationOperationQueue.addOperation {
+                let currentCachedIsAuthenticated = self.userDefaults.isUserAuthenticated
+                self.userDefaults.isUserAuthenticated = newValue
 
-            if newValue == false {
-                cachedUserEntitlements = []
-            }
+                if newValue == false {
+                    self.cachedUserEntitlements = []
+                }
 
-            // Send notification when the login changes
-            switch (currentCachedIsAuthenticated, newValue) {
-            case (false, true):
-                Logger.subscription.debug("Login detected")
-                NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
-            case (true, false):
-                Logger.subscription.debug("Logout detected")
-                NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
-            default:
-                Logger.subscription.debug("Login state unchanged - Current: \(currentCachedIsAuthenticated), new: \(newValue)")
+                // Send notification when the login changes
+                switch (currentCachedIsAuthenticated, newValue) {
+                case (false, true):
+                    Logger.subscription.debug("Login detected")
+                    NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
+                case (true, false):
+                    Logger.subscription.debug("Logout detected")
+                    NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
+                default:
+                    Logger.subscription.debug("Login state unchanged - Current: \(currentCachedIsAuthenticated), new: \(newValue)")
+                }
             }
         }
     }

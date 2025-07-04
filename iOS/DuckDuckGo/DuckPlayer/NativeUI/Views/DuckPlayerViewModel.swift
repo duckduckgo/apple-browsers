@@ -185,8 +185,9 @@ final class DuckPlayerViewModel: ObservableObject {
         // Check if tapped video is the same as currently playing
         if let tappedVideoID = url.youtubeVideoParams?.videoID,
            tappedVideoID == videoID {
-            // Same video - just dismiss DuckPlayer with current timestamp to preserve playback position
-            dismissPublisher.send(currentTimeStamp)
+            // Same video - just close DuckPlayer (no publisher events needed)
+            // User is already on the correct video and wants to dismiss the player
+            return
         } else {
             // Different video/URL - navigate to the URL
             youtubeNavigationRequestPublisher.send(url)

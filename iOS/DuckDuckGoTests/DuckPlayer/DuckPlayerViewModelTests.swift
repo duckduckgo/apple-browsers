@@ -276,28 +276,37 @@ final class DuckPlayerViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testHandleYouTubeNavigation_SameVideo_SendsCurrentTimestamp() {
+    func testHandleYouTubeNavigation_SameVideo_NoPublisherEvents() {
         // Given
-        let currentTimestamp: TimeInterval = 45.5 // 45.5 seconds into the video
-        viewModel.currentTimeStamp = currentTimestamp
-        
         let sameVideoURL = URL(string: "https://www.youtube.com/watch?v=\(viewModel.videoID)")!
-        let expectation = XCTestExpectation(description: "Dismiss publisher emitted with current timestamp")
-        var receivedTimestamp: TimeInterval?
+        var dismissPublisherFired = false
+        var navigationPublisherFired = false
 
+        // Subscribe to both publishers to ensure neither fires
         viewModel.dismissPublisher
-            .sink { timestamp in
-                receivedTimestamp = timestamp
-                expectation.fulfill()
+            .sink { _ in
+                dismissPublisherFired = true
+            }
+            .store(in: &cancellables)
+            
+        viewModel.youtubeNavigationRequestPublisher
+            .sink { _ in
+                navigationPublisherFired = true
             }
             .store(in: &cancellables)
 
         // When
         viewModel.handleYouTubeNavigation(sameVideoURL)
 
-        // Then
-        wait(for: [expectation], timeout: 1.0)
-        XCTAssertEqual(receivedTimestamp, currentTimestamp, "Should preserve current playback position when tapping same video")
+        // Then - Wait a brief moment to ensure no publishers fire
+        let expectation = XCTestExpectation(description: "Brief wait")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 0.2)
+        
+        XCTAssertFalse(dismissPublisherFired, "Dismiss publisher should not fire for same video")
+        XCTAssertFalse(navigationPublisherFired, "Navigation publisher should not fire for same video")
     }
 
     @MainActor

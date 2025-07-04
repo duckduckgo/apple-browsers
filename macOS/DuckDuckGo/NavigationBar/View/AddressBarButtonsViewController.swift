@@ -571,8 +571,13 @@ final class AddressBarButtonsViewController: NSViewController {
 
         var targetWidth: CGFloat
 
-        aiChatButton.isHidden = isTextFieldEditorFirstResponder
-        askAIChatButton.isHidden = !isTextFieldEditorFirstResponder
+        if isTextFieldEditorFirstResponder {
+            aiChatButton.isHidden = true
+            askAIChatButton.isHidden = false
+        } else {
+            // aiChatButton visibility managed in updateAIChatButtonVisibility
+            askAIChatButton.isHidden = true
+        }
 
         if shouldExpandButton() {
             guard !isAskAIChatButtonExpanded else {

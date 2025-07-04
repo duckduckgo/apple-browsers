@@ -29,6 +29,7 @@ final class DefaultBrowserPromptService {
     private weak var presentingController: UIViewController?
     private let userActivityManager: DefaultBrowserPromptUserActivityRecorder & DefaultBrowserPromptUserActivityManager
     private let presenter: DefaultBrowserPromptPresenting
+    private let featureFlagAdapter: DefaultBrowserPromptFeatureFlagAdapter
 
     init(
         presentingController: UIViewController,
@@ -45,7 +46,7 @@ final class DefaultBrowserPromptService {
         let defaultBrowserDateProvider: () -> Date = Date.init
 #endif
 
-        let featureFlagAdapter = DefaultBrowserPromptFeatureFlagAdapter(featureFlagger: featureFlagger, privacyConfigurationManager: privacyConfigManager)
+        featureFlagAdapter = DefaultBrowserPromptFeatureFlagAdapter(featureFlagger: featureFlagger, privacyConfigurationManager: privacyConfigManager)
         let userTypeStore = DefaultBrowserPromptUserTypeStore(keyValueFilesStore: keyValueFilesStore)
         let userTypeManager = DefaultBrowserPromptUserTypeManager(store: userTypeStore)
         userTypeManager.persistUserType()
@@ -72,14 +73,15 @@ final class DefaultBrowserPromptService {
     }
 
     func resume() {
-        // Application has been launched or brought back from foreground.
+        // Application has been launched or brought to foreground.
+        guard featureFlagAdapter.isDefaultBrowserPromptsFeatureEnabled else { return }
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Record User Activity If Needed.")
         userActivityManager.recordActivity()
     }
 
     func presentDefaultBrowserPromptIfNeeded() {
         guard let presentingController else { return }
-        Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Presenting default browser prompt.")
+        Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Attempt to present default browser prompt.")
         presenter.tryPresentDefaultModalPrompt(from: presentingController)
     }
 }

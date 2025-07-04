@@ -471,7 +471,6 @@ extension OmniBarEditingStateViewController {
 
 // MARK: - Extract Suggestions
 extension OmniBarEditingStateViewController {
-
     private func extractText(from suggestion: Suggestion) -> String? {
         switch suggestion {
         case .phrase(let phrase):

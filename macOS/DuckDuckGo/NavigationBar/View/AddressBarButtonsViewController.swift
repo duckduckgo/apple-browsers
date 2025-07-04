@@ -751,7 +751,11 @@ final class AddressBarButtonsViewController: NSViewController {
     func updateButtons() {
         stopAnimationsAfterFocus()
 
-        cancelButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
+        if featureFlagger.isFeatureOn(.aiChatSidebar) {
+            cancelButton.isShown = isTextFieldEditorFirstResponder
+        } else {
+            cancelButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
+        }
 
         updateImageButton()
         updatePrivacyEntryPointButton()

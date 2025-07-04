@@ -158,7 +158,7 @@ extension TestRunHelper: XCTestObservation {
     }
 
     func testCaseWillStart(_ testCase: XCTestCase) {
-        XCTAssertTrue(loadedViews.isEmpty)
+        XCTAssertTrue(loadedViews.isEmpty, loadedViews.description)
 
         if case .unitTests = AppVersion.runType {
             // cleanup dedicated temporary directory before each test run

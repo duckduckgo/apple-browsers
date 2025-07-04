@@ -319,7 +319,7 @@ extension NSView {
         method_exchangeImplementations(initMethod, swizzledInitMethod)
     }()
 
-    @objc dynamic func swizzled_initWithFrame(frame: CGRect) -> WKWebView {
+    @objc dynamic func swizzled_initWithFrame(frame: CGRect) -> NSView {
         let view = swizzled_initWithFrame(frame: frame)
         if let observer = view.value(forIvar: "_antialiasThresholdChangedNotificationObserver") {
             NotificationCenter.default.removeObserver(observer)

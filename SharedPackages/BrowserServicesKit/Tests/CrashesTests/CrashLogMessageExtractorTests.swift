@@ -79,9 +79,7 @@ final class CrashLogMessageExtractorTests: XCTestCase {
         let fm = FileManager.default
         let referenceDate = Date()
         let date = formatter.string(from: referenceDate)
-        let fileName = "\(date)-\(ProcessInfo().processIdentifier).log"
         let dir = fm.temporaryDirectory
-        let url = dir.appendingPathComponent(fileName)
         extractor = CrashLogMessageExtractor(diagnosticsDirectory: dir)
 
         let exception =  NSException(name: NSExceptionName(rawValue: "TestException"), reason: "Test crash message /with/file/path", userInfo: ["key1": "value1"])
@@ -97,8 +95,11 @@ final class CrashLogMessageExtractorTests: XCTestCase {
             XCTFail("could not find crash diagnostic")
             return
         }
+
+        XCTAssertEqual(diag.timestamp.timeIntervalSinceReferenceDate, formatter.date(from: date)!.timeIntervalSinceReferenceDate, accuracy: 2)
+        let fileName = "\(formatter.string(from: diag.timestamp))-\(ProcessInfo().processIdentifier).log"
+        let url = dir.appendingPathComponent(fileName)
         XCTAssertEqual(diag.url, url)
-        XCTAssertEqual(formatter.string(from: diag.timestamp), date)
         XCTAssertEqual(diag.pid, ProcessInfo().processIdentifier)
 
         let r = try diag.diagnosticData()

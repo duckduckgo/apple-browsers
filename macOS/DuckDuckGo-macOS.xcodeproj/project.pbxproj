@@ -3530,11 +3530,6 @@
 		EEE11C5F2C7F54AD000ABD7E /* AutofillLoginImportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE11C5D2C7F54AD000ABD7E /* AutofillLoginImportState.swift */; };
 		EEE50C292C38249C003DD7FF /* OptionalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE50C282C38249C003DD7FF /* OptionalExtension.swift */; };
 		EEE50C2A2C38249C003DD7FF /* OptionalExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEE50C282C38249C003DD7FF /* OptionalExtension.swift */; };
-		EEEFA3402D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEFA33F2D142AA6006A3F8A /* CombineTestHelpers.swift */; };
-		EEEFA3412D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEFA33F2D142AA6006A3F8A /* CombineTestHelpers.swift */; };
-		EEEFA3422D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEFA33F2D142AA6006A3F8A /* CombineTestHelpers.swift */; };
-		EEEFA3432D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEFA33F2D142AA6006A3F8A /* CombineTestHelpers.swift */; };
-		EEEFA3442D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEFA33F2D142AA6006A3F8A /* CombineTestHelpers.swift */; };
 		EEEFA3462D145328006A3F8A /* SyncPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEFA3452D145322006A3F8A /* SyncPixels.swift */; };
 		EEEFA3472D145328006A3F8A /* SyncPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEFA3452D145322006A3F8A /* SyncPixels.swift */; };
 		EEF12E6F2A2111880023E6BF /* MacPacketTunnelProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF12E6D2A2111880023E6BF /* MacPacketTunnelProvider.swift */; };
@@ -5569,7 +5564,6 @@
 		EEE0E1CE2C32F6530058E148 /* mock_login_data_large.csv */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mock_login_data_large.csv; sourceTree = "<group>"; };
 		EEE11C5D2C7F54AD000ABD7E /* AutofillLoginImportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginImportState.swift; sourceTree = "<group>"; };
 		EEE50C282C38249C003DD7FF /* OptionalExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OptionalExtension.swift; sourceTree = "<group>"; };
-		EEEFA33F2D142AA6006A3F8A /* CombineTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombineTestHelpers.swift; sourceTree = "<group>"; };
 		EEEFA3452D145322006A3F8A /* SyncPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPixels.swift; sourceTree = "<group>"; };
 		EEF12E6D2A2111880023E6BF /* MacPacketTunnelProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPacketTunnelProvider.swift; sourceTree = "<group>"; };
 		EEF53E172950CED5002D78F4 /* JSAlertViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSAlertViewModelTests.swift; sourceTree = "<group>"; };
@@ -8541,7 +8535,6 @@
 				9F0660752BECC7E700B8EEF1 /* Pixel */,
 				B6AE74322609AFBB005B9B1A /* Progress */,
 				9FFBEE712DDEDC540058B11A /* Utilities */,
-				EEEFA33F2D142AA6006A3F8A /* CombineTestHelpers.swift */,
 				4B9292C42667104B00AD2C21 /* CoreDataTestUtilities.swift */,
 				B603972B29BEDF2100902A34 /* ExpectedNavigationExtension.swift */,
 				B60C6F8329B1BAD3007BFAA8 /* FileManagerTempDirReplacement.swift */,
@@ -13526,7 +13519,6 @@
 				370E70A32D4691560077D4F3 /* RecentActivityProviderTests.swift in Sources */,
 				3706FE15293F661700E42796 /* PrivacyIconViewModelTests.swift in Sources */,
 				56A0543C2C20878E007D8FAB /* DuckSchemeHandlerTests.swift in Sources */,
-				EEEFA3442D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */,
 				370270C12C78EB13002E44E4 /* HomePageSettingsModelTests.swift in Sources */,
 				B68412212B6A30680092F66A /* StringExtensionTests.swift in Sources */,
 				1D8C2FEE2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift in Sources */,
@@ -13839,7 +13831,6 @@
 				1D8B7D6B2A38BF060045C6F6 /* FireproofDomainsStoreMock.swift in Sources */,
 				B630E80229C887ED00363609 /* NSErrorAdditionalInfo.swift in Sources */,
 				3706FEA3293F662100E42796 /* CoreDataEncryptionTests.swift in Sources */,
-				EEEFA3422D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */,
 				8434E6BF2DB01640008FFA3D /* MockWindow.swift in Sources */,
 				1DA7FEE82D88389D004882E9 /* PinnedTabsManagerProvidingMock.swift in Sources */,
 				845063522DB76F9E00A60B56 /* WindowManagerStateRestorationTests.swift in Sources */,
@@ -13917,7 +13908,6 @@
 				1D8B7D6A2A38BF050045C6F6 /* FireproofDomainsStoreMock.swift in Sources */,
 				B630E7FF29C887ED00363609 /* NSErrorAdditionalInfo.swift in Sources */,
 				7BA4727D26F01BC400EAA165 /* CoreDataTestUtilities.swift in Sources */,
-				EEEFA3432D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */,
 				8434E6BE2DB01640008FFA3D /* MockWindow.swift in Sources */,
 				1DA7FEE72D88389D004882E9 /* PinnedTabsManagerProvidingMock.swift in Sources */,
 				845063512DB76F9E00A60B56 /* WindowManagerStateRestorationTests.swift in Sources */,
@@ -14228,7 +14218,6 @@
 				9D84E4492CD4EE780046CD8B /* TestNavigationDelegate.swift in Sources */,
 				9D84E4442CD4EE600046CD8B /* EncryptionKeyStoreMock.swift in Sources */,
 				9D0668C92CD4F04600D6C9EA /* FireproofDomainsStoreMock.swift in Sources */,
-				EEEFA3402D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */,
 				9D0668CC2CD4F06900D6C9EA /* FindInView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -15573,7 +15562,6 @@
 				4BA1A6FE258C5C1300F6F690 /* EncryptedValueTransformerTests.swift in Sources */,
 				85F69B3C25EDE81F00978E59 /* URLExtensionTests.swift in Sources */,
 				4B9292BA2667103100AD2C21 /* BookmarkNodePathTests.swift in Sources */,
-				EEEFA3412D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */,
 				562532A02BC069180034D316 /* ZoomPopoverViewModelTests.swift in Sources */,
 				4B9292C02667103100AD2C21 /* BookmarkManagedObjectTests.swift in Sources */,
 				373A1AB228451ED400586521 /* BookmarksHTMLImporterTests.swift in Sources */,

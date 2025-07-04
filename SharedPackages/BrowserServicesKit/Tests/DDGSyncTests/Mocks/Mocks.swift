@@ -67,11 +67,11 @@ class AccountManagingMock: AccountManaging {
 
     var loginStub: LoginResult?
     var loginError: Error?
-    var loginSpy: (recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String)?
-    @Published var loginCalled: Bool = false
+    var loginSpy: (SyncCode.RecoveryKey, String, String) -> Void = { _, _, _ in }
+    var loginCalled: Bool = false
     func login(_ recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String) async throws -> LoginResult {
         loginCalled = true
-        loginSpy = (recoveryKey, deviceName, deviceType)
+        loginSpy(recoveryKey, deviceName, deviceType)
         if let error = loginError {
             throw error
         }

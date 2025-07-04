@@ -1331,7 +1331,7 @@ extension MainViewController: NSMenuItemValidation {
              #selector(MainViewController.showPageSource(_:)),
              #selector(MainViewController.showPageResources(_:)):
             let canReload = activeTabViewModel?.canReload == true
-            let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab
+            let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab && !isBurner
             let isHistoryView = featureFlagger.isFeatureOn(.historyView) && activeTabViewModel?.tab.content == .history
             return canReload || isHTMLNewTabPage || isHistoryView
 

@@ -98,13 +98,13 @@ struct SettingsRootView: View {
                 return
             }
 
-            self.deepLinkTarget = link
-
             // Check if navigation is valid before triggering it
             if case .subscriptionSettings = link, !canNavigateToSubscriptionSettings() {
                 // Don't navigate if there's no valid subscription settings to show
                 return
             }
+
+            self.deepLinkTarget = link
 
             switch link.type {
             case .sheet:

@@ -123,6 +123,7 @@ final class VPNSubscriptionEventsHandler {
                         trigger: trigger),
                     frequency: .dailyAndCount)
 
+                /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
                 lastKnownEntitlementsExpired = false
             } else if !hasEntitlements && !lastKnownEntitlementsExpired {
                 PixelKit.fire(
@@ -132,6 +133,7 @@ final class VPNSubscriptionEventsHandler {
                         trigger: trigger),
                     frequency: .dailyAndCount)
 
+                /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
                 lastKnownEntitlementsExpired = true
             }
         case .notification:
@@ -144,6 +146,7 @@ final class VPNSubscriptionEventsHandler {
                     frequency: .dailyAndCount)
 
                 if lastKnownEntitlementsExpired {
+                    /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
                     lastKnownEntitlementsExpired = false
                 }
             } else {
@@ -155,6 +158,7 @@ final class VPNSubscriptionEventsHandler {
                     frequency: .dailyAndCount)
 
                 if !lastKnownEntitlementsExpired {
+                    /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
                     lastKnownEntitlementsExpired = true
                 }
             }
@@ -193,6 +197,8 @@ final class VPNSubscriptionEventsHandler {
                     isAuthV2Enabled: isAuthV2Enabled,
                     trigger: .notification(sourceObject: notification.object)),
                 frequency: .dailyAndCount)
+
+            /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
             userDefaults.networkProtectionEntitlementsExpired = false
         }
     }

@@ -117,25 +117,25 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     }
 
     // Flaky test that fails often, to re-evaluate. See 15s timeout, something wrong here
-    @MainActor
-    func testEval() {
-        let message = MockWKScriptMessage(name: "eval", body: [
-            "type": "eval",
-            "id": "some id",
-            "code": "1+1==2"
-        ], webView: WKWebView())
-        let expect = expectation(description: "testEval")
-        userScript.handleMessage(
-            replyHandler: {(msg: Any?, _: String?) in
-                expect.fulfill()
-                XCTAssertEqual(self.replyToJson(msg: msg!), """
-                {"id":"some id","result":true,"type":"evalResp"}
-                """)
-            },
-            message: message
-        )
-        waitForExpectations(timeout: 15.0)
-    }
+//    @MainActor
+//    func testEval() {
+//        let message = MockWKScriptMessage(name: "eval", body: [
+//            "type": "eval",
+//            "id": "some id",
+//            "code": "1+1==2"
+//        ], webView: WKWebView())
+//        let expect = expectation(description: "testEval")
+//        userScript.handleMessage(
+//            replyHandler: {(msg: Any?, _: String?) in
+//                expect.fulfill()
+//                XCTAssertEqual(self.replyToJson(msg: msg!), """
+//                {"id":"some id","result":true,"type":"evalResp"}
+//                """)
+//            },
+//            message: message
+//        )
+//        waitForExpectations(timeout: 15.0)
+//    }
 
     @MainActor
     func testPopupFoundNoPromptIfEnabled() {

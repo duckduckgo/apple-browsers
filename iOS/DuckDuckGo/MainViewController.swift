@@ -1959,7 +1959,7 @@ class MainViewController: UIViewController {
                     frequency: .dailyAndCount)
                 
                 lastKnownEntitlementsExpired = false
-            } else if !hasEntitlements && !lastKnownEntitlementsExpired {
+            } else if !hasEntitlement && !lastKnownEntitlementsExpired {
                 PixelKit.fire(
                     VPNSubscriptionStatusPixel.vpnFeatureDisabled(
                         isSubscriptionActive: isSubscriptionActive,

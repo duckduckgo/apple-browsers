@@ -140,7 +140,6 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         editingStateViewController.delegate = self
         editingStateViewController.expectedStartFrame = barView.searchContainer.convert(barView.searchContainer.bounds, to: nil)
         editingStateViewController.modalPresentationStyle = .overFullScreen
-        editingStateViewController.modalTransitionStyle = .crossDissolve
         editingStateViewController.suggestionTrayDependencies = suggestionsDependencies
         present(editingStateViewController, animated: false)
         self.editingStateViewController = editingStateViewController

@@ -119,7 +119,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testGetVideoURL_IncludesCorrectParametersAndTimestamp() {
+    func testGetVideoURL_IncludesCorrectParametersAndTimestamp_WhenTimestampIsAboveThreshold() {
         // Given
         let expectedBaseURL = DuckPlayerViewModel.Constants.baseURL
         let expectedVideoID = "testVideoID"
@@ -144,6 +144,65 @@ final class DuckPlayerViewModelTests: XCTestCase {
         XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.colorSchemeParameter], DuckPlayerViewModel.Constants.colorSchemeValue, "color parameter should be white")
         XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.autoplayParameter], DuckPlayerViewModel.Constants.enabled, "autoplay parameter should be enabled based on settings")
         XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.startParameter], String(Int(expectedTimestamp)), "start parameter should match the timestamp")
+    }
+
+    @MainActor
+    func testGetVideoURL_ExcludesStartParameter_WhenTimestampIsBelowThreshold() {
+        // Given
+        let expectedVideoID = "testVideoID"
+        let expectedTimestamp: TimeInterval = 4.9
+        viewModel.timestamp = expectedTimestamp
+        mockSettings.autoplay = false
+
+        // When
+        let url = viewModel.getVideoURL()
+
+        // Then
+        XCTAssertNotNil(url, "Generated URL should not be nil")
+        
+        let components = URLComponents(url: url!, resolvingAgainstBaseURL: false)
+        let queryItems = components?.queryItems?.reduce(into: [String: String]()) { $0[$1.name] = $1.value } ?? [:]
+
+        XCTAssertNil(queryItems[DuckPlayerViewModel.Constants.startParameter], "start parameter should not be included for timestamps below 5 seconds")
+        XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.relParameter], DuckPlayerViewModel.Constants.disabled, "rel parameter should be disabled")
+        XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.playsInlineParameter], DuckPlayerViewModel.Constants.enabled, "playsinline parameter should be enabled")
+    }
+
+    @MainActor
+    func testGetVideoURL_IncludesStartParameter_WhenTimestampIsExactlyFive() {
+        // Given
+        let expectedVideoID = "testVideoID"
+        let expectedTimestamp: TimeInterval = 5.0
+        viewModel.timestamp = expectedTimestamp
+
+        // When
+        let url = viewModel.getVideoURL()
+
+        // Then
+        XCTAssertNotNil(url, "Generated URL should not be nil")
+        
+        let components = URLComponents(url: url!, resolvingAgainstBaseURL: false)
+        let queryItems = components?.queryItems?.reduce(into: [String: String]()) { $0[$1.name] = $1.value } ?? [:]
+
+        XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.startParameter], "5", "start parameter should be included for timestamp exactly at 5 seconds")
+    }
+
+    @MainActor
+    func testGetVideoURL_ExcludesStartParameter_WhenTimestampIsZero() {
+        // Given
+        let expectedVideoID = "testVideoID"
+        viewModel.timestamp = 0
+
+        // When
+        let url = viewModel.getVideoURL()
+
+        // Then
+        XCTAssertNotNil(url, "Generated URL should not be nil")
+        
+        let components = URLComponents(url: url!, resolvingAgainstBaseURL: false)
+        let queryItems = components?.queryItems?.reduce(into: [String: String]()) { $0[$1.name] = $1.value } ?? [:]
+
+        XCTAssertNil(queryItems[DuckPlayerViewModel.Constants.startParameter], "start parameter should not be included for timestamp of 0")
     }
 
 

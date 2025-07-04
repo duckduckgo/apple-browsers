@@ -175,3 +175,32 @@ public final class NewTabPageRecentActivityModel {
     }
 }
 ```
+
+## User script clients overview
+
+Most of the New Tab Page script clients represent individual NTP widgets, but there are some exceptions. The available user scripts clients are:
+* Configuration - for NTP configuration,
+* CustomBackground – for managing NTP background and browser theme settings,
+* Favorites - for the favorites widget,
+* FreemiumDBP - for the Freemium PIR promotion banner,
+* NextStepsCards – for Next Steps onboarding,
+* Omnibar - for the Search / Duck.ai Omnibar (_WIP_),
+* PrivacyStats - for the Privacy Stats widget (Protections Report summary),
+* ProtectionsReport - for the Protections Report widget,
+* RecentActivity - for the Recent Activity wigdet (Protections Report details),
+* RMF - for remote messages.
+
+### Configuration client
+
+Configuration client does not represent any widget, and instead it provides API to configure New Tab Page:
+* declare NTP widgets supported by the native app,
+* adjust configuration of widgets that support being configured,
+    * currently the configuration is limited only to managing visbility for some widgets (Omnibar, Favorites and Protections Report).
+* trigger generic NTP context menu,
+    * that menu allows for managing widgets visiblity,
+    * other context menus in the NTP (e.g. for favorites) are handled in their respective features' clients.
+* report diagnostic messages to the native layer, like JS exceptions.
+
+### Protections Report client
+
+Protections Report widget is composed of two sub-widgets. Its own UI is the tracker blocking summary and a segmented control. The control allows to switch between Privacy Stats (called _Summary_ in the UI) and Recent Activity (called _Details_), where each of them has a separate user script client.

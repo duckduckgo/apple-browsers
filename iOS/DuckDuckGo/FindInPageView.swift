@@ -52,8 +52,8 @@ class FindInPageView: UIView {
         layer.masksToBounds = false
 
         searchLoupe.image = DesignSystemImages.Glyphs.Size20.findSearch
-        nextButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft, for: .normal)
-        previousButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRight, for: .normal)
+        nextButton.setImage(DesignSystemImages.Glyphs.Size24.arrowDown, for: .normal)
+        previousButton.setImage(DesignSystemImages.Glyphs.Size24.arrowUp, for: .normal)
 
         nextButton.isPointerInteractionEnabled = true
         nextButton.accessibilityLabel = UserText.keyCommandFindNext

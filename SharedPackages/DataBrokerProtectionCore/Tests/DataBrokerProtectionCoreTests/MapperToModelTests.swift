@@ -22,7 +22,7 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class MapperToModelTests: XCTestCase {
 
-    private var sut = MapperToModel(mechanism: {_ in Data()})
+    private var sut = MapperToModel(mechanism: { _ in Data() })
     private var jsonDecoder: JSONDecoder!
     private var jsonEncoder: JSONEncoder!
 

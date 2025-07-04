@@ -44,11 +44,11 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         mockAppSettings = AppSettingsMock()
         mockAppSettings.duckPlayerOpenInNewTab = false // Disable openInNewTab
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
+        featureFlagger = MockDuckPlayerFeatureFlagger()
         playerSettings = MockDuckPlayerSettings(appSettings: mockAppSettings,
                                                 privacyConfigManager: mockPrivacyConfig,
-                                                featureFlagger: MockDuckPlayerFeatureFlagger(),
+                                                featureFlagger: featureFlagger,
                                                 internalUserDecider: MockInternalUserDecider())
-        featureFlagger = MockDuckPlayerFeatureFlagger()
         player = MockDuckPlayer(settings: playerSettings, featureFlagger: featureFlagger)
 
         // Create and assign the mock tab navigator
@@ -259,30 +259,6 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Assert
         XCTAssertEqual(handler.referrer, .serp)
 
-    }
-
-    @MainActor
-    func testHandleDelegateNavigation_DuckPlayerURL_CancelNavigationAndLoadsDuckPlayerWithParamsInTab() async {
-        // Arrange
-        let duckPlayerURL = URL(string: "duck://player/abc123")!
-        let request = URLRequest(url: duckPlayerURL)
-        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
-        let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
-        playerSettings.mode = .enabled
-        playerSettings.openInNewTab = true
-        featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
-
-        // Act
-        handler.handleDuckNavigation(navigationAction, webView: mockWebView)
-
-        // Assert
-        if let openedURL = tabNavigator.openedURL {
-            XCTAssertEqual(openedURL.host, "player")
-            XCTAssertEqual(openedURL.path, "/abc123")
-            XCTAssertTrue(openedURL.query?.contains("referrer=other") ?? false)
-        } else {
-            XCTFail("No URL was opened in a new tab")
-        }
     }
 
     // MARK: - Tests for handleURLChange

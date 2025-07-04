@@ -32,6 +32,7 @@ import PageRefreshMonitor
 import PixelKit
 import PixelExperimentKit
 import Networking
+import Network
 
 protocol DependencyProvider {
 
@@ -105,17 +106,34 @@ final class AppDependencyProvider: DependencyProvider {
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
 
     private init() {
+#if DEBUG
+        // Workaround for Xcode 26 crash: https://developer.apple.com/forums/thread/787365?answerId=846043022#846043022
+        // This is a known issue in Xcode 26 betas 1 and 2, if the issue is fixed in beta 3 onward then this can be removed
+        nw_tls_create_options()
+#endif
+
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!,
                                                                 actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
         )
         let experimentManager = ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:))
-        let featureFlagger = DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
-                                               privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
-                                               localOverrides: featureFlaggerOverrides,
-                                               experimentManager: experimentManager,
-                                               for: FeatureFlag.self)
-        self.featureFlagger = featureFlagger
-        self.contentScopeExperimentsManager = featureFlagger
+
+        var featureFlagger: FeatureFlagger
+        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) {
+            let mockFeatureFlagger = MockFeatureFlagger()
+            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
+            self.featureFlagger = mockFeatureFlagger
+            featureFlagger = mockFeatureFlagger
+        } else {
+            let defaultFeatureFlagger = DefaultFeatureFlagger(internalUserDecider: internalUserDecider,
+                                                              privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
+                                                              localOverrides: featureFlaggerOverrides,
+                                                              experimentManager: experimentManager,
+                                                              for: FeatureFlag.self)
+            self.featureFlagger = defaultFeatureFlagger
+            self.contentScopeExperimentsManager = defaultFeatureFlagger
+            featureFlagger = defaultFeatureFlagger
+        }
+
         configurationManager = ConfigurationManager(store: configurationStore)
 
         // Configure Subscription

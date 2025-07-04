@@ -51,7 +51,7 @@ final class BookmarksAndPasswordsImportStatusProvider: DataImportStatusProviding
 
     @MainActor
     func showImportWindow(customTitle: String?, completion: (() -> Void)?) {
-        DataImportView(title: customTitle ?? UserText.importDataTitle).show(completion: completion)
+        DataImportView(title: customTitle ?? UserText.importDataTitle, isDataTypePickerExpanded: false).show(completion: completion)
     }
 
     // It only cover the case in which the user has imported bookmar AFTER already having some bookmarks

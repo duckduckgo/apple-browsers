@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
+import Common
 import SecureStorage
 import SecureStorageTestsUtils
+import XCTest
+
 @testable import BrowserServicesKit
 
 final class AutofillKeyStoreProviderTests: XCTestCase {
@@ -108,11 +110,11 @@ final class AutofillKeyStoreProviderTests: XCTestCase {
             let sut = AutofillKeyStoreProvider(keychainService: keychainService)
 
             // When
-            let result = try sut.readData(named: entry.keychainIdentifier(using: macOSKeyStorePlatformProvider()), serviceName: sut.keychainServiceName)
+            let result = try XCTUnwrap(sut.readData(named: entry.keychainIdentifier(using: macOSKeyStorePlatformProvider()), serviceName: sut.keychainServiceName)?.utf8String())
 
             // Then
             XCTAssertEqual(keychainService.itemMatchingCallCount, 1)
-            XCTAssertEqual(String(decoding: result!, as: UTF8.self), "Mock Keychain data!")
+            XCTAssertEqual(result, "Mock Keychain data!")
         }
     }
 
@@ -140,13 +142,13 @@ final class AutofillKeyStoreProviderTests: XCTestCase {
             let sut = AutofillKeyStoreProvider(keychainService: keychainService)
 
             // When
-            let result = try sut.readData(named: entry.keychainIdentifier(using: macOSKeyStorePlatformProvider()), serviceName: sut.keychainServiceName)
+            let result = try XCTUnwrap(sut.readData(named: entry.keychainIdentifier(using: macOSKeyStorePlatformProvider()), serviceName: sut.keychainServiceName)?.utf8String())
 
             // Then
             XCTAssertEqual(keychainService.itemMatchingCallCount, 2)
             XCTAssertEqual(keychainService.latestItemMatchingQuery[kSecAttrAccount as String] as! String, entry.rawValue)
             XCTAssertEqual(keychainService.latestItemMatchingQuery[kSecAttrService as String] as! String, AutofillKeyStoreProvider.Constants.v2ServiceName)
-            XCTAssertEqual(String(decoding: result!, as: UTF8.self), "Mock Keychain data!")
+            XCTAssertEqual(result, "Mock Keychain data!")
         }
     }
 
@@ -177,13 +179,13 @@ final class AutofillKeyStoreProviderTests: XCTestCase {
             let sut = AutofillKeyStoreProvider(keychainService: keychainService)
 
             // When
-            let result = try sut.readData(named: entry.keychainIdentifier(using: macOSKeyStorePlatformProvider()), serviceName: sut.keychainServiceName)
+            let result = try XCTUnwrap(sut.readData(named: entry.keychainIdentifier(using: macOSKeyStorePlatformProvider()), serviceName: sut.keychainServiceName)?.utf8String())
 
             // Then
             XCTAssertEqual(keychainService.addCallCount, 1)
             XCTAssertEqual(keychainService.latestAddQuery[kSecAttrAccount as String] as! String, entry.keychainIdentifier(using: macOSKeyStorePlatformProvider()))
             XCTAssertEqual(keychainService.latestAddQuery[kSecAttrService as String] as! String, AutofillKeyStoreProvider.Constants.v3ServiceName)
-            XCTAssertEqual(String(decoding: result!, as: UTF8.self), "Mock Keychain data!")
+            XCTAssertEqual(result, "Mock Keychain data!")
         }
     }
 

@@ -106,6 +106,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
+
+    // This is fairly temporary and will likely be removed in a release or two one way or another
+    case june2025TabManagerLayoutChanges
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -134,6 +137,8 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case autofillCreditCards
     case autofillCreditCardsOnByDefault
     case passwordVariantCategorization
+    case autocompleteAttributeSupport
+    case inputFocusApi
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -163,6 +168,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Keep AI Chat session after the user closes it
     case keepSession
+
+    /// Adds context menu action for summarizing text selected on a website.
+    case textSummarization
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -274,6 +282,36 @@ public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
     case tdsNextExperimentOct25
     case tdsNextExperimentNov25
     case tdsNextExperimentDec25
+    case tdsNextExperiment001
+    case tdsNextExperiment002
+    case tdsNextExperiment003
+    case tdsNextExperiment004
+    case tdsNextExperiment005
+    case tdsNextExperiment006
+    case tdsNextExperiment007
+    case tdsNextExperiment008
+    case tdsNextExperiment009
+    case tdsNextExperiment010
+    case tdsNextExperiment011
+    case tdsNextExperiment012
+    case tdsNextExperiment013
+    case tdsNextExperiment014
+    case tdsNextExperiment015
+    case tdsNextExperiment016
+    case tdsNextExperiment017
+    case tdsNextExperiment018
+    case tdsNextExperiment019
+    case tdsNextExperiment020
+    case tdsNextExperiment021
+    case tdsNextExperiment022
+    case tdsNextExperiment023
+    case tdsNextExperiment024
+    case tdsNextExperiment025
+    case tdsNextExperiment026
+    case tdsNextExperiment027
+    case tdsNextExperiment028
+    case tdsNextExperiment029
+    case tdsNextExperiment030
 }
 
 public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {

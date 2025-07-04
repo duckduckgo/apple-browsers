@@ -35,6 +35,7 @@ import History
 import HistoryView
 import Lottie
 import MetricKit
+import Network
 import Networking
 import VPN
 import NetworkProtectionIPC
@@ -51,6 +52,7 @@ import SyncDataProviders
 import UserNotifications
 import VPNAppState
 import WebKit
+import ContentScopeScripts
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -108,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var privacyDashboardWindow: NSWindow?
 
     let windowControllersManager: WindowControllersManager
+    let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
 
     let appearancePreferences: AppearancePreferences
     let dataClearingPreferences: DataClearingPreferences
@@ -132,6 +135,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appearancePreferences: appearancePreferences,
         customizationModel: newTabPageCustomizationModel,
         bookmarkManager: bookmarkManager,
+        faviconManager: faviconManager,
         activeRemoteMessageModel: activeRemoteMessageModel,
         historyCoordinator: historyCoordinator,
         contentBlocking: privacyFeatures.contentBlocking,
@@ -140,7 +144,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
         tld: tld,
         fireCoordinator: fireCoordinator,
-        keyValueStore: keyValueStore
+        keyValueStore: keyValueStore,
+        featureFlagger: featureFlagger
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -381,22 +386,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        let featureFlagger = DefaultFeatureFlagger(
-            internalUserDecider: internalUserDecider,
-            privacyConfigManager: privacyConfigurationManager,
-            localOverrides: FeatureFlagLocalOverrides(
+        let featureFlagger: FeatureFlagger
+        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType)  {
+            featureFlagger = MockFeatureFlagger()
+            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
+
+        } else {
+            let featureFlagOverrides = FeatureFlagLocalOverrides(
                 keyValueStore: UserDefaults.appConfiguration,
                 actionHandler: featureFlagOverridesPublishingHandler
-            ),
-            experimentManager: ExperimentCohortsManager(
-                store: ExperimentsDataStore(),
-                fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
-            ),
-            for: FeatureFlag.self
-        )
-        self.featureFlagger = featureFlagger
-        self.contentScopeExperimentsManager = featureFlagger
+            )
+            let defaultFeatureFlagger = DefaultFeatureFlagger(
+                internalUserDecider: internalUserDecider,
+                privacyConfigManager: privacyConfigurationManager,
+                localOverrides: featureFlagOverrides,
+                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
+                    internalUserDecider.isInternalUser || isRunningUITests
+                },
+                experimentManager: ExperimentCohortsManager(
+                    store: ExperimentsDataStore(),
+                    fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
+                ),
+                for: FeatureFlag.self
+            )
+            featureFlagger = defaultFeatureFlagger
+            self.contentScopeExperimentsManager = defaultFeatureFlagger
 
+            featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
+        }
+        self.featureFlagger = featureFlagger
         pinnedTabsManagerProvider = PinnedTabsManagerProvider()
 
 #if DEBUG || REVIEW
@@ -463,9 +481,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 privacyConfigurationManager: privacyConfigurationManager,
                 purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform, paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) }
             ),
-            internalUserDecider: internalUserDecider
+            internalUserDecider: internalUserDecider,
+            featureFlagger: featureFlagger
         )
         self.windowControllersManager = windowControllersManager
+
+        let subscriptionNavigationCoordinator = SubscriptionNavigationCoordinator(
+            tabShower: windowControllersManager,
+            subscriptionManager: subscriptionAuthV1toV2Bridge
+        )
+        self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
         self.visualStyleDecider = DefaultVisualStyleDecider(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
         visualStyle = visualStyleDecider.style
@@ -494,7 +519,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager,
             pixelFiring: PixelKit.shared
         )
-        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
+        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld)
@@ -556,6 +581,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
         )
 
+        let onboardingManager = onboardingContextualDialogsManager
         defaultBrowserAndDockPromptKeyValueStore = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStore)
         DefaultBrowserAndDockPromptStoreMigrator(
             oldStore: DefaultBrowserAndDockPromptLegacyStore(),
@@ -576,7 +602,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let coordinator = DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: defaultBrowserAndDockPromptDecider,
             store: defaultBrowserAndDockPromptKeyValueStore,
-            isOnboardingCompleted: onboardingContextualDialogsManager.state == .onboardingCompleted,
+            isOnboardingCompleted: { onboardingManager.state == .onboardingCompleted },
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
@@ -630,11 +656,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Freemium DBP
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
 
-        let experimentManager = FreemiumDBPPixelExperimentManager(subscriptionManager: subscriptionAuthV1toV2Bridge)
-        experimentManager.assignUserToCohort()
-
         freemiumDBPFeature = DefaultFreemiumDBPFeature(privacyConfigurationManager: privacyConfigurationManager,
-                                                       experimentManager: experimentManager,
                                                        subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
@@ -663,6 +685,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // swiftlint:enable cyclomatic_complexity
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+#if DEBUG
+        // Workaround for Xcode 26 crash: https://developer.apple.com/forums/thread/787365?answerId=846043022#846043022
+        // This is a known issue in Xcode 26 betas 1 and 2, if the issue is fixed in beta 3 onward then this can be removed
+        nw_tls_create_options()
+#endif
+
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
         Configuration.setURLProvider(AppConfigurationURLProvider(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
@@ -889,9 +917,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        vpnAppEventsHandler.applicationDidBecomeActive()
-
         Task { @MainActor in
+            await vpnAppEventsHandler.applicationDidBecomeActive()
             await subscriptionCookieManager.refreshSubscriptionCookie()
         }
     }
@@ -1187,7 +1214,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setUpAutoClearHandler() {
-        let autoClearHandler = AutoClearHandler(preferences: dataClearingPreferences,
+        let autoClearHandler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
+                                                startupPreferences: startupPreferences,
                                                 fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager)
         self.autoClearHandler = autoClearHandler
@@ -1197,7 +1225,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSApplication.shared.reply(toApplicationShouldTerminate: true)
             }
         }
-        self.autoClearHandler.restoreTabsIfNeeded()
     }
 
     private func setUpAutofillPixelReporter() {
@@ -1247,6 +1274,31 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         completionHandler()
+    }
+
+}
+
+private extension FeatureFlagLocalOverrides {
+
+    func applyUITestsFeatureFlagsIfNeeded() {
+        guard AppVersion.runType == .uiTests else { return }
+
+        for item in ProcessInfo().environment["FEATURE_FLAGS", default: ""].split(separator: " ") {
+            let keyValue = item.split(separator: "=")
+            let key = String(keyValue[0])
+            guard let value = Bool(keyValue[safe: 1]?.lowercased() ?? "true") else {
+                fatalError("Only true/false values are supported for feature flag values (or none)")
+            }
+            guard let featureFlag = FeatureFlag(rawValue: key) else {
+                fatalError("Unrecognized feature flag: \(key)")
+            }
+            guard featureFlag.supportsLocalOverriding else {
+                fatalError("Feature flag \(key) does not support local overriding")
+            }
+            if currentValue(for: featureFlag)! != value {
+                toggleOverride(for: featureFlag)
+            }
+        }
     }
 
 }

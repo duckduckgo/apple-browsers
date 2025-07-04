@@ -284,7 +284,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     private func dismissDuckPlayerPill(reset: Bool, animated: Bool, programatic: Bool) {
         isDuckPlayerPillPresented = false
         Task { @MainActor in
-            duckPlayer.dismissPill(reset: reset, animated: animated, programatic: programatic)
+            duckPlayer.dismissPill(reset: reset, animated: animated, programatic: programatic, skipTransition: true)
         }
     }
 }
@@ -344,8 +344,14 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Dismiss the DuckPlayer Pill
         dismissDuckPlayerPill(reset: true, animated: true, programatic: true)
 
+        // Never present DuckPlayer pill on DuckDuckGo search pages (SERP)
+        guard let url = newURL, !url.isDuckDuckGoSearch else {
+            lastHandledVideoID = nil
+            return .notHandled(.invalidURL)
+        }
+
         // Never present DuckPlayer for non-YouTube URLs
-        guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
+        guard let (videoID, _) = url.youtubeVideoParams else {
             lastHandledVideoID = nil
             return .notHandled(.invalidURL)
         }
@@ -423,7 +429,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
 
         lastHandledVideoID = nil
-        duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
+        duckPlayer.dismissPill(reset: true, animated: false, programatic: true, skipTransition: true)
         _ = handleURLChange(webView: webView, previousURL: nil, newURL: webView.url)
 
     }
@@ -553,7 +559,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
-        duckPlayer.dismissPill(reset: false, animated: false, programatic: true)
+        duckPlayer.dismissPill(reset: false, animated: false, programatic: true, skipTransition: true)
     }
 
 }

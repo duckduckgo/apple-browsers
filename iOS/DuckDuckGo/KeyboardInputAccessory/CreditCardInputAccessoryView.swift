@@ -21,6 +21,7 @@ import Foundation
 import UIKit
 import SwiftUI
 import BrowserServicesKit
+import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
@@ -399,7 +400,8 @@ class CreditCardInputAccessoryView: UIView {
     @objc private func cardTapped(_ gesture: UITapGestureRecognizer) {
         if let view = gesture.view,
            let index = creditCards.indices.contains(view.tag) ? view.tag : nil {
-
+            Pixel.fire(pixel: .autofillCardsKeyboardFill)
+            
             if AppDependencyProvider.shared.autofillLoginSession.isSessionValid {
                 onCardSelected?(creditCards[index].creditCard)
                 return
@@ -427,6 +429,7 @@ class CreditCardInputAccessoryView: UIView {
     
     @objc private func manageButtonTapped() {
         onCardManagementSelected?()
+        Pixel.fire(pixel: .autofillCardsKeyboardOpenSettings)
     }
 
     @objc private func doneButtonTapped() {

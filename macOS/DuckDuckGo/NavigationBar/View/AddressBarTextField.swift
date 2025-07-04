@@ -316,6 +316,20 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func navigate(suggestion: Suggestion?) {
+        switch suggestion {
+        case .bookmark,
+                .historyEntry,
+                .website:
+            PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .suggestion))
+        case .none:
+            // Fire engagement pixel for direct URL entry (not search phrases)
+            if URL.makeURL(from: stringValueWithoutSuffix) != nil {
+                PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .addressBar))
+            }
+        default:
+            break
+        }
+
         let autocompletePixel: GeneralPixel? = {
             switch suggestion {
             case .phrase:

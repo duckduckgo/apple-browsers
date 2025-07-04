@@ -30,7 +30,7 @@ final class RemoteMessagingConfigMatcherProviderTests: XCTestCase {
     // Test: Feature flag is on, but visualStyle.isNewStyle is false → should NOT return the message
     func testVisualUpdatesFeatureFlag_WhenFeatureFlagOnButVisualStyleNotNew_ShouldNotBeInEnabledFlags() async {
         // Given
-        let featureFlagger = VisualStyleManagerTests.MockFeatureFlagger()
+        let featureFlagger = MockFeatureFlagger()
         let visualStyle: VisualStyleProviding = VisualStyle.legacy
         featureFlagger.enabledFeatureFlags = [FeatureFlag.visualUpdates]
 
@@ -47,7 +47,7 @@ final class RemoteMessagingConfigMatcherProviderTests: XCTestCase {
     // Test: Feature flag is off → should NOT return the message
     func testVisualUpdatesFeatureFlag_WhenFeatureFlagOff_ShouldNotBeInEnabledFlags() async {
         // Given
-        let featureFlagger = VisualStyleManagerTests.MockFeatureFlagger()
+        let featureFlagger = MockFeatureFlagger()
         let visualStyle: VisualStyleProviding = VisualStyle.legacy
         featureFlagger.enabledFeatureFlags = []
 
@@ -64,7 +64,7 @@ final class RemoteMessagingConfigMatcherProviderTests: XCTestCase {
     // Test: Feature flag is on and visualStyle.isNewStyle is true → should return the message
     func testVisualUpdatesFeatureFlag_WhenFeatureFlagOnAndVisualStyleNew_ShouldBeInEnabledFlags() async {
         // Given
-        let featureFlagger = VisualStyleManagerTests.MockFeatureFlagger()
+        let featureFlagger = MockFeatureFlagger()
         let visualStyle: VisualStyleProviding = VisualStyle.current
         featureFlagger.enabledFeatureFlags = [FeatureFlag.visualUpdates]
 
@@ -107,7 +107,7 @@ final class RemoteMessagingConfigMatcherProviderTests: XCTestCase {
             startupPreferencesPersistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             duckPlayerPreferencesPersistor: DuckPlayerPreferencesPersistorMock(),
             pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
-            internalUserDecider: VisualStyleManagerTests.MockInternalUserDecider(),
+            internalUserDecider: MockInternalUserDecider(),
             statisticsStore: MockStatisticsStore(),
             variantManager: MockVariantManager(),
             subscriptionManager: DefaultSubscriptionManager(),

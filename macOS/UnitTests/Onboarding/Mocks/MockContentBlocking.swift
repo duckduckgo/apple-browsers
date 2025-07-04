@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
 import BrowserServicesKit
 import Combine
 import Common
+import Foundation
 import TrackerRadarKit
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class MockContentBlocking: ContentBlockingProtocol {
@@ -62,7 +63,7 @@ class MockPrivacyConfigurationManaging: PrivacyConfigurationManaging {
         privacyConfig as! MockPrivacyConfiguration
     }
 
-    var internalUserDecider: InternalUserDecider = InternalUserDeciderMock()
+    var internalUserDecider: InternalUserDecider = MockInternalUserDecider()
 
     func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
         return PrivacyConfigurationManager.ReloadResult.downloaded
@@ -80,7 +81,7 @@ class MockContentBlockerRulesManagerProtocol: ContentBlockerRulesManagerProtocol
     var currentRules: [BrowserServicesKit.ContentBlockerRulesManager.Rules] = []
 
     func scheduleCompilation() -> ContentBlockerRulesManager.CompletionToken {
-        return ContentBlockerRulesManager.CompletionToken(StaticString())
+        return ContentBlockerRulesManager.CompletionToken("MockContentBlockerRulesManager.CompletionToken")
     }
 
     var currentMainRules: ContentBlockerRulesManager.Rules?

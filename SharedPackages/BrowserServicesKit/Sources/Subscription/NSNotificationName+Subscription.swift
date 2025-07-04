@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Networking
 
 public extension NSNotification.Name {
 
@@ -26,8 +27,37 @@ public extension NSNotification.Name {
 
     static let accountDidSignIn = Notification.Name("com.duckduckgo.subscription.AccountDidSignIn")
     static let accountDidSignOut = Notification.Name("com.duckduckgo.subscription.AccountDidSignOut")
+    /// Subscription features or user entitlements did change.
+    /// Note: do not use the entitlements in userInfo as source of truth but always fetch new ones
     static let entitlementsDidChange = Notification.Name("com.duckduckgo.subscription.EntitlementsDidChange")
     static let subscriptionDidChange = Notification.Name("com.duckduckgo.subscription.SubscriptionDidChange")
     static let availableAppStoreProductsDidChange = Notification.Name("com.duckduckgo.subscription.AvailableAppStoreProductsDidChange")
     static let expiredRefreshTokenDetected = Notification.Name("com.duckduckgo.subscription.ExpiredRefreshTokenDetected")
+}
+
+public struct EntitlementsDidChangePayload {
+
+    private let entitlementsKey = "entitlements"
+    private let previousEntitlementsKey = "previousEntitlementsKey"
+    public let entitlements: [SubscriptionEntitlement]
+    public let previousEntitlements: [SubscriptionEntitlement]
+    public var notificationUserInfo: [AnyHashable: Any] {
+        return [entitlementsKey: entitlements,
+        previousEntitlementsKey: previousEntitlements]
+    }
+
+    public init(entitlements: [SubscriptionEntitlement], previousEntitlements: [SubscriptionEntitlement]) {
+        self.entitlements = entitlements
+        self.previousEntitlements = previousEntitlements
+    }
+
+    public init?(notificationUserInfo: [AnyHashable: Any]) {
+        guard let entitlements = notificationUserInfo[entitlementsKey] as? [SubscriptionEntitlement],
+              let previousEntitlements = notificationUserInfo[previousEntitlementsKey] as? [SubscriptionEntitlement] else {
+                  assertionFailure("Missing required payload entitlements")
+                  return nil
+              }
+        self.entitlements = entitlements
+        self.previousEntitlements = previousEntitlements
+    }
 }

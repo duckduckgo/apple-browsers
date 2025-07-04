@@ -94,6 +94,23 @@ struct DataImportViewModel {
     /// selected Data Types to import (bookmarks/passwords)
     var selectedDataTypes: Set<DataType> = []
 
+    enum DataTypeSelection: Equatable {
+        case all
+        case single(DataType)
+        case none
+    }
+
+    var dataTypesSelection: DataTypeSelection {
+        assert(DataType.allCases.count == 2, "Unexpected number of DataType cases. Update logic.")
+        if selectedDataTypes.count == DataType.allCases.count {
+            return .all
+        }
+        guard let selectedDataType = selectedDataTypes.first else {
+            return .none
+        }
+        return .single(selectedDataType)
+    }
+
     /// data import concurrency Task launched in `initiateImport`
     /// used to cancel import and in `importProgress` to trace import progress and import completion
     private var importTask: DataImportTask?

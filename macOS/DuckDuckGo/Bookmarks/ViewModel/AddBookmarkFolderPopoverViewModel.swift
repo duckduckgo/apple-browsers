@@ -50,7 +50,7 @@ final class AddBookmarkFolderPopoverViewModel: ObservableObject {
     init(bookmark: Bookmark? = nil,
          folderName: String = "",
          bookmarkManager: BookmarkManager,
-         completionHandler: @escaping (BookmarkFolder?) -> Void = {_ in }) {
+         completionHandler: @escaping (BookmarkFolder?) -> Void = { _ in }) {
 
         self.folders = .init(bookmarkManager.list)
         self.bookmarkManager = bookmarkManager

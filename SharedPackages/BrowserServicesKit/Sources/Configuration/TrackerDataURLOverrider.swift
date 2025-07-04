@@ -77,6 +77,36 @@ public enum TDSExperimentType: String, CaseIterable {
     case oct25
     case nov25
     case dec25
+    case experiment001
+    case experiment002
+    case experiment003
+    case experiment004
+    case experiment005
+    case experiment006
+    case experiment007
+    case experiment008
+    case experiment009
+    case experiment010
+    case experiment011
+    case experiment012
+    case experiment013
+    case experiment014
+    case experiment015
+    case experiment016
+    case experiment017
+    case experiment018
+    case experiment019
+    case experiment020
+    case experiment021
+    case experiment022
+    case experiment023
+    case experiment024
+    case experiment025
+    case experiment026
+    case experiment027
+    case experiment028
+    case experiment029
+    case experiment030
 
     public var subfeature: any PrivacySubfeature {
         switch self {
@@ -104,6 +134,66 @@ public enum TDSExperimentType: String, CaseIterable {
             ContentBlockingSubfeature.tdsNextExperimentNov25
         case .dec25:
             ContentBlockingSubfeature.tdsNextExperimentDec25
+        case .experiment001:
+            ContentBlockingSubfeature.tdsNextExperiment001
+        case .experiment002:
+            ContentBlockingSubfeature.tdsNextExperiment002
+        case .experiment003:
+            ContentBlockingSubfeature.tdsNextExperiment003
+        case .experiment004:
+            ContentBlockingSubfeature.tdsNextExperiment004
+        case .experiment005:
+            ContentBlockingSubfeature.tdsNextExperiment005
+        case .experiment006:
+            ContentBlockingSubfeature.tdsNextExperiment006
+        case .experiment007:
+            ContentBlockingSubfeature.tdsNextExperiment007
+        case .experiment008:
+            ContentBlockingSubfeature.tdsNextExperiment008
+        case .experiment009:
+            ContentBlockingSubfeature.tdsNextExperiment009
+        case .experiment010:
+            ContentBlockingSubfeature.tdsNextExperiment010
+        case .experiment011:
+            ContentBlockingSubfeature.tdsNextExperiment011
+        case .experiment012:
+            ContentBlockingSubfeature.tdsNextExperiment012
+        case .experiment013:
+            ContentBlockingSubfeature.tdsNextExperiment013
+        case .experiment014:
+            ContentBlockingSubfeature.tdsNextExperiment014
+        case .experiment015:
+            ContentBlockingSubfeature.tdsNextExperiment015
+        case .experiment016:
+            ContentBlockingSubfeature.tdsNextExperiment016
+        case .experiment017:
+            ContentBlockingSubfeature.tdsNextExperiment017
+        case .experiment018:
+            ContentBlockingSubfeature.tdsNextExperiment018
+        case .experiment019:
+            ContentBlockingSubfeature.tdsNextExperiment019
+        case .experiment020:
+            ContentBlockingSubfeature.tdsNextExperiment020
+        case .experiment021:
+            ContentBlockingSubfeature.tdsNextExperiment021
+        case .experiment022:
+            ContentBlockingSubfeature.tdsNextExperiment022
+        case .experiment023:
+            ContentBlockingSubfeature.tdsNextExperiment023
+        case .experiment024:
+            ContentBlockingSubfeature.tdsNextExperiment024
+        case .experiment025:
+            ContentBlockingSubfeature.tdsNextExperiment025
+        case .experiment026:
+            ContentBlockingSubfeature.tdsNextExperiment026
+        case .experiment027:
+            ContentBlockingSubfeature.tdsNextExperiment027
+        case .experiment028:
+            ContentBlockingSubfeature.tdsNextExperiment028
+        case .experiment029:
+            ContentBlockingSubfeature.tdsNextExperiment029
+        case .experiment030:
+            ContentBlockingSubfeature.tdsNextExperiment030
         }
     }
 }

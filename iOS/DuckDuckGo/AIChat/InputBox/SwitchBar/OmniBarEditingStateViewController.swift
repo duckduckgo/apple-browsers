@@ -49,6 +49,10 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
 /// Later: Inject auto suggestions here.
 final class OmniBarEditingStateViewController: UIViewController {
 
+    private enum Constants {
+        static let logoOffset: CGFloat = 18
+    }
+
     private enum ViewVisibility {
         case visible
         case hidden
@@ -63,10 +67,16 @@ final class OmniBarEditingStateViewController: UIViewController {
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     private var suggestionTrayViewController: SuggestionTrayViewController?
     private var daxLogoHostingController: UIHostingController<NewTabPageDaxLogoView>?
+    private var logoCenterYConstraint: NSLayoutConstraint?
     var expectedStartFrame: CGRect?
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
     private var topSwitchBarConstraint: NSLayoutConstraint?
+    
+    // MARK: - Navigation Action Bar
+    private var navigationActionBarHostingController: UIHostingController<NavigationActionBarView>?
+    private var navigationActionBarViewModel: NavigationActionBarViewModel?
+    private var actionBarBottomConstraint: NSLayoutConstraint?
 
     internal init(switchBarHandler: any SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
@@ -77,12 +87,18 @@ final class OmniBarEditingStateViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
         installSwitchBarVC()
         installSuggestionsTray()
         installDaxLogoView()
+        installNavigationActionBar()
+        setupKeyboardNotifications()
 
         self.view.backgroundColor = .clear
     }
@@ -91,6 +107,7 @@ final class OmniBarEditingStateViewController: UIViewController {
         super.viewDidAppear(animated)
 
         animateAppearance()
+        DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
     }
 
     private func animateAppearance() {
@@ -280,7 +297,6 @@ final class OmniBarEditingStateViewController: UIViewController {
 
         switchBarHandler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
-            .dropFirst()
             .sink { [weak self] newState in
                 guard let self = self else { return }
                 switch newState {
@@ -317,15 +333,15 @@ final class OmniBarEditingStateViewController: UIViewController {
                 self?.handleMicrophoneButtonTapped()
             }
             .store(in: &cancellables)
-
     }
 
     private func handleMicrophoneButtonTapped() {
         delegate?.onVoiceSearchRequested(from: switchBarHandler.currentToggleState)
     }
 
-    func selectAllText() {
+    func setUpForInitialSelectedState() {
         switchBarVC.textEntryViewController.selectAllText()
+        showSuggestionTray(.favorites)
     }
 
     private func installDaxLogoView() {
@@ -339,16 +355,73 @@ final class OmniBarEditingStateViewController: UIViewController {
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
         /// Offset so the logo is displayed on the same height as the NTP logo
-        let logoOffset: CGFloat = 18
+        logoCenterYConstraint = hostingController.view.centerYAnchor.constraint(equalTo: view.centerYAnchor,
+                                                                                constant: Constants.logoOffset)
+
         NSLayoutConstraint.activate([
             hostingController.view.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            hostingController.view.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: logoOffset),
+            logoCenterYConstraint!,
         ])
         
         hostingController.didMove(toParent: self)
         
         view.sendSubviewToBack(hostingController.view)
     }
+    
+    private func installNavigationActionBar() {
+        let viewModel = NavigationActionBarViewModel(
+            switchBarHandler: switchBarHandler,
+            onMicrophoneTapped: { [weak self] in
+                self?.handleMicrophoneButtonTapped()
+            },
+            onNewLineTapped: { [weak self] in
+                self?.handleNewLineButtonTapped()
+            },
+            onSearchTapped: { [weak self] in
+                self?.handleSearchButtonTapped()
+            }
+        )
+        navigationActionBarViewModel = viewModel
+        
+        let actionBarView = NavigationActionBarView(viewModel: viewModel)
+        
+        let hostingController = UIHostingController(rootView: actionBarView)
+        navigationActionBarHostingController = hostingController
+        
+        hostingController.view.backgroundColor = .clear
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        
+        actionBarBottomConstraint = hostingController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
+        
+        NSLayoutConstraint.activate([
+            hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            actionBarBottomConstraint!
+        ])
+        
+        hostingController.didMove(toParent: self)
+        
+        // The action bar state is now automatically managed by the ViewModel
+    }
+    
+    // MARK: - Navigation Action Bar Handlers
+    
+    private func handleNewLineButtonTapped() {
+        let currentText = switchBarHandler.currentText
+        let newText = currentText + "\n"
+        switchBarHandler.updateCurrentText(newText)
+    }
+    
+    private func handleSearchButtonTapped() {
+        let currentText = switchBarHandler.currentText
+        if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            switchBarHandler.submitText(currentText)
+        }
+    }
+    
+
 }
 
 extension OmniBarEditingStateViewController: AutocompleteViewControllerDelegate {
@@ -446,5 +519,76 @@ extension OmniBarEditingStateViewController {
         suggestionTrayViewController = controller
 
         view.bringSubviewToFront(switchBarVC.view)
+    }
+}
+
+// MARK: - Keyboard handling
+extension OmniBarEditingStateViewController {
+
+    private func setupKeyboardNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow(_:)),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide(_:)),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+              let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+              let animationCurveRawNSN = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber else {
+            return
+        }
+
+        let logoOffsetForVisibleKeyboard: CGFloat = 50
+        let keyboardHeight = keyboardFrame.height - logoOffsetForVisibleKeyboard
+        let safeAreaInsets = view.safeAreaInsets
+        let adjustedKeyboardHeight = keyboardHeight - safeAreaInsets.bottom
+        let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRawNSN.uintValue)
+
+        let keyboardAdjustment = adjustedKeyboardHeight / 2
+        logoCenterYConstraint?.constant = Constants.logoOffset - keyboardAdjustment
+        
+        // Adjust action bar position above keyboard
+        actionBarBottomConstraint?.constant = -(keyboardHeight - safeAreaInsets.bottom + 16)
+
+        UIView.animate(
+            withDuration: duration,
+            delay: 0,
+            options: animationCurve,
+            animations: {
+                self.view.layoutIfNeeded()
+            }
+        )
+    }
+
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        guard let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+        let animationCurveRawNSN = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber else {
+            return
+        }
+
+        let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRawNSN.uintValue)
+        logoCenterYConstraint?.constant = Constants.logoOffset
+        
+        // Reset action bar position to bottom
+        actionBarBottomConstraint?.constant = -16
+
+        UIView.animate(
+            withDuration: duration,
+            delay: 0,
+            options: animationCurve,
+            animations: {
+                self.view.layoutIfNeeded()
+            }
+        )
     }
 }

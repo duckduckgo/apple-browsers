@@ -176,7 +176,7 @@ extension TabExtensionsBuilder {
         add {
             ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
-                               internalUserDecider: dependencies.featureFlagger.internalUserDecider)
+                               featureFlagger: dependencies.featureFlagger)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))
@@ -230,6 +230,7 @@ extension TabExtensionsBuilder {
 
         add {
             AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
+                               webViewPublisher: args.webViewFuture,
                                isLoadedInSidebar: args.isTabLoadedInSidebar)
         }
 

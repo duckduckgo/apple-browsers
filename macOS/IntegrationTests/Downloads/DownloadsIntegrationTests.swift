@@ -124,11 +124,11 @@ class DownloadsIntegrationTests: XCTestCase {
 
     @MainActor
     func testWhenLocalFile_downloadStartsAlwaysDisplayingSavePanel() async throws {
-#if APPSTORE
-        throw XCTSkip("https://app.asana.com/0/0/1208100078742790/f")
-#else
         let tempFileURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        let destDirURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let destDirURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0].appendingPathComponent(UUID().uuidString)
+        defer {
+            try? FileManager.default.removeItem(at: destDirURL)
+        }
         try FileManager.default.createDirectory(at: destDirURL, withIntermediateDirectories: true)
         try data.html.write(to: tempFileURL)
 
@@ -164,7 +164,6 @@ class DownloadsIntegrationTests: XCTestCase {
 
         XCTAssertEqual(fileUrl.resolvingSymlinksInPath(), destDirURL.appendingPathComponent(tempFileURL.lastPathComponent).resolvingSymlinksInPath())
         XCTAssertEqual(try? Data(contentsOf: fileUrl), data.html)
-#endif
     }
 
     @MainActor
@@ -432,6 +431,7 @@ class DownloadsIntegrationTests: XCTestCase {
 
     @MainActor
     func testWhenSaveDialogOpenInBackgroundTabAndWindowIsClosed_downloadIsCancelled() throws {
+
         var taskCancelledCancellable: AnyCancellable!
         var taskCancelledExpectation: XCTestExpectation!
         let persistor = DownloadsPreferencesUserDefaultsPersistor()

@@ -118,6 +118,7 @@ class MainViewController: UIViewController {
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
 
+    /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
     @UserDefaultsWrapper(key: .networkProtectionEntitlementsExpired, defaultValue: true)
     private var lastKnownEntitlementsExpired: Bool
 

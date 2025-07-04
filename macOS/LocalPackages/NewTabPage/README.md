@@ -214,9 +214,9 @@ Most of the New Tab Page script clients represent individual NTP widgets, but th
 Configuration client does not represent any widget, and instead it provides API to configure New Tab Page:
 * declare NTP widgets supported by the native app,
 * adjust configuration of widgets that support being configured,
-    * currently the configuration is limited only to managing visbility for some widgets (Omnibar, Favorites and Protections Report).
+    * currently the configuration is limited only to managing visibility for some widgets (Omnibar, Favorites and Protections Report).
 * trigger generic NTP context menu,
-    * that menu allows for managing widgets visiblity,
+    * that menu allows for managing widgets visibility,
     * other context menus in the NTP (e.g. for favorites) are handled in their respective features' clients.
 * report diagnostic messages to the native layer, like JS exceptions.
 

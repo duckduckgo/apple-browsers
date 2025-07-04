@@ -44,7 +44,7 @@ final class DuckPlayerViewModel: ObservableObject {
         static let playsInlineParameter = "playsinline"
         /// Controls whether video autoplays when loaded
         static let autoplayParameter = "autoplay"
-        // Used to enable features in URL parameters        
+        // Used to enable features in URL parameters
         static let enabled = "1"
         static let disabled = "0"
         // Used to set the start time of the video
@@ -134,6 +134,9 @@ final class DuckPlayerViewModel: ObservableObject {
     /// - `true` when device is in landscape orientation
     /// - `false` when device is in portrait orientation
     @Published var isLandscape: Bool = false
+    
+    /// Indicates whether the webview is currently loading content
+    @Published var isLoading: Bool = true
 
     // MARK: - Private Properties
     private var timestampUpdateTimer: Timer?
@@ -169,7 +172,9 @@ final class DuckPlayerViewModel: ObservableObject {
         var components = URLComponents(url: videoURL, resolvingAgainstBaseURL: true)
         let seconds = Int(timestamp)
         var queryItems = components?.queryItems ?? []
-        queryItems.append(URLQueryItem(name: Constants.startParameter, value: String(seconds)))
+        if seconds >= 5 {
+            queryItems.append(URLQueryItem(name: Constants.startParameter, value: String(seconds)))
+        }
         components?.queryItems = queryItems
         return components?.url
     }

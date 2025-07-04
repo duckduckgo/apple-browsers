@@ -25,8 +25,8 @@ Table of contents:
 This module provides resources used for communication between the New Tab Page user script and the native code of the macOS browser app.
 
 ### Useful links
-* [Content Scope Scripts (C-S-S) repository](#https://github.com/duckduckgo/content-scope-scripts)
-* [Frontend API documentation for New Tab Page](#https://duckduckgo.github.io/content-scope-scripts/documents/New_Tab_Page.html)
+* [Content Scope Scripts (C-S-S) repository](https://github.com/duckduckgo/content-scope-scripts)
+* [Frontend API documentation for New Tab Page](https://duckduckgo.github.io/content-scope-scripts/documents/New_Tab_Page.html)
 
 ### New Tab Page in the macOS browser
 macOS New Tab Page (NTP) is a special page in the macOS browser. It's an HTML website served from [C-S-S](#https://github.com/duckduckgo/content-scope-scripts). It's composed of _widgets_ that display various data, such as remote messages, favorites, privacy protection stats, "Next Steps" onboarding, etc. It uses native<>FE messaging for displaying data and passing actions to the native side.

@@ -100,7 +100,7 @@ struct BookmarksTestDBBuilder {
         }
 
         for id in ids {
-            let fav = favs.first(where: { $0.uuid == id})
+            let fav = favs.first(where: { $0.uuid == id })
             fav?.addToFavorites(favoritesRoot: favoritesRoot)
         }
     }

@@ -74,7 +74,7 @@ final class AutofillPreferencesModelTests: XCTestCase {
         let userAuthenticator = UserAuthenticatorMock()
         let model = try AutofillPreferencesModel(persistor: persistor, userAuthenticator: userAuthenticator, neverPromptWebsitesManager: neverPromptWebsitesManager())
 
-        userAuthenticator._authenticateUser = { _ in return .success}
+        userAuthenticator._authenticateUser = { _ in return .success }
 
         model.authorizeAutoLockSettingsChange(isEnabled: false)
         XCTAssertEqual(model.isAutoLockEnabled, false)
@@ -87,7 +87,7 @@ final class AutofillPreferencesModelTests: XCTestCase {
         let userAuthenticator = UserAuthenticatorMock()
         let model = try AutofillPreferencesModel(persistor: persistor, userAuthenticator: userAuthenticator, neverPromptWebsitesManager: neverPromptWebsitesManager())
 
-        userAuthenticator._authenticateUser = { _ in return .failure}
+        userAuthenticator._authenticateUser = { _ in return .failure }
 
         model.authorizeAutoLockSettingsChange(isEnabled: false)
         XCTAssertEqual(model.isAutoLockEnabled, true)
@@ -100,7 +100,7 @@ final class AutofillPreferencesModelTests: XCTestCase {
         let userAuthenticator = UserAuthenticatorMock()
         let model = try AutofillPreferencesModel(persistor: persistor, userAuthenticator: userAuthenticator, neverPromptWebsitesManager: neverPromptWebsitesManager())
 
-        userAuthenticator._authenticateUser = { _ in return .success}
+        userAuthenticator._authenticateUser = { _ in return .success }
 
         model.authorizeAutoLockSettingsChange(threshold: .oneHour)
         XCTAssertEqual(model.isAutoLockEnabled, true)
@@ -114,7 +114,7 @@ final class AutofillPreferencesModelTests: XCTestCase {
         let userAuthenticator = UserAuthenticatorMock()
         let model = try AutofillPreferencesModel(persistor: persistor, userAuthenticator: userAuthenticator, neverPromptWebsitesManager: neverPromptWebsitesManager())
 
-        userAuthenticator._authenticateUser = { _ in return .failure}
+        userAuthenticator._authenticateUser = { _ in return .failure }
 
         model.authorizeAutoLockSettingsChange(threshold: .oneHour)
         XCTAssertNotEqual(model.autoLockThreshold, .oneHour)

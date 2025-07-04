@@ -43,7 +43,7 @@ final class DuckDuckGoVPNApplication: NSApplication {
 
     public var accountManager: AccountManager
     public var subscriptionManagerV2: any SubscriptionManagerV2
-    private let _delegate: DuckDuckGoVPNAppDelegate
+    private let _delegate: DuckDuckGoVPNAppDelegate // swiftlint:disable:this weak_delegate
 
     override init() {
         Logger.networkProtection.log("🟢 Status Bar Agent starting\nPath: (\(Bundle.main.bundlePath, privacy: .public))\nVersion: \("\(Bundle.main.versionNumber!).\(Bundle.main.buildNumber)", privacy: .public)\nPID: \(NSRunningApplication.current.processIdentifier, privacy: .public)")

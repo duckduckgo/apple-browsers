@@ -183,7 +183,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 tokenRecoveryHandler: TokenRecoveryHandler? = nil,
                 initForPurchase: Bool = true,
                 legacyAccountStorage: AccountKeychainStorage? = nil,
-                isInternalUserEnabled: @escaping () -> Bool =  { false }) {
+                isInternalUserEnabled: @escaping () -> Bool = { false }) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
         self.userDefaults = userDefaults

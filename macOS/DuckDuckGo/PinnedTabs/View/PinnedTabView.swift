@@ -403,7 +403,7 @@ struct PinnedTabInnerView: View {
     }
 
     private var faviconImage: NSImage? {
-        if let error = model.error, (error as NSError as? URLError)?.code == .serverCertificateUntrusted || (error as NSError as? MaliciousSiteError != nil) {
+        if let error = model.error, (error as NSError as? URLError)?.code == .serverCertificateUntrusted || (error as NSError is MaliciousSiteError) {
             return .redAlertCircle16
         } else if model.error?.isWebContentProcessTerminated == true {
             return .alertCircleColor16

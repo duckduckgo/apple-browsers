@@ -19,7 +19,7 @@
 
 import Foundation
 
-public struct DefaultBrowserContext: Codable, Equatable {
+public struct DefaultBrowserContext: Codable, Equatable, Sendable {
     /// True if DDG browser is set as default, false otherwise.
     public let isDefaultBrowser: Bool
     /// The time interval when we last got a valid result.
@@ -41,7 +41,7 @@ public struct DefaultBrowserContext: Codable, Equatable {
 }
 
 public enum DefaultBrowserInfoResult: Equatable {
-    public enum Failure: Equatable {
+    public enum Failure: Equatable, Sendable {
         case notSupportedOnCurrentOSVersion
         case unknownError(NSError)
         case rateLimitReached(updatedStoredInfo: DefaultBrowserContext?)
@@ -69,8 +69,4 @@ public extension DefaultBrowserInfoResult {
         return self
     }
 
-    func isDefaultBrowser() -> Bool {
-        guard case let .success(newInfo) = self else { return false }
-        return newInfo.isDefaultBrowser
-    }
 }

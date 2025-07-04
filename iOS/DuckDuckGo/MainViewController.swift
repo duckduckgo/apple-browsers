@@ -1793,7 +1793,7 @@ class MainViewController: UIViewController {
                 Task {
                     guard let self else { return }
 
-                    let hasEntitlement = (try? await self.subscriptionManager.isEnabled(feature: .networkProtection)) ?? false
+                    let hasEntitlement = await self.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
                     let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
                     let isSubscriptionActive = try? await self.subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 

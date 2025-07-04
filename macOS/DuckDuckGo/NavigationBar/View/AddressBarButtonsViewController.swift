@@ -39,7 +39,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private enum Constants {
         static let askAiChatButtonHorizontalPadding: CGFloat = 16
-        static let askAiChatButtonAnimationDuration: TimeInterval = 0.1
+        static let askAiChatButtonAnimationDuration: TimeInterval = 0.2
     }
 
     weak var delegate: AddressBarButtonsViewControllerDelegate?

@@ -47,6 +47,7 @@ final class VPNSubscriptionEventsHandler {
         subscribeToEntitlementChanges()
     }
 
+    /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
     @MainActor
     private var lastKnownEntitlementsExpired: Bool {
         get {
@@ -111,7 +112,7 @@ final class VPNSubscriptionEventsHandler {
         // to be executed only when there are changes - they'll run at every app launch.
         //
         // For trigger == .notification we assume the notifications are fired on actual changes, so we want to fire
-        // pixels without additiona checks.
+        // pixels without additional checks.
         //
         switch trigger {
         case .clientCheck, .clientCheckOnWake:

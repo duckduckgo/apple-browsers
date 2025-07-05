@@ -1,5 +1,5 @@
 //
-//  NetworkProtectionAgentNotificationsPresenter.swift
+//  VPNProxyNotificationsPresenter.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -19,10 +19,9 @@
 import Foundation
 import VPN
 
-/// Notifications presenter for the system extension.  This really just asks for the running agent to present a notification using
-/// the established IPC connection.
+/// Proxy notifications presenter that fires a notification to be caught by the actual presenter.
 ///
-final class NetworkProtectionAgentNotificationsPresenter: NetworkProtectionNotificationsPresenter {
+final class VPNProxyNotificationsPresenter: VPNNotificationsPresenting {
 
     private let notificationCenter: NetworkProtectionNotificationCenter
 

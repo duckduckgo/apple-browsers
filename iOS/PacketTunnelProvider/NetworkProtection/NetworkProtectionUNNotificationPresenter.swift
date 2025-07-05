@@ -23,7 +23,7 @@ import Core
 
 /// This class takes care of requesting the presentation of notifications using UNNotificationCenter
 ///
-final class NetworkProtectionUNNotificationPresenter: NSObject, NetworkProtectionNotificationsPresenter {
+final class NetworkProtectionUNNotificationPresenter: NSObject, VPNNotificationsPresenting {
 
     private let userNotificationCenter: UNUserNotificationCenter
 

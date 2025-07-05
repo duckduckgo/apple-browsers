@@ -238,7 +238,6 @@
 		1E5FA8A72DD394EB0082FA72 /* DuckDuckGoUserAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF0E5112AD25A2600FFEC9E /* DuckDuckGoUserAgent.swift */; };
 		1E6783F02E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
 		1E6783F12E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
-		1E6783F22E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
 		1E6783F32E156DA200AE465A /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783EF2E156DA200AE465A /* Localizable.xcstrings */; };
 		1E6783F52E156DA200AE465A /* AppStoreInfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783F42E156DA200AE465A /* AppStoreInfoPlist.xcstrings */; };
 		1E6783F72E156DA200AE465A /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1E6783F62E156DA200AE465A /* InfoPlist.xcstrings */; };
@@ -2116,6 +2115,7 @@
 		7BBD45B12A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBD45B02A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift */; };
 		7BBD45B22A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBD45B02A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift */; };
 		7BBE2B7B2B61663C00697445 /* NetworkProtectionProxy in Frameworks */ = {isa = PBXBuildFile; productRef = 7BBE2B7A2B61663C00697445 /* NetworkProtectionProxy */; };
+		7BC15A1C2E1917D6000062C8 /* VPNNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC15A1B2E1917D6000062C8 /* VPNNotifications */; };
 		7BC26CA42DFC103D00E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CA32DFC103D00E52480 /* VPN */; };
 		7BC26CA62DFC104700E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CA52DFC104700E52480 /* VPN */; };
 		7BC26CA82DFC105400E52480 /* VPN in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC26CA72DFC105400E52480 /* VPN */; };
@@ -5714,6 +5714,7 @@
 				7BC26CA82DFC105400E52480 /* VPN in Frameworks */,
 				4B9EE3882D76CC2000DDC75C /* Configuration in Frameworks */,
 				4B9EE38A2D76CC2800DDC75C /* Networking in Frameworks */,
+				7BC15A1C2E1917D6000062C8 /* VPNNotifications in Frameworks */,
 				1E5921C12CF479EE00E15CCA /* FeatureFlags in Frameworks */,
 				9D9DE57B2C63AA1F00D20B15 /* AppKitExtensions in Frameworks */,
 				4B9EE38E2D76CC3C00DDC75C /* Persistence in Frameworks */,
@@ -11071,6 +11072,7 @@
 				4B9EE38F2D76CC4300DDC75C /* PixelKit */,
 				4B9EE3912D76CC4C00DDC75C /* Subscription */,
 				7BC26CA72DFC105400E52480 /* VPN */,
+				7BC15A1B2E1917D6000062C8 /* VPNNotifications */,
 			);
 			productName = NetworkProtectionSystemExtension;
 			productReference = 4B25375A2A11BE7300610219 /* com.duckduckgo.macos.vpn.network-extension.debug.systemextension */;
@@ -11790,16 +11792,6 @@
 				7BA7CC472AD11E5C0042E5CE /* Assets.xcassets in Resources */,
 				1EC711562D03421B0009EB5C /* Localizable.xcstrings in Resources */,
 				BDADBDCC2BD2BC4D00421B9B /* vpn-dark-mode.json in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		4B4BEC1E2A11B4E2001D9AC5 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				1EC711582D035BC30009EB5C /* NetworkProtectionLocalizable.xcstrings in Resources */,
-				4B4BEC482A11B61F001D9AC5 /* Assets.xcassets in Resources */,
-				1E6783F22E156DA200AE465A /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -17402,6 +17394,10 @@
 		7BBE2B7A2B61663C00697445 /* NetworkProtectionProxy */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NetworkProtectionProxy;
+		};
+		7BC15A1B2E1917D6000062C8 /* VPNNotifications */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VPNNotifications;
 		};
 		7BC26CA32DFC103D00E52480 /* VPN */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -109,47 +109,47 @@ public extension View {
     func daxTitle1() -> some View {
         modifier(DaxTitle1())
     }
-    
+
     func daxTitle2() -> some View {
         modifier(DaxTitle2())
     }
-    
+
     func daxTitle3() -> some View {
         modifier(DaxTitle3())
     }
-    
+
     func daxHeadline() -> some View {
         modifier(DaxHeadline())
     }
-    
+
     func daxBodyRegular() -> some View {
         modifier(DaxBodyRegular())
     }
-    
+
     func daxBodyBold() -> some View {
         modifier(DaxBodyBold())
     }
-    
+
     func daxSubheadRegular() -> some View {
         modifier(DaxSubheadRegular())
     }
-    
+
     func daxSubheadSemibold() -> some View {
         modifier(DaxSubheadSemibold())
     }
-    
+
     func daxButton() -> some View {
         modifier(DaxButton())
     }
-    
+
     func daxFootnoteRegular() -> some View {
         modifier(DaxFootnoteRegular())
     }
-    
+
     func daxFootnoteSemibold() -> some View {
         modifier(DaxFootnoteSemibold())
     }
-    
+
     func daxCaption() -> some View {
         modifier(DaxCaption())
     }

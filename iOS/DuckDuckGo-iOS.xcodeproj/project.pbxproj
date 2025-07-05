@@ -5908,7 +5908,7 @@
 				F1849C682D6E3C98000589A4 /* DebugScreensViewController.swift */,
 				F1849C692D6E3C98000589A4 /* DebugScreensViewModel.swift */,
 				F1849C6A2D6E3C98000589A4 /* DebugScreensViewModel+Screens.swift */,
-                9FF967CC2E12182100E45B54 /* DefaultBrowserPromptDebugView */,
+				9FF967CC2E12182100E45B54 /* DefaultBrowserPromptDebugView */,
 				F1849C6F2D6E3D17000589A4 /* DiagnosticReport.swift */,
 				65BD16382D8DA439000795DE /* DuckPlayerDebugSettingsView.swift */,
 				564441A02D4D2089003C53B8 /* FeatureFlagsDebugSettings */,

@@ -68,6 +68,23 @@ extension Preferences {
                                           includeAppVersionParameter: true)
                         }
                     }
+
+                    if model.shouldShowOpenAIChatInSidebarToggle {
+                        ToggleMenuItem(UserText.aiChatOpenInSidebarToggle,
+                                       isOn: $model.openAIChatInSidebar)
+                        .accessibilityIdentifier("Preferences.AIChat.openInSidebarToggle")
+                        .onChange(of: model.openAIChatInSidebar) { newValue in
+                            if newValue {
+    //                            PixelKit.fire(AIChatPixel.aiChatSettingsOpenInSidebarTurnedOn,
+    //                                          frequency: .dailyAndCount,
+    //                                          includeAppVersionParameter: true)
+                            } else {
+    //                            PixelKit.fire(AIChatPixel.aiChatSettingsOpenInSidebarTurnedOff,
+    //                                          frequency: .dailyAndCount,
+    //                                          includeAppVersionParameter: true)
+                            }
+                        }
+                    }
                 }
 
                 PreferencePaneSection(UserText.searchAssistSettings) {

@@ -1596,6 +1596,126 @@
         }
       }
     },
+    "aichat.address-bar.ask-button.title" : {
+      "comment" : "Title for button to ask Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frag Duck.ai"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregúntale a Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demandez à Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiedi a Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vraag stellen aan Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapytaj Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pergunta ao Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спросить у Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.address-bar.close-sidebar-button" : {
+      "comment" : "Button to close Duck.ai sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Seitenleiste schließen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close Duck.ai Sidebar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar la barra lateral de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer la barre latérale Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi la barra laterale di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De zijbalk van Duck.ai sluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij pasek boczny Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar a barra lateral Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть боковую панель Duck.ai"
+          }
+        }
+      }
+    },
     "aichat.address-bar.hide-button" : {
       "comment" : "Button to hide duck.ai shortcut in address bar",
       "extractionState" : "extracted_with_value",
@@ -1656,14 +1776,314 @@
         }
       }
     },
-    "aichat.sidebar.close-button.tooltip" : {
-      "comment" : "Tooltip for button to close the sidebar with the duck.ai chat",
+    "aichat.address-bar.open-new-tab-button" : {
+      "comment" : "Button to open Duck.ai in a new tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neuen Duck.ai-Tab öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open New Duck.ai Tab"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir una nueva pestaña de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir un nouvel onglet Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri una nuova scheda Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuw Duck.ai-tabblad openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz nową kartę Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre um novo separador Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть новую вкладку Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.address-bar.open-settings-button" : {
+      "comment" : "Button to open Duck.ai settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Einstellungen öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir ajustes de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les paramètres Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri le impostazioni di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-instellingen openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz ustawienia Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir as Definições do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть настройки Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.address-bar.open-sidebar-button" : {
+      "comment" : "Button to open Duck.ai sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Seitenleiste öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai Sidebar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir la barra lateral de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir la barre latérale Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri la barra laterale di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-zijbalk openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz pasek boczny Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir a barra lateral Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть боковую панель Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.address-bar.toggle-sidebar-button" : {
+      "comment" : "Button to toggle Duck.ai sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Seitenleiste umschalten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Toggle Duck.ai Sidebar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alternar la barra lateral de Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basculer la barre latérale Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alterna la barra laterale di Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-zijbalk in/uit schakelen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przełącz pasek boczny Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alternar a barra lateral Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переключить боковую панель Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.address-bar.trusted-indicator" : {
+      "comment" : "Label for the AI Chat displayed in the address bar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.sidebar.close-button.tooltip" : {
+      "comment" : "Tooltip for button to close the sidebar with the duck.ai chat",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schließen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
             "value" : "Close"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sluiten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zamknij"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть"
           }
         }
       }
@@ -1672,10 +2092,58 @@
       "comment" : "Tooltip for button to open duck.ai chat from sidebar in a full tab",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erweitern"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Expand"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Développer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espandi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uitvouwen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rozwiń"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandir"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Развернуть"
           }
         }
       }
@@ -1684,9 +2152,57 @@
       "comment" : "Title for the Duck.ai sidebar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Duck.ai"
           }
         }
@@ -7834,8 +8350,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "Die folgenden Bitwarden-Versionen sind mit DuckDuckGo inkompatibel: v2025.5.0, v2025.5.1. Bitte führe ein Downgrade auf eine ältere Version durch, indem du die folgenden Schritte ausführst:"
           }
         },
         "en" : {
@@ -7846,44 +8362,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "Las siguientes versiones de Bitwarden son incompatibles con DuckDuckGo: v2025.5.0, v2025.5.1. Vuelve a una versión anterior siguiendo estos pasos:"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "Les versions suivantes de Bitwarden sont incompatibles avec DuckDuckGo : v2025.5.0, v2025.5.1. Veuillez revenir à une version antérieure en procédant comme suit :"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "Le seguenti versioni di Bitwarden sono incompatibili con DuckDuckGo: v2025.5.0, v2025.5.1. Esegui il downgrade a una versione precedente seguendo questi passaggi:"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "De volgende versies van Bitwarden zijn niet compatibel met DuckDuckGo: v2025.5.0, v2025.5.1. Volg deze stappen om te downgraden naar een oudere versie:"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "Następujące wersje Bitwarden są niezgodne z DuckDuckGo: v2025.5.0, v2025.5.1. Przywróć starszą wersję, wykonując następujące czynności:"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "As seguintes versões do Bitwarden não são compatíveis com o DuckDuckGo: v2025.5.0, v2025.5.1. Faz downgrade para uma versão mais antiga ao seguir estes passos:"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "state" : "translated",
+            "value" : "С DuckDuckGo несовместимы следующие версии Bitwarden: 2025.5.0, 2025.5.1. Перейдите на более старую версию, выполнив следующие действия:"
           }
         }
       }
@@ -7894,8 +8410,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "v2025.4.2 herunterladen"
           }
         },
         "en" : {
@@ -7906,44 +8422,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Descarga v2025.4.2"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Télécharger v2025.4.2"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Scarica v2025.4.2"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Download v2025.4.2"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Pobierz v2025.4.2"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Descarrega a versão 2025.4.2"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Download v2024.9.0"
+            "state" : "translated",
+            "value" : "Загрузить версию 2025.4.2"
           }
         }
       }
@@ -21823,6 +22339,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Новый чат Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.open-in-sidebar.toggle-setting" : {
+      "comment" : "Settings option to open Duck.ai in the sidebar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai in der Seitenleiste öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai in the sidebar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir Duck.ai en la barra lateral"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir Duck.ai dans la barre latérale"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri Duck.ai nella barra laterale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai openen in de zijbalk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz Duck.ai w pasku bocznym"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre o Duck.ai na barra lateral"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть Duck.ai на боковой панели."
           }
         }
       }
@@ -58041,10 +58617,58 @@
       "comment" : "This string represents the header for an alert informing the user that their version of macOS will soon be unsupported",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Version von macOS wird bald nicht mehr unterstützt."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your version of macOS will soon be unsupported."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu versión de macOS pronto dejará de ser compatible."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre version de macOS ne sera bientôt plus prise en charge."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A breve, la versione di macOS non sarà più supportata."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je versie van macOS wordt binnenkort niet meer ondersteund."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja wersja systemu macOS wkrótce przestanie być obsługiwana."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua versão do macOS deixará de ser suportada em breve."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша версия macOS скоро перестанет поддерживаться."
           }
         }
       }
@@ -58053,10 +58677,58 @@
       "comment" : "This string informs the user that DuckDuckGo will soon discontinue browser updates for their version of macOS",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo wird in Kürze keine Browser-Updates mehr für deine Version von macOS bereitstellen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "DuckDuckGo will soon stop providing browser updates for your version of macOS."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo pronto dejará de proporcionar actualizaciones del navegador para tu versión de macOS."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo cessera bientôt de proposer des mises à jour de navigateur pour votre version de macOS."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo smetterà presto di fornire aggiornamenti del browser per la versione di macOS."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo biedt binnenkort geen browserupdates meer voor je versie van macOS."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo wkrótce przestanie udostępniać aktualizacje przeglądarki dla Twojej wersji systemu macOS."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Em breve, o DuckDuckGo deixará de fornecer atualizações de navegador para a tua versão do macOS."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo вскоре прекратит выпуск обновлений браузера для вашей версии macOS."
           }
         }
       }
@@ -58065,10 +58737,58 @@
       "comment" : "This string informs the user to update their macOS version to continue receiving DuckDuckGo browser updates, as their current version of macOS will soon be unsupported",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte aktualisiere auf macOS %@ oder höher, um weiterhin DuckDuckGo-Browser-Updates zu erhalten. Du kannst weiterhin deine aktuelle Browserversion verwenden, die Updates werden jedoch bald eingestellt."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Please update to macOS %@ or later to continue receiving DuckDuckGo browser updates. You can still use your current browser version, but updates will be discontinued soon."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiza a macOS %@ o posterior para seguir recibiendo actualizaciones del navegador DuckDuckGo. Puedes seguir usando la versión actual de tu navegador, pero pronto se suspenderán las actualizaciones."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veuillez installer macOS %@ ou une version ultérieure pour continuer à recevoir les mises à jour du navigateur DuckDuckGo. Vous pouvez encore utiliser la version actuelle de votre navigateur, mais les mises à jour seront bientôt interrompues."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna a macOS %@ o successivo per continuare a ricevere gli aggiornamenti del browser DuckDuckGo. Puoi ancora usare la tua versione attuale del browser, ma gli aggiornamenti saranno presto interrotti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update naar macOS %@ of hoger om DuckDuckGo-browserupdates te blijven ontvangen. Je kunt nog steeds je huidige browserversie gebruiken, maar je krijgt binnenkort geen updates meer."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaktualizuj system do wersji macOS %@ lub nowszej, aby dalej otrzymywać aktualizacje przeglądarki DuckDuckGo. Możesz nadal używać obecnej wersji przeglądarki, ale aktualizacje wkrótce przestaną być dostępne."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualiza para a versão macOS %@ ou superior para continuares a receber atualizações do navegador DuckDuckGo. Podes continuar a utilizar a versão atual do teu navegador, mas as atualizações serão descontinuadas em breve."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы поддерживать актуальность браузера DuckDuckGo в будущем, обновите macOS как минимум до версии %@. Вы по-прежнему можете пользоваться текущей версией браузера, но ее обновления скоро прекратятся."
           }
         }
       }

@@ -443,6 +443,8 @@ struct UserText {
 
     static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show “New Duck.ai Chat” in File and application menus", comment: "Show Duck.ai in application menus")
 
+    static let aiChatOpenInSidebarToggle = NSLocalizedString("duckai.open-in-sidebar.toggle-setting", value: "Open Duck.ai in the sidebar", comment: "Settings option to open Duck.ai in the sidebar")
+
     static let aiChatPreferencesCaption = NSLocalizedString("ai-features.preferences.caption", value: "DuckDuckGo AI features are private and optional. Your data is not used to train AI.", comment: "Ai Chat preferences explanation")
 
     static let aiChatPreferencesLearnMoreButton = NSLocalizedString("ai-chat.preferences.learn-more", value: "Learn More", comment: "AI Chat preferences button to learn more about it")
@@ -453,7 +455,15 @@ struct UserText {
 
     static let aiChatAddressBarTooltip = NSLocalizedString("tooltip.aichat.address-bar", value: "Duck.ai", comment: "Tooltip for the AI Chat address bar button")
 
+    static let aiChatAddressBarTrustedIndicator = NSLocalizedString("aichat.address-bar.trusted-indicator", value: "Duck.ai", comment: "Label for the AI Chat displayed in the address bar")
+
+    static let aiChatOpenNewTabButton = NSLocalizedString("aichat.address-bar.open-new-tab-button", value: "Open New Duck.ai Tab", comment: "Button to open Duck.ai in a new tab")
+    static let aiChatToggleSidebarButton = NSLocalizedString("aichat.address-bar.toggle-sidebar-button", value: "Toggle Duck.ai Sidebar", comment: "Button to toggle Duck.ai sidebar")
+    static let aiChatOpenSidebarButton = NSLocalizedString("aichat.address-bar.open-sidebar-button", value: "Open Duck.ai Sidebar", comment: "Button to open Duck.ai sidebar")
+    static let aiChatCloseSidebarButton = NSLocalizedString("aichat.address-bar.close-sidebar-button", value: "Close Duck.ai Sidebar", comment: "Button to close Duck.ai sidebar")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
+    static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open Duck.ai Settings", comment: "Button to open Duck.ai settings")
+    static let askAIChatButtonTitle = NSLocalizedString("aichat.address-bar.ask-button.title", value: "Ask Duck.ai", comment: "Title for button to ask Duck.ai")
 
     static let searchAssistSettings = NSLocalizedString("duckai.search-assist-settings", value: "Search Assist Settings", comment: "The section name in preferences for Search Assist Settings")
     static let searchAssistSettingsDescription = NSLocalizedString("duckai.search-assist-settings.description", value: "Choose how often you want AI-Assisted answers to appear in your searches", comment: "Description of the section in Settings")

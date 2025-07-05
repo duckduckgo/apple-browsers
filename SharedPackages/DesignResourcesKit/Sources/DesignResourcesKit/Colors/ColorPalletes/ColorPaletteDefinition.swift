@@ -1,5 +1,5 @@
 //
-//  ColorPalette.swift
+//  ColorPaletteDefinition.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import SwiftUI
 
 /// Color palette definition that logically collects all colors that work properly with each other.
 protocol ColorPaletteDefinition {
-    
+
     /// Gets dynamic color proxy for a specific semantic color.
     static func dynamicColor(for designSystemColor: DesignSystemColor) -> DynamicColor
 

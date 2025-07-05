@@ -1,5 +1,5 @@
 //
-//  BaseColors.swift
+//  SingleUse.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //

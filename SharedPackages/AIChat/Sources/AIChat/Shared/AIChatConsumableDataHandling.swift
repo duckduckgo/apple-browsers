@@ -98,10 +98,6 @@ public final class AIChatRestorationDataHandler: AIChatConsumableDataHandling {
         self.data = data
     }
 
-    public func getData() -> DataType? {
-        data
-    }
-
     public func consumeData() -> DataType? {
         let currentData = data
         reset()

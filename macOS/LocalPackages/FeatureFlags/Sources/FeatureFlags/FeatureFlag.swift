@@ -52,6 +52,8 @@ public enum FeatureFlag: String, CaseIterable {
     case historyView
 
     case autoUpdateInDEBUG
+
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1210099321661462?focus=true
     case updatesWontAutomaticallyRestartApp
 
     case autofillPartialFormSaves
@@ -218,7 +220,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.updatesWontAutomaticallyRestartApp))
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .autocompleteTabs:

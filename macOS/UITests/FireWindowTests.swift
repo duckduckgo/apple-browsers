@@ -111,7 +111,18 @@ class FireWindowTests: UITestCase {
         openFireWindow()
         hoverMouseOutsideTabSoPreviewIsNotShown()
         openLoginSite()
-        signInUsingAutoFill()
+                signInUsingAutoFill()
+    }
+
+    func testDevelopMenuIsDisabledInNewFireWindow() {
+        openFireWindow()
+        assertDeveloperToolsEnabled(false)
+    }
+
+    func testDevelopMenuIsEnabledInFireWindowAfterNavigation() {
+        openFireWindow()
+        openSite(pageTitle: "Some site")
+        assertDeveloperToolsEnabled(true)
     }
 
     // MARK: - Utilities
@@ -343,5 +354,15 @@ class FireWindowTests: UITestCase {
 
     private func areTestsRunningOnMacos13() -> Bool {
         return ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 13
+    }
+
+    private func assertDeveloperToolsEnabled(_ shouldBeEnabled: Bool) {
+        let developerTools = app.menuItems["toggleDeveloperTools:"]
+
+        if shouldBeEnabled {
+            XCTAssertTrue(developerTools.isEnabled)
+        } else {
+            XCTAssertFalse(developerTools.isEnabled)
+        }
     }
 }

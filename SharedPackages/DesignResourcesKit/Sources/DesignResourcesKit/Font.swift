@@ -22,72 +22,72 @@ import SwiftUI
 #if canImport(UIKit)
 
 public extension UIFont {
-    
+
     static func daxTitle1() -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .title1)
         let newDescriptor = descriptor.addingAttributes([.traits: [
             UIFontDescriptor.TraitKey.weight: UIFont.Weight.bold]])
         return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
     }
-    
+
     static func daxTitle2() -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .title2)
         let newDescriptor = descriptor.addingAttributes([.traits: [
             UIFontDescriptor.TraitKey.weight: UIFont.Weight.bold]])
         return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
     }
-    
+
     static func daxTitle3() -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .title3)
         let newDescriptor = descriptor.addingAttributes([.traits: [
             UIFontDescriptor.TraitKey.weight: UIFont.Weight.bold]])
         return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
     }
-    
+
     static func daxHeadline() -> UIFont {
         return UIFont.preferredFont(forTextStyle: .headline)
     }
-    
+
     static func daxBodyRegular() -> UIFont {
         return UIFont.preferredFont(forTextStyle: .callout)
     }
-    
+
     static func daxBodyBold() -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .callout)
         let newDescriptor = descriptor.addingAttributes([.traits: [
             UIFontDescriptor.TraitKey.weight: UIFont.Weight.bold]])
         return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
     }
-    
+
     static func daxSubheadRegular() -> UIFont {
         return UIFont.preferredFont(forTextStyle: .subheadline)
     }
-    
+
     static func daxSubheadSemibold() -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .subheadline)
         let newDescriptor = descriptor.addingAttributes([.traits: [
             UIFontDescriptor.TraitKey.weight: UIFont.Weight.semibold]])
         return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
     }
-    
+
     static func daxButton() -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .subheadline)
         let newDescriptor = descriptor.addingAttributes([.traits: [
             UIFontDescriptor.TraitKey.weight: UIFont.Weight.bold]])
         return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
     }
-    
+
     static func daxFootnoteRegular() -> UIFont {
         return UIFont.preferredFont(forTextStyle: .footnote)
     }
-    
+
     static func daxFootnoteSemibold() -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .footnote)
         let newDescriptor = descriptor.addingAttributes([.traits: [
             UIFontDescriptor.TraitKey.weight: UIFont.Weight.semibold]])
         return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
     }
-    
+
     static func daxCaption() -> UIFont {
         return UIFont.preferredFont(forTextStyle: .caption2)
     }

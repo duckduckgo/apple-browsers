@@ -78,7 +78,7 @@ struct DataImportProfilePicker: View {
                 }
             } label: {}
                 .pickerStyle(.menu)
-                .controlSize(.large)
+                .controlSize(.regular)
         }
     }
 

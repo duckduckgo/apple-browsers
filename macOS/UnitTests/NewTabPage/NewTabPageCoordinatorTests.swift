@@ -23,6 +23,7 @@ import PersistenceTestingUtils
 import PixelKit
 import PrivacyStats
 import XCTest
+import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockPrivacyStats: PrivacyStatsCollecting {
@@ -43,6 +44,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var notificationCenter: NotificationCenter!
     var keyValueStore: MockKeyValueFileStore!
     var firePixelCalls: [PixelKitEvent] = []
+    var featureFlagger: FeatureFlagger!
 
     @MainActor
     override func setUp() async throws {
@@ -67,10 +69,13 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             visualStyle: VisualStyle.legacy
         )
 
+        featureFlagger = FeatureFlaggerMock()
+
         coordinator = NewTabPageCoordinator(
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
             bookmarkManager: MockBookmarkManager(),
+            faviconManager: FaviconManagerMock(),
             activeRemoteMessageModel: ActiveRemoteMessageModel(
                 remoteMessagingStore: MockRemoteMessagingStore(),
                 remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
@@ -92,7 +97,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),
             keyValueStore: keyValueStore,
             notificationCenter: notificationCenter,
-            fireDailyPixel: { self.firePixelCalls.append($0) }
+            fireDailyPixel: { self.firePixelCalls.append($0) },
+            featureFlagger: featureFlagger
         )
     }
 

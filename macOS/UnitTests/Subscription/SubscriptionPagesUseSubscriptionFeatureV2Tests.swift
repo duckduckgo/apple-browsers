@@ -96,7 +96,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
                                                         notificationCenter: mockNotificationCenter,
                                                         dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
-                                                        featureFlagger: mockFeatureFlagger)
+                                                        featureFlagger: mockFeatureFlagger,
+                                                        aiChatURL: URL.duckDuckGo)
     }
 
     // MARK: - Free Trials
@@ -178,7 +179,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
-        XCTAssertTrue(featureValue.useDuckAiPro)
+        XCTAssertTrue(featureValue.usePaidDuckAi)
     }
 
     func testGetFeatureConfig_WhenPaidAIChatDisabled_ReturnsCorrectConfig() async throws {
@@ -196,7 +197,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertTrue(featureValue.useUnifiedFeedback)
         XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
-        XCTAssertFalse(featureValue.useDuckAiPro)
+        XCTAssertFalse(featureValue.usePaidDuckAi)
     }
 
     // MARK: - Feature Selection Tests

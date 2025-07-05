@@ -30,9 +30,9 @@ public class TLD {
 
     public init() {
         guard let url = Bundle.module.url(forResource: "tlds", withExtension: "json") else { return }
-        guard let data = try? Data(contentsOf: url) else { return }
+        guard let data = try? Data(contentsOf: url),
+              let asString = data.utf8String() else { return }
 
-        let asString = String(decoding: data, as: UTF8.self)
         let asStringWithoutComments = asString.replacingOccurrences(of: "(?m)^//.*",
                                                                     with: "",
                                                                     options: .regularExpression)

@@ -59,6 +59,7 @@ final class MockAdClickAttributionLogicDelegate: AdClickAttributionLogicDelegate
 }
 
 // swiftlint:disable weak_delegate
+// swiftlint:disable single_test_class
 final class AdClickAttributionLogicTests: XCTestCase {
 
     static let tld = TLD()
@@ -550,3 +551,4 @@ final class AdClickAttributionLogicConfigUpdateTests: XCTestCase {
 }
 
 // swiftlint:enable weak_delegate
+// swiftlint:enable single_test_class

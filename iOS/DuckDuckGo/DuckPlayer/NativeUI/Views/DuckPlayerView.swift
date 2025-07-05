@@ -99,6 +99,19 @@ struct DuckPlayerView: View {
                 GeometryReader { geometry in
                     ZStack {
                         webView
+
+                        // Loading Indicator
+                        if viewModel.isLoading {
+                            ZStack {
+                                Color.black.opacity(0.5)
+                                SwiftUI.ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle())
+                                    .tint(.white)
+                                    .scaleEffect(1.5)
+                            }
+                            .edgesIgnoringSafeArea(.all)
+                            .transition(.opacity)
+                        }
                     }
                     .frame(
                         width: geometry.size.width,
@@ -110,6 +123,7 @@ struct DuckPlayerView: View {
                     )
                 }
                 .layoutPriority(1)
+                .animation(.easeInOut(duration: 0.3), value: viewModel.isLoading)
 
                 Spacer(minLength: LayoutConstants.controlsSpacing)
 

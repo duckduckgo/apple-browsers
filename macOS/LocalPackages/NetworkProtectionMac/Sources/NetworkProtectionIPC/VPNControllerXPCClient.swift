@@ -65,7 +65,7 @@ public final class VPNControllerXPCClient {
         }
     }
 
-    private let xpcDelegate: TunnelControllerXPCClientDelegate
+    private let xpcDelegate: TunnelControllerXPCClientDelegate // swiftlint:disable:this weak_delegate
 
     public init(machServiceName: String) {
         let clientInterface = NSXPCInterface(with: XPCClientInterfaceObjC.self)

@@ -10,7 +10,7 @@ disabled_rules:
   - blanket_disable_command
   - type_body_length
   - explicit_non_final_class
-  - enforce_os_log_wrapper
+  - weak_delegate
 
 large_tuple:
   warning: 6

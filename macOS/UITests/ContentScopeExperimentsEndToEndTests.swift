@@ -18,15 +18,13 @@
 
 import XCTest
 
-final class ContentScopeExperimentsEndToEndTests: XCTestCase {
+final class ContentScopeExperimentsEndToEndTests: UITestCase {
 
     func testContentScopeExperiments() throws {
         // Initial set up
         super.setUp()
         UITests.firstRun()
-        let app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launch()
+        let app = XCUIApplication.setUp()
         app.openNewTab()
 
         // Step 1: Load custom remote config

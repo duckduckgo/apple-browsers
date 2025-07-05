@@ -47,6 +47,7 @@ vendor/
 
 # Release
 node_modules/
+build/
 .build/
 .swiftpm/
 release/
@@ -60,3 +61,6 @@ tmp
 .windsurf/
 /buildServer.json
 default.profraw
+
+# Claude
+.claude/

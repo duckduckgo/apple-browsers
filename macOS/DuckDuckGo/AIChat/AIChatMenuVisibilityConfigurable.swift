@@ -35,6 +35,11 @@ protocol AIChatMenuVisibilityConfigurable {
     /// - Returns: `true` if the application menu shortcut should be displayed; otherwise, `false`.
     var shouldDisplayApplicationMenuShortcut: Bool { get }
 
+    /// This property determines whether AI Chat should open in the sidebar.
+    ///
+    /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
+    var openAIChatInSidebar: Bool { get }
+
     /// A publisher that emits a value when either the `shouldDisplayApplicationMenuShortcut`  settings, backed by storage, are changed.
     ///
     /// This allows subscribers to react to changes in the visibility settings of the application menu
@@ -66,6 +71,10 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
         storage.showShortcutInAddressBar
     }
 
+    var openAIChatInSidebar: Bool {
+        storage.openAIChatInSidebar
+    }
+
     init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
          notificationCenter: NotificationCenter = .default,
          remoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings()) {
@@ -84,6 +93,12 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
             }.store(in: &cancellables)
 
         storage.showShortcutInAddressBarPublisher
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.valuesChangedPublisher.send()
+            }.store(in: &cancellables)
+
+        storage.openAIChatInSidebarPublisher
             .removeDuplicates()
             .sink { [weak self] _ in
                 self?.valuesChangedPublisher.send()

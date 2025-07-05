@@ -1689,7 +1689,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedBookmarkImportInterface(_ menu: NSMenu) {
-        DataImportView().show()
+        DataImportView(isDataTypePickerExpanded: true).show()
     }
 
     func optionsButtonMenuRequestedBookmarkExportInterface(_ menu: NSMenu) {
@@ -1735,7 +1735,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedPaidAIChat(_ menu: NSMenu) {
-        let aiChatURL = URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!
+        let aiChatURL = AIChatRemoteSettings().aiChatURL
         showTab(.aiChat(aiChatURL))
     }
 

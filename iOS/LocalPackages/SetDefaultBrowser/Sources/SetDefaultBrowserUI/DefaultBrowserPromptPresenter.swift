@@ -20,27 +20,43 @@
 import UIKit
 import SwiftUI
 import MetricBuilder
+import SetDefaultBrowserCore
 
 @MainActor
 public protocol DefaultBrowserPromptPresenting: AnyObject {
-    func presentSetDefaultModal(from viewController: UIViewController)
+    func tryPresentDefaultModalPrompt(from viewController: UIViewController)
 }
 
 @MainActor
-public final class DefaultBrowserPromptPresenter: DefaultBrowserPromptPresenting {
+final class DefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenting {
+    private let coordinator: DefaultBrowserPromptCoordinating
 
-    public init() {}
+    init(coordinator: DefaultBrowserPromptCoordinating) {
+        self.coordinator = coordinator
+    }
 
-    public func presentSetDefaultModal(from viewController: UIViewController) {
+    public func tryPresentDefaultModalPrompt(from viewController: UIViewController) {
+        // When prompt for inactive user is implemented check prompt type and present different view accordingly.
+        guard coordinator.getPrompt() != nil else { return }
+        presentDefaultDefaultBrowserPrompt(from: viewController)
+    }
+
+}
+
+// MARK: - Private
+
+private extension DefaultBrowserModalPresenter {
+
+    func presentDefaultDefaultBrowserPrompt(from viewController: UIViewController) {
         let rootView = DefaultBrowserPromptModalView(
-            closeAction: { [weak viewController] in
-
+            closeAction: { [weak viewController, weak coordinator] in
+                coordinator?.dismissAction(shouldDismissPromptPermanently: false)
                 viewController?.dismiss(animated: true)
-            }, setAsDefaultAction: { [weak viewController] in
-
+            }, setAsDefaultAction: { [weak viewController, weak coordinator] in
+                coordinator?.setDefaultBrowserAction()
                 viewController?.dismiss(animated: true)
-            }, doNotAskAgainAction: { [weak viewController] in
-                // Persist value
+            }, doNotAskAgainAction: { [weak viewController, weak coordinator] in
+                coordinator?.dismissAction(shouldDismissPromptPermanently: true)
                 viewController?.dismiss(animated: true)
             }
         )
@@ -51,13 +67,7 @@ public final class DefaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
         viewController.present(hostingController, animated: true)
     }
 
-}
-
-// MARK: - Private
-
-private extension DefaultBrowserPromptPresenter {
-
-    private func configurePresentationStyle(hostingController: UIHostingController<DefaultBrowserPromptModalView>, presentingController: UIViewController) {
+    func configurePresentationStyle(hostingController: UIHostingController<DefaultBrowserPromptModalView>, presentingController: UIViewController) {
         guard let presentationController = hostingController.sheetPresentationController else { return }
 
         if #available(iOS 16.0, *) {
@@ -72,7 +82,7 @@ private extension DefaultBrowserPromptPresenter {
     }
 
     @available(iOS 16.0, *)
-    private func customDetentsHeightFor(context: UISheetPresentationControllerDetentResolutionContext) -> CGFloat? {
+    func customDetentsHeightFor(context: UISheetPresentationControllerDetentResolutionContext) -> CGFloat? {
         func isIPhonePortrait(traitCollection: UITraitCollection) -> Bool {
             traitCollection.verticalSizeClass == .regular && traitCollection.horizontalSizeClass == .compact
         }
@@ -91,4 +101,5 @@ private extension DefaultBrowserPromptPresenter {
             return nil
         }
     }
+
 }

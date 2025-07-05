@@ -22,6 +22,8 @@ import WebKit
 
 final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {
     var messagePolicyHostname: String?
+    var customURL: String?
+    func reset() {}
 }
 
 final class AIChatRequestAuthorizationHandlerTests: XCTestCase {

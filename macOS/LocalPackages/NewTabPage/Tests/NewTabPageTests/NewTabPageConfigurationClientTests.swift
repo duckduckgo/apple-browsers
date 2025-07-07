@@ -87,11 +87,13 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
             .init(id: .freemiumPIRBanner),
             .init(id: .nextSteps),
             .init(id: .favorites),
-            .init(id: .protections)
+            .init(id: .protections),
+            .init(id: .omnibar)
         ])
         XCTAssertEqual(configuration.widgetConfigs, [
             .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
-            .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible)
+            .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible),
+            .init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible)
         ])
         XCTAssertEqual(configuration.platform, .init(name: "macos"))
     }

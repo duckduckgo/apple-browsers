@@ -56,12 +56,16 @@ let package = Package(
         .package(url: "https://github.com/duckduckgo/content-scope-scripts", exact: "10.4.0"),
         .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.4.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
-        .package(url: "https://github.com/duckduckgo/bloom_cpp.git", exact: "3.0.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.4"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
     ],
     targets: [
+        .binaryTarget(
+            name: "BloomFilter",
+            url: "https://github.com/duckduckgo/bloom_cpp/releases/download/3.0.3/BloomFilter.xcframework.zip",
+            checksum: "0fcdee7038077bd9db45beb6d48831e5efb0c6ea35a57acf629b8f3b8b0faf4b"
+        ),
         .target(
             name: "BrowserServicesKit",
             dependencies: [
@@ -161,7 +165,7 @@ let package = Package(
         .target(
             name: "BloomFilterObjC",
             dependencies: [
-                .product(name: "BloomFilter", package: "bloom_cpp")
+                "BloomFilter"
             ]),
         .target(
             name: "BloomFilterWrapper",

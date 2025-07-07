@@ -405,7 +405,6 @@ final class AddressBarButtonsViewController: NSViewController {
            aiChatMenuConfig.openAIChatInSidebar,
            let tab = tabViewModel?.tab,
            case .url = tab.content,
-           !isTextFieldEditorFirstResponder,
            behavior == .currentTab {
             aiChatSidebarPresenter.toggleSidebar()
         } else if let value = textFieldValue {

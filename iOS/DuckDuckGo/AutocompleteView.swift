@@ -37,7 +37,7 @@ struct AutocompleteView: View {
                     model.onShownToUser()
                 }
             }
-
+            
             SuggestionsSection(suggestions: model.topHits,
                                query: model.query,
                                onSuggestionSelected: model.onSuggestionSelected,
@@ -56,6 +56,7 @@ struct AutocompleteView: View {
         }
         .offset(x: 0, y: model.isExperimentalThemingEnabled ? -28 : -20)
         .padding(.bottom, -20)
+        .padding(.top, model.isPad ? 10 : 0)
         .modifier(HideScrollContentBackground())
         .background(Color(designSystemColor: .background))
         .modifier(CompactSectionSpacing())

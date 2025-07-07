@@ -38,7 +38,6 @@ get_build_id_for_version() {
     case "$1" in
         18.4*) echo "22E238" ;;
         18.5*) echo "22F77" ;;
-        26.0*) echo "23A5260l" ;;
         *) return 1 ;;
     esac
 }

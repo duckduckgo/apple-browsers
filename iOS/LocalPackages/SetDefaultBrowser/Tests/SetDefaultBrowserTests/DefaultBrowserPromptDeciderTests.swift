@@ -271,6 +271,36 @@ final class DefaultBrowserPromptDeciderTests {
     }
 
     @Test(
+        "Check Modal Is Not Presented when Default Browser Cannot Be Assessed",
+        arguments: [
+            DefaultBrowserPromptUserType.new,
+            .returning,
+            .existing,
+        ],
+        [
+            DefaultBrowserInfoResult.Failure.rateLimitReached(updatedStoredInfo: nil),
+            .unknownError(NSError(domain: "", code: 0, userInfo: nil)),
+            .notSupportedOnCurrentOSVersion
+        ]
+    )
+    func whenDefaultBrowserManagerReturnsErrorThenModalIsNotPresented(userType: DefaultBrowserPromptUserType, failure: DefaultBrowserInfoResult.Failure) {
+        // GIVEN
+        storeMock.lastModalShownDate = nil
+        storeMock.modalShownOccurrences = 0
+        defaultBrowserManagerMock.resultToReturn = .failure(failure)
+        let installDate = Date(timeIntervalSince1970: 1750739150) // Tuesday, 24 June 2025 12:00:00 AM (GMT)
+        makeSUT(installDate: installDate)
+        dateProviderMock.setNowDate(installDate)
+        dateProviderMock.advanceBy(.days(2))
+
+        // WHEN
+        let result = sut.promptType()
+
+        // THEN
+        #expect(result == nil)
+    }
+
+    @Test(
         "Check Full Flow Correctness For New and Returning User",
         arguments: [
             DefaultBrowserPromptUserType.new,

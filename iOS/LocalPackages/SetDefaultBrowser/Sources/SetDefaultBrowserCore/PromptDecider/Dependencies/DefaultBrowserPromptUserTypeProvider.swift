@@ -18,7 +18,7 @@
 //
 
 /// Represents the different types of users for the SAD prompts.
-public enum DefaultBrowserPromptUserType: String, Sendable {
+public enum DefaultBrowserPromptUserType: String, CaseIterable, Sendable {
     /// A user who has recently installed the app.
     ///
     /// New users typically receive a different prompt sequence designed for onboarding
@@ -36,7 +36,7 @@ public enum DefaultBrowserPromptUserType: String, Sendable {
     /// new or returning users would see.
     case existing
 
-    var isNewOrReturningUser: Bool {
+    public var isNewOrReturningUser: Bool {
         switch self {
         case .new, .returning:
             return true

@@ -86,6 +86,7 @@ public extension DesignSystemImages {
             public static var addToHome: DesignSystemImage { .init(resource: .addToHome16) }
             public static var addToTaskbar: DesignSystemImage { .init(resource: .addToTaskbar16) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChat16) }
+            public static var aiChatGradientColor: DesignSystemImage { .init(resource: .aiChatGradientColor16) }
             public static var alert: DesignSystemImage { .init(resource: .alert16) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable16) }
             public static var arrowCircleRight: DesignSystemImage { .init(resource: .arrowCircleRight16) }
@@ -151,6 +152,7 @@ public extension DesignSystemImages {
             public static var feedbackBlank: DesignSystemImage { .init(resource: .feedbackBlank16) }
             public static var findInPage: DesignSystemImage { .init(resource: .findInPage16) }
             public static var findSearch: DesignSystemImage { .init(resource: .findSearch16) }
+            public static var findSearchGradientColor: DesignSystemImage { .init(resource: .findSearchGradientColor16) }
             public static var fire: DesignSystemImage { .init(resource: .fire16) }
             public static var fireSolid: DesignSystemImage { .init(resource: .fireSolid16) }
             public static var fireTab: DesignSystemImage { .init(resource: .fireTab16) }
@@ -312,6 +314,7 @@ public extension DesignSystemImages {
             public static var aiChatAddSolid: DesignSystemImage { .init(resource: .aiChatAddSolid24) }
             public static var alertRecolorable: DesignSystemImage { .init(resource: .alertRecolorable24) }
             public static var arrowCircleUpLeft: DesignSystemImage { .init(resource: .arrowCircleUpLeft24) }
+            public static var arrowDown: DesignSystemImage { .init(resource: .arrowDown24) }
             public static var arrowDownLeft: DesignSystemImage { .init(resource: .arrowDownLeft24) }
             public static var arrowDownRight: DesignSystemImage { .init(resource: .arrowDownRight24) }
             public static var arrowDownLeftSmall: DesignSystemImage { .init(resource: .arrowDownLeft24Small) }

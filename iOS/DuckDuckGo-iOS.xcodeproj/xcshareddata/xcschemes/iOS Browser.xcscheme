@@ -86,6 +86,9 @@
                <Test
                   Identifier = "FireButtonReferenceTests/testClearDataUsingLegacyContainer()">
                </Test>
+               <Test
+                  Identifier = "SpecialErrorPageNavigationHandlerTests/whenWebViewIsNilled_ThenWebViewIsDeallocated()">
+               </Test>
             </SkippedTests>
          </TestableReference>
          <TestableReference

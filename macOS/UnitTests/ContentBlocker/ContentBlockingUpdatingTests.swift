@@ -42,7 +42,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
             persistor: MockFireButtonPreferencesPersistor(),
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock()
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger()
         )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
@@ -207,7 +208,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 extension UserContentControllerNewContent {
 
     func rules(withName name: String) -> WKContentRuleList? {
-        rulesUpdate.rules.first(where: { $0.name == name})?.rulesList
+        rulesUpdate.rules.first(where: { $0.name == name })?.rulesList
     }
 
     var isValid: Bool {

@@ -153,7 +153,7 @@ private enum Const {
         static let logoHorizontalPadding: CGFloat = 16.0
         static let rowVerticalSpacing: CGFloat = 3.0
         static let rowVerticalPadding: CGFloat = 11.0
-        static let cornerRadius: CGFloat = 8.0
+        static let cornerRadius: CGFloat = 12.0
         static let maxWidth: CGFloat = 480.0
     }
 }

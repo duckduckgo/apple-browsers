@@ -221,10 +221,9 @@ public final class DefaultAutofillDatabaseProvider: GRDBSecureStorageDatabasePro
         }
         do {
             var updatedSyncableCredentials = syncableCredentials
-            if let account = try credentials.account.saveAndFetch(database) {
-                credentials.account = account
-                updatedSyncableCredentials.account = account
-            }
+            let account = try credentials.account.saveAndFetch(database)
+            credentials.account = account
+            updatedSyncableCredentials.account = account
             try SecureVaultModels.WebsiteCredentialsRecord(credentials: credentials).save(database)
             try updatedSyncableCredentials.metadata.save(database)
         } catch let error as DatabaseError {

@@ -181,6 +181,9 @@
             </BuildableReference>
             <SkippedTests>
                <Test
+                  Identifier = "AddressBarSpoofingIntegrationTests/testUrlBarSpoofingWithUnsupportedApplicationScheme()">
+               </Test>
+               <Test
                   Identifier = "AutoconsentIntegrationTests/testFilterlistRule_whenFakeCookieBannerIsDisplayed_bannerIsHidden()">
                </Test>
                <Test

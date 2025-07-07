@@ -45,6 +45,10 @@ public extension String {
 
     static let localhost = "localhost"
 
+    init(_ staticString: StaticString) {
+        self = "\(staticString)"
+    }
+
     // MARK: Prefix/Suffix
 
     func trimmingWhitespace() -> String {

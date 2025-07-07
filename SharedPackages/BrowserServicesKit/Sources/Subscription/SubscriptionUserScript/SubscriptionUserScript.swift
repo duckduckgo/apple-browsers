@@ -143,6 +143,7 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
     public weak var broker: UserScriptMessageBroker?
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        print("SABRINA \(methodName)")
         switch MessageName(rawValue: methodName) {
         case .handshake:
             return handler.handshake

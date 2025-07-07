@@ -1799,6 +1799,56 @@ final class DataImportViewModelTests: XCTestCase {
         }
     }
 
+    // MARK: - DataTypesSelection Tests
+
+    func testDataTypesSelectionWhenAllDataTypesSelected_returnsAll() {
+        // GIVEN
+        model = DataImportViewModel(importSource: .chrome)
+        model.selectedDataTypes = [.bookmarks, .passwords]
+
+        // WHEN
+        let result = model.dataTypesSelection
+
+        // THEN
+        XCTAssertEqual(result, .all)
+    }
+
+    func testDataTypesSelectionWhenOnlyBookmarksSelected_returnsSingleBookmarks() {
+        // GIVEN
+        model = DataImportViewModel(importSource: .chrome)
+        model.selectedDataTypes = [.bookmarks]
+
+        // WHEN
+        let result = model.dataTypesSelection
+
+        // THEN
+        XCTAssertEqual(result, .single(.bookmarks))
+    }
+
+    func testDataTypesSelectionWhenOnlyPasswordsSelected_returnsSinglePasswords() {
+        // GIVEN
+        model = DataImportViewModel(importSource: .chrome)
+        model.selectedDataTypes = [.passwords]
+
+        // WHEN
+        let result = model.dataTypesSelection
+
+        // THEN
+        XCTAssertEqual(result, .single(.passwords))
+    }
+
+    func testDataTypesSelectionWhenNoDataTypesSelected_returnsNone() {
+        // GIVEN
+        model = DataImportViewModel(importSource: .chrome)
+        model.selectedDataTypes = []
+
+        // WHEN
+        let result = model.dataTypesSelection
+
+        // THEN
+        XCTAssertEqual(result, .none)
+    }
+
 }
 
 private extension DataImport.BrowserProfile {

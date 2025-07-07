@@ -60,7 +60,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
                                Entitlement.ProductName.dataBrokerProtection,
                                Entitlement.ProductName.identityTheftRestoration,
                                Entitlement.ProductName.paidAIChat]
-            let allNames = success.features.compactMap({ feature in feature.name})
+            let allNames = success.features.compactMap({ feature in feature.name })
 
             for feature in allFeatures {
                 XCTAssertTrue(allNames.contains(feature.subscriptionEntitlement))

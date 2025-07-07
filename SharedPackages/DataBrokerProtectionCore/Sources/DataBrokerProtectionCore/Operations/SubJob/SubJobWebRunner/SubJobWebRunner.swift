@@ -102,7 +102,7 @@ public extension SubJobWebRunning {
             return
         }
 
-        if action as? SolveCaptchaAction != nil, let captchaTransactionId = actionsHandler?.captchaTransactionId {
+        if action is SolveCaptchaAction, let captchaTransactionId = actionsHandler?.captchaTransactionId {
             actionsHandler?.captchaTransactionId = nil
             stageCalculator.setStage(.captchaSolve)
             if let captchaData = try? await captchaService.submitCaptchaToBeResolved(for: captchaTransactionId,
@@ -146,7 +146,7 @@ public extension SubJobWebRunning {
             stageCalculator.setStage(.emailReceive)
             let url =  try await emailService.getConfirmationLink(
                 from: email,
-                numberOfRetries: 100, // Move to constant
+                numberOfRetries: 10, // Move to constant
                 pollingInterval: action.pollingTime,
                 attemptId: stageCalculator.attemptId,
                 shouldRunNextStep: shouldRunNextStep

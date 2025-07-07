@@ -151,7 +151,7 @@ class DefaultRemoteMessagingSurveyURLBuilderTests: XCTestCase {
         let state = components.queryItems?.first(where: { $0.name == "last_search_state" })?.value
         XCTAssertEqual(state, "week")
 
-        XCTAssertTrue(components.queryItems!.contains { $0.name == "foo" && $0.value == "bar"})
+        XCTAssertTrue(components.queryItems!.contains { $0.name == "foo" && $0.value == "bar" })
     }
 
     private func buildRemoteMessagingSurveyURLBuilder(

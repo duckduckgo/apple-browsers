@@ -84,12 +84,6 @@ extension String {
         replacingOccurrences(of: "[~#@*+%{}<>\\[\\]|\"\\_^\\/:\\\\]", with: replacement, options: .regularExpression)
     }
 
-    init(_ staticString: StaticString) {
-        self = staticString.withUTF8Buffer {
-            String(decoding: $0, as: UTF8.self)
-        }
-    }
-
     var isBlank: Bool {
         self.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }

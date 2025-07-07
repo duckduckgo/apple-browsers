@@ -1164,7 +1164,6 @@ final class AddressBarButtonsViewController: NSViewController {
             attributedTitle.append(NSAttributedString(string: UserText.askAIChatButtonTitle, attributes: mainAttributes))
             attributedTitle.append(NSAttributedString(string: " "))
             attributedTitle.append(NSAttributedString(string: "⇧↵", attributes: shortcutAttributes))
-//            attributedTitle.append(NSAttributedString(string: " "))
 
             return attributedTitle
         }()

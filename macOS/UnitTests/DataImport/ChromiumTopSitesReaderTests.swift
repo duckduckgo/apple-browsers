@@ -21,7 +21,8 @@ import Testing
 
 class ChromiumTopSitesReaderTests {
 
-    @Test func testReadingTopSites() async throws {
+    @Test("Check if expected top sites are read from Chromium data")
+    func readingTopSites() async throws {
         let topSitesReader = ChromiumTopSitesReader(chromiumDataDirectoryURL: resourceURL())
         let topSites = try topSitesReader.readTopSites().get()
 

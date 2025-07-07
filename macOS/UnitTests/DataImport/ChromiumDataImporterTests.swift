@@ -22,7 +22,8 @@ import Testing
 
 class ChromiumDataImporterTests {
 
-    @Test func testWhenImportingBookmarks_AndBookmarkImportSucceeds_ThenSummaryIsPopulated() async throws {
+    @Test("Check if bookmarks import summary is populated after a successful bookmark import")
+    func whenImportingBookmarks_AndBookmarkImportSucceeds_ThenSummaryIsPopulated() async throws {
         let loginImporter = MockLoginImporter()
         let faviconManager = FaviconManagerMock()
         let bookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _ in .init(successful: 1, duplicates: 2, failed: 3) })
@@ -37,7 +38,8 @@ class ChromiumDataImporterTests {
         #expect(bookmarks.failed == 3)
     }
 
-    @Test func testWhenImportingBookmarks_AndFeatureFlagDisabled_OnlyBookmarksAreMerged_AndBookmarksBarIsFavorited() async throws {
+    @Test("Check if only bookmarks are imported and bookmarks bar is favorited after importing bookmarks with feature flag disabled")
+    func whenImportingBookmarks_AndFeatureFlagDisabled_OnlyBookmarksAreMerged_AndBookmarksBarIsFavorited() async throws {
         var bookmarksToImport: ImportedBookmarks?
         var bookmarksBarMarkedAsFavorites: Bool?
 
@@ -57,7 +59,8 @@ class ChromiumDataImporterTests {
         #expect(bookmarksBarMarkedAsFavorites == true)
     }
 
-    @Test func testWhenImportingBookmarks_AndFeatureFlagEnabled_BookmarksAndCustomShortcutsAreMerged_AndBookmarksBarIsNotFavorited() async throws {
+    @Test("Check if bookmarks and custom shortcuts are merged and bookmarks bar is not favorited after importing bookmarks with feature flag enabled")
+    func whenImportingBookmarks_AndFeatureFlagEnabled_BookmarksAndCustomShortcutsAreMerged_AndBookmarksBarIsNotFavorited() async throws {
         var bookmarksToImport: ImportedBookmarks?
         var bookmarksBarMarkedAsFavorites: Bool?
 
@@ -78,7 +81,8 @@ class ChromiumDataImporterTests {
         #expect(bookmarksBarMarkedAsFavorites == false)
     }
 
-    @Test func testWhenImportingBookmarks_AndFeatureFlagEnabled_BookmarksAndTopSitesShortcutsAreMerged_AndBookmarksBarIsNotFavorited() async throws {
+    @Test("Check if bookmarks and top sites shortcuts are merged and bookmarks bar is not favorited after importing bookmarks with feature flag enabled")
+    func whenImportingBookmarks_AndFeatureFlagEnabled_BookmarksAndTopSitesShortcutsAreMerged_AndBookmarksBarIsNotFavorited() async throws {
         var bookmarksToImport: ImportedBookmarks?
         var bookmarksBarMarkedAsFavorites: Bool?
 

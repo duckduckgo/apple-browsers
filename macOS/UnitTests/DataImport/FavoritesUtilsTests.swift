@@ -21,7 +21,8 @@ import Testing
 
 struct FavoritesUtilsTests {
 
-    @Test func testMergeBookmarksAndFavorites_ReturnsBookmarks_WhenFavoritesEmpty() {
+    @Test("Check if mergeBookmarksAndFavorites returns the provided bookmarks when no favorites are provided")
+    func mergeBookmarksAndFavorites_ReturnsBookmarks_WhenFavoritesEmpty() {
         let bookmarks = createMockImportedBookmarks()
         let favorites: [ImportedBookmarks.BookmarkOrFolder] = []
 
@@ -30,7 +31,8 @@ struct FavoritesUtilsTests {
         #expect(result == bookmarks)
     }
 
-    @Test func testMergeBookmarksAndFavorites_MarksExpectedBookmarksAsFavorites() throws {
+    @Test("Check if mergeBookmarksAndFavorites marks the expected bookmarks as favorites")
+    func mergeBookmarksAndFavorites_MarksExpectedBookmarksAsFavorites() throws {
         let bookmarks = createMockImportedBookmarks()
         let favorite = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
 
@@ -46,7 +48,8 @@ struct FavoritesUtilsTests {
         #expect(bookmarkBarBookmarkResult.isDDGFavorite == true)
     }
 
-    @Test func testMergeBookmarksAndFavorites_AddsUniqueFavoritesToBookmarkBar() throws {
+    @Test("Check if mergeBookmarksAndFavorites adds unique favorites to the bookmark bar")
+    func mergeBookmarksAndFavorites_AddsUniqueFavoritesToBookmarkBar() throws {
         let bookmarks = createMockImportedBookmarks()
         let favorite1 = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
         let favorite2 = ImportedBookmarks.BookmarkOrFolder(name: "Duck.ai", type: .bookmark, urlString: "https://duck.ai", children: nil)

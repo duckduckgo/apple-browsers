@@ -690,7 +690,7 @@ final class AddressBarButtonsViewController: NSViewController {
         leadingAIChatDivider.isHidden = aiChatButton.isHidden || bookmarkButton.isHidden
 
         if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            trailingAIChatDivider.isHidden = true
+            trailingAIChatDivider.isHidden = cancelButton.isHidden
         } else {
             trailingAIChatDivider.isHidden = aiChatButton.isHidden || cancelButton.isHidden
         }

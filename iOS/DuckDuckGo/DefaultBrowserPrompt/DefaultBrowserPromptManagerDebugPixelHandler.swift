@@ -33,7 +33,7 @@ final class DefaultBrowserPromptManagerDebugPixelHandler: EventMapping<DefaultBr
             case .rateLimitReachedNoExistingResultPersisted:
                 Logger.defaultBrowserPrompt.debug("[Default Browser] - Default Browser API Rate Limit Reached. No Persisted Result.")
             case .unknownError:
-                Logger.defaultBrowserPrompt.debug("[Default Browser] - Default Browser API Unknown Error")
+                Logger.defaultBrowserPrompt.debug("[Default Browser] - Default Browser API Unknown Error \(error)")
             }
         }
     }

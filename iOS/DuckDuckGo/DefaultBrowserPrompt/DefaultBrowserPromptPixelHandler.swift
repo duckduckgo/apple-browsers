@@ -24,7 +24,7 @@ import SetDefaultBrowserCore
 final class DefaultBrowserPromptPixelHandler: EventMapping<DefaultBrowserPromptEvent>, DefaultBrowserPromptEventMapping {
 
     public init() {
-        super.init { event, error, _, _ in
+        super.init { event, _, _, _ in
             switch event {
             case .modalShown:
                 Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Modal shown")

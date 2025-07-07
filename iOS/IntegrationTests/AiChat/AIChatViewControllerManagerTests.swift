@@ -48,7 +48,7 @@ struct AIChatViewControllerManagerTests {
         return MockUIViewController()
     }
     
-    private func waitForMainThreadProcessing() async {
+    private func waitForTaskProcessing() async {
         // Allow time for processing on main queue
         await Task.yield()
         try? await Task.sleep(nanoseconds: 100_000_000)
@@ -62,12 +62,12 @@ struct AIChatViewControllerManagerTests {
 
         // First, establish an AI chat session
         manager.openAIChat(on: mockViewController)
-        await waitForMainThreadProcessing()
+        await waitForTaskProcessing()
         let firstViewController = manager.chatViewController
 
         // Open AI chat again - should use the same view controller
         manager.openAIChat(on: mockViewController)
-        await waitForMainThreadProcessing()
+        await waitForTaskProcessing()
 
         // Verify the session invalidation was triggered by account sign in
         #expect(manager.chatViewController != nil)
@@ -83,7 +83,7 @@ struct AIChatViewControllerManagerTests {
         
         // First, establish an AI chat session
         manager.openAIChat(on: mockViewController)
-        await waitForMainThreadProcessing()
+        await waitForTaskProcessing()
 
         let firstViewController = manager.chatViewController
         // Simulate user signing in to their account
@@ -92,12 +92,12 @@ struct AIChatViewControllerManagerTests {
             object: nil,
             userInfo: nil
         )
-        await waitForMainThreadProcessing()
+        await waitForTaskProcessing()
 
         // Open AI chat again - session should be invalidated due to account sign in
         manager.openAIChat(on: mockViewController)
-        await waitForMainThreadProcessing()
-        
+        await waitForTaskProcessing()
+
         // Verify the session invalidation was triggered by account sign in
         #expect(manager.chatViewController != nil)
         #expect(firstViewController != nil)
@@ -112,7 +112,7 @@ struct AIChatViewControllerManagerTests {
 
         // First, establish an AI chat session
         manager.openAIChat(on: mockViewController)
-        await waitForMainThreadProcessing()
+        await waitForTaskProcessing()
 
         let firstViewController = manager.chatViewController
         // Simulate user signing in to their account
@@ -121,11 +121,11 @@ struct AIChatViewControllerManagerTests {
             object: nil,
             userInfo: nil
         )
-        await waitForMainThreadProcessing()
+        await waitForTaskProcessing()
 
         // Open AI chat again - session should be invalidated due to account sign in
         manager.openAIChat(on: mockViewController)
-        await waitForMainThreadProcessing()
+        await waitForTaskProcessing()
 
         // Verify the session invalidation was triggered by account sign in
         #expect(manager.chatViewController != nil)
@@ -141,7 +141,7 @@ struct AIChatViewControllerManagerTests {
 
         // First, establish an AI chat session
         manager.openAIChat(on: mockViewController)
-        await waitForMainThreadProcessing()
+        await waitForTaskProcessing()
 
         let firstViewController = manager.chatViewController
         // Simulate user signing in to their account
@@ -150,11 +150,11 @@ struct AIChatViewControllerManagerTests {
             object: nil,
             userInfo: nil
         )
-        await waitForMainThreadProcessing()
+        await waitForTaskProcessing()
 
         // Open AI chat again - session should be invalidated due to account sign in
         manager.openAIChat(on: mockViewController)
-        await waitForMainThreadProcessing()
+        await waitForTaskProcessing()
 
         // Verify the session invalidation was triggered by account sign in
         #expect(manager.chatViewController != nil)

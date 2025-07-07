@@ -341,6 +341,7 @@ let package = Package(
             name: "SecureStorage",
             dependencies: [
                 "Common",
+                "PixelKit",
                 "GRDB",
             ],
             swiftSettings: [

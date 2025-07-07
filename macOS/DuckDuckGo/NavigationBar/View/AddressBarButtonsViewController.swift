@@ -560,7 +560,8 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func updateAskAIChatButtonVisibility() {
         guard featureFlagger.isFeatureOn(.aiChatSidebar),
-              aiChatMenuConfig.shouldDisplayAddressBarShortcut else {
+              aiChatMenuConfig.shouldDisplayAddressBarShortcut,
+              !(tabViewModel?.tab.url?.isDuckAIURL ?? false) else {
             askAIChatButton.isHidden = true
             return
         }

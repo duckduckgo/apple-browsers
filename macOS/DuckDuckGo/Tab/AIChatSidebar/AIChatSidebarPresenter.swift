@@ -123,7 +123,14 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         sidebarPresenceWillChangeSubject.send(.init(tabID: tabID, isShown: isShowingSidebar))
 
         if isShowingSidebar {
-            let sidebarViewController = sidebarProvider.sidebar(for: tabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
+            let sidebarViewController: AIChatSidebarViewController = {
+                if let sidebar = sidebarProvider.getSidebar(for: tabID) {
+                    return sidebar.sidebarViewController
+                } else {
+                    return sidebarProvider.makeSidebar(for: tabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
+                }
+            }()
+
             sidebarViewController.delegate = self
             sidebarHost.embedSidebarViewController(sidebarViewController)
         }
@@ -165,7 +172,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
         if !isShowingSidebar {
             // If not showing the sidebar open it with the payload received
-            let sidebarViewController = sidebarProvider.sidebar(for: currentTabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
+            let sidebarViewController = sidebarProvider.makeSidebar(for: currentTabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
             sidebarViewController.aiChatPayload = payload
             updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
         } else {
@@ -195,8 +202,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
             // If not showing the sidebar open it with the summarization prompt
             updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
-        } else {
-            let sidebarViewController = sidebarProvider.sidebar(for: currentTabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
+        } else if let sidebarViewController = sidebarProvider.getSidebar(for: currentTabID)?.sidebarViewController {
             sidebarViewController.setAIChatPrompt(prompt)
         }
     }

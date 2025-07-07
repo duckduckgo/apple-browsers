@@ -565,8 +565,14 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
+        let isSidebarOpen: Bool = {
+            guard let tabID = tabViewModel?.tab.uuid else { return false }
+            return aiChatSidebarPresenter.isSidebarOpen(for: tabID)
+        }()
+
         func shouldExpandButton() -> Bool {
             guard isTextFieldEditorFirstResponder,
+                  !isSidebarOpen,
                   let textFieldValue,
                   !textFieldValue.isEmpty,
                   textFieldValue.isUserTyped || textFieldValue.isSuggestion
@@ -611,9 +617,18 @@ final class AddressBarButtonsViewController: NSViewController {
             isAskAIChatButtonExpanded = false
 
             askAIChatButton.imagePosition = .imageOnly
-            askAIChatButton.layer?.backgroundColor = NSColor.clear.cgColor
-
+//            askAIChatButton.layer?.backgroundColor = NSColor.clear.cgColor
             askAIChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+
+            if isSidebarOpen {
+                askAIChatButton.isEnabled = false
+                askAIChatButton.setButtonType(.toggle)
+                askAIChatButton.state = .on
+            } else {
+                askAIChatButton.isEnabled = true
+                askAIChatButton.setButtonType(.momentaryPushIn)
+                askAIChatButton.state = .off
+            }
         }
     }
 

@@ -106,7 +106,7 @@ public protocol OAuthClient {
 
     /// Checks if the migration from V1 to V2 is possible
     /// - Returns: true is possible, false otherwise
-    var isMigrationPossible: Bool { get }
+    var isV1TokenPresent: Bool { get }
 
     /// Migrate access token v1 to auth token v2 if needed
     /// - Throws: An error in case of failures during the migration or a `OAuthClientError.authMigrationNotPerformed` if the migration is not needed or not possible
@@ -306,7 +306,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
     }
 
-    public var isMigrationPossible: Bool {
+    public var isV1TokenPresent: Bool {
         guard let legacyTokenStorage,
               let legacyToken = legacyTokenStorage.token,
               !legacyToken.isEmpty else {

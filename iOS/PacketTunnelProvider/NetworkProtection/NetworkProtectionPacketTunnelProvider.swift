@@ -471,7 +471,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                     pixelHandler: pixelHandler,
                                                     isAuthV2Enabled: settings.isAuthV2Enabled)
-        Self.shouldUseAuthV2 = settings.isAuthV2Enabled && subscriptionAuthMigrator.isMigrated
+        Self.shouldUseAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
 
         if Self.shouldUseAuthV2 {
             Logger.networkProtection.log("Configure Subscription V2")

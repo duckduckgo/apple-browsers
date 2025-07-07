@@ -30,15 +30,19 @@ public class AuthMigrator {
     /// - migrationFailed(Error)
     let pixelHandler: SubscriptionPixelHandler
 
-    public var isMigrated: Bool {
-        if isAuthV2Enabled {
-            if oAuthClient.isMigrationPossible {
-                return oAuthClient.isUserAuthenticated
+    public var isReadyToUseAuthV2: Bool {
+        switch (isAuthV2Enabled, oAuthClient.isUserAuthenticated) {
+        case (true, true):
+            return true // AuthV2 FF enabled and the user is already logged in, the migration was completed or the subscription was purchased directly on V2
+        case (true, false):
+            // AuthV2 enabled but the user is not logged in, this could be:
+            if oAuthClient.isV1TokenPresent {
+                return false // Migration not performed yet
             } else {
-                return true
+               return true // User without a subscription
             }
-        } else {
-            return oAuthClient.isUserAuthenticated
+        case (false, _):
+            return false // AuthV2 FF disabled
         }
     }
 

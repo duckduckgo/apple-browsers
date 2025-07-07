@@ -21,7 +21,7 @@ import Networking
 
 public class MockOAuthClient: OAuthClient {
 
-    public var isMigrationPossible: Bool = false
+    public var isV1TokenPresent: Bool = false
 
     public init() {}
     public var isUserAuthenticated: Bool {

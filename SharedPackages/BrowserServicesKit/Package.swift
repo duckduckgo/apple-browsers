@@ -45,7 +45,8 @@ let package = Package(
         .library(name: "PixelExperimentKit", targets: ["PixelExperimentKit"]),
         .library(name: "BrokenSitePrompt", targets: ["BrokenSitePrompt"]),
         .library(name: "PageRefreshMonitor", targets: ["PageRefreshMonitor"]),
-        .library(name: "PrivacyStats", targets: ["PrivacyStats"])
+        .library(name: "PrivacyStats", targets: ["PrivacyStats"]),
+        .library(name: "SharedObjCTestsUtils", targets: ["SharedObjCTestsUtils"]),
     ],
     dependencies: [
         .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.1.0"),
@@ -467,21 +468,36 @@ let package = Package(
         ),
 
         // MARK: - Test Targets
+        .target(
+            name: "SharedObjCTestsUtils",
+            dependencies: [],
+            sources: [
+                "SharedObjCTestsUtils.m",
+            ],
+            publicHeadersPath: "include",
+            cSettings: [
+                .headerSearchPath("include"),
+            ]
+        ),
+
         .testTarget(
             name: "HistoryTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "History",
             ]
         ),
         .testTarget(
             name: "SuggestionsTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Suggestions",
             ]
         ),
         .testTarget(
             name: "BookmarksTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Bookmarks",
                 "BookmarksTestsUtils",
             ],
@@ -506,6 +522,7 @@ let package = Package(
         .testTarget(
             name: "BrowserServicesKitTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "BrowserServicesKit",
                 "BrowserServicesKitTestsUtils",
                 "SecureStorageTestsUtils",
@@ -519,6 +536,7 @@ let package = Package(
         .testTarget(
             name: "CrashesTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Crashes",
                 "PersistenceTestingUtils"
             ]
@@ -526,6 +544,7 @@ let package = Package(
         .testTarget(
             name: "DDGSyncTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "BookmarksTestsUtils",
                 "DDGSync",
                 "PersistenceTestingUtils",
@@ -540,24 +559,28 @@ let package = Package(
         .testTarget(
             name: "DDGSyncCryptoTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 .product(name: "DDGSyncCrypto", package: "sync_crypto"),
             ]
         ),
         .testTarget(
             name: "CommonTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Common",
             ]
         ),
         .testTarget(
             name: "NetworkingTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "NetworkingTestingUtils"
             ]
         ),
         .testTarget(
             name: "NavigationTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Navigation",
                 .product(name: "Swifter", package: "swifter"),
             ],
@@ -575,6 +598,7 @@ let package = Package(
         .testTarget(
             name: "UserScriptTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "UserScript",
             ],
             resources: [
@@ -584,6 +608,7 @@ let package = Package(
         .testTarget(
             name: "PersistenceTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "PersistenceTestingUtils",
                 "TrackerRadarKit",
             ]
@@ -591,6 +616,7 @@ let package = Package(
         .testTarget(
             name: "RemoteMessagingTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "BrowserServicesKitTestsUtils",
                 "RemoteMessaging",
                 "RemoteMessagingTestsUtils",
@@ -607,6 +633,7 @@ let package = Package(
         .testTarget(
             name: "ConfigurationTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Configuration",
                 "NetworkingTestingUtils",
                 "PersistenceTestingUtils",
@@ -615,6 +642,7 @@ let package = Package(
         .testTarget(
             name: "SyncDataProvidersTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "BookmarksTestsUtils",
                 "SecureStorageTestsUtils",
                 "SyncDataProviders",
@@ -623,6 +651,7 @@ let package = Package(
         .testTarget(
             name: "SecureStorageTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "SecureStorage",
                 "SecureStorageTestsUtils",
                 "PixelKit"
@@ -631,6 +660,7 @@ let package = Package(
         .testTarget(
             name: "PrivacyDashboardTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "PrivacyDashboard",
                 "PersistenceTestingUtils",
             ]
@@ -638,6 +668,7 @@ let package = Package(
         .testTarget(
             name: "SubscriptionTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Subscription",
                 "SubscriptionTestingUtilities",
                 "NetworkingTestingUtils",
@@ -646,6 +677,7 @@ let package = Package(
         .testTarget(
             name: "PixelKitTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "PixelKit",
                 "PixelKitTestingUtilities",
             ]
@@ -653,6 +685,7 @@ let package = Package(
         .testTarget(
             name: "DuckPlayerTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "DuckPlayer",
                 "BrowserServicesKitTestsUtils",
             ]
@@ -661,6 +694,7 @@ let package = Package(
         .testTarget(
             name: "MaliciousSiteProtectionTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Networking",
                 "NetworkingTestingUtils",
                 "MaliciousSiteProtection",
@@ -674,6 +708,7 @@ let package = Package(
         .testTarget(
             name: "PixelExperimentKitTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "PixelExperimentKit",
                 "Configuration"
             ]
@@ -681,24 +716,28 @@ let package = Package(
         .testTarget(
             name: "SpecialErrorPagesTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "SpecialErrorPages"
             ]
         ),
         .testTarget(
             name: "BrokenSitePromptTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "BrokenSitePrompt"
             ]
         ),
         .testTarget(
             name: "PageRefreshMonitorTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "PageRefreshMonitor"
             ]
         ),
         .testTarget(
             name: "PrivacyStatsTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "PrivacyStats",
             ]
         ),

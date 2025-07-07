@@ -433,6 +433,7 @@ final class AppearancePreferences: ObservableObject {
         currentThemeName = .init(rawValue: persistor.currentThemeName) ?? .systemDefault
         showFullURL = persistor.showFullURL
         favoritesDisplayMode = persistor.favoritesDisplayMode.flatMap(FavoritesDisplayMode.init) ?? .default
+        isOmnibarVisible = persistor.isOmnibarVisible
         isFavoriteVisible = persistor.isFavoriteVisible
         isProtectionsReportVisible = persistor.isProtectionsReportVisible
         showBookmarksBar = persistor.showBookmarksBar

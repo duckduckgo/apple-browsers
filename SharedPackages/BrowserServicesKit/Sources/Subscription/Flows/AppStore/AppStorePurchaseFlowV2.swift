@@ -119,7 +119,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
                 Logger.subscriptionAppStorePurchaseFlow.log("Failed to restore an account from a past purchase: \(error.localizedDescription, privacy: .public)")
                 do {
                     externalID = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded).decodedAccessToken.externalID
-                } catch Networking.OAuthClientError.missingTokens {
+                } catch Networking.OAuthClientError.missingTokenContainer {
                     Logger.subscriptionStripePurchaseFlow.error("Failed to create a new account: \(error.localizedDescription, privacy: .public)")
                     return .failure(.accountCreationFailed(error))
                 } catch {
@@ -139,7 +139,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         case .success(let transactionJWS):
             return .success(transactionJWS)
         case .failure(let error):
-            Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(String(reflecting: error), privacy: .public)")
+            Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(error.localizedDescription, privacy: .public)")
 
             await subscriptionManager.signOut(notifyUI: false) // TBD see if true is needed
 
@@ -179,7 +179,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
 
     private func getExpiredSubscriptionID() async -> String? {
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
             // Only return an externalID if the subscription is expired so to prevent creating multiple subscriptions in the same account
             if !subscription.isActive,
                subscription.platform != .apple {

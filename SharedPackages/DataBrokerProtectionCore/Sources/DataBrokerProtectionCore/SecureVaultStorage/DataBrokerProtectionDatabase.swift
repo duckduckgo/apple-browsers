@@ -35,6 +35,8 @@ public protocol DataBrokerProtectionRepository {
     func fetchAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData]
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile]
 
+    func fetchAllDataBrokers() throws -> [DataBroker]
+
     func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws
     func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws
     func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws
@@ -64,10 +66,13 @@ public protocol DataBrokerProtectionRepository {
     func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent]
     func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [HistoryEvent]
     func hasMatches() throws -> Bool
+    func matchRemovedByUser(_ matchID: Int64) throws
 
     func fetchAllAttempts() throws -> [AttemptInformation]
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation?
     func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
+
+    func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)?
 }
 
 public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
@@ -76,13 +81,16 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
     private let fakeBrokerFlag: DataBrokerDebugFlag
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let vault: (any DataBrokerProtectionSecureVault)
+    private let localBrokerService: LocalBrokerJSONServiceProvider
 
     public init(fakeBrokerFlag: DataBrokerDebugFlag,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                vault: (any DataBrokerProtectionSecureVault)) {
+                vault: (any DataBrokerProtectionSecureVault),
+                localBrokerService: LocalBrokerJSONServiceProvider) {
         self.fakeBrokerFlag = fakeBrokerFlag
         self.pixelHandler = pixelHandler
         self.vault = vault
+        self.localBrokerService = localBrokerService
     }
 
     public func save(_ profile: DataBrokerProtectionProfile) async throws {
@@ -362,6 +370,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
+    public func fetchAllDataBrokers() throws -> [DataBroker] {
+        do {
+            return try vault.fetchAllBrokers()
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchAllDataBrokers")
+            throw error
+        }
+    }
+
     public func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws {
         do {
             try vault.save(brokerId: optOut.brokerId,
@@ -398,6 +415,19 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             handleError(error, context: "DataBrokerProtectionDatabase.hasMatches")
             throw error
         }
+    }
+
+    public func matchRemovedByUser(_ matchID: Int64) throws {
+        guard let extractedProfile = try fetchExtractedProfile(with: matchID) else {
+            assertionFailure("Couldn't get extracted profile for matchID \(matchID)")
+            return
+        }
+
+        let event = HistoryEvent(extractedProfileId: matchID,
+                                 brokerId: extractedProfile.brokerId,
+                                 profileQueryId: extractedProfile.profileQueryId,
+                                 type: .matchRemovedByUser)
+        try add(event)
     }
 
     public func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent] {
@@ -455,6 +485,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
         }
     }
 
+    public func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)? {
+        do {
+            return try vault.fetchExtractedProfile(with: id)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchExtractedProfile id")
+            throw error
+        }
+    }
+
     private func handleError(_ error: Error, context: String) {
         let event: DataBrokerProtectionSharedPixels
         switch error {
@@ -494,21 +533,24 @@ extension DataBrokerProtectionDatabase {
         let newProfileQueries = profile.profileQueries
         _ = try vault.save(profile: profile)
 
-        if let brokers = try FileResources().fetchBrokerFromResourceFiles() {
-            var brokerIDs = [Int64]()
+        /// Fetch all broker IDs
+        let storedBrokers = try vault.fetchAllBrokers()
+        var brokerIDs = storedBrokers.compactMap(\.id)
 
+        /// If none exists in the vault, populate them with bundled JSONs
+        if storedBrokers.isEmpty, let brokers = try localBrokerService.bundledBrokers() {
             for broker in brokers {
                 let brokerId = try vault.save(broker: broker)
                 brokerIDs.append(brokerId)
             }
-
-            try initializeDatabaseForProfile(
-                profileId: Self.profileId,
-                vault: vault,
-                brokerIDs: brokerIDs,
-                profileQueries: newProfileQueries
-            )
         }
+
+        try initializeDatabaseForProfile(
+            profileId: Self.profileId,
+            vault: vault,
+            brokerIDs: brokerIDs,
+            profileQueries: newProfileQueries
+        )
     }
 
     // https://app.asana.com/0/481882893211075/1205574642847432/f

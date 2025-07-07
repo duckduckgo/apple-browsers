@@ -26,7 +26,12 @@ import BrowserServicesKit
 extension Preferences {
     struct EmailProtectionView: View, PreferencesTabOpening {
         var emailManager: EmailManager
-        @ObservedObject var protectionStatus: PrivacyProtectionStatus = PrivacyProtectionStatus.status(for: .emailProtection)
+        @ObservedObject var protectionStatus: PrivacyProtectionStatus
+
+        init(emailManager: EmailManager, protectionStatus: PrivacyProtectionStatus?) {
+            self.emailManager = emailManager
+            self.protectionStatus = protectionStatus ?? PrivacyProtectionStatus()
+        }
 
         var body: some View {
             PreferencePane(UserText.emailProtectionPreferences, spacing: 4) {

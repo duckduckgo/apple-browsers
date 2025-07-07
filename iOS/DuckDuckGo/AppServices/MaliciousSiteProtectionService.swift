@@ -31,13 +31,14 @@ final class MaliciousSiteProtectionService {
     init(featureFlagger: FeatureFlagger) {
         let maliciousSiteProtectionAPI = MaliciousSiteProtectionAPI()
 
+        // If Application Support directory is not available leave a trail in crash logs.
+        guard let applicationSupportDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            fatalError("Could not found Application Support directory for Malicious Site Protection")
+        }
+
         let maliciousSiteProtectionDataManager = MaliciousSiteProtection.DataManager(
             fileStore: MaliciousSiteProtection.FileStore(
-                dataStoreURL: FileManager.default.urls(
-                    for: .applicationSupportDirectory,
-                    in: .userDomainMask
-                )
-                .first!
+                dataStoreURL: applicationSupportDirectory
             ),
             embeddedDataProvider: nil,
             fileNameProvider: MaliciousSiteProtectionManager.fileName(for:)
@@ -54,6 +55,10 @@ final class MaliciousSiteProtectionService {
         let supportedThreatsProvider = {
             let isScamProtectionEnabled = featureFlagger.isFeatureOn(.scamSiteProtection)
             return isScamProtectionEnabled ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
+        }
+
+        let shouldRemoveWWWInCanonicalization = {
+            return featureFlagger.isFeatureOn(.removeWWWInCanonicalizationInThreatProtection)
         }
 
         let updateManager = MaliciousSiteProtection.UpdateManager(
@@ -77,15 +82,18 @@ final class MaliciousSiteProtectionService {
             dataManager: maliciousSiteProtectionDataManager,
             preferencesManager: preferencesManager,
             maliciousSiteProtectionFeatureFlagger: maliciousSiteProtectionFeatureFlagger,
-            supportedThreatsProvider: supportedThreatsProvider
+            supportedThreatsProvider: supportedThreatsProvider,
+            shouldRemoveWWWInCanonicalization: shouldRemoveWWWInCanonicalization
         )
 
-        // Register Malicious Site Protection background tasks to fetch datasets
-        manager.registerBackgroundRefreshTaskHandler()
+        Task { @MainActor in
+            maliciousSiteProtectionDatasetsFetcher.registerBackgroundRefreshTaskHandler()
+        }
     }
 
     // MARK: - Resume
 
+    @MainActor
     func resume() {
         manager.startFetching()
     }

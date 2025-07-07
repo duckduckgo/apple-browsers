@@ -65,11 +65,12 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         }
 
         let features: [SubscriptionEntitlement] = [.networkProtection,
-                                                  .dataBrokerProtection,
-                                                  .identityTheftRestoration]
+                                                   .dataBrokerProtection,
+                                                   .identityTheftRestoration,
+                                                   .paidAIChat]
         return .success(SubscriptionOptionsV2(platform: SubscriptionPlatformName.stripe,
-                                            options: options,
-                                            availableEntitlements: features))
+                                              options: options,
+                                              availableEntitlements: features))
     }
 
     public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PurchaseUpdate, StripePurchaseFlowError> {
@@ -98,7 +99,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
     }
 
     private func isSubscriptionExpired() async -> Bool? {
-        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData) else {
+        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .remoteFirst) else {
             return nil
         }
         return !subscription.isActive

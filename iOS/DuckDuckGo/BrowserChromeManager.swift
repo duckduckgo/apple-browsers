@@ -54,7 +54,6 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     
     private var observation: NSKeyValueObservation?
 
-    private var dragging = false
     private var startZoomScale: CGFloat = 0
     
     func attach(to scrollView: UIScrollView) {
@@ -82,7 +81,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard !scrollView.isZooming else { return }
         
-        guard dragging else { return }
+        guard scrollView.isDragging else { return }
         guard canHideBars(for: scrollView) else {
             if animator.barsState != .revealed {
                 animator.revealBars(animated: true)
@@ -115,7 +114,6 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         guard !scrollView.isZooming else { return }
-        dragging = true
         
         animator.didStartScrolling(in: scrollView)
     }
@@ -128,7 +126,7 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        dragging = false
+        // no-op
     }
 
     func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {

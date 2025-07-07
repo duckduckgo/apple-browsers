@@ -21,6 +21,8 @@ import Bookmarks
 import SwiftUI
 import UniformTypeIdentifiers
 import DuckUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct FavoritesView<Model: FavoritesViewModel>: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -44,7 +46,7 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
             NewTabPageGridView(geometry: geometry, isUsingDynamicSpacing: model.isNewTabPageCustomizationEnabled) { _ in
                 ReorderableForEach(result.items) { item in
                     viewFor(item)
-                        .previewShape()
+                        .previewShape(isExperimentalAppearanceEnabled: model.isExperimentalAppearanceEnabled)
                         .transition(.opacity)
                 } preview: { item in
                     previewFor(item)
@@ -62,7 +64,9 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
                         model.toggleCollapse()
                     }
                 }, label: {
-                    Image(model.isCollapsed ? .chevronDown : .chevronUp)
+                    Image(uiImage: model.isCollapsed ?
+                          DesignSystemImages.Glyphs.Size24.chevronDownSmall :
+                            DesignSystemImages.Glyphs.Size24.chevronUpSmall)
                         .resizable()
                 })
                 .buttonStyle(ToggleExpandButtonStyle())
@@ -71,7 +75,7 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
             }
         }
         // Prevent the content to leak out of bounds while collapsing
-        .clipped()
+        .clipShape(Rectangle())
         .padding(0)
     }
 
@@ -79,9 +83,9 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
     private func previewFor(_ item: FavoriteItem) -> some View {
         switch item {
         case .favorite(let favorite):
-            FavoriteIconView(favorite: favorite, faviconLoading: model.faviconLoader)
+            FavoriteIconView(favorite: favorite, isExperimentalAppearanceEnabled: model.isExperimentalAppearanceEnabled, faviconLoading: model.faviconLoader)
                 .frame(width: NewTabPageGrid.Item.edgeSize)
-                .previewShape()
+                .previewShape(isExperimentalAppearanceEnabled: model.isExperimentalAppearanceEnabled)
                 .transition(.opacity)
         case .addFavorite, .placeholder:
             EmptyView()
@@ -98,6 +102,7 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
             }, label: {
                 FavoriteItemView(
                     favorite: favorite,
+                    isExperimentalAppearanceEnabled: model.isExperimentalAppearanceEnabled,
                     faviconLoading: model.faviconLoader,
                     onMenuAction: { action in
                         switch action {
@@ -129,8 +134,8 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
 }
 
 private extension View {
-    func previewShape() -> some View {
-        contentShape(.dragPreview, RoundedRectangle(cornerRadius: 8))
+    func previewShape(isExperimentalAppearanceEnabled: Bool) -> some View {
+        contentShape(.dragPreview, FavoriteIconView.itemShape(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled))
     }
 }
 

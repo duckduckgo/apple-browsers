@@ -65,7 +65,7 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
 
     private var bookmarkListCancellable: AnyCancellable?
 
-    init(bookmark: Bookmark, bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
+    init(bookmark: Bookmark, bookmarkManager: BookmarkManager) {
         self.bookmarkManager = bookmarkManager
         self.bookmark = bookmark
         self.bookmarkTitle = bookmark.title

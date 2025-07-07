@@ -21,45 +21,32 @@ import XCTest
 
 final class HistoryViewOnboardingViewModelTests: XCTestCase {
 
+    var settingsStorage: MockHistoryViewOnboardingViewSettingsPersistor!
     var viewModel: HistoryViewOnboardingViewModel!
-    var pixels: [HistoryViewPixel] = []
+    var ctaCalls: [Bool] = []
 
     override func setUp() async throws {
-        pixels = []
+        settingsStorage = MockHistoryViewOnboardingViewSettingsPersistor()
+        ctaCalls = []
         viewModel = HistoryViewOnboardingViewModel(
-            settingsStorage: MockHistoryViewOnboardingViewSettingsPersistor(),
-            firePixel: { self.pixels.append($0) },
-            ctaCallback: { _ in }
+            settingsStorage: settingsStorage,
+            ctaCallback: { self.ctaCalls.append($0) }
         )
     }
 
-    func testThatMarkAsShownFiresPixel() throws {
+    func testThatMarkAsShownUpdatesStorageAndDoesNotTriggerCTA() throws {
         viewModel.markAsShown()
-        XCTAssertEqual(pixels.count, 1)
-        let pixel = try XCTUnwrap(pixels.first)
-        guard case .onboardingDialogShown = pixel else {
-            XCTFail("Unexpected pixel fired")
-            return
-        }
+        XCTAssertEqual(ctaCalls.count, 0)
+        XCTAssertTrue(settingsStorage.didShowOnboardingView)
     }
 
-    func testThatNotNowFiresPixel() throws {
+    func testThatNotNowDoesTriggersCTAWithFalse() throws {
         viewModel.notNow()
-        XCTAssertEqual(pixels.count, 1)
-        let pixel = try XCTUnwrap(pixels.first)
-        guard case .onboardingDialogDismissed = pixel else {
-            XCTFail("Unexpected pixel fired")
-            return
-        }
+        XCTAssertEqual(ctaCalls, [false])
     }
 
-    func testThatShowHistoryFiresPixel() throws {
+    func testThatShowHistoryTriggersCTAWithTrue() throws {
         viewModel.showHistory()
-        XCTAssertEqual(pixels.count, 1)
-        let pixel = try XCTUnwrap(pixels.first)
-        guard case .onboardingDialogAccepted = pixel else {
-            XCTFail("Unexpected pixel fired")
-            return
-        }
+        XCTAssertEqual(ctaCalls, [true])
     }
 }

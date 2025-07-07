@@ -26,6 +26,7 @@ final class BookmarksBarPromptPopover: NSPopover {
         super.init()
         self.behavior = .semitransient
         self.delegate = self
+        self.setAccessibilityTitle(UserText.bookmarksBarPromptTitle)
         setupContentController()
     }
 
@@ -142,7 +143,7 @@ final class BookmarksBarPromptViewModel: ObservableObject {
     let prefs: AppearancePreferences
     var userDidDismiss = false
 
-    init(prefs: AppearancePreferences = AppearancePreferences.shared) {
+    init(prefs: AppearancePreferences = NSApp.delegateTyped.appearancePreferences) {
         self.prefs = prefs
     }
 

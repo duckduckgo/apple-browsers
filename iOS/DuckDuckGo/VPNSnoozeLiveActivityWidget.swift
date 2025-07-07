@@ -63,7 +63,7 @@ struct VPNSnoozeLiveActivity: Widget {
                     VPNSnoozeLiveActivityActionView(snoozeActive: !context.isStale)
                 }
             } compactLeading: {
-                context.isStale ? Image("vpn-on-compact") : Image("vpn-off-compact")
+                context.isStale ? Image(.vpnOnCompact) : Image(.vpnOffCompact)
             } compactTrailing: {
                 if let range {
                     Text(timerInterval: range, pauseTime: range.lowerBound, countsDown: true)
@@ -77,7 +77,7 @@ struct VPNSnoozeLiveActivity: Widget {
                         .multilineTextAlignment(.trailing)
                 }
             } minimal: {
-                context.isStale ? Image("vpn-on-compact") : Image("vpn-off-compact")
+                context.isStale ? Image(.vpnOnCompact) : Image(.vpnOffCompact)
             }
         }
     }
@@ -104,9 +104,9 @@ private struct VPNSnoozeLiveActivityPrimaryCountdownView: View {
     var body: some View {
         HStack {
             if snoozeActive {
-                Image("vpn-off-live-activity")
+                Image(.vpnOffLiveActivity)
             } else {
-                Image("vpn-on")
+                Image(.vpnOn)
             }
 
             VStack(alignment: .leading) {

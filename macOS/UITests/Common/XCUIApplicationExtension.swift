@@ -33,6 +33,20 @@ extension XCUIApplication {
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"
     }
 
+    static func setUp(environment: [String: String]? = nil, featureFlags: [String: Bool] = ["visualUpdates": true]) -> XCUIApplication {
+        let app = XCUIApplication()
+        if let environment {
+            app.launchEnvironment = app.launchEnvironment.merging(environment, uniquingKeysWith: { $1 })
+        } else {
+            app.launchEnvironment["UITEST_MODE"] = "1"
+        }
+        if !featureFlags.isEmpty {
+            app.launchEnvironment["FEATURE_FLAGS"] = featureFlags.map { "\($0)=\($1)" }.joined(separator: " ")
+        }
+        app.launch()
+        return app
+    }
+
     /// Dismiss popover with the passed button identifier if exists. If it does not exist it continues the execution without failing.
     /// - Parameter buttonIdentifier: The button identifier we want to tap from the popover
     func dismissPopover(buttonIdentifier: String) {
@@ -143,5 +157,56 @@ extension XCUIApplication {
             let cellLabel = cell.staticTexts[expectedOrder[index]]
             XCTAssertTrue(cellLabel.exists, "Cell at index \(index) has unexpected label.")
         }
+    }
+
+    // MARK: - Context Menu
+
+    /// Find the coordinates of a context menu item that matches the given predicate
+    /// - Parameter matching: A closure that takes an XCUIElementSnapshot and returns Bool to match the desired menu item
+    /// - Returns: The CGRect frame of the matching menu item
+    /// - Throws: XCTestError if no matching item is found or context menu doesn't exist
+    func coordinatesForContextMenuItem(matching: (XCUIElementSnapshot) -> Bool) throws -> CGRect {
+        let contextMenu = windows.firstMatch.children(matching: .menu).firstMatch
+        XCTAssertTrue(
+            contextMenu.waitForExistence(timeout: 10),
+            "Context menu did not appear in a reasonable timeframe."
+        )
+
+        let menuSnapshot = try contextMenu.snapshot()
+        for child in menuSnapshot.children where matching(child) {
+            return child.frame
+        }
+
+        throw XCTestError(.failureWhileWaiting, userInfo: [
+            "reason": "No context menu item found matching the specified condition"
+        ])
+    }
+
+    /// Click a context menu item that matches the given predicate using XCUITest coordinate-based clicking
+    /// 
+    /// This method uses coordinate-based clicking rather than direct XCUIElement interaction because
+    /// context menu item detection tends to fail on macOS 13/14 CI workers. The snapshot-based approach
+    /// with coordinate clicking provides more reliable interaction with context menu items across
+    /// different macOS versions in CI environments.
+    /// 
+    /// - Parameter matching: A closure that takes an XCUIElementSnapshot and returns Bool to match the desired menu item
+    /// - Throws: XCTestError if no matching item is found or click fails
+    func clickContextMenuItem(matching: (XCUIElementSnapshot) -> Bool) throws {
+        let contextMenu = windows.firstMatch.children(matching: .menu).firstMatch
+        XCTAssertTrue(
+            contextMenu.waitForExistence(timeout: 10),
+            "Context menu did not appear in a reasonable timeframe."
+        )
+
+        let itemFrame = try coordinatesForContextMenuItem(matching: matching)
+
+        // Calculate normalized offset within the context menu bounds
+        let menuFrame = contextMenu.frame
+        let normalizedX = (itemFrame.midX - menuFrame.minX) / menuFrame.width
+        let normalizedY = (itemFrame.midY - menuFrame.minY) / menuFrame.height
+
+        // Use XCUITest's coordinate-based clicking
+        let coordinate = contextMenu.coordinate(withNormalizedOffset: CGVector(dx: normalizedX, dy: normalizedY))
+        coordinate.click()
     }
 }

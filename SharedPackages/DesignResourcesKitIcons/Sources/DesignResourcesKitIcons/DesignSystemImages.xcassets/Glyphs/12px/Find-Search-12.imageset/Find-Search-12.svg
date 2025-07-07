@@ -1,0 +1,10 @@
+<svg fill="none" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Find-Search-12_svg__a)">
+    <path fill="#000" fill-rule="evenodd" d="M8.75 5a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Zm-.684 3.95a5 5 0 1 1 .884-.884l2.867 2.867a.625.625 0 1 1-.884.884L8.066 8.95Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <clipPath id="Find-Search-12_svg__a">
+      <path fill="#fff" d="M0 0h12v12H0z"/>
+    </clipPath>
+  </defs>
+</svg>

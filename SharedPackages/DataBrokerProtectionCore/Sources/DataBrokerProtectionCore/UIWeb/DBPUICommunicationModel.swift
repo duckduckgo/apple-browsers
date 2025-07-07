@@ -77,7 +77,7 @@ public struct DBPUIStandardResponse: Codable {
 }
 
 /// Message Object representing a user profile name
-public struct DBPUIUserProfileName: Codable {
+public struct DBPUIUserProfileName: Codable, Equatable {
     public let first: String
     public let middle: String?
     public let last: String
@@ -89,10 +89,14 @@ public struct DBPUIUserProfileName: Codable {
         self.last = last
         self.suffix = suffix
     }
+
+    public func requiredComponentsAreBlank() -> Bool {
+        return first.isBlank || last.isBlank
+    }
 }
 
 /// Message Object representing a user profile address
-public struct DBPUIUserProfileAddress: Codable {
+public struct DBPUIUserProfileAddress: Codable, Equatable {
     public let street: String?
     public let city: String
     public let state: String
@@ -103,6 +107,10 @@ public struct DBPUIUserProfileAddress: Codable {
         self.city = city
         self.state = state
         self.zipCode = zipCode
+    }
+
+    public func requiredComponentsAreBlank() -> Bool {
+        return city.isBlank || state.isBlank
     }
 }
 
@@ -126,6 +134,14 @@ public struct DBPUIUserProfile: Codable {
         self.names = names
         self.birthYear = birthYear
         self.addresses = addresses
+    }
+}
+
+public extension DBPUIUserProfile {
+    init(from profile: DataBrokerProtectionProfile) {
+        names = profile.names.map { DBPUIUserProfileName(first: $0.firstName, middle: $0.middleName, last: $0.lastName, suffix: $0.suffix) }
+        addresses = profile.addresses.map { DBPUIUserProfileAddress(street: $0.street, city: $0.city, state: $0.state, zipCode: $0.zipCode) }
+        birthYear = profile.birthYear
     }
 }
 
@@ -180,6 +196,29 @@ public struct DBPUIDataBroker: Codable, Hashable {
     }
 }
 
+public extension DBPUIDataBroker {
+    init(from dataBroker: DataBroker, withDate date: Date? = nil) {
+        name = dataBroker.name
+        url = dataBroker.url
+        self.date = date?.timeIntervalSince1970
+        parentURL = dataBroker.parent
+        optOutUrl = dataBroker.optOutUrl
+    }
+
+    init(from mirrorSite: MirrorSite, parentBroker: DataBroker, withDate date: Date? = nil) {
+        name = mirrorSite.name
+        url = mirrorSite.url
+        self.date = date?.timeIntervalSince1970
+        parentURL = parentBroker.url
+        optOutUrl = parentBroker.optOutUrl
+    }
+
+    static func brokerWithMirrorSites(from broker: DataBroker, withDate date: Date? = nil) -> [Self] {
+        let mirrorSites = broker.mirrorSites.map { Self(from: $0, parentBroker: broker, withDate: date) }
+        return [.init(from: broker, withDate: date)] + mirrorSites
+    }
+}
+
 public struct DBPUIDataBrokerList: DBPUISendableMessage {
     public let dataBrokers: [DBPUIDataBroker]
 
@@ -201,6 +240,7 @@ public struct DBPUIBirthYear: Codable {
 /// The message contains the data broker on which the profile was found and the names
 /// and addresses that were matched
 public struct DBPUIDataBrokerProfileMatch: Codable {
+    public let id: Int64?
     public let dataBroker: DBPUIDataBroker
     public let name: String
     public let addresses: [DBPUIUserProfileAddress]
@@ -212,7 +252,8 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
     public let removedDate: Double?
     public let hasMatchingRecordOnParentBroker: Bool
 
-    public init(dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
+    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
+        self.id = id
         self.dataBroker = dataBroker
         self.name = name
         self.addresses = addresses
@@ -267,9 +308,10 @@ extension DBPUIDataBrokerProfileMatch {
             extractedProfile.doesMatchExtractedProfile(parentOptOut.extractedProfile)
         } ?? false
 
-        self.init(dataBroker: DBPUIDataBroker(name: dataBrokerName, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
+        self.init(id: extractedProfile.id,
+                  dataBroker: DBPUIDataBroker(name: dataBrokerName, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
                   name: extractedProfile.fullName ?? "No name",
-                  addresses: extractedProfile.addresses?.map {DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
+                  addresses: extractedProfile.addresses?.map { DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
                   alternativeNames: extractedProfile.alternativeNames ?? [String](),
                   relatives: extractedProfile.relatives ?? [String](),
                   foundDate: foundDate.timeIntervalSince1970,
@@ -306,7 +348,7 @@ extension DBPUIDataBrokerProfileMatch {
         return queryData.flatMap {
             var profiles = [DBPUIDataBrokerProfileMatch]()
 
-            for optOutJobData in $0.optOutJobData {
+            for optOutJobData in $0.optOutJobDataExcludingUserRemoved {
                 let dataBroker = $0.dataBroker
 
                 // Find opt-out job data for the parent broker, if applicable.
@@ -326,7 +368,7 @@ extension DBPUIDataBrokerProfileMatch {
                 if !dataBroker.mirrorSites.isEmpty {
                     // Create profile matches for each mirror site if it meets the inclusion criteria.
                     let mirrorSitesMatches = dataBroker.mirrorSites.compactMap { mirrorSite in
-                        if mirrorSite.shouldWeIncludeMirrorSite() {
+                        if mirrorSite.isExtant() {
                             return DBPUIDataBrokerProfileMatch(optOutJobData: optOutJobData,
                                                                dataBrokerName: mirrorSite.name,
                                                                dataBrokerURL: mirrorSite.url,
@@ -360,6 +402,17 @@ public struct DBPUIScanAndOptOutMaintenanceState: DBPUISendableMessage {
         self.completedOptOuts = completedOptOuts
         self.scanSchedule = scanSchedule
         self.scanHistory = scanHistory
+    }
+}
+
+public extension DBPUIScanAndOptOutMaintenanceState {
+    static func emptyMaintenanceState() -> Self {
+        return .init(
+            inProgressOptOuts: [],
+            completedOptOuts: [],
+            scanSchedule: DBPUIScanSchedule(lastScan: DBPUIScanDate(date: 0, dataBrokers: []), nextScan: DBPUIScanDate(date: 0, dataBrokers: [])),
+            scanHistory: DBPUIScanHistory(sitesScanned: 0)
+        )
     }
 }
 
@@ -433,6 +486,12 @@ public struct DBPUIInitialScanState: DBPUISendableMessage {
     public init(resultsFound: [DBPUIDataBrokerProfileMatch], scanProgress: DBPUIScanProgress) {
         self.resultsFound = resultsFound
         self.scanProgress = scanProgress
+    }
+}
+
+extension DBPUIInitialScanState {
+    public static func emptyInitialScanState() -> DBPUIInitialScanState {
+        DBPUIInitialScanState(resultsFound: [], scanProgress: DBPUIScanProgress(currentScans: 0, totalScans: 0, scannedBrokers: []))
     }
 }
 
@@ -530,4 +589,20 @@ struct DBPUIVPNBypassSettingUpdateRequest: DBPUISendableMessage {
 struct DBPUIVPNBypassSettingUpdateResult: DBPUISendableMessage {
     let success: Bool
     let version: Int
+}
+
+/// Represents a user request to remove a profile from the dashboard
+struct DBPUIRemoveOptOutFromDashboardRequest: DBPUISendableMessage {
+    let recordId: Int64
+}
+
+/// Represents the result of manually removing a profile from the dashboard
+struct DBPUIRemoveOptOutFromDashboardResult: DBPUISendableMessage {
+    let success: Bool
+    let error: String?
+
+    init(success: Bool, error: String? = nil) {
+        self.success = success
+        self.error = error
+    }
 }

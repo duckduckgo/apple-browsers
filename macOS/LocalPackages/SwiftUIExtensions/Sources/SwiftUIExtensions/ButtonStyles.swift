@@ -73,10 +73,10 @@ public struct DefaultActionButtonStyle: ButtonStyle {
 
         var body: some View {
             let enabledBackgroundColor = configuration.isPressed
-                ? Color("PrimaryButtonPressed")
+            ? Color("PrimaryButtonPressed", bundle: Bundle.module)
                 : (isHovered
-                    ? Color("PrimaryButtonHover")
-                    : Color("PrimaryButtonRest"))
+                    ? Color("PrimaryButtonHover", bundle: Bundle.module)
+                    : Color("PrimaryButtonRest", bundle: Bundle.module))
 
             let disabledBackgroundColor = Color.gray.opacity(0.1)
             let enabledLabelColor = configuration.isPressed ? Color.white.opacity(0.8) : Color.white

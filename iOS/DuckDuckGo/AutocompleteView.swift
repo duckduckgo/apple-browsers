@@ -19,6 +19,8 @@
 
 import Foundation
 import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct AutocompleteView: View {
 
@@ -35,7 +37,7 @@ struct AutocompleteView: View {
                     model.onShownToUser()
                 }
             }
-
+            
             SuggestionsSection(suggestions: model.topHits,
                                query: model.query,
                                onSuggestionSelected: model.onSuggestionSelected,
@@ -52,8 +54,9 @@ struct AutocompleteView: View {
                                onSuggestionDeleted: model.deleteSuggestion)
 
         }
-        .offset(x: 0, y: -20)
+        .offset(x: 0, y: model.isExperimentalThemingEnabled ? -28 : -20)
         .padding(.bottom, -20)
+        .padding(.top, model.isPad ? 10 : 0)
         .modifier(HideScrollContentBackground())
         .background(Color(designSystemColor: .background))
         .modifier(CompactSectionSpacing())
@@ -73,14 +76,14 @@ private struct HistoryMessageView: View {
             Button {
                 onDismiss()
             } label: {
-                Image("Close-24")
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                     .foregroundColor(.primary)
             }
             .padding(.top, 4)
             .buttonStyle(.plain)
 
             VStack {
-                Image("RemoteMessageAnnouncement")
+                Image(.remoteMessageAnnouncement)
                     .padding(8)
 
                 Text(UserText.autocompleteHistoryWarningTitle)
@@ -159,6 +162,10 @@ private struct SuggestionsSection: View {
     let selectedColor = Color(designSystemColor: .accent)
     let unselectedColor = Color(designSystemColor: .surface)
 
+    private struct Metrics {
+        static let rowInsets = EdgeInsets(top: 10, leading: 10, bottom: 8, trailing: 14)
+    }
+
     var body: some View {
         Section {
             ForEach(suggestions.indices, id: \.self) { index in
@@ -168,6 +175,11 @@ private struct SuggestionsSection: View {
                     SuggestionView(model: suggestions[index], query: query)
                  }
                  .listRowBackground(autocompleteViewModel.selection == suggestions[index] ? selectedColor : unselectedColor)
+                 .if(autocompleteViewModel.isExperimentalThemingEnabled) {
+                     $0
+                         .listRowInsets(Metrics.rowInsets)
+                         .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
+                 }
                  .modifier(SwipeDeleteHistoryModifier(suggestion: suggestions[index], onSuggestionDeleted: onSuggestionDeleted))
             }
         }
@@ -209,8 +221,8 @@ private struct SuggestionView: View {
 
     var tapAheadImage: Image? {
         guard model.canShowTapAhead else { return nil }
-        return Image(autocompleteModel.isAddressBarAtBottom ?
-                      "Arrow-Circle-Down-Left-16" : "Arrow-Circle-Up-Left-16")
+        return Image(uiImage: autocompleteModel.isAddressBarAtBottom ?
+                     DesignSystemImages.Glyphs.Size16.arrowCircleDownLeft : DesignSystemImages.Glyphs.Size16.arrowCircleUpLeft)
     }
 
     var body: some View {
@@ -218,41 +230,47 @@ private struct SuggestionView: View {
 
             switch model.suggestion {
             case .phrase(let phrase):
-                SuggestionListItem(icon: Image("Find-Search-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.findSearchSmall),
                                    title: phrase,
                                    query: query,
                                    indicator: tapAheadImage) {
                     autocompleteModel.onTapAhead(model)
-                }
+                }.accessibilityIdentifier("Autocomplete.Suggestions.ListItem.SearchPhrase-\(phrase)")
 
             case .website(let url):
-                SuggestionListItem(icon: Image("Globe-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),
                                    title: url.formattedForSuggestion())
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.Website-\(url.formattedForSuggestion())")
 
             case .bookmark(let title, let url, let isFavorite, _) where isFavorite:
-                SuggestionListItem(icon: Image("Bookmark-Fav-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmarkFavorite),
                                    title: title,
                                    subtitle: url.formattedForSuggestion())
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.Favorite-\(url.formattedForSuggestion())")
 
             case .bookmark(let title, let url, _, _):
-                SuggestionListItem(icon: Image("Bookmark-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmark),
                                    title: title,
                                    subtitle: url.formattedForSuggestion())
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.Bookmark-\(url.formattedForSuggestion())")
 
             case .historyEntry(_, let url, _) where url.isDuckDuckGoSearch:
-                SuggestionListItem(icon: Image("History-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
                                    title: url.searchQuery ?? "",
                                    subtitle: UserText.autocompleteSearchDuckDuckGo)
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.SERPHistory-\(url.searchQuery ?? "")")
 
             case .historyEntry(let title, let url, _):
-                SuggestionListItem(icon: Image("History-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
                                    title: title ?? "",
                                    subtitle: url.formattedForSuggestion())
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.History-\(url.formattedForSuggestion())")
 
-            case .openTab(title: let title, url: let url, _):
-                SuggestionListItem(icon: Image("OpenTab-24"),
+            case .openTab(title: let title, url: let url, _, _):
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.tabMobile),
                                    title: title,
                                    subtitle: "\(UserText.autocompleteSwitchToTab) · \(url.formattedForSuggestion())")
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.OpenTab-\(url.formattedForSuggestion())")
 
             case .internalPage, .unknown:
                 FailedAssertionView("Unknown or unsupported suggestion type")
@@ -264,6 +282,8 @@ private struct SuggestionView: View {
 }
 
 private struct SuggestionListItem: View {
+
+    @EnvironmentObject var autocompleteModel: AutocompleteViewModel
 
     let icon: Image
     let title: String
@@ -288,14 +308,13 @@ private struct SuggestionListItem: View {
     }
 
     var body: some View {
-
-        HStack {
+        HStack(spacing: autocompleteModel.isExperimentalThemingEnabled ? 0 : nil) {
             icon
                 .resizable()
-                .frame(width: 24, height: 24)
+                .frame(width: Metrics.iconSize, height: Metrics.iconSize)
                 .tintIfAvailable(Color(designSystemColor: .icons))
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Metrics.subtitleSpacing) {
 
                 Group {
                     // Can't use dax modifiers because they are not typed for Text
@@ -322,17 +341,35 @@ private struct SuggestionListItem: View {
                         .lineLimit(1)
                 }
             }
+            .padding(.leading, autocompleteModel.isExperimentalThemingEnabled ? Metrics.verticalSpacing : 0)
+
+            if autocompleteModel.isExperimentalThemingEnabled && indicator == nil {
+                // No indicator means we want to preserve the room for icon,
+                // so all the titles from other cells are aligned.
+                Spacer(minLength: Metrics.trailingPadding)
+            } else {
+                Spacer()
+            }
 
             if let indicator {
-                Spacer()
                 indicator
                     .highPriorityGesture(TapGesture().onEnded {
                         onTapIndicator?()
                     })
-                    .tintIfAvailable(Color.secondary)
+                    .tintIfAvailable(Color.init(designSystemColor: .iconsSecondary))
+                    .padding(.leading, autocompleteModel.isExperimentalThemingEnabled ? Metrics.indicatorLeadingPadding : 0)
             }
         }
     }
+
+    private struct Metrics {
+        static let iconSize: CGFloat = 24
+        static let verticalSpacing: CGFloat = 10
+        static let subtitleSpacing: CGFloat = 2
+        static let trailingPadding: CGFloat = 20
+        static let indicatorLeadingPadding: CGFloat = 4
+    }
+
 }
 
 private extension URL {

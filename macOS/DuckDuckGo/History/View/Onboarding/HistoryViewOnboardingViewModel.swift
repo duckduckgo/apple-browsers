@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+import SwiftUI
 import Persistence
 import PixelKit
 
@@ -42,29 +44,23 @@ final class UserDefaultsHistoryViewOnboardingViewSettingsPersistor: HistoryViewO
 
 final class HistoryViewOnboardingViewModel: ObservableObject {
     let settingsStorage: HistoryViewOnboardingViewSettingsPersisting
-    let firePixel: (HistoryViewPixel) -> Void
     let ctaCallback: (Bool) -> Void
 
     internal init(settingsStorage: any HistoryViewOnboardingViewSettingsPersisting = UserDefaultsHistoryViewOnboardingViewSettingsPersistor(),
-                  firePixel: @escaping (HistoryViewPixel) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) },
                   ctaCallback: @escaping (Bool) -> Void) {
         self.settingsStorage = settingsStorage
-        self.firePixel = firePixel
         self.ctaCallback = ctaCallback
     }
 
     func markAsShown() {
         settingsStorage.didShowOnboardingView = true
-        firePixel(.onboardingDialogShown)
     }
 
     func notNow() {
         ctaCallback(false)
-        firePixel(.onboardingDialogDismissed)
     }
 
     func showHistory() {
         ctaCallback(true)
-        firePixel(.onboardingDialogAccepted)
     }
 }

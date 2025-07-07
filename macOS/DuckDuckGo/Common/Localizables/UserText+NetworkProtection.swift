@@ -38,7 +38,7 @@ extension UserText {
 
     static let networkProtectionInviteSuccessTitle = NSLocalizedString("network.protection.invite.success.title", value: "Success! You’re in.", comment: "Title for the VPN invite success view")
 
-    static let networkProtectionInviteSuccessMessage = NSLocalizedString("network.protection.invite.success.title", value: "DuckDuckGo's VPN secures all of your device's Internet traffic anytime, anywhere.", comment: "Message for the VPN invite success view")
+    static let networkProtectionInviteSuccessMessage = NSLocalizedString("network.protection.invite.success.message", value: "DuckDuckGo's VPN secures all of your device's Internet traffic anytime, anywhere.", comment: "Message for the VPN invite success view")
 
     // MARK: - VPN Status View submenu (legacy)
 
@@ -92,6 +92,8 @@ extension UserText {
 
     static let generalFeedbackFormCategoryITR = NSLocalizedString("general.feedback-form.category.itr", value: "Identity Theft Restoration", comment: "Description for the feedback form when the issue is related to Identity Theft Restoration (ITR)")
 
+    static let generalFeedbackFormCategoryAiChat = NSLocalizedString("general.feedback-form.category.ai-chat", value: "Duck.ai", comment: "Description for the feedback form when the issue is related to Duck.ai")
+
     static let pproFeedbackFormCategorySelect = NSLocalizedString("ppro.feedback-form.category.select-category", value: "Select a category", comment: "Title for the category selection state of the feedback form")
 
     static let pproFeedbackFormCategoryOTP = NSLocalizedString("ppro.feedback-form.category.otp", value: "Issue with one-time password", comment: "Description for the feedback form when there is an issue with the one-time password")
@@ -137,6 +139,14 @@ extension UserText {
     static let itrFeedbackFormCategoryUnhelpful = NSLocalizedString("itr.feedback-form.category.unhelpful", value: "Call to Advisor was unhelpful", comment: "Description for the feedback form when the call to an advisor was unhelpful")
 
     static let itrFeedbackFormCategorySomethingElse = NSLocalizedString("itr.feedback-form.category.something-else", value: "Something else", comment: "Description for the feedback form when the user has an issue not categorized in other options")
+
+    static let paidDuckAIFeedbackFormCategorySelect = NSLocalizedString("paid-duck-ai.feedback-form.category.select-category", value: "Select a category", comment: "Title for the category selection state of the paid duck.ai feedback form")
+
+    static let paidDuckAIFeedbackFormCategoryAccessSubscriptionModels = NSLocalizedString("paid-duck-ai.feedback-form.category.access-subscription-models", value: "Unable to access the subscription Duck.ai models", comment: "Description for the feedback form when there is an issue with accessing the paid tier models")
+
+    static let paidDuckAIFeedbackFormCategoryLoginThirdPartyBrowser = NSLocalizedString("paid-duck-ai.feedback-form.category.login-third-party-browser", value: "Can’t log in to Duck.ai with my subscription", comment: "Description for the feedback form when there is an issue with logging into Duck.ai")
+
+    static let paidDuckAIFeedbackFormCategorySomethingElse = NSLocalizedString("paid-duck-ai.feedback-form.category.something-else", value: "Other Duck.ai feedback", comment: "Description for the feedback form when the user has an issue not categorized in other options")
 
     static let pproFeedbackFormText1 = NSLocalizedString("ppro.feedback-form.text-1", value: "Found an issue not covered in our [help center](duck://)? We definitely want to know about it.\n\nTell us what's going on:", comment: "Text for the body of the PPro feedback form")
 
@@ -234,7 +244,7 @@ extension UserText {
 
     static let vpnLocationSubmitButtonTitle = NSLocalizedString("vpn.location.submit.button.title", value: "Submit", comment: "Title of the VPN location list submit button")
 
-    static let vpnLocationCancelButtonTitle = NSLocalizedString("vpn.location.custom.section.title", value: "Cancel", comment: "Title of the VPN location list cancel button (Note: seems like a duplicate key with a different purpose, please check)")
+    static let vpnLocationCancelButtonTitle = NSLocalizedString("vpn.location.cancel.button.title", value: "Cancel", comment: "Title of the VPN location list cancel button (Note: seems like a duplicate key with a different purpose, please check)")
 
     static let vpnLocationNearest = NSLocalizedString("vpn.location.description.nearest", value: "Nearest", comment: "Nearest city setting description")
 
@@ -260,10 +270,6 @@ extension UserText {
     static let vpnExcludedAppsAddApp = NSLocalizedString("vpn.excluded.apps.add.app", value: "Browse Applications", comment: "Add Application button for the excluded apps view")
 
     // MARK: - Excluded Domains
-
-    static let vpnExcludedDomainsDescription = NSLocalizedString("vpn.setting.excluded.domains.description", value: "Excluded websites will bypass the VPN.", comment: "Excluded Sites description")
-
-    static let vpnExcludedDomainsManageButtonTitle = NSLocalizedString("vpn.setting.excluded.domains.manage.button.title", value: "Manage Excluded Websites…", comment: "Excluded Sites management button title")
 
     static let vpnExcludedDomainsAddDomain = NSLocalizedString("vpn.excluded.domains.add.domain", value: "Add Website", comment: "Add Domain button for the excluded sites view")
 

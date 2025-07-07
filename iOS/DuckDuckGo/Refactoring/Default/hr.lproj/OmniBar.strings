@@ -7,11 +7,14 @@
 /* Class = "UIButton"; accessibilityLabel = "Browse forward"; ObjectID = "aXg-p3-oeq"; */
 "aXg-p3-oeq.accessibilityLabel" = "Pretraži unaprijed";
 
-/* Class = "UIButton"; accessibilityLabel = "Clear Text"; ObjectID = "Dt8-We-5tV"; */
+/* Class = "UIButton"; accessibilityLabel = "Clear text"; ObjectID = "Dt8-We-5tV"; */
 "Dt8-We-5tV.accessibilityLabel" = "Obriši tekst";
 
-/* Class = "UIButton"; accessibilityLabel = "Clear Text"; ObjectID = "gb5-wL-4OW"; */
-"gb5-wL-4OW.accessibilityLabel" = "Obriši tekst";
+/* Class = "UIButton"; accessibilityLabel = "Refresh Page"; ObjectID = "eR6-Vx-MAY"; */
+"eR6-Vx-MAY.accessibilityLabel" = "Osvježi stranicu";
+
+/* Class = "UIButton"; accessibilityLabel = "Stop Loading"; ObjectID = "gb5-wL-4OW"; */
+"gb5-wL-4OW.accessibilityLabel" = "Zaustavi učitavanje";
 
 /* Class = "UIButton"; accessibilityLabel = "Share"; ObjectID = "hor-Jd-3kw"; */
 "hor-Jd-3kw.accessibilityLabel" = "Podijeli";

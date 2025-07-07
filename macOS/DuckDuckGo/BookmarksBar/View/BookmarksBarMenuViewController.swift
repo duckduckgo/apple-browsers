@@ -49,9 +49,10 @@ final class BookmarksBarMenuViewController: NSViewController {
     private var scrollUpButton: MouseOverButton!
 
     private let bookmarkManager: BookmarkManager
+    private let dragDropManager: BookmarkDragDropManager
     private let treeControllerDataSource: BookmarkListTreeControllerDataSource
-
     private let treeController: BookmarkTreeController
+    private let visualStyle: VisualStyleProviding
 
     private var submenuPopover: BookmarksBarMenuPopover?
     private(set) var preferredContentOffset: CGPoint = .zero
@@ -63,6 +64,7 @@ final class BookmarksBarMenuViewController: NSViewController {
             contentMode: .bookmarksMenu,
             bookmarkManager: bookmarkManager,
             treeController: treeController,
+            dragDropManager: dragDropManager,
             sortMode: .manual,
             presentFaviconsFetcherOnboarding: { [weak self] in
                 guard let self, let window = self.view.window else {
@@ -88,14 +90,18 @@ final class BookmarksBarMenuViewController: NSViewController {
         return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
     }()
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared, rootFolder: BookmarkFolder? = nil) {
+    init(bookmarkManager: BookmarkManager,
+         dragDropManager: BookmarkDragDropManager,
+         rootFolder: BookmarkFolder? = nil,
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.bookmarkManager = bookmarkManager
+        self.dragDropManager = dragDropManager
         self.treeControllerDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)
         self.treeController = BookmarkTreeController(dataSource: treeControllerDataSource,
                                                      sortMode: .manual,
                                                      rootFolder: rootFolder,
                                                      isBookmarksBarMenu: true)
-
+        self.visualStyle = visualStyle
         super.init(nibName: nil, bundle: nil)
         self.representedObject = rootFolder
     }
@@ -387,7 +393,7 @@ final class BookmarksBarMenuViewController: NSViewController {
                     // don‘t close on Cmd+click in other app
                     return false
                 }
-                guard let self,
+                guard let self, let window = view.window,
                       // always close on global event
                       let eventWindow = event.window else { return true /* close */}
                 // is showing submenu?
@@ -400,12 +406,8 @@ final class BookmarksBarMenuViewController: NSViewController {
                     return false
                 }
                 // go up from the clicked window to figure out if the click is in a submenu
-                for window in sequence(first: eventWindow, next: \.parent)
-                where window === self.view.window {
-                    // we found our window: the click was in the menu tree
-                    return false // don‘t close
-                }
-                return true // close
+                // close if the click was not in our window or submenu
+                return !eventWindow.isInHierarchy(of: window)
             }.asVoid()
         )
         .sink { [weak self] _ in
@@ -556,7 +558,7 @@ final class BookmarksBarMenuViewController: NSViewController {
 
             // desired width (limited to maxMenuPopoverContentWidth)
             if contentSize.width < Constants.maxMenuPopoverContentWidth {
-                let cellWidth = BookmarkOutlineCellView.preferredContentWidth(for: node) + contentInsets.left + contentInsets.right
+                let cellWidth = BookmarkOutlineCellView.preferredContentWidth(for: node, visualStyle: visualStyle) + contentInsets.left + contentInsets.right
                 if cellWidth > contentSize.width {
                     contentSize.width = min(Constants.maxMenuPopoverContentWidth, cellWidth)
                 }
@@ -628,7 +630,7 @@ final class BookmarksBarMenuViewController: NSViewController {
             // reuse the popover for another folder
             submenuPopover.reloadData(withRootFolder: folder)
         } else {
-            submenuPopover = BookmarksBarMenuPopover(rootFolder: folder)
+            submenuPopover = BookmarksBarMenuPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
             submenuPopover.delegate = self
             self.submenuPopover = submenuPopover
         }
@@ -688,7 +690,7 @@ final class BookmarksBarMenuViewController: NSViewController {
 
         switch node.representedObject {
         case let bookmark as Bookmark:
-            WindowControllersManager.shared.open(bookmark: bookmark)
+            Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
             delegate?.closeBookmarksPopovers(self)
 
         case let menuItem as MenuItemNode:
@@ -703,8 +705,18 @@ final class BookmarksBarMenuViewController: NSViewController {
         }
     }
 
+    override func otherMouseDown(with event: NSEvent) {
+        guard case .middle = event.button,
+              let row = outlineView.withMouseLocationInViewCoordinates(event.locationInWindow, convert: outlineView.row(at:)), row != -1,
+              let item = outlineView.item(atRow: row),
+              let node = item as? BookmarkNode,
+              let bookmark = node.representedObject as? Bookmark else { return }
+
+        Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
+    }
+
     private func openAllInNewTabs() {
-        guard let tabCollection = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
+        guard let tabCollection = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
               let folder = self.treeController.rootNode.representedObject as? BookmarkFolder else {
             assertionFailure("Cannot open all in new tabs")
             return
@@ -712,8 +724,7 @@ final class BookmarksBarMenuViewController: NSViewController {
         delegate?.closeBookmarksPopovers(self)
 
         let tabs = Tab.withContentOfBookmark(folder: folder, burnerMode: tabCollection.burnerMode)
-        tabCollection.append(tabs: tabs)
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
+        tabCollection.append(tabs: tabs, andSelect: true)
     }
 
     // MARK: NSOutlineView Configuration
@@ -963,7 +974,9 @@ extension BookmarksBarMenuViewController: BookmarksBarMenuPopoverDelegate {
 #if DEBUG
 @available(macOS 14.0, *)
 #Preview("Bookmarks Bar Menu", traits: .fixedLayout(width: 420, height: 500)) {
-    BookmarksBarMenuViewController(bookmarkManager: _mockPreviewBookmarkManager(previewEmptyState: false))
+    let bookmarkManager = _mockPreviewBookmarkManager(previewEmptyState: false)
+
+    return BookmarksBarMenuViewController(bookmarkManager: bookmarkManager, dragDropManager: .init(bookmarkManager: bookmarkManager))
         ._preview_hidingWindowControlsOnAppear()
 }
 #endif

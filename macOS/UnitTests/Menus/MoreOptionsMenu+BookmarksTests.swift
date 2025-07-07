@@ -24,7 +24,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
     @MainActor
     func testWhenBookmarkSubmenuIsInitThenBookmarkAllTabsKeyIsCmdShiftD() throws {
         // GIVEN
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init())
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))
@@ -39,7 +39,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
         // GIVEN
         let tab1 = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
         let tab2 = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui))
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [tab1, tab2])))
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [tab1, tab2])), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))
@@ -51,7 +51,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
     @MainActor
     func testWhenTabCollectionCannotBookmarkAllTabsThenBookmarkAllTabsMenuItemIsDisabled() throws {
         // GIVEN
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [])))
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [])), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))
@@ -60,4 +60,49 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
         XCTAssertFalse(result.isEnabled)
     }
 
+}
+
+final class MockMoreOpationsMenuIconProvider: MoreOptionsMenuIconsProviding {
+    var sendFeedbackIcon: NSImage = .logo
+    var addToDockIcon: NSImage = .logo
+    var setAsDefaultBrowserIcon: NSImage = .logo
+    var newTabIcon: NSImage = .logo
+    var newWindowIcon: NSImage = .logo
+    var newFireWindowIcon: NSImage = .logo
+    var newAIChatIcon: NSImage = .logo
+    var zoomIcon: NSImage = .logo
+    var zoomInIcon: NSImage = .logo
+    var zoomOutIcon: NSImage = .logo
+    var enterFullscreenIcon: NSImage = .logo
+    var changeDefaultZoomIcon: NSImage = .logo
+    var bookmarksIcon: NSImage = .logo
+    var downloadsIcon: NSImage = .logo
+    var historyIcon: NSImage = .logo
+    var passwordsIcon: NSImage = .logo
+    var deleteBrowsingDataIcon: NSImage = .logo
+    var syncIcon: NSImage = .logo
+    var emailProtectionIcon: NSImage = .logo
+    var privacyProIcon: NSImage = .logo
+    var fireproofSiteIcon: NSImage = .logo
+    var removeFireproofIcon: NSImage = .logo
+    var findInPageIcon: NSImage = .logo
+    var shareIcon: NSImage = .logo
+    var printIcon: NSImage = .logo
+    var helpIcon: NSImage = .logo
+    var settingsIcon: NSImage = .logo
+    var browserFeedbackIcon: NSImage = .logo
+    var reportBrokenSiteIcon: NSImage = .logo
+    var paidAIChat: NSImage = .logo
+    var sendPrivacyProFeedbackIcon: NSImage = .logo
+    var passwordsSubMenuIcon: NSImage = .logo
+    var identitiesIcon: NSImage = .logo
+    var creditCardsIcon: NSImage = .logo
+    var vpnIcon: NSImage? = .logo
+    var personalInformationRemovalIcon: NSImage = .logo
+    var identityTheftRestorationIcon: NSImage = .logo
+    var emailGenerateAddressIcon: NSImage = .logo
+    var emailManageAccount: NSImage = .logo
+    var emailProtectionTurnOffIcon: NSImage = .logo
+    var emailProtectionTurnOnIcon: NSImage = .logo
+    var favoritesIcon: NSImage = .logo
 }

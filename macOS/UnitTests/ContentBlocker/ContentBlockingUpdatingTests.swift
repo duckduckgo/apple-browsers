@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-import WebKit
-import Common
-import TrackerRadarKit
 import BrowserServicesKit
+import Common
+import PersistenceTestingUtils
+import TrackerRadarKit
+import WebKit
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContentBlockingUpdatingTests: XCTestCase {
@@ -30,8 +31,24 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     var updating: UserContentUpdating!
 
     @MainActor
-    override func setUp() {
+    override func setUp() async throws {
         let configStore = ConfigurationStore()
+
+        let appearancePreferences = AppearancePreferences(
+            keyValueStore: try MockKeyValueFileStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
+        let dataClearingPreferences = DataClearingPreferences(
+            persistor: MockFireButtonPreferencesPersistor(),
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock()
+        )
+        let startupPreferences = StartupPreferences(
+            persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
+            appearancePreferences: appearancePreferences
+        )
+
         updating = UserContentUpdating(contentBlockerRulesManager: rulesManager,
                                        privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                        trackerDataManager: TrackerDataManager(etag: configStore.loadEtag(for: .trackerDataSet),
@@ -40,7 +57,15 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                               errorReporting: nil),
                                        configStorage: MockConfigurationStore(),
                                        webTrackingProtectionPreferences: preferences,
-                                       tld: TLD())
+                                       experimentManager: MockContentScopeExperimentManager(),
+                                       tld: TLD(),
+                                       onboardingNavigationDelegate: CapturingOnboardingNavigation(),
+                                       appearancePreferences: appearancePreferences,
+                                       startupPreferences: startupPreferences,
+                                       bookmarkManager: MockBookmarkManager(),
+                                       historyCoordinator: CapturingHistoryDataSource(),
+                                       fireproofDomains: MockFireproofDomains(domains: []),
+                                       fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld))
     }
 
     override static func setUp() {
@@ -182,7 +207,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 extension UserContentControllerNewContent {
 
     func rules(withName name: String) -> WKContentRuleList? {
-        rulesUpdate.rules.first(where: { $0.name == name})?.rulesList
+        rulesUpdate.rules.first(where: { $0.name == name })?.rulesList
     }
 
     var isValid: Bool {

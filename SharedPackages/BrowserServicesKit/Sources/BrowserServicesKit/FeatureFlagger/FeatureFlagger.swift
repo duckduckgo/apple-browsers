@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Common
 
 /// This protocol defines a common interface for feature flags managed by FeatureFlagger.
 ///
@@ -26,6 +27,10 @@ public protocol FeatureFlagDescribing: CaseIterable {
 
     /// Returns a string representation of the flag, suitable for persisting the flag state to disk.
     var rawValue: String { get }
+
+    /// To be used to determine what the state of the feature flag should be when no remote definition exists
+    /// This is NOT to be used by the apps themselves, only the internal FeatureFlagger logic.
+    var defaultValue: Bool { get }
 
     /// Return `true` here if a flag can be locally overridden.
     ///
@@ -191,27 +196,6 @@ public protocol FeatureFlagger: AnyObject {
     ///
     func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool
 
-    /// Retrieves the cohort for a feature flag if the feature is enabled.
-    ///
-    /// This method determines the source of the feature flag and evaluates its eligibility based on
-    /// the user's internal status and the privacy configuration. It supports different sources, such as
-    /// disabled features, internal-only features, and remotely toggled features.
-    ///
-    /// - Parameter featureFlag: A feature flag conforming to `FeatureFlagDescribing`.
-    ///
-    /// - Returns: The `CohortID` associated with the feature flag, or `nil` if the feature is disabled or
-    ///   does not meet the eligibility criteria.
-    ///
-    /// - Behavior:
-    ///   - For `.disabled`: Returns `nil`.
-    ///   - For `.internalOnly`: Returns the cohort if the user is an internal user.
-    ///   - For `.remoteDevelopment` and `.remoteReleasable`:
-    ///     - If the feature is a subfeature, resolves its cohort using `resolveCohort(_ subfeature:)`.
-    ///     - Returns `nil` if the user is not eligible.
-    ///
-    /// > Note: Setting `allowOverride` to `false` skips checking local overrides. This can be used
-    ///   when the non-overridden feature flag value is required.
-
     /// Retrieves or attempts to assign a cohort for a feature flag if the feature is enabled.
     ///
     /// This method checks whether the feature flag is active based on its source configuration.
@@ -295,6 +279,7 @@ public extension FeatureFlagger {
 public class DefaultFeatureFlagger: FeatureFlagger {
 
     public let internalUserDecider: InternalUserDecider
+    private let allowOverrides: () -> Bool
     public let privacyConfigManager: PrivacyConfigurationManaging
     private let experimentManager: ExperimentCohortsManaging?
     public let localOverrides: FeatureFlagLocalOverriding?
@@ -304,22 +289,43 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         privacyConfigManager: PrivacyConfigurationManaging,
         experimentManager: ExperimentCohortsManaging?
     ) {
+#if DEBUG
+        let allowDefaultFeatureFlaggerInTests = ProcessInfo.processInfo.environment["TESTS_FEATUREFLAGGER_MODE"] == "1"
+        assert(![.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) || allowDefaultFeatureFlaggerInTests, {
+            "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
+        }())
+#endif
+
         self.internalUserDecider = internalUserDecider
         self.privacyConfigManager = privacyConfigManager
         self.experimentManager = experimentManager
         self.localOverrides = nil
+        self.allowOverrides = { false }
     }
 
     public init<Flag: FeatureFlagDescribing>(
         internalUserDecider: InternalUserDecider,
         privacyConfigManager: PrivacyConfigurationManaging,
         localOverrides: FeatureFlagLocalOverriding,
+        /// Allows to define custom behavior for allowing overrides.
+        ///
+        /// By default, overrides are allowed only for internal users. A custom closure can be injected
+        /// here to allow feature flag overriding in other situations (e.g. for UI testing).
+        allowOverrides: (() -> Bool)? = nil,
         experimentManager: ExperimentCohortsManaging?,
         for: Flag.Type
     ) {
+ #if DEBUG
+        let allowDefaultFeatureFlaggerInTests = ProcessInfo.processInfo.environment["TESTS_FEATUREFLAGGER_MODE"] == "1"
+        assert(![.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType) || allowDefaultFeatureFlaggerInTests, {
+            "Use MockFeatureFlagger instead in unit tests or previews:\n" + Thread.callStackSymbols.description
+        }())
+ #endif
+
         self.internalUserDecider = internalUserDecider
         self.privacyConfigManager = privacyConfigManager
         self.localOverrides = localOverrides
+        self.allowOverrides = allowOverrides ?? { internalUserDecider.isInternalUser }
         self.experimentManager = experimentManager
         localOverrides.featureFlagger = self
 
@@ -330,7 +336,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
     }
 
     public func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-        if allowOverride, internalUserDecider.isInternalUser, let localOverride = localOverrides?.override(for: featureFlag) {
+        if allowOverride, allowOverrides(), let localOverride = localOverrides?.override(for: featureFlag) {
             return localOverride
         }
         switch featureFlag.source {
@@ -344,9 +350,9 @@ public class DefaultFeatureFlagger: FeatureFlagger {
             guard internalUserDecider.isInternalUser else {
                 return false
             }
-            return isEnabled(featureType)
+            return isEnabled(featureType, defaultValue: featureFlag.defaultValue)
         case .remoteReleasable(let featureType):
-            return isEnabled(featureType)
+            return isEnabled(featureType, defaultValue: featureFlag.defaultValue)
         }
     }
 
@@ -370,7 +376,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
 
     public func resolveCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
         // Check for local overrides
-        if allowOverride, internalUserDecider.isInternalUser, let localOverride = localOverrides?.experimentOverride(for: featureFlag) {
+        if allowOverride, allowOverrides(), let localOverride = localOverrides?.experimentOverride(for: featureFlag) {
             return featureFlag.cohortType?.cohorts.first { $0.rawValue == localOverride }
         }
 
@@ -386,9 +392,9 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         case .internalOnly(let cohort):
             return cohort
         case .remoteReleasable(let featureType),
-                .remoteDevelopment(let featureType) where internalUserDecider.isInternalUser:
+             .remoteDevelopment(let featureType) where internalUserDecider.isInternalUser:
             if case .subfeature(let subfeature) = featureType {
-                if let resolvedCohortID = resolveCohort(subfeature, allowCohortAssignment: allowCohortAssignment) {
+                if let resolvedCohortID = resolveCohort(subfeature.rawValue, parentID: subfeature.parent.rawValue, allowCohortAssignment: allowCohortAssignment) {
                     return featureFlag.cohortType?.cohort(for: resolvedCohortID)
                 }
             }
@@ -398,11 +404,11 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         }
     }
 
-    private func resolveCohort(_ subfeature: any PrivacySubfeature, allowCohortAssignment: Bool = true) -> CohortID? {
+    func resolveCohort(_ subfeatureID: SubfeatureID, parentID: ParentFeatureID, allowCohortAssignment: Bool = true) -> CohortID? {
         let config = privacyConfigManager.privacyConfig
-        let featureState = config.stateFor(subfeature)
-        let cohorts = config.cohorts(for: subfeature)
-        let experiment = ExperimentSubfeature(parentID: subfeature.parent.rawValue, subfeatureID: subfeature.rawValue, cohorts: cohorts ?? [])
+        let featureState = config.stateFor(subfeatureID: subfeatureID, parentFeatureID: parentID)
+        let cohorts = config.cohorts(subfeatureID: subfeatureID, parentFeatureID: parentID)
+        let experiment = ExperimentSubfeature(parentID: parentID, subfeatureID: subfeatureID, cohorts: cohorts ?? [])
         switch featureState {
         case .enabled:
             return experimentManager?.resolveCohort(for: experiment, allowCohortAssignment: allowCohortAssignment)
@@ -413,12 +419,12 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         }
     }
 
-    private func isEnabled(_ featureType: PrivacyConfigFeatureLevel) -> Bool {
+    private func isEnabled(_ featureType: PrivacyConfigFeatureLevel, defaultValue: Bool) -> Bool {
         switch featureType {
         case .feature(let feature):
-            return privacyConfigManager.privacyConfig.isEnabled(featureKey: feature)
+            return privacyConfigManager.privacyConfig.isEnabled(featureKey: feature, defaultValue: defaultValue)
         case .subfeature(let subfeature):
-            return privacyConfigManager.privacyConfig.isSubfeatureEnabled(subfeature)
+            return privacyConfigManager.privacyConfig.isSubfeatureEnabled(subfeature, defaultValue: defaultValue)
         }
     }
 }

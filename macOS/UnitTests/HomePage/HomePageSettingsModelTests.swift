@@ -39,7 +39,7 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
         sendPixelEvents = []
 
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        appearancePreferences = .init(persistor: AppearancePreferencesPersistorMock())
+        appearancePreferences = .init(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager())
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
 
         UserDefaultsWrapper<Any>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.homePageLastPickedCustomColor.rawValue)
@@ -52,7 +52,8 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
                 self?.openFilePanelCallCount += 1
                 return self?.openFilePanel()
             },
-            showAddImageFailedAlert: { [weak self] in self?.showImageFailedAlertCallCount += 1 }
+            showAddImageFailedAlert: { [weak self] in self?.showImageFailedAlertCallCount += 1 },
+            visualStyle: VisualStyle.legacy
         )
     }
 

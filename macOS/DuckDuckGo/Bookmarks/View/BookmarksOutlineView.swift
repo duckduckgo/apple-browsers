@@ -36,6 +36,8 @@ extension BookmarksOutlineViewDataSource {
 
 final class BookmarksOutlineView: NSOutlineView {
 
+    private var insertionIndicatorView: BookmarkListInsertionIndicatorView?
+
     private var highlightedRowView: RoundedSelectionRowView?
     private var highlightedCellView: BookmarkOutlineCellView?
 
@@ -171,7 +173,7 @@ final class BookmarksOutlineView: NSOutlineView {
         super.viewDidMoveToWindow()
         guard let scrollView = enclosingScrollView else { return }
 
-        let trackingArea = NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self, userInfo: nil)
+        let trackingArea = NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeAlways, .inVisibleRect], owner: self, userInfo: nil)
 
         scrollView.addTrackingArea(trackingArea)
 
@@ -195,6 +197,27 @@ final class BookmarksOutlineView: NSOutlineView {
 
             updateIsInKeyPopoverState()
         }
+    }
+
+    private static let NSDraggingDestinationView = "NSDraggingDestinationView"
+    override func addSubview(_ view: NSView) {
+        // hide the default dragging destination view and replace it with custom drag insertion indicator view
+        if view.className == Self.NSDraggingDestinationView {
+            let v = BookmarkListInsertionIndicatorView(frame: view.frame)
+            insertionIndicatorView = v
+            super.addSubview(v)
+            view.alphaValue = 0
+        }
+        super.addSubview(view)
+    }
+
+    override func willRemoveSubview(_ subview: NSView) {
+        // when the dragging destination view is removed, remove the custom drag insertion indicator view
+        if subview.className == Self.NSDraggingDestinationView, let insertionIndicatorView {
+            insertionIndicatorView.removeFromSuperview()
+            self.insertionIndicatorView = nil
+        }
+        super.willRemoveSubview(subview)
     }
 
     override func mouseMoved(with event: NSEvent) {

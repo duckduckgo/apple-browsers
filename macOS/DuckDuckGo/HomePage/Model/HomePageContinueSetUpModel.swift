@@ -25,7 +25,7 @@ import PixelKit
 import Subscription
 import FeatureFlags
 
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 
 protocol ContinueSetUpModelTabOpening {
@@ -138,11 +138,11 @@ extension HomePage.Models {
 
         init(defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
              dockCustomizer: DockCustomization = DockCustomizer(),
-             dataImportProvider: DataImportStatusProviding = BookmarksAndPasswordsImportStatusProvider(),
+             dataImportProvider: DataImportStatusProviding,
              tabOpener: ContinueSetUpModelTabOpening,
              emailManager: EmailManager = EmailManager(),
              duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
-             privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager) {
+             privacyConfigurationManager: PrivacyConfigurationManaging) {
 
             self.defaultBrowserProvider = defaultBrowserProvider
             self.dockCustomizer = dockCustomizer
@@ -234,7 +234,7 @@ extension HomePage.Models {
             var features: [FeatureType] = []
             appendFeatureCards(&features)
             if features.isEmpty {
-                AppearancePreferences.shared.continueSetUpCardsClosed = true
+                NSApp.delegateTyped.appearancePreferences.continueSetUpCardsClosed = true
             }
             featuresMatrix = features.chunked(into: itemsPerRow)
         }
@@ -269,7 +269,7 @@ extension HomePage.Models {
 #if DEBUG
             settings.isFirstSession = false
 #endif
-            if OnboardingViewModel.isOnboardingFinished {
+            if OnboardingActionsManager.isOnboardingFinished {
                 settings.isFirstSession = false
             }
         }

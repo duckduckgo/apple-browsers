@@ -55,19 +55,23 @@ extension LoginResult {
 }
 
 class AccountManagingMock: AccountManaging {
+    var createAccountError: Error?
     func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount {
-        .mock
+        if let error = createAccountError {
+            throw error
+        }
+        return .mock
     }
 
     func deleteAccount(_ account: SyncAccount) async throws {}
 
     var loginStub: LoginResult?
     var loginError: Error?
-    var loginSpy: (recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String)?
-    @Published var loginCalled: Bool = false
+    var loginSpy: (SyncCode.RecoveryKey, String, String) -> Void = { _, _, _ in }
+    var loginCalled: Bool = false
     func login(_ recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String) async throws -> LoginResult {
         loginCalled = true
-        loginSpy = (recoveryKey, deviceName, deviceType)
+        loginSpy(recoveryKey, deviceName, deviceType)
         if let error = loginError {
             throw error
         }
@@ -145,10 +149,6 @@ class MockErrorHandler: EventMapping<SyncError> {
     }
 }
 
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
-}
-
 extension DefaultInternalUserDecider {
     convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
         self.init(store: mockedStore)
@@ -160,7 +160,7 @@ class MockPrivacyConfigurationManager: PrivacyConfigurationManaging {
     var updatesSubject = PassthroughSubject<Void, Never>()
     let updatesPublisher: AnyPublisher<Void, Never>
     var privacyConfig: PrivacyConfiguration = MockPrivacyConfiguration()
-    let internalUserDecider: InternalUserDecider = DefaultInternalUserDecider()
+    let internalUserDecider: InternalUserDecider = MockInternalUserDecider()
     func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
         .downloaded
     }
@@ -172,13 +172,13 @@ class MockPrivacyConfigurationManager: PrivacyConfigurationManaging {
 
 class MockPrivacyConfiguration: PrivacyConfiguration {
 
-    func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> Bool { true }
+    func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool { true }
 
     func stateFor(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
         return .enabled
     }
 
-    func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> Bool {
+    func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         true
     }
 
@@ -229,7 +229,8 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var scheduler: SchedulingInternal = SchedulerMock()
     var privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager()
     var errorEvents: EventMapping<SyncError> = MockErrorHandler()
-    var keyValueStore: KeyValueStoring = MockKeyValueStore()
+    var keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
+    var legacyKeyValueStore: KeyValueStoring = MockKeyValueStore()
 
     var request = HTTPRequestingMock()
 
@@ -314,11 +315,13 @@ final class MockRemoteKeyExchanging: RemoteKeyExchanging {
 }
 
 final class MockRecoveryKeyTransmitting: RecoveryKeyTransmitting {
-
     var sendCalled = 0
     var sendSpy: SyncCode.ConnectCode?
     var sendError: Error?
     func send(_ code: SyncCode.ConnectCode) async throws {
+        if let error = sendError {
+            throw error
+        }
         sendCalled += 1
         sendSpy = code
     }

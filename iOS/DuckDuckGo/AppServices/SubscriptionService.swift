@@ -33,12 +33,14 @@ final class SubscriptionService {
     private var cancellables: Set<AnyCancellable> = []
 
     init(application: UIApplication = UIApplication.shared,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
+         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         subscriptionCookieManager = Self.makeSubscriptionCookieManager(application: application,
                                                                        tokenProvider: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                        privacyConfigurationManager: privacyConfigurationManager)
         subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
-                                                                                 purchasePlatform: .appStore)
+                                                                                 purchasePlatform: .appStore,
+                                                                                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) })
         self.privacyConfigurationManager = privacyConfigurationManager
         privacyConfigurationManager.updatesPublisher
             .receive(on: DispatchQueue.main)

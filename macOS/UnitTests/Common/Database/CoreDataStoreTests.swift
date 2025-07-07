@@ -18,13 +18,15 @@
 
 import Foundation
 import XCTest
+import CoreData
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class CoreDataStoreTests: XCTestCase {
 
     let container = CoreData.coreDataStoreTestsContainer()
     typealias Store = CoreDataStore<TestManagedObject>
-    lazy var store = Store(context: container.newBackgroundContext(), tableName: "TestDataModel")
+    lazy var store = Store(context: container.newBackgroundContext())
 
     private func load(into result: inout [CoreDataTestStruct: NSManagedObjectID],
                       idValue: Store.IDValueTuple) throws {

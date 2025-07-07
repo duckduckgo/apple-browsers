@@ -53,7 +53,7 @@ final class FirePopoverViewModel {
          faviconManagement: FaviconManagement,
          initialClearingOption: ClearingOption = .allData,
          tld: TLD,
-         contextualOnboardingStateMachine: ContextualOnboardingStateUpdater) {
+         onboardingContextualDialogsManager: ContextualOnboardingStateUpdater) {
 
         self.fireViewModel = fireViewModel
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -62,7 +62,7 @@ final class FirePopoverViewModel {
         self.faviconManagement = faviconManagement
         self.clearingOption = initialClearingOption
         self.tld = tld
-        self.contextualOnboardingStateMachine = contextualOnboardingStateMachine
+        self.onboardingContextualDialogsManager = onboardingContextualDialogsManager
     }
 
     var clearingOption = ClearingOption.allData {
@@ -79,7 +79,7 @@ final class FirePopoverViewModel {
     private let fireproofDomains: FireproofDomains
     private let faviconManagement: FaviconManagement
     private let tld: TLD
-    private let contextualOnboardingStateMachine: ContextualOnboardingStateUpdater
+    private let onboardingContextualDialogsManager: ContextualOnboardingStateUpdater
 
     private(set) var hasOnlySingleFireproofDomain: Bool = false
     @Published private(set) var selectable: [Item] = []
@@ -192,8 +192,8 @@ final class FirePopoverViewModel {
     // MARK: - Burning
 
     func burn() {
-        contextualOnboardingStateMachine.fireButtonUsed()
-        PixelKit.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDaily)
+        onboardingContextualDialogsManager.fireButtonUsed()
+        PixelKit.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
 
         switch (clearingOption, areAllSelected) {
         case (.currentTab, _):
@@ -223,7 +223,7 @@ final class FirePopoverViewModel {
 
         case (.allData, false):
             PixelKit.fire(GeneralPixel.fireButton(option: .allSites))
-            fireViewModel.fire.burnEntity(entity: .allWindows(mainWindowControllers: WindowControllersManager.shared.mainWindowControllers,
+            fireViewModel.fire.burnEntity(entity: .allWindows(mainWindowControllers: Application.appDelegate.windowControllersManager.mainWindowControllers,
                                                               selectedDomains: selectedDomains,
                                                               customURLToOpen: nil))
         }

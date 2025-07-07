@@ -536,30 +536,3 @@ class ChallangeSender: URLAuthenticationChallengeSender {
     }
     var description: String = ""
 }
-
-class MockFeatureFlagger: FeatureFlagger {
-    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
-    var localOverrides: FeatureFlagLocalOverriding?
-    var cohort: (any FeatureFlagCohortDescribing)?
-
-    public init() { }
-
-    public init(internalUserDecider: InternalUserDecider) {
-        self.internalUserDecider = internalUserDecider
-    }
-
-    var isFeatureOn = true
-    func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-        return isFeatureOn
-    }
-
-    func getCohortIfEnabled(_ subfeature: any PrivacySubfeature) -> CohortID? {
-        return nil
-    }
-
-    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-        return cohort
-    }
-
-    var allActiveExperiments: Experiments = [:]
-}

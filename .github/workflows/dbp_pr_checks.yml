@@ -12,7 +12,10 @@ on:
   pull_request:
     paths:
       - '.github/**'
+      - '.xcode-version'
       - 'SharedPackages/DataBrokerProtectionCore/**'
+  schedule:
+    - cron: '10,40 4,5,6 * * *'
 
 jobs:
 
@@ -23,8 +26,13 @@ jobs:
       runs-on: macos-15
       timeout-minutes: 30
 
+      env:
+        RUNS_ON: macos-15 # keep this in sync with runs-on above
+        WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+
       outputs:
         commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
+        pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
       steps:
 
@@ -32,6 +40,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Start measuring duration
+        id: start-duration-macos
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: start
 
       - name: Set cache key hash
         run: |
@@ -57,22 +71,39 @@ jobs:
             ${{ runner.os }}-dbp-spm-
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+        uses: ./.github/actions/select-xcode-version
 
       - name: Build BSK
         run: set -o pipefail && swift build | tee build-log.txt | xcbeautify
 
       - name: Run tests
+        id: run-unit-tests
         run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+
+      - name: Report job duration
+        if: success() || (always() && steps.run-unit-tests.outcome == 'failure')
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: stop
+          start-timestamp: ${{ steps.start-duration-macos.outputs.start-timestamp }}
+          pixel-name: m_ci_apple_duration_dbp_unit_tests_macos
+          pixel-params: |
+            runner: ${{ env.RUNS_ON }}
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
         if: always()
         with:
-          check_name: Test Report (macOS)
+          check_name: DBP Test Report (macOS)
           report_paths: SharedPackages/DataBrokerProtectionCore/package-tests.xml
           require_tests: true
           check_retries: true
+
+      - name: Send Unit Tests Status Pixel
+        if: always() && github.ref_name == 'main'
+        uses: ./.github/actions/send-pixel
+        with:
+          pixel-name: m_ci_apple_status_dbp_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}
 
       - name: Update Asana with failed unit tests
         if: always() # always run even if the previous step fails
@@ -94,15 +125,28 @@ jobs:
           name: build-log.txt
           path: SharedPackages/DataBrokerProtectionCore/build-log.txt
 
-      - name: Fetch latest commit author
-        if: always() && github.ref_name == 'main'
-        id: fetch_commit_author
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Wait for crash reports to be generated
+        if: failure()
         run: |
-          head_commit=$(git rev-parse HEAD)
-          author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
-          echo "commit_author=${author}" >> $GITHUB_OUTPUT
+          sleep 30
+          ls -l ~/Library/Logs/DiagnosticReports
+
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "dbp-crash-reports-macOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/xctest-*.ips
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Fetch latest commit author and PR reviewers
+        if: failure() && github.ref_name == 'main' && github.run_attempt == 1
+        id: fetch_commit_author
+        uses: ./.github/actions/fetch-commit-info
+        with:
+          github-token: ${{ github.token }}
 
   unit-tests-ios:
 
@@ -111,12 +155,21 @@ jobs:
       runs-on: macos-15
       timeout-minutes: 30
 
+      env:
+        RUNS_ON: macos-15 # keep this in sync with runs-on above
+
       steps:
 
       - name: Check out the code
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Start measuring duration
+        id: start-duration-ios
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: start
 
       - name: Set cache key hash
         run: |
@@ -137,7 +190,7 @@ jobs:
             ${{ runner.os }}-dbp-spm-ios-
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+        uses: ./.github/actions/select-xcode-version
 
       - name: Resolve package dependencies
         run: |
@@ -153,6 +206,7 @@ jobs:
           # mv .build/* DerivedData/SourcePackages
 
       - name: Run tests
+        id: run-unit-tests
         run: |
           set -o pipefail && xcodebuild test \
             -scheme DataBrokerProtectionCore \
@@ -164,15 +218,31 @@ jobs:
             -retry-tests-on-failure \
             CODE_SIGNING_ALLOWED=NO \
             | tee -a ios-build-log.txt \
-            | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
+            | xcbeautify --report junit --report-path . --junit-report-filename dbp-ios-unittests.xml
+
+      - name: Report job duration
+        if: success() || (always() && steps.run-unit-tests.outcome == 'failure')
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: stop
+          start-timestamp: ${{ steps.start-duration-ios.outputs.start-timestamp }}
+          pixel-name: m_ci_apple_duration_dbp_unit_tests_ios
+          pixel-params: |
+            runner: ${{ env.RUNS_ON }}
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
         if: always()
         with:
-          check_name: Test Report (iOS)
-          report_paths: SharedPackages/DataBrokerProtectionCore/bsk-ios-unittests.xml
+          check_name: DBP Test Report (iOS)
+          report_paths: SharedPackages/DataBrokerProtectionCore/dbp-ios-unittests.xml
           require_tests: true
+
+      - name: Send Unit Tests Status Pixel
+        if: always() && github.ref_name == 'main'
+        uses: ./.github/actions/send-pixel
+        with:
+          pixel-name: m_ci_apple_status_dbp_main_unit_tests_ios_${{ steps.run-unit-tests.outcome }}
 
       - name: Update Asana with failed unit tests
         if: always() # always run even if the previous step fails
@@ -194,6 +264,22 @@ jobs:
           name: ios-build-log.txt
           path: SharedPackages/DataBrokerProtectionCore/ios-build-log.txt
 
+      - name: Wait for crash reports to be generated
+        if: failure()
+        run: |
+          sleep 30
+          ls -l ~/Library/Logs/DiagnosticReports
+
+      - name: Upload crash reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: "dbp-crash-reports-iOS"
+          path: |
+            ~/Library/Logs/DiagnosticReports/xctest-*.ips
+          retention-days: 7
+          if-no-files-found: ignore
+
   create-asana-task:
     name: Create Asana Task
     needs: [unit-tests, unit-tests-ios]
@@ -212,6 +298,8 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
+          pr-reviewers: ${{ needs.unit-tests.outputs.pr_reviewers }}
+          github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:
     name: Close Asana Task
@@ -230,3 +318,4 @@ jobs:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
+          github-token: ${{ secrets.GH_RO_PAT }}

@@ -18,7 +18,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 import Common
 import Core
 
@@ -58,8 +58,12 @@ extension EventMapping where Event == NetworkProtectionError {
             params[PixelParameters.keychainErrorCode] = String(status)
         case .noAuthTokenFound:
             pixelEvent = .networkProtectionNoAccessTokenFoundError
-        case .vpnAccessRevoked:
-            return
+        case .vpnAccessRevoked(let error):
+            pixelEvent = .networkProtectionVPNAccessRevoked
+            pixelError = error
+        case .unmanagedSubscriptionError(let error):
+            pixelEvent = .networkProtectionUnmanagedSubscriptionError
+            pixelError = error
         case .noServerRegistrationInfo,
                 .couldNotSelectClosestServer,
                 .couldNotGetPeerPublicKey,

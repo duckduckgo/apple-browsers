@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import SwiftUICore
+import SwiftUI
 
 /// Our Control Center Widgets
 ///
@@ -28,6 +28,6 @@ enum ControlCenterWidget {
     case vpnToggle
 
     var image: Image {
-        Image("ControlCenter-VPN-off")
+        Image(.controlCenterVPNOff)
     }
 }

@@ -23,14 +23,14 @@ public struct DeviceAttributeMatcher: AttributeMatching {
 
     let osVersion: String
     let localeIdentifier: String
+    let formFactor: String
 
-    public init() {
-        self.init(osVersion: AppVersion.shared.osVersion, locale: Locale.current.identifier)
-    }
-
-    public init(osVersion: String, locale: String) {
+    public init(osVersion: String = AppVersion.shared.osVersion,
+                locale: String = Locale.current.identifier,
+                formFactor: String = DevicePlatform.formFactor) {
         self.osVersion = osVersion
         self.localeIdentifier = locale
+        self.formFactor = formFactor
     }
 
     public func evaluate(matchingAttribute: MatchingAttribute) -> EvaluationResult? {
@@ -39,6 +39,8 @@ public struct DeviceAttributeMatcher: AttributeMatching {
             return matchingAttribute.evaluate(for: LocaleMatchingAttribute.localeIdentifierAsJsonFormat(localeIdentifier))
         case let matchingAttribute as OSMatchingAttribute:
             return matchingAttribute.evaluate(for: osVersion)
+        case let matchingAttribute as FormFactorMatchingAttribute:
+            return matchingAttribute.evaluate(for: formFactor)
         default:
             return nil
         }

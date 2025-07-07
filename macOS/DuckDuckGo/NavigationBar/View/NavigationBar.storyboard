@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="o2v-eH-jTI">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="o2v-eH-jTI">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -13,11 +13,14 @@
                     <view key="view" translatesAutoresizingMaskIntoConstraints="NO" id="hYV-nu-QIp" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="0.0" width="1675" height="68"/>
                         <subviews>
+                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="bSB-ca-LaM" customClass="MouseOverView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="0.0" width="1675" height="68"/>
+                            </customView>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="EQw-GG-GMA" customClass="WindowDraggingView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="1675" height="68"/>
                             </customView>
                             <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eEh-kf-smR">
-                                <rect key="frame" x="12" y="28" width="128" height="32"/>
+                                <rect key="frame" x="12" y="18" width="128" height="32"/>
                                 <subviews>
                                     <customView hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="3o5-MS-AWl">
                                         <rect key="frame" x="0.0" y="0.0" width="21" height="32"/>
@@ -156,8 +159,8 @@
                                     <real value="3.4028234663852886e+38"/>
                                 </customSpacing>
                             </stackView>
-                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="16" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gIy-el-24l" userLabel="Address Bar">
-                                <rect key="frame" x="335" y="6" width="1005" height="56"/>
+                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="16" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gIy-el-24l" userLabel="Address Bar">
+                                <rect key="frame" x="422" y="6" width="832" height="56"/>
                                 <subviews>
                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="8Ha-or-PB2">
                                         <rect key="frame" x="0.0" y="0.0" width="44" height="56"/>
@@ -167,12 +170,16 @@
                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="HomePageLogo" id="O0O-qm-kNp"/>
                                     </imageView>
                                     <containerView translatesAutoresizingMaskIntoConstraints="NO" id="Wba-nA-FYj">
-                                        <rect key="frame" x="60" y="3" width="945" height="50"/>
+                                        <rect key="frame" x="60" y="3" width="772" height="50"/>
                                         <connections>
                                             <segue destination="H4f-bE-T92" kind="embed" destinationCreationSelector="createAddressBarViewController:" id="5BM-Q3-tYH"/>
                                         </connections>
                                     </containerView>
                                 </subviews>
+                                <constraints>
+                                    <constraint firstAttribute="width" relation="lessThanOrEqual" constant="832" id="FmT-gw-Zi6"/>
+                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="212" id="cjs-qz-wlM"/>
+                                </constraints>
                                 <visibilityPriorities>
                                     <integer value="1000"/>
                                     <integer value="1000"/>
@@ -182,35 +189,9 @@
                                     <real value="3.4028234663852886e+38"/>
                                 </customSpacing>
                             </stackView>
-                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="aWu-Jm-Oaz" userLabel="Menu Buttons">
-                                <rect key="frame" x="1567" y="28" width="96" height="32"/>
+                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="aWu-Jm-Oaz" userLabel="Menu Buttons">
+                                <rect key="frame" x="1535" y="18" width="128" height="32"/>
                                 <subviews>
-                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="G8p-di-fq4" userLabel="AI Chat Button" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="32" height="32"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="AIChat" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="GwE-DM-8UC">
-                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                            <font key="font" metaFont="system"/>
-                                        </buttonCell>
-                                        <color key="contentTintColor" name="ButtonColor"/>
-                                        <constraints>
-                                            <constraint firstAttribute="width" constant="32" id="e8q-LQ-wRv"/>
-                                            <constraint firstAttribute="height" constant="32" id="fxJ-mh-eCf"/>
-                                        </constraints>
-                                        <userDefinedRuntimeAttributes>
-                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
-                                                <color key="value" name="ButtonMouseOverColor"/>
-                                            </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
-                                                <color key="value" name="ButtonMouseDownColor"/>
-                                            </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                                <real key="value" value="4"/>
-                                            </userDefinedRuntimeAttribute>
-                                        </userDefinedRuntimeAttributes>
-                                        <connections>
-                                            <action selector="aiChatButtonAction:" target="o2v-eH-jTI" id="F42-cw-WpC"/>
-                                        </connections>
-                                    </button>
                                     <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="l0L-Gq-8p3" userLabel="Downloads Button" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="0.0" width="32" height="32"/>
                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Downloads" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="oqg-Yl-ZvV">
@@ -315,8 +296,34 @@
                                             <action selector="networkProtectionButtonAction:" target="o2v-eH-jTI" id="DeW-ut-BEh"/>
                                         </connections>
                                     </button>
-                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="iIF-Ky-unr" customClass="MoreOptionsMenuButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="NvC-7a-4eG" userLabel="Overflow Button" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="64" y="0.0" width="32" height="32"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Chevron-Double-Right-16" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="Eo9-Y2-FKc">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="ButtonColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="32" id="9kl-8f-u1e"/>
+                                            <constraint firstAttribute="height" constant="32" id="jN5-Ge-fDt"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="4"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="overflowButtonAction:" target="o2v-eH-jTI" id="c2X-Pj-Kye"/>
+                                        </connections>
+                                    </button>
+                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="iIF-Ky-unr" customClass="MoreOptionsMenuButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="96" y="0.0" width="32" height="32"/>
                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Settings" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="N7m-mn-k3W">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
@@ -362,52 +369,73 @@
                         </subviews>
                         <constraints>
                             <constraint firstAttribute="bottom" secondItem="EQw-GG-GMA" secondAttribute="bottom" id="4ye-CO-dDp"/>
+                            <constraint firstAttribute="trailing" secondItem="bSB-ca-LaM" secondAttribute="trailing" id="7kW-CR-HTQ"/>
+                            <constraint firstItem="aWu-Jm-Oaz" firstAttribute="centerY" secondItem="hYV-nu-QIp" secondAttribute="centerY" id="8Jg-mH-CHM"/>
+                            <constraint firstAttribute="bottom" secondItem="bSB-ca-LaM" secondAttribute="bottom" id="Exa-XS-C2I"/>
                             <constraint firstAttribute="height" constant="68" id="KjG-nj-hqf"/>
                             <constraint firstItem="eEh-kf-smR" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" constant="12" id="MQ7-vv-adb"/>
-                            <constraint firstItem="aWu-Jm-Oaz" firstAttribute="top" secondItem="eEh-kf-smR" secondAttribute="top" id="S2g-Lx-lQw"/>
                             <constraint firstAttribute="trailing" secondItem="aWu-Jm-Oaz" secondAttribute="trailing" constant="12" id="UeG-qO-bD2"/>
+                            <constraint firstItem="bSB-ca-LaM" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" id="Vx4-mN-uKA"/>
                             <constraint firstAttribute="bottom" secondItem="gIy-el-24l" secondAttribute="bottom" constant="6" id="Xaz-X5-bmg"/>
                             <constraint firstItem="EQw-GG-GMA" firstAttribute="top" secondItem="hYV-nu-QIp" secondAttribute="top" id="ctd-w7-EMF"/>
-                            <constraint firstItem="aWu-Jm-Oaz" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="gIy-el-24l" secondAttribute="trailing" constant="16" id="eSb-tj-UdD"/>
+                            <constraint firstItem="aWu-Jm-Oaz" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="gIy-el-24l" secondAttribute="trailing" constant="12" id="eSb-tj-UdD"/>
+                            <constraint firstItem="eEh-kf-smR" firstAttribute="centerY" secondItem="Wba-nA-FYj" secondAttribute="centerY" id="fcj-rV-KVD"/>
                             <constraint firstItem="EQw-GG-GMA" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" id="hpe-5Y-XTJ"/>
                             <constraint firstItem="gIy-el-24l" firstAttribute="top" secondItem="hYV-nu-QIp" secondAttribute="top" constant="6" id="km5-nE-hfK"/>
                             <constraint firstAttribute="trailing" secondItem="EQw-GG-GMA" secondAttribute="trailing" id="oYK-XH-0iN"/>
-                            <constraint firstItem="eEh-kf-smR" firstAttribute="top" secondItem="hYV-nu-QIp" secondAttribute="top" constant="8" id="qeF-30-DZN"/>
-                            <constraint firstItem="gIy-el-24l" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="eEh-kf-smR" secondAttribute="trailing" constant="16" id="rfA-3F-QAf"/>
-                            <constraint firstItem="gIy-el-24l" firstAttribute="width" secondItem="hYV-nu-QIp" secondAttribute="width" multiplier="0.6" id="rqL-Vd-lnY"/>
-                            <constraint firstItem="gIy-el-24l" firstAttribute="centerX" secondItem="hYV-nu-QIp" secondAttribute="centerX" id="zgI-LQ-Zj3"/>
+                            <constraint firstItem="gIy-el-24l" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="eEh-kf-smR" secondAttribute="trailing" constant="12" id="rfA-3F-QAf"/>
+                            <constraint firstItem="gIy-el-24l" firstAttribute="width" secondItem="hYV-nu-QIp" secondAttribute="width" multiplier="0.6" priority="250" id="rqL-Vd-lnY"/>
+                            <constraint firstItem="bSB-ca-LaM" firstAttribute="top" secondItem="hYV-nu-QIp" secondAttribute="top" id="uuJ-L8-bDw"/>
+                            <constraint firstItem="gIy-el-24l" firstAttribute="centerX" secondItem="hYV-nu-QIp" secondAttribute="centerX" priority="100" id="zgI-LQ-Zj3"/>
                         </constraints>
-                        <userDefinedRuntimeAttributes>
-                            <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
-                                <color key="value" name="NavigationBarBackgroundColor"/>
-                            </userDefinedRuntimeAttribute>
-                        </userDefinedRuntimeAttributes>
                     </view>
                     <connections>
                         <outlet property="addressBarBottomConstraint" destination="Xaz-X5-bmg" id="Xsd-Ca-9o5"/>
                         <outlet property="addressBarContainer" destination="Wba-nA-FYj" id="VEq-Sp-Ns1"/>
-                        <outlet property="addressBarHeightConstraint" destination="KjG-nj-hqf" id="pT7-bY-Rf2"/>
                         <outlet property="addressBarLeftToNavButtonsConstraint" destination="rfA-3F-QAf" id="IJE-cK-DQ6"/>
+                        <outlet property="addressBarMinWidthConstraint" destination="cjs-qz-wlM" id="Zd3-Mb-E0r"/>
                         <outlet property="addressBarProportionalWidthConstraint" destination="rqL-Vd-lnY" id="zxF-f6-8wE"/>
                         <outlet property="addressBarStack" destination="gIy-el-24l" id="vlT-AD-nDv"/>
                         <outlet property="addressBarTopConstraint" destination="km5-nE-hfK" id="dR8-qN-sMa"/>
-                        <outlet property="aiChatButton" destination="G8p-di-fq4" id="s1c-9f-UFg"/>
+                        <outlet property="backgroundBaseColorView" destination="hYV-nu-QIp" id="9uD-tL-C95"/>
+                        <outlet property="backgroundColorView" destination="bSB-ca-LaM" id="aZM-FK-hPw"/>
                         <outlet property="bookmarkListButton" destination="4sj-qN-UUY" id="Fjs-KE-Lfp"/>
-                        <outlet property="buttonsTopConstraint" destination="qeF-30-DZN" id="WfB-NP-nV7"/>
+                        <outlet property="bookmarksButtonHeightConstraint" destination="Qzm-SN-RXg" id="ANa-CB-8eC"/>
+                        <outlet property="bookmarksButtonWidthConstraint" destination="q0c-3z-K6Y" id="Z6V-BL-xd0"/>
                         <outlet property="daxLogo" destination="8Ha-or-PB2" id="Id4-3e-U4K"/>
                         <outlet property="downloadsButton" destination="l0L-Gq-8p3" id="ujH-qR-rUH"/>
+                        <outlet property="downloadsButtonHeightConstraint" destination="GB6-Ad-cop" id="yKH-eG-eWr"/>
+                        <outlet property="downloadsButtonWidthConstraint" destination="OQQ-cJ-hZg" id="jD4-hk-Pwk"/>
                         <outlet property="goBackButton" destination="kky-0N-Cfd" id="RA9-yE-URS"/>
+                        <outlet property="goBackButtonHeightConstraint" destination="0zh-Jn-l2h" id="1Xv-Mt-Vgm"/>
+                        <outlet property="goBackButtonWidthConstraint" destination="8sl-Tr-gSd" id="68f-l3-gFj"/>
                         <outlet property="goForwardButton" destination="mdE-u0-Ei5" id="7wT-nX-Avr"/>
+                        <outlet property="goForwardButtonHeightConstraint" destination="VXS-B2-jFA" id="5qt-by-Oq3"/>
+                        <outlet property="goForwardButtonWidthConstraint" destination="jYM-So-c8l" id="lUu-R0-dqm"/>
                         <outlet property="homeButton" destination="s7D-YB-p00" id="sjk-Af-Zl4"/>
+                        <outlet property="homeButtonHeightConstraint" destination="AGI-Qn-D1V" id="f7o-Uj-CzW"/>
                         <outlet property="homeButtonSeparator" destination="3o5-MS-AWl" id="mcV-id-0zR"/>
+                        <outlet property="homeButtonWidthConstraint" destination="GN7-UV-Cyb" id="mCW-5g-QuU"/>
                         <outlet property="logoWidthConstraint" destination="jSz-y8-vaJ" id="BbD-cr-Hyv"/>
                         <outlet property="menuButtons" destination="aWu-Jm-Oaz" id="gb7-KP-Q3h"/>
                         <outlet property="navigationBarButtonsLeadingConstraint" destination="eSb-tj-UdD" id="Jnt-Xd-aUU"/>
+                        <outlet property="navigationBarHeightConstraint" destination="KjG-nj-hqf" id="pT7-bY-Rf2"/>
                         <outlet property="navigationButtons" destination="eEh-kf-smR" id="XC4-bo-89V"/>
                         <outlet property="networkProtectionButton" destination="iKf-yR-au9" id="HWJ-gT-EXa"/>
                         <outlet property="optionsButton" destination="iIF-Ky-unr" id="vvZ-mm-idv"/>
+                        <outlet property="optionsButtonHeightConstraint" destination="s7E-4e-eTj" id="117-oZ-g97"/>
+                        <outlet property="optionsButtonWidthConstraint" destination="2ry-8Q-yfk" id="QnL-ik-UxB"/>
+                        <outlet property="overflowButton" destination="NvC-7a-4eG" id="uvf-br-tuC"/>
+                        <outlet property="overflowButtonHeightConstraint" destination="jN5-Ge-fDt" id="zLi-42-VDH"/>
+                        <outlet property="overflowButtonWidthConstraint" destination="9kl-8f-u1e" id="ud9-ya-on4"/>
                         <outlet property="passwordManagementButton" destination="1nW-I1-nut" id="wDs-oE-b7d"/>
+                        <outlet property="passwordsButtonHeightConstraint" destination="7ig-jQ-Utf" id="gnG-OC-jQL"/>
+                        <outlet property="passwordsButtonWidthConstraint" destination="T0W-BM-7GU" id="qag-ZR-nWd"/>
+                        <outlet property="refreshButtonHeightConstraint" destination="Jkc-qJ-YzZ" id="w5f-X4-lcp"/>
+                        <outlet property="refreshButtonWidthConstraint" destination="Rf0-Vt-PDX" id="tLk-Sc-NYs"/>
                         <outlet property="refreshOrStopButton" destination="B2U-XM-Vo0" id="EaI-Kz-Qwi"/>
+                        <outlet property="vpnButtonHeightConstraint" destination="S1p-WW-bBT" id="Q6p-ST-40j"/>
+                        <outlet property="vpnButtonWidthConstraint" destination="sX1-Os-IT4" id="4vH-Vh-LTh"/>
                     </connections>
                 </viewController>
                 <customObject id="wkT-Td-n7D" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
@@ -418,15 +446,15 @@
         <scene sceneID="gzs-lg-gqU">
             <objects>
                 <viewController storyboardIdentifier="AddressBarViewController" id="H4f-bE-T92" customClass="AddressBarViewController" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" wantsLayer="YES" id="wj6-L2-5rJ">
-                        <rect key="frame" x="0.0" y="0.0" width="734" height="32"/>
+                    <view key="view" wantsLayer="YES" id="wj6-L2-5rJ" customClass="DraggingDestinationView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                        <rect key="frame" x="0.0" y="0.0" width="655" height="32"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="ENV-0H-Fcc" userLabel="Inactive Background View with Progress" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="2" y="2" width="730" height="28"/>
+                                <rect key="frame" x="2" y="2" width="651" height="28"/>
                                 <subviews>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="4x6-Xn-fNv" customClass="LoadingProgressView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="730" height="2"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="651" height="2"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="2" id="phH-XL-CIq"/>
                                         </constraints>
@@ -447,7 +475,7 @@
                                 </userDefinedRuntimeAttributes>
                             </customView>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="Zjk-bE-Xft" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="-3" y="-3" width="740" height="38"/>
+                                <rect key="frame" x="-3" y="-3" width="661" height="38"/>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
                                         <real key="value" value="10"/>
@@ -458,7 +486,7 @@
                                 </userDefinedRuntimeAttributes>
                             </customView>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="e0p-7S-Gan" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="734" height="32"/>
+                                <rect key="frame" x="0.0" y="0.0" width="655" height="32"/>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
                                         <color key="value" name="AddressBarBackgroundColor"/>
@@ -475,10 +503,10 @@
                                 </userDefinedRuntimeAttributes>
                             </customView>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="Ij9-fc-CLI" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="-28" width="734" height="60"/>
+                                <rect key="frame" x="0.0" y="-28" width="655" height="60"/>
                                 <subviews>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="INL-zs-eEh" userLabel="Inner Border View" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="1" y="1" width="732" height="58"/>
+                                        <rect key="frame" x="1" y="1" width="653" height="58"/>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
                                                 <color key="value" name="AddressBarInnerBorderColor"/>
@@ -514,8 +542,11 @@
                                     </userDefinedRuntimeAttribute>
                                 </userDefinedRuntimeAttributes>
                             </customView>
-                            <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="le0-Hn-ZAC">
-                                <rect key="frame" x="363" y="8" width="8" height="16"/>
+                            <textField horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="le0-Hn-ZAC">
+                                <rect key="frame" x="288" y="8" width="79" height="16"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="75" id="wcb-Gz-fOc"/>
+                                </constraints>
                                 <textFieldCell key="cell" lineBreakMode="truncatingTail" refusesFirstResponder="YES" alignment="center" usesSingleLineMode="YES" id="rpt-TE-48N">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -523,7 +554,7 @@
                                 </textFieldCell>
                             </textField>
                             <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zaX-wZ-E3D" customClass="AddressBarTextField" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="38" y="8" width="653" height="16"/>
+                                <rect key="frame" x="38" y="8" width="574" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" focusRingType="none" tag="5" placeholderString="Search or enter address" usesSingleLineMode="YES" id="1ah-Qg-8lr" customClass="AddressBarTextFieldCell" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -531,18 +562,18 @@
                                 </textFieldCell>
                             </textField>
                             <containerView translatesAutoresizingMaskIntoConstraints="NO" id="bOl-8Z-hTh">
-                                <rect key="frame" x="2" y="3" width="730" height="26"/>
+                                <rect key="frame" x="2" y="3" width="651" height="26"/>
                                 <connections>
                                     <segue destination="mcr-nj-GmC" kind="embed" identifier="" destinationCreationSelector="createAddressBarButtonsViewController:" id="zZO-zH-MBi"/>
                                 </connections>
                             </containerView>
                             <customView horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="JKb-5c-xaF" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="550" y="8" width="118" height="16"/>
+                                <rect key="frame" x="508" y="8" width="118" height="16"/>
                                 <subviews>
                                     <customView horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="JKb-5c-xaD" userLabel="Rounded Corners View" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="8" y="-3" width="110" height="22"/>
                                         <subviews>
-                                            <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="LBz-Pz-Fw5">
+                                            <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="LBz-Pz-Fw5">
                                                 <rect key="frame" x="10" y="4" width="75" height="14"/>
                                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Switch to Tab" id="xUQ-xN-fdL">
                                                     <font key="font" metaFont="smallSystem"/>
@@ -613,7 +644,6 @@
                         </subviews>
                         <constraints>
                             <constraint firstItem="Zjk-bE-Xft" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" constant="-3" id="0fn-nq-VWh"/>
-                            <constraint firstAttribute="trailing" secondItem="zaX-wZ-E3D" secondAttribute="trailing" priority="900" constant="45" id="0o6-qo-lcK"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="zaX-wZ-E3D" secondAttribute="trailing" constant="45" id="3qw-n4-evE"/>
                             <constraint firstItem="Zjk-bE-Xft" firstAttribute="top" secondItem="wj6-L2-5rJ" secondAttribute="top" constant="-3" id="7Hj-tq-lmj"/>
                             <constraint firstItem="JKb-5c-xaF" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" priority="300" constant="550" id="9CH-r6-Spp"/>
@@ -621,7 +651,6 @@
                             <constraint firstItem="zaX-wZ-E3D" firstAttribute="height" relation="lessThanOrEqual" secondItem="wj6-L2-5rJ" secondAttribute="height" multiplier="0.55" id="E0Q-AU-qRQ"/>
                             <constraint firstItem="e0p-7S-Gan" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" id="E5D-iA-uu3"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="JKb-5c-xaF" secondAttribute="trailing" constant="29" id="F0b-NX-BKL"/>
-                            <constraint firstItem="le0-Hn-ZAC" firstAttribute="centerX" secondItem="wj6-L2-5rJ" secondAttribute="centerX" id="GIk-xf-3Bn"/>
                             <constraint firstItem="ENV-0H-Fcc" firstAttribute="top" secondItem="wj6-L2-5rJ" secondAttribute="top" constant="2" id="HfA-Q8-0Uz"/>
                             <constraint firstItem="zaX-wZ-E3D" firstAttribute="centerY" secondItem="wj6-L2-5rJ" secondAttribute="centerY" id="M2U-b3-Z0t"/>
                             <constraint firstItem="bOl-8Z-hTh" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" constant="2" id="OSv-yy-Yz5"/>
@@ -637,26 +666,34 @@
                             <constraint firstAttribute="trailing" secondItem="Zjk-bE-Xft" secondAttribute="trailing" constant="-3" id="ctZ-aw-6Ck"/>
                             <constraint firstItem="le0-Hn-ZAC" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="wj6-L2-5rJ" secondAttribute="leading" constant="37" id="eJI-rp-ptx"/>
                             <constraint firstAttribute="bottom" secondItem="Zjk-bE-Xft" secondAttribute="bottom" constant="-3" id="ic3-He-fz0"/>
+                            <constraint firstItem="le0-Hn-ZAC" firstAttribute="centerX" secondItem="wj6-L2-5rJ" secondAttribute="centerX" priority="250" id="jND-q4-SK7"/>
                             <constraint firstAttribute="bottom" secondItem="ENV-0H-Fcc" secondAttribute="bottom" constant="2" id="jNf-6E-eDn"/>
                             <constraint firstItem="Ij9-fc-CLI" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" id="mPy-45-VDH"/>
+                            <constraint firstAttribute="trailing" secondItem="zaX-wZ-E3D" secondAttribute="trailing" priority="900" id="mhA-CM-51H"/>
                             <constraint firstItem="JKb-5c-xaF" firstAttribute="height" secondItem="zaX-wZ-E3D" secondAttribute="height" id="nDf-yK-Sgh"/>
                             <constraint firstAttribute="bottom" secondItem="e0p-7S-Gan" secondAttribute="bottom" priority="300" id="nuB-My-vJR"/>
                             <constraint firstItem="JKb-5c-xaF" firstAttribute="centerY" secondItem="wj6-L2-5rJ" secondAttribute="centerY" id="opE-0E-iRf"/>
                             <constraint firstItem="le0-Hn-ZAC" firstAttribute="centerY" secondItem="wj6-L2-5rJ" secondAttribute="centerY" id="wEn-eS-Lat"/>
-                            <constraint firstItem="ktI-g4-Uk6" firstAttribute="leading" relation="lessThanOrEqual" secondItem="le0-Hn-ZAC" secondAttribute="trailing" constant="45" id="yYJ-7M-8iq"/>
+                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="le0-Hn-ZAC" secondAttribute="trailing" constant="45" id="yYJ-7M-8iq"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="activeBackgroundView" destination="e0p-7S-Gan" id="2FB-uy-8tO"/>
                         <outlet property="activeBackgroundViewWithSuggestions" destination="Ij9-fc-CLI" id="JWC-g2-hrM"/>
+                        <outlet property="activeOuterBorderBottomConstraint" destination="ic3-He-fz0" id="pRh-g4-1mm"/>
+                        <outlet property="activeOuterBorderLeadingConstraint" destination="0fn-nq-VWh" id="UMH-7o-CeB"/>
+                        <outlet property="activeOuterBorderTopConstraint" destination="7Hj-tq-lmj" id="i6H-0m-wTk"/>
+                        <outlet property="activeOuterBorderTrailingConstraint" destination="ctZ-aw-6Ck" id="sVM-pe-98q"/>
                         <outlet property="activeOuterBorderView" destination="Zjk-bE-Xft" id="u6o-fc-V76"/>
                         <outlet property="activeTextFieldMinXConstraint" destination="bY3-LA-cuF" id="Sln-8O-mrq"/>
                         <outlet property="addressBarTextField" destination="zaX-wZ-E3D" id="pfO-d4-i46"/>
+                        <outlet property="addressBarTextTrailingConstraint" destination="3qw-n4-evE" id="Hgt-4m-g06"/>
                         <outlet property="buttonsContainerView" destination="bOl-8Z-hTh" id="UHc-27-JaK"/>
                         <outlet property="inactiveBackgroundView" destination="ENV-0H-Fcc" id="OV5-2s-Ggq"/>
                         <outlet property="innerBorderView" destination="INL-zs-eEh" id="7aF-qt-wCX"/>
                         <outlet property="passiveTextField" destination="le0-Hn-ZAC" id="npL-R1-gmH"/>
                         <outlet property="passiveTextFieldMinXConstraint" destination="eJI-rp-ptx" id="HNu-7v-JQy"/>
+                        <outlet property="passiveTextFieldTrailingConstraint" destination="yYJ-7M-8iq" id="KeG-V4-gBQ"/>
                         <outlet property="progressIndicator" destination="4x6-Xn-fNv" id="Ydu-ob-RJz"/>
                         <outlet property="shadowView" destination="ktI-g4-Uk6" id="v81-tf-DGJ"/>
                         <outlet property="switchToTabBox" destination="JKb-5c-xaF" id="mhx-BL-hG3"/>
@@ -691,60 +728,147 @@
                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="50" id="bfq-Cs-mcP"/>
                                 </constraints>
                             </customView>
-                            <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="taC-vG-1fV" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="546" y="1" width="32" height="32"/>
-                                <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Bookmark" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="H3Y-Sk-Xp8">
-                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <color key="contentTintColor" name="ButtonColor"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="32" id="3ze-iM-E0b"/>
-                                    <constraint firstAttribute="height" constant="32" id="nLM-v6-jHW"/>
-                                </constraints>
-                                <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
-                                        <color key="value" name="ButtonMouseOverColor"/>
-                                    </userDefinedRuntimeAttribute>
-                                    <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
-                                        <color key="value" name="ButtonMouseDownColor"/>
-                                    </userDefinedRuntimeAttribute>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                        <integer key="value" value="7"/>
-                                    </userDefinedRuntimeAttribute>
-                                </userDefinedRuntimeAttributes>
-                                <connections>
-                                    <action selector="bookmarkButtonAction:" target="mcr-nj-GmC" id="zSj-zA-HAq"/>
-                                </connections>
-                            </button>
-                            <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kRc-0m-oqe" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="550" y="4" width="26" height="26"/>
-                                <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Clear" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="Qnf-P6-S6w">
-                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <color key="contentTintColor" name="ClearButtonColor"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="26" id="8Ag-uG-RA7"/>
-                                    <constraint firstAttribute="height" constant="26" id="B6E-P0-EL6"/>
-                                </constraints>
-                                <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
-                                        <color key="value" name="ButtonMouseOverColor"/>
-                                    </userDefinedRuntimeAttribute>
-                                    <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
-                                        <color key="value" name="ButtonMouseDownColor"/>
-                                    </userDefinedRuntimeAttribute>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                        <real key="value" value="4"/>
-                                    </userDefinedRuntimeAttribute>
-                                </userDefinedRuntimeAttributes>
-                                <connections>
-                                    <action selector="clearButtonAction:" target="mcr-nj-GmC" id="m9h-NY-Ujx"/>
-                                </connections>
-                            </button>
+                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="2" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="L9C-04-I02" userLabel="Trailing Stack View">
+                                <rect key="frame" x="566" y="7" width="12" height="20"/>
+                                <subviews>
+                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="taC-vG-1fV" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="-12" width="32" height="32"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Bookmark" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="H3Y-Sk-Xp8">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="ButtonColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="32" id="3ze-iM-E0b"/>
+                                            <constraint firstAttribute="height" constant="32" id="nLM-v6-jHW"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <integer key="value" value="7"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="bookmarkButtonAction:" target="mcr-nj-GmC" id="zSj-zA-HAq"/>
+                                        </connections>
+                                    </button>
+                                    <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="L8T-hS-NZz" userLabel="Leading Ai Chat Divider">
+                                        <rect key="frame" x="0.0" y="0.0" width="5" height="20"/>
+                                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="AIChat-Divider" id="xf3-M4-GH0"/>
+                                    </imageView>
+                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="iq7-xk-4vY" customClass="AddressBarMenuButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="-12" width="32" height="32"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="AIChat" imagePosition="only" alignment="center" alternateImage="AIChat-Solid" imageScaling="proportionallyDown" inset="2" id="ltE-Mz-TRC">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="ButtonColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="32" id="V3J-c9-bzy"/>
+                                            <constraint firstAttribute="height" constant="32" id="XWC-J0-Ey7"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <integer key="value" value="7"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="aiChatButtonAction:" target="mcr-nj-GmC" id="QZC-3i-o4L"/>
+                                        </connections>
+                                    </button>
+                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vcx-Ct-S1I" customClass="AddressBarMenuButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="-12" width="32" height="32"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="AIChat" imagePosition="only" alignment="center" alternateImage="AIChat-Solid" imageScaling="proportionallyDown" inset="2" id="ZnX-OO-nlL">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="ButtonColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="32" id="U8v-Vm-26V"/>
+                                            <constraint firstAttribute="width" constant="32" id="bCV-Pu-oHa"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <integer key="value" value="7"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="aiChatButtonAction:" target="mcr-nj-GmC" id="AtQ-h8-MXe"/>
+                                        </connections>
+                                    </button>
+                                    <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="9Il-3g-u2s" userLabel="Trailing Ai Chat Divider">
+                                        <rect key="frame" x="7" y="0.0" width="5" height="20"/>
+                                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="AIChat-Divider" id="4ID-09-y9M"/>
+                                    </imageView>
+                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kRc-0m-oqe" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="-12" width="32" height="32"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Clear" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="Qnf-P6-S6w">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="ClearButtonColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="32" id="8Ag-uG-RA7"/>
+                                            <constraint firstAttribute="height" constant="32" id="B6E-P0-EL6"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="4"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="horizontalPadding">
+                                                <real key="value" value="6"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="verticalPadding">
+                                                <real key="value" value="6"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="cancelButtonAction:" target="mcr-nj-GmC" id="ead-BN-Oj3"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
+                                <visibilityPriorities>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                </visibilityPriorities>
+                                <customSpacing>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                </customSpacing>
+                            </stackView>
                             <stackView distribution="equalSpacing" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HEu-ro-RSA">
-                                <rect key="frame" x="0.0" y="1" width="191" height="32"/>
+                                <rect key="frame" x="0.0" y="1" width="189" height="32"/>
                                 <subviews>
                                     <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nOW-iY-XmO" customClass="MouseOverAnimationButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="0.0" width="32" height="32"/>
@@ -797,7 +921,7 @@
                                         </constraints>
                                     </customView>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="3Iv-YW-zn2">
-                                        <rect key="frame" x="5" y="0.0" width="34" height="32"/>
+                                        <rect key="frame" x="5" y="0.0" width="32" height="32"/>
                                         <subviews>
                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="psi-hX-Kh9">
                                                 <rect key="frame" x="15" y="8" width="16" height="16"/>
@@ -813,13 +937,13 @@
                                         </subviews>
                                         <constraints>
                                             <constraint firstItem="psi-hX-Kh9" firstAttribute="centerY" secondItem="3Iv-YW-zn2" secondAttribute="centerY" id="0Ul-G5-HXF"/>
-                                            <constraint firstItem="psi-hX-Kh9" firstAttribute="centerX" secondItem="3Iv-YW-zn2" secondAttribute="centerX" constant="6" id="2X2-AK-TfF"/>
-                                            <constraint firstAttribute="width" constant="34" id="Elf-ZT-HxV"/>
+                                            <constraint firstItem="psi-hX-Kh9" firstAttribute="centerX" secondItem="3Iv-YW-zn2" secondAttribute="centerX" constant="7" id="2X2-AK-TfF"/>
+                                            <constraint firstAttribute="width" constant="32" id="Elf-ZT-HxV"/>
                                             <constraint firstAttribute="height" constant="32" id="fQf-sl-KYI"/>
                                         </constraints>
                                     </customView>
                                     <button translatesAutoresizingMaskIntoConstraints="NO" id="b30-aJ-fvG" userLabel="ZoomButton" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="39" y="0.0" width="24" height="32"/>
+                                        <rect key="frame" x="37" y="0.0" width="24" height="32"/>
                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="ZoomIn" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="Rfs-eh-Yrh">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
@@ -842,7 +966,7 @@
                                         </connections>
                                     </button>
                                     <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="2" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="8UU-A8-1nD">
-                                        <rect key="frame" x="63" y="0.0" width="128" height="32"/>
+                                        <rect key="frame" x="61" y="0.0" width="128" height="32"/>
                                         <subviews>
                                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="CN6-fJ-o2J" userLabel="Geolocation Button" customClass="PermissionButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                                 <rect key="frame" x="0.0" y="0.0" width="24" height="32"/>
@@ -973,6 +1097,9 @@
                                         </customSpacing>
                                     </stackView>
                                 </subviews>
+                                <constraints>
+                                    <constraint firstItem="nOW-iY-XmO" firstAttribute="leading" secondItem="HEu-ro-RSA" secondAttribute="leading" id="aq1-9u-eHl"/>
+                                </constraints>
                                 <visibilityPriorities>
                                     <integer value="1000"/>
                                     <integer value="1000"/>
@@ -990,35 +1117,57 @@
                             </stackView>
                         </subviews>
                         <constraints>
-                            <constraint firstAttribute="trailing" secondItem="taC-vG-1fV" secondAttribute="trailing" id="26X-xU-JjT"/>
                             <constraint firstItem="HEu-ro-RSA" firstAttribute="centerY" secondItem="Bhg-sv-n5J" secondAttribute="centerY" id="BRs-q1-MOh"/>
                             <constraint firstItem="1qw-sL-vFK" firstAttribute="centerY" secondItem="Bhg-sv-n5J" secondAttribute="centerY" id="Cl5-vM-wFc"/>
                             <constraint firstItem="1qw-sL-vFK" firstAttribute="leading" secondItem="Bhg-sv-n5J" secondAttribute="leading" constant="2" id="IGR-F0-d7K"/>
+                            <constraint firstItem="L9C-04-I02" firstAttribute="centerY" secondItem="Bhg-sv-n5J" secondAttribute="centerY" id="Iq7-gW-g3q"/>
                             <constraint firstItem="HEu-ro-RSA" firstAttribute="leading" secondItem="Bhg-sv-n5J" secondAttribute="leading" id="JJu-Ej-iFq"/>
-                            <constraint firstItem="kRc-0m-oqe" firstAttribute="centerY" secondItem="Bhg-sv-n5J" secondAttribute="centerY" id="T0S-fo-y1J"/>
-                            <constraint firstAttribute="trailing" secondItem="kRc-0m-oqe" secondAttribute="trailing" constant="2" id="WeU-Fb-omO"/>
-                            <constraint firstItem="taC-vG-1fV" firstAttribute="centerY" secondItem="Bhg-sv-n5J" secondAttribute="centerY" id="j0x-vX-dys"/>
+                            <constraint firstAttribute="trailing" secondItem="L9C-04-I02" secondAttribute="trailing" id="SQu-A0-Vje"/>
                             <constraint firstItem="hdY-An-3W8" firstAttribute="centerY" secondItem="Bhg-sv-n5J" secondAttribute="centerY" id="rBY-us-BMz"/>
                             <constraint firstItem="hdY-An-3W8" firstAttribute="leading" secondItem="Bhg-sv-n5J" secondAttribute="leading" id="xv6-0t-7td"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="aiChatButton" destination="vcx-Ct-S1I" id="wLJ-dM-o4o"/>
+                        <outlet property="aiChatButtonHeightConstraint" destination="U8v-Vm-26V" id="p7a-br-maA"/>
+                        <outlet property="aiChatButtonWidthConstraint" destination="bCV-Pu-oHa" id="s8n-mg-ofI"/>
                         <outlet property="animationWrapperView" destination="hdY-An-3W8" id="53o-2D-orG"/>
+                        <outlet property="animationWrapperViewLeadingConstraint" destination="xv6-0t-7td" id="Bnx-Nf-Nb2"/>
+                        <outlet property="askAIChatButton" destination="iq7-xk-4vY" id="J2s-ey-47X"/>
+                        <outlet property="askAIChatButtonHeightConstraint" destination="XWC-J0-Ey7" id="KY7-Aa-OOu"/>
+                        <outlet property="askAIChatButtonWidthConstraint" destination="V3J-c9-bzy" id="tpA-Hc-sRs"/>
                         <outlet property="bookmarkButton" destination="taC-vG-1fV" id="tbQ-qW-71o"/>
+                        <outlet property="bookmarkButtonHeightConstraint" destination="nLM-v6-jHW" id="0if-Ez-QqB"/>
+                        <outlet property="bookmarkButtonWidthConstraint" destination="3ze-iM-E0b" id="t1B-0J-ET8"/>
                         <outlet property="buttonsContainer" destination="HEu-ro-RSA" id="5r4-Ag-NpA"/>
                         <outlet property="cameraButton" destination="C2L-f9-L3r" id="xua-H5-hAx"/>
-                        <outlet property="clearButton" destination="kRc-0m-oqe" id="2sv-EP-8MW"/>
+                        <outlet property="cameraButtonHeightConstraint" destination="A7u-wU-pBb" id="0E3-ev-fmb"/>
+                        <outlet property="cancelButton" destination="kRc-0m-oqe" id="iAr-0l-X5i"/>
+                        <outlet property="cancelButtonHeightConstraint" destination="B6E-P0-EL6" id="T4M-Ck-MPY"/>
+                        <outlet property="cancelButtonWidthConstraint" destination="8Ag-uG-RA7" id="JfF-9g-kQG"/>
                         <outlet property="externalSchemeButton" destination="gGA-Yv-pnz" id="Eyj-ms-jcc"/>
+                        <outlet property="externalSchemeButtonHeightConstraint" destination="QiS-pG-2Ex" id="XPu-Oa-9kk"/>
                         <outlet property="geolocationButton" destination="CN6-fJ-o2J" id="FP7-Od-wu8"/>
+                        <outlet property="geolocationButtonHeightConstraint" destination="y9v-oG-C5i" id="fS3-mc-fJV"/>
                         <outlet property="imageButton" destination="psi-hX-Kh9" id="gEt-yl-q9m"/>
+                        <outlet property="imageButtonLeadingConstraint" destination="2X2-AK-TfF" id="udd-Cm-Gm0"/>
                         <outlet property="imageButtonWrapper" destination="3Iv-YW-zn2" id="rzK-lJ-auZ"/>
+                        <outlet property="leadingAIChatDivider" destination="L8T-hS-NZz" id="1f9-tG-uDW"/>
                         <outlet property="microphoneButton" destination="uao-nC-0co" id="UHu-oA-rTl"/>
+                        <outlet property="microphoneButtonHeightConstraint" destination="0aM-UZ-dCe" id="Kgq-0q-iNz"/>
                         <outlet property="notificationAnimationView" destination="1qw-sL-vFK" id="b5X-px-pwG"/>
                         <outlet property="permissionButtons" destination="8UU-A8-1nD" id="gYJ-VW-MEG"/>
                         <outlet property="popupsButton" destination="qqY-h9-UQ7" id="1QY-I6-oNC"/>
+                        <outlet property="popupsButtonHeightConstraint" destination="Lys-Hh-cYc" id="aif-wm-FWV"/>
                         <outlet property="privacyEntryPointButton" destination="nOW-iY-XmO" id="r0A-EO-srN"/>
+                        <outlet property="privacyShieldButtonHeightConstraint" destination="NcD-Mf-Vae" id="Ssh-nD-Yv5"/>
+                        <outlet property="privacyShieldButtonWidthConstraint" destination="Hf1-nK-Kb4" id="uss-0B-3pT"/>
+                        <outlet property="privacyShieldLeadingConstraint" destination="aq1-9u-eHl" id="aEU-Iy-fau"/>
                         <outlet property="separator" destination="lbX-yW-2eM" id="b3h-JB-tja"/>
+                        <outlet property="trailingAIChatDivider" destination="9Il-3g-u2s" id="twV-65-EfY"/>
+                        <outlet property="trailingStackViewTrailingViewConstraint" destination="SQu-A0-Vje" id="7rh-E8-Hyx"/>
                         <outlet property="zoomButton" destination="b30-aJ-fvG" id="24G-cW-Qmg"/>
+                        <outlet property="zoomButtonHeightConstraint" destination="6TS-h0-8pK" id="dyK-lM-9fE"/>
                     </connections>
                 </viewController>
                 <customObject id="PAh-HG-vQt" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
@@ -1028,6 +1177,8 @@
     </scenes>
     <resources>
         <image name="AIChat" width="16" height="16"/>
+        <image name="AIChat-Divider" width="5" height="20"/>
+        <image name="AIChat-Solid" width="28" height="28"/>
         <image name="Arrow-Right-12" width="9" height="9"/>
         <image name="Back" width="16" height="16"/>
         <image name="Bookmark" width="16" height="16"/>
@@ -1035,6 +1186,7 @@
         <image name="Camera-Active" width="16" height="12"/>
         <image name="Camera-Icon" width="16" height="12"/>
         <image name="Camera-Tab-Blocked" width="16" height="14"/>
+        <image name="Chevron-Double-Right-16" width="16" height="16"/>
         <image name="Clear" width="9" height="9"/>
         <image name="Downloads" width="16" height="16"/>
         <image name="ExternalAppScheme" width="16" height="16"/>
@@ -1080,9 +1232,6 @@
         </namedColor>
         <namedColor name="InactiveSearchBarBackground">
             <color red="0.0" green="0.0" blue="0.0" alpha="0.05000000074505806" colorSpace="custom" customColorSpace="displayP3"/>
-        </namedColor>
-        <namedColor name="NavigationBarBackgroundColor">
-            <color red="0.98039215686274506" green="0.98039215686274506" blue="0.98039215686274506" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
     </resources>
 </document>

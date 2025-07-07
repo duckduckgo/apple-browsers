@@ -95,7 +95,7 @@ final class PasswordManagerCoordinator: PasswordManagerCoordinating {
         switch bitwardenManagement.status {
         case .disabled, .notInstalled, .oldVersion, .incompatible, .missingHandshake, .handshakeNotApproved, .error, .accessToContainersNotApproved:
             Task {
-                await WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .autofill)
+                await Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .autofill)
             }
             return
         default:

@@ -34,6 +34,8 @@ struct HomeMessageViewModelBuilder {
 
     static func build(for remoteMessage: RemoteMessageModel,
                       with privacyProDataReporter: PrivacyProDataReporting?,
+                      navigator: MessageNavigator,
+                      isExperimentalThemingEnabled: Bool,
                       onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void,
                       onDidAppear: @escaping () -> Void) -> HomeMessageViewModel? {
             guard let content = remoteMessage.content else { return nil }
@@ -42,6 +44,8 @@ struct HomeMessageViewModelBuilder {
             messageId: remoteMessage.id,
             sendPixels: remoteMessage.isMetricsEnabled,
             modelType: content,
+            navigator: navigator,
+            isExperimentalThemingEnabled: isExperimentalThemingEnabled,
             onDidClose: onDidClose,
             onDidAppear: onDidAppear,
             onAttachAdditionalParameters: { useCase, params in
@@ -59,7 +63,7 @@ extension RemoteAction {
         case .share(let value, let title):
             return .share(value: value, title: title)
 
-        case .appStore, .url, .survey:
+        case .appStore, .url, .survey, .navigation:
             if isSecondaryAction {
                 return .cancel
             }

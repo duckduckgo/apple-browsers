@@ -271,7 +271,9 @@ extension AutoconsentUserScript {
 
         let autoconsentConfig = [
             "type": "initResp",
-            "rules": nil, // rules are bundled with the content script atm
+            "rules": [
+                "compact": remoteConfig["compactRuleList"] ?? nil
+            ],
             "config": [
                 "enabled": true,
                 "autoAction": preferences.isAutoconsentEnabled == true ? "optOut" : nil,
@@ -432,7 +434,7 @@ extension AutoconsentUserScript {
     @MainActor
     func handleSelfTestResult(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         guard let messageData: SelfTestResultMessage = decodeMessageBody(from: message.body),
-              let url = URL(string: messageData.url) else {
+              URL(string: messageData.url) != nil else {
             assertionFailure("Received a malformed message from autoconsent")
             replyHandler(nil, "cannot decode message")
             return

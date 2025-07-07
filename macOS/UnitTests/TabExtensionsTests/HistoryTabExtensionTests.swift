@@ -27,13 +27,13 @@ import XCTest
 class HistoryTabExtensionTests: XCTestCase {
 
     @MainActor
-    func testWhenBurnerTab_ThenNoHistoryIsStored() {
+    func testWhenNotCapturingHistory_ThenNoHistoryIsStored() {
         let historyCoordinatingMock = HistoryCoordinatingMock()
 
         let trackersPublisher: AnyPublisher<DetectedTracker, Never> = Empty().eraseToAnyPublisher()
         let urlPublisher: AnyPublisher<URL?, Never> = Empty().eraseToAnyPublisher()
         let titlePublisher: AnyPublisher<String?, Never> = Empty().eraseToAnyPublisher()
-        let historyTabExtension = HistoryTabExtension(isBurner: true, historyCoordinating: historyCoordinatingMock, trackersPublisher: trackersPublisher, urlPublisher: urlPublisher, titlePublisher: titlePublisher)
+        let historyTabExtension = HistoryTabExtension(isCapturingHistory: false, historyCoordinating: historyCoordinatingMock, trackersPublisher: trackersPublisher, urlPublisher: urlPublisher, titlePublisher: titlePublisher)
 
         let navigationIdentity = NavigationIdentity(nil)
         let responderChain = ResponderChain(responderRefs: [])

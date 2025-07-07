@@ -142,7 +142,13 @@
                   Identifier = "SyncPreferencesTests/test_recoverDevice_accountAlreadyExists_twoOrMoreDevices_showsAccountSwitchingMessage()">
                </Test>
                <Test
+                  Identifier = "SyncPreferencesTests/test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_usesRecoveryCode()">
+               </Test>
+               <Test
                   Identifier = "TabSnapshotExtensionTests/testWhenSnapshotIsRestored_ThenRenderingIsSkippedAfterLoading()">
+               </Test>
+               <Test
+                  Identifier = "VPNUninstallerTests">
                </Test>
                <Test
                   Identifier = "WindowManagerStateRestorationTests/testWindowManagerStateRestoration()">
@@ -166,6 +172,9 @@
                   Identifier = "AutoconsentIntegrationTests/testWhenAutoconsentDisabled_promptIsDisplayed()">
                </Test>
                <Test
+                  Identifier = "BrowserTabViewControllerOnboardingTests/testWhenDialogIsDismissedViewHighlightsAreDismissed()">
+               </Test>
+               <Test
                   Identifier = "ConfigurationManagerIntegrationTests/testTdsAreFetchedFromURLBasedOnPrivacyConfigExperiment()">
                </Test>
                <Test
@@ -178,43 +187,16 @@
                   Identifier = "HTTPSUpgradeIntegrationTests">
                </Test>
                <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndMalwareDetection_tabIsNotMarkedMalware()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndScamDetection_tabIsNotMarkedScam()">
-               </Test>
-               <Test
                   Identifier = "NavigationProtectionIntegrationTests/testAMPLinks()">
                </Test>
                <Test
                   Identifier = "NavigationProtectionIntegrationTests/testReferrerTrimming()">
                </Test>
                <Test
-                  Identifier = "PhishingDetectionIntegrationTests">
+                  Identifier = "PinnedTabsManagerProviderTests/test_WhenMigratingFromSharedToPerWindow_ThenTabsAreMigratedToFirstNewPerWindowManager()">
                </Test>
                <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testFeatureDisabledAndPhishingDetection_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedThenDDGLoaded_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedThenNotDetected_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedViaHTTPRedirectChain_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedViaJSRedirectChain_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetected_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingNotDetected_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "TabContentTests">
+                  Identifier = "PinnedTabsManagerProviderTests/test_WhenNoTabsExist_ThenArePinnedTabsEmptyReturnsTrueForShared()">
                </Test>
             </SkippedTests>
          </TestableReference>

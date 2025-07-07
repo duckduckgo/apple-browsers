@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Combine
+import Foundation
 import TrackerRadarKit
 
 #if DEBUG

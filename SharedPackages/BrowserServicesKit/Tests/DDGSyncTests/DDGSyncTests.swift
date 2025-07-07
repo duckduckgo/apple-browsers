@@ -56,7 +56,7 @@ final class DDGSyncTests: XCTestCase {
         ]
 
         (dependencies.secureStore as! SecureStorageStub).theAccount = .mock
-        dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+        try dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
     }
 
     override func tearDownWithError() throws {

@@ -20,18 +20,27 @@
 import UIKit
 import BrowserServicesKit
 import AIChat
+import Bookmarks
+import Persistence
+import History
+import Core
 
 class MainViewFactory {
 
     private let coordinator: MainViewCoordinator
     private let featureFlagger: FeatureFlagger
     private let omnibarDependencies: OmnibarDependencyProvider
-
+    private var isExperimentalThemingEnabled: Bool {
+        omnibarDependencies.themingProperties.isExperimentalThemingEnabled
+    }
+    
     var superview: UIView {
         coordinator.superview
     }
-
-    private init(parentController: UIViewController, omnibarDependencies: OmnibarDependencyProvider, featureFlagger: FeatureFlagger) {
+    
+    private init(parentController: UIViewController,
+                 omnibarDependencies: OmnibarDependencyProvider,
+                 featureFlagger: FeatureFlagger) {
         coordinator = MainViewCoordinator(parentController: parentController)
         self.featureFlagger = featureFlagger
         self.omnibarDependencies = omnibarDependencies
@@ -40,11 +49,20 @@ class MainViewFactory {
     static func createViewHierarchy(_ parentController: UIViewController,
                                     aiChatSettings: AIChatSettingsProvider,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
-                                    featureFlagger: FeatureFlagger) -> MainViewCoordinator {
+                                    featureFlagger: FeatureFlagger,
+                                    themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties,
+                                    suggestionTrayDependencies: SuggestionTrayDependencies? = nil) -> MainViewCoordinator {
+
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aiChatSettings: aiChatSettings)
-        let factory = MainViewFactory(parentController: parentController, omnibarDependencies: omnibarDependencies, featureFlagger: featureFlagger)
+                                                      aiChatSettings: aiChatSettings,
+                                                      themingProperties: themingProperties,
+                                                      suggestionTrayDependencies: suggestionTrayDependencies)
+
+
+        let factory = MainViewFactory(parentController: parentController,
+                                      omnibarDependencies: omnibarDependencies,
+                                      featureFlagger: featureFlagger)
         factory.createViews()
         factory.disableAutoresizingOnImmediateSubviews(factory.superview)
         factory.constrainViews()
@@ -77,8 +95,12 @@ extension MainViewFactory {
     }
     
     private func createProgressView() {
-        coordinator.progress = ProgressView()
-        superview.addSubview(coordinator.progress)
+        if isExperimentalThemingEnabled {
+            coordinator.progress = coordinator.omniBar!.barView.progressView
+        } else {
+            coordinator.progress = ProgressView()
+            superview.addSubview(coordinator.progress)
+        }
     }
 
     private func createOmniBar() {
@@ -151,19 +173,18 @@ extension MainViewFactory {
     }
 
     private func createToolbar() {
-
         coordinator.toolbar = HitTestingToolbar()
         coordinator.toolbar.isTranslucent = false
         superview.addSubview(coordinator.toolbar)
-        coordinator.toolbarHandler = ToolbarHandler(toolbar: coordinator.toolbar, featureFlagger: featureFlagger)
+        coordinator.toolbarHandler = ToolbarHandler(toolbar: coordinator.toolbar)
         coordinator.updateToolbarWithState(.newTab)
     }
 
     final class LogoBackgroundView: UIView { }
     private func createLogoBackground() {
         coordinator.logoContainer = LogoBackgroundView()
-        coordinator.logo = UIImageView(image: UIImage(named: "Logo"))
-        coordinator.logoText = UIImageView(image: UIImage(named: "TextDuckDuckGo"))
+        coordinator.logo = UIImageView(image: UIImage(resource: .logo))
+        coordinator.logoText = UIImageView(image: UIImage(resource: .textDuckDuckGo))
 
         coordinator.logoContainer.backgroundColor = .clear
         coordinator.logoContainer.addSubview(coordinator.logo)
@@ -198,17 +219,22 @@ extension MainViewFactory {
     }
 
     private func constrainProgress() {
+        guard !isExperimentalThemingEnabled else { return }
+
         let progress = coordinator.progress!
         let navigationBarContainer = coordinator.navigationBarContainer!
 
-        coordinator.constraints.progressBarTop = progress.constrainView(navigationBarContainer, by: .top, to: .bottom)
-        coordinator.constraints.progressBarBottom = progress.constrainView(navigationBarContainer, by: .bottom, to: .top)
+        let progressBarTop = progress.constrainView(navigationBarContainer, by: .top, to: .bottom)
+        let progressBarBottom = progress.constrainView(navigationBarContainer, by: .bottom, to: .top)
+
+        coordinator.constraints.progressBarTop = progressBarTop
+        coordinator.constraints.progressBarBottom = progressBarBottom
 
         NSLayoutConstraint.activate([
             progress.constrainView(navigationBarContainer, by: .trailing),
             progress.constrainView(navigationBarContainer, by: .leading),
             progress.constrainAttribute(.height, to: 3),
-            coordinator.constraints.progressBarTop,
+            progressBarTop,
         ])
     }
     
@@ -219,14 +245,14 @@ extension MainViewFactory {
 
         coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
         coordinator.constraints.navigationBarContainerBottom = container.constrainView(toolbar, by: .bottom, to: .top)
-        coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: 52, relatedBy: .equal)
+        coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight, relatedBy: .equal)
 
         NSLayoutConstraint.activate([
             coordinator.constraints.navigationBarContainerTop,
             container.constrainView(superview, by: .leading),
             container.constrainView(superview, by: .trailing),
             coordinator.constraints.navigationBarContainerHeight,
-            navigationBarCollectionView.constrainAttribute(.height, to: 52),
+            navigationBarCollectionView.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight),
             navigationBarCollectionView.constrainView(container, by: .top),
             navigationBarCollectionView.constrainView(container, by: .leading),
             navigationBarCollectionView.constrainView(container, by: .trailing),
@@ -271,8 +297,7 @@ extension MainViewFactory {
 
         coordinator.constraints.contentContainerTop = contentContainer.constrainView(coordinator.topSlideContainer!, by: .top, to: .bottom)
         coordinator.constraints.contentContainerBottomToToolbarTop = contentContainer.constrainView(toolbar, by: .bottom, to: .top)
-        coordinator.constraints.contentContainerBottomToNavigationBarContainerTop
-            = contentContainer.constrainView(navigationBarContainer, by: .bottom, to: .top)
+        coordinator.constraints.contentContainerBottomToSafeArea = contentContainer.constrainView(superview, by: .bottom)
 
         NSLayoutConstraint.activate([
             contentContainer.constrainView(superview, by: .leading),

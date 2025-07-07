@@ -22,8 +22,17 @@ import Networking
 public class MockOAuthClient: OAuthClient {
 
     public init() {}
-    public var isUserAuthenticated: Bool = false
-    public var currentTokenContainer: Networking.TokenContainer?
+    public var isUserAuthenticated: Bool {
+        internalCurrentTokenContainer != nil
+    }
+    public var internalCurrentTokenContainer: Networking.TokenContainer?
+    public func currentTokenContainer() throws -> TokenContainer? {
+        internalCurrentTokenContainer
+    }
+
+    public func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws {
+        internalCurrentTokenContainer = tokenContainer
+    }
 
     public var getTokensResponse: Result<Networking.TokenContainer, Error>!
     public func getTokens(policy: Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer {
@@ -35,20 +44,15 @@ public class MockOAuthClient: OAuthClient {
         }
     }
 
-    public var migrateV1TokenResponse: Result<Networking.TokenContainer, Error>?
-    public func migrateV1Token() async throws -> Networking.TokenContainer? {
-        switch migrateV1TokenResponse {
-        case .success(let success):
-            return success
-        case .failure(let failure):
-            throw failure
-        case .none:
-            return nil
+    public var migrateV1TokenResponseError: Error?
+    public func migrateV1Token() async throws {
+        if let migrateV1TokenResponseError {
+            throw migrateV1TokenResponseError
         }
     }
 
     public func adopt(tokenContainer: Networking.TokenContainer) {
-        currentTokenContainer = tokenContainer
+        internalCurrentTokenContainer = tokenContainer
     }
 
     public var createAccountResponse: Result<Networking.TokenContainer, Error>!

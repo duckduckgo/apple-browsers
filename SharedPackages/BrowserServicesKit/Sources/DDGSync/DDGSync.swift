@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import DDGSyncCrypto
+import Persistence
 import Foundation
 import os.log
 
@@ -70,10 +71,12 @@ public class DDGSync: DDGSyncing {
     public convenience init(dataProvidersSource: DataProvidersSource,
                             errorEvents: EventMapping<SyncError>,
                             privacyConfigurationManager: PrivacyConfigurationManaging,
+                            keyValueStore: ThrowingKeyValueStoring,
                             environment: ServerEnvironment = .production) {
         let dependencies = ProductionDependencies(
             serverEnvironment: environment,
             privacyConfigurationManager: privacyConfigurationManager,
+            keyValueStore: keyValueStore,
             errorEvents: errorEvents
         )
         self.init(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
@@ -226,20 +229,48 @@ public class DDGSync: DDGSyncing {
         featureFlagsCancellable = Publishers.Merge(
             self.dependencies.privacyConfigurationManager.updatesPublisher,
             self.dependencies.privacyConfigurationManager.internalUserDecider.isInternalUserPublisher.map { _ in () })
-            .compactMap { [weak self] in
-                self?.dependencies.privacyConfigurationManager.privacyConfig
-            }
-            .prepend(dependencies.privacyConfigurationManager.privacyConfig)
-            .map(SyncFeatureFlags.init)
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.featureFlags, onWeaklyHeld: self)
+        .compactMap { [weak self] in
+            self?.dependencies.privacyConfigurationManager.privacyConfig
+        }
+        .prepend(dependencies.privacyConfigurationManager.privacyConfig)
+        .map(SyncFeatureFlags.init)
+        .removeDuplicates()
+        .receive(on: DispatchQueue.main)
+        .assign(to: \.featureFlags, onWeaklyHeld: self)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public func initializeIfNeeded() {
         guard authState == .initializing else { return }
 
-        let syncEnabled = dependencies.keyValueStore.object(forKey: Constants.syncEnabledKey) != nil
+        // Obtain or migrate sync status
+        var syncEnabled: Bool
+        do {
+            syncEnabled = try dependencies.keyValueStore.object(forKey: Constants.syncEnabledKey) != nil
+
+            if !syncEnabled {
+                // Try to migrate
+                let legacyFlag = dependencies.legacyKeyValueStore.object(forKey: Constants.syncEnabledKey)
+                if legacyFlag != nil {
+                    do {
+                        try dependencies.keyValueStore.set(true, forKey: Constants.syncEnabledKey)
+                        dependencies.legacyKeyValueStore.removeObject(forKey: Constants.syncEnabledKey)
+                        syncEnabled = true
+                        dependencies.errorEvents.fire(.migratedToFileStore)
+                    } catch {
+                        // Failed migration, retry later.
+                        dependencies.errorEvents.fire(.failedToMigrateToFileStore, error: error)
+                        return
+                    }
+                }
+            }
+        } catch {
+            // No access to kvs, retry later.
+            dependencies.errorEvents.fire(.failedToInitFileStore, error: error)
+            return
+        }
+
+        // Proceed to initialization - if needed
         guard syncEnabled else {
             if account != nil {
                 dependencies.errorEvents.fire(.accountRemoved(.syncEnabledNotSetOnKeyValueStore))
@@ -299,8 +330,12 @@ public class DDGSync: DDGSyncing {
             try dependencies.secureStore.persistAccount(account)
         }
 
+        // By this point kvs is already loaded into memory, so no read error should occur
+        if (try? dependencies.keyValueStore.object(forKey: Constants.syncEnabledKey)) == nil {
+            try dependencies.keyValueStore.set(true, forKey: Constants.syncEnabledKey)
+        }
+
         authState = account.state
-        dependencies.keyValueStore.set(true, forKey: Constants.syncEnabledKey)
 
         syncQueueCancellable = syncQueue.isSyncInProgressPublisher
             .handleEvents(receiveCancel: { [weak self] in
@@ -359,7 +394,7 @@ public class DDGSync: DDGSyncing {
         syncQueue = nil
         authState = .inactive
         try dependencies.secureStore.removeAccount()
-        dependencies.keyValueStore.set(nil, forKey: Constants.syncEnabledKey)
+        try dependencies.keyValueStore.set(nil, forKey: Constants.syncEnabledKey)
         dependencies.errorEvents.fire(.accountRemoved(reason))
     }
 

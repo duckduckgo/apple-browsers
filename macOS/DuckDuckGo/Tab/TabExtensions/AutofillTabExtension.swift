@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
+import AppKit
 import BrowserServicesKit
 import Combine
 import Foundation
-import SecureStorage
 import PixelKit
+import SecureStorage
 
 final class AutofillTabExtension: TabExtension {
 
@@ -35,7 +36,7 @@ final class AutofillTabExtension: TabExtension {
     static var vaultManagerProvider: (SecureVaultManagerDelegate) -> AutofillSecureVaultDelegate = { delegate in
         let manager = SecureVaultManager(passwordManager: PasswordManagerCoordinator.shared,
                                          shouldAllowPartialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves),
-                                         tld: ContentBlocking.shared.tld)
+                                         tld: Application.appDelegate.tld)
         manager.delegate = delegate
         return manager
     }
@@ -59,14 +60,17 @@ final class AutofillTabExtension: TabExtension {
     private var vaultManager: AutofillSecureVaultDelegate?
     private let credentialsImportManager: AutofillCredentialsImportManager
     private var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
-    private let privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
     private let isBurner: Bool
 
     @Published var autofillDataToSave: AutofillData?
 
     init(autofillUserScriptPublisher: some Publisher<WebsiteAutofillUserScript?, Never>,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          isBurner: Bool) {
         self.isBurner = isBurner
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.credentialsImportManager = AutofillCredentialsImportManager(isBurnerWindow: isBurner)
 
         autofillUserScriptCancellable = autofillUserScriptPublisher.sink { [weak self] autofillScript in
@@ -120,6 +124,14 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
         // no-op on macOS
     }
 
+    func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        // no-op on macOS
+    }
+
+    func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        // no-op on macOS
+    }
+
     func secureVaultManager(_: SecureVaultManager, promptUserWithGeneratedPassword password: String, completionHandler: @escaping (Bool) -> Void) {
         // no-op on macOS
     }
@@ -154,7 +166,8 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
     }
 
     func secureVaultManager(_: SecureVaultManager, didAutofill type: AutofillType, withObjectId objectId: String) {
-        PixelKit.fire(GeneralPixel.formAutofilled(kind: type.formAutofillKind))
+        let parameters = usageProvider.formattedFillDate.flatMap { [AutofillPixelKitEvent.Parameter.lastUsed: $0] } ?? [:]
+        PixelKit.fire(GeneralPixel.formAutofilled(kind: type.formAutofillKind), withAdditionalParameters: parameters)
 
         if type.formAutofillKind == .password &&
             passwordManagerCoordinator.isEnabled {

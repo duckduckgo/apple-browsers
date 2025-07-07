@@ -1,0 +1,345 @@
+{
+  "name": "BeenVerified",
+  "url": "beenverified.com",
+  "version": "0.3.0",
+  "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts",
+  "mirrorSites": [
+    {
+      "name": "Background Checks.org",
+      "url": "backgroundchecks.org",
+      "addedAt": 1745317273356,
+      "removedAt": null,
+      "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts"
+    },
+    {
+      "name": "DOBSearch",
+      "url": "DOBsearch.com",
+      "addedAt": 1745317273356,
+      "removedAt": null,
+      "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts"
+    },
+    {
+      "name": "EmailTracer",
+      "url": "emailtracer.com",
+      "addedAt": 1745317273356,
+      "removedAt": null,
+      "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts"
+    },
+    {
+      "name": "Government Registry",
+      "url": "governmentregistry.org",
+      "addedAt": 1745317273356,
+      "removedAt": null,
+      "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts"
+    },
+    {
+      "name": "Open Public Records",
+      "url": "open-public-records.com",
+      "addedAt": 1745317273356,
+      "removedAt": null,
+      "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts"
+    },
+    {
+      "name": "Phone Lookup California",
+      "url": "californiaphonelookup.com",
+      "addedAt": 1745317273356,
+      "removedAt": null,
+      "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts"
+    },
+    {
+      "name": "Phone Lookup Florida",
+      "url": "floridaphonelookup.com",
+      "addedAt": 1745317273356,
+      "removedAt": null,
+      "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts"
+    },
+    {
+      "name": "SearchSystems",
+      "url": "publicrecords.searchsystems.net",
+      "addedAt": 1745317273356,
+      "removedAt": null,
+      "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts"
+    },
+    {
+      "name": "yellowbook",
+      "url": "yellowbook.com",
+      "addedAt": 1745317273356,
+      "removedAt": null,
+      "optOutUrl": "https://www.beenverified.com/svc/optout/search/optouts"
+    }
+  ],
+  "steps": [
+    {
+      "stepType": "scan",
+      "scanType": "templatedUrl",
+      "actions": [
+        {
+          "actionType": "navigate",
+          "url": "https://www.beenverified.com/app/search/person?age=${age}&city=${city}&fname=${firstName}&ln=${lastName}&mn=${middleName}&optout=true&state=${state}",
+          "id": "028df3ca-c08b-4261-9d19-6b6463865677"
+        },
+        {
+          "actionType": "extract",
+          "selector": ".person-search-result-card",
+          "noResultsSelector": ".no-results",
+          "profile": {
+            "name": {
+              "selector": ".person-name",
+              "beforeText": ", "
+            },
+            "alternativeNamesList": {
+              "selector": ".person-aliases",
+              "separator": ","
+            },
+            "age": {
+              "selector": ".person-name",
+              "afterText": ", "
+            },
+            "addressCityState": {
+              "selector": ".person-city"
+            },
+            "addressCityStateList": {
+              "selector": ".person-locations"
+            },
+            "relativesList": {
+              "selector": ".person-relatives",
+              "separator": ","
+            },
+            "profileUrl": {
+              "identifierType": "hash"
+            }
+          },
+          "id": "4285ef9d-aebf-4176-80e6-2959fc9f5c8a"
+        }
+      ]
+    },
+    {
+      "stepType": "optOut",
+      "scanType": "formOptOut",
+      "actions": [
+        {
+          "actionType": "navigate",
+          "url": "https://www.beenverified.com/svc/optout/search/optouts",
+          "id": "86a38770-0484-4066-9a79-9c2edcc506ab"
+        },
+        {
+          "actionType": "fillForm",
+          "selector": "#optout-form",
+          "dataSource": "userProfile",
+          "elements": [
+            {
+              "type": "firstName",
+              "selector": "//input[@name='fname']"
+            },
+            {
+              "type": "lastName",
+              "selector": "//input[@name='ln']"
+            },
+            {
+              "type": "state",
+              "selector": "//input[@name='state']"
+            }
+          ],
+          "id": "374a01d9-630f-42e4-a8b8-4c87ddab91e3"
+        },
+        {
+          "actionType": "getCaptchaInfo",
+          "captchaType": "cloudFlareTurnstile",
+          "selector": "#captcha-widget",
+          "id": "2b6892a3-bb39-4552-8e57-cb4493fd4d70"
+        },
+        {
+          "actionType": "solveCaptcha",
+          "captchaType": "cloudFlareTurnstile",
+          "selector": "#captcha-widget",
+          "id": "48a1bd9a-0d92-44f8-9de2-89f1b10056b1"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": "//button[@aria-label='search-optout-button' and @type='submit']"
+            }
+          ],
+          "id": "019eb5ef-b469-41a6-af92-da9056c00781"
+        },
+        {
+          "actionType": "fillForm",
+          "selector": "#comprehensive-form",
+          "dataSource": "userProfile",
+          "elements": [
+            {
+              "type": "firstName",
+              "selector": ".//input[@name='fname']"
+            },
+            {
+              "type": "middleName",
+              "selector": ".//input[@name='mn']"
+            },
+            {
+              "type": "lastName",
+              "selector": ".//input[@name='ln']"
+            },
+            {
+              "type": "age",
+              "selector": ".//input[@name='age']"
+            },
+            {
+              "type": "city",
+              "selector": ".//input[@name='city']"
+            },
+            {
+              "type": "state",
+              "selector": ".//input[@name='state']"
+            }
+          ],
+          "id": "1b38a1e3-496c-4b88-9c71-f496f986c0db"
+        },
+        {
+          "actionType": "fillForm",
+          "selector": "#comprehensive-form",
+          "elements": [
+            {
+              "type": "email",
+              "selector": ".//input[@name='requestor_email']"
+            },
+            {
+              "type": "$generated_street_address$",
+              "selector": ".//input[@name='street']"
+            },
+            {
+              "type": "$generated_zip_code$",
+              "selector": ".//input[@name='zip']"
+            }
+          ],
+          "id": "19d0ffb1-a437-4db2-90ce-06a79f3026b2"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": "//button[@aria-label='continue-button' and @type='submit']"
+            }
+          ],
+          "id": "3ca42ab0-2f26-46f8-944e-999c097a94d0"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": "//button[contains(text(), 'Opt Out')]",
+              "parent": {
+                "profileMatch": {
+                  "selector": "//div[contains(@class, 'MuiPaper-elevation') and .//button[contains(text(), 'Opt Out')]]",
+                  "profile": {
+                    "name": {
+                      "selector": ".//h2",
+                      "beforeText": ","
+                    },
+                    "alternativeNamesList": {
+                      "selector": ".//div[contains(., 'Aliases')]/following-sibling::div"
+                    },
+                    "age": {
+                      "selector": ".//h2",
+                      "afterText": ","
+                    },
+                    "addressCityState": {
+                      "selector": ".//div[h2]/following-sibling::div[p]"
+                    },
+                    "addressCityStateList": {
+                      "selector": ".//div[contains(., 'Locations')]/following-sibling::div/p"
+                    },
+                    "relativesList": {
+                      "selector": ".//div[contains(., 'Relatives')]/following-sibling::div/p",
+                      "separator": ","
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "id": "6f46ae3c-be37-4827-9635-3a3406a6fff3"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "#additional-fields-form"
+            }
+          ],
+          "id": "8afd175a-9c31-46c8-8a37-eab78c3c37e5"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": "//input[@type='checkbox']"
+            }
+          ],
+          "id": "bc926ad2-4218-4e8a-bda6-a11c641540a2"
+        },
+        {
+          "actionType": "getCaptchaInfo",
+          "captchaType": "cloudFlareTurnstile",
+          "selector": "#captcha-widget",
+          "id": "54731c48-abd8-4f7f-a898-59dc2417115c"
+        },
+        {
+          "actionType": "solveCaptcha",
+          "captchaType": "cloudFlareTurnstile",
+          "selector": "#captcha-widget",
+          "id": "1bd50686-0506-4126-913e-bb029c5c4fdb"
+        },
+        {
+          "actionType": "click",
+          "elements": [
+            {
+              "type": "button",
+              "selector": "//button[contains(text(), 'Remove') and @type='submit']"
+            }
+          ],
+          "id": "974761a9-29f4-41c1-9623-f683a797b245"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "text",
+              "selector": "body",
+              "expect": "Your optout request was submitted"
+            }
+          ],
+          "id": "8e4d9bb1-7941-4dc1-b7f3-c3d694d93413"
+        },
+        {
+          "actionType": "emailConfirmation",
+          "pollingTime": 30,
+          "id": "2de547ea-ea4c-4809-b24c-9e4eca7ae8a3"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "text",
+              "selector": "body",
+              "expect": "You have successfully been opted out"
+            }
+          ],
+          "id": "68797019-b986-48ec-888f-91cb8e190ff8"
+        }
+      ]
+    }
+  ],
+  "schedulingConfig": {
+    "retryError": 48,
+    "confirmOptOutScan": 72,
+    "maintenanceScan": 120,
+    "maxAttempts": -1
+  },
+  "addedDatetime": 1744978506975
+}

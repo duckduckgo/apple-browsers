@@ -31,7 +31,7 @@ let package = Package(
             targets: ["DuckUI"])
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/DesignResourcesKit.git", exact: "4.1.0")
+        .package(path: "../../../SharedPackages/DesignResourcesKit")
     ],
     targets: [
         .target(

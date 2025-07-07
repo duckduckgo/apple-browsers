@@ -34,7 +34,7 @@ class AutofillNoAuthAvailableView: UIView {
     }
 
     private lazy var keyImageView: UIImageView = {
-        let image = UIImage(named: "AutofillKey")
+        let image = UIImage(resource: .autofillKey)
         let imageView = UIImageView(image: image)
         imageView.contentMode = .scaleAspectFit
         imageView.frame = CGRect(x: 0, y: 0, width: 220, height: 170)
@@ -70,7 +70,7 @@ class AutofillNoAuthAvailableView: UIView {
     }()
 
     private lazy var lockImageView: UIImageView = {
-        let image = UIImage(named: "AutofillLock")
+        let image = UIImage(resource: .autofillLock)
         let imageView = UIImageView(image: image)
         imageView.contentMode = .scaleAspectFit
         imageView.frame = CGRect(x: 0, y: 0, width: 128, height: 96)

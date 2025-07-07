@@ -28,12 +28,14 @@ final class AutofillSettingsViewModelTests: XCTestCase {
     private var manager: AutofillNeverPromptWebsitesManager!
     private var mockDelegate: MockAutofillSettingsViewModelDelegate!
     private var viewModel: AutofillSettingsViewModel!
+    private var mockFeatureFlagger: MockFeatureFlagger!
     
     override func setUpWithError() throws {
         super.setUp()
         setupUserDefault(with: #file)
         manager = AutofillNeverPromptWebsitesManager(secureVault: vault)
         mockDelegate = MockAutofillSettingsViewModelDelegate()
+        mockFeatureFlagger = MockFeatureFlagger()
         
         viewModel = AutofillSettingsViewModel(
             appSettings: appSettings,
@@ -48,6 +50,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         viewModel = nil
         mockDelegate = nil
         manager = nil
+        mockFeatureFlagger = nil
 
         try super.tearDownWithError()
     }
@@ -138,7 +141,140 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         
         XCTAssertEqual(viewModel.passwordsCount, 3)
     }
+
+    // MARK: - Credit Card Tests
+
+    func testInitCorrectlySetsShowCreditCardsBasedOnFeatureFlag() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.autofillCreditCards)
+
+        // When
+        let viewModelWithFeature = AutofillSettingsViewModel(
+                appSettings: appSettings,
+                autofillNeverPromptWebsitesManager: manager,
+                secureVault: vault,
+                source: .settings,
+                featureFlagger: mockFeatureFlagger
+        )
+
+        // Then
+        XCTAssertTrue(viewModelWithFeature.showCreditCards)
+
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        // When
+        let viewModelWithoutFeature = AutofillSettingsViewModel(
+                appSettings: appSettings,
+                autofillNeverPromptWebsitesManager: manager,
+                secureVault: vault,
+                source: .settings,
+                featureFlagger: mockFeatureFlagger
+        )
+
+        // Then
+        XCTAssertFalse(viewModelWithoutFeature.showCreditCards)
+    }
+
+    func testInitCorrectlySetsSaveCreditCardsEnabled() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.autofillCreditCards)
+        appSettings.autofillCreditCardsEnabled = true
+
+        // When
+        let viewModel = AutofillSettingsViewModel(
+                appSettings: appSettings,
+                autofillNeverPromptWebsitesManager: manager,
+                secureVault: vault,
+                source: .settings,
+                featureFlagger: mockFeatureFlagger
+        )
+
+        // Then
+        XCTAssertTrue(viewModel.saveCreditCardsEnabled.wrappedValue)
+    }
+
+    func testTogglingCreditCardsEnabledUpdatesAppSettings() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.autofillCreditCards)
+        appSettings.autofillCreditCardsEnabled = false
+        let viewModel = AutofillSettingsViewModel(
+                appSettings: appSettings,
+                autofillNeverPromptWebsitesManager: manager,
+                secureVault: vault,
+                source: .settings,
+                featureFlagger: mockFeatureFlagger
+        )
+
+        // When
+        viewModel.saveCreditCardsEnabled.wrappedValue = true
+
+        // Then
+        XCTAssertTrue(appSettings.autofillCreditCardsEnabled)
+    }
+
+    func testUpdateCreditCardsCountSuccess() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.autofillCreditCards)
+        
+        vault.storedCards = [
+            SecureVaultModels.CreditCard(title: "Card 1", cardNumber: "4111111111111111", cardholderName: "Test User", cardSecurityCode: "123", expirationMonth: 1, expirationYear: 2025),
+            SecureVaultModels.CreditCard(title: "Card 2", cardNumber: "5555555555554444", cardholderName: "Test User", cardSecurityCode: "123", expirationMonth: 11, expirationYear: 2028)
+        ]
+
+        let viewModel = AutofillSettingsViewModel(
+                appSettings: appSettings,
+                autofillNeverPromptWebsitesManager: manager,
+                secureVault: vault,
+                source: .settings,
+                featureFlagger: mockFeatureFlagger
+        )
+
+        // Then
+        XCTAssertEqual(viewModel.creditCardsCount, 2)
+
+        // When adding a new card
+        vault.storedCards.append(SecureVaultModels.CreditCard(title: "Card 3", cardNumber: "4111111111111111", cardholderName: "Test User", cardSecurityCode: "123", expirationMonth: 1, expirationYear: 2025))
     
+        viewModel.updateCreditCardsCount()
+
+        // Then count updates
+        XCTAssertEqual(viewModel.creditCardsCount, 3)
+    }
+
+    // MARK: - RefreshCounts Test
+
+    func testRefreshCountsUpdatesAllCounts() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.autofillCreditCards)
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "One", domain: "testsite.com", created: Date(), lastUpdated: Date())
+        ]
+
+        vault.storedCards = [
+            SecureVaultModels.CreditCard(title: "Card 1", cardNumber: "4111111111111111", cardholderName: "Test User", cardSecurityCode: "123", expirationMonth: 1, expirationYear: 2025),
+        ]
+
+        let viewModel = AutofillSettingsViewModel(
+                appSettings: appSettings,
+                autofillNeverPromptWebsitesManager: manager,
+                secureVault: vault,
+                source: .settings,
+                featureFlagger: mockFeatureFlagger
+        )
+
+        // Add new items without refreshing
+        vault.storedCards.append(SecureVaultModels.CreditCard(title: "Card 2", cardNumber: "5555555555554444", cardholderName: "Test User", cardSecurityCode: "123", expirationMonth: 11, expirationYear: 2028))
+
+        // When
+        viewModel.refreshCounts()
+
+        // Then both counts are updated
+        XCTAssertEqual(viewModel.passwordsCount, 1)
+        XCTAssertEqual(viewModel.creditCardsCount, 2)
+    }
+
     // MARK: - Navigation Tests
     
     func testNavigateToPasswords() {
@@ -149,7 +285,28 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(mockDelegate.navigateToPasswordsCalled)
         XCTAssertTrue(mockDelegate.navigateToPasswordsViewModel === viewModel)
     }
-    
+
+    func testNavigateToCreditCards() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.autofillCreditCards)
+        
+        viewModel = AutofillSettingsViewModel(
+                appSettings: appSettings,
+                autofillNeverPromptWebsitesManager: manager,
+                secureVault: vault,
+                source: .settings,
+                featureFlagger: mockFeatureFlagger
+        )
+        viewModel.delegate = mockDelegate
+
+        // When
+        viewModel.navigateToCreditCards()
+
+        // Then
+        XCTAssertTrue(mockDelegate.navigateToCreditCardsCalled)
+        XCTAssertTrue(mockDelegate.navigateToCreditCardsViewModel === viewModel)
+    }
+
     func testNavigateToFileImport() {
         // When
         viewModel.navigateToFileImport()
@@ -229,7 +386,10 @@ private class MockAutofillSettingsViewModelDelegate: AutofillSettingsViewModelDe
     
     var navigateToPasswordsCalled = false
     var navigateToPasswordsViewModel: AutofillSettingsViewModel?
-    
+
+    var navigateToCreditCardsCalled = false
+    var navigateToCreditCardsViewModel: AutofillSettingsViewModel?
+
     var navigateToFileImportCalled = false
     var navigateToFileImportViewModel: AutofillSettingsViewModel?
     
@@ -241,6 +401,11 @@ private class MockAutofillSettingsViewModelDelegate: AutofillSettingsViewModelDe
         navigateToPasswordsViewModel = viewModel
     }
     
+    func navigateToCreditCards(viewModel: DuckDuckGo.AutofillSettingsViewModel) {
+        navigateToCreditCardsCalled = true
+        navigateToCreditCardsViewModel = viewModel
+    }
+
     func navigateToFileImport(viewModel: AutofillSettingsViewModel) {
         navigateToFileImportCalled = true
         navigateToFileImportViewModel = viewModel

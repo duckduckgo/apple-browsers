@@ -100,7 +100,7 @@ public struct OAuthRequest {
     }
 
     private struct Defaults {
-        static let defaultRetryPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .seconds(2))
+        static let defaultRetryPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .fixed(.seconds(2)))
     }
 
     static func ddgAuthSessionCookie(domain: String, path: String, authSessionID: String) -> HTTPCookie? {
@@ -138,8 +138,7 @@ public struct OAuthRequest {
         ]
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .get,
-                                         queryItems: queryItems,
-                                         retryPolicy: Defaults.defaultRetryPolicy) else {
+                                         queryItems: queryItems) else { // we don't want to retry: https://app.asana.com/1/137249556945/task/1210411170978663/comment/1210411574944338?focus=true
             return nil
         }
         return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
@@ -359,8 +358,7 @@ public struct OAuthRequest {
 
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .post,
-                                         headers: APIRequestV2.HeadersV2(cookies: [cookie], authToken: accessTokenV1),
-                                         retryPolicy: Defaults.defaultRetryPolicy) else {
+                                         headers: APIRequestV2.HeadersV2(cookies: [cookie], authToken: accessTokenV1)) else { // we don't want to retry: https://app.asana.com/1/137249556945/task/1210411170978663/comment/1210411574944338?focus=true
             return nil
         }
         return OAuthRequest(apiRequest: request,

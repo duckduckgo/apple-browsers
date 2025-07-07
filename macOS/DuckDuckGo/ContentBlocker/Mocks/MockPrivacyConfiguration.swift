@@ -19,13 +19,15 @@
 import BrowserServicesKit
 import Combine
 import Common
+import Foundation
 
 #if DEBUG
 
 final class MockPrivacyConfiguration: PrivacyConfiguration {
 
     var isSubfeatureKeyEnabled: ((any PrivacySubfeature, AppVersionProvider) -> Bool)?
-    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> Bool {
+
+    func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         isSubfeatureKeyEnabled?(subfeature, versionProvider) ?? false
     }
 
@@ -44,13 +46,18 @@ final class MockPrivacyConfiguration: PrivacyConfiguration {
                                                                             state: PrivacyConfigurationData.State.enabled)
     var exceptionsList: (PrivacyFeature) -> [String] = { _ in [] }
     var featureSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings = [:]
-    var subfeatureSettings: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings = ""
+    var subfeatureSettings: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings?
 
     func exceptionsList(forFeature featureKey: PrivacyFeature) -> [String] { exceptionsList(featureKey) }
     var isFeatureKeyEnabled: ((PrivacyFeature, AppVersionProvider) -> Bool)?
     func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> Bool {
+        isEnabled(featureKey: featureKey, versionProvider: versionProvider, defaultValue: false)
+    }
+
+    func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool {
         isFeatureKeyEnabled?(featureKey, versionProvider) ?? true
     }
+
     func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {
         if isFeatureKeyEnabled?(featureKey, versionProvider) == true {
             return .enabled
@@ -84,10 +91,6 @@ final class MockPrivacyConfiguration: PrivacyConfiguration {
     func userDisabledProtection(forDomain: String) {}
 }
 
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
-}
-
 extension DefaultInternalUserDecider {
     convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
         self.init(store: mockedStore)
@@ -112,7 +115,10 @@ final class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManag
     }
 
     var updatesPublisher: AnyPublisher<Void, Never> = Just(()).eraseToAnyPublisher()
-    var privacyConfig: PrivacyConfiguration = MockPrivacyConfiguration()
+    var mockPrivacyConfig = MockPrivacyConfiguration()
+    var privacyConfig: PrivacyConfiguration {
+        mockPrivacyConfig
+    }
     var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider()
 }
 

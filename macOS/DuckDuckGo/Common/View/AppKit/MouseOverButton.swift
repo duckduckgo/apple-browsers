@@ -63,6 +63,14 @@ internal class MouseOverButton: NSButton, Hoverable {
         return size
     }
 
+    private var eventTypeMask: NSEvent.EventTypeMask = .leftMouseUp
+
+    @discardableResult
+    override func sendAction(on mask: NSEvent.EventTypeMask) -> Int {
+        self.eventTypeMask = mask
+        return Int(truncatingIfNeeded: mask.rawValue)
+    }
+
     var normalTintColor: NSColor? {
         didSet {
             updateTintColor()
@@ -198,6 +206,18 @@ internal class MouseOverButton: NSButton, Hoverable {
         isMouseDown = true
         super.mouseDown(with: event)
         isMouseDown = false
+    }
+
+    override func otherMouseDown(with event: NSEvent) {
+        if eventTypeMask.contains(.init(type: event.type)), let action {
+            NSApp.sendAction(action, to: target, from: self)
+        }
+    }
+
+    override func otherMouseUp(with event: NSEvent) {
+        if eventTypeMask.contains(.init(type: event.type)), let action {
+            NSApp.sendAction(action, to: target, from: self)
+        }
     }
 
 }

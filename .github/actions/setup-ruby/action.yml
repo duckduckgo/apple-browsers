@@ -1,0 +1,28 @@
+name: 'Setup Ruby with Caching'
+description: 'Sets up Ruby dependencies with bundler caching'
+
+inputs:
+  working-directory:
+    description: 'Working directory containing Gemfile (e.g. iOS, macOS)'
+    required: true
+  cache-key-prefix:
+    description: 'Cache key prefix (e.g. ios-ruby, macos-ruby)'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Cache Ruby dependencies
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.working-directory }}/vendor/bundle
+        key: ${{ runner.os }}-${{ inputs.cache-key-prefix }}-${{ hashFiles(format('{0}/Gemfile.lock', inputs.working-directory)) }}
+        restore-keys: |
+          ${{ runner.os }}-${{ inputs.cache-key-prefix }}-
+
+    - name: Setup bundler
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        bundle config set --local path vendor/bundle
+        bundle install

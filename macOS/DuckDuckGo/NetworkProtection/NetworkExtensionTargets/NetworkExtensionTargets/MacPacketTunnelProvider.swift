@@ -19,14 +19,13 @@
 import Foundation
 import Combine
 import Common
-import NetworkProtection
+import VPN
 import NetworkExtension
 import Networking
 import PixelKit
 import Subscription
 import os.log
 import WireGuard
-
 final class MacPacketTunnelProvider: PacketTunnelProvider {
 
     static var isAppex: Bool {
@@ -40,17 +39,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     static var subscriptionsAppGroup: String? {
         isAppex ? Bundle.main.appGroup(bundle: .subs) : nil
     }
-
-    // MARK: - Additional Status Info
-
-    /// Holds the date when the status was last changed so we can send it out as additional information
-    /// in our status-change notifications.
-    ///
-    private var lastStatusChangeDate = Date()
-
-    // MARK: - Notifications: Observation Tokens
-
-    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Error Reporting
 
@@ -110,6 +98,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                 domainEvent = .networkProtectionWireguardErrorCannotSetWireguardConfig(error)
             case .noAuthTokenFound:
                 domainEvent = .networkProtectionNoAuthTokenFoundError
+            case .vpnAccessRevoked(let error):
+                domainEvent = .networkProtectionVPNAccessRevoked(error)
             case .failedToFetchServerStatus(let error):
                 domainEvent = .networkProtectionClientFailedToFetchServerStatus(error)
             case .failedToParseServerStatusResponse(let error):
@@ -120,8 +110,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                     .failedToParseLocationListResponse:
                 // Needs Privacy triage for macOS Geoswitching pixels
                 return
-            case .vpnAccessRevoked:
-                return
+            case .unmanagedSubscriptionError(let error):
+                domainEvent = .networkProtectionUnmanagedSubscriptionError(error)
             }
 
             PixelKit.fire(domainEvent, frequency: .legacyDailyAndCount, includeAppVersionParameter: true)
@@ -145,7 +135,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         case .userBecameActive:
             PixelKit.fire(
                 NetworkProtectionPixelEvent.networkProtectionActiveUser,
-                frequency: .legacyDaily,
+                frequency: .legacyDailyNoSuffix,
                 withAdditionalParameters: [PixelKit.Parameters.vpnCohort: PixelKit.cohort(from: defaults.vpnFirstEnabled)],
                 includeAppVersionParameter: true)
         case .connectionTesterStatusChange(let status, let server):
@@ -225,7 +215,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             case .error:
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionLatencyError,
-                    frequency: .legacyDaily,
+                    frequency: .legacyDailyNoSuffix,
                     includeAppVersionParameter: true)
             case .quality(let quality):
                 guard quality != .unknown else { return }
@@ -452,8 +442,10 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                  key: UserDefaultsCacheKey.subscriptionEntitlements,
                                                                  settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
 
-        let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-        let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                                             userAgent: UserAgent.duckDuckGoUserAgent())
+        let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                             userAgent: UserAgent.duckDuckGoUserAgent())
         let accountManager = DefaultAccountManager(accessTokenStorage: tokenStore,
                                                    entitlementsCache: entitlementsCache,
                                                    subscriptionEndpointService: subscriptionEndpointService,
@@ -462,41 +454,25 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         self.tokenStoreV1 = tokenStore
 
         // MARK: - V2
-        let configuration = URLSessionConfiguration.default
-        configuration.httpCookieStorage = nil
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
-        let apiService = DefaultAPIService(urlSession: urlSession)
-        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url, apiService: apiService)
+        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
+                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
         let tokenStoreV2 = NetworkProtectionKeychainTokenStoreV2(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
-                                                                 errorEvents: debugEvents)
+                                                                 errorEventsHandler: debugEvents)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStoreV2,
                                             legacyTokenStorage: nil,
                                             authService: authService)
 
-        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
-                                                                               baseURL: subscriptionEnvironment.serviceEnvironment.url)
-        let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
-            // The SysExt handles only dead token pixels
-            switch type {
-            case .deadToken:
-                PixelKit.fire(PrivacyProPixel.privacyProDeadTokenDetected)
-            case .subscriptionIsActive: // handled by the main app only
-                break
-            case .v1MigrationFailed:
-                PixelKit.fire(PrivacyProPixel.authV1MigrationFailed)
-            case .v1MigrationSuccessful:
-                PixelKit.fire(PrivacyProPixel.authV1MigrationSucceeded)
-            }
-        }
-
+        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
+                                                                                 baseURL: subscriptionEnvironment.serviceEnvironment.url)
+        let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
         let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
-                                                             subscriptionEndpointService: subscriptionEndpointServiceV2,
-                                                             subscriptionEnvironment: subscriptionEnvironment,
-                                                             pixelHandler: pixelHandler,
-                                                             tokenRecoveryHandler: nil,
-                                                             initForPurchase: false)
+                                                               userDefaults: subscriptionUserDefaults,
+                                                               subscriptionEndpointService: subscriptionEndpointServiceV2,
+                                                               subscriptionEnvironment: subscriptionEnvironment,
+                                                               pixelHandler: pixelHandler,
+                                                               tokenRecoveryHandler: nil,
+                                                               initForPurchase: false)
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
             Logger.networkProtection.log("Subscription Entitlements check...")
@@ -506,8 +482,10 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             } else {
                 Logger.networkProtection.log("Using Auth V2")
                 do {
-                    let token = try await subscriptionManager.getTokenContainer(policy: .localValid)
-                    return .success(token.decodedAccessToken.hasEntitlement(.networkProtection))
+                    let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                    let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)
+                    Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
+                    return .success(isNetworkProtectionEnabled)
                 } catch {
                     return .failure(error)
                 }
@@ -547,92 +525,11 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         setupPixels()
         accountManager.delegate = self
-        observeServerChanges()
-        observeStatusUpdateRequests()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider Initialised")
     }
 
     deinit {
         Logger.networkProtectionMemory.log("[-] MacPacketTunnelProvider")
-    }
-
-    // MARK: - Observing Changes & Requests
-
-    /// Observe connection status changes to broadcast those changes through distributed notifications.
-    ///
-    public override func handleConnectionStatusChange(old: ConnectionStatus, new: ConnectionStatus) {
-        super.handleConnectionStatusChange(old: old, new: new)
-
-        lastStatusChangeDate = Date()
-        broadcast(new)
-    }
-
-    /// Observe server changes to broadcast those changes through distributed notifications.
-    ///
-    @MainActor
-    private func observeServerChanges() {
-        lastSelectedServerInfoPublisher.sink { [weak self] server in
-            self?.lastStatusChangeDate = Date()
-            self?.broadcast(server)
-        }
-        .store(in: &cancellables)
-
-        broadcastLastSelectedServerInfo()
-    }
-
-    /// Observe status update requests to broadcast connection status
-    ///
-    private func observeStatusUpdateRequests() {
-        notificationCenter.publisher(for: .requestStatusUpdate).sink { [weak self] _ in
-            guard let self else { return }
-
-            Task { @MainActor in
-                self.broadcastConnectionStatus()
-                self.broadcastLastSelectedServerInfo()
-            }
-        }
-        .store(in: &cancellables)
-    }
-
-    // MARK: - Broadcasting Status and Information
-
-    /// Broadcasts the current connection status.
-    ///
-    @MainActor
-    private func broadcastConnectionStatus() {
-        broadcast(connectionStatus)
-    }
-
-    /// Broadcasts the specified connection status.
-    ///
-    private func broadcast(_ connectionStatus: ConnectionStatus) {
-        let lastStatusChange = ConnectionStatusChange(status: connectionStatus, on: lastStatusChangeDate)
-        let payload = ConnectionStatusChangeEncoder().encode(lastStatusChange)
-
-        notificationCenter.post(.statusDidChange, object: payload)
-    }
-
-    /// Broadcasts the current server information.
-    ///
-    @MainActor
-    private func broadcastLastSelectedServerInfo() {
-        broadcast(lastSelectedServerInfo)
-    }
-
-    /// Broadcasts the specified server information.
-    ///
-    private func broadcast(_ serverInfo: NetworkProtectionServerInfo?) {
-        guard let serverInfo else {
-            return
-        }
-
-        let serverStatusInfo = NetworkProtectionStatusServerInfo(
-            serverLocation: serverInfo.attributes,
-            serverAddress: serverInfo.endpoint?.host.hostWithoutPort
-        )
-        let payload = ServerSelectedNotificationObjectEncoder().encode(serverStatusInfo)
-
-        notificationCenter.post(.serverSelected, object: payload)
     }
 
     // MARK: - NEPacketTunnelProvider
@@ -700,7 +597,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         if !Self.isAuthV2Enabled {
             // Auth V2 cleanup in case of rollback
             Logger.subscription.debug("Cleaning up Auth V2 token")
-            tokenStorageV2.tokenContainer = nil
+            try? tokenStorageV2.saveTokenContainer(nil)
         }
     }
 
@@ -776,7 +673,17 @@ final class DefaultWireGuardInterface: WireGuardInterface {
 extension MacPacketTunnelProvider: AccountManagerKeychainAccessDelegate {
 
     public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
-        PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType, accessError: error),
+
+        guard let expectedError = error as? AccountKeychainAccessError else {
+            assertionFailure("Unexpected error type: \(error)")
+            Logger.networkProtection.fault("Unexpected error type: \(error)")
+            return
+        }
+
+        PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
+                                                                         accessError: expectedError,
+                                                                         source: KeychainErrorSource.vpn,
+                                                                         authVersion: KeychainErrorAuthVersion.v1),
                       frequency: .legacyDailyAndCount)
     }
 }

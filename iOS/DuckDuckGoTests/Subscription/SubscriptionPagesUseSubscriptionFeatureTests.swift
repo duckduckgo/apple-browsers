@@ -29,6 +29,7 @@ import OHHTTPStubs
 import OHHTTPStubsSwift
 import os.log
 
+@MainActor
 final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     private struct Constants {
@@ -68,7 +69,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                                                                         externalID: Constants.externalID))
 
         static let mockParams: [String: String] = [:]
-        @MainActor static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
+        static let mockScriptMessage = MockWKScriptMessage(name: "", body: "", webView: WKWebView() )
 
         static let invalidTokenError = APIServiceError.serverError(statusCode: 401, error: "invalid_token")
     }
@@ -114,7 +115,9 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 let pixelName = path.dropping(prefix: "/t/")
                     .dropping(suffix: "_ios_phone")
                     .dropping(suffix: "_ios_tablet")
-                self.pixelsFired.append(pixelName)
+                Task { @MainActor in
+                    self.pixelsFired.append(pixelName)
+                }
             }
 
             return HTTPStubsResponse(data: Data(), statusCode: 200, headers: nil)
@@ -493,7 +496,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertNil(result)
 
         XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .hasActiveSubscription)
+        XCTAssertEqual(feature.transactionError, .activeSubscriptionAlreadyPresent)
 
         await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
                                            Pixel.Event.privacyProPurchaseAttempt.name + "_c",
@@ -516,7 +519,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertNil(result)
 
         XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .hasActiveSubscription)
+        XCTAssertEqual(feature.transactionError, .activeSubscriptionAlreadyPresent)
 
         await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
                                            Pixel.Event.privacyProPurchaseAttempt.name + "_c",
@@ -990,7 +993,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 return
             }
 
-            XCTAssertEqual(error, .subscriptionExpired)
+            XCTAssertEqual(error, .restoreFailedDueToExpiredSubscription)
             XCTAssertFalse(accountManager.isUserAuthenticated)
 
             XCTAssertEqual(feature.transactionStatus, .idle)
@@ -1017,7 +1020,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 return
             }
 
-            XCTAssertEqual(error, .subscriptionNotFound)
+            XCTAssertEqual(error, .restoreFailedDueToNoSubscription)
             XCTAssertFalse(accountManager.isUserAuthenticated)
 
             XCTAssertEqual(feature.transactionStatus, .idle)
@@ -1045,7 +1048,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 return
             }
 
-            XCTAssertEqual(error, .failedToRestorePastPurchase)
+            XCTAssertEqual(error, .otherRestoreError)
             XCTAssertFalse(accountManager.isUserAuthenticated)
 
             XCTAssertEqual(feature.transactionStatus, .idle)

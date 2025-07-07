@@ -19,6 +19,14 @@ silent_output() {
 	"$@" >/dev/null 2>&1
 }
 
+check_command() {
+    if ! command -v "$1" &> /dev/null; then
+        echo "‼️ Error: $1 is not installed. See source of this script for information."
+        echo
+        exit 1
+    fi
+}
+
 #
 # Runs script from a temporary directory:
 # 1. creates a temporary directory

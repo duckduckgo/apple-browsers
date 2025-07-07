@@ -26,41 +26,13 @@ import Common
 
 final class Database {
 
+    public let db: CoreDataDatabase
+
     fileprivate struct Constants {
         static let databaseName = "Database"
     }
 
-    static let shared: CoreDataDatabase = {
-        let (database, error) = makeDatabase()
-        if database == nil {
-            firePixelErrorIfNeeded(error: error)
-            NSAlert.databaseFactoryFailed().runModal()
-            NSApp.terminate(nil)
-        }
-
-        return database!
-    }()
-
-    static func makeDatabase() -> (CoreDataDatabase?, Error?) {
-        func makeDatabase(keyStore: EncryptionKeyStoring, containerLocation: URL) -> (CoreDataDatabase?, Error?) {
-
-            let mainModel = NSManagedObjectModel.mergedModel(from: [.main])!
-
-            _=mainModel.registerValueTransformers(withAllowedPropertyClasses: [
-                NSImage.self,
-                NSString.self,
-                NSURL.self,
-                NSNumber.self,
-                NSError.self,
-                NSData.self
-            ], keyStore: keyStore)
-
-            let httpsUpgradeModel = HTTPSUpgrade.managedObjectModel
-
-            return (CoreDataDatabase(name: Constants.databaseName,
-                                     containerLocation: containerLocation,
-                                     model: .init(byMerging: [mainModel, httpsUpgradeModel])!), nil)
-        }
+    init() {
 #if DEBUG
         assert(![.unitTests, .xcPreviews].contains(AppVersion.runType), {
             "Use CoreData.---Container() methods for testing purposes:\n" + Thread.callStackSymbols.description
@@ -85,39 +57,24 @@ final class Database {
             return .sandboxApplicationSupportURL
         }()
 
-        return makeDatabase(keyStore: keyStore, containerLocation: containerLocation)
-    }
+        let mainModel = NSManagedObjectModel.mergedModel(from: [.main])!
 
-    // MARK: - Pixel
+        _ = mainModel.registerValueTransformers(withAllowedPropertyClasses: [
+            NSImage.self,
+            NSString.self,
+            NSURL.self,
+            NSNumber.self,
+            NSError.self,
+            NSData.self
+        ], keyStore: keyStore)
 
-    @UserDefaultsWrapper(key: .lastDatabaseFactoryFailurePixelDate, defaultValue: nil)
-    static var lastDatabaseFactoryFailurePixelDate: Date?
+        let httpsUpgradeModel = HTTPSUpgrade.managedObjectModel
 
-    static func firePixelErrorIfNeeded(error: Error?) {
-        let lastPixelSentAt = lastDatabaseFactoryFailurePixelDate ?? Date.distantPast
-
-        // Fire the pixel once a day at max
-        if lastPixelSentAt < Date.daysAgo(1) {
-            lastDatabaseFactoryFailurePixelDate = Date()
-            PixelKit.fire(DebugEvent(GeneralPixel.dbMakeDatabaseError(error: error)))
-        }
-    }
-}
-
-extension Array where Element == CoreDataErrorsParser.ErrorInfo {
-
-    var errorPixelParameters: [String: String] {
-        let params: [String: String]
-        if let first = first {
-            params = ["errorCount": "\(count)",
-                      "coreDataCode": "\(first.code)",
-                      "coreDataDomain": first.domain,
-                      "coreDataEntity": first.entity ?? "empty",
-                      "coreDataAttribute": first.property ?? "empty"]
-        } else {
-            params = ["errorCount": "\(count)"]
-        }
-        return params
+        db = CoreDataDatabase(
+            name: Constants.databaseName,
+            containerLocation: containerLocation,
+            model: .init(byMerging: [mainModel, httpsUpgradeModel])!
+        )
     }
 }
 
@@ -196,5 +153,22 @@ extension NSManagedObjectContext {
 
             throw error
         }
+    }
+}
+
+extension Array where Element == CoreDataErrorsParser.ErrorInfo {
+
+    var errorPixelParameters: [String: String] {
+        let params: [String: String]
+        if let first = first {
+            params = ["errorCount": "\(count)",
+                      "coreDataCode": "\(first.code)",
+                      "coreDataDomain": first.domain,
+                      "coreDataEntity": first.entity ?? "empty",
+                      "coreDataAttribute": first.property ?? "empty"]
+        } else {
+            params = ["errorCount": "\(count)"]
+        }
+        return params
     }
 }

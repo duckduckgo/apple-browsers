@@ -30,7 +30,7 @@ final class ZoomPopoverViewModelTests: XCTestCase {
     @MainActor
     override func setUp() {
         UserDefaultsWrapper<Any>.clearAll()
-        let tab = Tab(url: url)
+        let tab = Tab(content: .none)
         tabVM = TabViewModel(tab: tab)
         zoomPopover = ZoomPopoverViewModel(tabViewModel: tabVM)
         let window = NSWindow()

@@ -16,35 +16,34 @@
 //  limitations under the License.
 //
 
+import AIChat
+import AppKit
+import BrowserServicesKit
 import Combine
 import Foundation
-import BrowserServicesKit
+import PixelKit
 
 final class AIChatPreferences: ObservableObject {
     static let shared = AIChatPreferences()
     private var storage: AIChatPreferencesStorage
     private var cancellables = Set<AnyCancellable>()
-    private let configuration: AIChatMenuVisibilityConfigurable
     private let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/aichat/")!
+    private let searchAssistSettingsURL = URL(string: "https://duckduckgo.com/settings#aifeatures")!
+    private var windowControllersManager: WindowControllersManager
+    private let featureFlagger: FeatureFlagger
 
     init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-         configuration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration()) {
+         windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager,
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.storage = storage
-        self.configuration = configuration
+        self.windowControllersManager = windowControllersManager
+        self.featureFlagger = featureFlagger
 
-        showShortcutInToolbar = storage.shouldDisplayToolbarShortcut
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
+        showShortcutInAddressBar = storage.showShortcutInAddressBar
+        openAIChatInSidebar = storage.openAIChatInSidebar
 
-        subscribeToShowInToolbarSettingsChanges()
         subscribeToShowInApplicationMenuSettingsChanges()
-    }
-
-    func subscribeToShowInToolbarSettingsChanges() {
-        storage.shouldDisplayToolbarShortcutPublisher
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.showShortcutInToolbar, onWeaklyHeld: self)
-            .store(in: &cancellables)
     }
 
     func subscribeToShowInApplicationMenuSettingsChanges() {
@@ -53,33 +52,45 @@ final class AIChatPreferences: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: \.showShortcutInApplicationMenu, onWeaklyHeld: self)
             .store(in: &cancellables)
+
+        storage.showShortcutInAddressBarPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.showShortcutInAddressBar, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
+        storage.openAIChatInSidebarPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.openAIChatInSidebar, onWeaklyHeld: self)
+            .store(in: &cancellables)
     }
 
-    var shouldShowToolBarShortcutOption: Bool {
-        self.configuration.isFeatureEnabledForToolbarShortcut
-    }
-
-    var shouldShowApplicationMenuShortcutOption: Bool {
-        self.configuration.isFeatureEnabledForApplicationMenuShortcut
-    }
-
-    @Published var showShortcutInToolbar: Bool {
-        didSet {
-            storage.shouldDisplayToolbarShortcut = showShortcutInToolbar
-        }
+    var shouldShowOpenAIChatInSidebarToggle: Bool {
+        featureFlagger.isFeatureOn(.aiChatSidebar)
     }
 
     @Published var showShortcutInApplicationMenu: Bool {
-        didSet {
-            storage.showShortcutInApplicationMenu = showShortcutInApplicationMenu
-        }
+        didSet { storage.showShortcutInApplicationMenu = showShortcutInApplicationMenu }
+    }
+
+    @Published var showShortcutInAddressBar: Bool {
+        didSet { storage.showShortcutInAddressBar = showShortcutInAddressBar }
+    }
+
+    @Published var openAIChatInSidebar: Bool {
+        didSet { storage.openAIChatInSidebar = openAIChatInSidebar }
     }
 
     @MainActor func openLearnMoreLink() {
-        WindowControllersManager.shared.show(url: learnMoreURL, source: .ui, newTab: true)
+        windowControllersManager.show(url: learnMoreURL, source: .ui, newTab: true)
     }
 
     @MainActor func openAIChatLink() {
-        AIChatTabOpener.openAIChatTab()
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab()
+    }
+
+    @MainActor func openSearchAssistSettings() {
+        windowControllersManager.show(url: searchAssistSettingsURL, source: .ui, newTab: true)
     }
 }

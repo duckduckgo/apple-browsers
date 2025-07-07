@@ -37,7 +37,7 @@ final class BookmarksBarViewModel: NSObject {
 
     enum Constants {
         static let buttonSpacing: CGFloat = 2
-        static let buttonHeight: CGFloat = 28
+        static let buttonHeight: CGFloat = 24
         static let maximumButtonWidth: CGFloat = 128
         static let labelFont = NSFont.systemFont(ofSize: 12)
 
@@ -62,6 +62,7 @@ final class BookmarksBarViewModel: NSObject {
     weak var delegate: BookmarksBarViewModelDelegate?
     var isInteractionPrevented = false
 
+    private let visualStyle: VisualStyleProviding
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
     private let tabCollectionViewModel: TabCollectionViewModel
@@ -109,10 +110,14 @@ final class BookmarksBarViewModel: NSObject {
 
     // MARK: - Initialization
 
-    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager = .shared, tabCollectionViewModel: TabCollectionViewModel) {
+    init(bookmarkManager: BookmarkManager,
+         dragDropManager: BookmarkDragDropManager,
+         tabCollectionViewModel: TabCollectionViewModel,
+         visualStyle: VisualStyleProviding) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.tabCollectionViewModel = tabCollectionViewModel
+        self.visualStyle = visualStyle
         super.init()
         subscribeToBookmarks()
     }
@@ -265,7 +270,7 @@ extension BookmarksBarViewModel: NSCollectionViewDelegate, NSCollectionViewDataS
             return NSView()
         }
 
-        let imageView = NSImageView(image: .dropTargetIndicator16)
+        let imageView = NSImageView(image: .dropTargetIndicator)
         imageView.contentTintColor = NSColor.controlAccentColor
 
         return imageView
@@ -281,7 +286,9 @@ extension BookmarksBarViewModel: NSCollectionViewDelegate, NSCollectionViewDataS
 
         let bookmarksBarItem = bookmarksBarItems[indexPath.item]
         bookmarksCollectionViewItem.delegate = self
-        bookmarksCollectionViewItem.updateItem(from: bookmarksBarItem.entity, isInteractionPrevented: isInteractionPrevented)
+        bookmarksCollectionViewItem.updateItem(from: bookmarksBarItem.entity,
+                                               isInteractionPrevented: isInteractionPrevented,
+                                               visualStyle: visualStyle)
 
         return bookmarksCollectionViewItem
     }

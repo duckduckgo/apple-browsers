@@ -80,6 +80,8 @@ extension MainViewController: EmailManagerAliasPermissionDelegate {
     func emailManager(_ emailManager: EmailManager,
                       didRequestPermissionToProvideAliasWithCompletion: @escaping (EmailManagerPermittedAddressType, Bool) -> Void) {
 
+        currentTab?.dismissKeyboardIfPresent()
+
         DispatchQueue.main.async {
             let emailAddressPromptViewController = EmailAddressPromptViewController(emailManager) { addressType, autosave in
                 didRequestPermissionToProvideAliasWithCompletion(addressType, autosave)
@@ -100,6 +102,8 @@ extension MainViewController: EmailManagerAliasPermissionDelegate {
     }
 
     func emailManager(_ emailManager: EmailManager, didRequestInContextSignUp completionHandler: @escaping (_ shouldContinue: Bool) -> Void) {
+
+        currentTab?.dismissKeyboardIfPresent()
 
         let emailSignupPromptViewController = EmailSignupPromptViewController { shouldContinue in
             if shouldContinue {

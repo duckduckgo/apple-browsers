@@ -19,6 +19,7 @@
 import Foundation
 import SwiftUI
 import Subscription
+import SubscriptionUI
 import BrowserServicesKit
 
 struct PreferencesSection: Hashable, Identifiable {
@@ -28,17 +29,17 @@ struct PreferencesSection: Hashable, Identifiable {
     @MainActor
     static func defaultSections(includingDuckPlayer: Bool,
                                 includingSync: Bool,
-                                includingVPN: Bool,
-                                includingAIChat: Bool) -> [PreferencesSection] {
+                                includingAIChat: Bool,
+                                subscriptionState: PreferencesSidebarSubscriptionState) -> [PreferencesSection] {
         let privacyPanes: [PreferencePaneIdentifier] = [
-            .defaultBrowser, .privateSearch, .webTrackingProtection, .cookiePopupProtection, .emailProtection
+            .defaultBrowser, .privateSearch, .webTrackingProtection, .threatProtection, .cookiePopupProtection, .emailProtection
         ]
 
         let regularPanes: [PreferencePaneIdentifier] = {
-            var panes: [PreferencePaneIdentifier] = [.general, .appearance, .autofill, .accessibility, .dataClearing]
+            var panes: [PreferencePaneIdentifier] = [.appearance, .autofill, .accessibility, .dataClearing]
 
             if includingSync {
-                panes.insert(.sync, at: 1)
+                panes.append(.sync)
             }
 
             if includingDuckPlayer {
@@ -49,7 +50,7 @@ struct PreferencesSection: Hashable, Identifiable {
                 panes.append(.aiChat)
             }
 
-            return panes
+            return [.general] + panes.sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
         }()
 
 #if APPSTORE
@@ -65,30 +66,47 @@ struct PreferencesSection: Hashable, Identifiable {
             .init(id: .about, panes: otherPanes)
         ]
 
-        let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
-        let platform = subscriptionManager.currentEnvironment.purchasePlatform
-        var shouldHidePrivacyProDueToNoProducts = platform == .appStore && subscriptionManager.canPurchase == false
-
-        if subscriptionManager.isUserAuthenticated {
-            shouldHidePrivacyProDueToNoProducts = false
-        }
-
-        if !shouldHidePrivacyProDueToNoProducts {
-            var subscriptionPanes: [PreferencePaneIdentifier] = [.subscription]
-
-            if includingVPN {
-                subscriptionPanes.append(.vpn)
-            }
-
-            sections.insert(.init(id: .privacyPro, panes: subscriptionPanes), at: 1)
+        if let subscriptionSection = makeSubscriptionSection(subscriptionState: subscriptionState) {
+            sections.insert(subscriptionSection, at: 1)
         }
 
         return sections
+    }
+
+    private static func makeSubscriptionSection(subscriptionState: PreferencesSidebarSubscriptionState) -> PreferencesSection? {
+        if subscriptionState.hasSubscription {
+            var subscriptionPanes: [PreferencePaneIdentifier] = []
+
+            if let currentSubscriptionFeatures = subscriptionState.subscriptionFeatures {
+                if currentSubscriptionFeatures.contains(.networkProtection) {
+                    subscriptionPanes.append(.vpn)
+                }
+                if currentSubscriptionFeatures.contains(.dataBrokerProtection) {
+                    subscriptionPanes.append(.personalInformationRemoval)
+                }
+                if currentSubscriptionFeatures.contains(.paidAIChat) && subscriptionState.isPaidAIChatEnabled {
+                    subscriptionPanes.append(.paidAIChat)
+                }
+                if currentSubscriptionFeatures.contains(.identityTheftRestoration) || currentSubscriptionFeatures.contains(.identityTheftRestorationGlobal) {
+                    subscriptionPanes.append(.identityTheftRestoration)
+                }
+            }
+
+            subscriptionPanes.append(.subscriptionSettings)
+            return PreferencesSection(id: .privacyPro, panes: subscriptionPanes)
+        } else if subscriptionState.shouldHideSubscriptionPurchase {
+            // No active subscription and no option to purchase
+            return nil
+        } else {
+            // No active subscription
+            return PreferencesSection(id: .purchasePrivacyPro, panes: [.privacyPro])
+        }
     }
 }
 
 enum PreferencesSectionIdentifier: Hashable, CaseIterable {
     case privacyProtections
+    case purchasePrivacyPro
     case privacyPro
     case regularPreferencePanes
     case about
@@ -97,8 +115,10 @@ enum PreferencesSectionIdentifier: Hashable, CaseIterable {
         switch self {
         case .privacyProtections:
             return UserText.privacyProtections
-        case .privacyPro:
+        case .purchasePrivacyPro:
             return nil
+        case .privacyPro:
+            return UserText.subscription
         case .regularPreferencePanes:
             return UserText.mainSettings
         case .about:
@@ -112,6 +132,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case defaultBrowser
     case privateSearch
     case webTrackingProtection
+    case threatProtection
     case cookiePopupProtection
     case emailProtection
 
@@ -119,8 +140,12 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case sync
     case appearance
     case dataClearing
+    case privacyPro
     case vpn
-    case subscription
+    case personalInformationRemoval
+    case paidAIChat
+    case identityTheftRestoration
+    case subscriptionSettings
     case autofill
     case accessibility
     case duckPlayer = "duckplayer"
@@ -154,6 +179,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.privateSearch
         case .webTrackingProtection:
             return UserText.webTrackingProtection
+        case .threatProtection:
+            return UserText.threatProtection
         case .cookiePopupProtection:
             return UserText.cookiePopUpProtection
         case .emailProtection:
@@ -174,10 +201,18 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.appearance
         case .dataClearing:
             return UserText.dataClearing
+        case .privacyPro:
+            return UserText.subscription
         case .vpn:
             return UserText.vpn
-        case .subscription:
-            return UserText.subscription
+        case .personalInformationRemoval:
+            return UserText.personalInformationRemoval
+        case .paidAIChat:
+            return UserText.paidAIChat
+        case .identityTheftRestoration:
+            return UserText.identityTheftRestoration
+        case .subscriptionSettings:
+            return UserText.subscriptionSettings
         case .autofill:
             return UserText.passwordManagementTitle
         case .accessibility:
@@ -185,7 +220,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .duckPlayer:
             return UserText.duckPlayer
         case .aiChat:
-            return UserText.aiChat
+            return UserText.aiFeatures
         case .about:
             return UserText.about
         case .otherPlatforms:
@@ -193,42 +228,52 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         }
     }
 
-    var preferenceIconName: String {
+    func preferenceIconName(for settingsIconProvider: SettingsIconsProviding) -> NSImage {
         switch self {
         case .defaultBrowser:
-            return "DefaultBrowser"
+            return settingsIconProvider.defaultBrowserIcon
         case .privateSearch:
-            return "PrivateSearchIcon"
+            return settingsIconProvider.privateSearchIcon
         case .webTrackingProtection:
-            return "WebTrackingProtectionIcon"
+            return settingsIconProvider.webTrackingProtectionIcon
+        case .threatProtection:
+            return settingsIconProvider.threatProtectionIcon
         case .cookiePopupProtection:
-            return "CookieProtectionIcon"
+            return settingsIconProvider.cookiePopUpProtectionIcon
         case .emailProtection:
-            return "EmailProtectionIcon"
+            return settingsIconProvider.emailProtectionIcon
         case .general:
-            return "GeneralIcon"
+            return settingsIconProvider.generalIcon
         case .sync:
-            return "Sync"
+            return settingsIconProvider.syncAndBackupIcon
         case .appearance:
-            return "Appearance"
+            return settingsIconProvider.appearanceIcon
         case .dataClearing:
-            return "FireSettings"
+            return settingsIconProvider.dataClearingIcon
+        case .privacyPro:
+            return settingsIconProvider.privacyProIcon
         case .vpn:
-            return "VPN"
-        case .subscription:
-            return "PrivacyPro"
+            return settingsIconProvider.vpnIcon
+        case .personalInformationRemoval:
+            return settingsIconProvider.personalInformationRemovalIcon
+        case .paidAIChat:
+            return settingsIconProvider.duckAIIcon
+        case .identityTheftRestoration:
+            return settingsIconProvider.identityTheftRestorationIcon
+        case .subscriptionSettings:
+            return settingsIconProvider.privacyProIcon
         case .autofill:
-            return "Autofill"
+            return settingsIconProvider.passwordsAndAutoFillIcon
         case .accessibility:
-            return "Accessibility"
+            return settingsIconProvider.accessibilityIcon
         case .duckPlayer:
-            return "DuckPlayerSettings"
+            return settingsIconProvider.duckPlayerIcon
         case .about:
-            return "About"
+            return settingsIconProvider.aboutIcon
         case .otherPlatforms:
-            return "OtherPlatformsPreferences"
+            return settingsIconProvider.otherPlatformsIcon
         case .aiChat:
-            return "AiChatPreferences"
+            return settingsIconProvider.duckAIIcon
         }
     }
 }

@@ -118,40 +118,6 @@ class AtbServerTests: XCTestCase {
 
 }
 
-class MockStatisticsStore: StatisticsStore {
-    
-    var hasInstallStatistics: Bool = false
-    
-    var installDate: Date?
-    
-    var atb: String?
-    
-    var appRetentionAtb: String?
-    
-    var searchRetentionAtb: String?
-
-    var variant: String?
-}
-
-class MockFeatureFlagger: FeatureFlagger {
-    func isFeatureOn<Flag>(for featureFlag: Flag, allowOverride: Bool) -> Bool where Flag: FeatureFlagDescribing {
-        return false
-    }
-    
-    var internalUserDecider: any InternalUserDecider = MockInteranlUserDecider()
-
-    var localOverrides: (any BrowserServicesKit.FeatureFlagLocalOverriding)?
-    
-    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-        return nil
-    }
-    
-    var allActiveExperiments: Experiments {
-        return [:]
-    }
-
-}
-
 class MockInteranlUserDecider: InternalUserDecider {
     var isInternalUser: Bool = false
 

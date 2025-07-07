@@ -29,16 +29,16 @@ final class OmniBarNotificationContainerView: UIView {
 
     var currentNotificationController: UIHostingController<OmniBarNotification>?
     
-    func prepareAnimation(_ type: OmniBarNotificationType) {
+    func prepareAnimation(_ type: OmniBarNotificationType, in controller: UIViewController) {
         removePreviousNotification()
         
         let viewModel = makeNotificationViewModel(for: type)
         let notificationViewController = UIHostingController(rootView: OmniBarNotification(viewModel: viewModel),
                                                              ignoreSafeArea: true)
         
-        window?.rootViewController?.addChild(notificationViewController)
+        controller.addChild(notificationViewController)
         addSubview(notificationViewController.view)
-        notificationViewController.didMove(toParent: window?.rootViewController)
+        notificationViewController.didMove(toParent: controller)
         
         currentNotificationController = notificationViewController
         setupConstraints()
@@ -78,6 +78,7 @@ final class OmniBarNotificationContainerView: UIView {
         let useDarkStyle = traitCollection.userInterfaceStyle == .dark
         let notificationText: String
         let notificationAnimationName = useDarkStyle ? "cookie-icon-animated-40-dark" : "cookie-icon-animated-40-light"
+        let isExperimental = ThemeManager.shared.properties.isExperimentalThemingEnabled
 
         switch type {
         case .cookiePopupManaged:
@@ -86,6 +87,6 @@ final class OmniBarNotificationContainerView: UIView {
             notificationText = UserText.omnibarNotificationPopupHidden
         }
         
-        return OmniBarNotificationViewModel(text: notificationText, animationName: notificationAnimationName)
+        return OmniBarNotificationViewModel(text: notificationText, animationName: notificationAnimationName, style: isExperimental ? .experimental : .default)
     }
 }

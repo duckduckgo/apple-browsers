@@ -18,8 +18,10 @@
 
 import Combine
 import Foundation
-import UniformTypeIdentifiers
 import protocol Navigation.WebKitDownload
+import UniformTypeIdentifiers
+import WebKit
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class DownloadsTabExtensionMock: NSObject, DownloadsTabExtensionProtocol {

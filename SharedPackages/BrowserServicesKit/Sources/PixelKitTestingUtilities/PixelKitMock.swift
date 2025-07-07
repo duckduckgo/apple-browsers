@@ -24,13 +24,13 @@ public final class PixelKitMock: PixelFiring {
 
     /// An array of fire calls, in order, that this mock expects
     ///
-    private let expectedFireCalls: [ExpectedFireCall]
+    public var expectedFireCalls: [ExpectedFireCall]
 
     /// The actual fire calls
     ///
     private var actualFireCalls = [ExpectedFireCall]()
 
-    public init(expecting expectedFireCalls: [ExpectedFireCall]) {
+    public init(expecting expectedFireCalls: [ExpectedFireCall] = []) {
         self.expectedFireCalls = expectedFireCalls
     }
 
@@ -43,7 +43,7 @@ public final class PixelKitMock: PixelFiring {
         actualFireCalls.append(fireCall)
     }
 
-    public func verifyExpectations(file: StaticString, line: UInt) {
+    public func verifyExpectations(file: StaticString = #file, line: UInt = #line) {
         XCTAssertEqual(expectedFireCalls, actualFireCalls, file: file, line: line)
     }
 }

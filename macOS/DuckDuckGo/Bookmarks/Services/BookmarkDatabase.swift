@@ -23,8 +23,6 @@ import Persistence
 
 public final class BookmarkDatabase {
 
-    public static let shared = BookmarkDatabase()
-
     public let db: CoreDataDatabase
 
     public static var defaultDBLocation: URL = URL.sandboxApplicationSupportURL

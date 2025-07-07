@@ -37,7 +37,7 @@ extension DefaultSubscriptionManagerV2: SubscriptionTokenHandling {
 
     public func adoptToken(_ someKindOfToken: Any) async throws {
         if let tokenContainer = someKindOfToken as? TokenContainer {
-            adopt(tokenContainer: tokenContainer)
+            try await adopt(tokenContainer: tokenContainer)
         } else {
             Logger.subscription.fault("Trying to adopt the wrong kind of token")
             assertionFailure("Trying to adopt the wrong kind of token")

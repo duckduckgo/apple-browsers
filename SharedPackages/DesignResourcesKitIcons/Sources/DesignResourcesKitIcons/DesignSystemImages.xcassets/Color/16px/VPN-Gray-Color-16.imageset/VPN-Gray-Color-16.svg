@@ -1,0 +1,22 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#VPN-Gray-Color-16_svg__a)">
+    <path fill="url(#VPN-Gray-Color-16_svg__b)" d="M8 .5A7.5 7.5 0 0 1 15.5 8l-.858.191a3.526 3.526 0 0 0-6.168 2.335v.291A2.238 2.238 0 0 0 7 12.921V14.5s-.379.935-1.306.636A7.5 7.5 0 0 1 8 .5Z"/>
+    <path fill="url(#VPN-Gray-Color-16_svg__c)" fill-rule="evenodd" d="M8 0a8 8 0 0 1 8 8" clip-rule="evenodd"/>
+    <path fill="#888" d="M13.526 10.526a1.527 1.527 0 0 0-3.052 0v2.027a1.527 1.527 0 0 0 3.052 0v-2.027Zm1 2.027a2.527 2.527 0 0 1-5.052 0v-2.027a2.526 2.526 0 0 1 5.052 0v2.027Z"/>
+    <path fill="#DDD" d="M8.5 12.921c0-.407.33-.737.737-.737h5.526c.407 0 .737.33.737.737v1.842c0 .407-.33.737-.737.737H9.237a.737.737 0 0 1-.737-.737v-1.842Z"/>
+    <path fill="#666" d="M15 12.921a.238.238 0 0 0-.237-.237H9.237a.238.238 0 0 0-.237.238v1.841c0 .131.107.237.237.237h5.526c.13 0 .237-.106.237-.237v-1.841Zm1 1.842c0 .683-.554 1.237-1.237 1.237H9.237A1.237 1.237 0 0 1 8 14.763v-1.841c0-.684.554-1.238 1.237-1.238h5.526c.683 0 1.237.554 1.237 1.238v1.841Z"/>
+  </g>
+  <defs>
+    <linearGradient id="VPN-Gray-Color-16_svg__b" x1="2" x2="14" y1="2" y2="14" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EEE"/>
+      <stop offset="1" stop-color="#AAA"/>
+    </linearGradient>
+    <linearGradient id="VPN-Gray-Color-16_svg__c" x1="8" x2="8" y1="0" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#AAA"/>
+      <stop offset="1" stop-color="#444"/>
+    </linearGradient>
+    <clipPath id="VPN-Gray-Color-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

@@ -52,7 +52,16 @@ final class UserContentUpdating {
          trackerDataManager: TrackerDataManager,
          configStorage: ConfigurationStoring,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-         tld: TLD) {
+         experimentManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
+         tld: TLD,
+         onboardingNavigationDelegate: OnboardingNavigating,
+         appearancePreferences: AppearancePreferences,
+         startupPreferences: StartupPreferences,
+         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+         historyCoordinator: HistoryDataSource,
+         fireproofDomains: DomainFireproofStatusProviding,
+         fireCoordinator: FireCoordinator
+    ) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
             let sourceProvider = ScriptSourceProvider(configStorage: configStorage,
@@ -60,7 +69,15 @@ final class UserContentUpdating {
                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                       contentBlockingManager: contentBlockerRulesManager,
                                                       trackerDataManager: trackerDataManager,
-                                                      tld: tld)
+                                                      experimentManager: experimentManager(),
+                                                      tld: tld,
+                                                      onboardingNavigationDelegate: onboardingNavigationDelegate,
+                                                      appearancePreferences: appearancePreferences,
+                                                      startupPreferences: startupPreferences,
+                                                      bookmarkManager: bookmarkManager,
+                                                      historyCoordinator: historyCoordinator,
+                                                      fireproofDomains: fireproofDomains,
+                                                      fireCoordinator: fireCoordinator)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
         }
 

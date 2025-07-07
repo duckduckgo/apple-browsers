@@ -1,0 +1,40 @@
+name: 'Send Pixel'
+description: 'Send a pixel tracking request'
+inputs:
+  base-url:
+    description: 'Base URL of the pixel to send'
+    required: false
+    default: 'https://improving.duckduckgo.com/t/'
+  pixel-name:
+    description: 'Name of the pixel to send'
+    required: true
+  query-params:
+    description: 'Query parameters as YAML key-value pairs'
+    required: false
+runs:
+  using: 'composite'
+  steps:
+    - name: Send pixel request
+      shell: bash
+      run: |
+        PIXEL_URL="${{ inputs.base-url }}${{ inputs.pixel-name }}"
+
+        # Construct workflow URL automatically (same format as env.WORKFLOW_URL)
+        WORKFLOW_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}"
+
+        # Start with workflow parameter
+        QUERY_STRING="workflow=$(printf '%s' "${WORKFLOW_URL}" | yq -r '@uri')"
+
+        # Add user-provided query params if any
+        if [[ -n "${{ inputs.query-params }}" ]]; then
+          USER_PARAMS=$(yq -r 'to_entries | map("\(.key)=\(.value | tostring | @uri)") | join("&")' <<< '${{ inputs.query-params }}')
+
+          if [[ -n "${USER_PARAMS}" && "${USER_PARAMS}" != "null" ]]; then
+            QUERY_STRING="${QUERY_STRING}&${USER_PARAMS}"
+          fi
+        fi
+
+        PIXEL_URL="${PIXEL_URL}?${QUERY_STRING}"
+
+        echo "::notice::Sending pixel to: ${PIXEL_URL}"
+        curl -fLSs -o /dev/null "${PIXEL_URL}"

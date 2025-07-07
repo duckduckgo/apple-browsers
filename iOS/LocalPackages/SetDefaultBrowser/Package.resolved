@@ -1,0 +1,33 @@
+{
+  "originHash" : "45300dad9c4eb0e848095d5ff18041ce36dfb1e49a89054d98c573d68f6509db",
+  "pins" : [
+    {
+      "identity" : "apple-toolbox",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/apple-toolbox.git",
+      "state" : {
+        "revision" : "579eb1d65c7f221094856269fc0e457a1c2a6660",
+        "version" : "3.2.1"
+      }
+    },
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser.git",
+      "state" : {
+        "revision" : "0fbc8848e389af3bb55c182bc19ca9d5dc2f255b",
+        "version" : "1.4.0"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-syntax",
+      "state" : {
+        "revision" : "f99ae8aa18f0cf0d53481901f88a0991dc3bd4a2",
+        "version" : "601.0.1"
+      }
+    }
+  ],
+  "version" : 3
+}

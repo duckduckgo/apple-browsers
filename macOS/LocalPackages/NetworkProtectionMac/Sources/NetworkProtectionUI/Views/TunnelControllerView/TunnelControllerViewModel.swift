@@ -18,9 +18,10 @@
 
 import Combine
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionProxy
 import SwiftUI
+import SwiftUIExtensions
 import TipKit
 import VPNAppState
 
@@ -84,6 +85,7 @@ public final class TunnelControllerViewModel: ObservableObject {
         return formatter
     }()
 
+    private let timeLapsedFormatter: VPNTimeFormatting
     private let uiActionHandler: VPNUIActionHandling
 
     // MARK: - Misc
@@ -103,6 +105,7 @@ public final class TunnelControllerViewModel: ObservableObject {
                 vpnSettings: VPNSettings,
                 proxySettings: TransparentProxySettings,
                 locationFormatter: VPNLocationFormatting,
+                timeLapsedFormatter: VPNTimeFormatting = VPNTimeFormatter(),
                 uiActionHandler: VPNUIActionHandling) {
 
         self.tunnelController = controller
@@ -113,6 +116,8 @@ public final class TunnelControllerViewModel: ObservableObject {
         self.vpnSettings = vpnSettings
         self.proxySettings = proxySettings
         self.locationFormatter = locationFormatter
+        self.timeLapsedFormatter = timeLapsedFormatter
+        self.timeLapsed = timeLapsedFormatter.string(from: 0)
         self.uiActionHandler = uiActionHandler
 
         connectionStatus = statusReporter.statusObserver.recentValue
@@ -264,17 +269,28 @@ public final class TunnelControllerViewModel: ObservableObject {
             }
 
             return self.internalIsRunning
-        } set: { newValue in
+        } set: { [weak self] newValue in
+            guard let self else { return }
+
             guard newValue != self.internalIsRunning else {
                 return
             }
 
-            self.internalIsRunning = newValue
+            Task {
+                // When turning OFF the VPN we let the parent app offer an alternative
+                // UI/UX to prevent it.  If they return `false` in `willStopVPN` the VPN
+                // will not be stopped.
+                if !newValue, await !self.uiActionHandler.willStopVPN() {
+                    return
+                }
 
-            if newValue {
-                self.startNetworkProtection()
-            } else {
-                self.stopNetworkProtection()
+                self.internalIsRunning = newValue
+
+                if newValue {
+                    self.startNetworkProtection()
+                } else {
+                    self.stopNetworkProtection()
+                }
             }
         }
     }
@@ -283,11 +299,11 @@ public final class TunnelControllerViewModel: ObservableObject {
 
     private weak var timer: Timer?
 
-    private var previousConnectionStatus: NetworkProtection.ConnectionStatus = .default
+    private var previousConnectionStatus: VPN.ConnectionStatus = .default
 
     @MainActor
     @Published
-    private var connectionStatus: NetworkProtection.ConnectionStatus {
+    private var connectionStatus: VPN.ConnectionStatus {
         didSet {
             detectAndRefreshExternalToggleSwitching()
             previousConnectionStatus = oldValue
@@ -349,7 +365,7 @@ public final class TunnelControllerViewModel: ObservableObject {
     /// The description for the current connection status.
     /// When the status is `connected` this description will also show the time lapsed since connection.
     ///
-    @Published var timeLapsed = UserText.networkProtectionStatusViewTimerZero
+    @Published var timeLapsed: String
 
     @MainActor
     private func refreshTimeLapsed() {
@@ -357,9 +373,9 @@ public final class TunnelControllerViewModel: ObservableObject {
         case .connected(let connectedDate):
             timeLapsed = timeLapsedString(since: connectedDate)
         case .disconnecting:
-            timeLapsed = UserText.networkProtectionStatusViewTimerZero
+            timeLapsed = timeLapsedFormatter.string(from: 0)
         default:
-            timeLapsed = UserText.networkProtectionStatusViewTimerZero
+            timeLapsed = timeLapsedFormatter.string(from: 0)
         }
     }
 
@@ -395,12 +411,7 @@ public final class TunnelControllerViewModel: ObservableObject {
 
     private func timeLapsedString(since date: Date) -> String {
         let secondsLapsed = Date().timeIntervalSince(date)
-
-        let hours   = Int(secondsLapsed) / 3600
-        let minutes = Int(secondsLapsed) / 60 % 60
-        let seconds = Int(secondsLapsed) % 60
-
-        return String(format: "%02i:%02i:%02i", hours, minutes, seconds)
+        return timeLapsedFormatter.string(from: secondsLapsed)
     }
 
     /// The feature status (ON/OFF) right below the main icon.

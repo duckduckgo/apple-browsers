@@ -46,6 +46,7 @@ final class BookmarkManagementSidebarViewController: NSViewController {
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
     private let treeControllerDataSource: BookmarkSidebarTreeController
+    private let visualStyle: VisualStyleProviding
 
     private lazy var tabSwitcherButton = NSPopUpButton()
     private lazy var scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 232, height: 410))
@@ -70,11 +71,13 @@ final class BookmarkManagementSidebarViewController: NSViewController {
         return [BookmarkNode]()
     }
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
-         dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared) {
+    init(bookmarkManager: BookmarkManager,
+         dragDropManager: BookmarkDragDropManager,
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.selectedSortMode = bookmarkManager.sortMode
+        self.visualStyle = visualStyle
         treeControllerDataSource = .init(bookmarkManager: bookmarkManager)
         super.init(nibName: nil, bundle: nil)
     }
@@ -84,7 +87,7 @@ final class BookmarkManagementSidebarViewController: NSViewController {
     }
 
     override func loadView() {
-        view = ColorView(frame: .zero, backgroundColor: .bookmarkPageBackground)
+        view = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.bookmarksManagerBackgroundColor)
 
         view.addSubview(tabSwitcherButton)
         view.addSubview(scrollView)
@@ -144,6 +147,7 @@ final class BookmarkManagementSidebarViewController: NSViewController {
         tabSwitcherButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
         tabSwitcherButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 23).isActive = true
         view.trailingAnchor.constraint(equalTo: tabSwitcherButton.trailingAnchor, constant: 23).isActive = true
+        tabSwitcherButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         scrollView.topAnchor.constraint(equalTo: tabSwitcherButton.bottomAnchor, constant: 12).isActive = true
         view.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: 12).isActive = true
@@ -322,40 +326,46 @@ extension BookmarkManagementSidebarViewController: BookmarksContextMenuDelegate 
 private let previewSize = NSSize(width: 400, height: 660)
 @available(macOS 14.0, *)
 #Preview(traits: previewSize.fixedLayout) { {
-
-    let vc = BookmarkManagementSidebarViewController(bookmarkManager: {
-        let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [
-            BookmarkFolder(id: "1", title: "Folder with a reasonably long name that would be clipped", children: [
-                BookmarkFolder(id: "2", title: "Nested Folder", children: [
-                ])
-            ]),
-            BookmarkFolder(id: "3", title: "Another Folder", children: [
-                BookmarkFolder(id: "4", title: "Nested Folder", children: [
-                    BookmarkFolder(id: "5", title: "Another Nested Folder", children: [
-                        BookmarkFolder(id: "a", title: "Another Nested Folder", children: [
-                            BookmarkFolder(id: "b", title: "Another Nested Folder", children: [
-                                BookmarkFolder(id: "c", title: "Another Nested Folder", children: [
-                                    BookmarkFolder(id: "d", title: "Another Nested Folder", children: [
-                                        Bookmark(id: "z1", url: "a:b", title: "a", isFavorite: false),
-                                        Bookmark(id: "z2", url: "a:b", title: "a", isFavorite: false),
-                                        Bookmark(id: "z3", url: "a:b", title: "a", isFavorite: false),
+    let bkman = {
+         let manager = LocalBookmarkManager(
+            bookmarkStore: BookmarkStoreMock(
+                bookmarks: [
+                    BookmarkFolder(id: "1", title: "Folder with a reasonably long name that would be clipped", children: [
+                        BookmarkFolder(id: "2", title: "Nested Folder", children: [
+                        ])
+                    ]),
+                    BookmarkFolder(id: "3", title: "Another Folder", children: [
+                        BookmarkFolder(id: "4", title: "Nested Folder", children: [
+                            BookmarkFolder(id: "5", title: "Another Nested Folder", children: [
+                                BookmarkFolder(id: "a", title: "Another Nested Folder", children: [
+                                    BookmarkFolder(id: "b", title: "Another Nested Folder", children: [
+                                        BookmarkFolder(id: "c", title: "Another Nested Folder", children: [
+                                            BookmarkFolder(id: "d", title: "Another Nested Folder", children: [
+                                                Bookmark(id: "z1", url: "a:b", title: "a", isFavorite: false),
+                                                Bookmark(id: "z2", url: "a:b", title: "a", isFavorite: false),
+                                                Bookmark(id: "z3", url: "a:b", title: "a", isFavorite: false),
+                                            ])
+                                        ])
                                     ])
                                 ])
                             ])
                         ])
-                    ])
-                ])
-            ]),
-            BookmarkFolder(id: "6", title: "Third Folder", children: []),
-            BookmarkFolder(id: "7", title: "Forth Folder", children: []),
-            BookmarkFolder(id: "8", title: "Fifth Folder", children: []),
-            Bookmark(id: "z", url: "a:b", title: "a", isFavorite: false)
-        ]))
-        bkman.loadBookmarks()
+                    ]),
+                    BookmarkFolder(id: "6", title: "Third Folder", children: []),
+                    BookmarkFolder(id: "7", title: "Forth Folder", children: []),
+                    BookmarkFolder(id: "8", title: "Fifth Folder", children: []),
+                    Bookmark(id: "z", url: "a:b", title: "a", isFavorite: false)
+                ]
+            ),
+            appearancePreferences: .mock
+        )
+        manager.loadBookmarks()
         customAssertionFailure = { _, _, _ in }
 
-        return bkman
-    }())
+        return manager
+    }()
+
+    let vc = BookmarkManagementSidebarViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
     vc.preferredContentSize = previewSize
     return vc
 

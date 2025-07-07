@@ -18,7 +18,7 @@
 
 import Foundation
 import SwiftUI
-import NetworkProtection
+import VPN
 @testable import DuckDuckGo_Privacy_Browser
 
 struct MockVPNLocationFormatter: VPNLocationFormatting {
@@ -26,12 +26,12 @@ struct MockVPNLocationFormatter: VPNLocationFormatting {
         nil
     }
 
-    func string(from location: String?, preferredLocation: NetworkProtection.VPNSettings.SelectedLocation) -> String {
+    func string(from location: String?, preferredLocation: VPN.VPNSettings.SelectedLocation) -> String {
         ""
     }
 
     @available(macOS 12, *)
-    func string(from location: String?, preferredLocation: NetworkProtection.VPNSettings.SelectedLocation, locationTextColor: Color, preferredLocationTextColor: Color) -> AttributedString {
+    func string(from location: String?, preferredLocation: VPN.VPNSettings.SelectedLocation, locationTextColor: Color, preferredLocationTextColor: Color) -> AttributedString {
         ""
     }
 }

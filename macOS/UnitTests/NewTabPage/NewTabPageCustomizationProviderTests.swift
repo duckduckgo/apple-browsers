@@ -33,7 +33,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     @MainActor
     override func setUp() async throws {
 
-        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor())
+        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager())
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
         openFilePanelCalls = 0
@@ -46,7 +46,8 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
                 self.openFilePanelCalls += 1
                 return nil
             },
-            showAddImageFailedAlert: {}
+            showAddImageFailedAlert: {},
+            visualStyle: VisualStyle.legacy
         )
 
         provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
@@ -118,7 +119,8 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
                 background: .solidColor("color05"),
                 theme: .light,
                 userColor: .init(hex: "#123abc"),
-                userImages: userBackgroundImagesManager.availableImages.map(NewTabPageDataModel.UserImage.init)
+                userImages: userBackgroundImagesManager.availableImages.map(NewTabPageDataModel.UserImage.init),
+                defaultStyles: .init(lightBackgroundColor: "#FAFAFA", darkBackgroundColor: "#333333")
             )
         )
     }
@@ -214,12 +216,9 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
 
         cancellable.cancel()
 
-        /// Slower machines may capture the initial empty array event so let's filter it out here
-        if events.first == [] {
-            events = Array(events.dropFirst())
-        }
-
-        XCTAssertEqual(events, [
+        /// Slower machines may capture the initial empty array event.
+        /// We're only interested in the correct sequence of events once images start being added.
+        XCTAssertEqual(events.suffix(4), [
             [.init(image1)],
             [.init(image1), .init(image2)],
             [],
@@ -249,6 +248,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     func testThatShowContextMenuPresentsTheMenuForTheSpecifiedImageID() async throws {
 
         final class CapturingNewTabPageContextMenuPresenter: NewTabPageContextMenuPresenting {
+            var window: NSWindow?
             func showContextMenu(_ menu: NSMenu) {
                 showContextMenuCalls.append(menu)
             }
@@ -271,7 +271,8 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
      * Sets up an expectation, then sets up Combine subscription for `settingsModel.$availableUserBackgroundImages` that fulfills
      * the expectation, then calls the provided `block` and waits for time specified by `duration` before cancelling the subscription.
      */
-    private func waitForAvailableUserBackgroundImages(for duration: TimeInterval = 1, inverted: Bool = false, _ block: () async -> Void = {}) async throws {
+    @MainActor
+    private func waitForAvailableUserBackgroundImages(for duration: TimeInterval = 1, inverted: Bool = false, _ block: @MainActor () async -> Void = {}) async throws {
         let expectation = self.expectation(description: "viewModelUpdate")
         expectation.isInverted = inverted
         let cancellable = customizationModel.$availableUserBackgroundImages.dropFirst().prefix(1).sink { _ in expectation.fulfill() }

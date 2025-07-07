@@ -19,7 +19,7 @@
 import AppKit
 import Combine
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
 
@@ -28,7 +28,7 @@ import NetworkProtectionUI
 final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
 
     private let networkProtectionStatusReporter: NetworkProtectionStatusReporter
-    private var status: NetworkProtection.ConnectionStatus = .default
+    private var status: VPN.ConnectionStatus = .default
     private let popoverManager: NetPPopoverManager
 
     // MARK: - Subscriptions
@@ -72,7 +72,7 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
          pinningManager: PinningManager = LocalPinningManager.shared,
          vpnGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
          statusReporter: NetworkProtectionStatusReporter,
-         iconProvider: IconProvider = NavigationBarIconProvider()) {
+         iconProvider: IconProvider) {
 
         self.popoverManager = popoverManager
         self.vpnGatekeeper = vpnGatekeeper

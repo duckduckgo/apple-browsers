@@ -115,17 +115,22 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
     ///   - key: Key used in encryption
     ///   - featureFlagger: Migrations feature flagger
     ///   - migrationProvider: Migrations provider
+    ///   - reporter: Secure vault event/error reporter
     /// - Returns: DefaultDataBrokerProtectionDatabaseProvider instance
     public static func create<T: MigrationsProvider>(file: URL,
                                                      key: Data,
-                                                     migrationProvider: T.Type = DefaultDataBrokerProtectionDatabaseMigrationsProvider.self) throws -> DefaultDataBrokerProtectionDatabaseProvider {
-        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v5Migrations)
+                                                     migrationProvider: T.Type = DefaultDataBrokerProtectionDatabaseMigrationsProvider.self,
+                                                     reporter: SecureVaultReporting? = nil) throws -> DefaultDataBrokerProtectionDatabaseProvider {
+        try DefaultDataBrokerProtectionDatabaseProvider(file: file, key: key, registerMigrationsHandler: migrationProvider.v6Migrations, reporter: reporter)
     }
 
     public init(file: URL,
                 key: Data,
-                registerMigrationsHandler: (inout DatabaseMigrator) throws -> Void) throws {
-        try super.init(file: file, key: key, writerType: .pool, registerMigrationsHandler: registerMigrationsHandler)
+                registerMigrationsHandler: (inout DatabaseMigrator) throws -> Void,
+                reporter: SecureVaultReporting? = nil) throws {
+        try super.init(file: file, key: key, writerType: .pool, registerMigrationsHandler: registerMigrationsHandler) {
+            reporter?.secureVaultKeyStoreEvent(.databaseRecreation)
+        }
     }
 
     func createFileURLInDocumentsDirectory(fileName: String) -> URL? {

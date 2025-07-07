@@ -33,12 +33,16 @@ import Networking
 import Suggestions
 import Subscription
 import SwiftUI
-import NetworkProtection
+import VPN
 import Onboarding
 import os.log
 import PageRefreshMonitor
 import BrokenSitePrompt
 import AIChat
+import NetworkExtension
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import PixelKit
 
 class MainViewController: UIViewController {
 
@@ -114,6 +118,10 @@ class MainViewController: UIViewController {
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
 
+    /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
+    @UserDefaultsWrapper(key: .networkProtectionEntitlementsExpired, defaultValue: true)
+    private var lastKnownEntitlementsExpired: Bool
+
     private var localUpdatesCancellable: AnyCancellable?
     private var syncUpdatesCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
@@ -130,6 +138,7 @@ class MainViewController: UIViewController {
     private let subscriptionCookieManager: SubscriptionCookieManaging
     let privacyProDataReporter: PrivacyProDataReporting
 
+    let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private(set) lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
     private lazy var faviconLoader: FavoritesFaviconLoading = FavoritesFaviconLoader()
     private lazy var faviconsFetcherOnboarding = FaviconsFetcherOnboarding(syncService: syncService, syncBookmarksAdapter: syncDataProviders.bookmarksAdapter)
@@ -141,7 +150,7 @@ class MainViewController: UIViewController {
     }()
 
     weak var tabSwitcherController: TabSwitcherViewController?
-    var tabSwitcherButton: TabSwitcherButton!
+    var tabSwitcherButton: TabSwitcherButton?
 
     /// Do not reference directly, use `presentedMenuButton`
     let menuButton = MenuButton()
@@ -162,7 +171,7 @@ class MainViewController: UIViewController {
 
     var searchBarRect: CGRect {
         let view = UIApplication.shared.firstKeyWindow?.rootViewController?.view
-        return viewCoordinator.omniBar.barView.searchContainerView.convert(viewCoordinator.omniBar.barView.searchContainerView.bounds, to: view)
+        return viewCoordinator.omniBar.barView.searchContainer.convert(viewCoordinator.omniBar.barView.searchContainer.bounds, to: view)
     }
 
     var keyModifierFlags: UIKeyModifierFlags?
@@ -179,6 +188,7 @@ class MainViewController: UIViewController {
         fatalError("Use init?(code:")
     }
 
+    let featureDiscovery: FeatureDiscovery
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
     let textZoomCoordinator: TextZoomCoordinating
@@ -186,12 +196,21 @@ class MainViewController: UIViewController {
     var historyManager: HistoryManaging
     var viewCoordinator: MainViewCoordinator!
     let aiChatSettings: AIChatSettingsProvider
+    let experimentalAIChatManager: ExperimentalAIChatManager
 
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
+    private lazy var themeColorManager: SiteThemeColorManager = {
+        SiteThemeColorManager(viewCoordinator: viewCoordinator,
+                              currentTabViewController: { [weak self] in self?.currentTab }(),
+                              appSettings: appSettings,
+                              themeManager: themeManager)
+    }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
-        let manager = AIChatViewControllerManager()
+        let manager = AIChatViewControllerManager(experimentalAIChatManager: .init(featureFlagger: featureFlagger),
+                                                  featureFlagger: featureFlagger,
+                                                  aiChatSettings: aiChatSettings)
         manager.delegate = self
         return manager
     }()
@@ -203,8 +222,12 @@ class MainViewController: UIViewController {
     }()
 
     let isAuthV2Enabled: Bool
+    let themeManager: ThemeManaging
+    let keyValueStore: ThrowingKeyValueStoring
 
     private var duckPlayerEntryPointVisible = false
+    private var isExperimentalAppearanceEnabled: Bool { themeManager.properties.isExperimentalThemingEnabled }
+    private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -216,6 +239,7 @@ class MainViewController: UIViewController {
         appSettings: AppSettings,
         previewsSource: TabPreviewsSource,
         tabsModel: TabsModel,
+        tabsPersistence: TabsModelPersisting,
         syncPausedStateManager: any SyncPausedStateManaging,
         privacyProDataReporter: PrivacyProDataReporting,
         variantManager: VariantManager,
@@ -227,6 +251,7 @@ class MainViewController: UIViewController {
         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
         voiceSearchHelper: VoiceSearchHelperProtocol,
         featureFlagger: FeatureFlagger,
+        contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
         subscriptionCookieManager: SubscriptionCookieManaging,
         textZoomCoordinator: TextZoomCoordinating,
@@ -234,7 +259,11 @@ class MainViewController: UIViewController {
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
         maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
-        aiChatSettings: AIChatSettingsProvider
+        aiChatSettings: AIChatSettingsProvider,
+        experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
+        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
+        themeManager: ThemeManaging,
+        keyValueStore: ThrowingKeyValueStoring
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -246,10 +275,14 @@ class MainViewController: UIViewController {
         self.bookmarksCachingSearch = BookmarksCachingSearch(bookmarksStore: CoreDataBookmarksSearchStore(bookmarksStore: bookmarksDatabase))
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
+        self.experimentalAIChatManager = experimentalAIChatManager
         self.previewsSource = previewsSource
+        self.featureDiscovery = featureDiscovery
+        self.themeManager = themeManager
 
         let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         self.tabManager = TabManager(model: tabsModel,
+                                     persistence: tabsPersistence,
                                      previewsSource: previewsSource,
                                      interactionStateSource: interactionStateSource,
                                      bookmarksDatabase: bookmarksDatabase,
@@ -260,13 +293,15 @@ class MainViewController: UIViewController {
                                      contextualOnboardingLogic: contextualOnboardingLogic,
                                      onboardingPixelReporter: contextualOnboardingPixelReporter,
                                      featureFlagger: featureFlagger,
+                                     contentScopeExperimentManager: contentScopeExperimentsManager,
                                      subscriptionCookieManager: subscriptionCookieManager,
                                      appSettings: appSettings,
                                      textZoomCoordinator: textZoomCoordinator,
                                      websiteDataManager: websiteDataManager,
                                      fireproofing: fireproofing,
                                      maliciousSiteProtectionManager: maliciousSiteProtectionManager,
-                                     maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager)
+                                     maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
+                                     featureDiscovery: featureDiscovery)
         self.syncPausedStateManager = syncPausedStateManager
         self.privacyProDataReporter = privacyProDataReporter
         self.homeTabManager = NewTabPageManager()
@@ -283,7 +318,9 @@ class MainViewController: UIViewController {
         self.websiteDataManager = websiteDataManager
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
+        self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
+        self.keyValueStore = keyValueStore
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -318,18 +355,23 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        let suggestionTrayDependencies = SuggestionTrayDependencies(favoritesViewModel: favoritesViewModel,
+                                                                    bookmarksDatabase: bookmarksDatabase,
+                                                                    historyManager: historyManager,
+                                                                    tabsModel: tabManager.model,
+                                                                    featureFlagger: featureFlagger,
+                                                                    appSettings: appSettings)
+
+
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
-                                                              featureFlagger: featureFlagger)
+                                                              featureFlagger: featureFlagger,
+                                                              suggestionTrayDependencies: suggestionTrayDependencies)
+
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
-        viewCoordinator.toolbarBackButton.action = #selector(onBackPressed)
-        viewCoordinator.toolbarForwardButton.action = #selector(onForwardPressed)
-        viewCoordinator.toolbarFireButton.action = #selector(onFirePressed)
-        viewCoordinator.toolbarPasswordsButton.action = #selector(onPasswordsPressed)
-        viewCoordinator.toolbarBookmarksButton.action = #selector(onToolbarBookmarksPressed)
-
+        setUpToolbarButtonsActions()
         installSwipeTabs()
             
         loadSuggestionTray()
@@ -353,6 +395,8 @@ class MainViewController: UIViewController {
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
+
+        checkSubscriptionEntitlements()
 
         findInPageView.delegate = self
         findInPageBottomLayoutConstraint.constant = 0
@@ -413,7 +457,8 @@ class MainViewController: UIViewController {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aiChatSettings: aiChatSettings)
+                                                      aiChatSettings: aiChatSettings,
+                                                      themingProperties: themeManager.properties)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -435,7 +480,7 @@ class MainViewController: UIViewController {
             self?.updatePreviewForCurrentTab()
         }
     }
-    
+
     func updatePreviewForCurrentTab(completion: (() -> Void)? = nil) {
         assert(Thread.isMainThread)
         
@@ -495,12 +540,14 @@ class MainViewController: UIViewController {
     func loadTabsBarIfNeeded() {
         guard isPad else { return }
 
-        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
-        let controller: TabsBarViewController = storyboard.instantiateViewController(identifier: "TabsBar")
+        let controller = TabsBarViewController.createFromXib(themingProperties: themeManager.properties)
+
+        addChild(controller)
         controller.view.frame = viewCoordinator.tabBarContainer.bounds
         controller.delegate = self
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
+        controller.didMove(toParent: self)
     }
 
     func startAddFavoriteFlow() {
@@ -577,6 +624,16 @@ class MainViewController: UIViewController {
         didSendGestureDismissPixel = false
     }
 
+    private func setUpToolbarButtonsActions() {
+
+        viewCoordinator.toolbarBackButton.setCustomItemAction(on: self, action: #selector(onBackPressed))
+        viewCoordinator.toolbarForwardButton.setCustomItemAction(on: self, action: #selector(onForwardPressed))
+        viewCoordinator.toolbarPasswordsButton.setCustomItemAction(on: self, action: #selector(onPasswordsPressed))
+        viewCoordinator.toolbarBookmarksButton.setCustomItemAction(on: self, action: #selector(onToolbarBookmarksPressed))
+        viewCoordinator.menuToolbarButton.setCustomItemAction(on: self, action: #selector(onMenuPressed))
+        viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(onFirePressed))
+    }
+
     private func registerForPageRefreshPatterns() {
         NotificationCenter.default.addObserver(
             self,
@@ -643,6 +700,7 @@ class MainViewController: UIViewController {
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         updateStatusBarBackgroundColor()
+        themeColorManager.updateThemeColor()
     }
 
     @objc private func onShowFullURLAddressChanged() {
@@ -659,8 +717,7 @@ class MainViewController: UIViewController {
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
-            viewCoordinator.omniBar.moveSeparatorToBottom()
-            if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            if isExperimentalAppearanceEnabled {
                 viewCoordinator.hideToolbarSeparator()
             } else {
                 viewCoordinator.showToolbarSeparator()
@@ -669,19 +726,19 @@ class MainViewController: UIViewController {
                     
         case .bottom:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: false)
-            viewCoordinator.omniBar.moveSeparatorToTop()
             // If this is called before the toolbar has shown it will not re-add the separator when moving to the top position
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 self.viewCoordinator.hideToolbarSeparator()
             }
         }
 
+        omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
-
     }
 
     private func updateChromeForDuckPlayer() {
+        themeColorManager.updateThemeColor()
         let position = appSettings.currentAddressBarPosition
         switch position {
         case .top:
@@ -707,7 +764,7 @@ class MainViewController: UIViewController {
         case .top:
             newTabPageViewController?.additionalSafeAreaInsets = .zero
         case .bottom:
-            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: 52, right: 0)
+            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: viewCoordinator.omniBar.barView.expectedHeight, right: 0)
         }
     }
 
@@ -730,42 +787,61 @@ class MainViewController: UIViewController {
 
         var keyboardHeight = keyboardFrame.size.height
 
+        let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
         let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
         let safeAreaFrame = view.safeAreaLayoutGuide.layoutFrame.insetBy(dx: 0, dy: -additionalSafeAreaInsets.bottom)
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
-        keyboardHeight = intersection.height
+        keyboardHeight = keyboardFrameInView.height
 
-        findInPageBottomLayoutConstraint.constant = keyboardHeight
-
-        let y = self.view.frame.height - keyboardHeight
-        let frame = self.findInPageView.frame
-        UIView.animate(withDuration: duration, delay: 0, options: animationCurve, animations: {
-            self.findInPageView.frame = CGRect(x: 0, y: y - frame.height, width: frame.width, height: frame.height)
-        }, completion: nil)
+        // On iPad the keyboard will change even if using the hardware keyboard and we don't want FIP to move in that case.
+        if intersection.height < 1.0 || intersection.height > (isPad ? 50 : 0) {
+            findInPageBottomLayoutConstraint.constant = intersection.height
+            let y = self.view.frame.height - intersection.height
+            let frame = self.findInPageView.frame
+            UIView.animate(withDuration: duration, delay: 0, options: animationCurve, animations: {
+                self.findInPageView.frame = CGRect(x: 0, y: y - frame.height, width: frame.width, height: frame.height)
+            }, completion: nil)
+        }
 
         if self.appSettings.currentAddressBarPosition.isBottom {
-            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(52, keyboardHeight)
+            let intersection = safeAreaFrame.intersection(keyboardFrameInView)
+            let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + omniBarHeight : 0
+            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, containerHeight)
 
             // Temporary fix, see https://app.asana.com/0/392891325557410/1207990702991361/f
-            self.currentTab?.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: keyboardHeight > 0 ? 52 : 0, right: 0)
+            if let currentTab {
+                let inset = intersection.height > 0 ? omniBarHeight : 0
+                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+            }
 
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
                 self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-                self.newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: max(52, keyboardHeight), right: 0)
+                self.newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: max(omniBarHeight, containerHeight), right: 0)
             }
         }
 
     }
 
     private func initTabButton() {
-        tabSwitcherButton = TabSwitcherButton()
-        tabSwitcherButton.delegate = self
+        assert(tabSwitcherButton == nil)
+
+        tabSwitcherButton = isExperimentalAppearanceEnabled ? TabSwitcherStaticButton() : TabSwitcherAnimatedButton()
+
+        tabSwitcherButton?.delegate = self
         viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+
+        assert(tabSwitcherButton != nil)
+
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
     }
-    
+
     private func initMenuButton() {
+        guard !isExperimentalAppearanceEnabled else {
+            // For experimental appearance, this is set up in the ToolbarStateHandling
+            return
+        }
+
         viewCoordinator.menuToolbarButton.customView = menuButton
         viewCoordinator.menuToolbarButton.isAccessibilityElement = true
         viewCoordinator.menuToolbarButton.accessibilityTraits = .button
@@ -774,10 +850,11 @@ class MainViewController: UIViewController {
     }
     
     private func initBookmarksButton() {
-        viewCoordinator.omniBar.barView.bookmarksButtonView.addGestureRecognizer(UILongPressGestureRecognizer(target: self,
+        viewCoordinator.omniBar.barView.bookmarksButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self,
                                                                                   action: #selector(quickSaveBookmarkLongPress(gesture:))))
         gestureBookmarksButton.delegate = self
-        gestureBookmarksButton.image = UIImage(named: "Bookmarks")
+
+        gestureBookmarksButton.image = DesignSystemImages.Glyphs.Size24.bookmarks
     }
 
     private func bindFavoritesDisplayMode() {
@@ -902,13 +979,15 @@ class MainViewController: UIViewController {
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let controller = NewTabPageViewController(tab: tabModel,
                                                   isNewTabPageCustomizationEnabled: homeTabManager.isNewTabPageSectionsEnabled,
+                                                  isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled,
                                                   interactionModel: favoritesViewModel,
                                                   homePageMessagesConfiguration: homePageConfiguration,
                                                   privacyProDataReporting: privacyProDataReporter,
                                                   variantManager: variantManager,
                                                   newTabDialogFactory: newTabDaxDialogFactory,
                                                   newTabDialogTypeProvider: DaxDialogs.shared,
-                                                  faviconLoader: faviconLoader)
+                                                  faviconLoader: faviconLoader,
+                                                  messageNavigationDelegate: self)
 
         controller.delegate = self
         controller.shortcutsDelegate = self
@@ -919,7 +998,11 @@ class MainViewController: UIViewController {
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
+        // Attaching HomeScreen means it's going to be displayed immediately.
+        // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
+        tabModel.viewed = true
         refreshControls()
+
         syncService.scheduler.requestSyncImmediately()
     }
 
@@ -1056,7 +1139,7 @@ class MainViewController: UIViewController {
             refreshOmniBar()
             refreshTabIcon()
             refreshControls()
-            tabsBarController?.refresh(tabsModel: tabManager.model)
+            tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
             swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         }
 
@@ -1153,6 +1236,7 @@ class MainViewController: UIViewController {
             attachTab(tab: tab)
             refreshControls()
         }
+        themeColorManager.updateThemeColor()
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         if DaxDialogs.shared.shouldShowFireButtonPulse {
@@ -1170,9 +1254,10 @@ class MainViewController: UIViewController {
         addToContentContainer(controller: tab)
 
         viewCoordinator.logoContainer.isHidden = true
-        
+
         tab.progressWorker.progressBar = viewCoordinator.progress
         chromeManager.attach(to: tab.webView.scrollView)
+        themeColorManager.attach(to: tab)
         tab.chromeDelegate = self
     }
 
@@ -1208,8 +1293,9 @@ class MainViewController: UIViewController {
 
     private func refreshTabIcon() {
         viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
-        tabSwitcherButton.tabCount = tabManager.count
-        tabSwitcherButton.hasUnread = tabManager.hasUnread
+        assert(tabSwitcherButton != nil)
+        tabSwitcherButton?.tabCount = tabManager.count
+        tabSwitcherButton?.hasUnread = tabManager.hasUnread
     }
 
     private func refreshOmniBar() {
@@ -1243,8 +1329,8 @@ class MainViewController: UIViewController {
     }
 
     func dismissOmniBar() {
-        viewCoordinator.omniBar.endEditing()
         hideSuggestionTray()
+        viewCoordinator.omniBar.endEditing()
         refreshOmniBar()
     }
 
@@ -1317,14 +1403,16 @@ class MainViewController: UIViewController {
             
             // Do this on the next UI thread pass so we definitely have the right width
             self.applyWidthToTrayController()
-            
-            self.refreshMenuButtonState()
+
+            if !self.isExperimentalAppearanceEnabled {
+                self.refreshMenuButtonState()
+            }
         }
     }
 
     func refreshMenuButtonState() {
         if !homeTabManager.isNewTabPageSectionsEnabled && newTabPageViewController != nil {
-            viewCoordinator.omniBar.barView.menuButtonView.accessibilityLabel = UserText.bookmarksButtonHint
+            viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.bookmarksButtonHint
             viewCoordinator.updateToolbarWithState(.newTab)
             presentedMenuButton.setState(.menuImage, animated: false)
 
@@ -1335,7 +1423,7 @@ class MainViewController: UIViewController {
             } else {
                 expectedState = .menuImage
             }
-            viewCoordinator.omniBar.barView.menuButtonView.accessibilityLabel = UserText.menuButtonHint
+            viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.menuButtonHint
 
             if let currentTab = currentTab {
                 viewCoordinator.updateToolbarWithState(.pageLoaded(currentTab: currentTab))
@@ -1346,7 +1434,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 24)
+            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32, useActiveShadow: isExperimentalAppearanceEnabled)
         } else {
             self.suggestionTrayController?.fill()
         }
@@ -1411,7 +1499,8 @@ class MainViewController: UIViewController {
             openSearch: openSearch,
             source: source,
             bookmarksDatabase: self.bookmarksDatabase,
-            favoritesDisplayMode: self.appSettings.favoritesDisplayMode
+            favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
+            keyValueStore: self.keyValueStore
         )
         autofillLoginListViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: autofillLoginListViewController)
@@ -1550,7 +1639,9 @@ class MainViewController: UIViewController {
 
     func animateBackgroundTab() {
         showBars()
-        tabSwitcherButton.incrementAnimated()
+        tabSwitcherButton?.animateUpdate {
+            self.refreshTabIcon()
+        }
         tabsBarController?.backgroundTabAdded()
     }
 
@@ -1569,9 +1660,10 @@ class MainViewController: UIViewController {
             tabManager.addHomeTab()
         }
         attachHomeScreen()
-        tabsBarController?.refresh(tabsModel: tabManager.model)
+        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         newTabPageViewController?.openedAsNewTab(allowingKeyboard: allowingKeyboard)
+        themeColorManager.updateThemeColor()
     }
     
     func updateFindInPage() {
@@ -1580,14 +1672,29 @@ class MainViewController: UIViewController {
         // hide toolbar on iPhone
         viewCoordinator.toolbar.accessibilityElementsHidden = !AppWidthObserver.shared.isLargeWidth
     }
-    
-    private func showVoiceSearch() {
+
+    private func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
+        SpeechRecognizer.requestMicAccess { [weak self] permission in
+            guard let self = self else { return }
+            if permission {
+                if let target = preferredTarget {
+                    self.showVoiceSearch(preferredTarget: target)
+                } else {
+                    self.showVoiceSearch()
+                }
+            } else {
+                self.showNoMicrophonePermissionAlert()
+            }
+        }
+    }
+
+    private func showVoiceSearch(preferredTarget: VoiceSearchTarget? = nil) {
         // https://app.asana.com/0/0/1201408131067987
         UIMenuController.shared.hideMenu()
         viewCoordinator.omniBar.removeTextSelection()
         
         Pixel.fire(pixel: .openVoiceSearch)
-        let voiceSearchController = VoiceSearchViewController()
+        let voiceSearchController = VoiceSearchViewController(preferredTarget: preferredTarget)
         voiceSearchController.delegate = self
         voiceSearchController.modalTransitionStyle = .crossDissolve
         voiceSearchController.modalPresentationStyle = .overFullScreen
@@ -1643,19 +1750,38 @@ class MainViewController: UIViewController {
         NotificationCenter.default.publisher(for: .settingsDeepLinkNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
-                switch notification.object as? SettingsViewModel.SettingsDeepLinkSection {
-                
-                case .duckPlayer:
-                    let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
-                        deepLinkTarget = .duckPlayer
-                    self?.launchSettings(deepLinkTarget: deepLinkTarget)
-                case .subscriptionFlow(let components):
-                    self?.launchSettings(deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
-                default:
-                    return
+                guard let self else { return }
+                let handleSettingsDeepLink = {
+                    self.handleSettingsDeepLink(notification)
                 }
+                if let presentedViewController {
+                    if !(presentedViewController is SettingsUINavigationController) {
+                        presentedViewController.dismiss(animated: true, completion: handleSettingsDeepLink)
+                        return
+                    }
+                }
+                
+                handleSettingsDeepLink()
             }
             .store(in: &settingsDeepLinkcancellables)
+    }
+    
+    private func handleSettingsDeepLink(_ notification: Notification) {
+        switch notification.object as? SettingsViewModel.SettingsDeepLinkSection {
+        
+        case .duckPlayer:
+            let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
+                deepLinkTarget = .duckPlayer
+            launchSettings(deepLinkTarget: deepLinkTarget)
+        case .subscriptionFlow(let components):
+            launchSettings(deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
+        case .subscriptionSettings:
+            launchSettings(deepLinkTarget: .subscriptionSettings)
+        case .restoreFlow:
+            launchSettings(deepLinkTarget: .restoreFlow)
+        default:
+            return
+        }
     }
 
     private func subscribeToAIChatSettingsEvents() {
@@ -1663,12 +1789,54 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
-                self?.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
             }
             .store(in: &aiChatCancellables)
     }
 
     private func subscribeToNetworkProtectionEvents() {
+        if !featureDiscovery.wasUsedBefore(.vpn) {
+            // If the VPN was used before we don't care about this notification any more
+            NotificationCenter.default.publisher(for: .NEVPNStatusDidChange)
+                .sink { [weak self] notification in
+                    self?.onVPNStatusDidChange(notification)
+                }.store(in: &vpnCancellables)
+        }
+
+        // Subscribe to app foreground events to check entitlements
+        NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Logger.networkProtection.log("App foreground notification received, checking entitlements")
+                Task {
+                    guard let self else { return }
+
+                    let hasEntitlement = await self.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
+                    let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+                    let isSubscriptionActive = try? await self.subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+
+                    if hasEntitlement && self.lastKnownEntitlementsExpired {
+                        PixelKit.fire(
+                            VPNSubscriptionStatusPixel.vpnFeatureEnabled(
+                                isSubscriptionActive: isSubscriptionActive,
+                                isAuthV2Enabled: isAuthV2Enabled,
+                                trigger: .clientForegrounded),
+                            frequency: .dailyAndCount)
+
+                        self.lastKnownEntitlementsExpired = false
+                    } else if !hasEntitlement && !self.lastKnownEntitlementsExpired {
+                        PixelKit.fire(
+                            VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                                isSubscriptionActive: isSubscriptionActive,
+                                isAuthV2Enabled: isAuthV2Enabled,
+                                trigger: .clientForegrounded),
+                            frequency: .dailyAndCount)
+
+                        self.lastKnownEntitlementsExpired = true
+                    }
+                }
+            }
+            .store(in: &vpnCancellables)
+
         NotificationCenter.default.publisher(for: .accountDidSignIn)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -1731,6 +1899,14 @@ class MainViewController: UIViewController {
             }
     }
 
+    private func onVPNStatusDidChange(_ notification: Notification) {
+        guard let session = (notification.object as? NETunnelProviderSession),
+           session.status == .connected else {
+            return
+        }
+        self.featureDiscovery.setWasUsedBefore(.vpn)
+    }
+
     private func onNetworkProtectionEntitlementMessagingChange() {
         if tunnelDefaults.showEntitlementAlert {
             presentExpiredEntitlementAlert()
@@ -1750,7 +1926,7 @@ class MainViewController: UIViewController {
     }
 
     private func presentExpiredEntitlementNotification() {
-        let presenter = NetworkProtectionNotificationsPresenterTogglableDecorator(
+        let presenter = VPNNotificationsPresenterTogglableDecorator(
             settings: AppDependencyProvider.shared.vpnSettings,
             defaults: .networkProtectionGroupDefaults,
             wrappee: NetworkProtectionUNNotificationPresenter()
@@ -1760,8 +1936,20 @@ class MainViewController: UIViewController {
 
     @objc
     private func onNetworkProtectionAccountSignIn(_ notification: Notification) {
-        tunnelDefaults.resetEntitlementMessaging()
-        Logger.networkProtection.info("[NetP Subscription] Reset expired entitlement messaging")
+        Task {
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+
+            PixelKit.fire(
+                VPNSubscriptionStatusPixel.signedIn(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    trigger: .notification(sourceObject: notification.object)),
+                frequency: .dailyAndCount)
+            tunnelDefaults.resetEntitlementMessaging()
+            Logger.networkProtection.info("[NetP Subscription] Reset expired entitlement messaging")
+        }
     }
 
     @objc
@@ -1773,13 +1961,73 @@ class MainViewController: UIViewController {
         AppDependencyProvider.shared.networkProtectionTunnelController
     }
 
+    func checkSubscriptionEntitlements() {
+        Task {
+            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
+
+            if hasEntitlement && lastKnownEntitlementsExpired {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        trigger: .clientCheck),
+                    frequency: .dailyAndCount)
+                
+                lastKnownEntitlementsExpired = false
+            } else if !hasEntitlement && !lastKnownEntitlementsExpired {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        trigger: .clientCheck),
+                    frequency: .dailyAndCount)
+                
+                lastKnownEntitlementsExpired = true
+            }
+        }
+    }
+
     @objc
     private func onEntitlementsChange(_ notification: Notification) {
         Task {
-            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            guard let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
-                      hasEntitlement == false
-            else { return }
+            guard let userInfo = notification.userInfo,
+                  let payload = EntitlementsDidChangePayload(notificationUserInfo: userInfo) else {
+                assertionFailure("Missing entitlements payload")
+                Logger.subscription.fault("Missing entitlements payload")
+                return
+            }
+            let hasEntitlement = payload.entitlements.contains(.networkProtection)
+            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            let hasEntitlements = (try? await subscriptionManager.isEnabled(feature: .networkProtection)) ?? false
+
+            if hasEntitlements {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        trigger: .notification(sourceObject: notification.object)),
+                    frequency: .dailyAndCount)
+
+                if lastKnownEntitlementsExpired {
+                    lastKnownEntitlementsExpired = false
+                }
+
+                return
+            } else {
+                PixelKit.fire(
+                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                        isSubscriptionActive: isSubscriptionActive,
+                        isAuthV2Enabled: isAuthV2Enabled,
+                        trigger: .notification(sourceObject: notification.object)),
+                    frequency: .dailyAndCount)
+
+                if !lastKnownEntitlementsExpired {
+                    lastKnownEntitlementsExpired = true
+                }
+            }
 
             if await networkProtectionTunnelController.isInstalled {
                 tunnelDefaults.enableEntitlementMessaging()
@@ -1793,6 +2041,17 @@ class MainViewController: UIViewController {
     @objc
     private func onNetworkProtectionAccountSignOut(_ notification: Notification) {
         Task {
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+
+            PixelKit.fire(
+                VPNSubscriptionStatusPixel.signedOut(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    trigger: .notification(sourceObject: notification.object)),
+                frequency: .dailyAndCount)
+
             await networkProtectionTunnelController.stop()
             await networkProtectionTunnelController.removeVPN(reason: .signedOut)
         }
@@ -1917,12 +2176,20 @@ extension MainViewController: BrowserChromeDelegate {
         }
            
         if animated {
+            self.view.layoutIfNeeded()
             UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) {
                 updateBlock()
                 self.view.layoutIfNeeded()
             }
         } else {
             updateBlock()
+
+            // Calling this here is important as it causes the layout to run immediately inside current run loop,
+            // instead of deferring it until next update block.
+            // Late layout after change here could potentially cause a scroll offset update right before the next one,
+            // which may cause an infitie loop layout loop in certain scenarios.
+            // See https://app.asana.com/1/137249556945/project/414709148257752/task/1208671955053442 for details.
+            self.view.layoutIfNeeded()
         }
     }
 
@@ -1953,7 +2220,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     var barsMaxHeight: CGFloat {
-        return max(toolbarHeight, viewCoordinator.omniBar.barView.frame.size.height)
+        max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
     }
 
     // 1.0 - full size, 0.0 - hidden
@@ -1981,9 +2248,77 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.constraints.navigationBarContainerTop.constant = browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
     }
 
+    private func handleFavoriteSelected(_ favorite: BookmarkEntity) {
+        guard let url = favorite.urlObject else { return }
+        Pixel.fire(pixel: .favoriteLaunchedWebsite)
+        newTabPageViewController?.chromeDelegate = nil
+        dismissOmniBar()
+        Favicons.shared.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
+        if url.isBookmarklet() {
+            executeBookmarklet(url)
+        } else {
+            loadUrl(url)
+        }
+        showHomeRowReminder()
+    }
+
+
+    private func handleSuggestionSelected(_ suggestion: Suggestion) {
+        newTabPageViewController?.chromeDelegate = nil
+        dismissOmniBar()
+        viewCoordinator.omniBar.cancel()
+        switch suggestion {
+        case .phrase(phrase: let phrase):
+            if let url = URL.makeSearchURL(text: phrase) {
+                loadUrl(url)
+            } else {
+                Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
+            }
+
+        case .website(url: let url):
+            if url.isBookmarklet() {
+                executeBookmarklet(url)
+            } else {
+                loadUrl(url)
+            }
+
+        case .bookmark(_, url: let url, _, _):
+            loadUrl(url)
+
+        case .historyEntry(_, url: let url, _):
+            loadUrl(url)
+
+        case .openTab(title: _, url: let url, tabId: let tabId, _):
+            if newTabPageViewController != nil, let tab = tabManager.model.currentTab {
+                self.closeTab(tab)
+            }
+            loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
+
+        case .unknown(value: let value), .internalPage(title: let value, url: _, _):
+            assertionFailure("Unknown suggestion: \(value)")
+        }
+
+        showHomeRowReminder()
+    }
 }
 
+// MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
+    func onSelectFavorite(_ favorite: BookmarkEntity) {
+        handleFavoriteSelected(favorite)
+    }
+
+    func onOmniPromptSubmitted(_ query: String) {
+        openAIChat(query, autoSend: true)
+    }
+
+    func didRequestCurrentURL() -> URL? {
+        return currentTab?.url
+    }
+    
+    func onSharePressed() {
+        shareCurrentURLFromAddressBar()
+    }
 
     func selectedSuggestion() -> Suggestion? {
         return suggestionTrayController?.selectedSuggestion
@@ -2038,7 +2373,8 @@ extension MainViewController: OmniBarDelegate {
         currentTab?.showPrivacyDashboard()
     }
 
-    func onMenuPressed() {
+    @objc func onMenuPressed() {
+        viewCoordinator.menuToolbarButton.isEnabled = false
         omniBar.cancel()
 
         // Dismiss privacy icon animation when showing menu
@@ -2051,13 +2387,10 @@ extension MainViewController: OmniBarDelegate {
         }
         performCancel()
         ActionMessageView.dismissAllMessages()
-        Task {
-            await launchBrowsingMenu()
-        }
+        launchBrowsingMenu()
     }
 
-    @MainActor
-    private func launchBrowsingMenu() async {
+    private func launchBrowsingMenu() {
         guard let tab = currentTab ?? tabManager.current(createIfNeeded: true) else {
             return
         }
@@ -2077,6 +2410,11 @@ extension MainViewController: OmniBarDelegate {
                                                                 menuEntries: menuEntries)
 
         controller.modalPresentationStyle = .custom
+        if isExperimentalAppearanceEnabled {
+            controller.onDismiss = {
+                self.viewCoordinator.menuToolbarButton.isEnabled = true
+            }
+        }
         self.present(controller, animated: true) {
             if self.canDisplayAddFavoriteVisualIndicator {
                 controller.highlightCell(atIndex: IndexPath(row: tab.favoriteEntryIndex, section: 0))
@@ -2156,6 +2494,7 @@ extension MainViewController: OmniBarDelegate {
         dismissOmniBar()
         omniBar.cancel()
         hideSuggestionTray()
+        themeColorManager.updateThemeColor()
         self.showMenuHighlighterIfNeeded()
     }
 
@@ -2175,6 +2514,12 @@ extension MainViewController: OmniBarDelegate {
         fireControllerAwarePixel(ntp: .addressBarClearPressedOnNTP,
                                  serp: .addressBarClearPressedOnSERP,
                                  website: .addressBarClearPressedOnWebsite)
+    }
+
+    private func newTabShortcutAction() {
+        Pixel.fire(pixel: .tabSwitchLongPressNewTab)
+        performCancel()
+        newTab()
     }
 
     private var isSERPPresented: Bool {
@@ -2201,6 +2546,7 @@ extension MainViewController: OmniBarDelegate {
         } else {
             tryToShowSuggestionTray(.favorites)
         }
+        themeColorManager.updateThemeColor()
     }
 
     func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
@@ -2230,11 +2576,13 @@ extension MainViewController: OmniBarDelegate {
         switch accessoryType {
         case .chat:
             openAIChatFromAddressBar()
-        case .share:
-            guard let link = currentTab?.link else { return }
-            Pixel.fire(pixel: .addressBarShare)
-            currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButtonView)
         }
+    }
+
+    private func shareCurrentURLFromAddressBar() {
+        Pixel.fire(pixel: .addressBarShare)
+        guard let link = currentTab?.link else { return }
+        currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.shareButton)
     }
 
     private func openAIChatFromAddressBar() {
@@ -2253,17 +2601,15 @@ extension MainViewController: OmniBarDelegate {
                 openAIChat(textFieldValue, autoSend: true)
             }
         } else {
-            /// Check if the current tab's URL is a DuckDuckGo search page
-            /// If it is, get the query item and open the chat with the query item's value
-            if currentTab?.url?.isDuckDuckGoSearch == true {
-                let queryItem = currentTab?.url?.getQueryItems()?.filter { $0.name == "q" }.first
-                openAIChat(queryItem?.value, autoSend: true)
-            } else {
-                openAIChat()
-            }
+            openAIChat()
         }
 
-        Pixel.fire(pixel: .openAIChatFromAddressBar)
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromAddressBar)
+    }
+
+    private func fireAIChatUsagePixelAndSetFeatureUsed(_ pixel: Pixel.Event) {
+        Pixel.fire(pixel: pixel, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        featureDiscovery.setWasUsedBefore(.aiChat)
     }
 
     func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
@@ -2275,13 +2621,11 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onVoiceSearchPressed() {
-        SpeechRecognizer.requestMicAccess { permission in
-            if permission {
-                self.showVoiceSearch()
-            } else {
-                self.showNoMicrophonePermissionAlert()
-            }
-        }
+        handleVoiceSearchOpenRequest()
+    }
+
+    func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget) {
+        handleVoiceSearchOpenRequest(preferredTarget: preferredTarget)
     }
 
     /// We always want to show the AI Chat button if the keyboard is on focus
@@ -2296,23 +2640,13 @@ extension MainViewController: OmniBarDelegate {
 }
 
 extension MainViewController: FavoritesOverlayDelegate {
-    
-    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
-        guard let url = favorite.urlObject else { return }
-        Pixel.fire(pixel: .favoriteLaunchedWebsite)
-        newTabPageViewController?.chromeDelegate = nil
-        dismissOmniBar()
-        Favicons.shared.loadFavicon(forDomain: url.host, intoCache: .fireproof, fromCache: .tabs)
-        if url.isBookmarklet() {
-            executeBookmarklet(url)
-        } else {
-            loadUrl(url)
-        }
-        showHomeRowReminder()
-    }
 
+    func favoritesOverlay(_ overlay: FavoritesOverlay, didSelect favorite: BookmarkEntity) {
+        handleFavoriteSelected(favorite)
+    }
 }
 
+// MARK: - AutocompleteViewControllerDelegate Methods
 extension MainViewController: AutocompleteViewControllerDelegate {
 
     func autocompleteDidEndWithUserQuery() {
@@ -2323,41 +2657,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
     }
 
     func autocomplete(selectedSuggestion suggestion: Suggestion) {
-        newTabPageViewController?.chromeDelegate = nil
-        dismissOmniBar()
-        viewCoordinator.omniBar.cancel()
-        switch suggestion {
-        case .phrase(phrase: let phrase):
-            if let url = URL.makeSearchURL(text: phrase) {
-                loadUrl(url)
-            } else {
-                Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
-            }
-
-        case .website(url: let url):
-            if url.isBookmarklet() {
-                executeBookmarklet(url)
-            } else {
-                loadUrl(url)
-            }
-
-        case .bookmark(_, url: let url, _, _):
-            loadUrl(url)
-
-        case .historyEntry(_, url: let url, _):
-            loadUrl(url)
-
-        case .openTab(title: _, url: let url, tabId: let tabId):
-            if newTabPageViewController != nil, let tab = tabManager.model.currentTab {
-                self.closeTab(tab)
-            }
-            loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
-
-        case .unknown(value: let value), .internalPage(title: let value, url: _):
-            assertionFailure("Unknown suggestion: \(value)")
-        }
-
-        showHomeRowReminder()
+        handleSuggestionSelected(suggestion)
     }
 
     func autocomplete(pressedPlusButtonForSuggestion suggestion: Suggestion) {
@@ -2375,7 +2675,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
         case .historyEntry(title: let title, _, _):
             viewCoordinator.omniBar.updateQuery(title)
         case .openTab: break // no-op
-        case .unknown(value: let value), .internalPage(title: let value, url: _):
+        case .unknown(value: let value), .internalPage(title: let value, url: _, _):
             assertionFailure("Unknown suggestion: \(value)")
         }
     }
@@ -2390,7 +2690,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
             }
         case .website(url: let url):
             viewCoordinator.omniBar.text = url.absoluteString
-        case .bookmark(title: let title, _, _, _), .openTab(title: let title, url: _, _):
+        case .bookmark(title: let title, _, _, _), .openTab(title: let title, url: _, _, _):
             viewCoordinator.omniBar.text = title
             if title.hasPrefix(query) {
                 viewCoordinator.omniBar.selectTextToEnd(query.count)
@@ -2404,7 +2704,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
                 viewCoordinator.omniBar.selectTextToEnd(query.count)
             }
 
-        case .unknown(value: let value), .internalPage(title: let value, url: _):
+        case .unknown(value: let value), .internalPage(title: let value, url: _, _):
             assertionFailure("Unknown suggestion: \(value)")
         }
     }
@@ -2480,6 +2780,7 @@ extension MainViewController: TabDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
         showBars()
         currentTab?.dismiss()
+        themeColorManager.updateThemeColor()
 
         // Don't use a request or else the page gets stuck on "about:blank"
         let newTab = tabManager.addURLRequest(nil,
@@ -2487,7 +2788,8 @@ extension MainViewController: TabDelegate {
                                               inheritedAttribution: inheritingAttribution)
         newTab.openedByPage = true
         newTab.openingTab = tab
-        
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
+
         newTabAnimation {
             guard self.tabManager.model.tabs.contains(newTab.tabModel) else { return }
 
@@ -2506,6 +2808,7 @@ extension MainViewController: TabDelegate {
     func tabLoadingStateDidChange(tab: TabViewController) {
         if currentTab == tab {
             refreshControls()
+            themeColorManager.updateThemeColor()
         }
         tabManager.save()
         tabsBarController?.refresh(tabsModel: tabManager.model)
@@ -2546,7 +2849,9 @@ extension MainViewController: TabDelegate {
                 self.currentTab?.openedByPage = true
                 self.currentTab?.openingTab = tab
             }
-            tabSwitcherButton.incrementAnimated()
+            tabSwitcherButton?.animateUpdate {
+                self.tabSwitcherButton?.tabCount += 1
+            }
         } else {
             loadUrlInNewTab(url, inheritedAttribution: attribution)
             self.currentTab?.openingTab = tab
@@ -2557,6 +2862,7 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController, didChangePrivacyInfo privacyInfo: PrivacyInfo?) {
         if currentTab == tab {
             viewCoordinator.omniBar.updatePrivacyIcon(for: privacyInfo)
+            themeColorManager.updateThemeColor()
         }
     }
 
@@ -2569,7 +2875,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChat(tab: TabViewController) {
-        Pixel.fire(pixel: .browsingMenuListAIChat)
+        fireAIChatUsagePixelAndSetFeatureUsed(tab.link == nil ? .browsingMenuAIChatNewTabPage : .browsingMenuAIChatWebPage)
         openAIChat()
     }
 
@@ -2600,7 +2906,15 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController,
              didRequestSettingsToLogins account: SecureVaultModels.WebsiteAccount,
              source: AutofillSettingsSource) {
-        segueToSettingsLoginsWithAccount(account, source: source)
+        segueToSettingsAutofillWith(account: account, card: nil, source: source)
+    }
+
+    func tab(_ tab: TabViewController, didRequestSettingsToCreditCards card: SecureVaultModels.CreditCard, source: AutofillSettingsSource) {
+        segueToSettingsAutofillWith(account: nil, card: card, source: source)
+    }
+
+    func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController, source: AutofillSettingsSource) {
+        segueToSettingsAutofillWith(account: nil, card: nil, showCardManagement: true, source: source)
     }
 
     func tabContentProcessDidTerminate(tab: TabViewController) {
@@ -2728,6 +3042,7 @@ extension MainViewController: TabSwitcherDelegate {
         if newTabPageViewController != nil {
             animateLogoAppearance()
         }
+        themeColorManager.updateThemeColor()
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didSelectTab tab: Tab) {
@@ -2735,6 +3050,7 @@ extension MainViewController: TabSwitcherDelegate {
         if DaxDialogs.shared.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
+        themeColorManager.updateThemeColor()
     }
     
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
@@ -2771,6 +3087,7 @@ extension MainViewController: TabSwitcherDelegate {
         guard let index = tabManager.model.indexOf(tab: tab) else { return }
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
+        themeColorManager.updateThemeColor()
 
         if shouldOpen {
             let newTab = Tab()
@@ -2801,9 +3118,9 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
     }
-
 }
 
 extension MainViewController: BookmarksDelegate {
@@ -2819,11 +3136,9 @@ extension MainViewController: BookmarksDelegate {
 }
 
 extension MainViewController: TabSwitcherButtonDelegate {
-    
+
     func launchNewTab(_ button: TabSwitcherButton) {
-        Pixel.fire(pixel: .tabSwitchLongPressNewTab)
-        performCancel()
-        newTab()
+        newTabShortcutAction()
     }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {
@@ -3009,7 +3324,7 @@ extension MainViewController: AutoClearWorker {
         if viewCoordinator.toolbar.isHidden {
             fireButtonView = tabsBarController?.fireButton
         } else {
-            fireButtonView = viewCoordinator.toolbarFireButton.value(forKey: "view") as? UIView
+            fireButtonView = viewCoordinator.toolbarFireBarButtonItem.value(forKey: "view") as? UIView
         }
         guard let view = fireButtonView else { return }
         
@@ -3041,6 +3356,7 @@ extension MainViewController {
         super.traitCollectionDidChange(previousTraitCollection)
 
         updateStatusBarBackgroundColor()
+        themeColorManager.updateThemeColor()
     }
 
     private func updateStatusBarBackgroundColor() {
@@ -3070,7 +3386,7 @@ extension MainViewController {
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
 
         viewCoordinator.toolbar.barTintColor = theme.barBackgroundColor
-        viewCoordinator.toolbar.tintColor = theme.barTintColor
+        viewCoordinator.toolbar.tintColor = UIColor(designSystemColor: .icons)
 
         viewCoordinator.toolbarTabSwitcherButton.tintColor = theme.barTintColor
         
@@ -3171,12 +3487,12 @@ extension MainViewController {
         }
         
         let backMenu = historyMenu(with: currentTab.webView.backForwardList.backList.reversed())
-        viewCoordinator.omniBar.barView.backButtonMenu = backMenu
-        viewCoordinator.toolbarBackButton.menu = backMenu
-        
+        viewCoordinator.omniBar.barView.backButton.menu = backMenu
+        viewCoordinator.toolbarBackButton.setCustomItemMenu(backMenu)
+
         let forwardMenu = historyMenu(with: currentTab.webView.backForwardList.forwardList)
-        viewCoordinator.omniBar.barView.forwardButtonMenu = forwardMenu
-        viewCoordinator.toolbarForwardButton.menu = forwardMenu
+        viewCoordinator.omniBar.barView.forwardButton.menu = forwardMenu
+        viewCoordinator.toolbarForwardButton.setCustomItemMenu(forwardMenu)
     }
 
     private func historyMenu(with backForwardList: [WKBackForwardListItem]) -> UIMenu {
@@ -3209,7 +3525,16 @@ extension MainViewController: AutofillLoginListViewControllerDelegate {
 // MARK: - AIChatViewControllerManagerDelegate
 extension MainViewController: AIChatViewControllerManagerDelegate {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL) {
-        loadUrlInNewTab(url, inheritedAttribution: nil)
+        if let tabSwitcher = tabSwitcherController {
+            loadUrlInNewTab(url, inheritedAttribution: nil)
+            tabSwitcher.dismiss(animated: true)
+        } else {
+            loadUrlInNewTab(url, inheritedAttribution: nil)
+        }
+    }
+
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String) {
+        self.loadQuery(query)
     }
 
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String) {
@@ -3239,3 +3564,24 @@ extension MainViewController {
         }
     }
 }
+
+private extension UIBarButtonItem {
+    func setCustomItemAction(on target: Any?, action: Selector) {
+        if let customControl = customView as? UIControl {
+            customControl.addTarget(target, action: action, for: .touchUpInside)
+        } else {
+            self.action = action
+        }
+    }
+
+    func setCustomItemMenu(_ menu: UIMenu) {
+        if let customControl = customView as? UIButton {
+            customControl.menu = menu
+        } else {
+            self.menu = menu
+        }
+    }
+}
+
+/// This extension allows delegating from the RMF action button when the action type is 'navigation'.  It shadows existing functions.
+extension MainViewController: MessageNavigationDelegate { }

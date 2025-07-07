@@ -22,6 +22,7 @@ import OHHTTPStubs
 import OHHTTPStubsSwift
 import Networking
 @testable import Core
+import Common
 
 class PixelTests: XCTestCase {
     
@@ -42,13 +43,54 @@ class PixelTests: XCTestCase {
         super.tearDown()
     }
 
+    func testWhenPixelFiredAndOverridesAppVersionThenOverrideIsUsed() {
+        let expectation = XCTestExpectation()
+
+        stub(condition: containsQueryParams([PixelParameters.appVersion: "override"])) { _ -> HTTPStubsResponse in
+            expectation.fulfill()
+            return HTTPStubsResponse(data: Data(), statusCode: 200, headers: nil)
+        }
+
+        Pixel.fire(pixel: .appLaunch, withAdditionalParameters: [PixelParameters.appVersion: "override"])
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testWhenPixelFiredAndIncludedParametersIsEmptyThenAppVersionIsNotSet() {
+        let expectation = XCTestExpectation()
+
+        stub(condition: { request in
+            return request.url?.queryParameters()?[PixelParameters.appVersion] == nil
+        }) { _ -> HTTPStubsResponse in
+            expectation.fulfill()
+            return HTTPStubsResponse(data: Data(), statusCode: 200, headers: nil)
+        }
+
+        Pixel.fire(pixel: .appLaunch, includedParameters: [])
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testWhenPixelFiredThenAppVersionIsSetByDefault() {
+        let expectation = XCTestExpectation()
+
+        stub(condition: containsQueryParams([PixelParameters.appVersion: AppVersion.shared.versionNumber])) { _ -> HTTPStubsResponse in
+            expectation.fulfill()
+            return HTTPStubsResponse(data: Data(), statusCode: 200, headers: nil)
+        }
+
+        Pixel.fire(pixel: .appLaunch)
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
     func testWhenTimedPixelFiredThenCorrectDurationIsSet() {
         let expectation = XCTestExpectation()
         
         let date = Date(timeIntervalSince1970: 0)
         let now = Date(timeIntervalSince1970: 1)
 
-        stub(condition: isHost(host) && isPath("/t/ml_ios_phone")) { request -> HTTPStubsResponse in
+        stub(condition: isHost(host) && (isPath("/t/ml_ios_phone") || isPath("/t/ml_ios_tablet"))) { request -> HTTPStubsResponse in
             XCTAssertEqual("1.0", request.url?.getParameter(named: "dur"))
 
             expectation.fulfill()

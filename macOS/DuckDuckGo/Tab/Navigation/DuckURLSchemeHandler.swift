@@ -151,7 +151,6 @@ private extension DuckURLSchemeHandler {
             urlSchemeTask.didReceive(data)
             urlSchemeTask.didFinish()
         }
-        PixelExperiment.fireOnboardingDuckplayerUsed5to7Pixel()
     }
 }
 
@@ -319,7 +318,7 @@ private extension DuckURLSchemeHandler {
         case "svg": return "image/svg+xml"
         case "ico": return "image/x-icon"
         case "riv": return "application/octet-stream"
-        case "json": return "application/json"
+        case "json", "map": return "application/json"
         default:
             assertionFailure("Unknown MIME type for \"\(fileExtension)\" file extension")
             return "application/octet-stream"

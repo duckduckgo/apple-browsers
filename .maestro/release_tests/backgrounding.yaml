@@ -17,6 +17,8 @@ tags:
 - inputText: "https://privacy-test-pages.site"
 - pressKey: Enter
 
+- assertVisible: ".*Privacy Test Pages.*"
+
 # Go home and hover there a bit
 - pressKey: Home
 - swipe:  
@@ -56,7 +58,8 @@ tags:
 - tapOn: "Cancel"
 - tapOn: "Browsing menu"
 - tapOn: "Settings"
-- assertVisible: "Default Browser"
+- assertVisible:
+    id: "Settings.ListItem.Field_DefaultBrowser"
 - tapOn: "Done"
 
 - assertVisible: "Bookmarks"

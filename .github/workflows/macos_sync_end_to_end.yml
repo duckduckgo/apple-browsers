@@ -42,16 +42,19 @@ jobs:
         include:
           - xcode-version: "15.2"
             runner: macos-13-xlarge
+            os-version: 13
           - xcode-version: "15.4"
             runner: macos-14-xlarge
-          - xcode-version: "16.2"
+            os-version: 14
+          - xcode-version: "16.4"
             runner: macos-15-xlarge
+            os-version: 15
 
     timeout-minutes: 60
 
     steps:
     - name: Register SSH key for certificates repository access
-      uses: webfactory/ssh-agent@v0.9.0
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -59,6 +62,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
 
     - name: Install screenresolution
       if: matrix.runner == 'macos-15-xlarge'
@@ -68,8 +77,11 @@ jobs:
       if: matrix.runner == 'macos-15-xlarge'
       run: screenresolution set 1920x1080x32@60
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Sync code signing assets
       env:
@@ -105,10 +117,9 @@ jobs:
           ${{ runner.os }}-macos-
 
     - name: Select Xcode
-      run: |
-        # Override .xcode_version because 15.4 is not available on macos 13
-        echo "${{ matrix.xcode-version }}" > .xcode-version
-        sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: ${{ matrix.xcode-version }}
 
     - name: Create test account for Sync and return the recovery code
       uses: duckduckgo/sync_crypto/action@main
@@ -126,12 +137,24 @@ jobs:
         | tee xcodebuild.log \
         | xcbeautify
 
-    - name: Unzip and Copy app to /DerivedData
+    - name: Extract and Copy app to /DerivedData
       run: |
-        cd DuckDuckGo-review-*.app && unzip DuckDuckGo-*.zip
+        cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
+        
+        # Find the extracted app bundle and rename if needed
+        extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
+        if [[ -n "${extracted_app}" ]]; then
+          extracted_app_name=$(basename "${extracted_app}")
+          if [[ "${extracted_app_name}" != "DuckDuckGo Review.app" ]]; then
+            echo "Renaming extracted app from '${extracted_app_name}' to 'DuckDuckGo Review.app'"
+            mv "${extracted_app}" "DuckDuckGo Review.app"
+          fi
+        fi
+        
         mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
     - name: Run UI Tests
+      id: run-ui-tests
       env:
         CODE: ${{ steps.sync-recovery-code.outputs.recovery-code }}
       run: |
@@ -157,6 +180,16 @@ jobs:
           -retry-tests-on-failure \
         | tee -a xcodebuild.log \
         | tee ui-tests.log
+
+    - name: Report job duration
+      if: success() || (always() && steps.run-ui-tests.outcome == 'failure')
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_macos_${{ matrix.os-version }}_sync_tests
+        pixel-params: |
+          runner: ${{ matrix.runner }}
 
     - name: Prepare test report
       if: always()

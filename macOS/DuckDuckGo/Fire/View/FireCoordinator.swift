@@ -17,19 +17,27 @@
 //
 
 import Cocoa
+import Common
+import PixelKit
 
 @MainActor
 final class FireCoordinator {
 
-    static var fireViewModel = FireViewModel()
+    /// This is a lazy var in order to avoid initializing Fire directly at AppDelegate.init
+    /// because of a significant number of dependencies that are still singletons.
+    private(set) lazy var fireViewModel: FireViewModel = FireViewModel(tld: tld)
+    private(set) var firePopover: FirePopover?
+    private let tld: TLD
 
-    static var firePopover: FirePopover?
+    init(tld: TLD) {
+        self.tld = tld
+    }
 
-    static func fireButtonAction() {
+    func fireButtonAction() {
         let burningWindow: NSWindow
         let waitForOpening: Bool
 
-        if let lastKeyWindow = WindowControllersManager.shared.lastKeyMainWindowController?.window,
+        if let lastKeyWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window,
            lastKeyWindow.isVisible {
             burningWindow = lastKeyWindow
             burningWindow.makeKeyAndOrderFront(nil)
@@ -46,7 +54,7 @@ final class FireCoordinator {
 
         if waitForOpening {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1/3) {
-                showFirePopover(relativeTo: mainViewController.tabBarViewController.fireButton,
+                self.showFirePopover(relativeTo: mainViewController.tabBarViewController.fireButton,
                                 tabCollectionViewModel: mainViewController.tabCollectionViewModel)
             }
         } else {
@@ -55,7 +63,7 @@ final class FireCoordinator {
         }
     }
 
-    static func showFirePopover(relativeTo positioningView: NSView, tabCollectionViewModel: TabCollectionViewModel) {
+    func showFirePopover(relativeTo positioningView: NSView, tabCollectionViewModel: TabCollectionViewModel) {
         guard !(firePopover?.isShown ?? false) else {
             firePopover?.close()
             return

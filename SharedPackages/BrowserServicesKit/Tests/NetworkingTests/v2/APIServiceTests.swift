@@ -216,7 +216,7 @@ final class APIServiceTests: XCTestCase {
 
     // MARK: - Retry
 
-    func testRetry() async throws {
+    func testRetryNoDelay() async throws {
         let request = APIRequestV2(url: HTTPURLResponse.testUrl, retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3))!
         let requestCountExpectation = expectation(description: "Request performed count")
         requestCountExpectation.expectedFulfillmentCount = 4
@@ -248,6 +248,37 @@ final class APIServiceTests: XCTestCase {
         }
 
         await fulfillment(of: [requestCountExpectation], timeout: 1.0)
+    }
+
+    // MARK: - Delays
+
+    func testRetryFixedDelay() async throws {
+        let retryPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .fixed(.seconds(2)))
+        var retries = 0
+        XCTAssertEqual(retryPolicy.delay.delayTimeInterval(failureRetryCount: retries), 2)
+        retries = 1
+        XCTAssertEqual(retryPolicy.delay.delayTimeInterval(failureRetryCount: retries), 2)
+        retries = 2
+        XCTAssertEqual(retryPolicy.delay.delayTimeInterval(failureRetryCount: retries), 2)
+    }
+
+    func testRetryExponentialDelay() async throws {
+        let retryPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .exponential(baseDelay: 2))
+        var retries = 0
+        XCTAssertEqual(retryPolicy.delay.delayTimeInterval(failureRetryCount: retries), 2)
+        retries = 1
+        XCTAssertEqual(retryPolicy.delay.delayTimeInterval(failureRetryCount: retries), 4)
+        retries = 2
+        XCTAssertEqual(retryPolicy.delay.delayTimeInterval(failureRetryCount: retries), 8)
+        retries = 3
+        XCTAssertEqual(retryPolicy.delay.delayTimeInterval(failureRetryCount: retries), 16)
+    }
+
+    func testRetryJitterDelay() async throws {
+        let retryPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .jitter(backoff: .seconds(8)))
+        let delay = retryPolicy.delay.delayTimeInterval(failureRetryCount: 0)
+        XCTAssertTrue(delay > -1)
+        XCTAssertTrue(delay < 9)
     }
 
     // MARK: - Refresh auth
@@ -287,5 +318,47 @@ final class APIServiceTests: XCTestCase {
         _ = try await apiService.fetch(request: request)
 
         await fulfillment(of: [refreshCalledExpectation], timeout: 1.0)
+    }
+
+    // MARK: - User agent
+
+    func testWhenAPIRequestsSetsUserAgent() async throws {
+        let requestUserAgent = "requestUserAgent"
+        let request = APIRequestV2(url: HTTPURLResponse.testUrl, headers: APIRequestV2.HeadersV2(userAgent: requestUserAgent))!
+
+        MockURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: HTTPHeaderKey.userAgent), requestUserAgent)
+            return (HTTPURLResponse.ok, nil)
+        }
+
+        let apiService = DefaultAPIService(urlSession: mockURLSession)
+        _ = try await apiService.fetch(request: request)
+    }
+
+    func testWhenAPIServiceSetsUserAgent() async throws {
+        let serviceUserAgent = "serviceUserAgent"
+        let request = APIRequestV2(url: HTTPURLResponse.testUrl, headers: APIRequestV2.HeadersV2())!
+
+        MockURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: HTTPHeaderKey.userAgent), serviceUserAgent)
+            return (HTTPURLResponse.ok, nil)
+        }
+
+        let apiService = DefaultAPIService(urlSession: mockURLSession, userAgent: serviceUserAgent)
+        _ = try await apiService.fetch(request: request)
+    }
+
+    func testWhenAPIRequestsSetsUserAgentItIsNotOverridenByAPIService() async throws {
+        let serviceUserAgent = "serviceUserAgent"
+        let requestUserAgent = "requestUserAgent"
+        let request = APIRequestV2(url: HTTPURLResponse.testUrl, headers: APIRequestV2.HeadersV2(userAgent: requestUserAgent))!
+
+        MockURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: HTTPHeaderKey.userAgent), requestUserAgent)
+            return (HTTPURLResponse.ok, nil)
+        }
+
+        let apiService = DefaultAPIService(urlSession: mockURLSession, userAgent: serviceUserAgent)
+        _ = try await apiService.fetch(request: request)
     }
 }

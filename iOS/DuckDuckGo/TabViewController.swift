@@ -37,7 +37,7 @@ import SecureStorage
 import History
 import ContentScopeScripts
 import SpecialErrorPages
-import NetworkProtection
+import VPN
 import Onboarding
 import os.log
 import Navigation
@@ -51,7 +51,9 @@ class TabViewController: UIViewController {
         static let secGPCHeader = "Sec-GPC"
         static let navigationExpectationInterval = 3.0
     }
-    
+
+    private lazy var borderView = TabBorderView()
+
     @IBOutlet private(set) weak var error: UIView!
     @IBOutlet private(set) weak var errorInfoImage: UIImageView!
     @IBOutlet private(set) weak var errorHeader: UILabel!
@@ -94,6 +96,15 @@ class TabViewController: UIViewController {
         webView.isLoading && !wasLoadingStoppedExternally
     }
 
+    private let themingProperties: ExperimentalThemingProperties
+    private var isExperimentalThemingEnabled: Bool {
+        themingProperties.isExperimentalThemingEnabled
+    }
+    
+    private var isRounderCornersEnabled: Bool {
+        themingProperties.isRoundedCornersTreatmentEnabled
+    }
+
     var openedByPage = false
     weak var openingTab: TabViewController? {
         didSet {
@@ -120,6 +131,7 @@ class TabViewController: UIViewController {
     let appSettings: AppSettings
 
     var featureFlagger: FeatureFlagger
+    let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let subscriptionCookieManager: SubscriptionCookieManaging
     private lazy var internalUserDecider = AppDependencyProvider.shared.internalUserDecider
 
@@ -173,12 +185,19 @@ class TabViewController: UIViewController {
 
     let privacyProDataReporter: PrivacyProDataReporting
 
-    // Required to know when to disable autofill, see SaveLoginViewModel for details
+    // Required to know when to disable autofill, see SaveLoginViewModel / SaveCreditCardViewModel for details
     // Stored in memory on TabViewController for privacy reasons
     private var domainSaveLoginPromptLastShownOn: String?
+    private var domainSaveCreditCardPromptLastShownOn: String?
+    // Required to allow grace period between authentication prompts when autofilling credit cards
+    // where forms are split into multiple iframes, requiring multiple prompts
+    private var domainFillCreditCardPromptLastShownOn: String?
     // Required to prevent fireproof prompt presenting before autofill save login prompt
     private var saveLoginPromptLastDismissed: Date?
     private var saveLoginPromptIsPresenting: Bool = false
+    // Required to determine whether to show credit card prompt or keyboard accessory
+    private var fillCreditCardsPromptIsPresenting: Bool = false
+    private var shouldShowCreditCardPrompt: Bool = true
 
     private var cachedRuntimeConfigurationForDomain: [String: String?] = [:]
 
@@ -215,7 +234,18 @@ class TabViewController: UIViewController {
     let syncService: DDGSyncing
 
     private let daxDialogsDebouncer = Debouncer(mode: .common)
-    private var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
+    var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
+
+    lazy var autofillCreditCardAccessoryView: CreditCardInputAccessoryView? = {
+        let initialFrame = CGRect(x: 0, y: 0, width: view.frame.width, height: 58)
+        let creditCardInputAccessoryView = CreditCardInputAccessoryView(frame: initialFrame)
+        creditCardInputAccessoryView.onCardManagementSelected = { [weak self] in
+            guard let self = self else { return }
+            self.dismissKeyboardIfPresent()
+            self.delegate?.tabDidRequestSettingsToCreditCardManagement(self, source: .creditCardKeyboardShortcut)
+        }
+        return creditCardInputAccessoryView
+    }()
 
     public var url: URL? {
         willSet {
@@ -340,12 +370,14 @@ class TabViewController: UIViewController {
                                    contextualOnboardingLogic: ContextualOnboardingLogic,
                                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
                                    featureFlagger: FeatureFlagger,
+                                   contentScopeExperimentManager: ContentScopeExperimentsManaging,
                                    subscriptionCookieManager: SubscriptionCookieManaging,
                                    textZoomCoordinator: TextZoomCoordinating,
                                    websiteDataManager: WebsiteDataManaging,
                                    fireproofing: Fireproofing,
                                    tabInteractionStateSource: TabInteractionStateSource?,
-                                   specialErrorPageNavigationHandler: SpecialErrorPageManaging) -> TabViewController {
+                                   specialErrorPageNavigationHandler: SpecialErrorPageManaging,
+                                   featureDiscovery: FeatureDiscovery) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -360,12 +392,14 @@ class TabViewController: UIViewController {
                               contextualOnboardingLogic: contextualOnboardingLogic,
                               onboardingPixelReporter: onboardingPixelReporter,
                               featureFlagger: featureFlagger,
+                              contentScopeExperimentManager: contentScopeExperimentManager,
                               subscriptionCookieManager: subscriptionCookieManager,
                               textZoomCoordinator: textZoomCoordinator,
                               fireproofing: fireproofing,
                               websiteDataManager: websiteDataManager,
                               tabInteractionStateSource: tabInteractionStateSource,
-                              specialErrorPageNavigationHandler: specialErrorPageNavigationHandler
+                              specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
+                              featureDiscovery: featureDiscovery
             )
         })
         return controller
@@ -384,15 +418,21 @@ class TabViewController: UIViewController {
                                    featureFlagger: AppDependencyProvider.shared.featureFlagger)
         
         if duckPlayer.settings.nativeUI {
-            return NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
+            let handler = NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
                                          appSettings: appSettings,
                                          tabNavigationHandler: self)
+            
+            // Set up constraint handling if using native UI
+            if let presenter = duckPlayer.nativeUIPresenter as? DuckPlayerNativeUIPresenter {
+                setupDuckPlayerConstraintHandling(publisher: presenter.constraintUpdates)
+            }
+            
+            return handler
         } else {
             return WebDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
                                          appSettings: appSettings,
                                          tabNavigationHandler: self)
         }
-        
     }()
 
     let contextualOnboardingPresenter: ContextualOnboardingPresenting
@@ -402,6 +442,7 @@ class TabViewController: UIViewController {
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
     let specialErrorPageNavigationHandler: SpecialErrorPageManaging
+    let featureDiscovery: FeatureDiscovery
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -417,12 +458,15 @@ class TabViewController: UIViewController {
                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
                    urlCredentialCreator: URLCredentialCreating = URLCredentialCreator(),
                    featureFlagger: FeatureFlagger,
+                   contentScopeExperimentManager: ContentScopeExperimentsManaging,
                    subscriptionCookieManager: SubscriptionCookieManaging,
                    textZoomCoordinator: TextZoomCoordinating,
                    fireproofing: Fireproofing,
                    websiteDataManager: WebsiteDataManaging,
                    tabInteractionStateSource: TabInteractionStateSource?,
-                   specialErrorPageNavigationHandler: SpecialErrorPageManaging) {
+                   specialErrorPageNavigationHandler: SpecialErrorPageManaging,
+                   featureDiscovery: FeatureDiscovery,
+                   themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
         self.tabModel = tabModel
         self.appSettings = appSettings
         self.bookmarksDatabase = bookmarksDatabase
@@ -436,12 +480,15 @@ class TabViewController: UIViewController {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.contentScopeExperimentsManager = contentScopeExperimentManager
         self.subscriptionCookieManager = subscriptionCookieManager
         self.textZoomCoordinator = textZoomCoordinator
         self.fireproofing = fireproofing
         self.websiteDataManager = websiteDataManager
         self.tabInteractionStateSource = tabInteractionStateSource
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
+        self.featureDiscovery = featureDiscovery
+        self.themingProperties = themingProperties
 
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
@@ -488,6 +535,7 @@ class TabViewController: UIViewController {
         super.viewWillAppear(animated)
         
         registerForResignActive()
+        registerForKeyboardNotifications()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -496,8 +544,8 @@ class TabViewController: UIViewController {
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 
         unregisterFromResignActive()
+        unregisterFromKeyboardNotifications()
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
-
     }
 
     private func registerForAddressBarLocationNotifications() {
@@ -562,6 +610,7 @@ class TabViewController: UIViewController {
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
         
         updateRoundedCorners()
+        fireWebViewDebugPixels()
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -603,10 +652,36 @@ class TabViewController: UIViewController {
         adClickAttributionLogic.applyInheritedAttribution(state: attribution)
     }
 
+    private func updateBorder(for webView: WKWebView) {
+        guard isExperimentalThemingEnabled else { return }
+
+        if !borderView.isDescendant(of: webView) {
+            webView.addSubview(borderView)
+
+            borderView.frame = webView.bounds
+            borderView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        }
+    }
+
     @objc func updateRoundedCorners() {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if isRounderCornersEnabled {
             webViewContainer.clipsToBounds = true
             webViewContainer.layer.cornerRadius = isPortrait ? 12 : 0
+        }
+    }
+
+    private func fireWebViewDebugPixels() {
+        if !webView.isDescendant(of: view) {
+            DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotInVisibleTabHierarchy)
+        }
+        if webView.window == nil {
+            DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotAttachedToWindow)
+        }
+        if webView.isHidden && (errorMessage.text.isNilOrEmpty || error.isHidden) {
+            DailyPixel.fireDailyAndCount(pixel: .debugWebViewInVisibleTabHidden)
+        }
+        if webView.frame == .zero {
+            DailyPixel.fireDailyAndCount(pixel: .debugWebViewHasZeroFrameSize)
         }
     }
 
@@ -628,7 +703,7 @@ class TabViewController: UIViewController {
             webView = customWebView(configuration)
             view.layoutIfNeeded()
         } else {
-            webView = WKWebView(frame: view.bounds, configuration: configuration)
+            webView = WebView(frame: view.bounds, configuration: configuration)
         }
         textZoomCoordinator.onWebViewCreated(applyToWebView: webView)
         specialErrorPageNavigationHandler.attachWebView(webView)
@@ -651,7 +726,7 @@ class TabViewController: UIViewController {
             webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
         ])
 
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if isExperimentalThemingEnabled {
             pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
                                                                 pullableView: webViewContainerView,
                                                                 onRefresh: { [weak self] in
@@ -715,6 +790,7 @@ class TabViewController: UIViewController {
 #endif
 
         updateRoundedCorners()
+        updateBorder(for: webView)
     }
 
     private func addObservers() {
@@ -723,6 +799,7 @@ class TabViewController: UIViewController {
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack), options: .new, context: nil)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward), options: .new, context: nil)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.title), options: .new, context: nil)
+        webView.addObserver(self, forKeyPath: #keyPath(WKWebView.isLoading), options: .new, context: nil)
     }
 
     private func configureRefreshControl(_ control: UIRefreshControl) {
@@ -754,7 +831,7 @@ class TabViewController: UIViewController {
             doLoad()
         }
     }
-    
+
     public func executeBookmarklet(url: URL) {
         if let js = url.toDecodedBookmarklet() {
             webView.evaluateJavaScript(js)
@@ -839,7 +916,12 @@ class TabViewController: UIViewController {
               let webView = webView else { return }
 
         switch keyPath {
-            
+
+        case #keyPath(WKWebView.isLoading):
+            if webView.isLoading {
+                delegate?.showBars()
+            }
+
         case #keyPath(WKWebView.estimatedProgress):
             progressWorker.progressDidChange(webView.estimatedProgress)
             
@@ -946,7 +1028,7 @@ class TabViewController: UIViewController {
         cachedRuntimeConfigurationForDomain = [:]
         duckPlayerNavigationHandler.handleReload(webView: webView)
         delegate?.tabLoadingStateDidChange(tab: self)
-
+        resetCreditCardPrompt()
     }
     
     func updateContentMode() {
@@ -960,6 +1042,7 @@ class TabViewController: UIViewController {
             webView.stopLoading()
             if webView.canGoBack {
                 duckPlayerNavigationHandler.handleGoBack(webView: webView)
+                webView.goBack()
                 chromeDelegate?.omniBar.endEditing()
                 return
             }
@@ -976,9 +1059,10 @@ class TabViewController: UIViewController {
             onWebpageDidFinishLoading()
             return
         }
-
+        
         if webView.canGoBack {
             webView.goBack()
+            duckPlayerNavigationHandler.handleGoBack(webView: webView)
             chromeDelegate?.omniBar.endEditing()
             return
         }
@@ -993,6 +1077,7 @@ class TabViewController: UIViewController {
         dismissJSAlertIfNeeded()
 
         if webView.goForward() != nil {
+            duckPlayerNavigationHandler.handleGoForward(webView: webView)
             chromeDelegate?.omniBar.endEditing()
         }
     }
@@ -1028,15 +1113,6 @@ class TabViewController: UIViewController {
             privacyDashboard = controller
         }
         
-        if let controller = segue.destination as? FullscreenDaxDialogViewController {
-            controller.spec = sender as? DaxDialogs.BrowsingSpec
-            controller.woShown = woShownRecently
-            controller.delegate = self
-            
-            if controller.spec?.highlightAddressBar ?? false {
-                chromeDelegate.omniBar.cancelAllAnimations()
-            }
-        }
     }
 
     private var jsAlertController: JSAlertController!
@@ -1053,7 +1129,7 @@ class TabViewController: UIViewController {
                                        entryPoint: .dashboard,
                                        privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                       breakageAdditionalInfo: makeBreakageAdditionalInfo())
+                                              breakageAdditionalInfo: makeBreakageAdditionalInfo())
     }
     
     private func addTextZoomObserver() {
@@ -1095,13 +1171,18 @@ class TabViewController: UIViewController {
         chromeDelegate?.setBarsHidden(false, animated: animated, customAnimationDuration: nil)
     }
 
+    private func hideBars(animated: Bool = true) {
+        chromeDelegate?.setBarsHidden(true, animated: animated, customAnimationDuration: nil)
+    }
+
     func showPrivacyDashboard() {
-        Pixel.fire(pixel: .privacyDashboardOpened)
+        Pixel.fire(pixel: .privacyDashboardOpened, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .privacyDashboard))
         performSegue(withIdentifier: "PrivacyDashboard", sender: self)
+        featureDiscovery.setWasUsedBefore(.privacyDashboard)
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if isExperimentalThemingEnabled {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(isEnabled)
         } else {
             webView.scrollView.refreshControl = isEnabled ? refreshControl : nil
@@ -1139,7 +1220,8 @@ class TabViewController: UIViewController {
                                       parentEntity: entity,
                                       protectionStatus: makeProtectionStatus(for: host),
                                       malicousSiteThreatKind: specialErrorPageNavigationHandler.currentThreatKind,
-                                      shouldCheckServerTrust: shouldCheckServerTrust)
+                                      shouldCheckServerTrust: shouldCheckServerTrust,
+                                      allActiveContentScopeExperiments: contentScopeExperimentsManager.allActiveContentScopeExperiments)
         let isCertificateInvalid = certificateTrustEvaluator
             .evaluateCertificateTrust(trust: webView.serverTrust)
             .map { !$0 }
@@ -1232,6 +1314,7 @@ class TabViewController: UIViewController {
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.title))
+        webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
     }
 
     public func makeBreakageAdditionalInfo() -> PrivacyDashboardViewController.BreakageAdditionalInfo? {
@@ -1309,6 +1392,8 @@ class TabViewController: UIViewController {
         temporaryDownloadForPreviewedFile?.cancel()
         cleanUpBeforeClosing()
     }
+
+    private var cancellables = Set<AnyCancellable>()
 }
 
 // MARK: - LoginFormDetectionDelegate
@@ -1383,7 +1468,6 @@ extension TabViewController: WKNavigationDelegate {
         self.fireWoFollowUp = false
 
         self.httpsForced = httpsForced
-        delegate?.showBars()
 
         resetDashboardInfo()
 
@@ -1647,8 +1731,9 @@ extension TabViewController: WKNavigationDelegate {
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }
-        
-        scheduleTrackerNetworksAnimation(collapsing: !spec.highlightAddressBar)
+
+        // In new onboarding we do not highlight the address bar so collapsing is default to true.
+        scheduleTrackerNetworksAnimation(collapsing: true)
         let daxDialogSourceURL = self.url
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
@@ -2142,6 +2227,10 @@ extension TabViewController: WKNavigationDelegate {
         checkForReloadOnError()
     }
     
+    func dismissKeyboardIfPresent() {
+        self.webView.evaluateJavaScript("document.activeElement?.blur()")
+    }
+    
     private func showLoginDetails(with account: SecureVaultModels.WebsiteAccount, source: AutofillSettingsSource) {
         delegate?.tab(self, didRequestAutofillLogins: account, source: source)
     }
@@ -2174,6 +2263,28 @@ extension TabViewController: WKNavigationDelegate {
         )
     }
 
+    private func registerForKeyboardNotifications() {
+        guard isCreditCardAutofillEnabled() else {
+            return
+        }
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(keyboardWillHide),
+                                               name: UIResponder.keyboardWillHideNotification,
+                                               object: nil)
+    }
+
+    private func unregisterFromKeyboardNotifications() {
+        guard isCreditCardAutofillEnabled() else {
+            return
+        }
+
+        NotificationCenter.default.removeObserver(
+            self,
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
     @objc private func autofillBreakageReport(_ notification: Notification) {
         guard let tabUid = notification.userInfo?[AutofillLoginListViewModel.UserInfoKeys.tabUid] as? String,
               tabUid == tabModel.uid,
@@ -2194,6 +2305,14 @@ extension TabViewController: WKNavigationDelegate {
 
         ActionMessageView.present(message: UserText.autofillSettingsReportNotWorkingSentConfirmation)
     }
+
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        if !fillCreditCardsPromptIsPresenting && isTabCurrentlyPresented() {
+            autofillUserScript?.cancelAllPendingReplies()
+            cleanupInputAccessoryView()
+        }
+    }
+
 }
 
 // MARK: - Downloads
@@ -2627,6 +2746,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.printingUserScript.delegate = self
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
+        userScripts.contentScopeUserScript.delegate = self
 
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
@@ -2725,6 +2845,13 @@ extension TabViewController: PrintingUserScriptDelegate {
         controller.present(animated: true, completionHandler: nil)
     }
 
+}
+
+// MARK: - ContentScopeUserScriptDelegate
+extension TabViewController: ContentScopeUserScriptDelegate {
+    func contentScopeUserScript(_ script: BrowserServicesKit.ContentScopeUserScript, didReceiveDebugFlag debugFlag: String) {
+        privacyInfo?.addDebugFlag(debugFlag)
+    }
 }
 
 // MARK: - AutoconsentUserScriptDelegate
@@ -2833,6 +2960,29 @@ extension TabViewController: SecureVaultManagerDelegate {
         }
     }
     
+    private func presentSaveCreditCardModal(with vault: SecureVaultManager, creditCard: SecureVaultModels.CreditCard) {
+        guard CreditCardValidation.isValidCardNumber(creditCard.cardNumber) else {
+            Logger.autofill.debug("Invalid credit card number, not presenting save prompt")
+            return
+        }
+        
+        let saveCreditCardController = SaveCreditCardViewController(creditCard: creditCard, accountDomain: self.url?.host ?? "", domainLastShownOn: self.domainSaveCreditCardPromptLastShownOn)
+        self.domainSaveCreditCardPromptLastShownOn = self.url?.host
+        saveCreditCardController.delegate = self
+        if let presentationController = saveCreditCardController.presentationController as? UISheetPresentationController {
+            if #available(iOS 16.0, *) {
+                presentationController.detents = [.custom(resolver: { _ in
+                    saveCreditCardController.viewModel.minHeight
+                })]
+            } else {
+                presentationController.detents = [.medium()]
+            }
+            presentationController.prefersScrollingExpandsWhenScrolledToEdge = false
+        }
+        
+        self.present(saveCreditCardController, animated: true, completion: nil)
+    }
+    
     func secureVaultError(_ error: SecureStorageError) {
         SecureVaultReporter().secureVaultError(error)
     }
@@ -2841,16 +2991,24 @@ extension TabViewController: SecureVaultManagerDelegate {
         SecureVaultReporter().secureVaultKeyStoreEvent(event)
     }
 
+    private func isCreditCardAutofillEnabled() -> Bool {
+        return AutofillSettingStatus.isCreditCardAutofillEnabledInSettings &&
+        featureFlagger.isFeatureOn(.autofillCreditCards) &&
+        !isLinkPreview
+    }
+    
     func secureVaultManagerIsEnabledStatus(_ manager: SecureVaultManager, forType type: AutofillType?) -> Bool {
-        let isEnabled = AutofillSettingStatus.isAutofillEnabledInSettings &&
+        let isCredentialsEnabled = AutofillSettingStatus.isAutofillEnabledInSettings &&
                         featureFlagger.isFeatureOn(.autofillCredentialInjecting) &&
                         !isLinkPreview
+        let isCreditCardsEnabled = isCreditCardAutofillEnabled()
+
         let isDataProtected = !UIApplication.shared.isProtectedDataAvailable
-        if isEnabled && isDataProtected {
+        if (isCredentialsEnabled || isCreditCardsEnabled) && isDataProtected {
             DailyPixel.fire(pixel: .secureVaultIsEnabledCheckedWhenEnabledAndDataProtected,
                        withAdditionalParameters: [PixelParameters.isDataProtected: "true"])
         }
-        return isEnabled
+        return isCredentialsEnabled || isCreditCardsEnabled
     }
 
     func secureVaultManagerShouldSaveData(_ manager: SecureVaultManager) -> Bool {
@@ -2882,6 +3040,11 @@ extension TabViewController: SecureVaultManagerDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.presentSavePasswordModal(with: vault, credentials: credentials, backfilled: data.backfilled)
             }
+        } else if let creditCard = data.creditCard, isCreditCardAutofillEnabled() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.presentSaveCreditCardModal(with: vault, creditCard: creditCard)
+            }
+            
         }
     }
 
@@ -2925,8 +3088,132 @@ extension TabViewController: SecureVaultManagerDelegate {
     }
 
     func secureVaultManager(_: SecureVaultManager,
+                            promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
+                            withTrigger trigger: AutofillUserScript.GetTriggerType,
+                            completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        guard isCreditCardAutofillEnabled() else {
+            completionHandler(nil)
+            return
+        }
+
+        // if user is interacting with the searchBar, don't show the autofill prompt since it will overlay the keyboard
+        if let parent = parent as? MainViewController, parent.viewCoordinator.omniBar.isTextFieldEditing {
+            completionHandler(nil)
+            return
+        }
+
+        promptToFill(withCreditCards: creditCards) { card in
+            completionHandler(card)
+        }
+    }
+
+    func secureVaultManager(_: SecureVaultManager,
+                            didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
+                            withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                            completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        guard isCreditCardAutofillEnabled(), mainType == .creditCards else {
+            completionHandler(nil)
+            cleanupInputAccessoryView()
+            return
+        }
+
+        promptToFill(withCreditCards: creditCards) { card in
+            completionHandler(card)
+        }
+    }
+
+    private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        if domainFillCreditCardPromptLastShownOn != url?.host {
+            AppDependencyProvider.shared.autofillLoginSession.endSession()
+            self.domainFillCreditCardPromptLastShownOn = self.url?.host
+            resetCreditCardPrompt()
+        }
+
+        guard creditCards.count > 0 else {
+            completionHandler(nil)
+            cleanupInputAccessoryView()
+            return
+        }
+
+        if shouldShowCreditCardPrompt {
+            fillCreditCardsPromptIsPresenting = true
+            presentAutofillPromptViewController(creditCards: creditCards) { [weak self] creditCard in
+                completionHandler(creditCard)
+                self?.fillCreditCardsPromptIsPresenting = false
+
+                if creditCard != nil {
+                    NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
+                }
+            }
+            shouldShowCreditCardPrompt = false
+            autofillCreditCardAccessoryView?.updateCreditCards(creditCards)
+        } else {
+            addCreditCardInputAccessoryView(creditCards: creditCards) { card in
+                completionHandler(card)
+            }
+        }
+    }
+
+    private func presentAutofillPromptViewController(creditCards: [SecureVaultModels.CreditCard],
+                                                     completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        // Ensure keyboard doesn't block prompt
+        dismissKeyboardIfPresent()
+
+        let creditCardPromptViewController = CreditCardPromptViewController(creditCards: creditCards) { creditCard in
+            completionHandler(creditCard)
+        }
+
+        if let presentationController = creditCardPromptViewController.presentationController as? UISheetPresentationController {
+            if #available(iOS 16.0, *) {
+                presentationController.detents = [.custom(resolver: { _ in
+                    AutofillViews.loginPromptMinHeight
+                })]
+            } else {
+                presentationController.detents =  [.medium()]
+            }
+        }
+
+        self.present(creditCardPromptViewController, animated: true, completion: nil)
+    }
+
+    private func addCreditCardInputAccessoryView(creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        guard let webView = webView as? WebView, let autofillCreditCardAccessoryView = autofillCreditCardAccessoryView else {
+            completionHandler(nil)
+            return
+        }
+        autofillCreditCardAccessoryView.updateCreditCards(creditCards)
+        webView.setAccessoryContentView(autofillCreditCardAccessoryView)
+
+        autofillCreditCardAccessoryView.onCardSelected = { [weak self] card in
+            completionHandler(card)
+            if card == nil {
+                self?.dismissKeyboardIfPresent()
+            } else {
+                NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
+            }
+
+            self?.cleanupInputAccessoryView()
+        }
+    }
+
+    private func cleanupInputAccessoryView() {
+        guard isCreditCardAutofillEnabled(), let webView = webView as? WebView else {
+            return
+        }
+
+        webView.removeAccessoryContentViewIfNecessary()
+    }
+
+    private func resetCreditCardPrompt() {
+        shouldShowCreditCardPrompt = true
+    }
+
+    func secureVaultManager(_: SecureVaultManager,
                             promptUserWithGeneratedPassword password: String,
                             completionHandler: @escaping (Bool) -> Void) {
+
+        // Ensure keyboard doesn't block prompt
+        dismissKeyboardIfPresent()
 
         var responseSent: Bool = false
 
@@ -2960,6 +3247,9 @@ extension TabViewController: SecureVaultManagerDelegate {
                                              useLargeDetent: Bool,
                                              onAccountSelected: @escaping (SecureVaultModels.WebsiteAccount?) -> Void,
                                              completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {
+
+        // Ensure keyboard doesn't block prompt
+        dismissKeyboardIfPresent()
 
         var responseSent: Bool = false
 
@@ -3118,23 +3408,19 @@ extension TabViewController: SaveLoginViewControllerDelegate {
     }
     
     func saveLoginViewController(_ viewController: SaveLoginViewController, didSaveCredentials credentials: SecureVaultModels.WebsiteCredentials) {
-        viewController.dismiss(animated: true)
         saveCredentials(credentials, withSuccessMessage: UserText.autofillLoginSavedToastMessage)
     }
     
     func saveLoginViewController(_ viewController: SaveLoginViewController, didUpdateCredentials credentials: SecureVaultModels.WebsiteCredentials) {
-        viewController.dismiss(animated: true)
         saveCredentials(credentials, withSuccessMessage: UserText.autofillLoginUpdatedToastMessage)
     }
     
     func saveLoginViewControllerDidCancel(_ viewController: SaveLoginViewController) {
-        viewController.dismiss(animated: true)
         saveLoginPromptLastDismissed = Date()
         saveLoginPromptIsPresenting = false
     }
 
     func saveLoginViewController(_ viewController: SaveLoginViewController, didRequestNeverPromptForWebsite domain: String) {
-        viewController.dismiss(animated: true)
         saveLoginPromptLastDismissed = Date()
         saveLoginPromptIsPresenting = false
 
@@ -3156,7 +3442,37 @@ extension TabViewController: SaveLoginViewControllerDelegate {
                                       onAction: { [weak self] in
                 Pixel.fire(pixel: .autofillLoginsFillLoginInlineDisableSnackbarOpenSettings)
                 guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
-                mainVC.segueToSettingsLoginsWithAccount(nil, source: .saveLoginDisablePrompt)
+                mainVC.segueToSettingsAutofillWith(account: nil, card: nil, source: .saveLoginDisablePrompt)
+            })
+            Pixel.fire(pixel: .autofillCardsSaveDisableSnackbarShown)
+        }
+    }
+}
+
+extension TabViewController: SaveCreditCardViewControllerDelegate {
+    func saveCreditCardViewController(_ viewController: SaveCreditCardViewController, didSaveCreditCard card: SecureVaultModels.CreditCard) {
+        let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
+        ActionMessageView.present(message: UserText.autofillCreditCardSavedToastMessage,
+                                  actionTitle: UserText.autofillLoginSaveToastActionButton,
+                                  presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+                                  onAction: { [weak self] in
+            guard let self = self else { return }
+            self.delegate?.tab(self, didRequestSettingsToCreditCards: card, source: .viewSavedCreditCardPrompt)
+        })
+    }
+    
+    func saveCreditCardViewControllerConfirmKeepUsing(_ viewController: SaveCreditCardViewController) {
+        DispatchQueue.main.async {
+            let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
+            ActionMessageView.present(message: UserText.autofillCreditCardsDisablePromptMessage,
+                                      actionTitle: UserText.autofillDisablePromptAction,
+                                      presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+                                      duration: 4.0,
+                                      onAction: { [weak self] in
+                
+                guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
+                mainVC.segueToSettingsAutofillWith(account: nil, card: nil, source: .saveCreditCardDisablePrompt)
+                Pixel.fire(pixel: .autofillCardsSaveDisableSnackbarOpenSettings)
             })
         }
     }
@@ -3327,4 +3643,56 @@ extension TabViewController: Navigatable {
         return webViewCanGoForward && !isError
     }
 
+}
+
+extension TabViewController: DuckPlayerHosting {
+    var contentBottomConstraint: NSLayoutConstraint? {
+        return webViewBottomAnchorConstraint
+    }
+    
+    var persistentBottomBarHeight: CGFloat {
+        return chromeDelegate?.barsMaxHeight ?? 0.0
+    }
+
+    func showChrome() {
+        showBars()
+    }
+
+    func hideChrome() {
+        hideBars()
+    }
+
+    func isTabCurrentlyPresented() -> Bool {
+        return delegate?.tabCheckIfItsBeingCurrentlyPresented(self) ?? false
+    }
+
+}
+
+extension TabViewController {
+        
+    // This is used to handle the webView constraint changes when DuckPlayer is presented
+    private func setupDuckPlayerConstraintHandling(publisher: AnyPublisher<DuckPlayerConstraintUpdate, Never>) {
+        publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] update in
+                guard let self = self else { return }
+                
+                switch update {
+                case .showPill(let height):
+                    if self.appSettings.currentAddressBarPosition == .bottom {
+                        let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
+                        self.webViewBottomAnchorConstraint?.constant = -targetHeight - height
+                    } else {
+                        self.webViewBottomAnchorConstraint?.constant = -height
+                    }
+                    
+                case .reset:
+                    let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
+                    self.webViewBottomAnchorConstraint?.constant = self.appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
+                }
+                
+                self.view.layoutIfNeeded()
+            }
+            .store(in: &cancellables)
+    }
 }

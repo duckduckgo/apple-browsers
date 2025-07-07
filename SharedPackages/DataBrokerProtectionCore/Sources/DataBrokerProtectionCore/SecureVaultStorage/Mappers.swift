@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 
 public struct MapperToDB {
@@ -58,7 +59,7 @@ public struct MapperToDB {
 
     func mapToDB(_ broker: DataBroker, id: Int64? = nil) throws -> BrokerDB {
         let encodedBroker = try jsonEncoder.encode(broker)
-        return .init(id: id, name: broker.name, json: encodedBroker, version: broker.version, url: broker.url)
+        return .init(id: id, name: broker.name, json: encodedBroker, version: broker.version, url: broker.url, eTag: broker.eTag)
     }
 
     func mapToDB(_ profileQuery: ProfileQuery, relatedTo profileId: Int64) throws -> ProfileQueryDB {
@@ -145,8 +146,8 @@ struct MapperToModel {
 
     private func mapToModel(_ nameDB: NameDB) throws -> DataBrokerProtectionProfile.Name {
         .init(
-            firstName: try mechanism(nameDB.first).decoded,
-            lastName: try mechanism(nameDB.last).decoded,
+            firstName: try mechanism(nameDB.first).utf8String()!,
+            lastName: try mechanism(nameDB.last).utf8String()!,
             middleName: try nameDB.middle.decode(mechanism),
             suffix: try nameDB.suffix.decode(mechanism)
         )
@@ -154,15 +155,15 @@ struct MapperToModel {
 
     private func mapToModel(_ addressDB: AddressDB) throws -> DataBrokerProtectionProfile.Address {
         .init(
-            city: try mechanism(addressDB.city).decoded,
-            state: try mechanism(addressDB.state).decoded,
+            city: try mechanism(addressDB.city).utf8String()!,
+            state: try mechanism(addressDB.state).utf8String()!,
             street: try addressDB.street.decode(mechanism),
             zipCode: try addressDB.zipCode.decode(mechanism)
         )
     }
 
     private func mapToModel(_ phoneDB: PhoneDB) throws -> String {
-        try mechanism(phoneDB.phoneNumber).decoded
+        try mechanism(phoneDB.phoneNumber).utf8String()!
     }
 
     func mapToModel(_ brokerDB: BrokerDB) throws -> DataBroker {
@@ -177,19 +178,20 @@ struct MapperToModel {
             schedulingConfig: decodedBroker.schedulingConfig,
             parent: decodedBroker.parent,
             mirrorSites: decodedBroker.mirrorSites,
-            optOutUrl: decodedBroker.optOutUrl
+            optOutUrl: decodedBroker.optOutUrl,
+            eTag: decodedBroker.eTag
         )
     }
 
     func mapToModel(_ profileQueryDB: ProfileQueryDB) throws -> ProfileQuery {
         .init(
             id: profileQueryDB.id,
-            firstName: try mechanism(profileQueryDB.first).decoded,
-            lastName: try mechanism(profileQueryDB.last).decoded,
+            firstName: try mechanism(profileQueryDB.first).utf8String()!,
+            lastName: try mechanism(profileQueryDB.last).utf8String()!,
             middleName: try profileQueryDB.middle.decode(mechanism),
             suffix: try profileQueryDB.suffix.decode(mechanism),
-            city: try mechanism(profileQueryDB.city).decoded,
-            state: try mechanism(profileQueryDB.state).decoded,
+            city: try mechanism(profileQueryDB.city).utf8String()!,
+            state: try mechanism(profileQueryDB.state).utf8String()!,
             street: try profileQueryDB.street.decode(mechanism),
             zipCode: try profileQueryDB.zipCode.decode(mechanism),
             phone: try profileQueryDB.phone.decode(mechanism),
@@ -298,17 +300,6 @@ extension Optional where Wrapped == Data {
             return nil
         }
 
-        return try mechanism(value).decoded
-    }
-}
-
-extension Data {
-
-    var decoded: String {
-        guard let decodedString = String(data: self, encoding: .utf8) else {
-            fatalError("Mappers: Failed trying to decode data")
-        }
-
-        return decodedString
+        return try mechanism(value).utf8String()
     }
 }

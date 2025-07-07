@@ -39,14 +39,18 @@ jobs:
             exit 1
           fi
 
-      - name: Prepare fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
 
       - name: Make release branch
         id: make_release_branch
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+          DBP_API_AUTH_TOKEN: ${{ secrets.DBP_API_AUTH_TOKEN }}
         run: |
           bundle exec fastlane run start_new_release \
             platform:"macos" \
@@ -67,6 +71,7 @@ jobs:
       APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
       APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
       ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+      GH_RO_PAT: ${{ secrets.GH_RO_PAT }}
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -86,8 +91,11 @@ jobs:
           submodules: recursive
           ref: ${{ needs.create_release_branch.outputs.release_branch_name }}
 
-      - name: Prepare fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
 
       - name: Increment build number
         env:

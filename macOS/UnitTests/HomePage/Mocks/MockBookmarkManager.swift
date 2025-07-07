@@ -20,9 +20,11 @@ import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 @testable import BrowserServicesKit
 
-class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding {
+class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding, RecentActivityFavoritesHandling {
+
     var bookmarksReturnedForSearch = [BaseBookmarkEntity]()
     var wasSearchByQueryCalled = false
+    var isLoading = false
 
     init(bookmarksReturnedForSearch: [BaseBookmarkEntity] = [BaseBookmarkEntity](), wasSearchByQueryCalled: Bool = false, isUrlBookmarked: Bool = false, removeBookmarkCalled: Bool = false, removeFolderCalled: Bool = false, removeObjectsCalled: [String]? = nil, updateBookmarkCalled: Bookmark? = nil, moveObjectsCalled: MoveArgs? = nil, list: BookmarkList? = nil, sortMode: BookmarksSortMode = .manual) {
         self.bookmarksReturnedForSearch = bookmarksReturnedForSearch
@@ -40,6 +42,14 @@ class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding {
     func isUrlFavorited(url: URL) -> Bool {
         return false
     }
+
+    func getFavorite(for url: URL) -> Bookmark? {
+        nil
+    }
+
+    func markAsFavorite(_ bookmark: Bookmark) {}
+    func unmarkAsFavorite(_ bookmark: Bookmark) {}
+    func addNewFavorite(for url: URL) {}
 
     var isUrlBookmarked = false
     func isUrlBookmarked(url: URL) -> Bool {
@@ -155,4 +165,15 @@ class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding {
 
     func restore(_ entities: [RestorableBookmarkEntity], undoManager: UndoManager) {}
 
+    func resetBookmarks(completion: @escaping () -> Void) {}
+}
+
+extension MockBookmarkManager: HistoryViewBookmarksHandling {
+    func addNewBookmarks(for websiteInfos: [DuckDuckGo_Privacy_Browser.WebsiteInfo]) {
+        makeBookmarks(for: websiteInfos, inNewFolderNamed: nil, withinParentFolder: .root)
+    }
+
+    func addNewFavorite(for url: URL, title: String) {
+        makeBookmark(for: url, title: title, isFavorite: true)
+    }
 }

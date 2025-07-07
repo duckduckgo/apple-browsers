@@ -16,37 +16,23 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 
 extension WindowControllersManager: URLOpening {
 
-    func open(_ url: URL) {
-        guard let tabCollectionViewModel else {
-            return
-        }
-        if NSApplication.shared.isCommandPressed && NSApplication.shared.isOptionPressed {
-            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: tabCollectionViewModel.isBurner)
-        } else if NSApplication.shared.isCommandPressed && NSApplication.shared.isShiftPressed {
-            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: true)
-        } else if NSApplication.shared.isCommandPressed {
-            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: false)
-        } else {
-            tabCollectionViewModel.selectedTabViewModel?.tab.setContent(.contentFromURL(url, source: .historyEntry))
-        }
-    }
+    func openInNewTab(_ urls: [URL], sourceWindow: NSWindow?) {
+        guard let mainWindowController = mainWindowController(for: sourceWindow), !urls.isEmpty else { return }
 
-    func openInNewTab(_ urls: [URL]) {
-        guard let tabCollectionViewModel, !urls.isEmpty else {
-            return
-        }
         let tabs = urls.map { Tab(content: .url($0, source: .historyEntry), shouldLoadInBackground: true) }
-        tabCollectionViewModel.append(tabs: tabs)
+
+        let tabCollectionViewModel = mainWindowController.mainViewController.tabCollectionViewModel
+        tabCollectionViewModel.append(tabs: tabs, andSelect: TabsPreferences.shared.switchToNewTabWhenOpened)
     }
 
-    func openInNewWindow(_ urls: [URL]) {
-        guard !urls.isEmpty else {
-            return
-        }
+    func openInNewWindow(_ urls: [URL], sourceWindow: NSWindow?) {
+        guard !urls.isEmpty else { return }
+
         let tabs = urls.map { Tab(content: .url($0, source: .historyEntry), shouldLoadInBackground: true) }
 
         let newTabCollection = TabCollection(tabs: tabs)
@@ -54,7 +40,7 @@ extension WindowControllersManager: URLOpening {
         openNewWindow(with: tabCollectionViewModel)
     }
 
-    func openInNewFireWindow(_ urls: [URL]) {
+    func openInNewFireWindow(_ urls: [URL], sourceWindow: NSWindow?) {
         guard !urls.isEmpty else {
             return
         }
@@ -65,10 +51,4 @@ extension WindowControllersManager: URLOpening {
         openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode)
     }
 
-    // MARK: - Private
-
-    @MainActor
-    private var tabCollectionViewModel: TabCollectionViewModel? {
-        lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
-    }
 }

@@ -20,6 +20,10 @@ import Foundation
 import PixelKit
 
 enum AutofillPixelKitEvent: PixelKitEventV2 {
+    enum Parameter {
+        static let lastUsed = "last_used"
+    }
+
     case importCredentialsFlowStarted
     case importCredentialsFlowCancelled
     case importCredentialsFlowHadCredentials
@@ -30,11 +34,11 @@ enum AutofillPixelKitEvent: PixelKitEventV2 {
 
     var name: String {
         switch self {
-        case .importCredentialsFlowStarted: "autofill_import_credentials_flow_started"
-        case .importCredentialsFlowCancelled: "autofill_import_credentials_flow_cancelled"
-        case .importCredentialsFlowHadCredentials: "autofill_import_credentials_flow_had_credentials"
-        case .importCredentialsFlowEnded: "autofill_import_credentials_flow_ended"
-        case .importCredentialsPromptNeverAgainClicked: "autofill_import_credentials_prompt_never_again_clicked"
+        case .importCredentialsFlowStarted: "autofill_import_credentials_flow_started_mac"
+        case .importCredentialsFlowCancelled: "autofill_import_credentials_flow_cancelled_mac"
+        case .importCredentialsFlowHadCredentials: "autofill_import_credentials_flow_had_credentials_mac"
+        case .importCredentialsFlowEnded: "autofill_import_credentials_flow_ended_mac"
+        case .importCredentialsPromptNeverAgainClicked: "autofill_import_credentials_prompt_never_again_clicked_mac"
         case .autofillSettingsOpened: "autofill_settings_opened"
         }
     }

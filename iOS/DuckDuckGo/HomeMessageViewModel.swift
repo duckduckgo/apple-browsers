@@ -23,6 +23,7 @@ import RemoteMessaging
 import UIKit
 
 struct HomeMessageViewModel {
+
     enum ButtonAction {
         case close
         case action(isShare: Bool) // a generic action that is specific to the type of message
@@ -33,6 +34,8 @@ struct HomeMessageViewModel {
     let messageId: String
     let sendPixels: Bool
     let modelType: RemoteMessageModelType
+    let navigator: MessageNavigator
+    let isExperimentalThemingEnabled: Bool
 
     var image: String? {
         switch modelType {
@@ -138,7 +141,8 @@ struct HomeMessageViewModel {
             }
         case .survey(let value):
             return { @MainActor in
-                LaunchTabNotification.postLaunchTabNotification(urlString: value)
+                let refreshedURL = refreshLastSearchState(in: value)
+                LaunchTabNotification.postLaunchTabNotification(urlString: refreshedURL)
                 await onDidClose(buttonAction)
             }
         case .appStore:
@@ -153,7 +157,19 @@ struct HomeMessageViewModel {
             return { @MainActor in
                 await onDidClose(buttonAction)
             }
+
+        case .navigation(let target):
+            return { @MainActor in
+                navigator.navigateTo(target)
+                await onDidClose(buttonAction)
+            }
         }
+    }
+    
+    /// If `last_search_state` is present, refresh before opening URL
+    private func refreshLastSearchState(in urlString: String) -> String {
+        let lastSearchDate = AutofillUsageStore().searchDauDate
+        return DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState(in: urlString, lastSearchDate: lastSearchDate)
     }
 }
 

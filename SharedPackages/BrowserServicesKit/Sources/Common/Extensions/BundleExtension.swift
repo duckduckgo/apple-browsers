@@ -27,6 +27,8 @@ extension Bundle {
         static let buildNumber = kCFBundleVersionKey as String
 		static let versionNumber = "CFBundleShortVersionString"
         static let displayName = "CFBundleDisplayName"
+        /// Custom key that may be added by the adhoc build workflow to append a suffix to the build version
+        static let alphaBuildSuffix = "DDG_ALPHA_BUILD_SUFFIX"
 
     }
 

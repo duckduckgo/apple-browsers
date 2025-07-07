@@ -33,16 +33,18 @@ let package = Package(
         .library(name: "VPNAppLauncher", targets: ["VPNAppLauncher"]),
         .library(name: "VPNAppState", targets: ["VPNAppState"]),
         .library(name: "VPNExtensionManagement", targets: ["VPNExtensionManagement"]),
+        .library(name: "VPNNotifications", targets: ["VPNNotifications"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.4.3"),
-        .package(path: "../../SharedPackages/BrowserServicesKit"),
+        .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.5.1"),
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../AppInfoRetriever"),
         .package(path: "../AppLauncher"),
         .package(path: "../UDSHelper"),
         .package(path: "../XPCHelper"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../LoginItems"),
+        .package(path: "../VPN"),
     ],
     targets: [
 
@@ -63,7 +65,7 @@ let package = Package(
         .target(
             name: "NetworkProtectionIPC",
             dependencies: [
-                .product(name: "NetworkProtection", package: "BrowserServicesKit"),
+                .product(name: "VPN", package: "VPN"),
                 .product(name: "XPCHelper", package: "XPCHelper"),
                 .product(name: "UDSHelper", package: "UDSHelper"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
@@ -81,7 +83,7 @@ let package = Package(
                 "AppInfoRetriever",
                 "VPNAppState",
                 "VPNExtensionManagement",
-                .product(name: "NetworkProtection", package: "BrowserServicesKit"),
+                .product(name: "VPN", package: "VPN"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
             ],
             swiftSettings: [
@@ -96,8 +98,20 @@ let package = Package(
             dependencies: [
                 "NetworkProtectionUI",
                 .product(name: "AppLauncher", package: "AppLauncher"),
-                .product(name: "NetworkProtection", package: "BrowserServicesKit"),
+                .product(name: "VPN", package: "VPN"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+
+        .target(
+            name: "VPNNotifications",
+            dependencies: [
+                "VPNAppLauncher",
+                .product(name: "AppLauncher", package: "AppLauncher"),
+                .product(name: "VPN", package: "VPN"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -124,7 +138,7 @@ let package = Package(
                 "NetworkProtectionProxy",
                 "VPNAppState",
                 "VPNPixels",
-                .product(name: "NetworkProtection", package: "BrowserServicesKit"),
+                .product(name: "VPN", package: "VPN"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "LoginItems", package: "LoginItems"),
@@ -142,7 +156,7 @@ let package = Package(
             name: "NetworkProtectionUITests",
             dependencies: [
                 "NetworkProtectionUI",
-                .product(name: "NetworkProtectionTestUtils", package: "BrowserServicesKit"),
+                .product(name: "VPNTestUtils", package: "VPN"),
                 .product(name: "LoginItems", package: "LoginItems"),
                 .product(name: "PixelKitTestingUtilities", package: "BrowserServicesKit"),
             ]

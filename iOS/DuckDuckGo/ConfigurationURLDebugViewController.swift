@@ -31,13 +31,17 @@ final class ConfigurationURLDebugViewController: UITableViewController {
 
     }
 
+    /// Adding support for more configs?  Don't forget to add it to the `setConfigurationURLProvider`
+    ///  function in `AppConfiguration`.
     enum CustomURLsRows: Int, CaseIterable {
 
         case privacyConfigURL
+        case remoteMessagingConfigURL
 
         var title: String {
             switch self {
             case .privacyConfigURL: return "Privacy Config"
+            case .remoteMessagingConfigURL: return "Remote Message Framework Config"
             }
         }
 
@@ -52,7 +56,6 @@ final class ConfigurationURLDebugViewController: UITableViewController {
 
     private var customURLProvider = CustomConfigurationURLProvider()
 
-
     @UserDefaultsWrapper(key: .lastConfigurationUpdateDate, defaultValue: nil)
     private var lastConfigurationUpdateDate: Date?
 
@@ -61,29 +64,41 @@ final class ConfigurationURLDebugViewController: UITableViewController {
         didSet {
             customURLProvider.customPrivacyConfigurationURL = privacyConfigCustomURL.flatMap { URL(string: $0) }
             Configuration.setURLProvider(customURLProvider)
-            fetchAssets()
+            fetchPrivacyConfig()
+        }
+    }
+
+    @UserDefaultsWrapper(key: .remoteMessagingConfigCustomURL, defaultValue: nil)
+    private var remoteMessagingConfigURL: String? {
+        didSet {
+            customURLProvider.customRemoteMessagingConfigURL = remoteMessagingConfigURL.flatMap { URL(string: $0) }
+            Configuration.setURLProvider(customURLProvider)
+            fetchRemoteMessagingConfig()
         }
     }
 
     private func customURL(for row: CustomURLsRows) -> String? {
         switch row {
         case .privacyConfigURL: return privacyConfigCustomURL
+        case .remoteMessagingConfigURL: return remoteMessagingConfigURL
         }
     }
 
     private func url(for row: CustomURLsRows) -> String {
         switch row {
         case .privacyConfigURL: return customURL(for: row) ?? customURLProvider.url(for: .privacyConfiguration).absoluteString
+        case .remoteMessagingConfigURL: return customURL(for: row) ?? customURLProvider.url(for: .remoteMessagingConfig).absoluteString
         }
     }
 
     private func setCustomURL(_ urlString: String?, for row: CustomURLsRows) {
         switch row {
         case .privacyConfigURL: privacyConfigCustomURL = urlString
+        case .remoteMessagingConfigURL: remoteMessagingConfigURL = urlString
         }
     }
 
-    private func fetchAssets() {
+    private func fetchPrivacyConfig() {
         AppConfigurationFetch().start(isDebug: true, forceRefresh: true) { [weak tableView] result in
             switch result {
             case .assetsUpdated(let protectionsUpdated):
@@ -101,6 +116,27 @@ final class ConfigurationURLDebugViewController: UITableViewController {
                 break
             }
         }
+    }
+
+    private func fetchRemoteMessagingConfig() {
+        (UIApplication.shared.delegate as? AppDelegate)?.debugRefreshRemoteMessages()
+    }
+
+    private func fetchAssets(for row: CustomURLsRows) {
+        switch row {
+        case .privacyConfigURL:
+            fetchPrivacyConfig()
+
+        case .remoteMessagingConfigURL:
+            fetchRemoteMessagingConfig()
+        }
+    }
+
+    @IBAction func resetAll() {
+        for config in CustomURLsRows.allCases {
+            setCustomURL(nil, for: config)
+        }
+        tableView.reloadData()
     }
 
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -124,19 +160,22 @@ final class ConfigurationURLDebugViewController: UITableViewController {
         cell.subtitle.text = url(for: row)
         cell.subtitle.textColor = customURL(for: row) != nil ? UIColor(designSystemColor: .accent) : .label
         cell.ternary.text = lastConfigurationUpdateDate != nil ? dateFormatter.string(from: lastConfigurationUpdateDate!) : "-"
-        cell.refresh.addAction(refreshAction, for: .primaryActionTriggered)
+
+        cell.refresh.addAction(UIAction { [weak self] _ in
+            self?.fetchAssets(for: row)
+            self?.tableView.reloadRows(at: [indexPath], with: .automatic)
+        }, for: .primaryActionTriggered)
+
+        cell.trash.addAction(UIAction { [weak self] _ in
+            self?.setCustomURL(nil, for: row)
+            self?.tableView.reloadRows(at: [indexPath], with: .automatic)
+        }, for: .primaryActionTriggered)
         return cell
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let row = CustomURLsRows(rawValue: indexPath.row)!
         presentCustomURLAlert(for: row)
-    }
-
-    private lazy var refreshAction = UIAction { [weak self] _ in
-        // Enables refreshing debug config
-        self?.fetchAssets()
-        self?.tableView.reloadData()
     }
 
     private func presentCustomURLAlert(for row: CustomURLsRows) {
@@ -204,6 +243,7 @@ final class ConfigurationURLTableViewCell: UITableViewCell {
     @IBOutlet weak var title: UILabel!
     @IBOutlet weak var subtitle: UILabel!
     @IBOutlet weak var refresh: UIButton!
+    @IBOutlet weak var trash: UIButton!
     @IBOutlet weak var ternary: UILabel!
 
     override func awakeFromNib() {

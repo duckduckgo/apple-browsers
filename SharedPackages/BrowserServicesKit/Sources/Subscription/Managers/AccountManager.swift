@@ -227,13 +227,14 @@ public final class DefaultAccountManager: AccountManager {
     public func updateCache(with entitlements: [Entitlement]) {
         let cachedEntitlements: [Entitlement] = entitlementsCache.get() ?? []
 
-        if entitlements != cachedEntitlements {
+        if Set(entitlements) != Set(cachedEntitlements) {
             if entitlements.isEmpty {
                 entitlementsCache.reset()
             } else {
                 entitlementsCache.set(entitlements)
             }
-            NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
+            let payload = EntitlementsDidChangePayload(entitlements: EntitlementsBridging.v2EntitlementsFrom(v1Entitlements: entitlements))
+            NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: payload.notificationUserInfo)
         }
     }
 

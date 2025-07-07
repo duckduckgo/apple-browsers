@@ -16,27 +16,34 @@
 //  limitations under the License.
 //
 
+import AIChat
+import Combine
 import Common
+import Foundation
 import UserScript
+import WebKit
 
 final class AIChatUserScript: NSObject, Subfeature {
-
-    enum MessageNames: String, CaseIterable {
-        case openSettings
-        case getUserValues
-    }
-
-    private let handler: AIChatUserScriptHandling
+    public let handler: AIChatUserScriptHandling
     public let featureName: String = "aiChat"
     weak var broker: UserScriptMessageBroker?
+    weak var webView: WKWebView?
     private(set) var messageOriginPolicy: MessageOriginPolicy
+
+    private var cancellables: Set<AnyCancellable> = []
+
+    public func with(broker: UserScriptMessageBroker) {
+        self.broker = broker
+    }
 
     init(handler: AIChatUserScriptHandling, urlSettings: AIChatDebugURLSettingsRepresentable) {
         self.handler = handler
         var rules = [HostnameMatchingRule]()
 
         /// Default rule for DuckDuckGo AI Chat
-        rules.append(.exact(hostname: URL.duckDuckGo.absoluteString))
+        if let ddgDomain = URL.duckDuckGo.host {
+            rules.append(.exact(hostname: ddgDomain))
+        }
 
         /// Check if a custom hostname is provided in the URL settings
         /// Custom hostnames are used for debugging purposes
@@ -44,14 +51,43 @@ final class AIChatUserScript: NSObject, Subfeature {
             rules.append(.exact(hostname: customURLHostname))
         }
         self.messageOriginPolicy = .only(rules: rules)
+        super.init()
+
+        handler.aiChatNativePromptPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] prompt in
+                self?.submitAIChatNativePrompt(prompt)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
+        guard let webView else {
+            return
+        }
+        broker?.push(method: AIChatUserScriptMessages.submitAIChatNativePrompt.rawValue, params: prompt, for: self, into: webView)
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
-        switch MessageNames(rawValue: methodName) {
-        case .getUserValues:
-            return handler.handleGetUserValues
-        case .openSettings:
-            return handler.openSettings
+        switch AIChatUserScriptMessages(rawValue: methodName) {
+        case .openAIChatSettings:
+            return handler.openAIChatSettings
+        case .getAIChatNativeConfigValues:
+            return handler.getAIChatNativeConfigValues
+        case .closeAIChat:
+            return handler.closeAIChat
+        case .getAIChatNativePrompt:
+            return handler.getAIChatNativePrompt
+        case .openAIChat:
+            return handler.openAIChat
+        case .getAIChatNativeHandoffData:
+            return handler.getAIChatNativeHandoffData
+        case .recordChat:
+            return handler.recordChat
+        case .restoreChat:
+            return handler.restoreChat
+        case .removeChat:
+            return handler.removeChat
         default:
             return nil
         }

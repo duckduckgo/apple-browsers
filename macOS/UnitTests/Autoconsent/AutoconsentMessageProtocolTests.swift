@@ -18,27 +18,57 @@
 
 import BrowserServicesKit
 import Common
+import PersistenceTestingUtils
+import WebKit
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class AutoconsentMessageProtocolTests: XCTestCase {
 
-    @MainActor
-    let userScript = AutoconsentUserScript(
-        scriptSource: ScriptSourceProvider(configStorage: MockConfigurationStore(),
-                                           privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                                           webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, // mock
-                                           contentBlockingManager: ContentBlockerRulesManagerMock(),
-                                           trackerDataManager: TrackerDataManager(etag: ConfigurationStore().loadEtag(for: .trackerDataSet),
-                                                                                  data: ConfigurationStore().loadData(for: .trackerDataSet),
-                                                                                  embeddedDataProvider: AppTrackerDataSetProvider(),
-                                                                                  errorReporting: nil),
-                                           tld: TLD()),
-        config: MockPrivacyConfiguration()
-    )
+    var userScript: AutoconsentUserScript!
 
-    override func setUp() {
-        super.setUp()
+    @MainActor
+    override func setUp() async throws{
+        try await super.setUp()
+
+        let appearancePreferences = AppearancePreferences(
+            keyValueStore: try MockKeyValueFileStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
+        let dataClearingPreferences = DataClearingPreferences(
+            persistor: MockFireButtonPreferencesPersistor(),
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock()
+        )
+        let startupPreferences = StartupPreferences(
+            persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
+            appearancePreferences: appearancePreferences,
+        )
+
+        userScript = AutoconsentUserScript(
+            scriptSource: ScriptSourceProvider(configStorage: MockConfigurationStore(),
+                                               privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                               webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, // mock
+                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
+                                               trackerDataManager: TrackerDataManager(etag: ConfigurationStore().loadEtag(for: .trackerDataSet),
+                                                                                      data: ConfigurationStore().loadData(for: .trackerDataSet),
+                                                                                      embeddedDataProvider: AppTrackerDataSetProvider(),
+                                                                                      errorReporting: nil),
+                                               experimentManager: MockContentScopeExperimentManager(),
+                                               tld: Application.appDelegate.tld,
+                                               onboardingNavigationDelegate: CapturingOnboardingNavigation(),
+                                               appearancePreferences: appearancePreferences,
+                                               startupPreferences: startupPreferences,
+                                               bookmarkManager: MockBookmarkManager(),
+                                               historyCoordinator: CapturingHistoryDataSource(),
+                                               fireproofDomains: MockFireproofDomains(domains: []),
+                                               fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld)
+                                              ),
+            config: MockPrivacyConfiguration()
+        )
+
         CookiePopupProtectionPreferences.shared.isAutoconsentEnabled = true
     }
 

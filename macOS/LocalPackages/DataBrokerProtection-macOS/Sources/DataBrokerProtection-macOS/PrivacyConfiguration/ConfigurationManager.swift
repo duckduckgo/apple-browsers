@@ -30,20 +30,20 @@ public extension Logger {
     static var config: Logger = { Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo", category: "Configuration") }()
 }
 
-final class ConfigurationManager: DefaultConfigurationManager {
+public final class ConfigurationManager: DefaultConfigurationManager {
 
     private let privacyConfigManager: DBPPrivacyConfigurationManager
 
-    init(privacyConfigManager: DBPPrivacyConfigurationManager,
-         fetcher: ConfigurationFetching = ConfigurationFetcher(store: ConfigurationStore(), eventMapping: configurationDebugEvents),
-         store: ConfigurationStoring = ConfigurationStore(),
-         defaults: KeyValueStoring = UserDefaults.config) {
+    public init(privacyConfigManager: DBPPrivacyConfigurationManager,
+                fetcher: ConfigurationFetching = ConfigurationFetcher(store: ConfigurationStore(), eventMapping: configurationDebugEvents),
+                store: ConfigurationStoring = ConfigurationStore(),
+                defaults: KeyValueStoring = UserDefaults.config) {
         self.privacyConfigManager = privacyConfigManager
         super.init(fetcher: fetcher, store: store, defaults: defaults)
     }
 
-    static let configurationDebugEvents = EventMapping<ConfigurationDebugEvents> { event, error, _, _ in
-        let domainEvent: DataBrokerProtectionSharedPixels
+    public static let configurationDebugEvents = EventMapping<ConfigurationDebugEvents> { event, error, _, _ in
+        let domainEvent: DataBrokerProtectionMacOSPixels
         switch event {
         case .invalidPayload(let configuration):
             domainEvent = .invalidPayload(configuration)
@@ -95,16 +95,16 @@ final class ConfigurationManager: DefaultConfigurationManager {
 }
 
 extension ConfigurationManager {
-    override var presentedItemURL: URL? {
+    public override var presentedItemURL: URL? {
         store.fileUrl(for: .privacyConfiguration).deletingLastPathComponent()
     }
 
-    override func presentedSubitemDidAppear(at url: URL) {
+    public override func presentedSubitemDidAppear(at url: URL) {
         guard url == store.fileUrl(for: .privacyConfiguration) else { return }
         updateConfigDependencies()
     }
 
-    override func presentedSubitemDidChange(at url: URL) {
+    public override func presentedSubitemDidChange(at url: URL) {
         guard url == store.fileUrl(for: .privacyConfiguration) else { return }
         updateConfigDependencies()
     }

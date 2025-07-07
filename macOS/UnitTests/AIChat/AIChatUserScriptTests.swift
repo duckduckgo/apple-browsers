@@ -16,8 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
+import AIChat
+import Combine
 import UserScript
+import WebKit
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -38,41 +41,138 @@ final class AIChatUserScriptTests: XCTestCase {
     }
 
     @MainActor func testOpenSettingsMessageTriggersOpenSettingsMethod() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScript.MessageNames.openSettings.rawValue))
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.openAIChatSettings.rawValue))
         _ = try await handler([""], WKScriptMessage())
 
         XCTAssertTrue(mockHandler.didOpenSettings, "openSettings should be called")
     }
 
-    @MainActor func testGetUserValuesMessageReturnsCorrectUserValues() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScript.MessageNames.getUserValues.rawValue))
-
+    @MainActor func testGetAIChatNativeConfigValues() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue))
         let result = try await handler([""], WKScriptMessage())
 
-        if let userValues = result as? AIChatUserScriptHandler.UserValues {
-            XCTAssertTrue(userValues.isToolbarShortcutEnabled, "isToolbarShortcutEnabled should be true")
-            XCTAssertEqual(userValues.platform, "macOS", "Platform should be macOS")
-        } else {
-            XCTFail("Expected result to be of type UserValues")
-        }
+        XCTAssertTrue(mockHandler.didGetConfigValues, "getAIChatNativeConfigValues should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testCloseAIChat() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.closeAIChat.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didCloseChat, "closeAIChat should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testGetAIChatNativePrompt() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativePrompt.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didGetPrompt, "getAIChatNativePrompt should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testOpenAIChat() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.openAIChat.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didOpenChat, "openAIChat should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testGetAIChatNativeHandoffData() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeHandoffData.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didGetHandoffData, "getAIChatNativeHandoffData should be called")
+        XCTAssertNil(result, "Expected result to be nil")
     }
 }
 
 final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didOpenSettings = false
+    var didGetConfigValues = false
+    var didCloseChat = false
+    var didGetPrompt = false
+    var didOpenChat = false
+    var didGetHandoffData = false
 
-    func openSettings(params: Any, message: UserScriptMessage) -> Encodable? {
+    var didRecordChat = false
+    var didRestoreChat = false
+    var didRemoveChat = false
+
+    var didSubmitAIChatNativePrompt = false
+    var aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
+
+    var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
+
+    init(messageHandling: any AIChatMessageHandling = MockAIChatMessageHandling()) {
+        self.messageHandling = messageHandling
+    }
+
+    func openAIChatSettings(params: Any, message: UserScriptMessage) async -> (any Encodable)? {
         didOpenSettings = true
         return nil
     }
 
-    func handleGetUserValues(params: Any, message: UserScriptMessage) -> Encodable? {
-        return AIChatUserScriptHandler.UserValues(isToolbarShortcutEnabled: true, platform: "macOS")
+    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> (any Encodable)? {
+        didGetConfigValues = true
+        return nil
+    }
+
+    func closeAIChat(params: Any, message: UserScriptMessage) -> (any Encodable)? {
+        didCloseChat = true
+        return nil
+    }
+
+    func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> (any Encodable)? {
+        didGetPrompt = true
+        return nil
+    }
+
+    func openAIChat(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        didOpenChat = true
+        return nil
+    }
+
+    func getAIChatNativeHandoffData(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didGetHandoffData = true
+        return nil
+    }
+
+    func recordChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didRecordChat = true
+        return nil
+    }
+
+    func restoreChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didRestoreChat = true
+        return nil
+    }
+
+    func removeChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didRemoveChat = true
+        return nil
+    }
+
+    func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
+        didSubmitAIChatNativePrompt = true
+    }
+
+    var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> {
+        aiChatNativePromptSubject.eraseToAnyPublisher()
     }
 }
 
-private final class AIChatMockDebugSettings: AIChatDebugURLSettingsRepresentable {
+final class AIChatMockDebugSettings: AIChatDebugURLSettingsRepresentable {
     var customURLHostname: String?
     var customURL: String?
     func reset() { }
+}
+
+private final class MockAIChatMessageHandling: AIChatMessageHandling {
+    func getDataForMessageType(_ type: DuckDuckGo_Privacy_Browser.AIChatMessageType) -> (any Encodable)? {
+        nil
+    }
+
+    func setData(_ data: Any?, forMessageType type: DuckDuckGo_Privacy_Browser.AIChatMessageType) {}
 }

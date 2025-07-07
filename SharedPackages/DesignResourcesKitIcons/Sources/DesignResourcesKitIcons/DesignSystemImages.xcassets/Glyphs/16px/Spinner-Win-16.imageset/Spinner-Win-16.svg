@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#000" fill-rule="evenodd" clip-path="url(#Spinner-Win-16_svg__a)" clip-rule="evenodd">
+    <path d="M8.08.599a.625.625 0 0 1 .682-.563 8 8 0 0 1 6.393 11.541.625.625 0 1 1-1.118-.559A6.749 6.749 0 0 0 8.643 1.28.625.625 0 0 1 8.081.6Z"/>
+    <path fill-opacity=".12" d="M8 14.75a6.75 6.75 0 1 0 0-13.5 6.75 6.75 0 0 0 0 13.5ZM8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16Z"/>
+  </g>
+  <defs>
+    <clipPath id="Spinner-Win-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

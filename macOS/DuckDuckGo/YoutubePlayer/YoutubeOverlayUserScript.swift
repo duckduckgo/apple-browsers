@@ -24,7 +24,7 @@ import PixelKit
 import Combine
 
 protocol YoutubeOverlayUserScriptDelegate: AnyObject {
-    func youtubeOverlayUserScriptDidRequestDuckPlayer(with url: URL, in webView: WKWebView)
+    @MainActor func youtubeOverlayUserScriptDidRequestDuckPlayer(with url: URL, in webView: WKWebView)
 }
 
 final class YoutubeOverlayUserScript: NSObject, Subfeature {

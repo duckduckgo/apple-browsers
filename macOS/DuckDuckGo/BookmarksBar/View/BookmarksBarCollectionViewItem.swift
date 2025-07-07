@@ -86,15 +86,16 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         super.viewDidLoad()
 
         view.wantsLayer = true
-        view.layer?.cornerRadius = 4.0
         view.layer?.masksToBounds = true
         view.menu = BookmarksContextMenu(delegate: self)
     }
 
-    func updateItem(from entity: BaseBookmarkEntity, isInteractionPrevented: Bool) {
+    func updateItem(from entity: BaseBookmarkEntity, isInteractionPrevented: Bool, visualStyle: VisualStyleProviding) {
         self.representedObject = entity
         self.title = entity.title
         self.representedObject = entity
+
+        view.layer?.cornerRadius = visualStyle.toolbarButtonsCornerRadius
 
         if let bookmark = entity as? Bookmark {
             let favicon = bookmark.favicon(.small)?.copy() as? NSImage
@@ -122,14 +123,32 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         case .bookmark(_, let url, let storedFavicon, _):
             let host = URL(string: url)?.host ?? ""
             let favicon = storedFavicon ?? NSApp.delegateTyped.faviconManager.getCachedFavicon(for: host, sizeCategory: .small)?.image
-            faviconView.image = favicon ?? .bookmark
+            faviconView.image = favicon ?? visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkIcon
         case .folder:
-            faviconView.image = .folder16
+            faviconView.image = visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkFolderIcon
         }
         mouseOverView.isEnabled = !isInteractionPrevented
         faviconView.isEnabled = !isInteractionPrevented
         titleLabel.isEnabled = !isInteractionPrevented
         titleLabel.alphaValue = isInteractionPrevented ? 0.3 : 1
+    }
+
+    @IBAction func mouseClickAction(_ sender: Any) {
+        delegate?.bookmarksBarCollectionViewItemClicked(self)
+    }
+
+    deinit {
+        // Sometimes the BookmarksBarCollectionView doesn‘t remove the cell views
+        // when the BookmarksBarCollectionViewItem is deallocated
+        // Steps to reproduce:
+        // 1. Create 1 folder and 4 bookmarks on the bookmarks bar
+        // 2. Open new window
+        // 3. Drag all the bookmarks to the folder on the bookmarks bar
+        // 4. Open the folder and drag the bookmarks back to the bookmarks bar
+        // Result: some cell views stay on the bookmarks bar messing with actual bookmarks
+        if isViewLoaded {
+            view.removeFromSuperview()
+        }
     }
 
 }
@@ -160,6 +179,12 @@ extension BookmarksBarCollectionViewItem: MouseOverViewDelegate {
     func mouseOverView(_ mouseOverView: MouseOverView, isMouseOver: Bool) {
         if isMouseOver {
             delegate?.bookmarksBarCollectionViewItemMouseDidHover(self)
+        }
+    }
+
+    func mouseClickView(_ mouseClickView: MouseClickView, otherMouseDownEvent: NSEvent) {
+        if case .middle = otherMouseDownEvent.button {
+            delegate?.bookmarksBarCollectionViewItemClicked(self)
         }
     }
 

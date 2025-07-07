@@ -31,6 +31,28 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
     var window: NSWindow!
     var cancellables: Set<AnyCancellable>!
+
+    // dataSets loading takes long time, so we preload them in a separate task once per the test class
+    static func dataManager() async -> MaliciousSiteProtection.DataManager {
+        let configurationUrl = FileManager.default.configurationDirectory()
+        let fileStore = MaliciousSiteProtection.FileStore(dataStoreURL: configurationUrl)
+        let dataManager = MaliciousSiteProtection.DataManager(fileStore: fileStore,
+                                                              embeddedDataProvider: MaliciousSiteProtectionManager.EmbeddedDataProvider(),
+                                                              fileNameProvider: MaliciousSiteProtectionManager.fileName(for:))
+        let preloadDataTask = Task.detached {
+            await dataManager.preloadData(for: ThreatKind.allCases)
+        }
+        await preloadDataTask.value
+        return dataManager
+    }
+
+    static var featureFlagger: MockFeatureFlagger! = MockFeatureFlagger()
+
+    static var initDetectorTask: Task<MaliciousSiteProtectionManager, Never>! = Task {
+        let dataManager = await MaliciousSiteProtectionIntegrationTests.dataManager()
+        return MaliciousSiteProtectionManager(dataManager: dataManager, featureFlagger: featureFlagger, updateIntervalProvider: { _ in nil })
+    }
+
     var detector: MaliciousSiteDetecting!
     var contentBlockingMock: ContentBlockingMock!
     var privacyFeaturesMock: AnyPrivacyFeatures!
@@ -40,37 +62,43 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
     var tab: Tab!
     var tabViewModel: TabViewModel!
     var schemeHandler: TestSchemeHandler!
-    var featureFlagger: MockFeatureFlagger!
 
     @MainActor
     override func setUp() async throws {
+        detector = await Self.initDetectorTask.value
+        Self.featureFlagger.enabledFeatureFlags = [.maliciousSiteProtection]
+
         WebTrackingProtectionPreferences.shared.isGPCEnabled = false
         MaliciousSiteProtectionPreferences.shared.isEnabled = true
-        featureFlagger = MockFeatureFlagger()
-        detector = MaliciousSiteProtectionManager(featureFlagger: featureFlagger, updateIntervalProvider: { _ in nil })
-        schemeHandler = TestSchemeHandler()
-        schemeHandler.middleware = [{
-            if $0.url!.lastPathComponent == "phishing.html" {
+
+        schemeHandler = TestSchemeHandler { request in
+            if request.url!.lastPathComponent == "phishing.html" {
                 XCTFail("Phishing request loaded")
-            } else if $0.url!.lastPathComponent == "malware.html" {
+            } else if request.url!.lastPathComponent == "malware.html" {
                 XCTFail("Malware request loaded")
             }
             return .ok(.html(""))
-        }]
-
-        WKWebView.customHandlerSchemes = [.http, .https]
-
-        let webViewConfiguration = WKWebViewConfiguration()
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.http.rawValue)
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.https.rawValue)
+        }
 
         let matchesUrlPrefix = MaliciousSiteDetector.APIEnvironment.production.url(for: .matches(.init(hashPrefix: "")), platform: .macOS)
             .absoluteString.prefix(while: { $0 != "?" })
+        let hashPrefixUrlPrefix = MaliciousSiteDetector.APIEnvironment.production.url(for: .hashPrefixSet(.init(threatKind: .phishing, revision: nil)), platform: .macOS)
+            .absoluteString.prefix(while: { $0 != "?" })
+        let filterSetUrlPrefix = MaliciousSiteDetector.APIEnvironment.production.url(for: .filterSet(.init(threatKind: .phishing, revision: nil)), platform: .macOS)
+            .absoluteString.prefix(while: { $0 != "?" })
         stub { request in
-            request.url?.absoluteString.hasPrefix(matchesUrlPrefix) == true
+            let matches = request.url?.absoluteString.hasPrefix(matchesUrlPrefix) == true
+            return matches
         } response: { _ in
             let path = OHPathForFile("match.api.response.json", type(of: self))!
             return fixture(filePath: path, status: 200, headers: nil)
+        }
+        stub { request in
+            let matches = request.url?.absoluteString.hasPrefix(hashPrefixUrlPrefix) == true
+            || request.url?.absoluteString.hasPrefix(filterSetUrlPrefix) == true
+            return matches
+        } response: { _ in
+            return .init(data: Data(), statusCode: 200, headers: nil)
         }
 
         contentBlockingMock = ContentBlockingMock()
@@ -80,7 +108,7 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
             if case .maliciousSiteProtection = feature { true } else { false }
         }
 
-        tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: detector)
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: detector)
         tabViewModel = TabViewModel(tab: tab)
         window = WindowsManager.openNewWindow(with: tab)!
         cancellables = Set<AnyCancellable>()
@@ -96,8 +124,11 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
         tabViewModel = nil
         schemeHandler = nil
         HTTPStubs.removeAllStubs()
-        WKWebView.customHandlerSchemes = []
         WebTrackingProtectionPreferences.shared.isGPCEnabled = true
+    }
+
+    override class func tearDown() {
+        initDetectorTask = nil
         featureFlagger = nil
     }
 
@@ -302,6 +333,8 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
     @MainActor
     func testScamDetected_tabIsMarkedScam() async throws {
+        Self.featureFlagger.enabledFeatureFlags.append(.scamSiteProtection)
+
         let url = URL(string: "http://privacy-test-pages.site/security/badware/scam.html")!
         try await loadUrl(url)
         XCTAssertEqual(tabViewModel.tab.error as NSError? as? MaliciousSiteError, MaliciousSiteError(code: .scam, failingUrl: url))
@@ -309,6 +342,8 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
     @MainActor
     func testFeatureDisabledAndScamDetection_tabIsNotMarkedScam() async throws {
+        Self.featureFlagger.enabledFeatureFlags.append(.scamSiteProtection)
+
         MaliciousSiteProtectionPreferences.shared.isEnabled = false
         let e = expectation(description: "request sent")
         schemeHandler.middleware = [{ _ in
@@ -323,6 +358,8 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
     @MainActor
     func testScamDetectedNotDetected_tabIsNotMarkedScam() async throws {
+        Self.featureFlagger.enabledFeatureFlags.append(.scamSiteProtection)
+
         let url1 = URL(string: "http://privacy-test-pages.site/security/badware/scam.html")!
         try await loadUrl(url1)
         XCTAssertEqual(tabViewModel.tab.error as NSError? as? MaliciousSiteError, MaliciousSiteError(code: .scam, failingUrl: url1))
@@ -334,6 +371,8 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
     @MainActor
     func testScamDetectedThenDDGLoaded_tabIsNotMarkedScam() async throws {
+        Self.featureFlagger.enabledFeatureFlags.append(.scamSiteProtection)
+
         let url1 = URL(string: "http://privacy-test-pages.site/security/badware/scam.html")!
         try await loadUrl(url1)
         XCTAssertEqual(tabViewModel.tab.error as NSError? as? MaliciousSiteError, MaliciousSiteError(code: .scam, failingUrl: url1))
@@ -369,26 +408,9 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
         switch result {
         case .completed: break
-        case .timedOut: throw XCTSkip("Test timed out")
+        case .timedOut: XCTFail("Test timed out")
         case .incorrectOrder, .invertedFulfillment, .interrupted: XCTFail("Test waiting failed")
         @unknown default: XCTFail("Unknown result")
         }
-    }
-}
-
-class MockFeatureFlagger: FeatureFlagger {
-    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
-    var localOverrides: FeatureFlagLocalOverriding?
-
-    func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-        return true
-    }
-
-    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-        return nil
-    }
-
-    var allActiveExperiments: Experiments {
-        return [:]
     }
 }

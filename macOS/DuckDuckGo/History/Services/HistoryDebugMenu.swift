@@ -29,7 +29,7 @@ final class HistoryDebugMenu: NSMenu {
 
     private let environmentMenu = NSMenu()
 
-    init(historyCoordinator: HistoryCoordinating = HistoryCoordinator.shared, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+    init(historyCoordinator: HistoryCoordinating, featureFlagger: FeatureFlagger) {
         self.historyCoordinator = historyCoordinator
         self.featureFlagger = featureFlagger
         resetMenuItem = NSMenuItem(title: "Reset History View Onboarding", action: #selector(resetHistoryViewOnboarding))
@@ -115,7 +115,7 @@ final class HistoryDebugMenu: NSMenu {
     @MainActor
     @objc func showHistoryViewOnboarding() {
         resetHistoryViewOnboarding()
-        WindowControllersManager.shared.lastKeyMainWindowController?
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?
             .mainViewController
             .navigationBarViewController
             .presentHistoryViewOnboardingIfNeeded(force: true)

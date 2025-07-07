@@ -21,6 +21,15 @@ import SwiftUIExtensions
 
 public struct SubscriptionAccessView: View {
 
+    private enum Constants {
+        static let bodyWidth: CGFloat = 480
+        static let verticalSpacing: CGFloat = 20
+        static let horizontalOptionSpacing: CGFloat = 12
+        static let contentPadding: CGFloat = 20
+        static let cancelButtonVerticalPadding: CGFloat = 16
+        static let titleImageSize = CGSize(width: 128, height: 96)
+    }
+
     @Environment(\.presentationMode) private var presentationMode: Binding<PresentationMode>
     private let model: SubscriptionAccessViewModel
 
@@ -33,87 +42,72 @@ public struct SubscriptionAccessView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 0) {
+            VStack(spacing: Constants.verticalSpacing) {
+                Image("Privacy-Pro-128", bundle: .module)
+                    .resizable()
+                    .frame(width: Constants.titleImageSize.width, height: Constants.titleImageSize.height)
 
-                VStack(spacing: 8) {
-                    Text(model.title)
-                        .font(.title2)
-                        .bold()
-                        .foregroundColor(Color(.textPrimary))
-                    Text(model.description)
-                        .font(.body)
-                        .multilineTextAlignment(.center)
-                        .fixMultilineScrollableText()
-                        .foregroundColor(Color(.textPrimary))
-                }
+                Text(model.title)
+                    .font(.title2)
+                    .bold()
+                    .foregroundColor(Color(.textPrimary))
 
-                Spacer().frame(height: 20)
+                HStack(spacing: Constants.horizontalOptionSpacing) {
+                    addViaEmailOption
 
-                VStack(spacing: 0) {
-
-                    VStack(alignment: .leading, spacing: 0) {
-                        HStack(alignment: .center, spacing: 8) {
-                            Image("email-icon", bundle: .module)
-
-                            Text(model.emailLabel)
-                                .font(.system(size: 14, weight: .regular, design: .default))
-                            Spacer()
-                        }
-                        .padding(.vertical, 10)
-
-                        Text(model.emailDescription)
-                            .font(.system(size: 13, weight: .regular, design: .default))
-                            .foregroundColor(Color("TextSecondary", bundle: .module))
-                            .fixMultilineScrollableText()
-
-                        Button(model.emailButtonTitle) {
-                            dismiss {
-                                model.handleEmailAction()
-                            }
-                        }
-                        .buttonStyle(DefaultActionButtonStyle(enabled: true))
-                        .padding(.vertical, 16)
+                    if model.shouldShowRestorePurchase {
+                        addViaAppleAccountOption
                     }
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 20)
-                }
-                .roundedBorder()
-
-                if model.shouldShowRestorePurchase {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(model.restorePurchaseDescription)
-                            .font(.system(size: 13, weight: .regular, design: .default))
-                            .foregroundColor(Color("TextSecondary", bundle: .module))
-                            .fixMultilineScrollableText()
-                        HStack {
-                            TextButton(model.restorePurchaseButtonTitle) {
-                                dismiss {
-                                    model.handleRestorePurchaseAction()
-                                }
-                            }
-                            Spacer()
-                        }
-                    }
-                    .padding(.horizontal, 4)
-                    .padding(.top, 20)
                 }
             }
-            .padding(20)
+            .padding(Constants.contentPadding)
 
             Divider()
 
-            HStack {
-                Spacer()
-
-                Button("Cancel") {
-                    dismiss()
-                }
-                .buttonStyle(DismissActionButtonStyle())
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            footer
         }
-        .frame(width: 480)
+        .frame(width: Constants.bodyWidth)
+        .fixedSize(horizontal: true, vertical: true)
+    }
+
+    @ViewBuilder
+    private var addViaEmailOption: some View {
+        RoundedOptionView(title: model.emailLabel,
+                          description: model.emailDescription,
+                          imageName: "email-icon",
+                          buttonTitle: model.emailButtonTitle,
+                          buttonAction: {
+            dismiss {
+                model.handleEmailAction()
+            }
+        })
+    }
+
+    @ViewBuilder
+    private var addViaAppleAccountOption: some View {
+        RoundedOptionView(title: model.appleAccountLabel,
+                          description: model.appleAccountDescription,
+                          imageName: "apple-icon",
+                          buttonTitle: model.appleAccountButtonTitle,
+                          buttonAction: {
+            dismiss {
+                model.handleRestorePurchaseAction()
+            }
+        })
+    }
+
+    @ViewBuilder
+    private var footer: some View {
+        HStack {
+            Spacer()
+
+            Button(UserText.cancelButtonTitle) {
+                dismiss()
+            }
+            .buttonStyle(DismissActionButtonStyle())
+        }
+        .padding(.horizontal, Constants.contentPadding)
+        .padding(.vertical, Constants.cancelButtonVerticalPadding)
     }
 
     private func dismiss(completion: (() -> Void)? = nil) {
@@ -125,5 +119,71 @@ public struct SubscriptionAccessView: View {
                 completion()
             }
         }
+    }
+}
+
+private struct RoundedOptionView: View {
+
+    private enum Constants {
+        static let horizontalSpacing: CGFloat = 8
+        static let verticalSpacing: CGFloat = 10
+
+        static let titleTopOffset: CGFloat = -3
+        static let buttonTopOffset: CGFloat = 6
+
+        static let contentPadding: CGFloat = 20
+    }
+
+    let title: String
+    let description: String
+    let imageName: String
+    let buttonTitle: String
+    let buttonAction: () -> Void
+
+    init(title: String,
+         description: String,
+         imageName: String,
+         buttonTitle: String,
+         buttonAction: @escaping () -> Void) {
+        self.title = title
+        self.description = description
+        self.imageName = imageName
+        self.buttonTitle = buttonTitle
+        self.buttonAction = buttonAction
+    }
+
+    var body: some View {
+        Group {
+            HStack(alignment: .top, spacing: 0) {
+                HStack(alignment: .top, spacing: Constants.horizontalSpacing) {
+                    Image(imageName, bundle: .module)
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        VStack(alignment: .leading, spacing: Constants.verticalSpacing) {
+                            Text(title)
+                                .font(.system(size: 14, weight: .regular, design: .default))
+
+                            Text(description)
+                                .font(.system(size: 13, weight: .regular, design: .default))
+                                .foregroundColor(Color("TextSecondary", bundle: .module))
+                                .fixMultilineScrollableText()
+
+                            Button(buttonTitle) {
+                                buttonAction()
+                            }
+                            .padding(.top, Constants.buttonTopOffset)
+                        }
+                        .padding(.top, Constants.titleTopOffset)
+
+                        Spacer(minLength: 0)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(Constants.contentPadding)
+        }
+        .frame(maxWidth: .infinity)
+        .roundedBorder()
     }
 }

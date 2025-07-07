@@ -64,11 +64,15 @@ protocol BookmarkManager: AnyObject {
     // Wrapper definition in a protocol is not supported yet
     var listPublisher: Published<BookmarkList?>.Publisher { get }
     var list: BookmarkList? { get }
+    var isLoading: Bool { get }
 
     var sortModePublisher: Published<BookmarksSortMode>.Publisher { get }
     var sortMode: BookmarksSortMode { get set }
 
     func requestSync()
+
+    /// For debug menu use only
+    func resetBookmarks(completion: @escaping () -> Void)
 }
 extension BookmarkManager {
     @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, completion: @escaping (Error?) -> Void = { _ in }) -> Bookmark? {
@@ -82,24 +86,24 @@ extension BookmarkManager {
     }
 }
 final class LocalBookmarkManager: BookmarkManager {
-    static let shared = LocalBookmarkManager()
 
-    init(bookmarkStore: BookmarkStore? = nil, faviconManagement: FaviconManagement? = nil, foldersStore: BookmarkFoldersStore = UserDefaultsBookmarkFoldersStore()) {
+    init(
+        bookmarkStore: BookmarkStore,
+        foldersStore: BookmarkFoldersStore = UserDefaultsBookmarkFoldersStore(),
+        sortRepository: SortBookmarksRepository = SortBookmarksUserDefaults(),
+        appearancePreferences: AppearancePreferences
+    ) {
         self.foldersStore = foldersStore
-        if let bookmarkStore {
-            self.bookmarkStore = bookmarkStore
-        }
-        if let faviconManagement {
-            self.faviconManagement = faviconManagement
-        }
+        self.bookmarkStore = bookmarkStore
+        self.sortRepository = sortRepository
 
-        self.subscribeToFavoritesDisplayMode()
-        self.sortMode = sortRepository.storedSortMode
+        subscribeToFavoritesDisplayMode(with: appearancePreferences)
+        sortMode = sortRepository.storedSortMode
     }
 
-    private func subscribeToFavoritesDisplayMode() {
-        favoritesDisplayMode = AppearancePreferences.shared.favoritesDisplayMode
-        favoritesDisplayModeCancellable = AppearancePreferences.shared.$favoritesDisplayMode
+    private func subscribeToFavoritesDisplayMode(with appearancePreferences: AppearancePreferences) {
+        favoritesDisplayMode = appearancePreferences.favoritesDisplayMode
+        favoritesDisplayModeCancellable = appearancePreferences.$favoritesDisplayMode
             .dropFirst()
             .sink { [weak self] displayMode in
                 self?.favoritesDisplayMode = displayMode
@@ -110,6 +114,7 @@ final class LocalBookmarkManager: BookmarkManager {
 
     @Published private(set) var list: BookmarkList?
     var listPublisher: Published<BookmarkList?>.Publisher { $list }
+    var isLoading: Bool = true
 
     @Published var sortMode: BookmarksSortMode = .manual {
         didSet {
@@ -118,9 +123,8 @@ final class LocalBookmarkManager: BookmarkManager {
     }
     var sortModePublisher: Published<BookmarksSortMode>.Publisher { $sortMode }
 
-    private lazy var bookmarkStore: BookmarkStore = LocalBookmarkStore(bookmarkDatabase: BookmarkDatabase.shared)
-    private lazy var faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
-    private lazy var sortRepository: SortBookmarksRepository = SortBookmarksUserDefaults()
+    private let bookmarkStore: BookmarkStore
+    private let sortRepository: SortBookmarksRepository
     private let foldersStore: BookmarkFoldersStore
 
     private var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.desktop)
@@ -132,22 +136,26 @@ final class LocalBookmarkManager: BookmarkManager {
         bookmarkStore.loadAll(type: .topLevelEntities) { [weak self] (topLevelEntities, error) in
             guard error == nil, let topLevelEntities = topLevelEntities else {
                 Logger.bookmarks.error("LocalBookmarkManager: Failed to fetch entities.")
+                self?.isLoading = false
                 return
             }
 
             self?.bookmarkStore.loadAll(type: .bookmarks) { [weak self] (bookmarks, error) in
                 guard error == nil, let bookmarks = bookmarks else {
                     Logger.bookmarks.error("LocalBookmarkManager: Failed to fetch bookmarks.")
+                    self?.isLoading = false
                     return
                 }
 
                 self?.bookmarkStore.loadAll(type: .favorites) { [weak self] (favorites, error) in
-                    guard error == nil, let favorites = favorites else {
+                    guard let self, error == nil, let favorites = favorites else {
                         Logger.bookmarks.error("LocalBookmarkManager: Failed to fetch favorites.")
+                        self?.isLoading = false
                         return
                     }
 
-                    self?.list = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
+                    self.isLoading = false
+                    self.list = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
                 }
             }
         }
@@ -443,17 +451,6 @@ final class LocalBookmarkManager: BookmarkManager {
         }
     }
 
-    // MARK: - Favicons
-
-    @MainActor(unsafe)
-    private func favicon(for host: String?) -> NSImage? {
-        if let host = host {
-            return faviconManagement.getCachedFavicon(for: host, sizeCategory: .small)?.image
-        }
-
-        return nil
-    }
-
     // MARK: - Import
 
     func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource) -> BookmarksImportSummary {
@@ -482,7 +479,7 @@ final class LocalBookmarkManager: BookmarkManager {
 
     // MARK: - Debugging
 
-    func resetBookmarks() {
+    func resetBookmarks(completion: @escaping () -> Void) {
         guard let store = bookmarkStore as? LocalBookmarkStore else {
             return
         }
@@ -490,7 +487,7 @@ final class LocalBookmarkManager: BookmarkManager {
         store.resetBookmarks { [self] _ in
             self.loadBookmarks()
             self.requestSync()
-
+            completion()
         }
     }
 

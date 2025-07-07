@@ -25,6 +25,13 @@ import Core
 /// This struct serves as a wrapper for PrivacyConfigurationManaging, enabling the retrieval of data relevant to AIChat.
 /// It also fire pixels when necessary data is missing.
 struct AIChatSettings: AIChatSettingsProvider {
+
+    // Settings for KeepSession subfeature
+    struct KeepSessionSettings: Codable {
+        let sessionTimeoutMinutes: Int
+        static let defaultSessionTimeoutInMinutes: Int = 60
+    }
+
     enum SettingsValue: String {
         case aiChatURL
 
@@ -37,43 +44,93 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let debugSettings: AIChatDebugSettingsHandling
     private var remoteSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigurationManager.privacyConfig.settings(for: .aiChat)
     }
     private let userDefaults: UserDefaults
     private let notificationCenter: NotificationCenter
-
+    private let featureFlagger: FeatureFlagger
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          userDefaults: UserDefaults = .standard,
-         notificationCenter: NotificationCenter = .default) {
+         notificationCenter: NotificationCenter = .default,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.debugSettings = debugSettings
         self.userDefaults = userDefaults
         self.notificationCenter = notificationCenter
+        self.featureFlagger = featureFlagger
     }
 
     // MARK: - Public
 
     var aiChatURL: URL {
+        // 1. First check for debug URL override
+        if let debugURL = debugSettings.customURL,
+           let url = URL(string: debugURL) {
+            return url
+        }
+        
+        // 2. Then check remote configuration
         guard let url = URL(string: getSettingsData(.aiChatURL)) else {
             return URL(string: SettingsValue.aiChatURL.defaultValue)!
         }
         return url
     }
 
+    private var keepSessionSettings: KeepSessionSettings? {
+        let decoder = JSONDecoder()
+
+        if let settingsJSON = privacyConfigurationManager.privacyConfig.settings(for: AIChatSubfeature.keepSession),
+           let jsonData = settingsJSON.data(using: .utf8) {
+            do {
+                let settings = try decoder.decode(KeepSessionSettings.self, from: jsonData)
+                return settings
+            } catch {
+                return nil
+            }
+        }
+        return nil
+    }
+
+    var sessionTimerInMinutes: Int {
+        keepSessionSettings?.sessionTimeoutMinutes ?? KeepSessionSettings.defaultSessionTimeoutInMinutes
+    }
+
+    var isAIChatEnabled: Bool {
+        userDefaults.isAIChatEnabled
+    }
+
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool {
-        userDefaults.showAIChatBrowsingMenu
+        userDefaults.showAIChatBrowsingMenu && isAIChatEnabled
     }
 
     var isAIChatAddressBarUserSettingsEnabled: Bool {
-        userDefaults.showAIChatAddressBar
+        userDefaults.showAIChatAddressBar && isAIChatEnabled
     }
 
     var isAIChatTabSwitcherUserSettingsEnabled: Bool {
-        userDefaults.showAIChatTabSwitcher
+        userDefaults.showAIChatTabSwitcher && isAIChatEnabled
     }
 
     var isAIChatVoiceSearchUserSettingsEnabled: Bool {
-        userDefaults.showAIChatVoiceSearch
+        userDefaults.showAIChatVoiceSearch && isAIChatEnabled
+    }
+
+    var isAIChatSearchInputUserSettingsEnabled: Bool {
+        userDefaults.showAIChatSearchInputInternal && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalSwitcherBarTransition)
+    }
+
+    func enableAIChat(enable: Bool) {
+        userDefaults.isAIChatEnabled = enable
+        triggerSettingsChangedNotification()
+
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsEnabled)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisabled)
+        }
     }
 
     func enableAIChatBrowsingMenuUserSettings(enable: Bool) {
@@ -95,6 +152,17 @@ struct AIChatSettings: AIChatSettingsProvider {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAddressBarTurnedOn)
         } else {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAddressBarTurnedOff)
+        }
+    }
+
+    func enableAIChatSearchInputUserSettings(enable: Bool) {
+        userDefaults.showAIChatSearchInputInternal = enable
+        triggerSettingsChangedNotification()
+
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOn)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOff)
         }
     }
 
@@ -137,17 +205,33 @@ struct AIChatSettings: AIChatSettingsProvider {
 
 private extension UserDefaults {
     enum Keys {
+        static let isAIChatEnabled = "aichat.settings.isEnabled"
         static let showAIChatBrowsingMenu = "aichat.settings.showAIChatBrowsingMenu"
         static let showAIChatAddressBar = "aichat.settings.showAIChatAddressBar"
         static let showAIChatVoiceSearch = "aichat.settings.showAIChatVoiceSearch"
         static let showAIChatTabSwitcher = "aichat.settings.showAIChatTabSwitcher"
 
+        /// We are using a specific flag for internal purposes because when we ship this to external users, the default value will be different, and we don't want to set the default before the feature is ready
+        static let showAIChatSearchInputInternal = "aichat.settings.showAIChatSearchInputInternal"
     }
 
+    static let isAIChatEnabledDefaultValue = true
     static let showAIChatBrowsingMenuDefaultValue = true
     static let showAIChatAddressBarDefaultValue = true
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
+    static let showAIChatSearchInputDefaultValueInternal = false
+
+    @objc dynamic var isAIChatEnabled: Bool {
+        get {
+            value(forKey: Keys.isAIChatEnabled) as? Bool ?? Self.isAIChatEnabledDefaultValue
+        }
+
+        set {
+            guard newValue != isAIChatEnabled else { return }
+            set(newValue, forKey: Keys.isAIChatEnabled)
+        }
+    }
 
     @objc dynamic var showAIChatBrowsingMenu: Bool {
         get {
@@ -179,6 +263,17 @@ private extension UserDefaults {
         set {
             guard newValue != showAIChatAddressBar else { return }
             set(newValue, forKey: Keys.showAIChatAddressBar)
+        }
+    }
+
+    @objc dynamic var showAIChatSearchInputInternal: Bool {
+        get {
+            value(forKey: Keys.showAIChatSearchInputInternal) as? Bool ?? Self.showAIChatSearchInputDefaultValueInternal
+        }
+
+        set {
+            guard newValue != showAIChatSearchInputInternal else { return }
+            set(newValue, forKey: Keys.showAIChatSearchInputInternal)
         }
     }
 

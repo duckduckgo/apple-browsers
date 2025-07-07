@@ -27,7 +27,9 @@ import XCTest
 @available(macOS 12.0, *)
 class HistoryIntegrationTests: XCTestCase {
 
+    var schemeHandler: TestSchemeHandler!
     var window: NSWindow!
+    static let testHtml = "<html><head><title>Title 1</title></head><body>test</body></html>"
 
     var mainViewController: MainViewController {
         (window.contentViewController as! MainViewController)
@@ -51,9 +53,12 @@ class HistoryIntegrationTests: XCTestCase {
         privacyConfiguration.isFeatureKeyEnabled = { _, _ in
             return false
         }
+        schemeHandler = TestSchemeHandler { _ in
+            return .ok(.html(Self.testHtml))
+        }
 
         await withCheckedContinuation { continuation in
-            HistoryCoordinator.shared.burnAll {
+            NSApp.delegateTyped.historyCoordinator.burnAll {
                 continuation.resume(returning: ())
             }
         }
@@ -64,23 +69,17 @@ class HistoryIntegrationTests: XCTestCase {
         window?.close()
         window = nil
         WebTrackingProtectionPreferences.shared.isGPCEnabled = true
+        schemeHandler = nil
     }
 
     // MARK: - Tests
 
     @MainActor
     func testWhenPageTitleIsUpdated_historyEntryTitleUpdated() async throws {
-        let tab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
-        let html = """
-            <html>
-                <head><title>Title 1</title></head>
-                <body>test content</body>
-            </html>
-        """
-
-        let url = URL.testsServer.appendingTestParameters(data: html.utf8data)
+        let url = URL.duckDuckGo
         let titleChangedPromise1 = tab.$title
             .filter { $0 == "Title 1" }
             .receive(on: DispatchQueue.main)
@@ -91,10 +90,10 @@ class HistoryIntegrationTests: XCTestCase {
         _=try await tab.setUrl(url, source: .link)?.result.get()
         _=try await titleChangedPromise1.value
 
-        XCTAssertEqual(HistoryCoordinator.shared.history?.count, 1)
-        XCTAssertEqual(HistoryCoordinator.shared.history?.first?.title, "Title 1")
-        XCTAssertEqual(HistoryCoordinator.shared.history?.first?.numberOfVisits, 1)
-        XCTAssertEqual(HistoryCoordinator.shared.history?.first?.blockedTrackingEntities.isEmpty, true)
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.count, 1)
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.first?.title, "Title 1")
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.first?.numberOfVisits, 1)
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.first?.blockedTrackingEntities.isEmpty, true)
 
         let titleChangedPromise2 = tab.$title
             .filter { $0 == "Title 2" }
@@ -106,15 +105,15 @@ class HistoryIntegrationTests: XCTestCase {
         try await tab.webView.evaluateJavaScript("(function() { document.title = 'Title 2'; })()") as Void?
         _=try await titleChangedPromise2.value
 
-        XCTAssertEqual(HistoryCoordinator.shared.history?.count, 1)
-        XCTAssertEqual(HistoryCoordinator.shared.history?.first?.title, "Title 2")
-        XCTAssertEqual(HistoryCoordinator.shared.history?.first?.numberOfVisits, 1)
-        XCTAssertEqual(HistoryCoordinator.shared.history?.first?.blockedTrackingEntities.isEmpty, true)
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.count, 1)
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.first?.title, "Title 2")
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.first?.numberOfVisits, 1)
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.first?.blockedTrackingEntities.isEmpty, true)
     }
 
     @MainActor
     func testWhenSameDocumentNavigation_historyEntryTitleUpdated() async throws {
-        let tab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let html = """
@@ -128,10 +127,13 @@ class HistoryIntegrationTests: XCTestCase {
                 </body>
             </html>
         """
+        schemeHandler.middleware = [{ _ in
+            return .ok(.html(html))
+        }]
 
         let urls = [
-            URL.testsServer.appendingTestParameters(data: html.utf8data),
-            URL(string: URL.testsServer.appendingTestParameters(data: html.utf8data).absoluteString + "#1")!,
+            URL(string: "http://test.com/")!,
+            URL(string: "http://test.com/#1")!,
         ]
 
         _=try await tab.setUrl(urls[0], source: .link)?.result.get()
@@ -146,54 +148,55 @@ class HistoryIntegrationTests: XCTestCase {
         try await tab.webView.evaluateJavaScript("(function() { document.getElementById('link').click(); })()") as Void?
         _=try await titleChangedPromise.value
 
-        XCTAssertEqual(HistoryCoordinator.shared.history?.count, 2)
-        let first = HistoryCoordinator.shared.history?.first(where: { $0.url == urls[0] })
+        XCTAssertEqual(NSApp.delegateTyped.historyCoordinator.history?.count, 2)
+        let first = NSApp.delegateTyped.historyCoordinator.history?.first(where: { $0.url == urls[0] })
         XCTAssertEqual(first?.numberOfVisits, 1)
         XCTAssertEqual(first?.title, "Title 1")
 
-        let second = HistoryCoordinator.shared.history?.first(where: { $0.url != urls[0] })
+        let second = NSApp.delegateTyped.historyCoordinator.history?.first(where: { $0.url != urls[0] })
         XCTAssertEqual(second?.numberOfVisits, 1)
         XCTAssertEqual(second?.title, "Title 2")
     }
 
     @MainActor
     func testWhenNavigatingToSamePage_visitIsAdded() async throws {
-        let tab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let urls = [
-            URL.testsServer,
-            URL.testsServer.appendingPathComponent("page1").appendingTestParameters(data: "".utf8data),
+            URL(string: "http://test.com/")!,
+            URL(string: "http://test.com/page1")!,
         ]
+
         _=try await tab.setUrl(urls[0], source: .link)?.result.get()
         _=try await tab.setUrl(urls[1], source: .link)?.result.get()
         _=try await tab.setUrl(urls[0], source: .link)?.result.get()
 
-        let first = HistoryCoordinator.shared.history?.first(where: { $0.url == urls[0] })
+        let first = NSApp.delegateTyped.historyCoordinator.history?.first(where: { $0.url == urls[0] })
         XCTAssertEqual(first?.numberOfVisits, 2)
 
-        let second = HistoryCoordinator.shared.history?.first(where: { $0.url == urls[1] })
+        let second = NSApp.delegateTyped.historyCoordinator.history?.first(where: { $0.url == urls[1] })
         XCTAssertEqual(second?.numberOfVisits, 1)
     }
 
     @MainActor
     func testWhenNavigatingBack_visitIsNotAdded() async throws {
-        let tab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let urls = [
-            URL.testsServer,
-            URL.testsServer.appendingPathComponent("page1").appendingTestParameters(data: "".utf8data),
+            URL(string: "http://test.com/")!,
+            URL(string: "http://test.com/page1")!,
         ]
         _=try await tab.setUrl(urls[0], source: .link)?.result.get()
         _=try await tab.setUrl(urls[1], source: .link)?.result.get()
         _=try await tab.goBack()?.result.get()
         _=try await tab.goForward()?.result.get()
 
-        let first = HistoryCoordinator.shared.history?.first(where: { $0.url == urls[0] })
+        let first = NSApp.delegateTyped.historyCoordinator.history?.first(where: { $0.url == urls[0] })
         XCTAssertEqual(first?.numberOfVisits, 1)
 
-        let second = HistoryCoordinator.shared.history?.first(where: { $0.url == urls[1] })
+        let second = NSApp.delegateTyped.historyCoordinator.history?.first(where: { $0.url == urls[1] })
         XCTAssertEqual(second?.numberOfVisits, 1)
     }
 
@@ -201,10 +204,28 @@ class HistoryIntegrationTests: XCTestCase {
     func testWhenScriptTrackerLoaded_trackerAddedToHistory() async throws {
         WebTrackingProtectionPreferences.shared.isGPCEnabled = false
 
-        let tab = Tab(content: .newtab)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL(string: "http://privacy-test-pages.site/tracker-reporting/1major-via-script.html")!
+        let html = """
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width">
+          <title>1 major tracker loaded via script</title>
+
+          <script src="//doubleclick.net/tracker.js"></script>
+        </head>
+        <body>
+        <p><a href="../index.html">[Home]</a></p>
+        <p>1 major tracker loaded via script src</p>
+        </body>
+        </html>
+        """
+        schemeHandler.middleware = [{ _ in
+            return .ok(.html(html))
+        }]
 
         // navigate to a regular page, tracker count should be reset to 0
         let trackerPromise = tab.privacyInfoPublisher.compactMap { $0?.$trackerInfo }
@@ -218,7 +239,7 @@ class HistoryIntegrationTests: XCTestCase {
         _=try await tab.setUrl(url, source: .link)?.result.get()
         _=try await trackerPromise.value
 
-        let first = HistoryCoordinator.shared.history?.first
+        let first = NSApp.delegateTyped.historyCoordinator.history?.first
         XCTAssertEqual(first?.trackersFound, true)
         XCTAssertEqual(first?.numberOfTrackersBlocked, 2)
         XCTAssertEqual(first?.blockedTrackingEntities, ["Google Ads (Google)"])
@@ -229,10 +250,29 @@ class HistoryIntegrationTests: XCTestCase {
     func testWhenSurrogateTrackerLoaded_trackerAddedToHistory() async throws {
         WebTrackingProtectionPreferences.shared.isGPCEnabled = false
 
-        let tab = Tab(content: .newtab)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
         window = WindowsManager.openNewWindow(with: tab)!
 
+        let html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width">
+          <title>1 major tracker with surrogate</title>
+          <script src="//doubleclick.net/instream/ad_status.js"></script>
+        </head>
+        <body>
+        <p><a href="../index.html">[Home]</a></p>
+        <p>1 major tracker with surrogate</p>
+        </body>
+        </html>
+        """
+
         let url = URL(string: "http://privacy-test-pages.site/tracker-reporting/1major-with-surrogate.html")!
+        schemeHandler.middleware = [{ _ in
+            return .ok(.html(html))
+        }]
 
         // navigate to a regular page, tracker count should be reset to 0
         let trackerPromise = tab.privacyInfoPublisher.compactMap { $0?.$trackerInfo }
@@ -246,7 +286,7 @@ class HistoryIntegrationTests: XCTestCase {
         _=try await tab.setUrl(url, source: .link)?.result.get()
         _=try await trackerPromise.value
 
-        let first = HistoryCoordinator.shared.history?.first
+        let first = NSApp.delegateTyped.historyCoordinator.history?.first
         XCTAssertEqual(first?.trackersFound, true)
         XCTAssertEqual(first?.numberOfTrackersBlocked, 3)
         XCTAssertEqual(first?.blockedTrackingEntities, ["Google Ads (Google)"])

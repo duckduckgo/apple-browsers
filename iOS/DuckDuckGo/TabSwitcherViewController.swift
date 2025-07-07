@@ -28,6 +28,7 @@ import os.log
 import SwiftUI
 import BrowserServicesKit
 import AIChat
+import Combine
 
 class TabSwitcherViewController: UIViewController {
 
@@ -46,28 +47,18 @@ class TabSwitcherViewController: UIViewController {
 
     enum InterfaceMode {
 
-        var isMultiSelection: Bool {
-            return !isSingleSelection
-        }
-
-        var isSingleSelection: Bool {
-            return [InterfaceMode.singleSelectNormal, .singleSelectLarge].contains(self)
-        }
-
         var isLarge: Bool {
-            return [InterfaceMode.singleSelectLarge, .multiSelectAvailableLarge, .multiSelectedEditingLarge].contains(self)
+            return [.largeSize, .editingLargeSize].contains(self)
         }
 
         var isNormal: Bool {
             return !isLarge
         }
 
-        case singleSelectNormal
-        case singleSelectLarge
-        case multiSelectAvailableNormal
-        case multiSelectAvailableLarge
-        case multiSelectEditingNormal
-        case multiSelectedEditingLarge
+        case regularSize
+        case largeSize
+        case editingRegularSize
+        case editingLargeSize
 
     }
 
@@ -83,9 +74,18 @@ class TabSwitcherViewController: UIViewController {
             }
         }
 
+        var image: UIImage {
+            switch self {
+            case .list:
+                return UIImage(resource: .tabsToggleList)
+            case .grid:
+                return UIImage(resource: .tabsToggleGrid)
+            }
+        }
+
     }
 
-    @IBOutlet weak var topBarView: UINavigationBar!
+    @IBOutlet weak var titleBarView: UINavigationBar!
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var toolbar: UIToolbar!
 
@@ -94,6 +94,14 @@ class TabSwitcherViewController: UIViewController {
     
     var selectedTabs: [IndexPath] {
         collectionView.indexPathsForSelectedItems ?? []
+    }
+
+    var isExperimentalThemingEnabled: Bool {
+        featureFlagger.isFeatureOn(.visualUpdates)
+    }
+
+    var isJune2025LayoutChangeEnabled: Bool {
+        featureFlagger.isFeatureOn(.june2025TabManagerLayoutChanges)
     }
 
     private(set) var bookmarksDatabase: CoreDataDatabase
@@ -110,7 +118,7 @@ class TabSwitcherViewController: UIViewController {
     let favicons: Favicons
 
     var tabsStyle: TabsStyle = .list
-    var interfaceMode: InterfaceMode = .singleSelectNormal
+    var interfaceMode: InterfaceMode = .regularSize
     var canShowSelectionMenu = false
 
     let featureFlagger: FeatureFlagger
@@ -120,7 +128,11 @@ class TabSwitcherViewController: UIViewController {
         tabManager.model
     }
 
-    let barsHandler = TabSwitcherBarsStateHandler()
+    /// Updated based on featureflag / killswitch in `viewDidLoad`
+    var barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
+
+    private var tabObserverCancellable: AnyCancellable?
+    private let appSettings: AppSettings
 
     required init?(coder: NSCoder,
                    bookmarksDatabase: CoreDataDatabase,
@@ -128,13 +140,15 @@ class TabSwitcherViewController: UIViewController {
                    featureFlagger: FeatureFlagger,
                    favicons: Favicons = Favicons.shared,
                    tabManager: TabManager,
-                   aiChatSettings: AIChatSettingsProvider) {
+                   aiChatSettings: AIChatSettingsProvider,
+                   appSettings: AppSettings) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
         self.favicons = favicons
         self.tabManager = tabManager
         self.aiChatSettings = aiChatSettings
+        self.appSettings = appSettings
         super.init(coder: coder)
     }
 
@@ -142,17 +156,76 @@ class TabSwitcherViewController: UIViewController {
         fatalError("Not implemented")
     }
 
-    fileprivate func createTopBar() {
+    fileprivate func createTitleBar() {
         let appearance = UINavigationBarAppearance()
         appearance.configureWithTransparentBackground()
-        topBarView.standardAppearance = appearance
-        topBarView.scrollEdgeAppearance = appearance
+        titleBarView.standardAppearance = appearance
+        titleBarView.scrollEdgeAppearance = appearance
+    }
+
+    private func activateLayoutConstraintsBasedOnBarPosition() {
+        let isBottomBar = isJune2025LayoutChangeEnabled && appSettings.currentAddressBarPosition.isBottom
+
+        // Potentially for these 3 we could do thing better for 'normal' on iPad
+        let topOffset = -6.0
+        let bottomOffset = 8.0
+        let navHPadding = isExperimentalThemingEnabled ? 10.0 : 0.0
+
+        // The constants here are to force the ai button to align between the tab switcher and this view
+        NSLayoutConstraint.activate([
+            titleBarView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: navHPadding),
+            titleBarView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -navHPadding),
+            isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: topOffset) : nil,
+            !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: bottomOffset) : nil,
+
+            collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
+
+            // Always at the bottom
+            toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            toolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ].compactMap { $0 })
+    }
+
+    private func setupBarsLayout() {
+        // Remove existing constraints to avoid conflicts
+        titleBarView.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Clear existing constraints for these views comprehensively
+        let viewsToRemoveConstraintsFor = [titleBarView, toolbar, collectionView]
+        viewsToRemoveConstraintsFor.forEach { targetView in
+            targetView?.removeFromSuperview()
+        }
+        
+        // Re-add the views to the hierarchy
+        view.addSubview(titleBarView)
+        view.addSubview(toolbar)
+        view.addSubview(collectionView)
+        
+        let toolbarAppearance = UIToolbarAppearance()
+        if isExperimentalThemingEnabled {
+            toolbarAppearance.configureWithTransparentBackground()
+            toolbarAppearance.shadowColor = .clear
+        } else {
+            toolbarAppearance.configureWithDefaultBackground()
+        }
+        toolbar.standardAppearance = toolbarAppearance
+        toolbar.compactAppearance = toolbarAppearance
+        activateLayoutConstraintsBasedOnBarPosition()
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        createTopBar()
+        applyJune2025LayoutChanges()
+
+        createTitleBar()
+        setupBarsLayout()
 
         refreshTitle()
         setupBackgroundView()
@@ -169,10 +242,19 @@ class TabSwitcherViewController: UIViewController {
             Pixel.fire(pixel: .tabSwitcherNewLayoutSeen)
             tabSwitcherSettings.hasSeenNewLayout = true
         }
+
+        tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.collectionView.reloadData()
+        }
+    }
+
+    private func applyJune2025LayoutChanges() {
+        barsHandler = isJune2025LayoutChangeEnabled ? DefaultTabSwitcherBarsStateHandler() : LegacyTabSwitcherBarsStateHandler()
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
+        setupBarsLayout()
         updateUIForSelectionMode()
     }
 
@@ -192,7 +274,7 @@ class TabSwitcherViewController: UIViewController {
         collectionView.dragInteractionEnabled = true
         collectionView.dragDelegate = self
         collectionView.dropDelegate = self
-
+        
         updateUIForSelectionMode()
     }
 
@@ -224,12 +306,9 @@ class TabSwitcherViewController: UIViewController {
     }
 
     func refreshTitle() {
-        topBarView.topItem?.title = UserText.numberOfTabs(tabsModel.count)
-
-        guard interfaceMode.isMultiSelection else { return }
-
+        titleBarView.topItem?.title = UserText.numberOfTabs(tabsModel.count)
         if !selectedTabs.isEmpty {
-            topBarView.topItem?.title = UserText.numberOfSelectedTabs(withCount: selectedTabs.count)
+            titleBarView.topItem?.title = UserText.numberOfSelectedTabs(withCount: selectedTabs.count)
         }
     }
 
@@ -298,7 +377,7 @@ class TabSwitcherViewController: UIViewController {
         if let current = currentSelection {
             let tab = tabsModel.get(tabAt: current)
             tab.viewed = true
-            tabsModel.save()
+            tabManager.save()
             delegate?.tabSwitcher(self, didSelectTab: tab)
         }
         dismiss()
@@ -436,9 +515,6 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemsAt indexPaths: [IndexPath], point: CGPoint) -> UIContextMenuConfiguration? {
-
-        guard interfaceMode.isMultiSelection else { return nil }
-
         // This can happen if you long press in the whitespace
         guard !indexPaths.isEmpty else { return nil }
         
@@ -527,7 +603,7 @@ extension TabSwitcherViewController {
         
         refreshDisplayModeButton()
         
-        topBarView.tintColor = theme.barTintColor
+        titleBarView.tintColor = theme.barTintColor
 
         toolbar.barTintColor = theme.barBackgroundColor
         toolbar.tintColor = theme.barTintColor

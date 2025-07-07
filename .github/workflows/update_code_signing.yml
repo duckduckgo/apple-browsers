@@ -31,6 +31,20 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v4
 
+      - name: Setup Ruby and dependencies for iOS
+        if: startsWith(inputs.target, 'ios')
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: iOS
+          cache-key-prefix: ios-ruby
+
+      - name: Setup Ruby and dependencies for macOS
+        if: startsWith(inputs.target, 'macos')
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
+
       - name: Update code signing assets
         env:
           APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
@@ -74,5 +88,4 @@ jobs:
           esac
  
           cd "$platform"
-          bundle install
           bundle exec fastlane ${lane}

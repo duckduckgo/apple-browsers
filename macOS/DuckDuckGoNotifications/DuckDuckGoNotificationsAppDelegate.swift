@@ -20,13 +20,13 @@ import AppLauncher
 import Cocoa
 import Combine
 import NetworkExtension
-import NetworkProtection
+import VPN
 import VPNAppLauncher
 import os.log
 
 @objc(Application)
 final class DuckDuckGoNotificationsApplication: NSApplication {
-    private let _delegate = DuckDuckGoNotificationsAppDelegate()
+    private let _delegate = DuckDuckGoNotificationsAppDelegate() // swiftlint:disable:this weak_delegate
 
     override init() {
         Logger.networkProtection.log("🟢 Notifications Agent init: \(ProcessInfo.processInfo.processIdentifier, privacy: .public)")

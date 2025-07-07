@@ -111,6 +111,9 @@ public protocol NavigationResponder {
 
     @MainActor
     func didFailProvisionalLoad(with request: URLRequest, in frame: WKFrameInfo, with error: Error)
+
+    @MainActor
+    func renderingProgressDidChange(progressEvents: UInt)
 #endif
 
     /// Return true to disable stop on decidePolicyForNavigationAction taking longer than 4 secoinds
@@ -165,6 +168,9 @@ public extension NavigationResponder {
 
     @MainActor
     func didFailProvisionalLoad(with request: URLRequest, in frame: WKFrameInfo, with error: Error) {}
+
+    @MainActor
+    func renderingProgressDidChange(progressEvents: UInt) {}
 #endif
 
     var shouldDisableLongDecisionMakingChecks: Bool { false }

@@ -16,19 +16,10 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
+import Foundation
 import PixelKit
-
-protocol AIChatRemoteSettingsProvider {
-    var onboardingCookieName: String { get }
-    var onboardingCookieDomain: String { get }
-    var aiChatURLIdentifiableQuery: String { get }
-    var aiChatURLIdentifiableQueryValue: String { get }
-    var aiChatURL: URL { get }
-    var isAIChatEnabled: Bool { get }
-    var isToolbarShortcutEnabled: Bool { get }
-    var isApplicationMenuShortcutEnabled: Bool { get }
-}
 
 /// This struct serves as a wrapper for PrivacyConfigurationManaging, enabling the retrieval of data relevant to AIChat.
 /// It also fire pixels when necessary data is missing.
@@ -52,12 +43,15 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let debugURLSettings: AIChatDebugURLSettingsRepresentable
     private var settings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigurationManager.privacyConfig.settings(for: .aiChat)
     }
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager) {
+    init(privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+         debugURLSettings: AIChatDebugURLSettingsRepresentable = AIChatDebugURLSettings()) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.debugURLSettings = debugURLSettings
     }
 
     // MARK: - Public
@@ -68,6 +62,13 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
     var aiChatURLIdentifiableQueryValue: String { getSettingsData(.aiChatURLIdentifiableQueryValue) }
 
     var aiChatURL: URL {
+        // 1. First check for debug URL override
+        if let debugURL = debugURLSettings.customURL,
+           let url = URL(string: debugURL) {
+            return url
+        }
+
+        // 2. Then check remote configuration
         guard let url = URL(string: getSettingsData(.aiChatURL)) else {
             return URL(string: SettingsValue.aiChatURL.defaultValue)!
         }
@@ -78,21 +79,13 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
         privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .aiChat)
     }
 
-    var isToolbarShortcutEnabled: Bool {
-        privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(AIChatSubfeature.toolbarShortcut)
-    }
-
-    var isApplicationMenuShortcutEnabled: Bool {
-        privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(AIChatSubfeature.applicationMenuShortcut)
-    }
-
     // MARK: - Private
 
     private func getSettingsData(_ value: SettingsValue) -> String {
         if let value = settings[value.rawValue] as? String {
             return value
         } else {
-            PixelKit.fire(GeneralPixel.aichatNoRemoteSettingsFound(value), includeAppVersionParameter: true)
+            PixelKit.fire(AIChatPixel.aichatNoRemoteSettingsFound(value), frequency: .dailyAndCount, includeAppVersionParameter: true)
             return value.defaultValue
         }
     }

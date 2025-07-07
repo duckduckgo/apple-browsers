@@ -150,12 +150,35 @@ public enum EmailAliasStatus {
     case unknown
 }
 
+private struct LockedEmailManagerStorage {
+    private let storage: EmailManagerStorage
+    private let lock: RecursiveLockWithSideEffects
+
+    var isLocked: Bool {
+        return lock.isLocked
+    }
+
+    init(storage: EmailManagerStorage, lock: RecursiveLockWithSideEffects) {
+        self.storage = storage
+        self.lock = lock
+    }
+
+    func withLock<T>(_ block: (EmailManagerStorage, _ dispatchSideEffect: (@escaping () -> Void) -> Void) throws -> T) rethrows -> T {
+        return try lock.withLock {
+            try block(storage) { sideEffect in
+                lock.dispatchSideEffect(sideEffect)
+            }
+        }
+    }
+
+}
+
 public class EmailManager {
 
     public static let emailDomain = "duck.com"
     private static let inContextEmailSignupPromptDismissedPermanentlyAtKey = "Autofill.InContextEmailSignup.dismissed.permanently.at"
 
-    private let storage: EmailManagerStorage
+    private let storage: LockedEmailManagerStorage
     public weak var aliasPermissionDelegate: EmailManagerAliasPermissionDelegate?
     public weak var requestDelegate: EmailManagerRequestDelegate?
 
@@ -168,119 +191,102 @@ public class EmailManager {
     private lazy var aliasAPIURL = emailUrls.emailAliasAPI
 
     /// This lock is static to prevent data races when using multiple instances of EmailManager to store data.
-    private static let lock = NSRecursiveLock()
+    /// Side effects have to be executed after unlocking to avoid deadlocks
+    private static let lock = RecursiveLockWithSideEffects()
 
     private var dateFormatter = ISO8601DateFormatter()
 
     private var username: String? {
-        Self.lock.lock()
-        defer {
-            Self.lock.unlock()
-        }
-
-        do {
-            return try storage.getUsername()
-        } catch {
-            if let error = error as? EmailKeychainAccessError {
-                requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .getUsername, error: error)
-            } else {
+        return storage.withLock { storage, dispatchSideEffect in
+            do {
+                return try storage.getUsername()
+            } catch let error as EmailKeychainAccessError {
+                dispatchSideEffect {
+                    self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .getUsername, error: error)
+                }
+                return nil
+            } catch {
                 assertionFailure("Expected EmailKeychainAccessFailure")
+                return nil
             }
-
-            return nil
         }
     }
 
     private var token: String? {
-        Self.lock.lock()
-        defer {
-            Self.lock.unlock()
-        }
-
-        do {
-            return try storage.getToken()
-        } catch {
-            if let error = error as? EmailKeychainAccessError {
-                requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .getToken, error: error)
-            } else {
+        return storage.withLock { storage, dispatchSideEffect in
+            do {
+                return try storage.getToken()
+            } catch let error as EmailKeychainAccessError {
+                dispatchSideEffect {
+                    self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .getToken, error: error)
+                }
+                return nil
+            } catch {
                 assertionFailure("Expected EmailKeychainAccessFailure")
+                return nil
             }
-
-            return nil
         }
     }
 
     private var alias: String? {
-        Self.lock.lock()
-        defer {
-            Self.lock.unlock()
-        }
-
-        do {
-            return try storage.getAlias()
-        } catch {
-            if let error = error as? EmailKeychainAccessError {
-                requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .getAlias, error: error)
-            } else {
+        return storage.withLock { storage, dispatchSideEffect in
+            do {
+                return try storage.getAlias()
+            } catch let error as EmailKeychainAccessError {
+                dispatchSideEffect {
+                    self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .getAlias, error: error)
+                }
+                return nil
+            } catch {
                 assertionFailure("Expected EmailKeychainAccessFailure")
+                return nil
             }
-
-            return nil
         }
     }
 
     public var cohort: String? {
-        Self.lock.lock()
-        defer {
-            Self.lock.unlock()
-        }
-
-        do {
-            return try storage.getCohort()
-        } catch {
-            if let error = error as? EmailKeychainAccessError {
-                requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .getCohort, error: error)
-            } else {
+        return storage.withLock { storage, dispatchSideEffect in
+            do {
+                return try storage.getCohort()
+            } catch let error as EmailKeychainAccessError {
+                dispatchSideEffect {
+                    self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .getCohort, error: error)
+                }
+                return nil
+            } catch {
                 assertionFailure("Expected EmailKeychainAccessFailure")
+                return nil
             }
-
-            return nil
         }
     }
 
     public var lastUseDate: String {
-        Self.lock.lock()
-        defer {
-            Self.lock.unlock()
-        }
-
-        do {
-            return try storage.getLastUseDate() ?? ""
-        } catch {
-            if let error = error as? EmailKeychainAccessError {
-                requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .getLastUseData, error: error)
-            } else {
+        return storage.withLock { storage, dispatchSideEffect in
+            do {
+                return try storage.getLastUseDate() ?? ""
+            } catch let error as EmailKeychainAccessError {
+                dispatchSideEffect {
+                    self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .getLastUseData, error: error)
+                }
+                return ""
+            } catch {
                 assertionFailure("Expected EmailKeychainAccessFailure")
+                return ""
             }
-
-            return ""
         }
     }
 
     public func updateLastUseDate() {
-        Self.lock.lock()
-        defer {
-            Self.lock.unlock()
-        }
-
         let dateString = dateFormatter.string(from: Date())
 
-        do {
-            try storage.store(lastUseDate: dateString)
-        } catch {
-            if let error = error as? EmailKeychainAccessError {
-                requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .storeLastUseDate, error: error)
-            } else {
+        storage.withLock { storage, dispatchSideEffect in
+            do {
+                try storage.store(lastUseDate: dateString)
+            } catch let error as EmailKeychainAccessError {
+                dispatchSideEffect {
+                    self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .storeLastUseDate, error: error)
+                }
+            } catch {
                 assertionFailure("Expected EmailKeychainAccessFailure")
             }
         }
@@ -299,47 +305,44 @@ public class EmailManager {
         get {
             UserDefaults().object(forKey: Self.inContextEmailSignupPromptDismissedPermanentlyAtKey) as? Double ?? nil
         }
-
         set {
             UserDefaults().set(newValue, forKey: Self.inContextEmailSignupPromptDismissedPermanentlyAtKey)
         }
     }
 
     public init(storage: EmailManagerStorage = EmailKeychainManager()) {
-        self.storage = storage
+        self.storage = LockedEmailManagerStorage(storage: storage, lock: Self.lock)
 
         dateFormatter.formatOptions = [.withFullDate, .withDashSeparatorInDate]
         dateFormatter.timeZone = TimeZone(identifier: "America/New_York") // Use ET time zone
     }
 
     public func signOut(isForced: Bool = false) throws {
-        Self.lock.lock()
-        defer {
-            Self.lock.unlock()
-        }
+        try storage.withLock { storage, dispatchSideEffect in
+            do {
+                // Retrieve the cohort before it gets removed from storage, so that it can be passed as a notification parameter.
+                let currentCohortValue = try? storage.getCohort()
+                try storage.deleteAuthenticationState()
 
-        // Retrieve the cohort before it gets removed from storage, so that it can be passed as a notification parameter.
-        let currentCohortValue = try? storage.getCohort()
+                dispatchSideEffect {
+                    var notificationParameters: [String: String] = [:]
+                    if let currentCohortValue {
+                        notificationParameters[NotificationParameter.cohort] = currentCohortValue
+                    }
+                    notificationParameters[NotificationParameter.isForcedSignOut] = isForced ? "true" : nil
 
-        do {
-            try storage.deleteAuthenticationState()
+                    NotificationCenter.default.post(name: .emailDidSignOut, object: self, userInfo: notificationParameters)
+                }
 
-            var notificationParameters: [String: String] = [:]
-
-            if let currentCohortValue = currentCohortValue {
-                notificationParameters[NotificationParameter.cohort] = currentCohortValue
-            }
-            notificationParameters[NotificationParameter.isForcedSignOut] = isForced ? "true" : nil
-
-            NotificationCenter.default.post(name: .emailDidSignOut, object: self, userInfo: notificationParameters)
-
-        } catch {
-            if let error = error as? EmailKeychainAccessError {
-                self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .deleteAuthenticationState, error: error)
-            } else {
+            } catch let error as EmailKeychainAccessError {
+                dispatchSideEffect {
+                    self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .deleteAuthenticationState, error: error)
+                }
+                throw error
+            } catch {
                 assertionFailure("Expected EmailKeychainAccessFailure")
+                throw error
             }
-            throw error
         }
     }
 
@@ -505,19 +508,15 @@ extension EmailManager: AutofillEmailDelegate {
 public extension EmailManager {
 
     func getUsername() throws -> String? {
-        Self.lock.lock()
-        defer {
-            Self.lock.unlock()
+        return try storage.withLock { storage, _ in
+            try storage.getUsername()
         }
-        return try storage.getUsername()
     }
 
     func getToken() throws -> String? {
-        Self.lock.lock()
-        defer {
-            Self.lock.unlock()
+        return try storage.withLock { storage, _ in
+            try storage.getToken()
         }
-        return try storage.getToken()
     }
 }
 
@@ -525,32 +524,27 @@ public extension EmailManager {
 
 public extension EmailManager {
     func storeToken(_ token: String, username: String, cohort: String?) throws {
-        Self.lock.lock()
-        defer {
-            Self.lock.unlock()
-        }
+        try storage.withLock { storage, dispatchSideEffect in
+            do {
 
-        do {
-            try storage.store(token: token, username: username, cohort: cohort)
+                try storage.store(token: token, username: username, cohort: cohort)
 
-            var notificationParameters: [String: String] = [:]
+                dispatchSideEffect {
+                    NotificationCenter.default.post(name: .emailDidSignIn, object: self, userInfo: cohort.map { [NotificationParameter.cohort: $0] })
+                }
 
-            if let cohort = cohort {
-                notificationParameters[NotificationParameter.cohort] = cohort
-            }
-
-            NotificationCenter.default.post(name: .emailDidSignIn, object: self, userInfo: notificationParameters)
-
-        } catch {
-            if let error = error as? EmailKeychainAccessError {
-                requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .storeTokenUsernameCohort, error: error)
-            } else {
+            } catch let error as EmailKeychainAccessError {
+                dispatchSideEffect {
+                    self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .storeTokenUsernameCohort, error: error)
+                }
+                throw error
+            } catch {
                 assertionFailure("Expected EmailKeychainAccessFailure")
+                throw error
             }
-            throw error
-        }
 
-        fetchAndStoreAlias()
+            fetchAndStoreAlias()
+        }
     }
 }
 
@@ -591,31 +585,28 @@ private extension EmailManager {
     }
 
     func consumeAliasAndReplace() {
-        Self.lock.lock()
-        defer {
-            Self.lock.unlock()
-        }
-
-        do {
-            try storage.deleteAlias()
-        } catch {
-            if let error = error as? EmailKeychainAccessError {
-                self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .deleteAlias, error: error)
-            } else {
+        storage.withLock { storage, dispatchSideEffect in
+            do {
+                try storage.deleteAlias()
+            } catch let error as EmailKeychainAccessError {
+                dispatchSideEffect {
+                    self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .deleteAlias, error: error)
+                }
+            } catch {
                 assertionFailure("Expected EmailKeychainAccessFailure")
             }
-        }
 
-        fetchAndStoreAlias()
+            fetchAndStoreAlias()
+        }
     }
 
     func getAliasIfNeeded(timeoutInterval: TimeInterval = 4.0, completionHandler: @escaping AliasCompletion) {
-        if let alias = alias {
+        if let alias {
             completionHandler(alias, nil)
             return
         }
         fetchAndStoreAlias(timeoutInterval: timeoutInterval) { newAlias, error in
-            guard let newAlias = newAlias, error == nil  else {
+            guard let newAlias, error == nil  else {
                 completionHandler(nil, error)
                 return
             }
@@ -624,33 +615,40 @@ private extension EmailManager {
     }
 
     func fetchAndStoreAlias(timeoutInterval: TimeInterval = 60.0, completionHandler: AliasCompletion? = nil) {
+        assert(completionHandler == nil || !Self.lock.isLocked, "completionHandler may be called synchronously from locked context")
         fetchAlias(timeoutInterval: timeoutInterval) { [weak self] alias, error in
-            guard let alias = alias, error == nil else {
+            guard let alias, error == nil else {
                 completionHandler?(nil, error)
                 return
             }
             // Check we haven't signed out whilst waiting
             // if so we don't want to save sensitive data
-            guard let self = self, self.isSignedIn else {
+            guard let self else {
                 completionHandler?(nil, .signedOut)
                 return
             }
 
-            Self.lock.lock()
-            defer {
-                Self.lock.unlock()
-            }
-
             do {
-                try self.storage.store(alias: alias)
-            } catch {
-                if let error = error as? EmailKeychainAccessError {
-                    self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .storeAlias, error: error)
-                } else {
-                    assertionFailure("Expected EmailKeychainAccessFailure")
-                }
-            }
+                try self.storage.withLock { storage, dispatchSideEffect in
+                    do {
+                        guard self.isSignedIn else { throw AliasRequestError.signedOut }
+                        try storage.store(alias: alias)
 
+                    } catch AliasRequestError.signedOut {
+                        throw AliasRequestError.signedOut
+
+                    } catch let error as EmailKeychainAccessError {
+                        dispatchSideEffect {
+                            self.requestDelegate?.emailManagerKeychainAccessFailed(self, accessType: .storeAlias, error: error)
+                        }
+                    } catch {
+                        assertionFailure("Expected EmailKeychainAccessFailure")
+                    }
+                }
+            } catch AliasRequestError.signedOut {
+                completionHandler?(nil, .signedOut)
+                return
+            } catch {}
             completionHandler?(alias, nil)
         }
     }
@@ -712,18 +710,10 @@ private extension EmailManager {
                                                           timeoutInterval: timeoutInterval)
             let response: EmailAliasStatusResponse = try JSONDecoder().decode(EmailAliasStatusResponse.self, from: data)
             return response.active ? .active : .inactive
-        } catch let error {
-            switch error {
-            case EmailManagerRequestDelegateError.serverError(let code):
-                switch code {
-                case 404:
-                    return .notFound
-                default:
-                    return .error
-                }
-            default:
-                return .error
-            }
+        } catch EmailManagerRequestDelegateError.serverError(404) {
+            return .notFound
+        } catch {
+            return .error
         }
     }
 
@@ -747,18 +737,10 @@ private extension EmailManager {
                                                               timeoutInterval: timeoutInterval)
             let response: EmailAliasStatusResponse = try JSONDecoder().decode(EmailAliasStatusResponse.self, from: data)
             return response.active ? .active : .inactive
-        } catch let error {
-            switch error {
-            case EmailManagerRequestDelegateError.serverError(let code):
-                switch code {
-                case 404:
-                    return .notFound
-                default:
-                    return .error
-                }
-            default:
-                return .error
-            }
+        } catch EmailManagerRequestDelegateError.serverError(404) {
+            return .notFound
+        } catch {
+            return .error
         }
     }
 

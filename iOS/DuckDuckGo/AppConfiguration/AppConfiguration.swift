@@ -28,6 +28,9 @@ struct AppConfiguration {
     @UserDefaultsWrapper(key: .privacyConfigCustomURL, defaultValue: nil)
     private var privacyConfigCustomURL: String?
 
+    @UserDefaultsWrapper(key: .remoteMessagingConfigCustomURL, defaultValue: nil)
+    private var remoteMessagingConfigCustomURL: String?
+
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
 
     let persistentStoresConfiguration = PersistentStoresConfiguration()
@@ -55,11 +58,23 @@ struct AppConfiguration {
     }
 
     private func setConfigurationURLProvider() {
-        if isDebugBuild, let privacyConfigCustomURL, let url = URL(string: privacyConfigCustomURL) {
-            Configuration.setURLProvider(CustomConfigurationURLProvider(customPrivacyConfigurationURL: url))
-        } else {
+        // Never use the custom configuration by default when not DEBUG, but
+        //  you can go to the debug menu and enabled it.
+        if !isDebugBuild {
             Configuration.setURLProvider(AppConfigurationURLProvider())
+            return
         }
+
+        // Always use custom configuration in debug.
+        //  Only the configurations editable in the debug menu are specified here.
+        let privacyConfigURL = privacyConfigCustomURL.flatMap { URL(string: $0) }
+        let remoteMessagingConfigURL = remoteMessagingConfigCustomURL.flatMap { URL(string: $0) }
+
+        // This will default to normal values if the overrides are nil.
+        Configuration.setURLProvider(CustomConfigurationURLProvider(
+            customPrivacyConfigurationURL: privacyConfigURL,
+            customRemoteMessagingConfigURL: remoteMessagingConfigURL
+        ))
     }
 
     func finalize(with reportingService: ReportingService,
@@ -70,6 +85,7 @@ struct AppConfiguration {
             onVariantAssigned(reportingService: reportingService)
         }
         CrashHandlersConfiguration.handleCrashDuringCrashHandlersSetup()
+        startAutomationServerIfNeeded(mainViewController: mainViewController)
         configureUserBrowsingUserAgent() // Called at launch end to avoid IPC race when spawning WebView for content blocking.
     }
 
@@ -80,6 +96,16 @@ struct AppConfiguration {
     private func removeLeftoverStatesIfNeeded(autoClearService: AutoClearService, mainViewController: MainViewController) {
         if !autoClearService.isClearingEnabled {
             mainViewController.tabManager.removeLeftoverInteractionStates()
+        }
+    }
+
+    private func startAutomationServerIfNeeded(mainViewController: MainViewController) {
+        let launchOptionsHandler = LaunchOptionsHandler()
+        guard launchOptionsHandler.automationPort != nil else {
+            return
+        }
+        Task { @MainActor in
+            _ = AutomationServer(main: mainViewController, port: launchOptionsHandler.automationPort)
         }
     }
 

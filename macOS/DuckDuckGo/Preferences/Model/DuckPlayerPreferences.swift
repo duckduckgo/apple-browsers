@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Combine
+import AppKit
 import BrowserServicesKit
-import PixelKit
+import Combine
 import DuckPlayer
+import Foundation
+import PixelKit
 
 protocol DuckPlayerPreferencesPersistor {
     /// The persistor hadles raw Bool values but each one translates into a DuckPlayerMode:
@@ -129,11 +130,11 @@ final class DuckPlayerPreferences: ObservableObject {
     func openLearnMoreContingencyURL() {
         guard let url = duckPlayerContingencyHandler.learnMoreURL else { return }
         PixelKit.fire(NonStandardEvent(GeneralPixel.duckPlayerContingencyLearnMoreClicked))
-        WindowControllersManager.shared.show(url: url, source: .ui, newTab: true)
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     init(persistor: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
          internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider) {
         self.persistor = persistor
         duckPlayerMode = .init(persistor.duckPlayerModeBool)

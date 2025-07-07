@@ -22,6 +22,32 @@ import Core
 import BrowserServicesKit
 import Onboarding
 import PixelKit
+import PixelExperimentKit
+
+/// A protocol that defines a method for firing experiment-related analytics pixels.
+///
+/// Types conforming to this protocol can be used to send experiment data (e.g., metrics and user actions).
+/// This protocol is particularly useful for injecting dependencies to enable testing.
+protocol ExperimentPixelFiring {
+    /// Fires an experiment pixel with the specified parameters.
+    ///
+    /// - Parameters:
+    ///   - subfeatureID: The unique identifier of the subfeature associated with the experiment.
+    ///   - metric: The name of the metric being tracked (e.g., impressions, clicks, conversions).
+    ///   - conversionWindowDays: The time range (in days) to associate the pixel with conversion events.
+    ///   - value: A string representing the value associated with the metric, such as counts or statuses.
+    static func fireExperimentPixel(for subfeatureID: SubfeatureID,
+                                    metric: String,
+                                    conversionWindowDays: ConversionWindow,
+                                    value: String)
+}
+
+/// Conforming `PixelKit` to the `ExperimentPixelFiring` protocol.
+///
+/// `PixelKit` provides the concrete implementation for firing experiment pixels. By extending
+/// `PixelKit` to conform to `ExperimentPixelFiring`, its functionality can be injected and mocked
+/// for testing purposes.
+extension PixelKit: ExperimentPixelFiring {}
 
 // MARK: - Pixel Fire Interface
 
@@ -48,6 +74,9 @@ protocol OnboardingIntroImpressionReporting {
 }
 
 protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
+    func measureSkipOnboardingCTAAction()
+    func measureConfirmSkipOnboardingCTAAction()
+    func measureResumeOnboardingCTAAction()
     func measureBrowserComparisonImpression()
     func measureChooseBrowserCTAAction()
     func measureChooseAppIconImpression()
@@ -65,6 +94,15 @@ protocol OnboardingCustomInteractionPixelReporting {
 
 protocol OnboardingDaxDialogsReporting {
     func measureScreenImpression(event: Pixel.Event)
+    func measureTrySearchDialogNewTabDismissButtonTapped()
+    func measureSearchResultDialogDismissButtonTapped()
+    func measureTryVisitSiteDialogNewTabDismissButtonTapped()
+    func measureTryVisitSiteDialogDismissButtonTapped()
+    func measureTrackersDialogDismissButtonTapped()
+    func measureFireDialogDismissButtonTapped()
+    func measureEndOfJourneyDialogNewTabDismissButtonTapped()
+    func measureEndOfJourneyDialogDismissButtonTapped()
+    func measurePrivacyPromoDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogCTAAction()
 }
 
@@ -81,7 +119,7 @@ protocol OnboardingSetAsDefaultBrowserExperimentReporting {
 }
 
 typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting & OnboardingSetAsDefaultBrowserExperimentReporting
-typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingSearchSuggestionsPixelReporting & OnboardingSiteSuggestionsPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting
+typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting
 
 // MARK: - Implementation
 
@@ -156,6 +194,18 @@ extension OnboardingPixelReporter {
 
 extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
+    func measureSkipOnboardingCTAAction() {
+        fire(event: .onboardingIntroSkipOnboardingCTAPressed, unique: false)
+    }
+
+    func measureConfirmSkipOnboardingCTAAction() {
+        fire(event: .onboardingIntroConfirmSkipOnboardingCTAPressed, unique: false)
+    }
+
+    func measureResumeOnboardingCTAAction() {
+        fire(event: .onboardingIntroResumeOnboardingCTAPressed, unique: false)
+    }
+
     func measureOnboardingIntroImpression() {
         fire(event: .onboardingIntroShownUnique, unique: true)
     }
@@ -182,24 +232,6 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
     func measureChooseBottomAddressBarPosition() {
         fire(event: .onboardingIntroBottomAddressBarSelected, unique: false)
-    }
-
-}
-
-// MARK: - OnboardingPixelReporter + List
-
-extension OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting {
-    
-    func measureSearchSuggetionOptionTapped() {
-        // Left empty on purpose. These were temporary pixels in iOS. macOS will still use them.
-    }
-
-}
-
-extension OnboardingPixelReporter: OnboardingSiteSuggestionsPixelReporting {
-    
-    func measureSiteSuggetionOptionTapped() {
-        // Left empty on purpose. These were temporary pixels in iOS. macOS will still use them.
     }
 
 }
@@ -243,6 +275,42 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
         fire(event: event, unique: true)
     }
 
+    func measureTrySearchDialogNewTabDismissButtonTapped() {
+        fire(event: .onboardingTrySearchDialogNewTabDismissButtonTapped, unique: false)
+    }
+
+    func measureSearchResultDialogDismissButtonTapped() {
+        fire(event: .onboardingSearchResultDialogDismissButtonTapped, unique: false)
+    }
+
+    func measureTryVisitSiteDialogNewTabDismissButtonTapped() {
+        fire(event: .onboardingTryVisitSiteDialogNewTabDismissButtonTapped, unique: false)
+    }
+
+    func measureTryVisitSiteDialogDismissButtonTapped() {
+        fire(event: .onboardingTryVisitSiteDialogDismissButtonTapped, unique: false)
+    }
+
+    func measureTrackersDialogDismissButtonTapped() {
+        fire(event: .onboardingTrackersDialogDismissButtonTapped, unique: false)
+    }
+
+    func measureFireDialogDismissButtonTapped() {
+        fire(event: .onboardingFireDialogDismissButtonTapped, unique: false)
+    }
+
+    func measureEndOfJourneyDialogNewTabDismissButtonTapped() {
+        fire(event: .onboardingEndOfJourneyDialogNewTabDismissButtonTapped, unique: false)
+    }
+
+    func measureEndOfJourneyDialogDismissButtonTapped() {
+        fire(event: .onboardingEndOfJourneyDialogDismissButtonTapped, unique: false)
+    }
+
+    func measurePrivacyPromoDialogNewTabDismissButtonTapped() {
+        fire(event: .onboardingPrivacyPromoDialogDismissButtonTapped, unique: false)
+    }
+
     func measureEndOfJourneyDialogCTAAction() {
         fire(event: .daxDialogsEndOfJourneyDismissed, unique: false)
     }
@@ -275,9 +343,9 @@ extension OnboardingPixelReporter: OnboardingAddToDockReporting {
 
 extension OnboardingPixelReporter: OnboardingSetAsDefaultBrowserExperimentReporting {
 
-    enum SetAsDefaultExperimentMetrics {
+    enum SetAsDefaultBrowserPipVideoExperimentMetrics {
         /// Unique identifier for the subfeature being tested.
-        static let subfeatureIdentifier = OnboardingSubfeature.setAsDefaultBrowserExperiment.rawValue
+        static let subfeatureIdentifier = OnboardingSubfeature.setAsDefaultBrowserPiPVideoExperiment.rawValue
 
         /// Metric identifiers for various user actions during the experiment.
         static let metricDefaultBrowserSet = "setAsDefaultBrowser"
@@ -289,18 +357,18 @@ extension OnboardingPixelReporter: OnboardingSetAsDefaultBrowserExperimentReport
 
     func measureDidSetDDGAsDefaultBrowser() {
         experimentPixel.fireExperimentPixel(
-            for: SetAsDefaultExperimentMetrics.subfeatureIdentifier,
-            metric: SetAsDefaultExperimentMetrics.metricDefaultBrowserSet,
-            conversionWindowDays: SetAsDefaultExperimentMetrics.conversionWindowDays,
+            for: SetAsDefaultBrowserPipVideoExperimentMetrics.subfeatureIdentifier,
+            metric: SetAsDefaultBrowserPipVideoExperimentMetrics.metricDefaultBrowserSet,
+            conversionWindowDays: SetAsDefaultBrowserPipVideoExperimentMetrics.conversionWindowDays,
             value: "1"
         )
     }
 
     func measureDidNotSetDDGAsDefaultBrowser() {
         experimentPixel.fireExperimentPixel(
-            for: SetAsDefaultExperimentMetrics.subfeatureIdentifier,
-            metric: SetAsDefaultExperimentMetrics.metricDefaultBrowserNotSet,
-            conversionWindowDays: SetAsDefaultExperimentMetrics.conversionWindowDays,
+            for: SetAsDefaultBrowserPipVideoExperimentMetrics.subfeatureIdentifier,
+            metric: SetAsDefaultBrowserPipVideoExperimentMetrics.metricDefaultBrowserNotSet,
+            conversionWindowDays: SetAsDefaultBrowserPipVideoExperimentMetrics.conversionWindowDays,
             value: "1"
         )
     }

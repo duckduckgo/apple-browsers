@@ -52,6 +52,27 @@ public struct CreditCardValidation {
             }
         }
 
+        public var displayCardType: String {
+            switch self {
+            case .amex:
+                return "amex"
+            case .dinersClub:
+                return "dinersClub"
+            case .discover:
+                return "discover"
+            case .mastercard:
+                return "masterCard"
+            case .jcb:
+                return "jcb"
+            case .unionPay:
+                return "unionPay"
+            case .visa:
+                return "visa"
+            case .unknown:
+                return "generic"
+            }
+        }
+
         static fileprivate var patterns: [(type: CardType, pattern: String)] {
             return [
                 (.amex, "^3[47][0-9]{5,}$"),
@@ -77,6 +98,62 @@ public struct CreditCardValidation {
         return CreditCardValidation(cardNumber: cardNumber).type
     }
 
+    public static func formattedCardNumber(_ number: String) -> String {
+        let digitsOnly = number.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+
+        let formatted: String
+
+        // American Express: 4 digits, 6 digits, 5 digits (XXXX XXXXXX XXXXX)
+        if digitsOnly.hasPrefix("34") || digitsOnly.hasPrefix("37") {
+            formatted = digitsOnly.chunked(by: [4, 6, 5])
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
+        }
+        // All other cards: groups of 4 (XXXX XXXX XXXX XXXX)
+        else {
+            formatted = digitsOnly.chunked(by: 4)
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
+        }
+
+        return formatted
+    }
+
+    public static func extractDigits(from formatted: String) -> String {
+        return formatted.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
+    }
+
+    public static func hasMinimumLength(_ cardNumber: String) -> Bool {
+        return cardNumber.count >= 8
+    }
+
+    public static func hasMaximumLength(_ cardNumber: String) -> Bool {
+        return cardNumber.count <= 19
+    }
+
+    public static func isValidCardNumber(_ number: String) -> Bool {
+        guard hasMinimumLength(number), hasMaximumLength(number) else {
+            return false
+        }
+        // Implement Luhn algorithm (mod 10)
+        var sum = 0
+        let reversedDigits = number.reversed().map { Int(String($0)) ?? 0 }
+
+        for (index, digit) in reversedDigits.enumerated() {
+            if index % 2 == 1 {
+                // Double every second digit
+                let doubled = digit * 2
+                // If doubled value is greater than 9, subtract 9
+                sum += doubled > 9 ? doubled - 9 : doubled
+            } else {
+                sum += digit
+            }
+        }
+
+        // Valid if sum is divisible by 10
+        return sum % 10 == 0
+    }
+
     private let cardNumber: String
 
     public init(cardNumber: String) {
@@ -91,6 +168,39 @@ fileprivate extension String {
         let set = CharacterSet.decimalDigits.inverted
         let numbers = components(separatedBy: set)
         return numbers.joined(separator: "")
+    }
+
+    func chunked(by lengths: [Int]) -> [String] {
+        var result: [String] = []
+        var startIndex = self.startIndex
+
+        for length in lengths {
+            guard startIndex < self.endIndex else { break }
+
+            let endIndex = self.index(startIndex, offsetBy: length, limitedBy: self.endIndex) ?? self.endIndex
+            result.append(String(self[startIndex..<endIndex]))
+            startIndex = endIndex
+        }
+
+        // If there are remaining characters, add them as the last chunk
+        if startIndex < self.endIndex {
+            result.append(String(self[startIndex..<self.endIndex]))
+        }
+
+        return result
+    }
+
+    func chunked(by length: Int) -> [String] {
+        var result: [String] = []
+        var startIndex = self.startIndex
+
+        while startIndex < self.endIndex {
+            let endIndex = self.index(startIndex, offsetBy: length, limitedBy: self.endIndex) ?? self.endIndex
+            result.append(String(self[startIndex..<endIndex]))
+            startIndex = endIndex
+        }
+
+        return result
     }
 
 }

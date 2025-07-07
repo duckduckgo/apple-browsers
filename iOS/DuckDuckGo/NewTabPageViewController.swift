@@ -39,19 +39,14 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private var hostingController: UIHostingController<AnyView>?
 
-    private weak var daxDialogViewController: DaxDialogViewController?
-    private var daxDialogHeightConstraint: NSLayoutConstraint?
-
     private let pixelFiring: PixelFiring.Type
+    private let messageNavigationDelegate: MessageNavigationDelegate
 
     private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating
 
-    var isDaxDialogVisible: Bool {
-        daxDialogViewController?.view.isHidden == false
-    }
-
     init(tab: Tab,
          isNewTabPageCustomizationEnabled: Bool,
+         isExperimentalAppearanceEnabled: Bool,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          privacyProDataReporting: PrivacyProDataReporting? = nil,
@@ -60,7 +55,8 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
          newTabDialogTypeProvider: NewTabDialogSpecProvider,
          privacyProPromotionCoordinating: PrivacyProPromotionCoordinating = DaxDialogs.shared,
          faviconLoader: FavoritesFaviconLoading,
-         pixelFiring: PixelFiring.Type = Pixel.self) {
+         pixelFiring: PixelFiring.Type = Pixel.self,
+         messageNavigationDelegate: MessageNavigationDelegate) {
 
         self.associatedTab = tab
         self.variantManager = variantManager
@@ -68,25 +64,30 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         self.newTabDialogTypeProvider = newTabDialogTypeProvider
         self.privacyProPromotionCoordinating = privacyProPromotionCoordinating
         self.pixelFiring = pixelFiring
+        self.messageNavigationDelegate = messageNavigationDelegate
 
-        newTabPageViewModel = NewTabPageViewModel()
+        newTabPageViewModel = NewTabPageViewModel(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
         shortcutsSettingsModel = NewTabPageShortcutsSettingsModel()
         sectionsSettingsModel = NewTabPageSectionsSettingsModel()
         favoritesModel = FavoritesViewModel(isNewTabPageCustomizationEnabled: isNewTabPageCustomizationEnabled,
+                                            isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader)
         shortcutsModel = ShortcutsModel()
-        messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration, privacyProDataReporter: privacyProDataReporting)
+        messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
+                                                privacyProDataReporter: privacyProDataReporting,
+                                                navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate),
+                                                isExperimentalThemingEnabled: isExperimentalAppearanceEnabled)
 
         if isNewTabPageCustomizationEnabled {
-            super.init(rootView: AnyView(NewTabPageView(viewModel: self.newTabPageViewModel,
+            super.init(rootView: AnyView(CustomizableNewTabPageView(viewModel: self.newTabPageViewModel,
                                                         messagesModel: self.messagesModel,
                                                         favoritesViewModel: self.favoritesModel,
                                                         shortcutsModel: self.shortcutsModel,
                                                         shortcutsSettingsModel: self.shortcutsSettingsModel,
                                                         sectionsSettingsModel: self.sectionsSettingsModel)))
         } else {
-            super.init(rootView: AnyView(SimpleNewTabPageView(viewModel: self.newTabPageViewModel,
+            super.init(rootView: AnyView(NewTabPageView(viewModel: self.newTabPageViewModel,
                                                               messagesModel: self.messagesModel,
                                                               favoritesViewModel: self.favoritesModel)))
         }
@@ -99,7 +100,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         super.viewDidLoad()
 
         registerForSettingsDidDisappear()
-        setUpDaxDialog()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -130,32 +130,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         if self.favoritesModel.hasMissingIcons {
             self.delegate?.newTabPageDidRequestFaviconsFetcherOnboarding(self)
         }
-    }
-
-    private func setUpDaxDialog() {
-        let daxDialogController = DaxDialogViewController.loadFromStoryboard()
-        guard let dialogView = daxDialogController.view else { return }
-
-        self.addChild(daxDialogController)
-        self.view.addSubview(dialogView)
-
-        dialogView.translatesAutoresizingMaskIntoConstraints = false
-        dialogView.isHidden = true
-
-        let widthConstraint = dialogView.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 1)
-        widthConstraint.priority = .defaultHigh
-        let heightConstraint = dialogView.heightAnchor.constraint(equalToConstant: 250)
-        daxDialogHeightConstraint = heightConstraint
-        NSLayoutConstraint.activate([
-            dialogView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 44.0),
-            dialogView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            dialogView.widthAnchor.constraint(lessThanOrEqualToConstant: 375),
-            heightConstraint,
-            widthConstraint
-        ])
-
-        daxDialogController.didMove(toParent: self)
-        daxDialogViewController = daxDialogController
     }
 
     // MARK: - Private
@@ -243,6 +217,8 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     func onboardingCompleted() {
         presentNextDaxDialog()
+        // Show Keyboard when showing the first Dax tip
+        chromeDelegate?.omniBar.beginEditing()
     }
 
     func reloadFavorites() {
@@ -311,7 +287,14 @@ extension NewTabPageViewController {
                 self.launchNewSearch()
             }
         }
-        let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onDismiss: onDismiss))
+
+        let onManualDismiss: () -> Void = { [weak self] in
+            self?.dismissHostingController(didFinishNTPOnboarding: true)
+            // Show keyboard when manually dismiss the Dax tips.
+            self?.chromeDelegate?.omniBar.beginEditing()
+        }
+
+        let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onCompletion: onDismiss, onManualDismiss: onManualDismiss))
         let hostingController = UIHostingController(rootView: daxDialogView)
         self.hostingController = hostingController
 

@@ -40,8 +40,8 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         encoder.dateEncodingStrategy = .millisecondsSince1970
         apiService = MockAPIService()
         endpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
-                                                             baseURL: baseURL,
-                                                             subscriptionCache: disposableCache)
+                                                               baseURL: baseURL,
+                                                               subscriptionCache: disposableCache)
     }
 
     override func tearDown() {
@@ -53,7 +53,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func createSubscriptionResponseData() -> Data {
+    private func createSubscriptionResponseData() throws -> Data {
         let date = Date(timeIntervalSince1970: 123456789)
         let subscription = PrivacyProSubscription(
             productId: "prod123",
@@ -65,7 +65,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
             status: .autoRenewable,
             activeOffers: []
         )
-        return try! encoder.encode(subscription)
+        return try encoder.encode(subscription)
     }
 
     private func createAPIResponse(statusCode: Int, data: Data?) -> APIResponseV2 {
@@ -94,13 +94,13 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         )
         endpointService.updateCache(with: cachedSubscription)
 
-        let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .returnCacheDataDontLoad)
+        let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheOnly)
         XCTAssertEqual(subscription, cachedSubscription)
     }
 
     func testGetSubscriptionFetchesRemoteSubscriptionWhenNoCache() async throws {
         // mock subscription response
-        let subscriptionData = createSubscriptionResponseData()
+        let subscriptionData = try createSubscriptionResponseData()
         let apiResponse = createAPIResponse(statusCode: 200, data: subscriptionData)
         let request = SubscriptionRequest.getSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
 
@@ -109,7 +109,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
         apiService.set(response: apiResponse, forRequest: request)
 
-        let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .returnCacheDataElseLoad)
+        let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
         XCTAssertEqual(subscription.productId, "prod123")
         XCTAssertEqual(subscription.name, "Pro Plan")
         XCTAssertEqual(subscription.billingPeriod, .yearly)
@@ -119,7 +119,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
     func testGetSubscriptionThrowsNoDataWhenNoCacheAndFetchFails() async {
         do {
-            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .returnCacheDataDontLoad)
+            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheOnly)
             XCTFail("Expected noData error")
         } catch SubscriptionEndpointServiceError.noData {
             // Success
@@ -229,7 +229,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         )
         endpointService.updateCache(with: subscription)
 
-        let cachedSubscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .returnCacheDataDontLoad)
+        let cachedSubscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheOnly)
         XCTAssertEqual(cachedSubscription, subscription)
     }
 
@@ -249,7 +249,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
         endpointService.clearSubscription()
         do {
-            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .returnCacheDataDontLoad)
+            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheOnly)
         } catch SubscriptionEndpointServiceError.noData {
             // Success
         } catch {

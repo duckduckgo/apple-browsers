@@ -1,0 +1,10 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Stop-Solid-16_svg__a)">
+    <path fill="#000" fill-rule="evenodd" d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0ZM3.625 7.375a.625.625 0 1 0 0 1.25h8.75a.625.625 0 1 0 0-1.25h-8.75Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <clipPath id="Stop-Solid-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

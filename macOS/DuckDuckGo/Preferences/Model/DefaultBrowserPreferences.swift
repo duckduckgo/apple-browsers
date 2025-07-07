@@ -65,8 +65,6 @@ struct SystemDefaultBrowserProvider: DefaultBrowserProvider {
         if result != 0 {
             throw SystemDefaultBrowserProviderError.unableToSetDefaultURLHandler
         }
-        PixelExperiment.fireOnboardingSetAsDefaultRequestedPixel()
-        DefaultBrowserAndDockPromptCoordinator.fireSetAsDefaultAddToDockExperimentPixel()
     }
 
     func openSystemPreferences() {
@@ -91,9 +89,6 @@ final class DefaultBrowserPreferences: ObservableObject {
                 if AppDelegate.isNewUser && self.isDefault {
                     PixelKit.fire(GeneralPixel.setAsDefaultInitial, frequency: .legacyInitial)
                 }
-                if self.isDefault {
-                    PixelExperiment.fireOnboardingSetAsDefaultEnabled5to7Pixel()
-                }
             }
         }
     }
@@ -105,7 +100,7 @@ final class DefaultBrowserPreferences: ObservableObject {
         let notificationCenter = NotificationCenter.default
         appDidBecomeActiveCancellable = notificationCenter
             .publisher(for: NSApplication.didBecomeActiveNotification)
-            .merge(with: notificationCenter.publisher(for: .windowDidBecomeKey))
+            .merge(with: notificationCenter.publisher(for: NSWindow.didBecomeKeyNotification))
             .sink { [weak self] _ in
                 self?.checkIfDefault()
             }

@@ -57,7 +57,7 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
         do {
             // Sets up a test vault and restores data (with violations) from a `test-vault.sql` file
             sut = try DefaultDataBrokerProtectionDatabaseProvider(file: vaultURL, key: key, registerMigrationsHandler: Migrations.v2Migrations)
-            let fileURL = Bundle.module.url(forResource: "test-vault", withExtension: "sql", subdirectory: "Resources")!
+            let fileURL = Bundle.module.url(forResource: "test-vault", withExtension: "sql", subdirectory: "BundleResources")!
             try sut.restoreDatabase(from: fileURL)
         } catch {
             XCTFail("Failed to create test-vault and insert data")
@@ -180,6 +180,8 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
                     try db.execute(sql: "PRAGMA foreign_keys = ON")
                 }
 
+            } catch let error as GRDB.DatabaseError where error.message == "table broker has no column named eTag" {
+                // no-op, BrokerDB.eTag doesn't exist as of v3 migration so we expect this
             } catch {
                 XCTFail("Failed to setup invalid data")
             }

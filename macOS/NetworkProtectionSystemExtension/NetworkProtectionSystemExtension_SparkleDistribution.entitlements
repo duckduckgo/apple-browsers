@@ -23,5 +23,9 @@
 	<array>
 		<string>$(AppIdentifierPrefix)com.duckduckgo.network-protection</string>
 	</array>
+	<key>com.apple.security.temporary-exception.files.absolute-path.read-write:before:14.0</key>
+	<array>
+		<string>/Library/Keychains/</string>
+	</array>
 </dict>
 </plist>

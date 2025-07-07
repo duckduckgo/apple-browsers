@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
+import Foundation
 import NewTabPage
 
 final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
@@ -24,27 +26,18 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
 
     let bookmarkManager: BookmarkManager
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
+    init(bookmarkManager: BookmarkManager) {
         self.bookmarkManager = bookmarkManager
     }
 
     @MainActor
-    func open(_ url: URL, target: LinkOpenTarget) {
-        guard let tabCollectionViewModel else {
-            return
-        }
+    func open(_ url: URL, sender: NewTabPage.LinkOpenSender, target: NewTabPage.LinkOpenTarget, in window: NSWindow?) {
+        open(url, sender: sender, target: target, setBurner: nil, in: window)
+    }
 
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
-
-        if target == .newWindow || NSApplication.shared.isCommandPressed && NSApplication.shared.isOptionPressed {
-            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: tabCollectionViewModel.isBurner)
-        } else if target == .newTab || NSApplication.shared.isCommandPressed && NSApplication.shared.isShiftPressed {
-            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: true)
-        } else if NSApplication.shared.isCommandPressed {
-            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: false)
-        } else {
-            tabCollectionViewModel.selectedTabViewModel?.tab.setContent(.contentFromURL(url, source: .bookmark))
-        }
+    @MainActor
+    func open(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, setBurner: Bool?, in window: NSWindow?) {
+        NewTabPageLinkOpener.open(url, source: .bookmark(isFavorite: true), setBurner: setBurner, sender: sender, target: target, sourceWindow: window)
     }
 
     func copyLink(_ favorite: Bookmark) {
@@ -61,30 +54,21 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
     }
 
     @MainActor
-    func addNewFavorite() {
+    func addNewFavorite(in window: NSWindow?) {
         guard let window else { return }
-        BookmarksDialogViewFactory.makeAddFavoriteView().show(in: window)
+        BookmarksDialogViewFactory.makeAddFavoriteView(bookmarkManager: bookmarkManager).show(in: window)
     }
 
     @MainActor
-    func edit(_ favorite: Bookmark) {
+    func edit(_ favorite: Bookmark, in window: NSWindow?) {
         guard let window else { return }
-        BookmarksDialogViewFactory.makeEditBookmarkView(bookmark: favorite).show(in: window)
+        BookmarksDialogViewFactory.makeEditBookmarkView(bookmark: favorite, bookmarkManager: bookmarkManager).show(in: window)
     }
 
     func move(_ bookmarkID: String, toIndex index: Int) {
         bookmarkManager.moveFavorites(with: [bookmarkID], toIndex: index) { _ in }
     }
 
-    @MainActor
-    private var window: NSWindow? {
-        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.view.window
-    }
-
-    @MainActor
-    private var tabCollectionViewModel: TabCollectionViewModel? {
-        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
-    }
 }
 
 extension Bookmark: NewTabPageFavorite {
@@ -96,6 +80,6 @@ extension Bookmark: NewTabPageFavorite {
         guard let domain = urlObject?.host else {
             return nil
         }
-        return ContentBlocking.shared.tld.eTLDplus1(domain)?.dropping(prefix: Const.wwwPrefix)
+        return Application.appDelegate.tld.eTLDplus1(domain)?.dropping(prefix: Const.wwwPrefix)
     }
 }

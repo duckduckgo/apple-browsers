@@ -16,6 +16,9 @@
 //  limitations under the License.
 //
 
+import Foundation
+import WebKit
+
 struct WKVisitedLinkStoreWrapper {
 
     fileprivate let visitedLinkStore: NSObject

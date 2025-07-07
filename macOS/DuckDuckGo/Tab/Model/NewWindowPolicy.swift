@@ -24,9 +24,17 @@ enum NewWindowPolicy {
     case popup(origin: NSPoint?, size: NSSize?)
     case window(active: Bool, burner: Bool)
 
-    init(_ windowFeatures: WKWindowFeatures, shouldSelectNewTab: Bool = false, isBurner: Bool, contextMenuInitiated: Bool = false) {
-        if windowFeatures.toolbarsVisibility?.boolValue == true {
-            self = .tab(selected: shouldSelectNewTab,
+    init(_ windowFeatures: WKWindowFeatures, linkOpenBehavior: LinkOpenBehavior, isBurner: Bool, preferTabsToWindows: Bool, contextMenuInitiated: Bool = false) {
+
+        if case .newWindow(let selected) = linkOpenBehavior {
+            self = .window(active: selected, burner: isBurner)
+            return
+        }
+
+        if windowFeatures.toolbarsVisibility?.boolValue == true,
+           // Use new window instead of tab when user prefers windows over tabs.
+           preferTabsToWindows {
+            self = .tab(selected: linkOpenBehavior.shouldSelectNewTab,
                         burner: isBurner,
                         contextMenuInitiated: contextMenuInitiated)
         } else if windowFeatures.width != nil {
@@ -37,11 +45,13 @@ enum NewWindowPolicy {
         // Instead of defaulting to window policy, we default to tab policy, and allow popups in some limited scenarios.
         // See https://app.asana.com/0/1177771139624306/1205690527704551/f.
         if #available(macOS 14.1, *),
-           windowFeatures.statusBarVisibility == nil && windowFeatures.menuBarVisibility == nil {
-            self = .tab(selected: shouldSelectNewTab, burner: isBurner, contextMenuInitiated: contextMenuInitiated)
+           windowFeatures.statusBarVisibility == nil && windowFeatures.menuBarVisibility == nil,
+           // Use new window instead of tab when user prefers windows over tabs.
+           preferTabsToWindows {
+            self = .tab(selected: linkOpenBehavior.shouldSelectNewTab, burner: isBurner, contextMenuInitiated: contextMenuInitiated)
 
         } else {
-            self = .window(active: true, burner: isBurner)
+            self = .window(active: linkOpenBehavior.shouldSelectNewTab, burner: isBurner)
         }
     }
 
@@ -52,16 +62,6 @@ enum NewWindowPolicy {
     var isSelectedTab: Bool {
         if case .tab(selected: true, burner: _, contextMenuInitiated: _) = self { return true }
         return false
-    }
-
-    /**
-     * Replaces `.tab` with `.window` when user prefers windows over tabs.
-     */
-    func preferringTabsToWindows(_ prefersTabsToWindows: Bool) -> NewWindowPolicy {
-        guard case .tab(_, let isBurner, contextMenuInitiated: false) = self, !prefersTabsToWindows else {
-            return self
-        }
-        return .window(active: true, burner: isBurner)
     }
 
     /**

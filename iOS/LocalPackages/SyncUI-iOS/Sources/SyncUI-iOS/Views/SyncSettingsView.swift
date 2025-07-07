@@ -18,6 +18,7 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
@@ -140,11 +141,20 @@ public struct SyncSettingsView: View {
 
     }
 
+    // At some point work out how to change at least the fallback image to a resource.
     @ViewBuilder
     func deviceTypeImage(_ device: SyncSettingsViewModel.Device) -> some View {
-        let image = UIImage(named: "SyncDeviceType_\(device.type)") ?? UIImage(named: "SyncDeviceType_phone")!
-        Image(uiImage: image)
-            .foregroundColor(.primary)
+        switch device.type {
+        case "desktop":
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceDesktop)
+
+        case "tablet":
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceTablet)
+
+        default: // including phone
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceMobile)
+        }
+
     }
 
     @State var selectedDevice: SyncSettingsViewModel.Device?

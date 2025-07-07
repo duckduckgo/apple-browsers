@@ -22,9 +22,10 @@ import SwiftUIExtensions
 
 struct PinnedTabView: View, DropDelegate {
     enum Const {
-        static let dimension: CGFloat = 34
         static let cornerRadius: CGFloat = 10
     }
+
+    let tabStyleProvider: TabStyleProviding
 
     @ObservedObject var model: Tab
     @EnvironmentObject var collectionModel: PinnedTabsViewModel
@@ -42,27 +43,48 @@ struct PinnedTabView: View, DropDelegate {
                 }
             } label: {
                 PinnedTabInnerView(
+                    width: tabStyleProvider.pinnedTabWidth,
+                    height: tabStyleProvider.pinnedTabHeight,
+                    isSelected: isSelected,
+                    isHovered: collectionModel.hoveredItem == model,
                     foregroundColor: foregroundColor,
-                    drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model)
+                    separatorColor: Color(tabStyleProvider.separatorColor),
+                    separatorHeight: tabStyleProvider.separatorHeight,
+                    drawSeparator: shouldDrawSeparator,
+                    showSShaped: tabStyleProvider.shouldShowSShapedTab,
+                    applyTabShadow: tabStyleProvider.applyTabShadow,
+                    roundedHover: tabStyleProvider.isRoundedBackgroundPresentOnHover
                 )
                 .environmentObject(model)
+                .environmentObject(model.crashIndicatorModel)
             }
             .buttonStyle(TouchDownButtonStyle())
-            .cornerRadius(Const.cornerRadius, corners: [.topLeft, .topRight])
             .contextMenu { contextMenu }
             .onDrop(of: [
                 NSPasteboard.PasteboardType.URL.rawValue,
                 NSPasteboard.PasteboardType.string.rawValue,
             ], delegate: self)
 
-            BorderView(isSelected: isSelected,
-                       cornerRadius: Const.cornerRadius,
-                       size: TabShadowConfig.dividerSize)
+            if !tabStyleProvider.shouldShowSShapedTab {
+                BorderView(isSelected: isSelected,
+                           cornerRadius: Const.cornerRadius,
+                           size: TabShadowConfig.dividerSize)
+            }
         }
+            .shadow(color: isSelected && tabStyleProvider.applyTabShadow ? Color(.shadowPrimary) : .clear, radius: 6, x: 0, y: -2)
 
         if controlActiveState == .key {
             stack.onHover { [weak collectionModel, weak model] isHovered in
                 collectionModel?.hoveredItem = isHovered ? model : nil
+                // Notify adjacent tabs to update their separators
+                if let model = model, let index = collectionModel?.items.firstIndex(of: model) {
+                    if index > 0 {
+                        collectionModel?.items[index - 1].needsSeparatorUpdate = true
+                    }
+                    if index < (collectionModel?.items.count ?? 0) - 1 {
+                        collectionModel?.items[index + 1].needsSeparatorUpdate = true
+                    }
+                }
             }
         } else {
             stack
@@ -91,10 +113,26 @@ struct PinnedTabView: View, DropDelegate {
 
     private var foregroundColor: Color {
         if isSelected {
-            return .navigationBarBackground
+            return Color(tabStyleProvider.selectedTabColor)
         }
         let isHovered = collectionModel.hoveredItem == model
-        return showsHover && isHovered ? .tabMouseOver : Color.clear
+        return showsHover && isHovered ? Color(tabStyleProvider.hoverTabColor) : Color.clear
+    }
+
+    private var shouldDrawSeparator: Bool {
+        let isHovered = collectionModel.hoveredItem == model
+        let rightItemIsHovered: Bool = {
+            guard let index = collectionModel.items.firstIndex(of: model),
+                  index < collectionModel.items.count - 1
+            else { return false }
+            return collectionModel.hoveredItem == collectionModel.items[index + 1]
+        }()
+
+        if tabStyleProvider.isRoundedBackgroundPresentOnHover && (isHovered || rightItemIsHovered) {
+            return false
+        }
+
+        return !isSelected && !collectionModel.itemsWithoutSeparator.contains(model)
     }
 
     @ViewBuilder
@@ -126,6 +164,15 @@ struct PinnedTabView: View, DropDelegate {
         Button(UserText.closeTab) { [weak collectionModel, weak model] in
             guard let model = model else { return }
             collectionModel?.close(model)
+        }
+
+        if model.canKillWebContentProcess {
+            Divider()
+            Button { [weak model] in
+                model?.killWebContentProcess()
+            } label: {
+                Text(verbatim: Tab.crashTabMenuOptionTitle)
+            }
         }
     }
 
@@ -201,23 +248,47 @@ private struct BorderView: View {
 }
 
 struct PinnedTabInnerView: View {
+    let rampSize: CGFloat = 10.0
+    let width: CGFloat
+    let height: CGFloat
+    var isSelected: Bool
+    var isHovered: Bool
     var foregroundColor: Color
+    var separatorColor: Color
+    var separatorHeight: CGFloat
     var drawSeparator: Bool = true
+    var showSShaped: Bool
+    var applyTabShadow: Bool
+    var roundedHover: Bool
+
+    var shouldApplyNewHoverState: Bool {
+        return isHovered && !isSelected && roundedHover
+    }
 
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: Tab
+    @EnvironmentObject var tabCrashIndicatorModel: TabCrashIndicatorModel
     @Environment(\.controlActiveState) private var controlActiveState
 
     var body: some View {
         ZStack {
             Rectangle()
                 .foregroundColor(foregroundColor)
+                .frame(width: shouldApplyNewHoverState ? width - 8 : showSShaped ? width : width-2,
+                       height: shouldApplyNewHoverState ? height - 8 : height)
+                .cornerRadius(
+                    shouldApplyNewHoverState ? 6 : PinnedTabView.Const.cornerRadius,
+                    corners: shouldApplyNewHoverState ? [.topLeft, .topRight, .bottomLeft, .bottomRight] : [.topLeft, .topRight]
+                )
+
             if drawSeparator {
                 GeometryReader { proxy in
                     Rectangle()
-                        .foregroundColor(.separator)
-                        .frame(width: 1, height: 20)
-                        .offset(x: proxy.size.width-1, y: 6)
+                        .foregroundColor(separatorColor)
+                        .frame(width: 1, height: separatorHeight)
+                        .offset(
+                            x: showSShaped ? proxy.size.width - rampSize + 2 : proxy.size.width-1,
+                            y: showSShaped ? 10 : 6)
                 }
             }
             favicon
@@ -225,8 +296,24 @@ struct PinnedTabInnerView: View {
                 .opacity(controlActiveState == .key ? 1.0 : 0.60)
                 .frame(maxWidth: 16, maxHeight: 16)
                 .aspectRatio(contentMode: .fit)
+
+            if isSelected && showSShaped {
+                PinnedTabRampView(rampWidth: rampSize,
+                                  rampHeight: rampSize,
+                                  foregroundColor: .surfacePrimary)
+                .position(x: 2, y: height - (rampSize / 2))
+
+                PinnedTabRampView(rampWidth: rampSize,
+                                  rampHeight: rampSize,
+                                  isFlippedHorizontally: true,
+                                  foregroundColor: .surfacePrimary)
+                .position(x: width + rampSize + 2, y: height - (rampSize / 2))
+            }
         }
-        .frame(width: PinnedTabView.Const.dimension)
+        .frame(
+            width: showSShaped ? width + rampSize + 4 : width,
+            height: height
+        )
     }
 
     @ViewBuilder
@@ -247,32 +334,79 @@ struct PinnedTabInnerView: View {
         }
     }
 
-    private func audioIndicator(isMuted: Bool) -> some View {
-        ZStack {
-            Circle()
-                .stroke(Color.gray.opacity(0.5), lineWidth: 0.5)
-                .background(Circle().foregroundColor(.pinnedTabMuteStateCircle))
-                .frame(width: 16, height: 16)
+    @ViewBuilder
+    var accessoryButton: some View {
+        if tabCrashIndicatorModel.isShowingIndicator {
+            crashIndicatorView
+        } else {
+            audioStateView
+        }
+    }
 
-            if isMuted {
-                Image(.audioMute)
-                    .resizable()
-                    .frame(width: 12, height: 12)
-            } else {
-                Image(.audio)
+    private func audioIndicator(isMuted: Bool) -> some View {
+        Button {
+            model.muteUnmuteTab()
+        } label: {
+            ZStack {
+                Circle()
+                    .stroke(Color.gray.opacity(0.5), lineWidth: 0.5)
+                    .background(Circle().foregroundColor(.pinnedTabMuteStateCircle))
+                    .frame(width: 16, height: 16)
+
+                if isMuted {
+                    Image(.audioMute)
+                        .resizable()
+                        .frame(width: 12, height: 12)
+                } else {
+                    Image(.audio)
+                        .resizable()
+                        .frame(width: 12, height: 12)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .offset(x: 8, y: -8)
+    }
+
+    @ViewBuilder
+    var crashIndicatorView: some View {
+        Button {
+            tabCrashIndicatorModel.isShowingPopover.toggle()
+        } label: {
+            ZStack {
+                Circle()
+                    .stroke(Color.gray.opacity(0.5), lineWidth: 0.5)
+                    .background(Circle().foregroundColor(.pinnedTabMuteStateCircle))
+                    .frame(width: 16, height: 16)
+
+                Image(.tabCrash)
                     .resizable()
                     .frame(width: 12, height: 12)
             }
         }
-        .offset(x: 8, y: -8)
-        .onTapGesture {
-            model.muteUnmuteTab()
+        .buttonStyle(.plain)
+        .popover(isPresented: $tabCrashIndicatorModel.isShowingPopover, arrowEdge: .bottom) {
+            PopoverMessageView(
+                viewModel: .init(
+                    title: UserText.tabCrashPopoverTitle,
+                    message: UserText.tabCrashPopoverMessage,
+                    maxWidth: TabCrashIndicatorModel.Const.popoverWidth
+                ),
+                onClick: {
+                    tabCrashIndicatorModel.isShowingPopover = false
+                }, onClose: {
+                    tabCrashIndicatorModel.isShowingPopover = false
+                }
+            )
         }
+        .offset(x: 8, y: -8)
     }
 
     private var faviconImage: NSImage? {
-        if let error = model.error, (error as NSError as? URLError)?.code == .serverCertificateUntrusted || (error as NSError as? MaliciousSiteError != nil) {
+        if let error = model.error, (error as NSError as? URLError)?.code == .serverCertificateUntrusted || (error as NSError is MaliciousSiteError) {
             return .redAlertCircle16
+        } else if model.error?.isWebContentProcessTerminated == true {
+            return .alertCircleColor16
         } else if let favicon = model.favicon {
             return favicon
         }
@@ -285,10 +419,10 @@ struct PinnedTabInnerView: View {
             ZStack(alignment: .topTrailing) {
                 Image(nsImage: favicon)
                     .resizable()
-                audioStateView
+                accessoryButton
             }
         } else if let domain = model.content.userEditableUrl?.host,
-                  let eTLDplus1 = ContentBlocking.shared.tld.eTLDplus1(domain),
+                  let eTLDplus1 = NSApp.delegateTyped.tld.eTLDplus1(domain),
                   let firstLetter = eTLDplus1.capitalized.first.flatMap(String.init) {
             ZStack {
                 Rectangle()
@@ -296,14 +430,14 @@ struct PinnedTabInnerView: View {
                 Text(firstLetter)
                     .font(.caption)
                     .foregroundColor(.white)
-                audioStateView
+                accessoryButton
             }
             .cornerRadius(4.0)
         } else {
             ZStack {
                 Image(nsImage: .web)
                     .resizable()
-                audioStateView
+                accessoryButton
             }
         }
     }

@@ -41,6 +41,11 @@ extension DebugScreensViewModel {
             .action(title: "Reset TipKit", { d in
                 d.tipKitUIActionHandler.resetTipKitTapped()
             }),
+            .action(title: "Reset Settings > Complete Setup", { d in
+                try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
+                try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
+                try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.shouldCheckIfDefaultBrowserKey)
+            }),
             .action(title: "Generate Diagnostic Report", { d in
                 guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
 
@@ -54,7 +59,7 @@ extension DebugScreensViewModel {
                     }
                 }
 
-                controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), fireproofing: d.fireproofing)], fromView: controller.view)
+                controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
 
             // MARK: SwiftUI Views
@@ -63,6 +68,9 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
+            }),
+            .view(title: "ContentScope Experiments", { _ in
+                ContentScopeExperimentsDebugView()
             }),
             .view(title: "Crashes", { _ in
                 CrashDebugScreen()
@@ -85,6 +93,9 @@ extension DebugScreensViewModel {
             .view(title: "Remote Messaging", { _ in
                 RemoteMessagingDebugRootView()
             }),
+            .view(title: "Settings Cells Demo", { _ in
+                SettingsCellDemoDebugView()
+            }),
             .view(title: "Vanilla Web View", { d in
                 let configuration = WKWebViewConfiguration()
                 configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
@@ -106,6 +117,9 @@ extension DebugScreensViewModel {
             .view(title: "Tab Generator", { d in
                 BulkGeneratorView(factory: BulkTabFactory(tabManager: d.tabManager))
             }),
+            .view(title: "Default Browser Prompt", { d in
+                DefaultBrowserPromptDebugView(model: DefaultBrowserPromptDebugViewModel(keyValueFilesStore: d.keyValueStore))
+            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in
@@ -113,6 +127,7 @@ extension DebugScreensViewModel {
                 return storyboard.instantiateViewController(identifier: "ImageCacheDebugViewController") { coder in
                     ImageCacheDebugViewController(coder: coder,
                                                   bookmarksDatabase: d.bookmarksDatabase,
+                                                  tabsModel: d.tabManager.model,
                                                   fireproofing: d.fireproofing)
                 }
             }),
@@ -134,6 +149,12 @@ extension DebugScreensViewModel {
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "NetworkProtectionDebugViewController") { coder in
                     NetworkProtectionDebugViewController(coder: coder)
+                }
+            }),
+            .controller(title: "PIR", { _ in
+                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
+                return storyboard.instantiateViewController(identifier: "DataBrokerProtectionDebugViewController") { coder in
+                    DataBrokerProtectionDebugViewController(coder: coder)
                 }
             }),
             .controller(title: "File Size Inspector", { _ in

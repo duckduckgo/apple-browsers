@@ -32,7 +32,7 @@ final class SyncPromoManagerTests: XCTestCase {
 
         UserDefaultsWrapper<Any>.clearAll()
 
-        privacyConfigurationManager.privacyConfig = config
+        privacyConfigurationManager.mockPrivacyConfig = config
         syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
     }
 

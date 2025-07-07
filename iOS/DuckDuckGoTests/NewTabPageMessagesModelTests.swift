@@ -24,14 +24,20 @@ import XCTest
 @testable import DuckDuckGo
 
 final class NewTabPageMessagesModelTests: XCTestCase {
-
+ 
     private var messagesConfiguration: HomePageMessagesConfigurationMock!
     private var notificationCenter: NotificationCenter!
 
+    private var segueToAIChatSettingsCallCount = 0
+    private var segueToSettingsCallCount = 0
+    private var segueToFeedbackCallCount = 0
 
     override func setUpWithError() throws {
         messagesConfiguration = HomePageMessagesConfigurationMock(homeMessages: [])
         notificationCenter = NotificationCenter()
+        segueToAIChatSettingsCallCount = 0
+        segueToSettingsCallCount = 0
+        segueToFeedbackCallCount = 0
     }
 
     override func tearDownWithError() throws {
@@ -125,6 +131,23 @@ final class NewTabPageMessagesModelTests: XCTestCase {
         await model.onDidClose(.secondaryAction(isShare: true))
 
         XCTAssertNil(messagesConfiguration.lastDismissedHomeMessage)
+    }
+
+    func testMessageNavigator() async throws {
+
+        XCTAssertEqual(segueToSettingsCallCount, 0)
+        XCTAssertEqual(segueToAIChatSettingsCallCount, 0)
+        XCTAssertEqual(segueToFeedbackCallCount, 0)
+
+        DefaultMessageNavigator(delegate: self).navigateTo(.settings)
+        XCTAssertEqual(segueToSettingsCallCount, 1)
+
+        DefaultMessageNavigator(delegate: self).navigateTo(.duckAISettings)
+        XCTAssertEqual(segueToAIChatSettingsCallCount, 1)
+        
+        DefaultMessageNavigator(delegate: self).navigateTo(.feedback)
+        XCTAssertEqual(segueToFeedbackCallCount, 1)
+
     }
 
     // MARK: Pixels
@@ -246,31 +269,24 @@ final class NewTabPageMessagesModelTests: XCTestCase {
     private func createSUT() -> NewTabPageMessagesModel {
         NewTabPageMessagesModel(homePageMessagesConfiguration: messagesConfiguration,
                                 notificationCenter: notificationCenter,
-                                pixelFiring: PixelFiringMock.self)
+                                pixelFiring: PixelFiringMock.self,
+                                navigator: DefaultMessageNavigator(delegate: self))
     }
 }
 
-class HomePageMessagesConfigurationMock: HomePageMessagesConfiguration {
-    var homeMessages: [HomeMessage]
-
-    init(homeMessages: [HomeMessage]) {
-        self.homeMessages = homeMessages
+extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
+    func segueToSettingsAIChat() {
+        segueToAIChatSettingsCallCount += 1
+    }
+    
+    func segueToSettings() {
+        segueToSettingsCallCount += 1
     }
 
-    private(set) var lastAppearedHomeMessage: HomeMessage?
-    func didAppear(_ homeMessage: HomeMessage) {
-        lastAppearedHomeMessage = homeMessage
+    func segueToFeedback() {
+        segueToFeedbackCallCount += 1
     }
 
-    private(set) var lastDismissedHomeMessage: HomeMessage?
-    func dismissHomeMessage(_ homeMessage: HomeMessage) {
-        lastDismissedHomeMessage = homeMessage
-    }
-
-    private(set) var didRefresh: Bool = false
-    func refresh() {
-        didRefresh = true
-    }
 }
 
 private extension HomeMessage {

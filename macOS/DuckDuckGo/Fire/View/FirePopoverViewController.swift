@@ -21,6 +21,8 @@ import Combine
 import Common
 import History
 import os.log
+import PixelKit
+import DesignResourcesKitIcons
 
 protocol FirePopoverViewControllerDelegate: AnyObject {
 
@@ -43,6 +45,7 @@ final class FirePopoverViewController: NSViewController {
     private let fireViewModel: FireViewModel
     private var firePopoverViewModel: FirePopoverViewModel
     private let historyCoordinating: HistoryCoordinating
+    private let visualStyle: VisualStyleProviding
 
     @IBOutlet weak var closeTabsLabel: NSTextField!
     @IBOutlet weak var openFireWindowsTitleLabel: NSTextField!
@@ -67,6 +70,8 @@ final class FirePopoverViewController: NSViewController {
     @IBOutlet weak var clearButton: NSButton!
     @IBOutlet weak var cancelButton: NSButton!
     @IBOutlet weak var closeBurnerWindowButton: NSButton!
+    @IBOutlet weak var burnerWindowButton: NSImageView!
+    @IBOutlet weak var fireGraphic: NSImageView!
 
     private var viewModelCancellable: AnyCancellable?
     private var selectedCancellable: AnyCancellable?
@@ -78,18 +83,21 @@ final class FirePopoverViewController: NSViewController {
     init?(coder: NSCoder,
           fireViewModel: FireViewModel,
           tabCollectionViewModel: TabCollectionViewModel,
-          historyCoordinating: HistoryCoordinating = HistoryCoordinator.shared,
-          fireproofDomains: FireproofDomains = FireproofDomains.shared,
-          faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager) {
+          historyCoordinating: HistoryCoordinating = NSApp.delegateTyped.historyCoordinator,
+          fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
+          faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager,
+          tld: TLD = NSApp.delegateTyped.tld,
+          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.fireViewModel = fireViewModel
         self.historyCoordinating = historyCoordinating
+        self.visualStyle = visualStyle
         self.firePopoverViewModel = FirePopoverViewModel(fireViewModel: fireViewModel,
                                                          tabCollectionViewModel: tabCollectionViewModel,
                                                          historyCoordinating: historyCoordinating,
                                                          fireproofDomains: fireproofDomains,
                                                          faviconManagement: faviconManagement,
-                                                         tld: ContentBlocking.shared.tld,
-                                                         contextualOnboardingStateMachine: Application.appDelegate.onboardingStateMachine)
+                                                         tld: tld,
+                                                         onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager)
 
         super.init(coder: coder)
     }
@@ -101,6 +109,8 @@ final class FirePopoverViewController: NSViewController {
         collectionView.register(nib, forItemWithIdentifier: FirePopoverCollectionViewItem.identifier)
         collectionView.delegate = self
         collectionView.dataSource = self
+
+        updateBurnerButtonAppearance()
 
         if firePopoverViewModel.tabCollectionViewModel?.isBurner ?? false {
             adjustViewForBurnerWindow()
@@ -115,12 +125,41 @@ final class FirePopoverViewController: NSViewController {
 
         subscribeToViewModel()
         subscribeToSelected()
+
+        fireGraphic.image = visualStyle.iconsProvider.fireInfoGraphic
     }
 
     override func viewWillAppear() {
         super.viewWillAppear()
 
         firePopoverViewModel.refreshItems()
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        if burnerWindowButton.wantsLayer {
+            addCircularBackground(to: burnerWindowButton)
+        }
+    }
+
+    private func updateBurnerButtonAppearance() {
+        self.burnerWindowButton.image = NSApp.delegateTyped.visualStyle.isNewStyle ?
+            DesignSystemImages.Glyphs.Size16.fireWindow : .newBurnerWindow
+
+        self.burnerWindowButton.wantsLayer = true
+        addCircularBackground(to: self.burnerWindowButton)
+    }
+
+    private func addCircularBackground(to imageView: NSImageView) {
+        let layerName = "circularBackground"
+        imageView.layer?.sublayers?.removeAll { $0.name == layerName }
+        let backgroundLayer = CALayer()
+        backgroundLayer.name = layerName
+        backgroundLayer.backgroundColor = NSColor(designSystemColor: .buttonsWhite).withAlphaComponent(0.05).cgColor
+        backgroundLayer.frame = imageView.bounds
+        let radius = min(imageView.bounds.width, imageView.bounds.height) / 2
+        backgroundLayer.cornerRadius = radius
+        imageView.layer?.insertSublayer(backgroundLayer, at: 0)
     }
 
     private func setUpStrings() {
@@ -143,9 +182,13 @@ final class FirePopoverViewController: NSViewController {
 
     @IBAction func openNewBurnerWindowAction(_ sender: Any) {
         NSApp.delegateTyped.newBurnerWindow(self)
+        delegate?.firePopoverViewControllerDidCancel(self)
     }
 
     @IBAction func openDetailsButtonAction(_ sender: Any) {
+        // Fire pixel when fire popover details are viewed
+        PixelKit.fire(GeneralPixel.fireButtonDetailsViewed, frequency: .dailyAndCount)
+
         toggleDetails()
     }
 
@@ -154,7 +197,7 @@ final class FirePopoverViewController: NSViewController {
     }
 
     @IBAction func closeBurnerWindowButtonAction(_ sender: Any) {
-        let windowControllersManager = WindowControllersManager.shared
+        let windowControllersManager = Application.appDelegate.windowControllersManager
         guard let tabCollectionViewModel = firePopoverViewModel.tabCollectionViewModel,
               let windowController = windowControllersManager.windowController(for: tabCollectionViewModel) else {
             assertionFailure("No TabCollectionViewModel or MainWindowController")
@@ -191,7 +234,7 @@ final class FirePopoverViewController: NSViewController {
         let sites = firePopoverViewModel.selected.count
         switch firePopoverViewModel.clearingOption {
         case .allData:
-            let tabs = WindowControllersManager.shared.allTabViewModels.count
+            let tabs = Application.appDelegate.windowControllersManager.allTabViewModels.count
             infoLabel.stringValue = UserText.activeTabsInfo(tabs: tabs, sites: sites)
         case .currentWindow:
             let tabs = firePopoverViewModel.tabCollectionViewModel?.tabs.count ?? 0
@@ -288,7 +331,7 @@ final class FirePopoverViewController: NSViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] selected in
                 guard let self = self else { return }
-                let selectionIndexPaths = Set(selected.map {IndexPath(item: $0, section: self.firePopoverViewModel.selectableSectionIndex)})
+                let selectionIndexPaths = Set(selected.map { IndexPath(item: $0, section: self.firePopoverViewModel.selectableSectionIndex) })
                 self.collectionView.selectionIndexPaths = selectionIndexPaths
                 self.updateInfoLabel()
             }

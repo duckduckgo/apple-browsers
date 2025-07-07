@@ -22,6 +22,7 @@ extension Tab: NSSecureCoding {
     // MARK: - Coding
 
     private enum NSSecureCodingKeys {
+        static let uuid = "uuid"
         static let url = "url"
         static let videoID = "videoID"
         static let videoTimestamp = "videoTimestamp"
@@ -38,6 +39,7 @@ extension Tab: NSSecureCoding {
 
     @MainActor
     convenience init?(coder decoder: NSCoder) {
+        let uuid: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.uuid)
         let url: URL? = decoder.decodeIfPresent(at: NSSecureCodingKeys.url)
         let videoID: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.videoID)
         let videoTimestamp: String? = decoder.decodeIfPresent(at: NSSecureCodingKeys.videoTimestamp)
@@ -51,7 +53,8 @@ extension Tab: NSSecureCoding {
 
         let interactionStateData: Data? = decoder.decodeIfPresent(at: NSSecureCodingKeys.interactionStateData) ?? decoder.decodeIfPresent(at: NSSecureCodingKeys.sessionStateData)
 
-        self.init(content: content,
+        self.init(uuid: uuid,
+                  content: content,
                   title: decoder.decodeIfPresent(at: NSSecureCodingKeys.title),
                   favicon: decoder.decodeIfPresent(at: NSSecureCodingKeys.favicon),
                   interactionStateData: interactionStateData,
@@ -64,6 +67,7 @@ extension Tab: NSSecureCoding {
     func encode(with coder: NSCoder) {
         guard webView.configuration.websiteDataStore.isPersistent == true else { return }
 
+        coder.encode(uuid, forKey: NSSecureCodingKeys.uuid)
         content.urlForWebView.map(coder.encode(forKey: NSSecureCodingKeys.url))
         title.map(coder.encode(forKey: NSSecureCodingKeys.title))
         favicon.map(coder.encode(forKey: NSSecureCodingKeys.favicon))
@@ -89,7 +93,7 @@ private extension Tab.TabContent {
         case preferences = 1
         case bookmarks = 2
         case newtab = 3
-        case onboardingDeprecated = 4
+        case onboardingDeprecated = 4 // Not in use anymore
         case duckPlayer = 5
         case dataBrokerProtection = 6
         case subscription = 7
@@ -98,6 +102,7 @@ private extension Tab.TabContent {
         case releaseNotes = 10
         case history = 11
         case webExtensionUrl = 12
+        case aiChat = 13
     }
 
     init?(type: ContentType, url: URL?, videoID: String?, timestamp: String?, preferencePane: PreferencePaneIdentifier?) {
@@ -113,8 +118,6 @@ private extension Tab.TabContent {
             self = .history
         case .preferences:
             self = .settings(pane: preferencePane)
-        case .onboardingDeprecated:
-            self = .onboardingDeprecated
         case .duckPlayer:
             guard let videoID = videoID else { return nil }
             self = .url(.duckPlayer(videoID, timestamp: timestamp), source: .pendingStateRestoration)
@@ -133,6 +136,11 @@ private extension Tab.TabContent {
         case .webExtensionUrl:
             guard let url = url else { return nil }
             self = .webExtensionUrl(url)
+        case .onboardingDeprecated:
+            self = .onboarding
+        case .aiChat:
+            guard let url = url else { return nil }
+            self = .aiChat(url)
         }
     }
 
@@ -143,7 +151,6 @@ private extension Tab.TabContent {
         case .history: return .history
         case .bookmarks: return .bookmarks
         case .settings: return .preferences
-        case .onboardingDeprecated: return .onboardingDeprecated
         case .onboarding: return .onboarding
         case .none: return .newtab
         case .dataBrokerProtection: return .dataBrokerProtection
@@ -151,6 +158,7 @@ private extension Tab.TabContent {
         case .identityTheftRestoration: return .identityTheftRestoration
         case .releaseNotes: return .releaseNotes
         case .webExtensionUrl: return .webExtensionUrl
+        case .aiChat: return .aiChat
         }
     }
 

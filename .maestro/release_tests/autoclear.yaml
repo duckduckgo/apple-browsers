@@ -18,7 +18,8 @@ tags:
 
 - tapOn: "Browsing Menu"
 - tapOn: "Settings"
-- assertVisible: "Default Browser"
+- assertVisible:
+    id: "Settings.ListItem.Field_DefaultBrowser"
 - scrollUntilVisible:
     centerElement: true
     element:
@@ -65,6 +66,8 @@ tags:
 - inputText: "https://example.com"
 - pressKey: Enter
 
+- assertVisible: ".*Example Domain.*"
+
 # Go home and hover there a bit
 - pressKey: Home
 
@@ -80,6 +83,7 @@ tags:
 
 - tapOn: "DuckDuckGo"
 
+- assertVisible: "Tab Switcher" # wait for the tab switcher to appear so that we don't try and use the blank snapshot view
 - assertNotVisible: "https://example.com/"
 - assertVisible: "Search or enter address"
 - tapOn: "Tab Switcher"

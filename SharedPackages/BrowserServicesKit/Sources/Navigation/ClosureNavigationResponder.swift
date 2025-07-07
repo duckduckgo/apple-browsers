@@ -22,6 +22,11 @@ import WebKit
 @MainActor
 public struct ClosureNavigationResponder: NavigationResponder {
 
+    let renderingProgressDidChange: ((UInt) -> Void)?
+    public func renderingProgressDidChange(progressEvents: UInt) {
+        renderingProgressDidChange?(progressEvents)
+    }
+
     let decidePolicy: ((_ navigationAction: NavigationAction, _ preferences: inout NavigationPreferences) async -> NavigationActionPolicy?)?
     public func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
         await self.decidePolicy?(navigationAction, &preferences)
@@ -108,7 +113,8 @@ public struct ClosureNavigationResponder: NavigationResponder {
                 navigationActionDidBecomeDownload: ((NavigationAction, WebKitDownload) -> Void)? = nil,
                 navigationResponseWillBecomeDownload: ((NavigationResponse, WKWebView) -> Void)? = nil,
                 navigationResponseDidBecomeDownload: ((NavigationResponse, WebKitDownload) -> Void)? = nil,
-                webContentProcessDidTerminate: ((WKProcessTerminationReason?) -> Void)? = nil) {
+                webContentProcessDidTerminate: ((WKProcessTerminationReason?) -> Void)? = nil,
+                renderingProgressDidChange: ((UInt) -> Void)? = nil) {
         self.decidePolicy = decidePolicy
         self.didCancelNavigationAction = didCancel
         self.willStart = willStart
@@ -124,6 +130,7 @@ public struct ClosureNavigationResponder: NavigationResponder {
         self.navigationResponseWillBecomeDownload = navigationResponseWillBecomeDownload
         self.navigationResponseDidBecomeDownload = navigationResponseDidBecomeDownload
         self.webContentProcessDidTerminate = webContentProcessDidTerminate
+        self.renderingProgressDidChange = renderingProgressDidChange
     }
 
 }

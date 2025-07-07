@@ -25,6 +25,10 @@ import DataBrokerProtectionCore
 
 public enum DataBrokerProtectionMacOSPixels {
 
+    // Initialisation failure errors
+    case mainAppSetUpFailedSecureVaultInitFailed(error: Error?)
+    case backgroundAgentSetUpFailedSecureVaultInitFailed(error: Error?)
+
     // Backgrond Agent events
     case backgroundAgentStarted
     case backgroundAgentStartedStoppingDueToAnotherInstanceRunning
@@ -71,11 +75,19 @@ public enum DataBrokerProtectionMacOSPixels {
     case entitlementCheckValid
     case entitlementCheckInvalid
     case entitlementCheckError
+
+    // Configuration
+    case invalidPayload(Configuration)
+    case errorLoadingCachedConfig(Error)
+    case failedToParsePrivacyConfig(Error)
 }
 
 extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
     public var name: String {
         switch self {
+
+        case .mainAppSetUpFailedSecureVaultInitFailed: return "m_mac_dbp_main-app_set-up-failed_secure-vault-init-failed"
+        case .backgroundAgentSetUpFailedSecureVaultInitFailed: return "m_mac_dbp_background-agent_set-up-failed_secure-vault-init-failed"
 
         case .backgroundAgentStarted: return "m_mac_dbp_background-agent_started"
         case .backgroundAgentStartedStoppingDueToAnotherInstanceRunning: return "m_mac_dbp_background-agent_started_stopping-due-to-another-instance-running"
@@ -130,6 +142,11 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
         case .entitlementCheckInvalid: return "m_mac_dbp_macos_entitlement_invalid"
         case .entitlementCheckError: return "m_mac_dbp_macos_entitlement_error"
 
+            // Configuration
+        case .invalidPayload(let configuration): return "m_mac_dbp_\(configuration.rawValue)_invalid_payload".lowercased()
+        case .errorLoadingCachedConfig: return "m_mac_dbp_configuration_error_loading_cached_config"
+        case .failedToParsePrivacyConfig: return "m_mac_dbp_configuration_failed_to_parse"
+
         }
     }
 
@@ -145,7 +162,10 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
             return [DataBrokerProtectionSharedPixels.Consts.environmentKey: environment]
         case .webUILoadingFailed(let error):
             return [DataBrokerProtectionSharedPixels.Consts.errorCategoryKey: error]
-        case .backgroundAgentStarted,
+        case .mainAppSetUpFailedSecureVaultInitFailed,
+                .backgroundAgentSetUpFailedSecureVaultInitFailed,
+
+                .backgroundAgentStarted,
                 .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
                 .dataBrokerProtectionNotificationSentFirstScanComplete,
                 .dataBrokerProtectionNotificationOpenedFirstScanComplete,
@@ -161,9 +181,13 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
                 .homeViewShowBadPathError,
                 .homeViewCTAMoveApplicationClicked,
                 .homeViewCTAGrantPermissionClicked,
+
                 .entitlementCheckValid,
                 .entitlementCheckInvalid,
-                .entitlementCheckError:
+                .entitlementCheckError,
+
+                .invalidPayload,
+                .failedToParsePrivacyConfig:
             return [:]
         case .ipcServerProfileSavedCalledByApp,
                 .ipcServerProfileSavedReceivedByAgent,
@@ -179,6 +203,8 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
                 .ipcServerAppLaunchedScheduledScansFinishedWithoutError,
                 .ipcServerAppLaunchedScheduledScansFinishedWithError:
             return [DataBrokerProtectionSharedPixels.Consts.bundleIDParamKey: Bundle.main.bundleIdentifier ?? "nil"]
+        case .errorLoadingCachedConfig(let error):
+            return [DataBrokerProtectionSharedPixels.Consts.errorDomainKey: (error as NSError).domain]
         }
     }
 }
@@ -188,11 +214,17 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
     public init() {
         super.init { event, _, _, _ in
             switch event {
-            case .ipcServerProfileSavedXPCError(error: let error),
+            case .mainAppSetUpFailedSecureVaultInitFailed(error: let error),
+                    .backgroundAgentSetUpFailedSecureVaultInitFailed(error: let error),
+
+                    .ipcServerProfileSavedXPCError(error: let error),
                     .ipcServerImmediateScansFinishedWithError(error: let error),
                     .ipcServerAppLaunchedXPCError(error: let error),
                     .ipcServerAppLaunchedScheduledScansFinishedWithError(error: let error):
                 PixelKit.fire(DebugEvent(event, error: error), frequency: .legacyDailyAndCount, includeAppVersionParameter: true)
+            case .errorLoadingCachedConfig(let error),
+                    .failedToParsePrivacyConfig(let error):
+                PixelKit.fire(DebugEvent(event, error: error))
             case .ipcServerProfileSavedCalledByApp,
                     .ipcServerProfileSavedReceivedByAgent,
                     .ipcServerImmediateScansInterrupted,
@@ -215,7 +247,8 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                     .dataBrokerProtectionNotificationOpenedAllRecordsRemoved,
                     .webUILoadingFailed,
                     .webUILoadingStarted,
-                    .webUILoadingSuccess:
+                    .webUILoadingSuccess,
+                    .invalidPayload:
                 PixelKit.fire(event)
 
             case .homeViewShowNoPermissionError,

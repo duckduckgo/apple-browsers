@@ -59,10 +59,7 @@
 "action.title.downloads" = "Lataukset";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "Tekoäly-chat";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Uusi AI Chat";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Muokkaa kirjanmerkkiä";
@@ -160,6 +157,9 @@
 /* No comment provided by engineer. */
 "addWidget.title" = "Yhdellä napautuksella suosikkisivustoillesi.";
 
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "Tekoälyominaisuudet";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Olemassa olevia kirjanmerkkejä ei kopioida.";
 
@@ -189,6 +189,15 @@
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synkronointi on keskeytetty. Jos haluat jatkaa tämän laitteen synkronointia, muodosta yhteys uudelleen toisella laitteella tai palautuskoodilla.";
+
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Synkronoi nyt";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "%@ voi käyttää synkronoituja DuckDuckGo-tietojasi.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Synkronoidaanko uusi laite?";
 
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Lue lisää";
@@ -241,6 +250,9 @@
 /* Description for unable to remove device error */
 "alert.unable-to-remove-device-description" = "Tätä laitetta ei voida poistaa synkronoinnista ja varmuuskopioinnista.";
 
+/* Description for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-description" = "Tämä koodi ei kelpaa. Varmista, että oikea koodi annettiin tai skannattiin.";
+
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Yhteyden muodostaminen palvelimeen ei onnistu.";
 
@@ -255,9 +267,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Avaa DuckDuckGo.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Haluatko varmasti poistaa kaikki kirjanmerkit? Tätä toimintoa ei voi kumota.";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Kirjaudu sisään";
@@ -304,6 +313,117 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Kun DuckDuckGo havaitsee evästeiden hallinnan ponnahdusikkunoita vierailemillasi sivustoilla, voimme yrittää määrittää evästeasetuksesi automaattisesti evästeiden minimoimiseksi ja yksityisyyden maksimoimiseksi ja sulkea sitten ponnahdusikkunat. Joillakin sivustoilla evästeiden hallinta ei ole mahdollista, joten voimme vain piilottaa tällaiset ponnahdusikkunat.";
 
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Kortti tallennettu";
+
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Kortti poistettu";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Kortissa oleva nimi";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Kortin kutsumanimi";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Kortin numero";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Kortin numero";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Nimi kopioitu";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Kortin numero kopioitu";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV kopioitu";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Viimeinen voimassaolopäivä kopioitu";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Kortti";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Poista kortti";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Poista kortti";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Haluatko varmasti poistaa tämän kortin?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Muokkaa korttia";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Turvakoodi";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "KK/VV";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Viimeinen voimassaolopäivä";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Lisää kortti";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Kortissa oleva nimi";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(esim. Työ)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Luottokortit tallennetaan laitteellesi turvallisesti.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Luottokortteja ei ole vielä tallennettu";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Avaa laitteen lukitus päästäksesi luottokortteihin";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Vanhenemispäivä:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Luottokortit";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "Luottokorttien suojaamiseksi vaaditaan pääsykoodi.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Suojaa laitteesi luottokorttien tallentamiseksi";
+
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Älä tallenna";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Tallenna kortti";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Luottokortit tallennetaan laitteellesi turvallisesti.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Haluatko, että DuckDuckGo tallentaa korttitietosi?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Tee todennus luottokorttitietojen täyttämiseksi";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Käytetäänkö tallennettua korttia?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Voit poistaa luottokorttitietojen tallentamisen käytöstä milloin tahansa.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -324,6 +444,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Ota Email Protection käyttöön";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Piilota CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Piilota salasana";
@@ -361,8 +484,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Synkronointi pöytäkoneen kanssa";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Näin tuot salasanat";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Tietokoneen salasanojen synkronointi";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Poista Käytöstä";
@@ -379,7 +502,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Salasana päivitetty";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Kopioi %@";
 
 /* Title for toast when copying address */
@@ -514,6 +637,9 @@
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Salasanat salataan. Kukaan muu kuin sinä ei näe niitä, emme edes me.";
 
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Salasanat ja luottokortit salataan. Kukaan muu kuin sinä ei näe niitä, emme edes me.";
+
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Ehdotettu";
 
@@ -556,9 +682,11 @@
 /* Do not translate - stringsdict entry */
 "autofill.number.of.passwords" = "autofill.number.of.passwords";
 
-/* Description of autofill onboarding prompt's secure storage feature
-   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
-"autofill.onboarding.key-features.secure-storage.description" = "Salasanat salataan, tallennetaan laitteeseen ja lukitaan %@.";
+/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+"autofill.onboarding.key-features.secure-storage.biometric.description" = "Salasanat salataan, tallennetaan laitteeseen ja lukitaan %@.";
+
+/* Description of autofill onboarding prompt's secure storage feature */
+"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID:lla tai salakoodilla";
@@ -679,6 +807,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Näytä";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Näytä CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Näytä salasana";
@@ -819,6 +950,9 @@
 "close.all.tabs" = "Sulje kaikki välilehdet";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohortti: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Vahvista";
 
 /* Button to continue the onboarding process */
@@ -931,6 +1065,9 @@
 
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Lähetetäänkö virheraportit automaattisesti?";
+
+/* No comment provided by engineer. */
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Tuo kirjanmerkkitiedosto...";
@@ -1046,41 +1183,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Eilen";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Piilota vinkit ikuisesti";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Peruuta";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Niitä on vain pari, ja yritimme tehdä niistä informatiivisia.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Piilotetaanko jäljellä olevat vinkit?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "DuckDuckGo-hakusi ovat aina nimettömiä. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Huh huh!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Ylävitonen!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* yritti seurata sinua.\n\nEstin sen!\n\n☝️ Tarkista osoiteriviltä, kuka yrittää seurata sinua, kun vierailet uudella sivustolla.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Ylävitonen!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Huomio! %1$@ näkee mitä teet sivustolla %2$@, enkä voi estää sitä.\n\nMutta jos käytät minua selaamiseen, voin vähentää, mitä %1$@ saa tietää sinusta, estämällä heidän seurantansa monilla muilla sivustoilla.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Selvä";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Huomio! Koska %2$@ omistaa palvelun %1$@, en voi estää heitä näkemästä, mitä teet täällä.\n\nMutta jos käytät minua selaamiseen, voin vähentää, mitä %2$@ saa tietää sinusta, estämällä heidän seurantansa monilla muilla sivustoilla.";
@@ -1091,35 +1195,11 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Kun napautat ja selaat, estän ikävät seurantaohjelmat.\n\nEli jatka vain selaamista!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Selvä";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Henkilökohtaisia tietoja voi tallentua selaimeesi. Hyi. Hävitä ne kaikki Liekki-painikkeella. Kokeile nyt! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Peruuta";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Sulje välilehdet ja tyhjennä tiedot";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Käy lempisivustoillasi hetkessä!\n\nSiirry lempisivustollesi. Napauta \"...\"-kuvaketta ja valitse *Lisää suosikkeihin*.";
 
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Käy lempisivustoillasi hetkessä! Käy suosikkisivustoillasi. Napauta sitten valikon avauspainiketta ja valitse Lisää suosikkeihin.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Käy seuraavaksi jollain lempisivustoistasi.\n\nEstän jäljittäjät, jotta he eivät voi vakoilla sinua. Päivitän myös yhteytesi suojauksen, jos se on mahdollista. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Hyvin menee!\n\nMuista, että joka kerta kun käytät minua selaamiseen, rasittavat mainokset katoavat. 👍";
-
 /* No comment provided by engineer. */
 "Debug" = "Virheenkorjaus";
-
-/* No comment provided by engineer. */
-"Delete All" = "Poista kaikki";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "laitteelle";
@@ -1199,37 +1279,31 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player ei ole käytettävissä";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Lue lisää";
 
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "YouTuben viimeaikaiset muutokset ovat vaikuttaneet Duck Playerin toimintaan. Pyrimme korjaamaan nämä ongelmat. Kiitos ymmärryksestä.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai on valinnainen ominaisuus, jonka avulla voit keskustella anonyymisti suosittujen kolmannen osapuolen tekoälykeskustelumallien kanssa. Keskustelujasi ei käytetä tekoälyn kouluttamiseen.\n[Lue lisää](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "DuckDuckGo-tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Tietojasi ei käytetä tekoälyn kouluttamiseen.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Näytä Duck.ai osoiterivillä";
+"duckai.settings.enable.address-bar-toggle" = "Osoitekenttä";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Näytä Duck.ai selainvalikossa";
+"duckai.settings.enable.browsing-menu-toggle" = "Selainvalikko";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Näytä Duck.ai välilehtinäytöllä";
+"duckai.settings.enable.tab-switcher-toggle" = "Välilehdet-näyttö";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Näytä Duck.ai äänihaussa";
+"duckai.settings.enable.voice-search-toggle" = "Äänihaku";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Lue lisää";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -1244,8 +1318,26 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Ei koskaan";
 
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "Tap to watch without targeted ads";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
+
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Player estää kohdennetut mainokset ja pitää katseluhistoriasi suojattuna.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, mutta vähemmän mainoksia ja enemmän yksityisyyttä";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Katso ilman kohdennettuja mainoksia";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Toista tämä video Duck Playerissa";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Katso ilman kohdennettuja mainoksia";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Toista tämä video Duck Playerissa";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Playerin avulla voit katsella YouTubea ilman kohdennettuja mainoksia DuckDuckGossa, eivätkä katsomasi videot vaikuta suosituksiisi.";
@@ -1258,6 +1350,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Hukutko mainoksiin YouTubessa? Duck Playerin avulla et huku!";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Jatka Duck Playerissa";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "Duck Playerissa avatut videot toistetaan automaattisesti. Poista tämä käytöstä, jos haluat toistaa Duck Playerissa avatut videot manuaalisesti.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Toista videot automaattisesti";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Kokeellinen";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo tarjoaa kaikki Privacy Essentials ominaisuudet, joita tarvitset suojautuaksesi selatessasi verkkoa.";
@@ -1274,8 +1378,59 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "Avaa YouTube-videot Duck Playerissa";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "YouTube-videoiden napsauttaminen DuckDuckGo-hakutuloksissa avaa videot Duck Playerissa.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "DuckDuckGo-hakutulokset";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "Sulje kaikki välilehdet, jotta tämä asetus astuu voimaan.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "OK";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Tärkeää!";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Avaa YouTube-videot täällä";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Duck Player -variaatio";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "Kun selaat YouTube.comissa ja napsautat YouTube-videoita, ne avataan Duck Playerissa.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Anna minun valita";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Avaa automaattisesti";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Älä näytä";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Avaa asetukset";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Voit poistaa Duck Playerin käytöstä milloin tahansa";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Katso YouTubessa";
+
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Jos haluat palata YouTubeen, sulje Duck Player.\nEikö tämä ole sinua varten? Poista se käytöstä alta!";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.welcome.message.text" = "Katsot Duck Playerissa!\nTäällä ei ole kohdennettuja mainoksia.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Sähköpostisuojaus";
@@ -1352,6 +1507,12 @@
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Ei hakutuloksia";
 
+/* No comment provided by engineer. */
+"Enrolled: %@" = "Rekisteröitynyt: %@";
+
+/* No comment provided by engineer. */
+"Entry Pill" = "Entry Pill";
+
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Kirjaudu sisään";
 
@@ -1402,6 +1563,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Vain mobiilisuosikit";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Ominaisuus: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Mainosten ja ponnahdusikkunoiden esto";
@@ -2085,7 +2249,7 @@
 "new.tab.page.settings.title" = "Mukauta uuden välilehden sivua";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Tekoäly-chat";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Kirjanmerkit";
@@ -2151,12 +2315,12 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Estä evästeponnahdusikkunat";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Estä seurantamainokset";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Estä kohdennetut mainokset";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Poista selaustiedot yhdellä painikkeella";
 
-/* Message to highlight browser capability ofblocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Estä kolmannen osapuolen seuraimet";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2170,6 +2334,9 @@
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Aloitetaan!";
+
+/* Button to skip the onboarding process */
+"onboarding.intro.cta.skip" = "Olen ollut täällä aiemmin";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Lue lisää";
@@ -2188,6 +2355,18 @@
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
 "onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
+
+/* The title of the button to skip the onboarding and start browsing. */
+"onboarding.skip.cta.confirmSkip" = "Aloita selailu";
+
+/* The title of the button to resume the onboarding. */
+"onboarding.skip.cta.resumeOnboarding" = "Näytä opetusohjelma";
+
+/* The message of the skip onboarding dialog popup. */
+"onboarding.skip.message" = "Muista: voit poistaa kaikki välilehdet, historian ja selaustiedot napsauttamalla kahdesti Fire Button -painiketta 🔥";
+
+/* The title of the skip onboarding dialog popup */
+"onboarding.skip.title" = "Selvä! Ohitan muut vinkit.";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Lisää widget";
@@ -2291,6 +2470,33 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Lähetä palautetta";
 
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Huijausten esto";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Tämän ominaisuuden käytöstä poistaminen voi vaarantaa henkilötietosi.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Varoita sivustoista, jotka on merkitty huijausten, tietojenkalastelun tai haittaohjelmien johdosta. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Päivittää linkit automaattisesti HTTPS-yhteyteen aina kun mahdollista. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Älykkäämpi salaus";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Aina käytössä";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Uhkien torjunta";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGon parannetut suojaustoiminnot pysäyttävät yleisimmät uhat ja pitävät yhteytesi suojattuna.\n[Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+
+/* Description of incorrectly formatted data error when syncing. */
+"prefrences.sync.bad-request.description" = "Jotkin kirjanmerkit tai salasanat on väärin muotoiltuja tai liian pitkiä, eikä niitä ole synkronoitu.";
+
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Hallitse kirjanmerkkejä";
 
@@ -2303,13 +2509,14 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Salasanakiintiösi on täynnä. Poista joitain salasanoja jatkaaksesi synkronointia.";
 
-/* Description invalid credentials error when syncing.
-   Description of incorrectly formatted data error when syncing.
-   Description of too many requests error when syncing. */
+/* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Synkronoinnin aikana havaittiin virhe. Yritä poistaa synkronointi käytöstä tällä laitteella. Muodosta sitten yhteys uudelleen toisella laitteella tai palautuskoodilla.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Synkronointi keskeytetty";
+
+/* Description of too many requests error when syncing. */
+"prefrences.sync.too-many-requests.description" = "Synkronointi ja varmuuskopiointi on tilapäisesti poissa käytöstä.";
 
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Verkkosivustot käyttävät evästeitä, joilla pysyt kirjautuneena sisään. Kun teet sivustosta palonkestävän, evästeitä ei poisteta ja pysyt kirjautuneena sisään, vaikka käytät Liekki-painiketta. Estämme edelleen kolmannen osapuolen seurannan palonkestävillä sivustoilla.";
@@ -2351,6 +2558,9 @@
 "Primary / First Action" = "Ensisijainen/ensimmäinen toiminto";
 
 /* No comment provided by engineer. */
+"Priming Modal" = "Priming Modal";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Yksityisyyden suoja";
 
 /* Privacy Icon accessibility title */
@@ -2376,6 +2586,12 @@
 
 /* No comment provided by engineer. */
 "Reset" = "Nollaa";
+
+/* No comment provided by engineer. */
+"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+
+/* No comment provided by engineer. */
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Hae tai anna osoite";
@@ -2425,18 +2641,26 @@
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Lisää DuckDuckGo VPN -widget aloitusnäyttöön.";
 
-/* Name of the settings subsection related to the address bar
-   Settings screen cell text for addess bar position */
+/* Name of the settings subsection related to the address bar */
 "settings.address.bar" = "Osoitekenttä";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Näytä sivuston osoite kokonaan";
+
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Duck.ai-pikakuvakkeet";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Search Assist -asetukset";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Aina käytössä";
 
 /* Settings screen appearance section title */
 "settings.appearance" = "Ulkoasu";
+
+/* Settings screen cell text for addess bar position */
+"settings.appearance.address.bar" = "Osoitepalkin sijainti";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Avaa linkit liittyvissä sovelluksissa";
@@ -2468,6 +2692,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Tyhjennä tiedot automaattisesti";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Viimeistele asennuksesi";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Evästeiden ponnahdusikkuna -suojaus";
 
@@ -2483,8 +2710,7 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datan tyhjentäminen";
 
-/* Settings screen cell text for setting the app as default browser
-   The name of Settings category in Privacy Features related to configuration of the default browser */
+/* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Oletusselain";
 
 /* Label of a button disabling email protection */
@@ -2502,11 +2728,20 @@
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Estä sähköpostiseuraajat ja piilota osoitteesi";
 
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Keskustele yksityisesti suosittujen kolmannen osapuolen tekoälymallien kanssa";
+
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Ota Email Protection käyttöön";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Ota käyttöön äänihaku";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Valitse, kuinka usein haluat tekoälyavusteisten vastausten näkyvän hauissasi";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Jaa palaute";
@@ -2520,11 +2755,17 @@
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Yleiset";
 
+/* Settings screen cell text for setting the app as default browser */
+"settings.general.default.browser" = "Aseta oletusselaimeksi";
+
 /* Settings screen cell text for GPC */
 "settings.gpc" = "Global Privacy Control (GPC)";
 
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Sovelluskuvake";
+
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Tuo salasanat";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Näppäimistö";
@@ -2565,6 +2806,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Tietosuojakäytäntö ja palveluehdot";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Sisältää: VPN ja Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Seuraavat sisältyvät: VPN, Personal Information Removal ja Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Esikatselu pitkällä painalluksella";
 
@@ -2585,6 +2832,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Lähetä virheraportit automaattisesti DuckDuckGolle.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Aseta oletusselaimeksi";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Aseta osoitekentän sijainti";
@@ -2622,14 +2872,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Tilauksen asetukset";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Sisältää: VPN ja Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Suojaa yhteytesi ja identiteettisi Privacy Prolla";
 
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Seuraavat sisältyvät: VPN, Personal Information Removal ja Identity Theft Restoration.";
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Kokeile Privacy Pro -tilausta ilmaiseksi";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2661,15 +2908,8 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Verkkoseurannan suojaus";
 
-/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
-   Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "Estä yli 150 000 verkkotunnusta, jotka on lisätty DNS-tason estolistalle haittaohjelmien, tietojenkalasteluhyökkäysten ja verkkohuijausten vuoksi. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
-
-/* Header of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.header" = "Sisällön estäminen ja suodattaminen";
-
-/* Title of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.title" = "Estä vaaralliset verkkotunnukset";
+/* Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "DuckDuckGo estää piilotetut seurantalaitteet automaattisesti, kun selaat verkkoa.\n[Lue lisää] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Valitse vaihtoehto, joka parhaiten kuvaa ongelmaa.";
@@ -2707,23 +2947,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tallennettu isäntänimi: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Pääset Privacy Pro -tilaukseesi tällä laitteella Apple-tilin tai sähköpostiosoitteen kautta.";
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Alaominaisuus: %@";
 
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Lisää sähköpostiosoite";
-
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple-tili";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Palauta osto";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Aktivoi tilauksesi tällä laitteella palauttamalla ostosi.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Tilauksesi on automaattisesti käytettävissä DuckDuckGossa kaikilla laitteilla, joilla olet kirjautunut sisään Apple-tilillesi.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Lisää laitteeseen";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Muokkaa sähköpostiosoitetta";
@@ -2731,17 +2959,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Muokkaa sähköpostiosoitetta";
 
-/* Email option for activation */
-"subscription.activate.email" = "Sähköposti";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Anna sähköpostiosoite";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Aktivoi tilauksesi tällä laitteella sähköpostiosoitteellasi.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aktivoi tilaus";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Lisää Privacy Pro -tilauksesi tähän laitteeseen";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Peruuta";
@@ -2749,11 +2968,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "OK";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Palauta osto";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Palauta osto";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Aktivoi tilauksesi tällä laitteella";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Palauta tilauksesi Apple-laitteisiin käyttämällä Apple-tiliäsi.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Lisää Apple-tilin kautta";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Aloita";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Lisää Privacy Pro tähän laitteeseen käyttämällä sähköpostiosoitetta.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Lisää sähköpostiosoitteen kautta";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Minulla on tilaus";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Lähetä ohjeet uudelleen";
@@ -2763,6 +2997,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Lisää sähköpostiosoite";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Lisää Privacy Pro muihin laitteisiin";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Lisää Privacy Pro muihin laitteisiisi käyttämällä Apple ID:tä tai linkittämällä sähköpostiosoite. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Lisää tilauksesi muihin laitteisiisi DuckDuckGo-sovelluksessa käyttämällä tätä sähköpostiosoitetta. Siirry kohtaan Asetukset > Privacy Pro > Minulla on tilaus. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Privacy Pro on käytettävissä kaikilla laitteilla, joilla on kirjauduttu sisään samalle Apple-tilille.";
@@ -2784,15 +3027,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Oletko varma?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktivoi muilla laitteilla";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Lisää tilaukseesi valinnainen sähköpostiosoite, jotta voit käyttää Privacy Prota muilla laitteilla. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Aktivoi tilauksesi tällä sähköpostiosoitteella muiden laitteiden DuckDuckGo-sovelluksessa kohdassa Asetukset > Privacy Pro. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Tähän sähköpostiin liitetty tilaus ei ole enää aktiivinen.";
@@ -2937,6 +3171,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Tilauksesi uusiutuu %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Tilauksesi uusiutuu %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Vuositilauksesi uusiutuu %@.";
@@ -3231,6 +3468,15 @@
 
 /* Title for the Apply button on the DNS Server setting screen */
 "vpn.settings.dns.server.apply.button.title" = "Käytä";
+
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link) */
+"vpn.settings.dns.server.content.blocking.explanation" = "Estä yli 150 000 verkkotunnusta, jotka on lisätty DNS-tason estolistalle haittaohjelmien, tietojenkalasteluhyökkäysten ja verkkohuijausten vuoksi. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.header" = "Haitallisen sisällön estäminen";
+
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Huijausten esto";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

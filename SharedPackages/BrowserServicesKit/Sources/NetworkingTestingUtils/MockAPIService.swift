@@ -43,7 +43,7 @@ public class MockAPIService: APIService {
     }
 
     // Function to fetch response for a given request
-    public func fetch(request: Networking.APIRequestV2, authAlreadyRefreshed: Bool, failureRetryCount: Int) async throws -> Networking.APIResponseV2 {
+    public func fetch(request: Networking.APIRequestV2) async throws -> Networking.APIResponseV2 {
         if let requestHandler {
             switch requestHandler(request) {
                     case .success(let result):

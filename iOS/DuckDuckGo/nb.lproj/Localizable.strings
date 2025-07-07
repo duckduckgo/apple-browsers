@@ -59,10 +59,7 @@
 "action.title.downloads" = "Nedlastinger";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "KI-chat";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Ny AI-chat";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Rediger bokmerke";
@@ -160,6 +157,9 @@
 /* No comment provided by engineer. */
 "addWidget.title" = "Ett trykk til favorittnettstedene dine.";
 
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "AI-funksjoner";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Eksisterende bokmerker blir ikke duplisert.";
 
@@ -189,6 +189,15 @@
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synkronisering er satt på pause. Hvis du vil fortsette å synkronisere denne enheten, må du koble til på nytt ved hjelp av en annen enhet eller gjenopprettingskoden.";
+
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Synkroniser nå";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "«%@» får tilgang til dine synkroniserte DuckDuckGo-data.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Vil du synkronisere en ny enhet?";
 
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Finn ut mer";
@@ -241,6 +250,9 @@
 /* Description for unable to remove device error */
 "alert.unable-to-remove-device-description" = "Kan ikke fjerne denne enheten fra Synkronisering og sikkerhetskopiering.";
 
+/* Description for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-description" = "Beklager, denne koden er ugyldig. Kontroller at riktig kode ble tastet inn eller skannet.";
+
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Kan ikke koble til serveren.";
 
@@ -255,9 +267,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Lås opp DuckDuckGo.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Er du sikker på at du vil slette alle bokmerkene? Denne handlingen kan ikke angres.";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Logg inn";
@@ -304,6 +313,117 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Når DuckDuckGo oppdager popup-vinduer om samtykke til informasjonskapsler på nettsteder du besøker, kan vi automatisk angi innstillingene for å minimere informasjonskapslene og maksimere personvernet, og deretter lukke popup-vinduene. Noen nettsteder tilbyr ikke noe alternativ for å administrere preferanser for informasjonskapsler, så slike popup-vinduer kan vi bare skjule.";
 
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Kortet er lagret";
+
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Kortet er slettet";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Navn på kortet";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Kortets kallenavn";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Kortnummer";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Kortnummer";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Navnet er kopiert";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Kortnummeret er kopiert";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV er kopiert";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Utløpsdato er kopiert";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Kort";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Slett kortet";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Slett kortet";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Er du sikker på at du vil slette dette kortet?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Rediger kortet";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Sikkerhetskode";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "MM / ÅÅ";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Utløpsdato";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Legg til kort";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Navn på kortet";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(f.eks. Jobb)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Kredittkort lagres på enheten din på en sikker måte.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Ingen kredittkort er lagret ennå";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Lås opp enheten for å få tilgang til kredittkortene";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Utløpsdato:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Kredittkort";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "Det kreves et passord for å beskytte kredittkortene dine.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Sikre enheten din for å lagre kredittkort";
+
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Ikke lagre";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Lagre kortet";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Kredittkort lagres på enheten din på en sikker måte.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Vil du at DuckDuckGo skal lagre kortinformasjonen din?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Autentiser for å fylle ut kredittkortinformasjon";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Vil du bruke et lagret kort?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Du kan slå av lagring av kredittkort når som helst.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -324,6 +444,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Aktiver e-postbeskyttelse";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Skjul CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Skjul passord";
@@ -361,8 +484,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Synkroniser med datamaskinen";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Slik importerer du passord";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Slik synkroniserer du passord på datamaskinen";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Slå av";
@@ -379,7 +502,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Passordet er oppdatert";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Kopier %@";
 
 /* Title for toast when copying address */
@@ -514,6 +637,9 @@
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Passord krypteres. Ingen andre enn du kan se dem, ikke engang vi.";
 
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Passord og kredittkort er kryptert. Ingen andre enn du kan se dem, ikke engang vi.";
+
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Forslag";
 
@@ -556,9 +682,11 @@
 /* Do not translate - stringsdict entry */
 "autofill.number.of.passwords" = "autofill.number.of.passwords";
 
-/* Description of autofill onboarding prompt's secure storage feature
-   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
-"autofill.onboarding.key-features.secure-storage.description" = "Passord er kryptert, lagret på enheten og låst med %@.";
+/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+"autofill.onboarding.key-features.secure-storage.biometric.description" = "Passord er kryptert, lagret på enheten og låst med %@.";
+
+/* Description of autofill onboarding prompt's secure storage feature */
+"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID eller passord";
@@ -679,6 +807,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Vis";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Vis CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Vis passord";
@@ -819,6 +950,9 @@
 "close.all.tabs" = "Lukk alle faner";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohort: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Bekreft";
 
 /* Button to continue the onboarding process */
@@ -931,6 +1065,9 @@
 
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Sende krasjrapporter automatisk?";
+
+/* No comment provided by engineer. */
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importer bokmerkefil ...";
@@ -1046,41 +1183,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "I går";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Skjul tips for alltid";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Avbryt";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Det er bare noen få, og vi prøvde å gjøre dem informative.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Skjule gjenværende tips?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "DuckDuckGo-søkene dine er anonyme. Alltid. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Puh!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "High five!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* prøvde å spore deg her.\n\nJeg har blokkert dem!\n\n☝️ Du kan sjekke adresselinjen for å se hvem som prøver å spore deg når du besøker et nytt nettsted.️";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "High five!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Pass opp! Jeg klarer ikke å forhindre at %1$@ ser aktiviteten din på %2$@.\n\nMen surf med meg, så kan jeg redusere informasjonen %1$@ får om deg. Det gjør jeg ved å blokkere vedkommendes sporingsanordninger på mange andre nettsteder.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Den er grei";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Pass opp! Siden %2$@ eier %1$@, kan jeg ikke forhindre at de ser aktiviteten din her.\n\nMen surf med meg, så kan jeg redusere informasjonen %2$@ får om deg. Det gjør jeg ved å blokkere vedkommendes sporingsanordninger på mange andre nettsteder.";
@@ -1091,35 +1195,11 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Jeg blokkerer irriterende sporere mens du trykker og blar.\n\nDu kan bare fortsette å surfe!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Den er grei";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Det kan samles opp personopplysninger i nettleseren din. Fysj. Bruk brannknappen til å sette fyr på alt sammen. Prøv det nå! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Avbryt";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Lukk faner og slett data";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Besøk favorittsidene dine på et blunk!\n\nGå til et nettsted du liker. Trykk deretter på «…»-ikonet og velg *Legg til i Favoritter*.";
 
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Besøk favorittsidene dine på et blunk! Besøk en av favorittsidene dine. Trykk deretter på Åpne meny-knappen og velg Legg til i Favoritter.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Deretter kan du besøke et av favorittnettstedene dine!\n\nJeg blokkerer sporingsforsøk slik at de ikke kan spionere på deg. Hvis det er mulig, oppgraderer jeg også sikkerheten på forbindelsen din. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Dette går bra!\n\nHusk: Hver gang du surfer med meg, klippes vingene av en ekkel annonse. 👍";
-
 /* No comment provided by engineer. */
 "Debug" = "Feilsøke";
-
-/* No comment provided by engineer. */
-"Delete All" = "Slett alt";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "enhet";
@@ -1199,37 +1279,31 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player er utilgjengelig";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Finn ut mer";
 
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Players funksjonalitet har blitt påvirket av nylige endringer i YouTube. Vi jobber med å løse disse problemene og setter pris på forståelsen din.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai er en valgfri funksjon der du kan chatte anonymt med populære tredjeparts AI-chat-modeller. Chattene dine brukes ikke til å trene AI.\n[Finn ut mer](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "AI-funksjonene i DuckDuckGo er private og valgfrie. Dataene dine brukes ikke til å trene AI.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Vis Duck.ai i adressefeltet";
+"duckai.settings.enable.address-bar-toggle" = "Adressefelt";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Vis Duck.ai i nettlesermenyen";
+"duckai.settings.enable.browsing-menu-toggle" = "Nettlesermeny";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Vis Duck.ai på skjermen med faner";
+"duckai.settings.enable.tab-switcher-toggle" = "Faneskjerm";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Vis Duck.ai i talesøk";
+"duckai.settings.enable.voice-search-toggle" = "Talesøk";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Finn ut mer";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -1244,8 +1318,26 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Aldri";
 
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "Tap to watch without targeted ads";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
+
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Player blokkerer målrettede annonser og holder visningshistorikken din beskyttet.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, men med færre annonser og mer personvern";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Se uten målrettede annonser";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Spill av denne videoen i Duck Player";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Se uten målrettede annonser";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Spill av denne videoen i Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Med Duck Player kan du se på YouTube uten målrettede annonser i DuckDuckGo. Det du ser på, påvirker ikke anbefalingene du får.";
@@ -1258,6 +1350,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Drukner du i annonser på YouTube? Ikke med Duck Player!";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Fortsett i Duck Player";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "Videoer som åpnes i Duck Player, begynner automatisk å spille av. Slå av dette hvis du vil starte avspilling av videoer åpnet i Duck Player manuelt.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automatisk avspilling av videoer";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Eksperimentell";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo gir deg alt du trenger for å beskytte personvernet ditt, når du surfer på nettet.";
@@ -1274,8 +1378,59 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "Åpne YouTube-videoer i Duck Player";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "Hvis du klikker på YouTube-videoer fra DuckDuckGo-søkeresultater, åpnes de i Duck Player.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "DuckDuckGo Search-resultater";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "Alle faner må lukkes for at innstillingen skal virke.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "OK";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Viktig!";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Åpne YouTube-videoer her";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Duck Player-variant";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "Når du klikker på YouTube-videoer mens du surfer på YouTube.com, åpnes de i Duck Player.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "La meg velge";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Åpne automatisk";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Ikke vis";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Åpne innstillingene";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Du kan slå av Duck Player når som helst";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Se på YouTube";
+
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Lukk Duck Player for å gå tilbake til YouTube.\nIkke noe for deg? Slå den av nedenfor!";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.welcome.message.text" = "Du ser på Duck Player!\nIngen målrettede annonser her.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-postbeskyttelse";
@@ -1352,6 +1507,12 @@
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Ingen match ble funnet";
 
+/* No comment provided by engineer. */
+"Enrolled: %@" = "Påmeldt: %@";
+
+/* No comment provided by engineer. */
+"Entry Pill" = "Entry Pill";
+
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Logg inn";
 
@@ -1402,6 +1563,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Kun favoritter på mobil";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funksjon: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokkering av reklame og popups";
@@ -2085,7 +2249,7 @@
 "new.tab.page.settings.title" = "Tilpass ny faneside";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "KI-chat";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Bokmerker";
@@ -2151,12 +2315,12 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blokker popup-vinduer om informasjonskapsler";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokker sporende annonser";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokker målrettede annonser";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Slett nettleserdata med én knapp";
 
-/* Message to highlight browser capability ofblocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokker tredjepartssporere";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2170,6 +2334,9 @@
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Sett i gang!";
+
+/* Button to skip the onboarding process */
+"onboarding.intro.cta.skip" = "Jeg har vært her før";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Finn ut mer";
@@ -2188,6 +2355,18 @@
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
 "onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
+
+/* The title of the button to skip the onboarding and start browsing. */
+"onboarding.skip.cta.confirmSkip" = "Begynn å surfe";
+
+/* The title of the button to resume the onboarding. */
+"onboarding.skip.cta.resumeOnboarding" = "Vis veiledning";
+
+/* The message of the skip onboarding dialog popup. */
+"onboarding.skip.message" = "Husk: Du kan slette alle fanene, historikken og nettleserdataene dine med to trykk på Fire Button 🔥";
+
+/* The title of the skip onboarding dialog popup */
+"onboarding.skip.title" = "Skjønner! Jeg hopper over de andre tipsene.";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Legg til widget";
@@ -2291,6 +2470,33 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Send tilbakemelding";
 
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Svindelblokkering";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Deaktivering av denne funksjonen kan sette personopplysningene dine i fare.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Varsle om nettsteder som er flagget for svindel, phishing eller skadelig programvare. [Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Oppgraderer automatisk lenker til HTTPS når det er mulig. [Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Alltid på";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Trusselbeskyttelse";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGos forbedrede beskyttelse stopper vanlige trusler mens den holder tilkoblingen din sikker.\n[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+
+/* Description of incorrectly formatted data error when syncing. */
+"prefrences.sync.bad-request.description" = "Noen bokmerker eller passord er formatert feil eller for lange og ble ikke synkronisert.";
+
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Administrer bokmerker";
 
@@ -2303,13 +2509,14 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Du har nådd det maksimale antallet passord. Slett noen for å gjenoppta synkronisering.";
 
-/* Description invalid credentials error when syncing.
-   Description of incorrectly formatted data error when syncing.
-   Description of too many requests error when syncing. */
+/* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Synkronisering oppdaget en feil. Prøv å slå av synkronisering på denne enheten og koble til igjen med en annen enhet eller gjenopprettingskoden.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Synkronisering satt på pause";
+
+/* Description of too many requests error when syncing. */
+"prefrences.sync.too-many-requests.description" = "Sync & Backup er midlertidig utilgjengelig.";
 
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Nettsider anvender informasjonskapsler for å holde deg innlogget. Når du gjør en side brannsikker, slettes ikke informasjonskapslene, og du forblir innlogget, selv etter å ha brukt brannknappen. Vi blokkerer fortsatt tredjeparters sporingsanordninger som blir funnet på Brannsikre nettsteder.";
@@ -2351,6 +2558,9 @@
 "Primary / First Action" = "Primær / første handling";
 
 /* No comment provided by engineer. */
+"Priming Modal" = "Priming Modal";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Personvern";
 
 /* Privacy Icon accessibility title */
@@ -2376,6 +2586,12 @@
 
 /* No comment provided by engineer. */
 "Reset" = "Tilbakestill";
+
+/* No comment provided by engineer. */
+"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+
+/* No comment provided by engineer. */
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Søk eller skriv inn adresse";
@@ -2425,18 +2641,26 @@
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Legg til DuckDuckGos VPN-widget på startskjermen din";
 
-/* Name of the settings subsection related to the address bar
-   Settings screen cell text for addess bar position */
+/* Name of the settings subsection related to the address bar */
 "settings.address.bar" = "Adressefelt";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Vis fullstendig nettstedsadresse";
+
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Duck.ai-snarveier";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Innstillinger for Search Assist";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alltid på";
 
 /* Settings screen appearance section title */
 "settings.appearance" = "Utseende";
+
+/* Settings screen cell text for addess bar position */
+"settings.appearance.address.bar" = "Plassering av adressefelt";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Åpne lenker i tilknyttede apper";
@@ -2468,6 +2692,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Slett data automatisk";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Fullfør oppsettet";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Beskyttelse mot popup-vinduer om informasjonskapsler";
 
@@ -2483,8 +2710,7 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Sletting av data";
 
-/* Settings screen cell text for setting the app as default browser
-   The name of Settings category in Privacy Features related to configuration of the default browser */
+/* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardnettleser";
 
 /* Label of a button disabling email protection */
@@ -2502,11 +2728,20 @@
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Blokker e-postsporere og skjul adressen din";
 
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Chat privat med populære tredjeparts AI-modeller";
+
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Aktiver e-postbeskyttelse";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Aktiver talesøk";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Velg hvor ofte du vil at AI-assisterte svar skal vises i søkene dine";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Del tilbakemelding";
@@ -2520,11 +2755,17 @@
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Generelt";
 
+/* Settings screen cell text for setting the app as default browser */
+"settings.general.default.browser" = "Gjør til standardnettleser";
+
 /* Settings screen cell text for GPC */
 "settings.gpc" = "Global Privacy Control (GPC)";
 
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Appikon";
+
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Importer passord";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
@@ -2565,6 +2806,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Personvernerklæring og vilkår for bruk";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Inkluderer vår VPN og Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Inkluderer vår VPN, Personal Information Removal og Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Forhåndsvisning ved å trykke og holde";
 
@@ -2585,6 +2832,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Send krasjrapporter automatisk til DuckDuckGo.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Gjør til standardnettleser";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Angi plassering av adressefeltet";
@@ -2622,14 +2872,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonnementsinnstillinger";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Inkluderer vår VPN og Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Beskytt tilkoblingen og identiteten din med Privacy Pro";
 
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Inkluderer vår VPN, Personal Information Removal og Identity Theft Restoration.";
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Prøv Privacy Pro gratis";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2661,15 +2908,8 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Beskyttelse mot nettsporing";
 
-/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
-   Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "Blokker over 150 000 domener som er flagget for skadelig programvare, phishing-angrep og nettsvindel, med en blokkeringsliste på DNS-nivå. [Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
-
-/* Header of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.header" = "Blokkering og filtrering av innhold";
-
-/* Title of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.title" = "Blokker risikable domener";
+/* Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "DuckDuckGo blokkerer automatisk skjulte sporere når du surfer på nettet.\n[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Velg alternativet som best beskriver problemet du opplevde.";
@@ -2707,23 +2947,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagret vertsnavn: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Få tilgang til Privacy Pro-abonnementet ditt på denne enheten via Apple-kontoen din eller en e-postadresse.";
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Underfunksjon: %@";
 
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Legg til e-postadresse";
-
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple-konto";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Gjenopprett kjøp";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Gjenopprett kjøpet ditt for å aktivere abonnementet ditt på denne enheten.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Abonnementet ditt er automatisk tilgjengelig i DuckDuckGo på alle enheter som er logget inn på Apple-kontoen din.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Legg til på enheten";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Rediger e-postadresse";
@@ -2731,17 +2959,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Rediger e-postadresse";
 
-/* Email option for activation */
-"subscription.activate.email" = "E-post";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Skriv inn e-postadresse";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Bruk e-postadressen din til å aktivere abonnementet ditt på denne enheten.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aktiver abonnement";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Legg til Privacy Pro-abonnementet ditt på denne enheten";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Avbryt";
@@ -2749,11 +2968,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "OK";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Gjenopprett kjøp";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Gjenopprett kjøp";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Aktiver abonnementet ditt på denne enheten";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Gjenopprett abonnementet på Apple-enheter ved hjelp av Apple-kontoen din.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Legg til via Apple-konto";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Kom i gang";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Bruk en e-postadresse for å legge til Privacy Pro på denne enheten.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Legg til via e-postadresse";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Jeg har et abonnement";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Send instruksjonene på nytt";
@@ -2763,6 +2997,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Legg til e-postadresse";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Legg til Privacy Pro på andre enheter";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Legg til Privacy Pro på andre enheter via Apple ID eller ved å koble til en e-postadresse. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Bruk denne e-postadressen til å legge til abonnementet ditt på andre enheter i DuckDuckGo-appen. Gå til Innstillinger > Privacy Pro > Jeg har et abonnement. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Privacy Pro er tilgjengelig på alle enheter som er logget inn på samme Apple-konto.";
@@ -2784,15 +3027,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Er du sikker?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktiver på andre enheter";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Legg til en valgfri e-postadresse i abonnementet ditt for å få tilgang til Privacy Pro på andre enheter. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Bruk denne e-postadressen til å aktivere abonnementet ditt i Innstillinger > Privacy Pro i DuckDuckGo-appen på de andre enhetene. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Abonnementet tilknyttet denne e-postadressen er ikke lenger aktiv.";
@@ -2937,6 +3171,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Abonnementet ditt fornyes %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Abonnementet ditt fornyes %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Årsabonnementet ditt fornyes %@.";
@@ -3231,6 +3468,15 @@
 
 /* Title for the Apply button on the DNS Server setting screen */
 "vpn.settings.dns.server.apply.button.title" = "Bruk";
+
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link) */
+"vpn.settings.dns.server.content.blocking.explanation" = "Blokker over 150 000 domener som er flagget for skadelig programvare, phishing-angrep og nettsvindel, med en blokkeringsliste på DNS-nivå. [Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.header" = "Blokkering av skadelig innhold";
+
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Svindelblokkering";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

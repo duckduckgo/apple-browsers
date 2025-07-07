@@ -18,15 +18,13 @@
 
 import XCTest
 
-class DownloadsTests: XCTestCase {
+class DownloadsTests: UITestCase {
 
     private var app: XCUIApplication!
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launch()
+        app = XCUIApplication.setUp()
         setupSingleWindow()
     }
 
@@ -162,6 +160,10 @@ class DownloadsTests: XCTestCase {
     }
 
     private func toggleAlwaysAskWhereToSaveFiles(_ enabled: Bool) {
+        // scroll the view to the bottom
+        // scroll view is the second scroll view in the view hierarchy
+        let scrollView = app.scrollViews.element(boundBy: 1)
+        scrollView.swipeUp()
         let toggle = app.checkBoxes["PreferencesGeneralView.alwaysAskWhereToSaveFiles"]
         XCTAssertTrue(toggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         if (toggle.value as? Bool) != enabled {

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import BrowserServicesKit
 
 protocol HistoryViewOnboardingDeciding {
@@ -26,7 +27,7 @@ protocol HistoryViewOnboardingDeciding {
 final class HistoryViewOnboardingDecider: HistoryViewOnboardingDeciding {
 
     var shouldPresentOnboarding: Bool {
-        featureFlagger.isFeatureOn(.historyView) && !isNewUser() && !settingsPersistor.didShowOnboardingView
+        featureFlagger.isFeatureOn(.historyView) && !isNewUser() && !settingsPersistor.didShowOnboardingView && isContextualOnboardingCompleted()
     }
 
     func skipPresentingOnboarding() {
@@ -36,14 +37,17 @@ final class HistoryViewOnboardingDecider: HistoryViewOnboardingDeciding {
     init(
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         settingsPersistor: HistoryViewOnboardingViewSettingsPersisting = UserDefaultsHistoryViewOnboardingViewSettingsPersistor(),
+        isContextualOnboardingCompleted: @escaping () -> Bool = { Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted },
         isNewUser: @escaping () -> Bool = { AppDelegate.isNewUser }
     ) {
         self.featureFlagger = featureFlagger
         self.settingsPersistor = settingsPersistor
         self.isNewUser = isNewUser
+        self.isContextualOnboardingCompleted = isContextualOnboardingCompleted
     }
 
     let featureFlagger: FeatureFlagger
     let settingsPersistor: HistoryViewOnboardingViewSettingsPersisting
     let isNewUser: () -> Bool
+    let isContextualOnboardingCompleted: () -> Bool
 }

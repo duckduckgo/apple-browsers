@@ -65,8 +65,8 @@ final class StatisticsLoader {
                         completion()
                     }
                 }
-                PixelExperiment.fireSerpPixel()
-                PixelExperiment.fireOnboardingSearchPerformed5to7Pixel()
+                PixelKit.fire(GeneralPixel.serp, frequency: .standard)
+                PixelKit.fire(GeneralPixel.serpInitial, frequency: .uniqueByName)
                 self.fireSearchExperimentPixels()
                 if AppVersion.runType == .normal {
                     self.fireDailyOsVersionCounterPixel()
@@ -247,7 +247,7 @@ final class StatisticsLoader {
 
         DispatchQueue.global().asyncAfter(deadline: .now() + randomDelay) {
             PixelKit.fire(GeneralPixel.dailyOsVersionCounter,
-                          frequency: .legacyDaily)
+                          frequency: .legacyDailyNoSuffix)
         }
     }
 

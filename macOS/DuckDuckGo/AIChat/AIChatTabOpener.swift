@@ -16,8 +16,100 @@
 //  limitations under the License.
 //
 
-struct AIChatTabOpener {
-    @MainActor static func openAIChatTab() {
-        WindowControllersManager.shared.showTab(with: .url(AIChatRemoteSettings().aiChatURL, credential: nil, source: .ui))
+import Foundation
+import AIChat
+
+protocol AIChatTabOpening {
+    @MainActor
+    func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior)
+
+    @MainActor
+    func openAIChatTab(_ value: AddressBarTextField.Value, with linkOpenBehavior: LinkOpenBehavior)
+
+    @MainActor
+    func openNewAIChatTab(_ aiChatURL: URL, with linkOpenBehavior: LinkOpenBehavior)
+
+    @MainActor
+    func openNewAIChatTab(withPayload payload: AIChatPayload)
+
+    @MainActor
+    func openNewAIChatTab(withChatRestorationData data: AIChatRestorationData)
+}
+
+extension AIChatTabOpening {
+    @MainActor
+    func openAIChatTab() {
+        openAIChatTab(nil, with: .currentTab)
+    }
+}
+
+struct AIChatTabOpener: AIChatTabOpening {
+    private let promptHandler: AIChatPromptHandler
+    private let addressBarQueryExtractor: AIChatAddressBarPromptExtractor
+    private let windowControllersManager: WindowControllersManagerProtocol
+
+    let aiChatRemoteSettings = AIChatRemoteSettings()
+
+    init(
+        promptHandler: AIChatPromptHandler,
+        addressBarQueryExtractor: AIChatAddressBarPromptExtractor,
+        windowControllersManager: WindowControllersManagerProtocol
+    ) {
+        self.promptHandler = promptHandler
+        self.addressBarQueryExtractor = addressBarQueryExtractor
+        self.windowControllersManager = windowControllersManager
+    }
+
+    @MainActor
+    func openAIChatTab(_ value: AddressBarTextField.Value, with linkOpenBehavior: LinkOpenBehavior) {
+        let query = addressBarQueryExtractor.queryForValue(value)
+
+        // We don't want to auto-submit if the user is opening duck.ai from the SERP
+        // https://app.asana.com/1/137249556945/project/1204167627774280/task/1210024262385459?focus=true
+        let shouldAutoSubmit: Bool
+        if case let .url(_, url, _) = value {
+            shouldAutoSubmit = !url.isDuckDuckGoSearch
+        } else {
+            shouldAutoSubmit = true
+        }
+        openAIChatTab(query, with: linkOpenBehavior, autoSubmit: shouldAutoSubmit)
+    }
+
+    @MainActor
+    func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior) {
+        openAIChatTab(query, with: linkOpenBehavior, autoSubmit: true)
+    }
+
+    @MainActor
+    func openNewAIChatTab(_ aiChatURL: URL, with linkOpenBehavior: LinkOpenBehavior) {
+        windowControllersManager.openAIChat(aiChatURL, with: linkOpenBehavior)
+    }
+
+    @MainActor
+    private func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) {
+        if let query = query {
+            promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
+        }
+        windowControllersManager.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
+    }
+
+    @MainActor
+    func openNewAIChatTab(withPayload payload: AIChatPayload) {
+        guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+
+        let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
+        newAIChatTab.aiChat?.setAIChatNativeHandoffData(payload: payload)
+
+        tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
+    }
+
+    @MainActor
+    func openNewAIChatTab(withChatRestorationData data: AIChatRestorationData) {
+        guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+
+        let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
+        newAIChatTab.aiChat?.setAIChatRestorationData(data: data)
+
+        tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
     }
 }

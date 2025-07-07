@@ -27,7 +27,9 @@ struct BookmarkFolderPicker: View {
     var body: some View {
 
         NSPopUpButtonView(selection: $selectedFolder) {
-            let popUpButton = NSPopUpButton()
+            // Fix popup button title color in dark mode
+            // https://app.asana.com/1/137249556945/project/1201048563534612/task/1208767189188914?focus=true
+            let popUpButton = PopUpButton(cell: CustomTitleColorPopUpButtonCell(textColor: .labelColor))
             popUpButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             return popUpButton
         } content: {

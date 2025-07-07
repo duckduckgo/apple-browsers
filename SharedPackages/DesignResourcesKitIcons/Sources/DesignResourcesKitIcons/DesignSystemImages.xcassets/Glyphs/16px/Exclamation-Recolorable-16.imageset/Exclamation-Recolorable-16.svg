@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Exclamation-Recolorable-16_svg__a)">
+    <path fill="#EE1025" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16Z"/>
+    <path fill="#fff" d="M8 9.5a.665.665 0 0 1-.664-.624L7.028 3.93A.875.875 0 0 1 7.901 3H8.1c.505 0 .905.426.873.93l-.309 4.946A.665.665 0 0 1 8 9.5ZM8 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/>
+  </g>
+  <defs>
+    <clipPath id="Exclamation-Recolorable-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

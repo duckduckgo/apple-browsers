@@ -19,6 +19,7 @@
 
 
 import XCTest
+import DesignResourcesKit
 @testable import DuckDuckGo
 
 // MARK: - ToolbarHandlerTests
@@ -28,21 +29,21 @@ class ToolbarHandlerTests: XCTestCase {
     var toolbarHandler: ToolbarHandler!
     var mockToolbar: UIToolbar!
     var mockNavigatable: MockNavigatable!
-    var mockFeatureFlagger: MockFeatureFlagger!
+    var mockThemeManager: MockThemeManager!
 
     override func setUp() {
         super.setUp()
         mockToolbar = UIToolbar()
         mockNavigatable = MockNavigatable(canGoBack: true, canGoForward: false)
-        mockFeatureFlagger = MockFeatureFlagger()
-        toolbarHandler = ToolbarHandler(toolbar: mockToolbar, featureFlagger: mockFeatureFlagger)
+        mockThemeManager = MockThemeManager()
+        toolbarHandler = ToolbarHandler(toolbar: mockToolbar, themeManager: mockThemeManager)
     }
 
     override func tearDown() {
         toolbarHandler = nil
         mockToolbar = nil
         mockNavigatable = nil
-        mockFeatureFlagger = nil
+        mockThemeManager = nil
         super.tearDown()
     }
 
@@ -66,6 +67,39 @@ class ToolbarHandlerTests: XCTestCase {
         XCTAssertEqual(mockToolbar.items?[4].title, UserText.actionForgetAll)
         XCTAssertEqual(mockToolbar.items?[6].title, UserText.tabSwitcherAccessibilityLabel)
         XCTAssertEqual(mockToolbar.items?[8].title, UserText.menuButtonHint)
+
+        XCTAssertTrue(toolbarHandler.backButton.isEnabled)
+        XCTAssertFalse(toolbarHandler.forwardButton.isEnabled)
+    }
+
+    func testUpdateExperimentalToolbarWithStateNewTab() {
+        mockThemeManager.properties = ExperimentalThemingProperties(isExperimentalThemingEnabled: true)
+        // To prevent assertion for using experimental colors with the default theme
+        DesignSystemPalette.current = .experimental
+
+        toolbarHandler.updateToolbarWithState(.newTab)
+
+        XCTAssertEqual(mockToolbar.items?.count, 11)
+        XCTAssertEqual(mockToolbar.items?[1].title, UserText.actionOpenBookmarks)
+        XCTAssertEqual(mockToolbar.items?[3].title, UserText.actionOpenPasswords)
+        XCTAssertEqual(mockToolbar.items?[5].title, UserText.actionForgetAll)
+        XCTAssertEqual(mockToolbar.items?[7].title, UserText.tabSwitcherAccessibilityLabel)
+        XCTAssertEqual(mockToolbar.items?[9].title, UserText.menuButtonHint)
+    }
+
+    func testUpdateExperimentalToolbarWithStatePageLoaded() {
+        mockThemeManager.properties = ExperimentalThemingProperties(isExperimentalThemingEnabled: true)
+        // To prevent assertion for using experimental colors with the default theme
+        DesignSystemPalette.current = .experimental
+
+        toolbarHandler.updateToolbarWithState(.pageLoaded(currentTab: mockNavigatable))
+
+        XCTAssertEqual(mockToolbar.items?.count, 11)
+        XCTAssertEqual(mockToolbar.items?[1].title, UserText.keyCommandBrowserBack)
+        XCTAssertEqual(mockToolbar.items?[3].title, UserText.keyCommandBrowserForward)
+        XCTAssertEqual(mockToolbar.items?[5].title, UserText.actionForgetAll)
+        XCTAssertEqual(mockToolbar.items?[7].title, UserText.tabSwitcherAccessibilityLabel)
+        XCTAssertEqual(mockToolbar.items?[9].title, UserText.menuButtonHint)
 
         XCTAssertTrue(toolbarHandler.backButton.isEnabled)
         XCTAssertFalse(toolbarHandler.forwardButton.isEnabled)

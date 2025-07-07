@@ -29,13 +29,15 @@ let package = Package(
             targets: ["DataBrokerProtection-macOS"])
     ],
     dependencies: [
-        .package(path: "../../SharedPackages/BrowserServicesKit"),
-        .package(path: "../../SharedPackages/DataBrokerProtectionCore"),
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/DataBrokerProtectionCore"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../AppKitExtensions"),
         .package(path: "../XPCHelper"),
         .package(path: "../Freemium"),
         .package(path: "../NetworkProtectionMac"),
+        .package(path: "../FeatureFlags"),
+        .package(path: "../VPN"),
     ],
     targets: [
         .target(
@@ -49,8 +51,9 @@ let package = Package(
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Configuration", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "FeatureFlags", package: "FeatureFlags"),
                 .product(name: "Freemium", package: "Freemium"),
-                .product(name: "NetworkProtection", package: "NetworkProtectionMac"),
+                .product(name: "VPN", package: "VPN"),
                 .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
                 .product(name: "NetworkProtectionProxy", package: "NetworkProtectionMac"),
             ],
@@ -68,6 +71,7 @@ let package = Package(
                 "Freemium",
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
+                .product(name: "FeatureFlags", package: "FeatureFlags"),
             ]
         )
     ]

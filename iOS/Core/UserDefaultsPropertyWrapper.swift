@@ -55,8 +55,6 @@ public struct UserDefaultsWrapper<T> {
         case fireButtonPulseDateShown = "com.duckduckgo.ios.fireButtonPulseDateShown"
         case privacyButtonPulseShown = "com.duckduckgo.ios.privacyButtonPulseShown"
         case daxBrowsingFinalDialogShown = "com.duckduckgo.ios.daxOnboardingFinalDialogSeen"
-        case daxLastVisitedOnboardingWebsite = "com.duckduckgo.ios.daxOnboardingLastVisitedWebsite"
-        case daxLastShownContextualOnboardingDialogType = "com.duckduckgo.ios.daxLastShownContextualOnboardingDialogType"
         case daxPrivacyProPromotionDialogShown = "com.duckduckgo.ios.daxPrivacyProPromotionDialogShown"
 
         case notFoundCache = "com.duckduckgo.ios.favicons.notFoundCache"
@@ -88,10 +86,15 @@ public struct UserDefaultsWrapper<T> {
 
         case autofillSaveModalRejectionCount = "com.duckduckgo.ios.autofillSaveModalRejectionCount"
         case autofillSaveModalDisablePromptShown = "com.duckduckgo.ios.autofillSaveModalDisablePromptShown"
+        case autofillCreditCardsSaveModalRejectionCount = "com.duckduckgo.ios.autofillCreditCardsSaveModalRejectionCount"
+        case autofillCreditCardsSaveModalDisablePromptShown = "com.duckduckgo.ios.autofillCreditCardsSaveModalDisablePromptShown"
         case autofillFirstTimeUser = "com.duckduckgo.ios.autofillFirstTimeUser"
+        case autofillCreditCardsFirstTimeUser = "com.duckduckgo.ios.autofillCreditCardsFirstTimeUser"
         case autofillCredentialsSavePromptShowAtLeastOnce = "com.duckduckgo.ios.autofillCredentialsSavePromptShowAtLeastOnce"
         case autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary =
                 "com.duckduckgo.ios.autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary"
+        case autofillCreditCardsHasBeenEnabledAutomaticallyIfNecessary =
+                "com.duckduckgo.ios.autofillCreditCardsHasBeenEnabledAutomaticallyIfNecessary"
         case autofillImportViaSyncStart = "com.duckduckgo.ios.autofillImportViaSyncStart"
         case autofillSearchDauDate = "com.duckduckgo.app.autofill.SearchDauDate"
         case autofillFillDate = "com.duckduckgo.app.autofill.FillDate"
@@ -133,6 +136,7 @@ public struct UserDefaultsWrapper<T> {
         case syncCurrentBookmarksPausedError = "sync.current-bookmarks-paused-error"
         case syncCurrentCredentialsPausedError = "sync.current-credentials-paused-error"
 
+        case networkProtectionEntitlementsExpired = "com.duckduckgo.network-protection.entitlements.expired"
         case networkProtectionDebugOptionAlwaysOnDisabled = "com.duckduckgo.network-protection.always-on.disabled"
         case networkProtectionWaitlistTermsAndConditionsAccepted = "com.duckduckgo.ios.vpn.terms-and-conditions-accepted"
 
@@ -143,6 +147,7 @@ public struct UserDefaultsWrapper<T> {
         case bookmarksMigrationVersion = "com.duckduckgo.ios.bookmarksMigrationVersion"
 
         case privacyConfigCustomURL = "com.duckduckgo.ios.privacyConfigCustomURL"
+        case remoteMessagingConfigCustomURL = "com.duckduckgo.ios.remoteMessagingConfigCustomURL"
 
         case privacyProEnvironment = "com.duckduckgo.ios.privacyPro.environment"
 
@@ -172,6 +177,10 @@ public struct UserDefaultsWrapper<T> {
         case duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"
         case duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerduckPlayerNativeUIPrimingModalTimeSinceLastPresented"
         case duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
+        case duckPlayerWelcomeMessageShown = "com.duckduckgo.ios.duckPlayerWelcomeMessageShown"
+        case duckPlayerControlsVisible = "com.duckduckgo.ios.duckPlayerControlsVisible"
+        case duckPlayerNativeUIWasUsed = "com.duckduckgo.ios.duckPlayerNativeUIWasUsed"
+        case duckPlayerNativeUISettingsMapped = "com.duckduckgo.ios.duckPlayerNativeUISettingsMapped"
 
         case newTabPageSectionsSettings = "com.duckduckgo.ios.newTabPage.sections.settings"
         case newTabPageShortcutsSettings = "com.duckduckgo.ios.newTabPage.shortcuts.settings"
@@ -182,6 +191,7 @@ public struct UserDefaultsWrapper<T> {
         case debugNewTabPageSectionsEnabledKey = "com.duckduckgo.ios.debug.newTabPageSectionsEnabled"
         case debugOnboardingHighlightsEnabledKey = "com.duckduckgo.ios.debug.onboardingHighlightsEnabled"
         case debugWebViewStateRestorationEnabledKey = "com.duckduckgo.ios.debug.webViewStateRestorationEnabled"
+        case debugDefaultBrowserPromptCurrentDateKey = "com.duckduckgo.ios.debug.defaultBrowserPromptCurrentDate"
 
         // Domain specific text zoom
         case domainTextZoomStorage = "com.duckduckgo.ios.domainTextZoomStorage"

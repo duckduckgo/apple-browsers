@@ -94,6 +94,23 @@ struct DataImportViewModel {
     /// selected Data Types to import (bookmarks/passwords)
     var selectedDataTypes: Set<DataType> = []
 
+    enum DataTypeSelection: Equatable {
+        case all
+        case single(DataType)
+        case none
+    }
+
+    var dataTypesSelection: DataTypeSelection {
+        assert(DataType.allCases.count == 2, "Unexpected number of DataType cases. Update logic.")
+        if selectedDataTypes.count == DataType.allCases.count {
+            return .all
+        }
+        guard let selectedDataType = selectedDataTypes.first else {
+            return .none
+        }
+        return .single(selectedDataType)
+    }
+
     /// data import concurrency Task launched in `initiateImport`
     /// used to cancel import and in `importProgress` to trace import progress and import completion
     private var importTask: DataImportTask?
@@ -172,8 +189,6 @@ struct DataImportViewModel {
         self.reportSenderFactory = reportSenderFactory
         self.onFinished = onFinished
         self.onCancelled = onCancelled
-
-        PixelExperiment.fireOnboardingImportRequestedPixel()
     }
 
     /// Import button press (starts browser data import)
@@ -406,28 +421,28 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
     case .bookmarksHTML,
          /* any */_ where fileDataType == .bookmarks:
 
-        BookmarkHTMLImporter(fileURL: url, bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: LocalBookmarkManager.shared))
+        BookmarkHTMLImporter(fileURL: url, bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
 
     case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv,
          /* any */_ where fileDataType == .passwords:
-        CSVImporter(fileURL: url, loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()), defaultColumnPositions: .init(source: source), reporter: SecureVaultReporter.shared, tld: ContentBlocking.shared.tld)
+        CSVImporter(fileURL: url, loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()), defaultColumnPositions: .init(source: source), reporter: SecureVaultReporter.shared, tld: Application.appDelegate.tld)
 
     case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi:
         ChromiumDataImporter(profile: profile,
                              loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
-                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: LocalBookmarkManager.shared))
+                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
     case .yandex:
         YandexDataImporter(profile: profile,
-                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: LocalBookmarkManager.shared))
+                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
     case .firefox, .tor:
         FirefoxDataImporter(profile: profile,
                             primaryPassword: primaryPassword,
                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
-                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: LocalBookmarkManager.shared),
+                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
                             faviconManager: NSApp.delegateTyped.faviconManager)
     case .safari, .safariTechnologyPreview:
         SafariDataImporter(profile: profile,
-                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: LocalBookmarkManager.shared))
+                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
     }
 }
 

@@ -15,9 +15,9 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-
 import XCTest
 import Combine
+import AIChat
 @testable import DuckDuckGo_Privacy_Browser
 
 class AIChatMenuConfigurationTests: XCTestCase {
@@ -30,12 +30,12 @@ class AIChatMenuConfigurationTests: XCTestCase {
         mockStorage = MockAIChatPreferencesStorage()
         remoteSettings = MockRemoteAISettings()
         configuration = AIChatMenuConfiguration(storage: mockStorage, remoteSettings: remoteSettings)
-
     }
 
     override func tearDown() {
         configuration = nil
         mockStorage = nil
+        remoteSettings = nil
         super.tearDown()
     }
 
@@ -46,37 +46,32 @@ class AIChatMenuConfigurationTests: XCTestCase {
         XCTAssertTrue(result, "Application menu shortcut should be displayed when enabled.")
     }
 
-    func testShouldDisplayToolbarShortcut() {
-        mockStorage.shouldDisplayToolbarShortcut = true
-        let result = configuration.shouldDisplayToolbarShortcut
+    func testShouldDisplayAddressBarShortcut() {
+        mockStorage.showShortcutInAddressBar = true
+        let result = configuration.shouldDisplayAddressBarShortcut
 
-        XCTAssertTrue(result, "Toolbar shortcut should be displayed when enabled.")
+        XCTAssertTrue(result, "Address bar shortcut should be displayed when enabled.")
     }
 
-    func testToolbarValuesChangedPublisher() {
+    func testAddressBarValuesChangedPublisher() {
         let expectation = self.expectation(description: "Values changed publisher should emit a value.")
-        var receivedValue: Void?
 
         let cancellable = configuration.valuesChangedPublisher.sink {
-            receivedValue = $0
             expectation.fulfill()
         }
 
-        mockStorage.updateToolbarShortcutDisplay(to: true)
+        mockStorage.updateAddressBarShortcutDisplay(to: true)
 
         waitForExpectations(timeout: 1) { error in
             XCTAssertNil(error, "Values changed publisher did not emit a value in time.")
-            XCTAssertNotNil(receivedValue, "Values changed publisher should emit a value when storage changes.")
         }
         cancellable.cancel()
     }
 
     func testApplicationMenuValuesChangedPublisher() {
         let expectation = self.expectation(description: "Values changed publisher should emit a value.")
-        var receivedValue: Void?
 
-        let cancellable = configuration.valuesChangedPublisher.sink {
-            receivedValue = $0
+        let cancellable = configuration.valuesChangedPublisher.sink { value in
             expectation.fulfill()
         }
 
@@ -84,81 +79,53 @@ class AIChatMenuConfigurationTests: XCTestCase {
 
         waitForExpectations(timeout: 1) { error in
             XCTAssertNil(error, "Values changed publisher did not emit a value in time.")
-            XCTAssertNotNil(receivedValue, "Values changed publisher should emit a value when storage changes.")
         }
         cancellable.cancel()
     }
 
-    func testShouldNotDisplayToolbarShortcutWhenDisabled() {
-        mockStorage.shouldDisplayToolbarShortcut = false
-        let result = configuration.shouldDisplayToolbarShortcut
+    func testOpenAIChatInSidebarPublisherValuesChangedPublisher() {
+        let expectation = self.expectation(description: "Values changed publisher should emit a value.")
 
-        XCTAssertFalse(result, "Toolbar shortcut should not be displayed when disabled.")
+        let cancellable = configuration.valuesChangedPublisher.sink { value in
+            expectation.fulfill()
+        }
+
+        mockStorage.updateOpenAIChatInSidebarPublisher(to: true)
+
+        waitForExpectations(timeout: 1) { error in
+            XCTAssertNil(error, "Values changed publisher did not emit a value in time.")
+        }
+        cancellable.cancel()
     }
 
-    func testMarkToolbarOnboardingPopoverAsShown() {
-        mockStorage.didDisplayAIChatToolbarOnboarding = false
+    func testShouldNotDisplayAddressBarShortcutWhenDisabled() {
+        mockStorage.showShortcutInAddressBar = false
+        let result = configuration.shouldDisplayAddressBarShortcut
 
-        configuration.markToolbarOnboardingPopoverAsShown()
-
-        XCTAssertTrue(mockStorage.didDisplayAIChatToolbarOnboarding, "Toolbar onboarding popover should be marked as shown.")
+        XCTAssertFalse(result, "Address bar shortcut should not be displayed when disabled.")
     }
 
     func testReset() {
         mockStorage.showShortcutInApplicationMenu = true
-        mockStorage.shouldDisplayToolbarShortcut = true
-        mockStorage.didDisplayAIChatToolbarOnboarding = true
+        mockStorage.showShortcutInAddressBar = true
+        mockStorage.openAIChatInSidebar = true
+        mockStorage.didDisplayAIChatAddressBarOnboarding = true
 
         mockStorage.reset()
 
         XCTAssertFalse(mockStorage.showShortcutInApplicationMenu, "Application menu shortcut should be reset to false.")
-        XCTAssertFalse(mockStorage.shouldDisplayToolbarShortcut, "Toolbar shortcut should be reset to false.")
-        XCTAssertFalse(mockStorage.didDisplayAIChatToolbarOnboarding, "Toolbar onboarding popover should be reset to false.")
+        XCTAssertFalse(mockStorage.showShortcutInAddressBar, "Address bar shortcut should be reset to false.")
+        XCTAssertFalse(mockStorage.openAIChatInSidebar, "Open AI Chat in sidebar should be reset to false.")
+        XCTAssertFalse(mockStorage.didDisplayAIChatAddressBarOnboarding, "Address bar onboarding popover should be reset to false.")
     }
 
-    func testShouldNotDisplayToolbarShortcutWhenRemoteFlagIsTrueAndStorageIsFalse() {
-        remoteSettings.isToolbarShortcutEnabled = true
-        mockStorage.shouldDisplayToolbarShortcut = false
+    func testShouldDisplayAddressBarShortcutWhenRemoteFlagAndStorageAreTrue() {
+        remoteSettings.isAddressBarShortcutEnabled = true
+        mockStorage.showShortcutInAddressBar = true
 
-        let result = configuration.shouldDisplayToolbarShortcut
+        let result = configuration.shouldDisplayAddressBarShortcut
 
-        XCTAssertFalse(result, "Toolbar shortcut should not be displayed when remote flag is true and storage is false.")
-    }
-
-    func testShouldNotDisplayToolbarShortcutWhenRemoteFlagIsFalseAndStorageIsTrue() {
-        remoteSettings.isToolbarShortcutEnabled = false
-        mockStorage.shouldDisplayToolbarShortcut = true
-
-        let result = configuration.shouldDisplayToolbarShortcut
-
-        XCTAssertFalse(result, "Toolbar shortcut should not be displayed when remote flag is false, even if storage is true.")
-    }
-
-    func testShouldNotDisplayApplicationMenuShortcutWhenRemoteFlagIsTrueAndStorageIsFalse() {
-        remoteSettings.isApplicationMenuShortcutEnabled = true
-        mockStorage.showShortcutInApplicationMenu = false
-
-        let result = configuration.shouldDisplayApplicationMenuShortcut
-
-        XCTAssertFalse(result, "Application menu shortcut should not be displayed when remote flag is true and storage is false.")
-    }
-
-    func testShouldNotDisplayApplicationMenuShortcutWhenRemoteFlagIsFalseAndStorageIsTrue() {
-        remoteSettings.isApplicationMenuShortcutEnabled = false
-        mockStorage.showShortcutInApplicationMenu = true
-
-        let result = configuration.shouldDisplayApplicationMenuShortcut
-
-        XCTAssertFalse(result, "Application menu shortcut should not be displayed when remote flag is false, even if storage is true.")
-    }
-
-    func testShouldDisplayToolbarShortcutWhenRemoteFlagAndStorageAreTrue() {
-        remoteSettings.isToolbarShortcutEnabled = true
-        mockStorage.shouldDisplayToolbarShortcut = true
-
-        let result = configuration.shouldDisplayToolbarShortcut
-
-        XCTAssertTrue(result, "Toolbar shortcut should be displayed when both remote flag and storage are true.")
+        XCTAssertTrue(result, "Address bar shortcut should be displayed when both remote flag and storage are true.")
     }
 
     func testShouldDisplayApplicationMenuShortcutWhenRemoteFlagAndStorageAreTrue() {
@@ -169,16 +136,18 @@ class AIChatMenuConfigurationTests: XCTestCase {
 
         XCTAssertTrue(result, "Application menu shortcut should be displayed when both remote flag and storage are true.")
     }
+
+    func testOpenAIChatInSidebarPublisherWhenStorageAreTrue() {
+        mockStorage.openAIChatInSidebar = true
+
+        let result = configuration.openAIChatInSidebar
+
+        XCTAssertTrue(result, "Open AI Chat in sidebar should be displayed when storage is true.")
+    }
 }
 
 class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
-    var didDisplayAIChatToolbarOnboarding: Bool = false
-
-    func reset() {
-        showShortcutInApplicationMenu = false
-        shouldDisplayToolbarShortcut = false
-        didDisplayAIChatToolbarOnboarding = false
-    }
+    var didDisplayAIChatAddressBarOnboarding: Bool = false
 
     var showShortcutInApplicationMenu: Bool = false {
         didSet {
@@ -186,32 +155,52 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         }
     }
 
-    var shouldDisplayToolbarShortcut: Bool = false {
+    var showShortcutInAddressBar: Bool = false {
         didSet {
-            shouldDisplayToolbarShortcutSubject.send(shouldDisplayToolbarShortcut)
+            showShortcutInAddressBarSubject.send(showShortcutInAddressBar)
+        }
+    }
+
+    var openAIChatInSidebar: Bool = false {
+        didSet {
+            openAIChatInSidebarSubject.send(openAIChatInSidebar)
         }
     }
 
     private var showShortcutInApplicationMenuSubject = PassthroughSubject<Bool, Never>()
-    private var shouldDisplayToolbarShortcutSubject = PassthroughSubject<Bool, Never>()
+    private var showShortcutInAddressBarSubject = PassthroughSubject<Bool, Never>()
+    private var openAIChatInSidebarSubject = PassthroughSubject<Bool, Never>()
 
     var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> {
         showShortcutInApplicationMenuSubject.eraseToAnyPublisher()
     }
 
-    var shouldDisplayToolbarShortcutPublisher: AnyPublisher<Bool, Never> {
-        shouldDisplayToolbarShortcutSubject.eraseToAnyPublisher()
+    var showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> {
+        showShortcutInAddressBarSubject.eraseToAnyPublisher()
+    }
+
+    var openAIChatInSidebarPublisher: AnyPublisher<Bool, Never> {
+        openAIChatInSidebarSubject.eraseToAnyPublisher()
+    }
+
+    func reset() {
+        showShortcutInApplicationMenu = false
+        showShortcutInAddressBar = false
+        didDisplayAIChatAddressBarOnboarding = false
+        openAIChatInSidebar = false
     }
 
     func updateApplicationMenuShortcutDisplay(to value: Bool) {
         showShortcutInApplicationMenu = value
     }
 
-    func updateToolbarShortcutDisplay(to value: Bool) {
-        shouldDisplayToolbarShortcut = value
+    func updateAddressBarShortcutDisplay(to value: Bool) {
+        showShortcutInAddressBar = value
     }
 
-    func markToolbarOnboardingPopoverAsShown() { }
+    func updateOpenAIChatInSidebarPublisher(to value: Bool) {
+        openAIChatInSidebar = value
+    }
 }
 
 final class MockRemoteAISettings: AIChatRemoteSettingsProvider {
@@ -221,7 +210,7 @@ final class MockRemoteAISettings: AIChatRemoteSettingsProvider {
     var aiChatURLIdentifiableQueryValue: String
     var aiChatURL: URL
     var isAIChatEnabled: Bool
-    var isToolbarShortcutEnabled: Bool
+    var isAddressBarShortcutEnabled: Bool
     var isApplicationMenuShortcutEnabled: Bool
 
     init(onboardingCookieName: String = "defaultCookie",
@@ -230,7 +219,7 @@ final class MockRemoteAISettings: AIChatRemoteSettingsProvider {
          aiChatURLIdentifiableQueryValue: String = "defaultValue",
          aiChatURL: URL = URL(string: "https://duck.com/chat")!,
          isAIChatEnabled: Bool = true,
-         isToolbarShortcutEnabled: Bool = true,
+         isAddressBarShortcutEnabled: Bool = true,
          isApplicationMenuShortcutEnabled: Bool = true) {
         self.onboardingCookieName = onboardingCookieName
         self.onboardingCookieDomain = onboardingCookieDomain
@@ -238,7 +227,7 @@ final class MockRemoteAISettings: AIChatRemoteSettingsProvider {
         self.aiChatURLIdentifiableQueryValue = aiChatURLIdentifiableQueryValue
         self.aiChatURL = aiChatURL
         self.isAIChatEnabled = isAIChatEnabled
-        self.isToolbarShortcutEnabled = isToolbarShortcutEnabled
+        self.isAddressBarShortcutEnabled = isAddressBarShortcutEnabled
         self.isApplicationMenuShortcutEnabled = isApplicationMenuShortcutEnabled
     }
 }

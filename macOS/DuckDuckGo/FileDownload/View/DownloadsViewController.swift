@@ -44,12 +44,15 @@ final class DownloadsViewController: NSViewController {
 
     private let separator = NSBox()
     private let viewModel: DownloadListViewModel
+    private let visualStyle: VisualStyleProviding
     private var downloadsCancellable: AnyCancellable?
     private var errorBannerCancellable: AnyCancellable?
     private var errorBannerHostingView: NSHostingView<DownloadsErrorBannerView>?
 
-    init(viewModel: DownloadListViewModel) {
+    init(viewModel: DownloadListViewModel,
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.viewModel = viewModel
+        self.visualStyle = visualStyle
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -58,7 +61,7 @@ final class DownloadsViewController: NSViewController {
     }
 
     override func loadView() {
-        view = NSView()
+        view = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.bookmarksPanelBackgroundColor)
 
         view.addSubview(titleLabel)
         view.addSubview(openDownloadsFolderButton)
@@ -323,7 +326,7 @@ final class DownloadsViewController: NSViewController {
                 if let url = $0.localURL, FileManager.default.fileExists(atPath: url.path) { true } else { false }
             }),
                let lastDownloadedURL = lastDownloaded.localURL,
-               !viewModel.items.contains(where: { $0.localURL?.deletingLastPathComponent().path == url?.path  }) || url == nil {
+               !viewModel.items.contains(where: { $0.localURL?.deletingLastPathComponent().path == url?.path }) || url == nil {
 
                 url = lastDownloadedURL.deletingLastPathComponent()
                 // select last downloaded item
@@ -400,7 +403,7 @@ final class DownloadsViewController: NSViewController {
         else { return }
 
         self.dismiss()
-        WindowControllersManager.shared.show(url: url, source: .historyEntry, newTab: true)
+        Application.appDelegate.windowControllersManager.show(url: url, source: .historyEntry, newTab: true)
     }
 
     @objc func doubleClickAction(_ sender: Any) {
@@ -546,7 +549,7 @@ enum DownloadsErrorViewType {
         switch self {
         case .openHelpURL:
             let updateHelpURL = URL(string: "https://support.apple.com/guide/mac-help/get-macos-updates-and-apps-mh35618/mac")!
-            WindowControllersManager.shared.show(url: updateHelpURL, source: .ui, newTab: true)
+            Application.appDelegate.windowControllersManager.show(url: updateHelpURL, source: .ui, newTab: true)
         case .openSystemSettings:
             let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.Software-Update-Settings.extension")!
             NSWorkspace.shared.open(softwareUpdateURL)

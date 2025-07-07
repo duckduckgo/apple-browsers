@@ -20,6 +20,7 @@ import Cocoa
 import CoreData
 import Combine
 import Common
+import Persistence
 import PixelKit
 import os.log
 
@@ -46,8 +47,8 @@ final class FaviconStore: FaviconStoring {
 
     private let context: NSManagedObjectContext
 
-    init() {
-        context = Database.shared.makeContext(concurrencyType: .privateQueueConcurrencyType, name: "Favicons")
+    init(database: CoreDataDatabase) {
+        context = database.makeContext(concurrencyType: .privateQueueConcurrencyType, name: "Favicons")
     }
 
     init(context: NSManagedObjectContext) {
@@ -228,7 +229,7 @@ fileprivate extension Favicon {
               let documentUrl = faviconMO.documentUrlEncrypted as? URL,
               let dateCreated = faviconMO.dateCreated,
               let relation = Favicon.Relation(rawValue: Int(faviconMO.relation)) else {
-            PixelKit.fire(DebugEvent(GeneralPixel.faviconDecryptionFailedUnique), frequency: .daily)
+            PixelKit.fire(DebugEvent(GeneralPixel.faviconDecryptionFailedUnique), frequency: .legacyDaily)
             assertionFailure("Favicon: Failed to init Favicon from FaviconManagedObject")
             return nil
         }

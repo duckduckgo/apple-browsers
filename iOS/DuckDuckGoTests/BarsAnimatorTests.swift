@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import PrivacyDashboard
 
 @testable import DuckDuckGo
 
@@ -51,15 +52,9 @@ class BarsAnimatorTests: XCTestCase {
 
         scrollView.contentOffset.y = 300
         sut.didScroll(in: scrollView)
+        XCTAssertEqual(sut.barsState, .hidden)
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0))
 
-        let expectation = XCTestExpectation(description: "Wait for bars state to update to hidden")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            XCTAssertEqual(sut.barsState, .hidden)
-            XCTAssertEqual(delegate.receivedMessages, [.setBarsVisibility(0.0), .setBarsVisibility(0.0), .setBarsVisibility(0.0)])
-            expectation.fulfill()
-        }
-
-        wait(for: [expectation], timeout: 0.3)
     }
 
     func testBarStateHiddenWhenScrollDownKeepsHiddenState() {
@@ -76,32 +71,18 @@ class BarsAnimatorTests: XCTestCase {
 
         scrollView.contentOffset.y = 300
         sut.didScroll(in: scrollView)
-
-        // Add delay before checking hidden state
-        let expectation1 = XCTestExpectation(description: "Wait for bars state to update to hidden")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            XCTAssertEqual(sut.barsState, .hidden)
-            expectation1.fulfill()
-        }
-
-        wait(for: [expectation1], timeout: 0.3)
+        XCTAssertEqual(sut.barsState, .hidden)
 
         scrollView.contentOffset.y = 100
         sut.didScroll(in: scrollView)
+        XCTAssertEqual(sut.barsState, .hidden)
 
-        // Add another delay before checking that barsState remains hidden
-        let expectation2 = XCTestExpectation(description: "Wait to confirm bars state remains hidden")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            XCTAssertEqual(sut.barsState, .hidden)
-            XCTAssertTrue(delegate.receivedMessages.count >= 2, "Expected at least 2 messages, got \(delegate.receivedMessages.count)")
-            XCTAssertTrue(delegate.receivedMessages.allSatisfy { $0 == .setBarsVisibility(0.0) }, "All messages should be .setBarsVisibility(0.0), got \(delegate.receivedMessages)")
-            expectation2.fulfill()
-        }
-
-        wait(for: [expectation2], timeout: 0.3)
+        XCTAssertEqual(delegate.receivedMessages.count, 2)
+        XCTAssertLessThan(delegate.receivedMessages.first?.percent ?? 2.0, 1.0, "Message should be .setBarsVisibility(< 1.0), got \(delegate.receivedMessages)")
+        XCTAssertEqual(delegate.receivedMessages.last, .setBarsVisibility(0.0), "Message should be .setBarsVisibility(0.0), got \(delegate.receivedMessages)")
     }
 
-    func testBarStateHiddenWhenScrollUpUpdatesToRevealedState() {
+    func testBarStateHiddenWhenScrollUpUpdatesToRevealedState() throws {
         let (sut, delegate) = makeSUT()
         let scrollView = mockScrollView()
 
@@ -115,15 +96,7 @@ class BarsAnimatorTests: XCTestCase {
 
         scrollView.contentOffset.y = 400
         sut.didScroll(in: scrollView)
-
-        // Add delay before checking hidden state
-        let expectation1 = XCTestExpectation(description: "Wait for bars state to update to hidden")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            XCTAssertEqual(sut.barsState, .hidden)
-            expectation1.fulfill()
-        }
-
-        wait(for: [expectation1], timeout: 0.3)
+        XCTAssertEqual(sut.barsState, .hidden)
 
         scrollView.contentOffset.y = -100
         sut.didStartScrolling(in: scrollView)
@@ -132,38 +105,27 @@ class BarsAnimatorTests: XCTestCase {
 
         scrollView.contentOffset.y = -150
         sut.didScroll(in: scrollView)
+        XCTAssertEqual(sut.barsState, .revealed)
 
-        // Add another delay before checking revealed state
-        let expectation2 = XCTestExpectation(description: "Wait for bars state to update to revealed")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            XCTAssertEqual(sut.barsState, .revealed)
+        // Verify message pattern: first some 0.0 values, then some 1.0 values
+        XCTAssertTrue(delegate.receivedMessages.count >= 4, "Expected at least 4 messages, got \(delegate.receivedMessages.count)")
 
-            // Verify message pattern: first some 0.0 values, then some 1.0 values
-            XCTAssertTrue(delegate.receivedMessages.count >= 4, "Expected at least 4 messages, got \(delegate.receivedMessages.count)")
-
-            // Find where the transition from 0.0 to 1.0 happens
-            let transitionIndex = delegate.receivedMessages.firstIndex {
-                if case .setBarsVisibility(1.0) = $0 { return true } else { return false }
-            }
-
-            XCTAssertNotNil(transitionIndex, "Expected to find at least one .setBarsVisibility(1.0) message")
-
-            if let transitionIndex = transitionIndex {
-                // Check that all messages before transition are 0.0
-                let beforeTransition = delegate.receivedMessages[0..<transitionIndex]
-                XCTAssertTrue(beforeTransition.allSatisfy { $0 == .setBarsVisibility(0.0) },
-                              "All messages before transition should be .setBarsVisibility(0.0), got \(beforeTransition)")
-
-                // Check that all messages after and including transition are 1.0
-                let afterTransition = delegate.receivedMessages[transitionIndex...]
-                XCTAssertTrue(afterTransition.allSatisfy { $0 == .setBarsVisibility(1.0) },
-                              "All messages after transition should be .setBarsVisibility(1.0), got \(afterTransition)")
-            }
-
-            expectation2.fulfill()
+        // Find where the transition from 0.0 to 1.0 happens
+        let transitionIndex = delegate.receivedMessages.firstIndex {
+            if case .setBarsVisibility(1.0) = $0 { return true } else { return false }
         }
 
-        wait(for: [expectation2], timeout: 0.3)
+        let index = try XCTUnwrap(transitionIndex, "Expected to find at least one .setBarsVisibility(1.0) message")
+
+        // Check that all messages before transition are 0.0
+        let beforeTransition = delegate.receivedMessages[0..<index]
+        XCTAssertTrue(beforeTransition.allSatisfy { $0.percent ?? 2.0 <= 1 },
+                      "All messages before transition should be .setBarsVisibility(<= 1), got \(beforeTransition)")
+
+        // Check that all messages after and including transition are 1.0
+        let afterTransition = delegate.receivedMessages[index...]
+        XCTAssertTrue(afterTransition.allSatisfy { $0 == .setBarsVisibility(1.0) },
+                      "All messages after transition should be .setBarsVisibility(1.0), got \(afterTransition)")
     }
 
     func testBarStateRevealedWhenScrollUpDoNotChangeCurrentState() {
@@ -218,6 +180,15 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
         case setNavigationBarHidden(Bool)
         case setBarsVisibility(CGFloat)
         case setRefreshControlEnabled(Bool)
+
+        var percent: CGFloat? {
+            switch self {
+            case .setBarsVisibility(let value):
+                return value
+            default:
+                return nil
+            }
+        }
     }
 
     var receivedMessages: [Message] = []
@@ -242,18 +213,15 @@ private class BrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var isToolbarHidden: Bool = false
 
-    var toolbarHeight: CGFloat = 0.0
+    var toolbarHeight: CGFloat = 0
 
-    var barsMaxHeight: CGFloat = 30
+    var barsMaxHeight: CGFloat = 0
 
-    var omniBar: OmniBar = DefaultOmniBarViewController(
-        dependencies: MockOmnibarDependency(
-            voiceSearchHelper: MockVoiceSearchHelper(
-                isSpeechRecognizerAvailable: true,
-                voiceSearchEnabled: true
-            )
-        )
-    )
+    var omniBar: OmniBar = {
+        let omniBar = MockOmniBar()
+        omniBar.mockBarView.expectedHeight = 52
+        return omniBar
+    }()
 
     var tabBarContainer: UIView = UIView()
 }

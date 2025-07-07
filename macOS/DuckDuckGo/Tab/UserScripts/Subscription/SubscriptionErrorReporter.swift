@@ -26,16 +26,13 @@ enum SubscriptionError: LocalizedError {
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
-         failedToRestoreFromEmail,
-         failedToRestoreFromEmailSubscriptionInactive,
-         failedToRestorePastPurchase,
-         subscriptionNotFound,
-         subscriptionExpired,
-         hasActiveSubscription,
          cancelledByUser,
          accountCreationFailed,
          activeSubscriptionAlreadyPresent,
-         generalError
+         otherPurchaseError,
+         restoreFailedDueToNoSubscription,
+         restoreFailedDueToExpiredSubscription,
+         otherRestoreError
 
     var localizedDescription: String {
         switch self {
@@ -47,26 +44,20 @@ enum SubscriptionError: LocalizedError {
             return "Unable to retrieve subscription options."
         case .failedToSetSubscription:
             return "Failed to set the subscription."
-        case .failedToRestoreFromEmail:
-            return "Email restore process failed."
-        case .failedToRestoreFromEmailSubscriptionInactive:
-            return "Cannot restore; email subscription is inactive."
-        case .failedToRestorePastPurchase:
-            return "Failed to restore your past purchase."
-        case .subscriptionNotFound:
-            return "No subscription could be found."
-        case .subscriptionExpired:
-            return "Your subscription has expired."
-        case .hasActiveSubscription:
-            return "You already have an active subscription."
         case .cancelledByUser:
             return "Action was cancelled by the user."
         case .accountCreationFailed:
             return "Account creation failed. Please try again."
         case .activeSubscriptionAlreadyPresent:
             return "There is already an active subscription present."
-        case .generalError:
-            return "A general error has occurred."
+        case .otherPurchaseError:
+            return "A general purchase error has occurred."
+        case .restoreFailedDueToNoSubscription:
+            return "No subscription could be found."
+        case .restoreFailedDueToExpiredSubscription:
+            return "Your subscription has expired."
+        case .otherRestoreError:
+            return "A general restore error has occurred."
         }
     }
 }
@@ -81,43 +72,28 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
 
         Logger.subscription.error("Subscription purchase error: \(subscriptionActivationError.localizedDescription, privacy: .public)")
 
-        var isStoreError = false
-        var isBackendError = false
-
         switch subscriptionActivationError {
         case .purchaseFailed:
-            isStoreError = true
+            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureStoreError, frequency: .legacyDailyAndCount)
         case .missingEntitlements:
-            isBackendError = true
+            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureBackendError, frequency: .legacyDailyAndCount)
         case .failedToGetSubscriptionOptions:
-            isStoreError = true
+            break
         case .failedToSetSubscription:
-            isBackendError = true
-        case .failedToRestoreFromEmail, .failedToRestoreFromEmailSubscriptionInactive:
-            isBackendError = true
-        case .failedToRestorePastPurchase:
-            isStoreError = true
-        case .subscriptionNotFound:
-            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound, frequency: .legacyDailyAndCount)
-            isStoreError = true
-        case .subscriptionExpired:
-            isStoreError = true
-        case .hasActiveSubscription:
-            isStoreError = true
-            isBackendError = true
-        case .cancelledByUser: break
+            break
+        case .cancelledByUser:
+            break
         case .accountCreationFailed:
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated, frequency: .legacyDailyAndCount)
-        case .activeSubscriptionAlreadyPresent: break
-        case .generalError: break
-        }
-
-        if isStoreError {
-            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureStoreError, frequency: .legacyDailyAndCount)
-        }
-
-        if isBackendError {
-            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureBackendError, frequency: .legacyDailyAndCount)
+        case .activeSubscriptionAlreadyPresent:
+            break
+        case .otherPurchaseError:
+            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureOther, frequency: .legacyDailyAndCount)
+        case .restoreFailedDueToNoSubscription,
+             .restoreFailedDueToExpiredSubscription:
+            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound, frequency: .legacyDailyAndCount)
+        case .otherRestoreError:
+            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther, frequency: .legacyDailyAndCount)
         }
     }
 }

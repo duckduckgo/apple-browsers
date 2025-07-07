@@ -22,7 +22,7 @@ import Foundation
 import MaliciousSiteProtection
 @testable import DuckDuckGo
 
-@Suite("Malicious Site Protection - Manager", .serialized)
+@Suite("Malicious Site Protection - Manager")
 final class MaliciousSiteProtectionManagerTests {
     private var sut: MaliciousSiteProtectionManager!
     private var mockDetector: MockMaliciousSiteDetector!
@@ -51,10 +51,12 @@ final class MaliciousSiteProtectionManagerTests {
             maliciousSiteProtectionFeatureFlagger: featureFlaggerMock,
             supportedThreatsProvider: {
                 return self.scamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
-            }
+            },
+            shouldRemoveWWWInCanonicalization: { true }
         )
     }
 
+    @MainActor
     @Test("Start Fetching Datasets Asks DatasetsFetcher To Fetch Data")
     func whenStartFetchingDatasetsIsCalledThenItAsksDataFetcherToFetchData() {
         // GIVEN
@@ -65,18 +67,6 @@ final class MaliciousSiteProtectionManagerTests {
 
         // THEN
         #expect(dataFetcherMock.didCallStartFetching)
-    }
-
-    @Test("Register Background Tasks Asks DatasetsFetcher to Register Background Tasks")
-    func whenRegisterBackgroundTasksIsCalledThenItAsksDataFetcherToRegisterBackgroundTasks() {
-        // GIVEN
-        #expect(!dataFetcherMock.didCallRegisterBackgroundRefreshTaskHandler)
-
-        // WHEN
-        sut.registerBackgroundRefreshTaskHandler()
-
-        // THEN
-        #expect(dataFetcherMock.didCallRegisterBackgroundRefreshTaskHandler)
     }
 
     @Test(

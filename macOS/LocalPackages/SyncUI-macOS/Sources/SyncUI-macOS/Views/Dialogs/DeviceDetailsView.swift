@@ -58,7 +58,7 @@ struct DeviceDetailsView: View {
                 }
             } buttons: {
                 Button(UserText.cancel) {
-                    model.endFlow()
+                    model.cancelPressed()
                 }
                 .buttonStyle(DismissActionButtonStyle())
                 Button(UserText.ok) {

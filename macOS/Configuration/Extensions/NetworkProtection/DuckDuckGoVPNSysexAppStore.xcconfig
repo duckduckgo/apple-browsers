@@ -29,7 +29,7 @@ CODE_SIGN_IDENTITY[config=CI][sdk=macosx*] =
 CODE_SIGN_IDENTITY[config=Debug][sdk=macosx*] = Apple Development
 
 GENERATE_INFOPLIST_FILE = YES
-INFOPLIST_FILE = NetworkProtectionSystemExtension/Info.plist
+INFOPLIST_FILE = NetworkProtectionSystemExtension/AppStoreInfo.plist
 INFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2023 DuckDuckGo. All rights reserved.
 INFOPLIST_KEY_NSSystemExtensionUsageDescription = DuckDuckGo VPN
 
@@ -57,4 +57,5 @@ PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match AppStore com.
 
 SDKROOT = macosx
 SKIP_INSTALL = YES
+LOCALIZATION_PREFERS_STRING_CATALOGS = YES
 SWIFT_EMIT_LOC_STRINGS = YES

@@ -20,9 +20,11 @@ import Combine
 import Common
 import Foundation
 import Navigation
+import PixelKit
 import UniformTypeIdentifiers
 import WebKit
 import PDFKit
+import CommonObjCExtensions
 
 extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
 
@@ -85,9 +87,15 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
                                             windowFeatures: WKWindowFeatures,
                                             completionHandler: @escaping (WKWebView?) -> Void) {
 
-        switch newWindowPolicy(for: navigationAction)?.preferringTabsToWindows(tabsPreferences.preferNewTabsToWindows) {
+        switch newWindowPolicy(for: navigationAction) {
         // popup kind is known, action doesn‘t require Popup Permission
-        case .allow(let targetKind):
+        case .allow(var targetKind):
+            // replace `.tab` with `.window` when user prefers windows over tabs
+            if case .tab(_, let isBurner, contextMenuInitiated: false) = targetKind,
+               !tabsPreferences.preferNewTabsToWindows  {
+                targetKind = .window(active: true, burner: isBurner)
+            }
+
             // proceed to web view creation
             completionHandler(self.createWebView(from: webView, with: configuration,
                                                  for: navigationAction, of: targetKind.preferringSelectedTabs(tabsPreferences.switchToNewTabWhenOpened)))
@@ -100,10 +108,11 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
             break
         }
 
-        let shouldSelectNewTab = !NSApp.isCommandPressed || tabsPreferences.switchToNewTabWhenOpened // this is actually not correct, to be fixed later
-        // try to guess popup kind from provided windowFeatures
-        let targetKind = NewWindowPolicy(windowFeatures, shouldSelectNewTab: shouldSelectNewTab, isBurner: burnerMode.isBurner)
-            .preferringTabsToWindows(tabsPreferences.preferNewTabsToWindows)
+        // select new tab by default; ⌘-click modifies the selection state
+        let linkOpenBehavior = LinkOpenBehavior(event: NSApp.currentEvent, switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened, canOpenLinkInCurrentTab: false, shouldSelectNewTab: true)
+
+        // determine popup kind from provided windowFeatures and current key modifiers
+        let targetKind = NewWindowPolicy(windowFeatures, linkOpenBehavior: linkOpenBehavior, isBurner: burnerMode.isBurner, preferTabsToWindows: tabsPreferences.preferNewTabsToWindows)
 
         // action doesn‘t require Popup Permission as it‘s user-initiated
         // TO BE FIXED: this also opens a new window when a popup ad is shown on click simultaneously with the main frame navigation:
@@ -132,6 +141,7 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
         }
     }
 
+    @MainActor
     private func newWindowPolicy(for navigationAction: WKNavigationAction) -> NavigationDecision? {
         if let newWindowPolicy = self.decideNewWindowPolicy(for: navigationAction) {
             return newWindowPolicy
@@ -242,6 +252,32 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
         self.permissions.permissions(.geolocation, requestedForDomain: host) { granted in
             decisionHandler(granted ? .grant : .deny)
         }
+    }
+
+    @objc(_webView:requestStorageAccessPanelForDomain:underCurrentDomain:completionHandler:)
+    @available(macOS 10.14, iOS 12.0, *)
+    func webView(_ webView: WKWebView,
+                 requestStorageAccessPanelForDomain requestingDomain: String,
+                 underCurrentDomain currentDomain: String,
+                 completionHandler: @escaping (Bool) -> Void) {
+        let alert = NSAlert.storageAccessAlert(currentDomain: currentDomain,
+                                               requestingDomain: requestingDomain)
+        let response = alert.runModal()
+        completionHandler(response == .alertFirstButtonReturn)
+    }
+
+    @objc(_webView:requestStorageAccessPanelForDomain:underCurrentDomain:forQuirkDomains:completionHandler:)
+    @available(macOS 15.0, iOS 18.0, visionOS 2.0, *)
+    func webView(_ webView: WKWebView,
+                 requestStorageAccessPanelForDomain requestingDomain: String,
+                 underCurrentDomain currentDomain: String,
+                 forQuirkDomains quirkDomains: [String: [String]],
+                 completionHandler: @escaping (Bool) -> Void) {
+        let alert = NSAlert.storageAccessAlertForQuirkDomains(requestingDomain: requestingDomain,
+                                                              currentDomain: currentDomain,
+                                                              quirkDomains: Array(quirkDomains.keys))
+        let response = alert.runModal()
+        completionHandler(response == .alertFirstButtonReturn)
     }
 
     func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void) {
@@ -378,5 +414,20 @@ extension Tab: WKInspectorDelegate {
                       burnerMode: BurnerMode(isBurner: burnerMode.isBurner),
                       webViewSize: webView.superview?.bounds.size ?? .zero)
         delegate?.tab(self, createdChild: tab, of: .window(active: true, burner: burnerMode.isBurner))
+    }
+
+    // Private WebKit delegate method to detect when developer tools inspector is attached
+    @objc(_webView:didAttachLocalInspector:)
+    func webView(_ webView: WKWebView, didAttachLocalInspector inspector: NSObject) {
+        // Fire pixel when developer tools are opened
+        PixelKit.fire(GeneralPixel.developerToolsOpened, frequency: .dailyAndCount)
+    }
+
+    @objc(_webView:hasVideoInPictureInPictureDidChange:)
+    func webView(_ webView: WKWebView, hasVideoInPictureInPictureDidChange hasVideoInPictureInPicture: Bool) {
+        if hasVideoInPictureInPicture {
+            // Fire pixel when Picture-in-Picture is activated
+            PixelKit.fire(GeneralPixel.pictureInPictureVideoPlayback, frequency: .dailyAndCount)
+        }
     }
 }

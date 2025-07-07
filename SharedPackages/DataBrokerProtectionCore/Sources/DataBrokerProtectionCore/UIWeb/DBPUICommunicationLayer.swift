@@ -42,11 +42,12 @@ public protocol DBPUICommunicationDelegate: AnyObject {
     func removeAddressAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool
     func startScanAndOptOut() -> Bool
     func getInitialScanState() async -> DBPUIInitialScanState
-    func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState
+    func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState
     func getDataBrokers() async -> [DBPUIDataBroker]
     func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata
     func openSendFeedbackModal() async
     func applyVPNBypassSetting(_ bypass: Bool) async
+    func removeOptOutFromDashboard(_ id: Int64) async
 }
 
 public enum DBPUIReceivedMethodName: String {
@@ -70,6 +71,7 @@ public enum DBPUIReceivedMethodName: String {
     case openSendFeedbackModal
     case getVPNBypassSetting = "getVpnExclusionSetting"
     case setVPNBypassSetting = "setVpnExclusionSetting"
+    case removeOptOutFromDashboard
 }
 
 public enum DBPUISendableMethodName: String {
@@ -88,7 +90,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     weak public var delegate: DBPUICommunicationDelegate?
 
     private enum Constants {
-        static let version = 8
+        static let version = 10
     }
 
     public init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
@@ -129,6 +131,7 @@ public struct DBPUICommunicationLayer: Subfeature {
         case .openSendFeedbackModal: return openSendFeedbackModal
         case .getVPNBypassSetting: return getVPNBypassSetting
         case .setVPNBypassSetting: return setVPNBypassSetting
+        case .removeOptOutFromDashboard: return removeOptOutFromDashboard
         }
 
     }
@@ -152,7 +155,7 @@ public struct DBPUICommunicationLayer: Subfeature {
         return DBPUIHandshakeResponse(version: Constants.version, success: true, userdata: userData)
     }
 
-    func saveProfile(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+    public func saveProfile(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         Logger.dataBrokerProtection.log("Web UI requested to save the profile")
 
         do {
@@ -297,7 +300,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func maintenanceScanStatus(params: Any, origin: WKScriptMessage) async throws -> Encodable? {
-        guard let maintenanceScanStatus = await delegate?.getMaintananceScanState() else {
+        guard let maintenanceScanStatus = await delegate?.getMaintenanceScanState() else {
             return DBPUIStandardResponse(version: Constants.version, success: false, id: "NOT_FOUND", message: "No maintenance data found")
         }
 
@@ -348,5 +351,17 @@ public struct DBPUICommunicationLayer: Subfeature {
         await delegate?.applyVPNBypassSetting(result.enabled)
 
         return DBPUIVPNBypassSettingUpdateResult(success: true, version: Constants.version)
+    }
+
+    func removeOptOutFromDashboard(_ params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let data = try? JSONSerialization.data(withJSONObject: params),
+              let result = try? JSONDecoder().decode(DBPUIRemoveOptOutFromDashboardRequest.self, from: data) else {
+            Logger.dataBrokerProtection.log("Failed to parse removeOptOutFromDashboard message")
+            return DBPUIRemoveOptOutFromDashboardResult(success: false, error: DBPUIError.malformedRequest.errorDescription)
+        }
+
+        await delegate?.removeOptOutFromDashboard(result.recordId)
+
+        return DBPUIRemoveOptOutFromDashboardResult(success: true)
     }
 }

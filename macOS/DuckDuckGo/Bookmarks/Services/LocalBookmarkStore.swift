@@ -43,13 +43,14 @@ final class LocalBookmarkStore: BookmarkStore {
                                        index: Int?,
                                        indexInFavoritesArray: Int?)
 
-    convenience init(bookmarkDatabase: BookmarkDatabase) {
+    convenience init(bookmarkDatabase: BookmarkDatabase, favoritesDisplayMode: FavoritesDisplayMode) {
         self.init(
             contextProvider: {
                 let context = bookmarkDatabase.db.makeContext(concurrencyType: .privateQueueConcurrencyType)
                 context.stalenessInterval = 0
                 return context
             },
+            favoritesDisplayMode: favoritesDisplayMode,
             preFormFactorSpecificFavoritesOrder: bookmarkDatabase.preFormFactorSpecificFavoritesFolderOrder
         )
     }
@@ -57,13 +58,13 @@ final class LocalBookmarkStore: BookmarkStore {
     // Directly used in tests
     init(
         contextProvider: @escaping () -> NSManagedObjectContext,
-        appearancePreferences: AppearancePreferences = .shared,
+        favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.desktop),
         preFormFactorSpecificFavoritesOrder: [String]? = nil
     ) {
         self.contextProvider = contextProvider
         self.preFormFactorSpecificFavoritesOrder = preFormFactorSpecificFavoritesOrder
+        self.favoritesDisplayMode = favoritesDisplayMode
 
-        favoritesDisplayMode = appearancePreferences.favoritesDisplayMode
         migrateToFormFactorSpecificFavoritesFolders()
         removeInvalidBookmarkEntities()
         cacheReadOnlyTopLevelBookmarksFolders()
@@ -214,11 +215,15 @@ final class LocalBookmarkStore: BookmarkStore {
 
                 var params = processedErrors.errorPixelParameters
                 params[PixelKit.Parameters.errorSource] = source
-                PixelKit.fire(DebugEvent(GeneralPixel.bookmarksSaveFailed, error: error),
-                           withAdditionalParameters: params)
+                PixelKit.fire(
+                    DebugEvent(GeneralPixel.bookmarksSaveFailed, error: error),
+                    frequency: .dailyAndStandard,
+                    withAdditionalParameters: params)
             } else {
-                PixelKit.fire(DebugEvent(GeneralPixel.bookmarksSaveFailed, error: localError),
-                           withAdditionalParameters: [PixelKit.Parameters.errorSource: source])
+                PixelKit.fire(
+                    DebugEvent(GeneralPixel.bookmarksSaveFailed, error: localError),
+                    frequency: .dailyAndStandard,
+                    withAdditionalParameters: [PixelKit.Parameters.errorSource: source])
             }
         } else {
             let error = error as NSError
@@ -226,8 +231,10 @@ final class LocalBookmarkStore: BookmarkStore {
 
             var params = processedErrors.errorPixelParameters
             params[PixelKit.Parameters.errorSource] = source
-            PixelKit.fire(DebugEvent(GeneralPixel.bookmarksSaveFailed, error: error),
-                       withAdditionalParameters: params)
+            PixelKit.fire(
+                DebugEvent(GeneralPixel.bookmarksSaveFailed, error: error),
+                frequency: .dailyAndStandard,
+                withAdditionalParameters: params)
         }
     }
 
@@ -738,8 +745,10 @@ final class LocalBookmarkStore: BookmarkStore {
             let processedErrors = CoreDataErrorsParser.parse(error: error)
 
             if AppVersion.runType.requiresEnvironment {
-                PixelKit.fire(DebugEvent(GeneralPixel.bookmarksSaveFailedOnImport, error: error),
-                           withAdditionalParameters: processedErrors.errorPixelParameters)
+                PixelKit.fire(
+                    DebugEvent(GeneralPixel.bookmarksSaveFailedOnImport, error: error),
+                    frequency: .dailyAndStandard,
+                    withAdditionalParameters: processedErrors.errorPixelParameters)
                 assertionFailure("LocalBookmarkStore: Saving of context failed, error: \(error.localizedDescription)")
             }
         }

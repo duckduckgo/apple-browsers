@@ -29,7 +29,7 @@ public let AutofillSecureVaultFactory: AutofillVaultFactory = SecureVaultFactory
         return AutofillCryptoProvider()
     }, makeKeyStoreProvider: { reporter in
         return AutofillKeyStoreProvider(reporter: reporter)
-    }, makeDatabaseProvider: { key in
+    }, makeDatabaseProvider: { key, _ in
         return try DefaultAutofillDatabaseProvider(key: key)
     }
 )

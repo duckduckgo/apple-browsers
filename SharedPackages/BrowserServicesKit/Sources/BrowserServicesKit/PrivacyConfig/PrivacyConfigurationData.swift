@@ -390,7 +390,7 @@ extension PrivacyConfigurationData {
     /// Returns the JSON Data representation.
     public func toJSONData() throws -> Data {
         let jsonDict = self.toJSONDictionary()
-        return try JSONSerialization.data(withJSONObject: jsonDict, options: [.prettyPrinted])
+        return try JSONSerialization.data(withJSONObject: jsonDict, options: [])
     }
 }
 

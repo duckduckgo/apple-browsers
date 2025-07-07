@@ -29,22 +29,23 @@ final class HistoryViewOnboardingDeciderTests: XCTestCase {
     var featureFlagger: MockFeatureFlagger!
     var settingsPersistor: HistoryViewOnboardingViewSettingsPersisting!
     var isNewUser: Bool = false
+    var isContextualOnboardingCompleted: Bool = true
 
     override func setUp() async throws {
         featureFlagger = MockFeatureFlagger()
         settingsPersistor = MockHistoryViewOnboardingViewSettingsPersistor()
-        decider = HistoryViewOnboardingDecider(featureFlagger: featureFlagger, settingsPersistor: settingsPersistor, isNewUser: { self.isNewUser })
+        decider = HistoryViewOnboardingDecider(featureFlagger: featureFlagger, settingsPersistor: settingsPersistor, isContextualOnboardingCompleted: { self.isContextualOnboardingCompleted }, isNewUser: { self.isNewUser })
 
-        featureFlagger.isFeatureOn = true
+        featureFlagger.enabledFeatureFlags = [.historyView]
     }
 
     func testWhenFeatureFlagIsDisabledThenOnboardingShouldNotBePresented() {
-        featureFlagger.isFeatureOn = false
+        featureFlagger.enabledFeatureFlags = []
         XCTAssertFalse(decider.shouldPresentOnboarding)
     }
 
-    func testWhenFeatureFlagIsEnabledThenOnboardingShouldNotBePresented() {
-        featureFlagger.isFeatureOn = true
+    func testWhenFeatureFlagIsEnabledThenOnboardingShouldBePresented() {
+        featureFlagger.enabledFeatureFlags = [.historyView]
         XCTAssertTrue(decider.shouldPresentOnboarding)
     }
 
@@ -55,6 +56,16 @@ final class HistoryViewOnboardingDeciderTests: XCTestCase {
 
     func testWhenIsOldUserThenOnboardingShouldBePresented() {
         isNewUser = false
+        XCTAssertTrue(decider.shouldPresentOnboarding)
+    }
+
+    func testWhenIsNewUserButStillInContextualOnboardingThenOnboardingShouldNotBePresented() {
+        isContextualOnboardingCompleted = false
+        XCTAssertFalse(decider.shouldPresentOnboarding)
+    }
+
+    func testWhenIsNewUserAndInContextualOnboardingCompletedThenOnboardingShouldBePresented() {
+        isContextualOnboardingCompleted = true
         XCTAssertTrue(decider.shouldPresentOnboarding)
     }
 

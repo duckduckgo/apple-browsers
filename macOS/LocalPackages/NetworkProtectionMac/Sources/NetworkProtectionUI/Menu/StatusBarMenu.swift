@@ -21,7 +21,7 @@ import Foundation
 import Combine
 import Common
 import LoginItems
-import NetworkProtection
+import VPN
 import NetworkProtectionProxy
 import os.log
 import SwiftUI
@@ -144,7 +144,7 @@ public final class StatusBarMenu: NSObject {
 
             let connectionStatusPublisher = CurrentValuePublisher(
                 initialValue: .disconnected,
-                publisher: Just(NetworkProtection.ConnectionStatus.disconnected).eraseToAnyPublisher())
+                publisher: Just(VPN.ConnectionStatus.disconnected).eraseToAnyPublisher())
 
             let activeSitePublisher = CurrentValuePublisher(
                 initialValue: ActiveSiteInfo?(nil),

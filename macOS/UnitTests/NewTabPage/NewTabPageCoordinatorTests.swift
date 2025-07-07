@@ -17,11 +17,13 @@
 //
 
 import Combine
+import Common
 import NewTabPage
 import PersistenceTestingUtils
 import PixelKit
 import PrivacyStats
 import XCTest
+import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockPrivacyStats: PrivacyStatsCollecting {
@@ -30,6 +32,7 @@ final class MockPrivacyStats: PrivacyStatsCollecting {
 
     func recordBlockedTracker(_ name: String) async {}
     func fetchPrivacyStats() async -> [String: Int64] { [:] }
+    func fetchPrivacyStatsTotalCount() async -> Int64 { 0 }
     func clearPrivacyStats() async {}
     func handleAppTermination() async {}
 }
@@ -39,21 +42,22 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var appearancePreferences: AppearancePreferences!
     var customizationModel: NewTabPageCustomizationModel!
     var notificationCenter: NotificationCenter!
-    var keyValueStore: MockKeyValueStore!
+    var keyValueStore: MockKeyValueFileStore!
     var firePixelCalls: [PixelKitEvent] = []
+    var featureFlagger: FeatureFlagger!
 
     @MainActor
     override func setUp() async throws {
         try await super.setUp()
 
         notificationCenter = NotificationCenter()
-        keyValueStore = MockKeyValueStore()
+        keyValueStore = try MockKeyValueFileStore()
         firePixelCalls.removeAll()
 
         let appearancePreferencesPersistor = AppearancePreferencesPersistorMock()
         appearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
-            newTabPageSectionsAvailabilityProvider: NewTabPageModeDecider(keyValueStore: keyValueStore)
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         customizationModel = NewTabPageCustomizationModel(
@@ -61,155 +65,45 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             userBackgroundImagesManager: nil,
             sendPixel: { _ in },
             openFilePanel: { nil },
-            showAddImageFailedAlert: {}
+            showAddImageFailedAlert: {},
+            visualStyle: VisualStyle.legacy
         )
+
+        featureFlagger = FeatureFlaggerMock()
 
         coordinator = NewTabPageCoordinator(
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
             bookmarkManager: MockBookmarkManager(),
+            faviconManager: FaviconManagerMock(),
             activeRemoteMessageModel: ActiveRemoteMessageModel(
                 remoteMessagingStore: MockRemoteMessagingStore(),
                 remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
-                openURLHandler: { _ in }
+                openURLHandler: { _ in },
+                navigateToFeedbackHandler: { }
             ),
             historyCoordinator: HistoryCoordinatingMock(),
+            contentBlocking: ContentBlockingMock(),
+            fireproofDomains: MockFireproofDomains(domains: []),
             privacyStats: MockPrivacyStats(),
             freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator(
                 freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager(),
                 freemiumDBPFeature: MockFreemiumDBPFeature(),
                 freemiumDBPPresenter: MockFreemiumDBPPresenter(),
                 notificationCenter: notificationCenter,
-                freemiumDBPExperimentPixelHandler: MockFreemiumDBPExperimentPixelHandler()
+                dataBrokerProtectionFreemiumPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler()
             ),
+            tld: Application.appDelegate.tld,
+            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),
             keyValueStore: keyValueStore,
             notificationCenter: notificationCenter,
-            fireDailyPixel: { self.firePixelCalls.append($0) }
+            fireDailyPixel: { self.firePixelCalls.append($0) },
+            featureFlagger: featureFlagger
         )
     }
 
     func testWhenNewTabPageAppearsThenPixelIsSent() {
         notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
         XCTAssertEqual(firePixelCalls.count, 1)
-    }
-
-    func testWhenFavoritesIsVisibleThenPixelSetsTrueForFavorites() throws {
-        appearancePreferences.isFavoriteVisible = true
-
-        notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
-        let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
-
-        switch pixel {
-        case .newTabPageShown(favorites: true, _, _, _):
-            break
-        default:
-            XCTFail("Unexpected pixel value: \(pixel)")
-        }
-    }
-
-    func testWhenFavoritesIsNotVisibleThenPixelSetsFalseForFavorites() throws {
-        appearancePreferences.isFavoriteVisible = false
-
-        notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
-        let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
-
-        switch pixel {
-        case .newTabPageShown(favorites: false, _, _, _):
-            break
-        default:
-            XCTFail("Unexpected pixel value: \(pixel)")
-        }
-    }
-
-    func testWhenModeIsPrivacyStatsAndPrivacyStatsIsVisibleThenPixelSetsTrueForPrivacyStats() throws {
-        let modeDecider = NewTabPageModeDecider(keyValueStore: keyValueStore)
-        modeDecider.modeOverride = .privacyStats
-        appearancePreferences.isPrivacyStatsVisible = true
-
-        notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
-        let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
-
-        switch pixel {
-        case .newTabPageShown(_, recentActivity: nil, privacyStats: true, _):
-            break
-        default:
-            XCTFail("Unexpected pixel value: \(pixel)")
-        }
-    }
-
-    func testWhenModeIsPrivacyStatsAndPrivacyStatsIsNotVisibleThenPixelSetsFalseForPrivacyStats() throws {
-        let modeDecider = NewTabPageModeDecider(keyValueStore: keyValueStore)
-        modeDecider.modeOverride = .privacyStats
-        appearancePreferences.isPrivacyStatsVisible = false
-
-        notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
-        let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
-
-        switch pixel {
-        case .newTabPageShown(_, recentActivity: nil, privacyStats: false, _):
-            break
-        default:
-            XCTFail("Unexpected pixel value: \(pixel)")
-        }
-    }
-
-    func testWhenModeIsRecentActivityAndRecentActivityIsVisibleThenPixelSetsTrueForRecentActivity() throws {
-        let modeDecider = NewTabPageModeDecider(keyValueStore: keyValueStore)
-        modeDecider.modeOverride = .recentActivity
-        appearancePreferences.isRecentActivityVisible = true
-
-        notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
-        let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
-
-        switch pixel {
-        case .newTabPageShown(_, recentActivity: true, privacyStats: nil, _):
-            break
-        default:
-            XCTFail("Unexpected pixel value: \(pixel)")
-        }
-    }
-
-    func testWhenModeIsRecentActivityAndRecentActivityIsNotVisibleThenPixelSetsFalseForRecentActivity() throws {
-        let modeDecider = NewTabPageModeDecider(keyValueStore: keyValueStore)
-        modeDecider.modeOverride = .recentActivity
-        appearancePreferences.isRecentActivityVisible = false
-
-        notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
-        let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
-
-        switch pixel {
-        case .newTabPageShown(_, recentActivity: false, privacyStats: nil, _):
-            break
-        default:
-            XCTFail("Unexpected pixel value: \(pixel)")
-        }
-    }
-
-    func testWhenBackgroundIsCustomThenPixelSetsTrueForCustomBackground() throws {
-        customizationModel.customBackground = .gradient(.gradient02)
-
-        notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
-        let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
-
-        switch pixel {
-        case .newTabPageShown(_, _, _, customBackground: true):
-            break
-        default:
-            XCTFail("Unexpected pixel value: \(pixel)")
-        }
-    }
-
-    func testWhenBackgroundIsDefaultThenPixelSetsFalseForCustomBackground() throws {
-        customizationModel.customBackground = nil
-
-        notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
-        let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
-
-        switch pixel {
-        case .newTabPageShown(_, _, _, customBackground: false):
-            break
-        default:
-            XCTFail("Unexpected pixel value: \(pixel)")
-        }
     }
 }

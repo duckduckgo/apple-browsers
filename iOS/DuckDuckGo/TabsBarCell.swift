@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class TabsBarCell: UICollectionViewCell {
 
@@ -43,11 +44,9 @@ class TabsBarCell: UICollectionViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
+
+        removeButton.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
         removeButton.isPointerInteractionEnabled = true
-        removeButton.pointerStyleProvider = { button, _, _ -> UIPointerStyle? in
-            return .init(effect: .lift(.init(view: button)))
-        }
         
         contentView.addInteraction(UIPointerInteraction(delegate: self))
     }

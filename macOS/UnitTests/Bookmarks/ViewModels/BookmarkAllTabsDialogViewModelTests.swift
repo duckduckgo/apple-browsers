@@ -28,7 +28,7 @@ final class BookmarkAllTabsDialogViewModelTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [BookmarkFolder.mock])
-        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         foldersStoreMock = .init()
     }
@@ -172,7 +172,7 @@ final class BookmarkAllTabsDialogViewModelTests: XCTestCase {
         // GIVEN
         let folder = BookmarkFolder(id: "1", title: #function)
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [folder])
-        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         let websitesInfo = WebsiteInfo.makeWebsitesInfo(url: .duckDuckGo)
         let sut = BookmarkAllTabsDialogViewModel(websites: websitesInfo, foldersStore: foldersStoreMock, bookmarkManager: bookmarkManager)
@@ -235,7 +235,7 @@ final class BookmarkAllTabsDialogViewModelTests: XCTestCase {
         let folder = BookmarkFolder(id: "1", title: #function)
         foldersStoreMock.lastBookmarkAllTabsFolderIdUsed = "1"
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [folder])
-        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         let websitesInfo = WebsiteInfo.makeWebsitesInfo(url: .duckDuckGo)
         let sut = BookmarkAllTabsDialogViewModel(websites: websitesInfo, foldersStore: foldersStoreMock, bookmarkManager: bookmarkManager)
@@ -255,7 +255,7 @@ final class BookmarkAllTabsDialogViewModelTests: XCTestCase {
         let folder = BookmarkFolder(id: "1", title: #function)
         let folder2 = BookmarkFolder(id: "2", title: "Test")
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [folder])
-        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         let websitesInfo = WebsiteInfo.makeWebsitesInfo(url: .duckDuckGo)
         let sut = BookmarkAllTabsDialogViewModel(websites: websitesInfo, foldersStore: foldersStoreMock, bookmarkManager: bookmarkManager)

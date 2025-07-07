@@ -134,7 +134,7 @@ protocol DuckPlayerControlling: AnyObject {
     var settings: DuckPlayerSettings { get }
 
     /// The host view controller, if any.
-    var hostView: TabViewController? { get }
+    var hostView: DuckPlayerHosting? { get }
 
     // Navigation Request Publisher to notify when DuckPlayer needs direct Youtube Nav
     var youtubeNavigationRequest: PassthroughSubject<URL, Never> { get }
@@ -148,7 +148,11 @@ protocol DuckPlayerControlling: AnyObject {
     ///   - settings: The Duck Player settings.
     ///   - featureFlagger: The feature flag manager.
     ///   - nativeUIPresenter: The native UI presenter.
-    init(settings: DuckPlayerSettings, featureFlagger: FeatureFlagger, nativeUIPresenter: DuckPlayerNativeUIPresenting)
+    ///   - featureDiscovery: Storage for saying this feature has been used.
+    init(settings: DuckPlayerSettings,
+         featureFlagger: FeatureFlagger,
+         nativeUIPresenter: DuckPlayerNativeUIPresenting,
+         featureDiscovery: FeatureDiscovery)
 
     /// Sets user values received from the web content.
     ///
@@ -225,7 +229,7 @@ protocol DuckPlayerControlling: AnyObject {
     /// Sets the host view controller for presenting modals.
     ///
     /// - Parameter vc: The view controller to set as host.
-    func setHostViewController(_ vc: TabViewController)
+    func setHostViewController(_ vc: DuckPlayerHosting)
 
     /// Loads a native DuckPlayerView
     ///
@@ -246,13 +250,26 @@ protocol DuckPlayerControlling: AnyObject {
     ///   - reset: Whether to reset the pill state
     ///   - animated: Whether to animate the dismissal
     ///   - programatic: Whether the dismissal was triggered programatically
-    @MainActor func dismissPill(reset: Bool, animated: Bool, programatic: Bool)
-
+    ///   - skipTransition: Whether to skip the welcome pill transition
+    @MainActor func dismissPill(reset: Bool, animated: Bool, programatic: Bool, skipTransition: Bool)
+    
     /// Hides the bottom sheet when browser chrome is hidden
     @MainActor func hidePillForHiddenChrome()
 
     /// Shows the bottom sheet when browser chrome is visible
     @MainActor func showPillForVisibleChrome()
+
+    // Map Settings
+    func mapLegacySettings()
+
+    // Native UI - UserScript Methods    
+    // These are used to notify the UserScript to trigger the appropriate actions
+    // on the UserScript Broker    
+    var muteAudioPublisher: PassthroughSubject<Bool, Never> { get }
+    var mediaControlPublisher: PassthroughSubject<Bool, Never> { get }
+    var currentTimeStampPublisher: PassthroughSubject<TimeInterval, Never> { get }
+    var serpNotificationPublisher: PassthroughSubject<Bool, Never> { get }
+    var urlChangedPublisher: PassthroughSubject<URL, Never> { get }
 }
 
 extension DuckPlayerControlling {
@@ -279,7 +296,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     }
 
     private(set) var settings: DuckPlayerSettings
-    private(set) weak var hostView: TabViewController?
+    private(set) weak var hostView: DuckPlayerHosting?
 
     private var featureFlagger: FeatureFlagger
     private var hideBrowserChromeTimer: Timer?
@@ -322,8 +339,31 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     var playerDismissedPublisher: PassthroughSubject<Void, Never>
 
     /// Native UI Presenter
-    private let nativeUIPresenter: DuckPlayerNativeUIPresenting
+    let nativeUIPresenter: DuckPlayerNativeUIPresenting
     private var nativeUIPresenterCancellables = Set<AnyCancellable>()
+    
+    /// Publishers to communicate between Native UI -> UserScript
+    // DuckPlayer acts as a two way bridge between the UserScripts and the Native UI
+    var muteAudioPublisher: PassthroughSubject<Bool, Never>
+    var mediaControlPublisher: PassthroughSubject<Bool, Never>
+    var currentTimeStampPublisher: PassthroughSubject<TimeInterval, Never>
+    var serpNotificationPublisher: PassthroughSubject<Bool, Never>
+    var urlChangedPublisher: PassthroughSubject<URL, Never>
+
+    /// Used for recording discovery of a feature
+    let featureDiscovery: FeatureDiscovery
+    
+    /// Current timestamp from YouTube.com for entry pill handling
+    private var youtubeTimestamp: TimeInterval?
+    
+    /// Current timestamp from DuckPlayer view for re-entry pill handling
+    private var duckPlayerTimestamp: TimeInterval?
+    
+    /// Current video ID being tracked
+    private var currentVideoID: String?
+    
+    /// Whether the current video has been shown in DuckPlayer before
+    private var hasBeenShown: Bool = false
 
     /// Initializes a new instance of DuckPlayer with the provided settings and feature flagger.
     ///
@@ -333,12 +373,19 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///   - nativeUIPresenter: The native UI presenter.
     init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         nativeUIPresenter: DuckPlayerNativeUIPresenting) {
+         nativeUIPresenter: DuckPlayerNativeUIPresenting,
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.settings = settings
         self.featureFlagger = featureFlagger
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
         self.playerDismissedPublisher = PassthroughSubject<Void, Never>()
         self.nativeUIPresenter = nativeUIPresenter
+        self.muteAudioPublisher = PassthroughSubject<Bool, Never>()
+        self.mediaControlPublisher = PassthroughSubject<Bool, Never>()
+        self.currentTimeStampPublisher = PassthroughSubject<TimeInterval, Never>()
+        self.serpNotificationPublisher = PassthroughSubject<Bool, Never>()
+        self.urlChangedPublisher = PassthroughSubject<URL, Never>()
+        self.featureDiscovery = featureDiscovery
         super.init()
         setupSubscriptions()
 
@@ -346,6 +393,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                                              selector: #selector(handleChromeVisibilityChange(_:)),
                                              name: .browserChromeVisibilityChanged,
                                              object: nil)
+
+        // Map legacy settings
+        mapLegacySettings()
     }
 
     // Add a convenience initializer that creates a new presenter
@@ -379,7 +429,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// Sets the host view controller for presenting modals.
     ///
     /// - Parameter vc: The view controller to set as host.
-    public func setHostViewController(_ vc: TabViewController) {
+    public func setHostViewController(_ vc: DuckPlayerHosting) {
         hostView = vc
     }
 
@@ -409,7 +459,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         if let url = hostView?.url, url.isDuckPlayer {
             let orientation = UIDevice.current.orientation
             if orientation.isLandscape {
-                hostView?.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
+                hostView?.showChrome()
                 Task { await showPillForVisibleChrome() }
             }
         }
@@ -420,18 +470,24 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         hideBrowserChromeTimer?.invalidate()
 
         weak var weakHostView = hostView
-        hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { [weak self] _ in
+        hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { _ in
             DispatchQueue.main.async {
                 let orientation = UIDevice.current.orientation
                 if orientation.isLandscape {
-                    weakHostView?.chromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
+                    weakHostView?.hideChrome()
                 }
             }
         }
     }
-    // Loads a native DuckPlayerView
+
+    /// Loads a native DuckPlayerView and sets flag that DuckPlayer has been used.
     func loadNativeDuckPlayerVideo(videoID: String, source: VideoNavigationSource = .other, timestamp: TimeInterval? = nil) {
+
+        // Mark that Native UI was used
+        settings.nativeUIWasUsed = true
+        
         guard let hostView = hostView else { return }
+        featureDiscovery.setWasUsedBefore(.duckPlayer)
 
         Task { @MainActor in
             let publishers = nativeUIPresenter.presentDuckPlayer(videoID: videoID, source: source, in: hostView, title: nil, timestamp: timestamp)
@@ -478,8 +534,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///
     /// - Parameter userValues: The user values to update settings with.
     private func updateSettings(userValues: UserValues) async {
-        settings.setMode(userValues.duckPlayerMode)
-        settings.setAskModeOverlayHidden(userValues.askModeOverlayHidden)
+        settings.mode = userValues.duckPlayerMode
+        settings.askModeOverlayHidden = userValues.askModeOverlayHidden
     }
 
     /// Registers an Nootification observer for orientation changes
@@ -495,10 +551,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         let orientation = UIDevice.current.orientation
 
         // Only proceed with orientation change if DuckPlayer is visible
-        guard let hostView = hostView,
-              let hostViewDelegate = hostView.delegate,
-              hostViewDelegate.tabCheckIfItsBeingCurrentlyPresented(hostView),
-              let url = hostView.url,
+        guard hostView?.isTabCurrentlyPresented() ?? false,
+              let url = hostView?.url,
               url.isDuckPlayer else {
             return
         }
@@ -527,8 +581,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     /// Handle Portrait rotation
     private func handlePortraitOrientation() {
-        hostView?.chromeDelegate?.omniBar.endEditing()
-        hostView?.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
+        hostView?.showChrome()
         hideBrowserChromeTimer?.invalidate()
         hideBrowserChromeTimer = nil
         hostView?.setupWebViewForPortraitVideo()
@@ -536,9 +589,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     /// Handle Landscape rotation
     private func handleLandscapeOrientation() {
-        hostView?.chromeDelegate?.omniBar.endEditing()
         hostView?.setupWebViewForLandscapeVideo()
-        hostView?.chromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
+        hostView?.hideChrome()
     }
 
     /// Default rotation should be portrait mode
@@ -566,10 +618,11 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///   - webView: The web view to load the video in.
     @MainActor
     public func openVideoInDuckPlayer(url: URL, webView: WKWebView) {
+        featureDiscovery.setWasUsedBefore(.duckPlayer)
         webView.load(URLRequest(url: url))
     }
 
-    /// Performs initial setup for the player.
+    /// Performs initial setup for the player and sets flag that DuckPlayer has been used.
     ///
     /// - Parameters:
     ///   - params: Parameters from the web content.
@@ -581,7 +634,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         return await self.encodedPlayerSettings(with: webView)
     }
 
-    /// Performs initial setup for the overlay.
+    /// Performs initial setup for the overlay and sets flag that DuckPlayer has been used.
     ///
     /// - Parameters:
     ///   - params: Parameters from the web content.
@@ -658,8 +711,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Parameter context: The presentation context for the modal.
     @MainActor
     public func presentDuckPlayerInfo(context: DuckPlayerModalPresenter.PresentationContext) {
-        guard let hostView else { return }
-        DuckPlayerModalPresenter(context: context).presentDuckPlayerFeatureModal(on: hostView)
+
+        // Need to cast to TabVC for now - Will be remove once DuckPlayer NativeUI is released
+        guard let view = hostView as? TabViewController else { return }
+        DuckPlayerModalPresenter(context: context).presentDuckPlayerFeatureModal(on: view)
     }
 
     /// Encodes user values for sending to the web content.
@@ -715,10 +770,6 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     @MainActor
     private func firePixels(message: WKScriptMessage, userValues: UserValues) {
 
-        guard let messageData: WKMessageData = DecodableHelper.decode(from: message.body) else {
-            assertionFailure("DuckPlayer: expected JSON representation of Message")
-            return
-        }
         // Get the webView URL
         guard let webView = message.webView, let url = webView.url else {
             return
@@ -762,24 +813,21 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         nativeUIPresenter.showBottomSheetForVisibleChrome()
     }
 
-    /// Presents a bottom sheet asking the user how they want to open the video
+    /// Presents a bottom sheet asking the user how they want to open the video and sets flag that DuckPlayer has been used.
     ///
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
-    ///   - timestamp: The timestamp of the video    
+    ///   - timestamp: The timestamp of the video
     func presentPill(for videoID: String, timestamp: TimeInterval?) {
         guard let hostView = hostView else { return }
 
         Task { @MainActor in
-            nativeUIPresenter.presentPill(for: videoID, in: hostView, timestamp: timestamp)
-        }
-
-        nativeUIPresenter.videoPlaybackRequest
-            .sink { [weak self] videoDetails in
-                let (videoID, timestamp) = videoDetails
-                self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp)
+            if hostView.url?.isYoutubeWatch ?? false {
+                // Determine which timestamp to use based on pill type logic
+                let appropriateTimestamp = self.getAppropriateTimestamp(for: videoID)
+                nativeUIPresenter.presentPill(for: videoID, in: hostView, timestamp: appropriateTimestamp)
             }
-            .store(in: &nativeUIPresenterCancellables)
+        }
     }
 
     /// Dismisses the bottom sheet
@@ -788,8 +836,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///   - animated: Whether to animate the dismissal
     ///   - programatic: Whether the dismissal was triggered programatically
     @MainActor
-    func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {
-        nativeUIPresenter.dismissPill(reset: reset, animated: animated, programatic: programatic)
+    func dismissPill(reset: Bool, animated: Bool, programatic: Bool, skipTransition: Bool = false) {
+        nativeUIPresenter.dismissPill(reset: reset, animated: animated, programatic: programatic, skipTransition: skipTransition)
     }
 
     @objc private func handleChromeVisibilityChange(_ notification: Notification) {
@@ -806,15 +854,75 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     }
 
     private func setupSubscriptions() {
+        // Subscribe to timestamp updates from the UserScript (YouTube.com)
+        currentTimeStampPublisher
+            .sink { [weak self] timestamp in
+                self?.youtubeTimestamp = timestamp
+            }
+            .store(in: &nativeUIPresenterCancellables)
+        
         // Set up the subscription once and keep it alive
         nativeUIPresenter.videoPlaybackRequest
             .sink { [weak self] videoDetails in
-                let (videoID, timestamp) = videoDetails
-                Task { await self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp) }
+                let (videoID, pillTimestamp, pillType) = videoDetails
+                
+                // When on youtube, we use the timestamp from the pill if it's an entry pill
+                // Otherwise, we use the timestamp from the UserScript (DuckPlayer)
+                Task {
+                    let timestamp = pillType == .entry ? self?.youtubeTimestamp : pillTimestamp
+                    await self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp)
+                }
+            }
+            .store(in: &nativeUIPresenterCancellables)
+
+        nativeUIPresenter.presentDuckPlayerRequest
+            .sink { [weak self] in
+                guard let self = self else { return }
+                // Pause media playback when presenting the full player
+                self.mediaControlPublisher.send(true)
+            }
+            .store(in: &nativeUIPresenterCancellables)
+        
+        nativeUIPresenter.duckPlayerTimestampUpdate
+            .sink { [weak self] timestamp in
+                self?.storeDuckPlayerTimestamp(timestamp)
             }
             .store(in: &nativeUIPresenterCancellables)
 
         registerOrientationSubscriber()
+    }
+    
+    /// Determines the appropriate timestamp based on pill type logic
+    /// - Parameter videoID: The video ID being presented
+    /// - Returns: YouTube timestamp for entry pills, DuckPlayer timestamp for re-entry pills
+    private func getAppropriateTimestamp(for videoID: String) -> TimeInterval? {
+        // Update current video tracking
+        if currentVideoID != videoID {
+            currentVideoID = videoID
+            hasBeenShown = false  // Reset for new video
+        }
+        
+        let duckPlayerSettings = DuckPlayerSettingsDefault()
+        
+        // If priming modal hasn't been presented, it's a welcome pill (use YouTube timestamp)
+        if !duckPlayerSettings.primingMessagePresented {
+            return youtubeTimestamp
+        }
+        
+        // Logic for returning users: entry vs re-entry
+        if hasBeenShown {
+            // Re-entry pill - use DuckPlayer timestamp
+            return duckPlayerTimestamp
+        } else {
+            // Entry pill - use YouTube timestamp
+            return youtubeTimestamp
+        }
+    }
+    
+    /// Stores timestamp from DuckPlayer view dismissal
+    /// This should be called when DuckPlayer view is dismissed with a timestamp
+    func storeDuckPlayerTimestamp(_ timestamp: TimeInterval?) {
+        duckPlayerTimestamp = timestamp
     }
 
     /// Returns tuple of Pixels for firing when a YouTube Error occurs
@@ -833,6 +941,26 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                 }
         }
         return (.duckPlayerYouTubeUnknownErrorImpression, .duckPlayerYouTubeUnknownErrorDaily)
+    }
+
+    /// Maps legacy settings to new settings
+    // Maps DuckPlayerMode to NativeUIYoutubeMode
+    // https://app.asana.com/1/137249556945/project/1204099484721401/task/1210320494056772?focus=true
+    func mapLegacySettings() {
+        if settings.nativeUI && !settings.nativeUISettingsMapped {
+            switch settings.mode {
+            case .enabled:
+                settings.nativeUIYoutubeMode = .auto
+                settings.nativeUISERPEnabled = true
+            case .alwaysAsk:
+                settings.nativeUIYoutubeMode = .ask
+                settings.nativeUISERPEnabled = true
+            case .disabled:
+                settings.nativeUIYoutubeMode = .never
+                settings.nativeUISERPEnabled = false
+            }
+            settings.nativeUISettingsMapped = true
+        }
     }
 }
 

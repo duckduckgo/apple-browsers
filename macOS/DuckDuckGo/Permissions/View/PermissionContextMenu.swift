@@ -34,14 +34,17 @@ final class PermissionContextMenu: NSMenu {
     let domain: String
     let permissions: [(key: PermissionType, value: PermissionState)]
     weak var actionDelegate: PermissionContextMenuDelegate?
+    private let permissionManager: PermissionManagerProtocol
 
     required init(coder: NSCoder) {
         fatalError("PermissionContextMenu: Bad initializer")
     }
 
-    init(permissions: [(key: PermissionType, value: PermissionState)],
+    init(permissionManager: PermissionManagerProtocol,
+         permissions: [(key: PermissionType, value: PermissionState)],
          domain: String,
          delegate: PermissionContextMenuDelegate?) {
+        self.permissionManager = permissionManager
         self.domain = domain.droppingWwwPrefix()
         self.permissions = permissions
         self.actionDelegate = delegate
@@ -92,7 +95,7 @@ final class PermissionContextMenu: NSMenu {
 
     private func setupOtherPermissionMenuItems(for permissions: Permissions) {
         let permanentlyDeniedPermission = permissions.first(where: {
-            $0.value.isDenied && PermissionManager.shared.permission(forDomain: domain, permissionType: $0.key) == .deny
+            $0.value.isDenied && permissionManager.permission(forDomain: domain, permissionType: $0.key) == .deny
         })
         // don't display Reload item for permanently denied Permissions
         var shouldAddReload = permanentlyDeniedPermission == nil
@@ -151,7 +154,7 @@ final class PermissionContextMenu: NSMenu {
             addSeparator(if: numberOfItems > 0)
             addItem(.persistenceHeaderItem(for: permission, on: domain))
 
-            let persistedValue = PermissionManager.shared.permission(forDomain: domain, permissionType: permission)
+            let persistedValue = permissionManager.permission(forDomain: domain, permissionType: permission)
             addItem(.alwaysAsk(permission, on: domain, target: self, isChecked: persistedValue == .ask))
 
             if permission.canPersistGrantedDecision {

@@ -37,7 +37,7 @@ final class RecentlyClosedCoordinatorTests: XCTestCase {
             ])
         ]
 
-        cache.burn(for: ["site1.com", "site3.com"], tld: ContentBlocking.shared.tld)
+        cache.burn(for: ["site1.com", "site3.com"], tld: Application.appDelegate.tld)
 
         XCTAssertEqual(cache.count, 2)
         let tab = try XCTUnwrap(cache[0] as? RecentlyClosedTab)
@@ -58,7 +58,7 @@ final class RecentlyClosedCoordinatorTests: XCTestCase {
             ])
         ]
 
-        cache.burn(for: ["unrelatedsite1.com", "unrelatedsite2.com"], tld: ContentBlocking.shared.tld)
+        cache.burn(for: ["unrelatedsite1.com", "unrelatedsite2.com"], tld: Application.appDelegate.tld)
 
         XCTAssertEqual(cache.count, 3)
 
@@ -89,6 +89,8 @@ private extension RecentlyClosedWindow {
 
 final class WindowControllersManagerMock: WindowControllersManagerProtocol {
 
+    var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
+
     var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding = PinnedTabsManagerProvidingMock()
@@ -102,11 +104,11 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
     var lastKeyMainWindowController: MainWindowController?
 
     struct ShowArgs: Equatable {
-        let url: URL?, source: Tab.TabContent.URLSource, newTab: Bool
+        let url: URL?, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool?
     }
     var showCalled: ShowArgs?
-    func show(url: URL?, tabId: String?, source: Tab.TabContent.URLSource, newTab: Bool) {
-        showCalled = .init(url: url, source: source, newTab: newTab)
+    func show(url: URL?, tabId: String?, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool?) {
+        showCalled = .init(url: url, source: source, newTab: newTab, selected: selected)
     }
     var showBookmarksTabCalled = false
     func showBookmarksTab() {
@@ -124,4 +126,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
         return nil
     }
     func showTab(with content: DuckDuckGo_Privacy_Browser.Tab.TabContent) { }
+
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
 }

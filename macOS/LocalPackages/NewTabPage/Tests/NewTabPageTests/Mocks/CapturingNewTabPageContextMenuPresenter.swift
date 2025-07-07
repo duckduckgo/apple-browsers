@@ -20,6 +20,8 @@ import AppKit
 import NewTabPage
 
 final class CapturingNewTabPageContextMenuPresenter: NewTabPageContextMenuPresenting {
+    var window: NSWindow?
+
     func showContextMenu(_ menu: NSMenu) {
         showContextMenuCalls.append(menu)
     }

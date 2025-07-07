@@ -44,7 +44,7 @@ final class SuggestionViewModelTests: XCTestCase {
         let urlString = "https://spreadprivacy.com"
         let url = URL(string: urlString)!
         let suggestion = Suggestion.website(url: url)
-        let suggestionViewModel = SuggestionViewModel(isHomePage: true, suggestion: suggestion, userStringValue: "w")
+        let suggestionViewModel = SuggestionViewModel(isHomePage: true, suggestion: suggestion, userStringValue: "w", visualStyle: VisualStyle.legacy)
 
         XCTAssertEqual(suggestionViewModel.string, "www.spreadprivacy.com")
     }
@@ -124,7 +124,7 @@ final class SuggestionViewModelTests: XCTestCase {
     func testWhenSuggestionIsBookmark_ThenStringIsTitle() {
         let url = URL(string: "https://spreadprivacy.com")!
         let title = "Title"
-        let suggestion = Suggestion.bookmark(title: title, url: url, isFavorite: true, allowedInTopHits: true)
+        let suggestion = Suggestion.bookmark(title: title, url: url, isFavorite: true, score: 0)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssertEqual(suggestionViewModel.string, title)
@@ -134,7 +134,7 @@ final class SuggestionViewModelTests: XCTestCase {
         let query = "test search"
         let searchUrl = URL.makeSearchUrl(from: query)!
         let title = "Title"
-        let suggestion = Suggestion.historyEntry(title: title, url: searchUrl, allowedInTopHits: true)
+        let suggestion = Suggestion.historyEntry(title: title, url: searchUrl, score: 0)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssertEqual(suggestionViewModel.string, query)
@@ -143,7 +143,7 @@ final class SuggestionViewModelTests: XCTestCase {
     func testWhenSuggestionIsHistoryEntryOfDuckDuckGoSearch_ThenSuffixIsSearchDuckDuckGo() {
         let searchUrl = URL.makeSearchUrl(from: "test search")!
         let title = "Title"
-        let suggestion = Suggestion.historyEntry(title: title, url: searchUrl, allowedInTopHits: true)
+        let suggestion = Suggestion.historyEntry(title: title, url: searchUrl, score: 0)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssert((suggestionViewModel.suffix ?? "").hasSuffix(UserText.searchDuckDuckGoSuffix))
@@ -153,7 +153,7 @@ final class SuggestionViewModelTests: XCTestCase {
         let query = "test search"
         let searchUrl = URL.makeSearchUrl(from: query)!
         let title = "Title"
-        let suggestion = Suggestion.historyEntry(title: title, url: searchUrl, allowedInTopHits: true)
+        let suggestion = Suggestion.historyEntry(title: title, url: searchUrl, score: 0)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssertEqual(suggestionViewModel.title, query)
@@ -162,7 +162,7 @@ final class SuggestionViewModelTests: XCTestCase {
     func testWhenSuggestionIsOpenTabWebsite_ThenSuggestionViewModelValuesAreCorrect() {
         let url = URL(string: "https://spreadprivacy.com")!
         let title = "Open Tab Title"
-        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil)
+        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil, score: 0)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssertEqual(suggestionViewModel.string, title)
@@ -173,7 +173,7 @@ final class SuggestionViewModelTests: XCTestCase {
     func testWhenSuggestionIsOpenTabSERP_ThenSuggestionViewModelValuesAreCorrect() {
         let url = URL.makeSearchUrl(from: "Test search")!
         let title = "SERP Title"
-        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil)
+        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil, score: 0)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssertEqual(suggestionViewModel.string, title)
@@ -184,7 +184,7 @@ final class SuggestionViewModelTests: XCTestCase {
     func testWhenSuggestionIsOpenTabSettings_ThenSuggestionViewModelValuesAreCorrect() {
         let url = URL.settings
         let title = UserText.settings
-        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil)
+        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil, score: 0)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssertEqual(suggestionViewModel.string, title)
@@ -195,7 +195,7 @@ final class SuggestionViewModelTests: XCTestCase {
     func testWhenSuggestionIsOpenTabBookmarks_ThenSuggestionViewModelValuesAreCorrect() {
         let url = URL.bookmarks
         let title = UserText.bookmarks
-        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil)
+        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil, score: 0)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssertEqual(suggestionViewModel.string, title)
@@ -206,7 +206,7 @@ final class SuggestionViewModelTests: XCTestCase {
     func testWhenSuggestionIsOpenTabHistory_ThenSuggestionViewModelValuesAreCorrect() {
         let url = URL.history
         let title = UserText.mainMenuHistory
-        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil)
+        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil, score: 0)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssertEqual(suggestionViewModel.string, title)
@@ -217,6 +217,6 @@ final class SuggestionViewModelTests: XCTestCase {
 
 extension SuggestionViewModel {
     init(suggestion: Suggestion, userStringValue: String) {
-        self.init(isHomePage: false, suggestion: suggestion, userStringValue: userStringValue)
+        self.init(isHomePage: false, suggestion: suggestion, userStringValue: userStringValue, visualStyle: VisualStyle.legacy)
     }
 }

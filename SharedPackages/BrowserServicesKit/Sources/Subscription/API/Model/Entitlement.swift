@@ -18,14 +18,19 @@
 
 import Foundation
 
-public struct Entitlement: Codable, Equatable {
+public struct Entitlement: Codable, Equatable, Hashable {
     public let product: ProductName
+
+    public init(product: Entitlement.ProductName) {
+        self.product = product
+    }
 
     public enum ProductName: String, Codable {
         case networkProtection = "Network Protection"
         case dataBrokerProtection = "Data Broker Protection"
         case identityTheftRestoration = "Identity Theft Restoration"
         case identityTheftRestorationGlobal = "Global Identity Theft Restoration"
+        case paidAIChat = "Duck.ai"
         case unknown
 
         public init(from decoder: Decoder) throws {

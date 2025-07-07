@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import Foundation
 import HistoryView
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {

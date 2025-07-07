@@ -19,8 +19,9 @@
 #if DEBUG
 
 import Bookmarks
-import Foundation
 import BrowserServicesKit
+import CoreData
+import Foundation
 
 final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
 
@@ -155,7 +156,7 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
 
     var updateBookmarkCalled = false
     func update(bookmark: Bookmark) {
-        if store == nil, let index = bookmarks?.firstIndex(where: { $0.id == bookmark.id}) {
+        if store == nil, let index = bookmarks?.firstIndex(where: { $0.id == bookmark.id }) {
             bookmarks![index] = bookmark
         }
 

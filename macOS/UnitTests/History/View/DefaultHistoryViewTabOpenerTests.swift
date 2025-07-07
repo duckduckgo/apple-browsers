@@ -20,19 +20,20 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class CapturingURLOpener: URLOpening {
-    func open(_ url: URL) {
+
+    func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
         openCalls.append(url)
     }
 
-    func openInNewTab(_ urls: [URL]) {
+    func openInNewTab(_ urls: [URL], sourceWindow: NSWindow?) {
         openInNewTabCalls.append(urls)
     }
 
-    func openInNewWindow(_ urls: [URL]) {
+    func openInNewWindow(_ urls: [URL], sourceWindow: NSWindow?) {
         openInNewWindowCalls.append(urls)
     }
 
-    func openInNewFireWindow(_ urls: [URL]) {
+    func openInNewFireWindow(_ urls: [URL], sourceWindow: NSWindow?) {
         openInNewFireWindowCalls.append(urls)
     }
 
@@ -48,7 +49,7 @@ final class DefaultHistoryViewTabOpenerTests: XCTestCase {
     var dialogPresenter: CapturingHistoryViewDeleteDialogPresenter!
 
     override func setUp() async throws {
-        urlOpener = await CapturingURLOpener()
+        urlOpener = CapturingURLOpener()
         dialogPresenter = CapturingHistoryViewDeleteDialogPresenter()
         tabOpener = DefaultHistoryViewTabOpener(urlOpener: { self.urlOpener })
         tabOpener.dialogPresenter = dialogPresenter
@@ -59,7 +60,7 @@ final class DefaultHistoryViewTabOpenerTests: XCTestCase {
     @MainActor
     func testThatOpenCallsURLOpener() async throws {
         let url = try XCTUnwrap("https://example.com".url)
-        await tabOpener.open(url)
+        tabOpener.open(url)
         XCTAssertEqual(urlOpener.openCalls, [url])
     }
 
@@ -166,5 +167,20 @@ final class DefaultHistoryViewTabOpenerTests: XCTestCase {
         await tabOpener.openInNewFireWindow(urls)
         XCTAssertEqual(dialogPresenter.showMultipleTabsDialogCalls, [50])
         XCTAssertEqual(urlOpener.openInNewFireWindowCalls, [urls])
+    }
+}
+
+private extension DefaultHistoryViewTabOpener {
+    @MainActor func open(_ url: URL) {
+        open(url, window: nil)
+    }
+    @MainActor func openInNewTab(_ urls: [URL]) async {
+        await openInNewTab(urls, sourceWindow: nil)
+    }
+    @MainActor func openInNewWindow(_ urls: [URL]) async {
+        await openInNewWindow(urls, sourceWindow: nil)
+    }
+    @MainActor func openInNewFireWindow(_ urls: [URL]) async {
+        await openInNewFireWindow(urls, sourceWindow: nil)
     }
 }

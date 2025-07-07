@@ -18,8 +18,38 @@
 //
 
 import UIKit
+import BrowserServicesKit
 
-class TabSwitcherBarsStateHandler {
+protocol TabSwitcherBarsStateHandling {
+
+    var plusButton: UIBarButtonItem { get }
+    var fireButton: UIBarButtonItem { get }
+    var doneButton: UIBarButtonItem { get }
+    var closeTabsButton: UIBarButtonItem { get }
+    var menuButton: UIBarButtonItem { get }
+    var addAllBookmarksButton: UIBarButtonItem { get }
+    var tabSwitcherStyleButton: UIBarButtonItem { get }
+    var editButton: UIBarButtonItem { get }
+    var selectAllButton: UIBarButtonItem { get }
+    var deselectAllButton: UIBarButtonItem { get }
+    var duckChatButton: UIBarButtonItem { get }
+
+    var bottomBarItems: [UIBarButtonItem] { get }
+    var topBarLeftButtonItems: [UIBarButtonItem] { get }
+    var topBarRightButtonItems: [UIBarButtonItem] { get }
+
+    var isBottomBarHidden: Bool { get }
+
+    func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,
+                selectedTabsCount: Int,
+                totalTabsCount: Int,
+                containsWebPages: Bool,
+                showAIChatButton: Bool)
+
+}
+
+/// This is what we hope will be the new version long term.
+class DefaultTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
 
     let plusButton = UIBarButtonItem()
     let fireButton = UIBarButtonItem()
@@ -38,14 +68,22 @@ class TabSwitcherBarsStateHandler {
     private(set) var topBarLeftButtonItems = [UIBarButtonItem]()
     private(set) var topBarRightButtonItems = [UIBarButtonItem]()
 
-    private(set) var interfaceMode: TabSwitcherViewController.InterfaceMode = .singleSelectNormal
+    private(set) var interfaceMode: TabSwitcherViewController.InterfaceMode = .regularSize
     private(set) var selectedTabsCount: Int = 0
     private(set) var totalTabsCount: Int = 0
     private(set) var containsWebPages = false
     private(set) var showAIChatButton = false
-    private(set) var canShowEditButton = false
 
     private(set) var isFirstUpdate = true
+
+    private let themingProperties: ExperimentalThemingProperties
+    private var isExperimentalThemingEnabled: Bool {
+        themingProperties.isExperimentalThemingEnabled
+    }
+
+    init(themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
+        self.themingProperties = themingProperties
+    }
 
     func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,
                 selectedTabsCount: Int,
@@ -73,8 +111,9 @@ class TabSwitcherBarsStateHandler {
 
         self.fireButton.accessibilityLabel = "Close all tabs and clear data"
         self.tabSwitcherStyleButton.accessibilityLabel = "Toggle between grid and list view"
+        self.duckChatButton.accessibilityLabel = UserText.duckAiFeatureName
 
-        self.canShowEditButton = self.totalTabsCount > 1 || containsWebPages
+        self.editButton.isEnabled = self.totalTabsCount > 1 || containsWebPages
 
         updateBottomBar()
         updateTopLeftButtons()
@@ -82,67 +121,77 @@ class TabSwitcherBarsStateHandler {
     }
 
     func updateBottomBar() {
+        var newItems: [UIBarButtonItem]
+
+        let leadingSideWidthDifference: CGFloat = isExperimentalThemingEnabled ? 6 : 11
+
         switch interfaceMode {
-        case .singleSelectNormal,
-                .multiSelectAvailableNormal:
-            bottomBarItems = [
-                doneButton,
-                UIBarButtonItem.flexibleSpace(),
+        case .regularSize:
+
+            newItems = [
+                tabSwitcherStyleButton,
+
+                .flexibleSpace(),
+                .fixedSpace(leadingSideWidthDifference),
+                .flexibleSpace(),
+
                 fireButton,
-                UIBarButtonItem.flexibleSpace(),
-                showAIChatButton ? duckChatButton : nil,
-                showAIChatButton ? UIBarButtonItem.fixedSpace(24) : nil,
+
+                .flexibleSpace(),
+
                 plusButton,
+
+                .flexibleSpace(),
+
+                editButton
             ].compactMap { $0 }
+
             isBottomBarHidden = false
 
-        case .multiSelectEditingNormal:
-            bottomBarItems = [
+        case .editingRegularSize:
+            newItems = [
                 closeTabsButton,
                 UIBarButtonItem.flexibleSpace(),
                 menuButton,
             ]
             isBottomBarHidden = false
 
-        case .multiSelectedEditingLarge,
-                .multiSelectAvailableLarge,
-                .singleSelectLarge:
-            bottomBarItems = []
+        case .editingLargeSize,
+                .largeSize:
+            newItems = []
             isBottomBarHidden = true
         }
+
+        if !newItems.isEmpty && isExperimentalThemingEnabled {
+            // This aligns items with the toolbar on main screen,
+            // which is supposed to be aligned with Omnibar buttons.
+            newItems = [.additionalFixedSpaceItem()] + newItems + [.additionalFixedSpaceItem()]
+        }
+
+        bottomBarItems = newItems
     }
 
     func updateTopLeftButtons() {
 
         switch interfaceMode {
-        case .singleSelectNormal:
+
+        case .regularSize:
             topBarLeftButtonItems = [
-                addAllBookmarksButton,
+                doneButton,
             ]
 
-        case .singleSelectLarge:
+        case .largeSize:
             topBarLeftButtonItems = [
-                addAllBookmarksButton,
+                editButton,
                 tabSwitcherStyleButton,
             ]
 
-        case .multiSelectAvailableNormal:
+        case .editingRegularSize:
             topBarLeftButtonItems = [
-                tabSwitcherStyleButton,
+                doneButton
             ]
 
-        case .multiSelectAvailableLarge:
-            topBarLeftButtonItems = [
-                canShowEditButton ? editButton : nil,
-                tabSwitcherStyleButton,
-            ].compactMap { $0 }
-
-        case .multiSelectEditingNormal:
-            topBarLeftButtonItems = [
-                selectedTabsCount == totalTabsCount ? deselectAllButton : selectAllButton,
-            ]
-
-        case .multiSelectedEditingLarge:
+        case .editingLargeSize:
             topBarLeftButtonItems = [
                 doneButton,
             ]
@@ -153,12 +202,8 @@ class TabSwitcherBarsStateHandler {
     func updateTopRightButtons() {
 
         switch interfaceMode {
-        case .singleSelectNormal:
-            topBarRightButtonItems = [
-                tabSwitcherStyleButton,
-            ].compactMap { $0 }
 
-        case .singleSelectLarge, .multiSelectAvailableLarge:
+        case .largeSize:
             topBarRightButtonItems = [
                 doneButton,
                 fireButton,
@@ -166,17 +211,207 @@ class TabSwitcherBarsStateHandler {
                 showAIChatButton ? duckChatButton : nil,
             ].compactMap { $0 }
 
-        case .multiSelectAvailableNormal:
+        case .regularSize:
             topBarRightButtonItems = [
+                showAIChatButton ? duckChatButton : nil,
+            ].compactMap { $0 }
+
+        case .editingRegularSize:
+            topBarRightButtonItems = [
+                selectedTabsCount == totalTabsCount ? deselectAllButton : selectAllButton,
+            ]
+
+        case .editingLargeSize:
+            topBarRightButtonItems = [
+                menuButton,
+            ]
+
+        }
+    }
+}
+
+private extension UIBarButtonItem {
+    private static let additionalHorizontalSpace = 10.0
+
+    static func additionalFixedSpaceItem() -> UIBarButtonItem {
+        .fixedSpace(additionalHorizontalSpace)
+    }
+}
+
+/// To be removed once we're happy there's no abundance of negative user feedback.
+class LegacyTabSwitcherBarsStateHandler: TabSwitcherBarsStateHandling {
+
+    let plusButton = UIBarButtonItem()
+    let fireButton = UIBarButtonItem()
+    let doneButton = UIBarButtonItem()
+    let closeTabsButton = UIBarButtonItem()
+    let menuButton = UIBarButtonItem()
+    let addAllBookmarksButton = UIBarButtonItem()
+    let tabSwitcherStyleButton = UIBarButtonItem()
+    let editButton = UIBarButtonItem()
+    let selectAllButton = UIBarButtonItem()
+    let deselectAllButton = UIBarButtonItem()
+    let duckChatButton = UIBarButtonItem()
+
+    private(set) var bottomBarItems = [UIBarButtonItem]()
+    private(set) var isBottomBarHidden = false
+    private(set) var topBarLeftButtonItems = [UIBarButtonItem]()
+    private(set) var topBarRightButtonItems = [UIBarButtonItem]()
+
+    private(set) var interfaceMode: TabSwitcherViewController.InterfaceMode = .regularSize
+    private(set) var selectedTabsCount: Int = 0
+    private(set) var totalTabsCount: Int = 0
+    private(set) var containsWebPages = false
+    private(set) var showAIChatButton = false
+    private(set) var canShowEditButton = false
+
+    private(set) var isFirstUpdate = true
+
+    private let themingProperties: ExperimentalThemingProperties
+    private var isExperimentalThemingEnabled: Bool {
+        themingProperties.isExperimentalThemingEnabled
+    }
+
+    init(themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
+        self.themingProperties = themingProperties
+    }
+
+    func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,
+                selectedTabsCount: Int,
+                totalTabsCount: Int,
+                containsWebPages: Bool,
+                showAIChatButton: Bool) {
+
+        guard isFirstUpdate
+                || interfaceMode != self.interfaceMode
+                || selectedTabsCount != self.selectedTabsCount
+                || totalTabsCount != self.totalTabsCount
+                || containsWebPages != self.containsWebPages
+                || showAIChatButton != self.showAIChatButton
+        else {
+            // If nothing has changed, don't update
+            return
+        }
+
+        self.isFirstUpdate = false
+        self.interfaceMode = interfaceMode
+        self.selectedTabsCount = selectedTabsCount
+        self.totalTabsCount = totalTabsCount
+        self.containsWebPages = containsWebPages
+        self.showAIChatButton = showAIChatButton
+
+        self.fireButton.accessibilityLabel = "Close all tabs and clear data"
+        self.tabSwitcherStyleButton.accessibilityLabel = "Toggle between grid and list view"
+        self.duckChatButton.accessibilityLabel = UserText.duckAiFeatureName
+
+        self.canShowEditButton = self.totalTabsCount > 1 || containsWebPages
+
+        updateBottomBar()
+        updateTopLeftButtons()
+        updateTopRightButtons()
+    }
+
+    func updateBottomBar() {
+        var newItems: [UIBarButtonItem]
+
+        let regularItemWidth: CGFloat = 34
+        let leadingSideWidthDifference: CGFloat = isExperimentalThemingEnabled ? 6 : 11
+
+        switch interfaceMode {
+        case .regularSize:
+
+            newItems = [
+                tabSwitcherStyleButton,
+
+                .flexibleSpace(),
+                .fixedSpace(leadingSideWidthDifference),
+                .flexibleSpace(),
+
+                fireButton,
+
+                .flexibleSpace(),
+                showAIChatButton ? duckChatButton : .fixedSpace(regularItemWidth),
+                .flexibleSpace(),
+
+                plusButton
+            ].compactMap { $0 }
+
+            isBottomBarHidden = false
+
+        case .editingRegularSize:
+            newItems = [
+                closeTabsButton,
+                UIBarButtonItem.flexibleSpace(),
+                menuButton,
+            ]
+            isBottomBarHidden = false
+
+        case .editingLargeSize,
+                .largeSize:
+            newItems = []
+            isBottomBarHidden = true
+        }
+
+        if !newItems.isEmpty && isExperimentalThemingEnabled {
+            // This aligns items with the toolbar on main screen,
+            // which is supposed to be aligned with Omnibar buttons.
+            newItems = [.additionalFixedSpaceItem()] + newItems + [.additionalFixedSpaceItem()]
+        }
+
+        bottomBarItems = newItems
+    }
+
+    func updateTopLeftButtons() {
+
+        switch interfaceMode {
+
+        case .regularSize:
+            topBarLeftButtonItems = [
                 canShowEditButton ? editButton : nil,
             ].compactMap { $0 }
 
-        case .multiSelectEditingNormal:
-            topBarRightButtonItems = [
+        case .largeSize:
+            topBarLeftButtonItems = [
+                canShowEditButton ? editButton : nil,
+                tabSwitcherStyleButton,
+            ].compactMap { $0 }
+
+        case .editingRegularSize:
+            topBarLeftButtonItems = [
+                doneButton
+            ]
+
+        case .editingLargeSize:
+            topBarLeftButtonItems = [
                 doneButton,
             ]
 
-        case .multiSelectedEditingLarge:
+        }
+    }
+
+    func updateTopRightButtons() {
+
+        switch interfaceMode {
+
+        case .largeSize:
+            topBarRightButtonItems = [
+                doneButton,
+                fireButton,
+                plusButton,
+                showAIChatButton ? duckChatButton : nil,
+            ].compactMap { $0 }
+
+        case .regularSize:
+            topBarRightButtonItems = [
+                doneButton
+            ]
+
+        case .editingRegularSize:
+            topBarRightButtonItems = [
+                selectedTabsCount == totalTabsCount ? deselectAllButton : selectAllButton,
+            ]
+
+        case .editingLargeSize:
             topBarRightButtonItems = [
                 menuButton,
             ]

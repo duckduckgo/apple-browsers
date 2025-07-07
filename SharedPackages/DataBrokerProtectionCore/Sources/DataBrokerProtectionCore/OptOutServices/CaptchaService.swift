@@ -176,8 +176,8 @@ public struct CaptchaService: CaptchaServiceProtocol {
     }
 
     private func submitCaptchaInformationRequest(_ captchaInfo: GetCaptchaInfoResponse, attemptId: UUID) async throws -> CaptchaTransaction {
-        var urlComponents = URLComponents(url: settings.selectedEnvironment.endpointURL, resolvingAgainstBaseURL: true)
-        urlComponents?.path = "\(Constants.endpointSubPath)/submit"
+        var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
+        urlComponents?.path += "\(Constants.endpointSubPath)/submit"
         urlComponents?.queryItems = [URLQueryItem(name: "attemptId", value: attemptId.uuidString)]
 
         guard let url = urlComponents?.url else {
@@ -260,8 +260,8 @@ public struct CaptchaService: CaptchaServiceProtocol {
 
     private func submitCaptchaToBeResolvedRequest(_ transactionID: CaptchaTransactionId, attemptId: UUID) async throws -> CaptchaResult {
 
-        var urlComponents = URLComponents(url: settings.selectedEnvironment.endpointURL, resolvingAgainstBaseURL: true)
-        urlComponents?.path = "\(Constants.endpointSubPath)/result"
+        var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
+        urlComponents?.path += "\(Constants.endpointSubPath)/result"
 
         urlComponents?.queryItems = [
             URLQueryItem(name: "transactionId", value: transactionID),

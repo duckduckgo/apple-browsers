@@ -80,6 +80,7 @@ struct StatsByBroker {
     let numberOfFailureOptOuts: Int
     let numberOfNewMatchesFound: Int
     let numberOfReAppereances: Int
+    let numberOfHiddenFound: Int
     let durationOfFirstOptOut: Int
 
     var toWeeklyPixel: DataBrokerProtectionSharedPixels {
@@ -90,7 +91,8 @@ struct StatsByBroker {
                                              failedOptOuts: numberOfFailureOptOuts,
                                              durationOfFirstOptOut: durationOfFirstOptOut,
                                              numberOfNewRecordsFound: numberOfNewMatchesFound,
-                                             numberOfReappereances: numberOfReAppereances)
+                                             numberOfReappereances: numberOfReAppereances,
+                                             numberOfHiddenFound: numberOfHiddenFound)
     }
 
     var toMonthlyPixel: DataBrokerProtectionSharedPixels {
@@ -251,6 +253,7 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
         var numberOfOptOutsInProgress = 0 // Number of opt-outs in progress since the beginning.
         var numberOfSuccessfulOptOuts = 0 // Number of successfull opt-outs since the beginning
         var numberOfReAppearences = 0 // Number of records that were removed and came back
+        var numberOfHiddenFound = 0 // Number of records that were manually removed from dashboard
 
         for query in data {
             for optOutData in query.optOutJobData {
@@ -276,6 +279,7 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
             }
 
             numberOfReAppearences += calculateNumberOfProfileReAppereances(query.scanJobData) + mirrorSitesSize
+            numberOfHiddenFound += calculateNumberOfHiddenProfiles(query.optOutJobData) * (1 + mirrorSitesSize)
         }
 
         let numberOfFailureOptOuts = numberOfProfilesFound - numberOfOptOutsInProgress - numberOfSuccessfulOptOuts
@@ -289,6 +293,7 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
                              numberOfFailureOptOuts: numberOfFailureOptOuts,
                              numberOfNewMatchesFound: numberOfNewMatchesFound,
                              numberOfReAppereances: numberOfReAppearences,
+                             numberOfHiddenFound: numberOfHiddenFound,
                              durationOfFirstOptOut: durationOfFirstOptOut)
     }
 
@@ -360,6 +365,12 @@ private extension DataBrokerProtectionStatsPixels {
     /// - Returns: Count of reappearances
     func calculateNumberOfProfileReAppereances(_ scan: ScanJobData) -> Int {
         return scan.historyEvents.filter { $0.type == .reAppearence }.count
+    }
+
+    func calculateNumberOfHiddenProfiles(_ optOuts: [OptOutJobData]) -> Int {
+        optOuts.reduce(0) { count, optOut in
+            count + (optOut.historyEvents.doesBelongToUserRemovedRecord ? 1 : 0)
+        }
     }
 
     /// Returns the date of the first scan since the beginning if not from Date is provided
@@ -509,7 +520,7 @@ extension DataBrokerProtectionStatsPixels {
          */
 
         let allOptOuts = brokerProfileQueryData.flatMap { $0.optOutJobData }
-        let successfullySubmittedOptOuts = allOptOuts.filter { $0.submittedSuccessfullyDate != nil }
+        let successfullySubmittedOptOuts = allOptOuts.filter { $0.submittedSuccessfullyDate != nil && !$0.isRemovedByUser }
 
         let sevenDayOldPlusOptOutsThatHaveNotFiredPixel = successfullySubmittedOptOuts.filter { optOutJob in
             guard let submittedSuccessfullyDate = optOutJob.submittedSuccessfullyDate else { return false }

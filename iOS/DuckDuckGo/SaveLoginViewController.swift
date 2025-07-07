@@ -98,6 +98,7 @@ class SaveLoginViewController: UIViewController {
         let saveLoginView = SaveLoginView(viewModel: saveViewModel)
         let controller = UIHostingController(rootView: saveLoginView)
         controller.view.backgroundColor = .clear
+        presentationController?.delegate = self
         installChildViewController(controller)
         let backfilledParameter = [PixelParameters.backfilled: String(describing: backfilled)]
 
@@ -116,8 +117,16 @@ class SaveLoginViewController: UIViewController {
     }
 }
 
+extension SaveLoginViewController: UISheetPresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        delegate?.saveLoginViewControllerDidCancel(self)
+    }
+}
+
 extension SaveLoginViewController: SaveLoginViewModelDelegate {
     func saveLoginViewModelDidSave(_ viewModel: SaveLoginViewModel) {
+        dismiss(animated: true)
+
         let backfilledParameter = [PixelParameters.backfilled: String(describing: backfilled)]
         switch viewModel.layoutType {
         case .saveLogin, .savePassword, .newUser:
@@ -140,10 +149,14 @@ extension SaveLoginViewController: SaveLoginViewModelDelegate {
     }
     
     func saveLoginViewModelDidCancel(_ viewModel: SaveLoginViewModel) {
+        dismiss(animated: true)
+
         delegate?.saveLoginViewControllerDidCancel(self)
     }
 
     func saveLoginViewModelNeverPrompt(_ viewModel: SaveLoginViewModel) {
+        dismiss(animated: true)
+
         if case .newUser = viewModel.layoutType {
             Pixel.fire(pixel: .autofillLoginsSaveLoginOnboardingModalExcludeSiteConfirmed)
         } else {

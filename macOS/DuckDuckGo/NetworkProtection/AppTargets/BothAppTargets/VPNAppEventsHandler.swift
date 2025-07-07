@@ -22,88 +22,132 @@ import Common
 import FeatureFlags
 import Foundation
 import LoginItems
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 import NetworkProtectionIPC
 import NetworkExtension
+import PixelKit
 import Subscription
 
 /// Implements the sequence of steps that the VPN needs to execute when the App starts up.
 ///
 final class VPNAppEventsHandler {
 
-    // MARK: - Legacy VPN Item and Extension
-
-#if NETP_SYSTEM_EXTENSION
-#if DEBUG
-    private let legacyAgentBundleID = "HKE973VLUW.com.duckduckgo.macos.browser.network-protection.system-extension.agent.debug"
-    private let legacySystemExtensionBundleID = "com.duckduckgo.macos.browser.debug.network-protection-extension"
-#elseif REVIEW
-    private let legacyAgentBundleID = "HKE973VLUW.com.duckduckgo.macos.browser.network-protection.system-extension.agent.review"
-    private let legacySystemExtensionBundleID = "com.duckduckgo.macos.browser.review.network-protection-extension"
-#else
-    private let legacyAgentBundleID = "HKE973VLUW.com.duckduckgo.macos.browser.network-protection.system-extension.agent"
-    private let legacySystemExtensionBundleID = "com.duckduckgo.macos.browser.network-protection-extension"
-#endif // DEBUG || REVIEW || RELEASE
-#endif // NETP_SYSTEM_EXTENSION
+    typealias FeatureFlagOverridesPublisher = AnyPublisher<(FeatureFlag, Bool), Never>
 
     // MARK: - Feature Gatekeeping
 
-    private let featureGatekeeper: VPNFeatureGatekeeper
-    private let uninstaller: VPNUninstalling
-    private let defaults: UserDefaults
     private var cancellables = Set<AnyCancellable>()
+    private let defaults: UserDefaults
+    private let featureGatekeeper: VPNFeatureGatekeeper
+    private let ipcClient: VPNControllerXPCClientProtocol
+    private let loginItemsManager: LoginItemsManaging
+    private let pixelKit: PixelKit?
+
+    // MARK: - Initializers
 
     init(featureGatekeeper: VPNFeatureGatekeeper,
-         featureFlagOverridesPublishingHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>,
-         uninstaller: VPNUninstalling = VPNUninstaller(),
-         defaults: UserDefaults = .netP) {
+         featureFlagOverridesPublisher: FeatureFlagOverridesPublisher,
+         loginItemsManager: LoginItemsManaging,
+         ipcClient: VPNControllerXPCClientProtocol = VPNControllerXPCClient.shared,
+         defaults: UserDefaults = .netP,
+         pixelKit: PixelKit? = .shared) {
 
         self.defaults = defaults
-        self.uninstaller = uninstaller
         self.featureGatekeeper = featureGatekeeper
+        self.ipcClient = ipcClient
+        self.loginItemsManager = loginItemsManager
+        self.pixelKit = pixelKit
 
-        subscribeToFeatureFlagOverrideChanges(featureFlagOverridesPublishingHandler: featureFlagOverridesPublishingHandler)
+        subscribeToFeatureFlagOverrideChanges(featureFlagOverridesPublisher)
     }
 
     /// Call this method when the app finishes launching, to run the startup logic for NetP.
     ///
     func applicationDidFinishLaunching() {
-        let loginItemsManager = LoginItemsManager()
-
-        Task { @MainActor in
-            await featureGatekeeper.disableIfUserHasNoAccess()
-            restartNetworkProtectionIfVersionChanged(using: loginItemsManager)
+        Task {
+            await loginItemsControlCheckpoint(canRestart: true, loginItemsManager: loginItemsManager)
         }
     }
 
-    /// Call this method when the app becomes active to run the associated NetP logic.
-    ///
     func applicationDidBecomeActive() {
-        Task { @MainActor in
-            await featureGatekeeper.disableIfUserHasNoAccess()
+        Task {
+            await loginItemsControlCheckpoint(canRestart: false, loginItemsManager: loginItemsManager)
         }
     }
 
-    private func restartNetworkProtectionIfVersionChanged(using loginItemsManager: LoginItemsManager) {
-        // We want to restart the VPN menu app to make sure it's always on the latest.
-        restartNetworkProtectionMenu(using: loginItemsManager)
-    }
+    // MARK: - Login Item Control Checkpoints
 
-    private func restartNetworkProtectionMenu(using loginItemsManager: LoginItemsManager) {
-        guard loginItemsManager.isAnyEnabled(LoginItemsManager.networkProtectionLoginItems) else {
-            return
+    private enum LoginItemsControlCheckpointPixel: PixelKitEventV2 {
+        case cannotStopVPN(_ error: Error)
+
+        var name: String {
+            switch self {
+            case .cannotStopVPN:
+                return "vpn_browser_login_items_control_checkpoint_cannot_stop_vpn"
+            }
         }
 
-        loginItemsManager.restartLoginItems(LoginItemsManager.networkProtectionLoginItems)
+        var error: (any Error)? {
+            switch self {
+            case .cannotStopVPN(let error):
+                return error
+            }
+        }
+
+        var parameters: [String: String]? {
+            nil
+        }
+    }
+
+    /// Checks whether the VNP login items need to be disabled
+    ///
+    @MainActor
+    private func loginItemsControlCheckpoint(canRestart: Bool, loginItemsManager: LoginItemsManaging) async {
+        switch try? await featureGatekeeper.canStartVPN() {
+        case .some(true) where loginItemsManager.isAnyEnabled(LoginItemsManager.vpnLoginItems):
+            if canRestart {
+                restartLoginItem(using: loginItemsManager)
+            }
+        case .some(false) where loginItemsManager.isAnyInstalled(LoginItemsManager.vpnLoginItems):
+            await withCheckedContinuation { continuation in
+                ipcClient.stop { error in
+                    if let error {
+                        self.pixelKit?.fire(LoginItemsControlCheckpointPixel.cannotStopVPN(error))
+                    }
+
+                    Task { @MainActor in
+                        do {
+                            try await Task.sleep(interval: .seconds(2))
+                        } catch {
+                            // no-op: just want to catch task cancellation to make sure resume is called
+                        }
+                        self.disableLoginItem(using: loginItemsManager)
+                        continuation.resume()
+                    }
+                }
+            }
+        default:
+            break
+        }
+    }
+
+    // MARK: - Managing the VPN Login Items
+
+    private func disableLoginItem(using loginItemsManager: LoginItemsManaging) {
+        loginItemsManager.disableLoginItems(LoginItemsManager.vpnLoginItems)
+    }
+
+    private func restartLoginItem(using loginItemsManager: LoginItemsManaging) {
+        loginItemsManager.restartLoginItems(LoginItemsManager.vpnLoginItems)
     }
 
     // MARK: - Feature Flag Overriding
 
     private func subscribeToFeatureFlagOverrideChanges(
-        featureFlagOverridesPublishingHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>) {
+        _ featureFlagOverridesPublisher: FeatureFlagOverridesPublisher) {
 
-            featureFlagOverridesPublishingHandler.flagDidChangePublisher
+            featureFlagOverridesPublisher
                 .filter { flag, _ in
                     flag == .networkProtectionAppStoreSysex
                 }.map { _, enabled in

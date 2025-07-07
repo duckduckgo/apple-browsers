@@ -96,7 +96,7 @@ public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging 
                 fetchedConfigData = (data, configData, etag)
                 updatesSubject.send(())
             } catch {
-                PixelKit.fire(DebugEvent(DataBrokerProtectionSharedPixels.failedToParsePrivacyConfig(error), error: error))
+                PixelKit.fire(DebugEvent(DataBrokerProtectionMacOSPixels.failedToParsePrivacyConfig(error), error: error))
                 fetchedConfigData = nil
                 return .embeddedFallback
             }
@@ -107,6 +107,8 @@ public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging 
 
         return result
     }
+
+    public init() {}
 }
 
 func privacyConfiguration(withData data: PrivacyConfigurationData,

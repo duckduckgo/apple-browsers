@@ -42,7 +42,7 @@ class HTTPSUpgradeIntegrationTests: XCTestCase {
 
         window = WindowsManager.openNewWindow(with: .none)!
 
-        XCTAssertTrue(AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager.privacyConfig.isFeature(.httpsUpgrade, enabledForDomain: "privacy-test-pages.site"))
+        XCTAssertTrue(Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig.isFeature(.httpsUpgrade, enabledForDomain: "privacy-test-pages.site"))
     }
 
     @MainActor
@@ -62,7 +62,7 @@ class HTTPSUpgradeIntegrationTests: XCTestCase {
 
         let url = URL(string: "http://privacy-test-pages.site/privacy-protections/https-upgrades/")!
         let upgradableUrl = URL(string: "http://good.third-party.site/privacy-protections/https-upgrades/frame.html")!
-        let upgradedUrl = try? await AppPrivacyFeatures.shared.httpsUpgrade.upgrade(url: upgradableUrl).get()
+        let upgradedUrl = try? await Application.appDelegate.privacyFeatures.httpsUpgrade.upgrade(url: upgradableUrl).get()
         XCTAssertEqual(upgradedUrl, upgradableUrl.toHttps()!, "URL not upgraded")
 
         let tabViewModel = self.tabViewModel

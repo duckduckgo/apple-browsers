@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Common
 import Foundation
@@ -40,33 +41,17 @@ public protocol NewTabPageRecentActivityProviding: AnyObject {
     var activityPublisher: AnyPublisher<[NewTabPageDataModel.DomainActivity], Never> { get }
 }
 
-public protocol NewTabPageRecentActivitySettingsPersistor: AnyObject {
-    var isViewExpanded: Bool { get set }
-}
-
-final class UserDefaultsNewTabPageRecentActivitySettingsPersistor: NewTabPageRecentActivitySettingsPersistor {
-    enum Keys {
-        static let isViewExpanded = "new-tab-page.recent-activity.is-view-expanded"
-    }
-
-    private let keyValueStore: KeyValueStoring
-
-    init(_ keyValueStore: KeyValueStoring = UserDefaults.standard, getLegacySetting: @autoclosure () -> Bool?) {
-        self.keyValueStore = keyValueStore
-        migrateFromLegacyHomePageSettings(using: getLegacySetting)
-    }
-
-    var isViewExpanded: Bool {
-        get { return keyValueStore.object(forKey: Keys.isViewExpanded) as? Bool ?? true }
-        set { keyValueStore.set(newValue, forKey: Keys.isViewExpanded) }
-    }
-
-    private func migrateFromLegacyHomePageSettings(using getLegacySetting: () -> Bool?) {
-        guard keyValueStore.object(forKey: Keys.isViewExpanded) == nil, let legacySetting = getLegacySetting() else {
-            return
-        }
-        isViewExpanded = legacySetting
-    }
+/**
+ * This protocol describes objects that can return Recent Activity widget visibility.
+ *
+ * It's implemented by `NewTabPageProtectionsReportModel` and it's used to limit unnecessary
+ * data processing when the widget is not present on New Tab Page.
+ */
+public protocol NewTabPageRecentActivityVisibilityProviding: AnyObject {
+    /**
+     * This property should return `true` if Recent Activity widget is visible on the New Tab Page.
+     */
+    var isRecentActivityVisible: Bool { get }
 }
 
 public final class NewTabPageRecentActivityModel {
@@ -74,49 +59,21 @@ public final class NewTabPageRecentActivityModel {
     let activityProvider: NewTabPageRecentActivityProviding
     let actionsHandler: RecentActivityActionsHandling
 
-    @Published var isViewExpanded: Bool {
-        didSet {
-            settingsPersistor.isViewExpanded = self.isViewExpanded
-        }
-    }
-
-    private let settingsPersistor: NewTabPageRecentActivitySettingsPersistor
-
-    public convenience init(
-        activityProvider: NewTabPageRecentActivityProviding,
-        actionsHandler: RecentActivityActionsHandling,
-        keyValueStore: KeyValueStoring = UserDefaults.standard,
-        getLegacyIsViewExpandedSetting: @autoclosure () -> Bool?
-    ) {
-        self.init(
-            activityProvider: activityProvider,
-            actionsHandler: actionsHandler,
-            settingsPersistor: UserDefaultsNewTabPageRecentActivitySettingsPersistor(keyValueStore, getLegacySetting: getLegacyIsViewExpandedSetting())
-        )
-    }
-
-    init(
-        activityProvider: NewTabPageRecentActivityProviding,
-        actionsHandler: RecentActivityActionsHandling,
-        settingsPersistor: NewTabPageRecentActivitySettingsPersistor
-    ) {
+    public init(activityProvider: NewTabPageRecentActivityProviding, actionsHandler: RecentActivityActionsHandling) {
         self.activityProvider = activityProvider
         self.actionsHandler = actionsHandler
-        self.settingsPersistor = settingsPersistor
-
-        isViewExpanded = settingsPersistor.isViewExpanded
     }
 
     // MARK: - Actions
 
-    @MainActor func addFavorite(_ url: String) async {
+    @MainActor func addFavorite(_ url: String) {
         guard let url = URL(string: url), url.isValid else { return }
-        await actionsHandler.addFavorite(url)
+        actionsHandler.addFavorite(url)
     }
 
-    @MainActor func removeFavorite(_ url: String) async {
+    @MainActor func removeFavorite(_ url: String) {
         guard let url = URL(string: url), url.isValid else { return }
-        await actionsHandler.removeFavorite(url)
+        actionsHandler.removeFavorite(url)
     }
 
     @MainActor func confirmBurn(_ url: String) async -> Bool {
@@ -124,8 +81,8 @@ public final class NewTabPageRecentActivityModel {
         return await actionsHandler.confirmBurn(url)
     }
 
-    @MainActor func open(_ url: String, target: LinkOpenTarget) async {
+    @MainActor func open(_ url: String, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
         guard let url = URL(string: url), url.isValid else { return }
-        await actionsHandler.open(url, target: target)
+        actionsHandler.openHistoryEntry(url, sender: sender, target: target, sourceWindow: sourceWindow)
     }
 }

@@ -33,7 +33,7 @@ final class DaxDialogsNewTabTests: XCTestCase {
             settings: settings,
             entityProviding: MockEntityProvider(),
             variantManager: mockVariantManager,
-            onboardingPrivacyProPromoExperiment: MockOnboardingPrivacyProPromoExperimenting(cohort: .none)
+            onboardingPrivacyProPromotionHelper: MockOnboardingPrivacyProPromotionHelper()
         )
     }
 
@@ -123,10 +123,6 @@ final class DaxDialogsNewTabTests: XCTestCase {
 }
 
 class MockDaxDialogsSettings: DaxDialogsSettings {
-    
-    var lastVisitedOnboardingWebsiteURLPath: String?
-    
-    var lastShownContextualOnboardingDialogType: String?
     
     var isDismissed: Bool = false
 

@@ -47,10 +47,20 @@ vendor/
 
 # Release
 node_modules/
+build/
 .build/
+.swiftpm/
 release/
 
 ## Build generated
 DerivedData/
 xcodebuild.log
 tmp
+
+#VSCode
+.windsurf/
+/buildServer.json
+default.profraw
+
+# Claude
+.claude/

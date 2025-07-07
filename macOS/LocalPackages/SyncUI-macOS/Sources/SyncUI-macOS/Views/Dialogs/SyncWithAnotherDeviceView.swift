@@ -23,27 +23,32 @@ struct SyncWithAnotherDeviceView: View {
 
     @EnvironmentObject var model: ManagementDialogModel
     @EnvironmentObject var recoveryCodeModel: RecoveryCodeViewModel
-    let code: String
+    let codeForDisplayOrPasting: String
+    let stringForQRCode: String
 
     @State private var selectedSegment = 0
     @State private var showQRCode = true
 
     var body: some View {
         SyncDialog(spacing: 20.0) {
-            Image(.syncPair96)
-            SyncUIViews.TextHeader(text: UserText.syncWithAnotherDeviceTitle)
+            VStack(spacing: 8.0) {
+                Image(.sync96)
+                SyncUIViews.TextHeader(text: UserText.syncWithAnotherDeviceTitle)
+            }
             if #available(macOS 12.0, *) {
                 Text(syncWithAnotherDeviceInstruction)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .multilineTextAlignment(.center)
             } else {
-                Text(UserText.syncWithAnotherDeviceSubtitle(syncMenuPath: UserText.syncMenuPath))
+                Text(UserText.syncWithAnotherDeviceSubtitle(syncMenuPath: UserText.syncWithAnotherDevicePath))
                     .fixedSize(horizontal: false, vertical: true)
                     .multilineTextAlignment(.center)
             }
 
+            pickerView()
+
             VStack(spacing: 20) {
-                pickerView()
                 if selectedSegment == 0 {
                     if showQRCode {
                         scanQRCodeView()
@@ -51,11 +56,12 @@ struct SyncWithAnotherDeviceView: View {
                         showTextCodeView()
                     }
                 } else {
-                    enterCodeView()
+                    enterCodeView().onAppear {
+                        model.delegate?.enterCodeViewDidAppear()
+                    }
                 }
-                Spacer(minLength: 0)
             }
-            .padding(.top, 16)
+            .padding(16)
             .frame(height: 332)
             .frame(minWidth: 380)
             .roundedBorder()
@@ -63,7 +69,7 @@ struct SyncWithAnotherDeviceView: View {
         }
     buttons: {
         Button(UserText.cancel) {
-            model.endFlow()
+            model.cancelPressed()
         }
     }
     .frame(width: 420)
@@ -71,19 +77,20 @@ struct SyncWithAnotherDeviceView: View {
 
     @available(macOS 12, *)
     private var syncWithAnotherDeviceInstruction: AttributedString {
-        let baseString = UserText.syncWithAnotherDeviceSubtitle(syncMenuPath: UserText.syncMenuPath)
+        let baseString = UserText.syncWithAnotherDeviceSubtitle(syncMenuPath: UserText.syncWithAnotherDevicePath)
         var instructions = AttributedString(baseString)
-        if let range = instructions.range(of: UserText.syncMenuPath) {
-            instructions[range].font = .system(size: NSFont.systemFontSize, weight: .bold)
+        if let range = instructions.range(of: UserText.syncWithAnotherDevicePath) {
+            instructions[range].foregroundColor = .primary
         }
         return instructions
     }
 
     fileprivate func pickerView() -> some View {
         return HStack(spacing: 0) {
-            pickerOptionView(imageName: "QR-Icon", title: UserText.syncWithAnotherDeviceShowCodeButton, tag: 0)
+            pickerOptionView(imageName: "QR-Icon", title: UserText.syncWithAnotherDeviceShowQRCodeButton, tag: 0)
             pickerOptionView(imageName: "Keyboard-16D", title: UserText.syncWithAnotherDeviceEnterCodeButton, tag: 1)
         }
+        .padding(4)
         .frame(height: 32)
         .frame(minWidth: 348)
         .roundedBorder()
@@ -114,10 +121,27 @@ struct SyncWithAnotherDeviceView: View {
     }
 
     fileprivate func scanQRCodeView() -> some View {
-        return  Group {
-            Text(UserText.syncWithAnotherDeviceShowQRCodeExplanation)
-            QRCode(string: code, size: CGSize(width: 164, height: 164))
-            Text(UserText.syncWithAnotherDeviceViewTextCode)
+        return VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 8) {
+                Text(UserText.syncWithAnotherDeviceShowQRCodeExplanationPrefix)
+                HStack(alignment: .center, spacing: 10) {
+                    Text(UserText.syncWithAnotherDeviceShowQRCodeExplanationApp)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.primary)
+                    Image(.duckDuckGo24)
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(Color(.blackWhite5))
+                .cornerRadius(8)
+            }
+            .padding(.top, 8)
+            Spacer()
+            QRCode(string: stringForQRCode, desiredSize: 180)
+            Spacer()
+            Text(UserText.syncWithAnotherDeviceUseTextCode)
                 .fontWeight(.semibold)
                 .foregroundColor(Color(.linkBlue))
                 .onTapGesture {
@@ -147,9 +171,10 @@ struct SyncWithAnotherDeviceView: View {
 
     fileprivate func showTextCodeView() -> some View {
         Group {
-            VStack(spacing: 20) {
-                Text(UserText.syncWithAnotherDeviceShowCodeExplanation)
-                Text(code)
+            VStack(spacing: 0) {
+                Text(UserText.syncWithAnotherDeviceShowCodeToPasteExplanation)
+                Spacer()
+                Text(codeForDisplayOrPasting)
                     .font(
                     Font.custom("SF Mono", size: 13)
                     .weight(.medium)
@@ -157,15 +182,17 @@ struct SyncWithAnotherDeviceView: View {
                     .kerning(2)
                     .lineSpacing(5)
                     .multilineTextAlignment(.center)
+                    .padding(.bottom, 20)
                 HStack(spacing: 10) {
                     Button {
-                        shareContent(code)
+                        shareContent(codeForDisplayOrPasting)
                     } label: {
                         HStack {
                             Image(.share)
                             Text(UserText.share)
                         }
-                        .frame(width: 153, height: 28)
+                        .padding(.horizontal, 12)
+                        .frame(height: 28)
                     }
                     Button {
                         model.delegate?.copyCode()
@@ -174,17 +201,20 @@ struct SyncWithAnotherDeviceView: View {
                             Image(.copy)
                             Text(UserText.copy)
                         }
-                        .frame(width: 153, height: 28)
+                        .padding(.horizontal, 12)
+                        .frame(height: 28)
                     }
                 }
                 .frame(width: 348, height: 32)
-                Text(UserText.syncWithAnotherDeviceViewQRCode)
+                Spacer()
+                Text(UserText.syncWithAnotherDeviceUseQRCode)
                     .fontWeight(.semibold)
                     .foregroundColor(Color(.linkBlue))
                     .onTapGesture {
                         showQRCode = true
                     }
             }
+            .padding(.top, 8)
         }
         .frame(width: 348)
     }

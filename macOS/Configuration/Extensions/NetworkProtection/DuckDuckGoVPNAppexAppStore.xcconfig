@@ -49,6 +49,7 @@ PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match AppStore com.
 
 SDKROOT = macosx
 SKIP_INSTALL = YES
+LOCALIZATION_PREFERS_STRING_CATALOGS = YES
 SWIFT_EMIT_LOC_STRINGS = YES
 
 LD_RUNPATH_SEARCH_PATHS = @executable_path/../Frameworks @executable_path/../../../../Frameworks

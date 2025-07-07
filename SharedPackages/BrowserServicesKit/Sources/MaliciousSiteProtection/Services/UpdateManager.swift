@@ -26,7 +26,7 @@ public protocol MaliciousSiteUpdateManaging {
     #if os(iOS)
     var lastHashPrefixSetUpdateDate: Date { get }
     var lastFilterSetUpdateDate: Date { get }
-    func updateData(datasetType: DataManager.StoredDataType.Kind) -> Task<Void, Error>
+    func updateData(datasetType: DataManager.StoredDataType.Kind) -> Task<Void, Never>
     #elseif os(macOS)
     func startPeriodicUpdates() -> Task<Void, Error>
     #endif
@@ -58,7 +58,7 @@ public struct UpdateManager: InternalUpdateManaging {
     }
     #endif
 
-    public init(apiEnvironment: APIClientEnvironment, service: APIService = DefaultAPIService(urlSession: .shared), dataManager: DataManager, eventMapping: EventMapping<Event>, updateIntervalProvider: @escaping UpdateIntervalProvider, supportedThreatsProvider: @escaping SupportedThreatsProvider) {
+    public init(apiEnvironment: APIClientEnvironment, service: APIService, dataManager: DataManager, eventMapping: EventMapping<Event>, updateIntervalProvider: @escaping UpdateIntervalProvider, supportedThreatsProvider: @escaping SupportedThreatsProvider) {
         self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, eventMapping: eventMapping, updateIntervalProvider: updateIntervalProvider, supportedThreatsProvider: supportedThreatsProvider)
     }
 
@@ -79,8 +79,7 @@ public struct UpdateManager: InternalUpdateManaging {
         }
 
         // load currently stored data set
-        var dataSet = await dataManager.dataSet(for: key)
-        let oldRevision = dataSet.revision
+        let oldRevision = await dataManager.dataSet(for: key).revision
 
         // get change set from current revision from API
         let changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>
@@ -91,25 +90,22 @@ public struct UpdateManager: InternalUpdateManaging {
             Logger.updateManager.error("error fetching \(type(of: key)).\(key.threatKind): \(error)")
 
             // Fire a Pixel if it fails to load initial datasets
-            if case APIRequestV2.Error.urlSession(URLError.notConnectedToInternet) = error, dataSet.revision == 0 {
+            if case APIRequestV2.Error.urlSession(URLError.notConnectedToInternet) = error, oldRevision == 0 {
                 eventMapping.fire(MaliciousSiteProtection.Event.failedToDownloadInitialDataSets(category: key.threatKind, type: key.dataType.kind))
             }
 
             throw error
         }
 
-        guard !changeSet.isEmpty || changeSet.revision != dataSet.revision else {
+        guard !changeSet.isEmpty || changeSet.revision != oldRevision else {
             Logger.updateManager.debug("no changes to \(type(of: key)).\(key.threatKind)")
             return
         }
 
-        // apply changes
-        dataSet.apply(changeSet)
-
-        // store back
+        // apply and save changes
         do {
-            try await self.dataManager.store(dataSet, for: key)
-            Logger.updateManager.debug("\(type(of: key)).\(key.threatKind) updated from rev.\(oldRevision) to rev.\(dataSet.revision)")
+            try await dataManager.updateDataSet(with: key, changeSet: changeSet)
+            Logger.updateManager.debug("\(type(of: key)).\(key.threatKind) updated from rev.\(oldRevision) to rev.\(changeSet.revision)")
         } catch {
             Logger.updateManager.error("\(type(of: key)).\(key.threatKind) failed to be saved")
             throw error
@@ -149,32 +145,28 @@ public struct UpdateManager: InternalUpdateManaging {
     #endif
 
     #if os(iOS)
-    public func updateData(datasetType: DataManager.StoredDataType.Kind) -> Task<Void, any Error> {
-        Task {
+    public func updateData(datasetType: DataManager.StoredDataType.Kind) -> Task<Void, Never> {
+        Task.detached {
             // run update jobs in background for every data type
-            await withTaskGroup(of: Bool.self) { group in
-                let supportedThreats = supportedThreatsProvider()
-                for dataType in DataManager.StoredDataType.dataTypes(for: datasetType, supportedThreats: supportedThreats) {
-                    group.addTask {
-                        do {
-                            try await self.updateData(for: dataType.dataKey)
-                            return true
-                        } catch {
-                            Logger.updateManager.error("Failed to update dataset type: \(datasetType.rawValue) for kind: \(dataType.dataKey.threatKind). Error: \(error)")
-                            return false
-                        }
-                    }
-                }
+            let supportedThreats = supportedThreatsProvider()
 
-                // Check that at least one of the dataset type have updated
-                // swiftlint:disable:next reduce_boolean
-                let success = await group.reduce(false) { partial, newValue in
-                    partial || newValue
-                }
+            var results: [Bool] = []
 
-                if success {
-                    await saveLastUpdateDate(for: datasetType)
+            for dataType in DataManager.StoredDataType.dataTypes(for: datasetType, supportedThreats: supportedThreats) {
+                do {
+                    try await self.updateData(for: dataType.dataKey)
+                    results.append(true)
+                } catch {
+                    Logger.updateManager.error("Failed to update dataset type: \(datasetType.rawValue) for kind: \(dataType.dataKey.threatKind). Error: \(error)")
+                    results.append(false)
                 }
+            }
+
+            // Check that at least one of the dataset type have updated
+            let shouldSaveLastUpdateDate = results.contains(true)
+
+            if shouldSaveLastUpdateDate {
+                await saveLastUpdateDate(for: datasetType)
             }
         }
     }

@@ -27,6 +27,7 @@ final class SyncBookmarksAdapterTests: XCTestCase {
 
     var errorHandler: CapturingAdapterErrorHandler!
     var adapter: SyncBookmarksAdapter!
+    var appearancePreferences: AppearancePreferences!
     let metadataStore = MockMetadataStore()
     var cancellables: Set<AnyCancellable>!
     var database: CoreDataDatabase!
@@ -38,8 +39,9 @@ final class SyncBookmarksAdapterTests: XCTestCase {
             XCTFail("Failed to load model")
             return
         }
+        appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager())
         database = CoreDataDatabase(name: "", containerLocation: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString), model: model, readOnly: true, options: [:])
-        adapter = SyncBookmarksAdapter(database: database, bookmarkManager: MockBookmarkManager(), syncErrorHandler: errorHandler)
+        adapter = SyncBookmarksAdapter(database: database, bookmarkManager: MockBookmarkManager(), appearancePreferences: appearancePreferences, syncErrorHandler: errorHandler)
         cancellables = []
     }
 

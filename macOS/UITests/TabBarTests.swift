@@ -23,9 +23,7 @@ class TabBarTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
-        app.launch()
+        app = XCUIApplication.setUp()
 
         app.typeKey("n", modifierFlags: .command)
         resetPinnedTabs()
@@ -173,7 +171,7 @@ class TabBarTests: UITestCase {
         app.menuItems["Pin Tab"].tap()
     }
 
-    private func openSite(pageTitle: String, siteWithLinks: Bool = false) {
+    private func openSite(pageTitle: String) {
         let url = UITests.simpleServedPage(titled: pageTitle)
 
         let addressBarTextField = app.windows.firstMatch.textFields["AddressBarViewController.addressBarTextField"]

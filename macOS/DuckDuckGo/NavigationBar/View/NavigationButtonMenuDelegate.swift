@@ -32,10 +32,12 @@ final class NavigationButtonMenuDelegate: NSObject {
 
     private let buttonType: ButtonType
     private let tabCollectionViewModel: TabCollectionViewModel
+    private let historyCoordinator: HistoryCoordinating
 
-    init(buttonType: ButtonType, tabCollectionViewModel: TabCollectionViewModel) {
+    init(buttonType: ButtonType, tabCollectionViewModel: TabCollectionViewModel, historyCoordinator: HistoryCoordinating) {
         self.buttonType = buttonType
         self.tabCollectionViewModel = tabCollectionViewModel
+        self.historyCoordinator = historyCoordinator
     }
 
 }
@@ -59,7 +61,7 @@ extension NavigationButtonMenuDelegate: NSMenuDelegate {
 
         let listItemViewModel = BackForwardListItemViewModel(backForwardListItem: listItem,
                                                              faviconManagement: NSApp.delegateTyped.faviconManager,
-                                                             historyCoordinating: HistoryCoordinator.shared,
+                                                             historyCoordinating: historyCoordinator,
                                                              isCurrentItem: index == 0)
 
         item.title = listItemViewModel.title
@@ -75,11 +77,25 @@ extension NavigationButtonMenuDelegate: NSMenuDelegate {
     @MainActor
     @objc func menuItemAction(_ sender: NSMenuItem) {
         let index = sender.tag
-        guard let listItem = listItems[safe: index] else {
+        guard let listItem = listItems[safe: index], let url = listItem.url else {
             Logger.general.error("Index out of bounds")
             return
         }
-        tabCollectionViewModel.selectedTabViewModel?.tab.go(to: listItem)
+        let behavior = LinkOpenBehavior(
+            event: NSApp.currentEvent,
+            switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+            canOpenLinkInCurrentTab: true
+        )
+
+        lazy var tab = Tab(content: .url(url, source: .historyEntry), parentTab: tabCollectionViewModel.selectedTabViewModel?.tab, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
+        switch behavior {
+        case .currentTab:
+            tabCollectionViewModel.selectedTabViewModel?.tab.go(to: listItem)
+        case .newTab(let selected):
+            tabCollectionViewModel.insert(tab, selected: selected)
+        case .newWindow(let selected):
+            WindowsManager.openNewWindow(with: tab, showWindow: selected)
+        }
     }
 
     private var listItems: [BackForwardListItem] {

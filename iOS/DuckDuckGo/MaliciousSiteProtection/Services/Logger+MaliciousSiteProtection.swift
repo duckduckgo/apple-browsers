@@ -22,7 +22,7 @@ import os.log
 
 extension Logger {
     enum MaliciousSiteProtection {
-        static let datasetsFetcher = Logger(subsystem: "MalSite", category: "DatasetsFetcher")
-        static let manager = Logger(subsystem: "MalSite", category: "Manager")
+        static let datasetsFetcher = Logger(subsystem: "MSP", category: "DatasetsFetcher")
+        static let manager = Logger(subsystem: "MSP", category: "Manager")
     }
 }

@@ -37,7 +37,6 @@ final class TabPermissionsTests: XCTestCase {
         contentBlockingMock.privacyConfigurationManager.privacyConfig as! MockPrivacyConfiguration
     }
 
-    var webViewConfiguration: WKWebViewConfiguration!
     var schemeHandler: TestSchemeHandler!
 
     override func setUp() {
@@ -49,20 +48,13 @@ final class TabPermissionsTests: XCTestCase {
         }
 
         schemeHandler = TestSchemeHandler()
-        WKWebView.customHandlerSchemes = [.http, .https]
-
-        webViewConfiguration = WKWebViewConfiguration()
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.http.rawValue)
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.https.rawValue)
     }
 
     override func tearDown() {
         TestTabExtensionsBuilder.shared = .default
         contentBlockingMock = nil
         privacyFeaturesMock = nil
-        webViewConfiguration = nil
         schemeHandler = nil
-        WKWebView.customHandlerSchemes = []
     }
 
     // MARK: - Tests
@@ -71,7 +63,7 @@ final class TabPermissionsTests: XCTestCase {
     func testWhenExternalAppPermissionRequestedAndGranted_AppIsOpened() async throws {
         let extensionsBuilder = TestTabExtensionsBuilder(load: [ExternalAppSchemeHandler.self, DownloadsTabExtension.self])
         let workspace = WorkspaceMock()
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
+        let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
 
         schemeHandler.middleware = [{ _ in
             return .ok(.html(""))
@@ -152,7 +144,7 @@ final class TabPermissionsTests: XCTestCase {
     func testWhenExternalAppPermissionRequestedAndGrantedAndPersisted_AppIsOpened() async throws {
         let extensionsBuilder = TestTabExtensionsBuilder(load: [ExternalAppSchemeHandler.self, DownloadsTabExtension.self])
         let workspace = WorkspaceMock()
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, workspace: workspace, privacyFeatures: privacyFeaturesMock, permissionManager: PermissionManagerMock(), extensionsBuilder: extensionsBuilder)
+        let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), workspace: workspace, privacyFeatures: privacyFeaturesMock, permissionManager: PermissionManagerMock(), extensionsBuilder: extensionsBuilder)
 
         schemeHandler.middleware = [{ _ in
             return .ok(.html(""))
@@ -224,7 +216,7 @@ final class TabPermissionsTests: XCTestCase {
     func testWhenExternalAppPermissionEnteredByUser_permissionIsQueriedAndAppIsOpened() async throws {
         let extensionsBuilder = TestTabExtensionsBuilder(load: [ExternalAppSchemeHandler.self, DownloadsTabExtension.self])
         let workspace = WorkspaceMock()
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
+        let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
 
         schemeHandler.middleware = [{ _ in
             return .ok(.html(""))
@@ -271,7 +263,7 @@ final class TabPermissionsTests: XCTestCase {
     func testWhenExternalAppPermissionRejected_AppIsNotOpened() async throws {
         let extensionsBuilder = TestTabExtensionsBuilder(load: [ExternalAppSchemeHandler.self, DownloadsTabExtension.self])
         let workspace = WorkspaceMock()
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
+        let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
 
         schemeHandler.middleware = [{ _ in
             return .ok(.html(""))
@@ -315,7 +307,7 @@ final class TabPermissionsTests: XCTestCase {
     func testWhenExternalAppNotFound_AppIsNotOpened() async throws {
         let extensionsBuilder = TestTabExtensionsBuilder(load: [ExternalAppSchemeHandler.self, DownloadsTabExtension.self])
         let workspace = WorkspaceMock()
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
+        let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
 
         schemeHandler.middleware = [{ _ in
             return .ok(.html(""))
@@ -353,7 +345,7 @@ final class TabPermissionsTests: XCTestCase {
     func testWhenExternalAppNotFoundForUserEnteredUrl_SearchIsDone() async throws {
         let extensionsBuilder = TestTabExtensionsBuilder(load: [ExternalAppSchemeHandler.self, DownloadsTabExtension.self])
         let workspace = WorkspaceMock()
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
+        let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
 
         schemeHandler.middleware = [{ _ in
             return .ok(.html(""))
@@ -391,7 +383,7 @@ final class TabPermissionsTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenSessionIsRestored_externalAppIsNotOpened() {
+    func testWhenSessionIsRestored_externalAppIsNotOpened() throws {
         var eDidCancel: XCTestExpectation!
         let extensionsBuilder = TestTabExtensionsBuilder(load: [ExternalAppSchemeHandler.self, DownloadsTabExtension.self]) { builder in { _, _ in
             builder.add {
@@ -413,8 +405,8 @@ final class TabPermissionsTests: XCTestCase {
 
         eDidCancel = expectation(description: "didCancel external app should be called")
 
-        // shouldn‘t open external app when restoring session from interaction state
-        let tab = Tab(content: .url(externalUrl, source: .pendingStateRestoration), webViewConfiguration: webViewConfiguration, workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
+        // shouldn't open external app when restoring session from interaction state
+        let tab = Tab(content: .url(externalUrl, source: .pendingStateRestoration), webViewConfiguration: schemeHandler.webViewConfiguration(), workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
 
         var c = tab.permissions.$authorizationQuery.sink { query in
             guard let query else { return }

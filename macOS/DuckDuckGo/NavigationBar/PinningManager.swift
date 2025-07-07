@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 
 enum PinnableView: String {
     case autofill
@@ -25,7 +25,6 @@ enum PinnableView: String {
     case downloads
     case homeButton
     case networkProtection
-    case aiChat
 }
 
 protocol PinningManager {
@@ -109,9 +108,6 @@ final class LocalPinningManager: PinningManager {
         case .homeButton: return ""
         case .networkProtection:
             return isPinned(.networkProtection) ? UserText.hideNetworkProtectionShortcut : UserText.showNetworkProtectionShortcut
-        case .aiChat:
-            return isPinned(.aiChat) ? UserText.hideAIChatShortcut : UserText.showAIChatShortcut
-
         }
     }
 

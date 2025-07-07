@@ -25,6 +25,7 @@ final class MockPrivacyStats: PrivacyStatsCollecting {
     func recordBlockedTracker(_ name: String) async {}
     let statsUpdatePublisher: AnyPublisher<Void, Never> = PassthroughSubject<Void, Never>().eraseToAnyPublisher()
     func fetchPrivacyStats() async -> [String: Int64] { [:] }
+    func fetchPrivacyStatsTotalCount() async -> Int64 { 0 }
     func clearPrivacyStats() async {}
     func handleAppTermination() async {}
 }

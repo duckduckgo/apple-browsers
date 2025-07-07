@@ -11,12 +11,14 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Utilities"),
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
     ],
     targets: [
         .target(
             name: "AppKitExtensions",
             dependencies: [
-                "Utilities"
+                "Utilities",
+                .product(name: "Common", package: "BrowserServicesKit"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

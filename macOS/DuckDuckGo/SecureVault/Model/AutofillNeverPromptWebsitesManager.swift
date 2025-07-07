@@ -49,7 +49,7 @@ final class AutofillNeverPromptWebsitesManager {
             fetchNeverPromptWebsites()
             return id
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
             throw error
         }
     }
@@ -65,7 +65,7 @@ final class AutofillNeverPromptWebsitesManager {
             fetchNeverPromptWebsites()
             return true
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
             return false
         }
     }
@@ -78,7 +78,7 @@ final class AutofillNeverPromptWebsitesManager {
         do {
             neverPromptWebsites = try secureVault.neverPromptWebsites()
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
             neverPromptWebsites = []
         }
     }

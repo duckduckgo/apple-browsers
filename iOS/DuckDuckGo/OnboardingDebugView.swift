@@ -46,8 +46,24 @@ struct OnboardingDebugView: View {
             }
 
             Section {
+                Picker(
+                    selection: $viewModel.onboardingUserType,
+                    content: {
+                        ForEach(OnboardingUserType.allCases) { state in
+                            Text(verbatim: state.description).tag(state)
+                        }
+                    },
+                    label: {
+                        Text(verbatim: "Type:")
+                    }
+                )
+            } header: {
+                Text(verbatim: "Onboarding User Type")
+            }
+
+            Section {
                 Button(action: newOnboardingIntroStartAction, label: {
-                    Text(verbatim: "Preview Onboarding Intro")
+                    Text(verbatim: "Preview Onboarding Intro - \(viewModel.onboardingUserType.description)")
                 })
             }
         }
@@ -55,19 +71,28 @@ struct OnboardingDebugView: View {
 }
 
 final class OnboardingDebugViewModel: ObservableObject {
+
+    @Published var onboardingUserType: OnboardingUserType {
+        didSet {
+            manager.onboardingUserTypeDebugValue = onboardingUserType
+        }
+    }
+
+    private let manager: OnboardingNewUserProviderDebugging
     private var settings: DaxDialogsSettings
-    let isIphone: Bool
 
     init(
-        settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
-        isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone
+        manager: OnboardingNewUserProviderDebugging = OnboardingManager(),
+        settings: DaxDialogsSettings = DefaultDaxDialogsSettings()
     ) {
+        self.manager = manager
         self.settings = settings
-        self.isIphone = isIphone
+        onboardingUserType = manager.onboardingUserTypeDebugValue
     }
 
     func resetDaxDialogs() {
-        UserDefaults().set(false, forKey: LaunchOptionsHandler.isOnboardingCompleted)
+        // Remove a debug setting that internal users may have set in the past and could not remove:
+        UserDefaults().removeObject(forKey: LaunchOptionsHandler.isOnboardingCompleted)
 
         settings.isDismissed = false
         settings.tryAnonymousSearchShown = false
@@ -81,8 +106,6 @@ final class OnboardingDebugViewModel: ObservableObject {
         settings.fireButtonPulseDateShown = nil
         settings.privacyButtonPulseShown = false
         settings.browsingFinalDialogShown = false
-        settings.lastVisitedOnboardingWebsiteURLPath = nil
-        settings.lastShownContextualOnboardingDialogType = nil
         settings.privacyProPromotionDialogShown = false
     }
 }
@@ -91,8 +114,8 @@ final class OnboardingDebugViewModel: ObservableObject {
     OnboardingDebugView(onNewOnboardingIntroStartAction: {})
 }
 
-extension OnboardingAddToDockState: Identifiable {
-    var id: OnboardingAddToDockState {
+extension OnboardingUserType: Identifiable {
+    var id: OnboardingUserType {
         self
     }
 }

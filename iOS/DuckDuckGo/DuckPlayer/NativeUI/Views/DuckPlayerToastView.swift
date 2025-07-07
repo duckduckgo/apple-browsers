@@ -21,8 +21,8 @@ import SwiftUI
 
 private enum Constants {
     static let cornerRadius: CGFloat = 8
-    static let backgroundColor: Color = .shade(0.9)
-    static let textColor: Color = Color(designSystemColor: .buttonsWhite)
+    static let backgroundColor: Color = .black.opacity(0.9)
+    static let buttonColor: Color = .white.opacity(0.76)
     static let horizontalPadding: CGFloat = 20
     static let verticalPadding: CGFloat = 100
     static let height: CGFloat = 50
@@ -36,7 +36,14 @@ enum ToastPosition {
 }
 
 @MainActor
-final class DuckPlayerToastViewModel: ObservableObject {
+protocol DuckPlayerToastViewModel {
+    var message: AttributedString { get }
+    var buttonTitle: String { get }
+    var onButtonTapped: (() -> Void)? { get }
+}
+
+@MainActor
+final class DefaultDuckPlayerToastViewModel: ObservableObject, DuckPlayerToastViewModel {
     @Published var opacity: CGFloat = 0
     let message: AttributedString
     let buttonTitle: String
@@ -108,7 +115,7 @@ struct DuckPlayerToastView: View {
     @State private var opacity: CGFloat = 0
     @State private var dismissTask: Task<Void, Never>?
 
-    private static var activeToast: UIView?
+    private(set) static var activeToast: UIView?
 
     init(
         message: AttributedString,
@@ -164,7 +171,7 @@ struct DuckPlayerToastView: View {
                             label: {
                                 Text(buttonTitle)
                                     .daxBodyBold()
-                                    .foregroundColor(Constants.textColor)
+                                    .foregroundColor(Constants.buttonColor)
                             })
                     }
                 }

@@ -19,15 +19,24 @@
 import Combine
 import Common
 import XCTest
+import PersistenceTestingUtils
 @testable import DDGSync
 
 final class DDGSyncLifecycleTests: XCTestCase {
+
+    enum MockError: Error {
+        case error
+    }
 
     var dataProvidersSource: MockDataProvidersSource!
     var dependencies: MockSyncDependencies!
 
     var secureStorageStub: SecureStorageStub {
         dependencies.secureStore as! SecureStorageStub
+    }
+
+    var kvfStoreStub: MockKeyValueFileStore {
+        dependencies.keyValueStore as! MockKeyValueFileStore
     }
 
     var mockErrorHandler: MockErrorHandler {
@@ -41,9 +50,9 @@ final class DDGSyncLifecycleTests: XCTestCase {
         dependencies = MockSyncDependencies()
     }
 
-    func testWhenInitializingAndOffThenStateIsInactive() {
+    func testWhenInitializingAndOffThenStateIsInactive() throws {
         secureStorageStub.theAccount = nil
-        dependencies.keyValueStore.set(false, forKey: DDGSync.Constants.syncEnabledKey)
+        try dependencies.keyValueStore.set(false, forKey: DDGSync.Constants.syncEnabledKey)
 
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
         XCTAssertEqual(syncService.authState, .initializing)
@@ -52,9 +61,9 @@ final class DDGSyncLifecycleTests: XCTestCase {
         XCTAssertEqual(mockErrorHandler.handledErrors, [.accountRemoved(.notFoundInSecureStorage)])
     }
 
-    func testWhenInitializingAndOnThenStateIsActive() {
+    func testWhenInitializingAndOnThenStateIsActive() throws {
         secureStorageStub.theAccount = .mock
-        dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+        try dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
 
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
         XCTAssertEqual(syncService.authState, .initializing)
@@ -74,9 +83,9 @@ final class DDGSyncLifecycleTests: XCTestCase {
         XCTAssertEqual(mockErrorHandler.handledErrors, [.accountRemoved(.syncEnabledNotSetOnKeyValueStore)])
     }
 
-    func testWhenInitializingAndKeysBeenRemovedThenStateIsInactive() {
+    func testWhenInitializingAndKeysBeenRemovedThenStateIsInactive() throws {
         secureStorageStub.theAccount = nil
-        dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+        try dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
 
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
         XCTAssertEqual(syncService.authState, .initializing)
@@ -90,12 +99,12 @@ final class DDGSyncLifecycleTests: XCTestCase {
         XCTAssertEqual(mockErrorHandler.handledErrors, [.accountRemoved(.notFoundInSecureStorage)])
     }
 
-    func testWhenInitializingAndCannotReadAccountThenErrorIsReportedAndInitializationIsPostponed() {
+    func testWhenInitializingAndCannotReadAccountThenErrorIsReportedAndInitializationIsPostponed() throws {
         let expectedError = SyncError.failedToReadSecureStore(status: 0)
         secureStorageStub.theAccount = .mock
         secureStorageStub.mockReadError = expectedError
 
-        dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+        try dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
 
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
         XCTAssertEqual(syncService.authState, .initializing)
@@ -104,12 +113,12 @@ final class DDGSyncLifecycleTests: XCTestCase {
         XCTAssertEqual(mockErrorHandler.handledErrors, [.failedToLoadAccount])
     }
 
-    func testWhenInitializingAndCannotSaveAccountThenErrorIsReported() {
+    func testWhenInitializingAndCannotSaveAccountThenErrorIsReported() throws {
         let expectedError = SyncError.failedToWriteSecureStore(status: 0)
         secureStorageStub.theAccount = .mock
         secureStorageStub.mockWriteError = expectedError
 
-        dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+        try dependencies.keyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
 
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
         XCTAssertEqual(syncService.authState, .initializing)
@@ -117,6 +126,53 @@ final class DDGSyncLifecycleTests: XCTestCase {
         // Account has been read, so it is active
         XCTAssertEqual(syncService.authState, .active)
         XCTAssertEqual(mockErrorHandler.handledErrors, [.failedToSetupEngine])
+    }
+
+    func testWhenMigratingAndDisabledThenStateIsInactive() throws {
+        dependencies.legacyKeyValueStore.removeObject(forKey: DDGSync.Constants.syncEnabledKey)
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        XCTAssertEqual(syncService.authState, .initializing)
+        syncService.initializeIfNeeded()
+
+        XCTAssertEqual(syncService.authState, .inactive)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [])
+    }
+
+    func testWhenMigratingAndEnabledThenStateIsActive() throws {
+        dependencies.legacyKeyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+        secureStorageStub.theAccount = .mock
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        XCTAssertEqual(syncService.authState, .initializing)
+        syncService.initializeIfNeeded()
+
+        XCTAssertEqual(syncService.authState, .active)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [.migratedToFileStore])
+    }
+
+    func testWhenMigratingAndErrorReadingThenErrorIsReportedAndInitializationIsPostponed() throws {
+        dependencies.legacyKeyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+        kvfStoreStub.throwOnRead = MockError.error
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        XCTAssertEqual(syncService.authState, .initializing)
+        syncService.initializeIfNeeded()
+
+        XCTAssertEqual(syncService.authState, .initializing)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [.failedToInitFileStore])
+    }
+
+    func testWhenMigratingAndErrorSavingThenErrorIsReportedAndInitializationIsPostponed() throws {
+        dependencies.legacyKeyValueStore.set(true, forKey: DDGSync.Constants.syncEnabledKey)
+        kvfStoreStub.throwOnSet = MockError.error
+
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+        XCTAssertEqual(syncService.authState, .initializing)
+        syncService.initializeIfNeeded()
+
+        XCTAssertEqual(syncService.authState, .initializing)
+        XCTAssertEqual(mockErrorHandler.handledErrors, [.failedToMigrateToFileStore])
     }
 
 }

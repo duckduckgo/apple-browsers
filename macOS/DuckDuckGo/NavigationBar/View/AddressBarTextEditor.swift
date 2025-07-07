@@ -465,17 +465,64 @@ final class AddressBarTextEditor: NSTextView {
         self.scrollRangeToVisible(endRange)
     }
 
+    /// Adds extra URL field to the dragging pasteboard and displays a bookmark preview
+    /// if it‘s possible to parse the dragged text as a URL.
+    /// Falls back to default system text dragging otherwise.
     override func draggingSession(_ session: NSDraggingSession, willBeginAt screenPoint: NSPoint) {
-        // add URL and Title to the dragging pasteboard
-        if let draggedString = session.draggingPasteboard.string(forType: .string),
-           let url = URL(trimmedAddressBarString: draggedString) {
-            session.draggingPasteboard.setString(url.absoluteString, forType: .URL)
-            // if the address matches currently loaded URL
-            if let title = addressBar?.tabCollectionViewModel.selectedTabViewModel?.title, !title.isEmpty,
-               addressBar?.tabCollectionViewModel.selectedTabViewModel?.tab.url == url {
-                session.draggingPasteboard.setString(title, forType: .urlName)
-            }
+        let tabViewModel = addressBar?.tabCollectionViewModel.selectedTabViewModel
+        let currentUrl = tabViewModel?.tab.content.userEditableUrl
+
+        // allow dragging domain name without the scheme, dropping the "://" part if no scheme is selected
+        guard let draggedString = session.draggingPasteboard.string(forType: .string)?
+            .trimmingWhitespace().dropping(prefix: ":").dropping(prefix: "/").dropping(prefix: "/"),
+              var draggedUrl = URL(trimmedAddressBarString: draggedString),
+              let navigationalScheme = draggedUrl.navigationalScheme, // `URL(trimmedAddressBarString:)` will add missing scheme if needed
+              URL.NavigationalScheme.navigationalSchemes.contains(navigationalScheme) || draggedUrl.scheme == currentUrl?.scheme else {
+            // otherwise fallback to regular text dragging
+            return
         }
+        // if dragging e.g. "duckduckgo.com" part of currently active "https://duckduckgo.com",
+        // replace the "http" scheme automatically added by `URL(trimmedAddressBarString:)` with current scheme ("https" in our case)
+        if let currentUrl, let scheme = currentUrl.scheme, !scheme.isEmpty, // currently loaded website url scheme
+           let editedUrl = URL(trimmedAddressBarString: self.string.trimmingWhitespace()),
+           editedUrl.scheme == currentUrl.scheme, editedUrl.host == currentUrl.host, // actual edited url‘s scheme+host should match currently loaded url
+           draggedUrl.scheme != scheme { // non-matching url would mean URL(trimmedAddressBarString:) has added the scheme
+
+            var components = URLComponents(url: draggedUrl, resolvingAgainstBaseURL: false)!
+            components.scheme = scheme
+            draggedUrl = components.url ?? draggedUrl
+        }
+
+        // add URL, Title and favicon to the dragging pasteboard
+        session.draggingPasteboard.setString(draggedUrl.absoluteString, forType: .URL)
+
+        // Favicon for dragging
+        let favicon: NSImage
+        if let tabViewModel, let currentUrl,
+            draggedUrl.securityOrigin == currentUrl.securityOrigin,
+            let tabFavicon = tabViewModel.favicon {
+            // if current website scheme/host/port matches what‘s being dragged: use its favicon
+            favicon = tabFavicon
+        } else {
+            // fallback to the "globe" favicon
+            favicon = .web
+        }
+        session.setPreviewProvider(URLDragPreviewProvider(url: draggedUrl, favicon: favicon))
+
+        // if the address matches currently loaded URL
+        if let title = addressBar?.tabCollectionViewModel.selectedTabViewModel?.title, !title.isEmpty,
+           addressBar?.tabCollectionViewModel.selectedTabViewModel?.tab.url == draggedUrl {
+            session.draggingPasteboard.setString(title, forType: .urlName)
+        }
+    }
+
+    override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
+        // should navigate to the dropped url?
+        if self.addressBar?.performDragOperation(sender) == true {
+            return true
+        }
+        // perform default text reordering
+        return super.performDragOperation(sender)
     }
 
 }

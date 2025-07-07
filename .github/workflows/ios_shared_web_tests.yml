@@ -32,7 +32,7 @@ jobs:
         submodules: recursive
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Checkout shared web tests
       uses: actions/checkout@v4
@@ -67,10 +67,12 @@ jobs:
     steps:
       - name: Check out the code
         uses: actions/checkout@v4
-      - name: Create Asana Task
-        uses: ./.github/actions/asana-failed-pr-checks
+      - name: Create Asana task when workflow failed
+        uses: duckduckgo/native-github-asana-sync@v1.1
         with:
-          action: create-task
-          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          asana-section-id: 1209511873385229
-          commit-author: ${{ needs.unit-tests.outputs.commit_author }}
+          action: create-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-project: ${{ vars.APPLE_CI_FAILING_TESTS_PROJECT_ID }}
+          asana-section: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_SHARED_WEB_TESTS_SECTION_ID }}
+          asana-task-name: GH Workflow Failure - iOS Shared Web Tests
+          asana-task-description: The iOS Shared Web Tests workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

@@ -80,8 +80,7 @@ final class LocalBookmarkManagerTests: XCTestCase {
     @MainActor
     func testWhenLoadFails_ThenTheManagerHoldsBookmarksAreNil() {
         let bookmarkStoreMock = BookmarkStoreMock()
-        let faviconManagerMock = FaviconManagerMock()
-        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: faviconManagerMock)
+        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
 
         bookmarkStoreMock.loadError = BookmarkManagerError.somethingReallyBad
         bookmarkManager.loadBookmarks()
@@ -732,7 +731,7 @@ final class LocalBookmarkManagerTests: XCTestCase {
     // MARK: - Search
 
     func testWhenBookmarkListIsNilThenSearchIsEmpty() {
-        let sut = LocalBookmarkManager()
+        let sut = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(), appearancePreferences: .mock)
         let results = sut.search(by: "abc")
 
         XCTAssertNil(sut.list)
@@ -919,9 +918,8 @@ fileprivate extension LocalBookmarkManagerTests {
     @MainActor
     private func makeManager(@BookmarksBuilder with bookmarks: () -> [BookmarksBuilderItem]) -> (LocalBookmarkManager, BookmarkStoreMock) {
         let bookmarkStoreMock = BookmarkStoreMock(contextProvider: context.map { context in { context } }, bookmarks: bookmarks().build())
-        let faviconManagerMock = FaviconManagerMock()
         foldersStore = BookmarkFolderStoreMock()
-        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: faviconManagerMock, foldersStore: foldersStore)
+        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, foldersStore: foldersStore, appearancePreferences: .mock)
         Logger.tests.debug("LocalBookmarkManagerTests.\(self.name).makeManager \(String(describing: bookmarkManager)) with \(bookmarkStoreMock.debugDescription, privacy: .public)")
 
         return (bookmarkManager, bookmarkStoreMock)

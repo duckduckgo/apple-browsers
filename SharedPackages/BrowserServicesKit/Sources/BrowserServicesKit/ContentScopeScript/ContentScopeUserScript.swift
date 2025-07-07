@@ -23,6 +23,26 @@ import ContentScopeScripts
 import UserScript
 import Common
 
+public protocol ContentScopeUserScriptDelegate: AnyObject {
+    func contentScopeUserScript(_ script: ContentScopeUserScript, didReceiveDebugFlag debugFlag: String)
+}
+
+public protocol UserScriptWithContentScope: UserScript {
+    var delegate: ContentScopeUserScriptDelegate? { get set }
+}
+
+public struct ContentScopeExperimentData: Encodable, Equatable {
+    public let feature: String
+    public let subfeature: String
+    public let cohort: String
+
+    public init(feature: String, subfeature: String, cohort: String) {
+        self.feature = feature
+        self.subfeature = subfeature
+        self.cohort = cohort
+    }
+}
+
 public final class ContentScopeProperties: Encodable {
     public let globalPrivacyControlValue: Bool
     public let debug: Bool = false
@@ -31,8 +51,13 @@ public final class ContentScopeProperties: Encodable {
     public let languageCode: String
     public let platform = ContentScopePlatform()
     public let features: [String: ContentScopeFeature]
+    public var currentCohorts: [ContentScopeExperimentData]
 
-    public init(gpcEnabled: Bool, sessionKey: String, messageSecret: String, featureToggles: ContentScopeFeatureToggles) {
+    public init(gpcEnabled: Bool,
+                sessionKey: String,
+                messageSecret: String,
+                featureToggles: ContentScopeFeatureToggles,
+                currentCohorts: [ContentScopeExperimentData] = []) {
         self.globalPrivacyControlValue = gpcEnabled
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret
@@ -40,6 +65,7 @@ public final class ContentScopeProperties: Encodable {
         features = [
             "autofill": ContentScopeFeature(featureToggles: featureToggles)
         ]
+        self.currentCohorts = currentCohorts
     }
 
     enum CodingKeys: String, CodingKey {
@@ -52,7 +78,10 @@ public final class ContentScopeProperties: Encodable {
         case messageSecret
         case platform
         case features
+        case currentCohorts
+
     }
+
 }
 
 public struct ContentScopeFeature: Encodable {
@@ -84,6 +113,12 @@ public struct ContentScopeFeatureToggles: Encodable {
 
     public let partialFormSaves: Bool
 
+    public let passwordVariantCategorization: Bool
+
+    public let inputFocusApi: Bool
+
+    public let autocompleteAttributeSupport: Bool
+
     // Explicitly defined memberwise init only so it can be public
     public init(emailProtection: Bool,
                 emailProtectionIncontextSignup: Bool,
@@ -95,7 +130,10 @@ public struct ContentScopeFeatureToggles: Encodable {
                 inlineIconCredentials: Bool,
                 thirdPartyCredentialsProvider: Bool,
                 unknownUsernameCategorization: Bool,
-                partialFormSaves: Bool) {
+                partialFormSaves: Bool,
+                passwordVariantCategorization: Bool,
+                inputFocusApi: Bool,
+                autocompleteAttributeSupport: Bool) {
 
         self.emailProtection = emailProtection
         self.emailProtectionIncontextSignup = emailProtectionIncontextSignup
@@ -108,6 +146,9 @@ public struct ContentScopeFeatureToggles: Encodable {
         self.thirdPartyCredentialsProvider = thirdPartyCredentialsProvider
         self.unknownUsernameCategorization = unknownUsernameCategorization
         self.partialFormSaves = partialFormSaves
+        self.passwordVariantCategorization = passwordVariantCategorization
+        self.inputFocusApi = inputFocusApi
+        self.autocompleteAttributeSupport = autocompleteAttributeSupport
     }
 
     enum CodingKeys: String, CodingKey {
@@ -126,6 +167,9 @@ public struct ContentScopeFeatureToggles: Encodable {
         case thirdPartyCredentialsProvider = "third_party_credentials_provider"
         case unknownUsernameCategorization = "unknown_username_categorization"
         case partialFormSaves = "partial_form_saves"
+        case passwordVariantCategorization = "password_variant_categorization"
+        case inputFocusApi = "input_focus_api"
+        case autocompleteAttributeSupport = "autocomplete_attribute_support"
     }
 }
 
@@ -139,11 +183,17 @@ public struct ContentScopePlatform: Encodable {
     #endif
 }
 
-public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessaging {
+public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessaging, UserScriptWithContentScope {
 
     public var broker: UserScriptMessageBroker
     public let isIsolated: Bool
     public var messageNames: [String] = []
+    public weak var delegate: ContentScopeUserScriptDelegate?
+
+    enum MessageName: String {
+        case contentScopeScriptsIsolated
+        case contentScopeScripts
+    }
 
     public init(_ privacyConfigManager: PrivacyConfigurationManaging,
                 properties: ContentScopeProperties,
@@ -151,12 +201,11 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                 privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) {
         self.isIsolated = isIsolated
-        let contextName = self.isIsolated ? "contentScopeScriptsIsolated" : "contentScopeScripts"
+        let contextName = self.isIsolated ? MessageName.contentScopeScriptsIsolated.rawValue : MessageName.contentScopeScripts.rawValue
 
         broker = UserScriptMessageBroker(context: contextName)
 
-        // dont register any handlers at all if we're not in the isolated context
-        messageNames = isIsolated ? [contextName] : []
+        messageNames = [contextName]
 
         source = ContentScopeUserScript.generateSource(
                 privacyConfigManager,
@@ -206,6 +255,12 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
     @MainActor
     public func userContentController(_ userContentController: WKUserContentController,
                                       didReceive message: WKScriptMessage) async -> (Any?, String?) {
+        propagateDebugFlag(message)
+        // Don't propagate the message for ContentScopeScript non isolated context
+        if message.name == MessageName.contentScopeScripts.rawValue {
+            return (nil, nil)
+        }
+        // Propagate the message for ContentScopeScriptIsolated and other context like "dbpui"
         let action = broker.messageHandlerFor(message)
         do {
             let json = try await broker.execute(action: action, original: message)
@@ -213,6 +268,15 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
         } catch {
             // forward uncaught errors to the client
             return (nil, error.localizedDescription)
+        }
+    }
+
+    @MainActor
+    private func propagateDebugFlag(_ message: WKScriptMessage) {
+        if let messageDictionary = message.body as? [String: Any],
+           let parameters = messageDictionary["params"] as? [String: String],
+           let flag = parameters["flag"] {
+            delegate?.contentScopeUserScript(self, didReceiveDebugFlag: flag)
         }
     }
 }

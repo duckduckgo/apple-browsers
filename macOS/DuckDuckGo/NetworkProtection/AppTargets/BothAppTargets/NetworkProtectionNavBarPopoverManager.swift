@@ -24,7 +24,7 @@ import Common
 import FeatureFlags
 import Foundation
 import LoginItems
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
@@ -46,10 +46,10 @@ protocol NetworkProtectionIPCClient {
 }
 
 extension VPNControllerXPCClient: NetworkProtectionIPCClient {
-    public var ipcStatusObserver: any NetworkProtection.ConnectionStatusObserver { connectionStatusObserver }
-    public var ipcServerInfoObserver: any NetworkProtection.ConnectionServerInfoObserver { serverInfoObserver }
-    public var ipcConnectionErrorObserver: any NetworkProtection.ConnectionErrorObserver { connectionErrorObserver }
-    public var ipcDataVolumeObserver: any NetworkProtection.DataVolumeObserver { dataVolumeObserver }
+    public var ipcStatusObserver: any VPN.ConnectionStatusObserver { connectionStatusObserver }
+    public var ipcServerInfoObserver: any VPN.ConnectionServerInfoObserver { serverInfoObserver }
+    public var ipcConnectionErrorObserver: any VPN.ConnectionErrorObserver { connectionErrorObserver }
+    public var ipcDataVolumeObserver: any VPN.DataVolumeObserver { dataVolumeObserver }
 }
 
 @MainActor
@@ -76,7 +76,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
         self.vpnUIPresenting = vpnUIPresenting
         self.proxySettings = proxySettings
 
-        let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: .shared)
+        let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: Application.appDelegate.windowControllersManager)
 
         activeSitePublisher = ActiveSiteInfoPublisher(
             activeDomainPublisher: activeDomainPublisher.eraseToAnyPublisher(),
@@ -150,35 +150,6 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
         return menuItems
     }
 
-    /// Only used if the .networkProtectionAppExclusions feature flag is disabled
-    ///
-    private func legacyStatusViewSubmenu() -> [StatusBarMenu.MenuItem] {
-        let appLauncher = AppLauncher(appBundleURL: Bundle.main.bundleURL)
-
-        if UserDefaults.netP.networkProtectionOnboardingStatus == .completed {
-            return [
-                .text(title: UserText.networkProtectionNavBarStatusViewVPNSettings, action: {
-                    try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showSettings)
-                }),
-                .text(title: UserText.networkProtectionNavBarStatusViewFAQ, action: {
-                    try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showFAQ)
-                }),
-                .text(title: UserText.networkProtectionNavBarStatusViewSendFeedback, action: {
-                    try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.shareFeedback)
-                })
-            ]
-        } else {
-            return [
-                .text(title: UserText.networkProtectionNavBarStatusViewFAQ, action: {
-                    try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showFAQ)
-                }),
-                .text(title: UserText.networkProtectionNavBarStatusViewSendFeedback, action: {
-                    try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.shareFeedback)
-                })
-            ]
-        }
-    }
-
     func show(positionedBelow view: NSView, withDelegate delegate: NSPopoverDelegate) -> NSPopover {
 
         /// Since the favicon doesn't have a publisher we force refreshing here
@@ -201,7 +172,11 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
 
             let onboardingStatusPublisher = UserDefaults.netP.networkProtectionOnboardingStatusPublisher
             let vpnURLEventHandler = VPNURLEventHandler()
-            let uiActionHandler = VPNUIActionHandler(vpnURLEventHandler: vpnURLEventHandler, proxySettings: proxySettings)
+            let uiActionHandler = VPNUIActionHandler(
+                vpnURLEventHandler: vpnURLEventHandler,
+                tunnelController: controller,
+                proxySettings: proxySettings,
+                vpnAppState: vpnAppState)
 
             let connectionStatusPublisher = CurrentValuePublisher(
                 initialValue: statusReporter.statusObserver.recentValue,
@@ -218,11 +193,6 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
 
             let menuItems = { [weak self] () -> [NetworkProtectionStatusView.Model.MenuItem] in
                 guard let self else { return [] }
-
-                guard featureFlagger.isFeatureOn(.networkProtectionAppExclusions) else {
-                    return legacyStatusViewSubmenu()
-                }
-
                 return statusViewSubmenu()
             }
 

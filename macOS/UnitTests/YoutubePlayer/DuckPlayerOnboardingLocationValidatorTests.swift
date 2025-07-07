@@ -16,9 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import DuckDuckGo_Privacy_Browser
 import Navigation
+import WebKit
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
+
 class DuckPlayerOnboardingLocationValidatorTests: XCTestCase {
 
     var validator: DuckPlayerOnboardingLocationValidator!
@@ -26,6 +29,11 @@ class DuckPlayerOnboardingLocationValidatorTests: XCTestCase {
     override func setUp() {
         super.setUp()
         validator = DuckPlayerOnboardingLocationValidator()
+    }
+
+    override func tearDown() {
+        validator = nil
+        super.tearDown()
     }
 
     @MainActor

@@ -1,0 +1,126 @@
+---
+description: General project overview and cursor rules navigation for DuckDuckGo browser development
+globs:
+  - "**/*.swift"
+  - "**/*.md"
+  - "**/Package.swift"
+alwaysApply: true
+---
+
+# DuckDuckGo Browser Development Rules Overview
+
+## Project Context
+This is the DuckDuckGo browser for iOS and macOS, built with privacy-first principles, modern Swift patterns, and cross-platform architecture.
+
+**Key Directories:**
+- `iOS/` - iOS browser app (UIKit + SwiftUI hybrid)
+- `macOS/` - macOS browser app (AppKit + SwiftUI hybrid) 
+- `SharedPackages/` - Cross-platform Swift packages
+- `.cursor/rules/` - Development rules and guidelines
+
+## Architecture Summary
+- **Pattern**: MVVM + Coordinators + Dependency Injection
+- **UI**: SwiftUI preferred, UIKit/AppKit for legacy
+- **Storage**: Core Data + GRDB + Keychain for sensitive data
+- **Design**: DesignResourcesKit for colors/icons (MANDATORY)
+- **Testing**: >80% coverage required
+
+## Rule Files Reference
+
+### Core Development Rules (Apply to All Code)
+- `anti-patterns.mdc` - What NOT to do (memory leaks, force unwrapping, etc.)
+- `code-style.mdc` - Swift style guide and conventions
+- `privacy-security.mdc` - Privacy requirements (ALWAYS applies)
+
+### Architecture & Patterns
+- `architecture.mdc` - MVVM, DI, and structural patterns
+- `property-wrappers.mdc` - @UserDefaultsWrapper and custom property wrappers
+- `feature-flags.mdc` - Type-safe feature flags and A/B testing
+
+### UI Development
+- `swiftui-style.mdc` - SwiftUI + DesignResourcesKit integration
+- `swiftui-advanced.mdc` - Advanced SwiftUI patterns and techniques
+- `webkit-browser.mdc` - WebView and browser-specific patterns
+
+### Platform-Specific Rules
+- `ios-architecture.mdc` - iOS AppDependencyProvider, MainCoordinator, UIKit patterns
+- `macos-window-management.mdc` - macOS window management and AppKit patterns
+- `macos-system-integration.mdc` - macOS system services and extensions
+
+### Specialized Development
+- `testing.mdc` - Testing patterns and requirements
+- `performance-optimization.mdc` - Performance best practices
+- `shared-packages.mdc` - Cross-platform package development
+- `analytics-patterns.mdc` - Pixel analytics and event tracking
+
+## Quick Start Checklist
+
+### Before Writing Any Code:
+1. ✅ Read `privacy-security.mdc` - Privacy is non-negotiable
+2. ✅ Check platform rules (`ios-architecture.mdc` or `macos-architecture.mdc`)
+3. ✅ Review `anti-patterns.mdc` - Avoid common mistakes
+
+### For UI Development:
+1. ✅ Use `swiftui-style.mdc` for SwiftUI components
+2. ✅ MUST use DesignResourcesKit colors: `Color(designSystemColor: .textPrimary)`
+3. ✅ MUST use DesignResourcesKit icons: `DesignSystemImages.Glyphs.Size16.add`
+
+### For New Features:
+1. ✅ Follow `architecture.mdc` for MVVM + DI patterns
+2. ✅ Use AppDependencyProvider (iOS) or equivalent (macOS)
+3. ✅ Write tests per `testing.mdc` requirements
+
+## Critical Don'ts (from anti-patterns.mdc)
+- ❌ NEVER use singletons except for truly global state
+- ❌ NEVER hardcode colors/icons (use DesignResourcesKit)
+- ❌ NEVER update UI without @MainActor
+- ❌ NEVER ignore privacy implications
+- ❌ NEVER force unwrap without justification
+
+## Dependency Injection Pattern (iOS)
+```swift
+// ✅ CORRECT pattern used throughout codebase
+final class FeatureViewModel: ObservableObject {
+    private let service: FeatureServiceProtocol
+    
+    init(dependencies: DependencyProvider = AppDependencyProvider.shared) {
+        self.service = dependencies.featureService
+    }
+}
+```
+
+## Design System Usage (MANDATORY)
+```swift
+// ✅ REQUIRED - Use DesignResourcesKit
+Text("Title")
+    .foregroundColor(Color(designSystemColor: .textPrimary))
+
+Image(uiImage: DesignSystemImages.Color.Size24.bookmark)
+
+// ❌ FORBIDDEN - Hardcoded colors/icons
+Text("Title").foregroundColor(.black)
+Image(systemName: "bookmark")
+```
+
+## When to Consult Specific Rules
+- **New ViewModels**: `architecture.mdc` + `swiftui-style.mdc`
+- **Network calls**: `performance-optimization.mdc` + `privacy-security.mdc`
+- **Settings/Preferences**: Platform-specific rules + `property-wrappers.mdc`
+- **Feature flags**: `feature-flags.mdc`
+- **Analytics/Tracking**: `analytics-patterns.mdc` + `privacy-security.mdc`
+- **Advanced SwiftUI**: `swiftui-advanced.mdc`
+- **Testing**: `testing.mdc` + `anti-patterns.mdc`
+- **Cross-platform code**: `shared-packages.mdc`
+- **WebView integration**: `webkit-browser.mdc`
+- **macOS windows**: `macos-window-management.mdc`
+- **macOS system features**: `macos-system-integration.mdc`
+
+## Code Review Checklist
+1. Privacy implications assessed (`privacy-security.mdc`)
+2. Design system properly used (`swiftui-style.mdc`)
+3. Architecture patterns followed (platform-specific rules)
+4. Anti-patterns avoided (`anti-patterns.mdc`)
+5. Tests written and passing (`testing.mdc`)
+6. Performance considered (`performance-optimization.mdc`)
+
+This overview ensures you understand the project context and know which specific rules to consult for your development task.

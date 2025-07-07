@@ -27,56 +27,29 @@ struct NewTabPageView: View {
     @ObservedObject private var viewModel: NewTabPageViewModel
     @ObservedObject private var messagesModel: NewTabPageMessagesModel
     @ObservedObject private var favoritesViewModel: FavoritesViewModel
-    @ObservedObject private var shortcutsModel: ShortcutsModel
-    @ObservedObject private var shortcutsSettingsModel: NewTabPageShortcutsSettingsModel
-    @ObservedObject private var sectionsSettingsModel: NewTabPageSectionsSettingsModel
-
-    @State private var customizeButtonShowedInline = false
-    @State private var isAddingFavorite: Bool = false
-
-    @State var isDragging: Bool = false
 
     init(viewModel: NewTabPageViewModel,
          messagesModel: NewTabPageMessagesModel,
-         favoritesViewModel: FavoritesViewModel,
-         shortcutsModel: ShortcutsModel,
-         shortcutsSettingsModel: NewTabPageShortcutsSettingsModel,
-         sectionsSettingsModel: NewTabPageSectionsSettingsModel) {
+         favoritesViewModel: FavoritesViewModel) {
         self.viewModel = viewModel
         self.messagesModel = messagesModel
         self.favoritesViewModel = favoritesViewModel
-        self.shortcutsModel = shortcutsModel
-        self.shortcutsSettingsModel = shortcutsSettingsModel
-        self.sectionsSettingsModel = sectionsSettingsModel
 
         self.messagesModel.load()
     }
 
-    private var isAnySectionEnabled: Bool {
-        !sectionsSettingsModel.enabledItems.isEmpty
-    }
-
-    private var isShortcutsSectionVisible: Bool {
-        !shortcutsSettingsModel.enabledItems.isEmpty
+    private var isShowingSections: Bool {
+        !favoritesViewModel.allFavorites.isEmpty
     }
 
     var body: some View {
         if !viewModel.isOnboarding {
             mainView
-                .background(Color(ThemeManager.shared.currentTheme.backgroundColor))
-                .sheet(isPresented: $viewModel.isShowingSettings, onDismiss: {
-                    shortcutsSettingsModel.save()
-                    sectionsSettingsModel.save()
-                }, content: {
-                    NavigationView {
-                        NewTabPageSettingsView(shortcutsSettingsModel: shortcutsSettingsModel,
-                                               sectionsSettingsModel: sectionsSettingsModel)
-                    }
-                })
+                .background(Color(designSystemColor: .background))
                 .simultaneousGesture(
                     DragGesture()
                         .onChanged({ value in
-                            if value.translation.height != 0 {
+                            if value.translation.height != 0.0 {
                                 viewModel.beginDragging()
                             }
                         })
@@ -87,7 +60,7 @@ struct NewTabPageView: View {
 
     @ViewBuilder
     private var mainView: some View {
-        if isAnySectionEnabled {
+        if isShowingSections {
             sectionsView
         } else {
             emptyStateView
@@ -101,58 +74,21 @@ private extension NewTabPageView {
     private var sectionsView: some View {
         GeometryReader { proxy in
             ScrollView {
-                VStack(spacing: Metrics.sectionSpacing) {
-                    introMessageView
-                        .padding(.top, Metrics.nonGridSectionTopPadding)
-
+                LazyVStack(spacing: Metrics.sectionSpacing) {
+                    
                     messagesSectionView
                         .padding(.top, Metrics.nonGridSectionTopPadding)
-
-                    ForEach(sectionsSettingsModel.enabledItems, id: \.rawValue) { section in
-                        switch section {
-                        case .favorites:
-                            favoritesSectionView(proxy: proxy)
-                        case .shortcuts:
-                            shortcutsSectionView(proxy: proxy)
+                        .if(viewModel.isExperimentalAppearanceEnabled) {
+                            $0.padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
                         }
-                    }
 
-                    if customizeButtonShowedInline {
-                        customizeButtonView
-                            .padding(.top, Metrics.largePadding)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
+                    favoritesSectionView(proxy: proxy)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(Metrics.largePadding)
-                .anchorPreference(key: CustomizeButtonPrefKey.self, value: .bounds, transform: { vStackBoundsAnchor in
-                    let buttonSizeWithPadding = Metrics.customizeButtonHeight + Metrics.sectionSpacing + Metrics.largePadding
-
-                    let buttonVSpaceRequired = !customizeButtonShowedInline ? buttonSizeWithPadding : 0
-
-                    let availableVerticalSpace = proxy.size.height
-                    let currentStackHeight = proxy[vStackBoundsAnchor].height
-
-                    let buttonHasRoomInViewport = availableVerticalSpace >= currentStackHeight + buttonVSpaceRequired
-
-                    // If there's no room, show the button inside the stack view, after sections
-                    return !buttonHasRoomInViewport
-                })
-                .onPreferenceChange(CustomizeButtonPrefKey.self, perform: { value in
-                    customizeButtonShowedInline = isAnySectionEnabled ? value : false
-                })
+                .padding(sectionsViewPadding(in: proxy))
+                .background(Color(designSystemColor: .background))
             }
             .withScrollKeyboardDismiss()
-            .safeAreaInset(edge: .bottom, alignment: .trailing) {
-                if !customizeButtonShowedInline {
-                    customizeButtonView
-                        .frame(maxWidth: .infinity)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .padding([.trailing, .bottom], Metrics.largePadding)
-                }
-            }
-            .sheet(isPresented: $isAddingFavorite) {
-                EmptyView()
-            }
         }
         // Prevent recreating geomery reader when keyboard is shown/hidden.
         .ignoresSafeArea(.keyboard)
@@ -161,23 +97,21 @@ private extension NewTabPageView {
     @ViewBuilder
     private var emptyStateView: some View {
         ZStack {
-            NewTabPageDaxLogoView()
+            if messagesModel.homeMessageViewModels.isEmpty {
+                NewTabPageDaxLogoView()
+            }
 
             VStack(spacing: Metrics.sectionSpacing) {
-                introMessageView
-                    .padding(.top, Metrics.nonGridSectionTopPadding)
-
                 messagesSectionView
                     .padding(.top, Metrics.nonGridSectionTopPadding)
+                    .if(viewModel.isExperimentalAppearanceEnabled) {
+                        $0.padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                    }
                     .frame(maxHeight: .infinity, alignment: .top)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .safeAreaInset(edge: .bottom, alignment: .trailing) {
-                customizeButtonView
-                    .frame(maxWidth: .infinity)
-            }
         }
-        .padding(Metrics.largePadding)
+        .padding(Metrics.regularPadding)
     }
 
     private var messagesSectionView: some View {
@@ -189,46 +123,13 @@ private extension NewTabPageView {
     }
 
     private func favoritesSectionView(proxy: GeometryProxy) -> some View {
-                FavoritesView(model: favoritesViewModel,
-                              isAddingFavorite: $isAddingFavorite,
-                              geometry: proxy)
+        FavoritesView(model: favoritesViewModel,
+                      isAddingFavorite: .constant(false),
+                      geometry: proxy)
     }
 
-    @ViewBuilder
-    private func shortcutsSectionView(proxy: GeometryProxy) -> some View {
-        if isShortcutsSectionVisible {
-            ShortcutsView(model: shortcutsModel, shortcuts: shortcutsSettingsModel.enabledItems, proxy: proxy)
-                .transition(.scale.combined(with: .opacity))
-        }
-    }
-
-    private var customizeButtonView: some View {
-        HStack {
-            Spacer()
-
-            Button(action: {
-                viewModel.customizeNewTabPage()
-            }, label: {
-                NewTabPageCustomizeButtonView()
-                // Needed to reduce default button margins
-                    .padding(EdgeInsets(top: 0, leading: -8, bottom: 0, trailing: -8))
-            }).buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
-        }
-    }
-
-    @ViewBuilder
-    private var introMessageView: some View {
-        if viewModel.isIntroMessageVisible {
-            NewTabPageIntroMessageView(onClose: {
-                withAnimation {
-                    viewModel.dismissIntroMessage()
-                }
-            })
-            .onFirstAppear {
-                viewModel.introMessageDisplayed()
-            }
-            .transition(.scale.combined(with: .opacity))
-        }
+    private func sectionsViewPadding(in geometry: GeometryProxy) -> CGFloat {
+        geometry.frame(in: .local).width > Metrics.verySmallScreenWidth ? Metrics.regularPadding : Metrics.smallPadding
     }
 }
 
@@ -245,22 +146,16 @@ private extension View {
 
 private struct Metrics {
 
-    static let regularPadding = 16.0
-    static let largePadding = 24.0
+    static let smallPadding = 12.0
+    static let regularPadding = 24.0
     static let sectionSpacing = 32.0
     static let nonGridSectionTopPadding = -8.0
+    static let updatedNonGridSectionHorizontalPadding = -8.0
 
-    static let customizeButtonHeight: CGFloat = 40
     static let messageMaximumWidth: CGFloat = 380
     static let messageMaximumWidthPad: CGFloat = 455
-}
 
-private struct CustomizeButtonPrefKey: PreferenceKey {
-    static var defaultValue: Bool = true
-
-    static func reduce(value: inout Value, nextValue: () -> Value) {
-        value = nextValue()
-    }
+    static let verySmallScreenWidth: CGFloat = 320
 }
 
 // MARK: - Preview
@@ -271,12 +166,10 @@ private struct CustomizeButtonPrefKey: PreferenceKey {
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
-            )
+            ),
+            navigator: DefaultMessageNavigator(delegate: nil)
         ),
-        favoritesViewModel: FavoritesPreviewModel(),
-        shortcutsModel: ShortcutsModel(),
-        shortcutsSettingsModel: NewTabPageShortcutsSettingsModel(),
-        sectionsSettingsModel: NewTabPageSectionsSettingsModel()
+        favoritesViewModel: FavoritesPreviewModel()
     )
 }
 
@@ -296,12 +189,10 @@ private struct CustomizeButtonPrefKey: PreferenceKey {
                         )
                     )
                 ]
-            )
+            ),
+            navigator: DefaultMessageNavigator(delegate: nil)
         ),
-        favoritesViewModel: FavoritesPreviewModel(),
-        shortcutsModel: ShortcutsModel(),
-        shortcutsSettingsModel: NewTabPageShortcutsSettingsModel(),
-        sectionsSettingsModel: NewTabPageSectionsSettingsModel()
+        favoritesViewModel: FavoritesPreviewModel()
     )
 }
 
@@ -311,12 +202,10 @@ private struct CustomizeButtonPrefKey: PreferenceKey {
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
-            )
+            ),
+            navigator: DefaultMessageNavigator(delegate: nil)
         ),
-        favoritesViewModel: FavoritesPreviewModel(favorites: []),
-        shortcutsModel: ShortcutsModel(),
-        shortcutsSettingsModel: NewTabPageShortcutsSettingsModel(),
-        sectionsSettingsModel: NewTabPageSectionsSettingsModel()
+        favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
 }
 
@@ -326,12 +215,10 @@ private struct CustomizeButtonPrefKey: PreferenceKey {
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
-            )
+            ),
+            navigator: DefaultMessageNavigator(delegate: nil)
         ),
-        favoritesViewModel: FavoritesPreviewModel(),
-        shortcutsModel: ShortcutsModel(),
-        shortcutsSettingsModel: NewTabPageShortcutsSettingsModel(),
-        sectionsSettingsModel: NewTabPageSectionsSettingsModel(storage: .emptyStorage())
+        favoritesViewModel: FavoritesPreviewModel()
     )
 }
 
@@ -352,15 +239,5 @@ private final class PreviewMessagesConfiguration: HomePageMessagesConfiguration 
 
     func dismissHomeMessage(_ homeMessage: HomeMessage) {
         homeMessages = homeMessages.dropLast()
-    }
-}
-
-private extension NewTabPageSectionsSettingsStorage {
-    static func emptyStorage() -> Self {
-        Self.init(persistentStore: EmptyStore(), defaultOrder: [], defaultEnabledItems: [])
-    }
-
-    private final class EmptyStore: NewTabPageSettingsPersistentStore {
-        var data: Data?
     }
 }

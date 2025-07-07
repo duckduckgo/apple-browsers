@@ -183,13 +183,13 @@ class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManaging {
 
     var updatesPublisher: AnyPublisher<Void, Never> = Just(()).eraseToAnyPublisher()
     var privacyConfig: PrivacyConfiguration = MockPrivacyConfiguration()
-    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider()
+    var internalUserDecider: InternalUserDecider = MockInternalUserDecider()
 }
 
 class MockPrivacyConfiguration: PrivacyConfiguration {
 
     var isSubfeatureKeyEnabled: ((any PrivacySubfeature, AppVersionProvider) -> Bool)?
-    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> Bool {
+    func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         isSubfeatureKeyEnabled?(subfeature, versionProvider) ?? false
     }
 
@@ -229,7 +229,7 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
 
     func exceptionsList(forFeature featureKey: PrivacyFeature) -> [String] { exceptionsList(featureKey) }
     var isFeatureKeyEnabled: ((PrivacyFeature, AppVersionProvider) -> Bool)?
-    func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> Bool {
+    func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool {
         isFeatureKeyEnabled?(featureKey, versionProvider) ?? true
     }
     func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {
@@ -247,10 +247,6 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
     func settings(for feature: PrivacyFeature) -> PrivacyConfigurationData.PrivacyFeature.FeatureSettings { featureSettings }
     func userEnabledProtection(forDomain: String) {}
     func userDisabledProtection(forDomain: String) {}
-}
-
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
 }
 
 extension DefaultInternalUserDecider {

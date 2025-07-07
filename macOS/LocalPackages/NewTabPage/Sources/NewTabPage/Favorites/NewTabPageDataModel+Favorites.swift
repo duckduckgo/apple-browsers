@@ -24,11 +24,6 @@ extension NewTabPageDataModel {
         let id: String
     }
 
-    struct FavoritesOpenAction: Codable {
-        let id: String
-        let url: String
-    }
-
     struct FavoritesMoveAction: Codable {
         let id: String
         let fromIndex: Int
@@ -81,4 +76,22 @@ extension NewTabPageDataModel {
         let maxAvailableSize: Int
         let src: String
     }
+
+    struct FavoritesRefresh: Encodable, Equatable {
+        let items: [Item]
+
+        enum Item: String, Codable {
+            case favicons
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                try container.encode(self.rawValue, forKey: .kind)
+            }
+
+            private enum CodingKeys: String, CodingKey {
+                case kind
+            }
+        }
+    }
+
 }

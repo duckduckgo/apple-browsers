@@ -57,13 +57,11 @@ extension WKWebViewConfiguration {
         preferences.javaScriptCanOpenWindowsAutomatically = true
         preferences.isFraudulentWebsiteWarningEnabled = false
 
-        if SupportedOSChecker.isCurrentOSReceivingUpdates {
-            if urlSchemeHandler(forURLScheme: URL.NavigationalScheme.duck.rawValue) == nil {
-                setURLSchemeHandler(
-                    DuckURLSchemeHandler(featureFlagger: NSApp.delegateTyped.featureFlagger, isHistorySpecialPageSupported: true),
-                    forURLScheme: URL.NavigationalScheme.duck.rawValue
-                )
-            }
+        if urlSchemeHandler(forURLScheme: URL.NavigationalScheme.duck.rawValue) == nil {
+            setURLSchemeHandler(
+                DuckURLSchemeHandler(featureFlagger: NSApp.delegateTyped.featureFlagger, isHistorySpecialPageSupported: true),
+                forURLScheme: URL.NavigationalScheme.duck.rawValue
+            )
         }
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED

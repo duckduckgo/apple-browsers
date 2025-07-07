@@ -39,6 +39,7 @@ protocol OmniBarState: CustomStringConvertible {
     var showBackground: Bool { get }
     var showClear: Bool { get }
     var showRefresh: Bool { get }
+    var showShare: Bool { get }
     var showMenu: Bool { get }
     var showSettings: Bool { get }
     var showVoiceSearch: Bool { get }

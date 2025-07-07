@@ -23,30 +23,6 @@ import XCTest
 
 @testable import Core
 
-class MockStatisticsStore: StatisticsStore {
-
-    var installDate: Date?
-    var atb: String?
-    var searchRetentionAtb: String?
-    var appRetentionAtb: String?
-
-    var hasInstallStatistics: Bool {
-        return atb != nil
-    }
-
-    var variant: String?
-}
-
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
-}
-
-extension DefaultInternalUserDecider {
-    convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
-        self.init(store: mockedStore)
-    }
-}
-
 class MockEmbeddedDataProvider: EmbeddedDataProvider {
     var embeddedDataEtag: String
 
@@ -147,7 +123,7 @@ final class UserAgentTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: mockProtectionStore,
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
 
         privacyConfig = manager.privacyConfig
     }
@@ -221,8 +197,8 @@ final class UserAgentTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: mockProtectionStore,
-                                                  internalUserDecider: DefaultInternalUserDecider())
-        
+                                                  internalUserDecider: MockInternalUserDecider())
+
         let testee = UserAgent(defaultAgent: DefaultAgent.mobile)
         XCTAssertEqual(ExpectedAgent.mobileNoApplication, testee.agent(forUrl: Constants.url, isDesktop: false,
                                                                        privacyConfig: manager.privacyConfig))
@@ -238,7 +214,7 @@ final class UserAgentTests: XCTestCase {
                                                   fetchedData: nil,
                                                   embeddedDataProvider: mockEmbeddedData,
                                                   localProtection: mockProtectionStore,
-                                                  internalUserDecider: DefaultInternalUserDecider())
+                                                  internalUserDecider: MockInternalUserDecider())
         return manager.privacyConfig
     }
 

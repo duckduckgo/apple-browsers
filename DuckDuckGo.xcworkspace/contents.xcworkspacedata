@@ -1,12 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace
    version = "1.0">
-   <FileRef
-      location = "group:SharedPackages/BrowserServicesKit">
-   </FileRef>
-   <FileRef
-      location = "group:SharedPackages/DataBrokerProtectionCore">
-   </FileRef>
+   <Group
+      location = "group:SharedPackages"
+      name = "SharedPackages">
+      <FileRef
+         location = "group:AIChat">
+      </FileRef>
+      <FileRef
+         location = "group:BrowserServicesKit">
+      </FileRef>
+      <FileRef
+         location = "group:DataBrokerProtectionCore">
+      </FileRef>
+      <FileRef
+         location = "group:DesignResourcesKitIcons">
+      </FileRef>
+      <FileRef
+         location = "group:Onboarding">
+      </FileRef>
+      <FileRef
+         location = "group:UIComponents">
+      </FileRef>
+      <FileRef
+         location = "group:VPN">
+      </FileRef>
+      <FileRef
+         location = "group:DesignResourcesKit">
+      </FileRef>
+   </Group>
    <FileRef
       location = "group:iOS/DuckDuckGo-iOS.xcodeproj">
    </FileRef>

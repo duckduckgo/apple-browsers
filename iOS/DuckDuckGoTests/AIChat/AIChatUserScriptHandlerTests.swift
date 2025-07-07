@@ -22,17 +22,28 @@ import XCTest
 @testable import DuckDuckGo
 import UserScript
 import WebKit
+import AIChat
 
 class AIChatUserScriptHandlerTests: XCTestCase {
     var aiChatUserScriptHandler: AIChatUserScriptHandler!
     var mockFeatureFlagger: MockFeatureFlagger!
-    var mockPayloadHandler: MockAIChatPayloadHandling!
+    var mockPayloadHandler: AIChatPayloadHandler!
+    private var mockUserDefaults: UserDefaults!
+
+    private var mockSuiteName: String {
+        String(describing: self)
+    }
 
     override func setUp() {
         super.setUp()
         mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        mockPayloadHandler = MockAIChatPayloadHandling()
-        aiChatUserScriptHandler = AIChatUserScriptHandler(featureFlagger: mockFeatureFlagger)
+        mockPayloadHandler = AIChatPayloadHandler()
+
+        mockUserDefaults = UserDefaults(suiteName: mockSuiteName)
+        mockUserDefaults.removePersistentDomain(forName: mockSuiteName)
+
+        let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger, userDefaults: mockUserDefaults)
+        aiChatUserScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalAIChatManager)
         aiChatUserScriptHandler.setPayloadHandler(mockPayloadHandler)
     }
 
@@ -59,7 +70,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     func testGetAIChatNativeHandoffData() {
         // Given
         let expectedPayload = ["key": "value"]
-        mockPayloadHandler.payload = expectedPayload
+        mockPayloadHandler.setData(expectedPayload)
 
         // When
         let handoffData = aiChatUserScriptHandler.getAIChatNativeHandoffData(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeHandoffData
@@ -87,25 +98,6 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             expectation.fulfill()
         }
         await fulfillment(of: [expectation])
-    }
-}
-
-class MockAIChatPayloadHandling: AIChatPayloadHandling {
-    typealias PayloadType = [String: Any]
-
-    var payload: PayloadType?
-
-    func setPayload(_ payload: PayloadType) {
-        self.payload = payload
-    }
-
-    func consumePayload() -> PayloadType? {
-        defer { payload = nil } // Reset the payload after consuming
-        return payload
-    }
-
-    func reset() {
-        payload = nil
     }
 }
 

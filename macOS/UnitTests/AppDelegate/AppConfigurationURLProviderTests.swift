@@ -21,6 +21,16 @@ import BrowserServicesKit
 import Configuration
 @testable import DuckDuckGo_Privacy_Browser
 
+fileprivate extension AppConfigurationURLProvider {
+    init() {
+        self.init(
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            customPrivacyConfiguration: nil
+        )
+    }
+}
+
 final class AppConfigurationURLProviderTests: XCTestCase {
     private var urlProvider: AppConfigurationURLProvider!
     private var mockTdsURLProvider: MockTrackerDataURLProvider!

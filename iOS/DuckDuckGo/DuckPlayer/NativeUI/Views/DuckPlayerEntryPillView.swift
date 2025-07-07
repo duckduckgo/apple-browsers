@@ -30,7 +30,6 @@ struct DuckPlayerEntryPillView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     struct Constants {
-        static let daxLogo = "Home"
         static let playImage = "play.fill"
 
         // Layout
@@ -62,12 +61,12 @@ struct DuckPlayerEntryPillView: View {
                 VStack(spacing: Constants.vStackSpacing) {
                     HStack(spacing: Constants.hStackSpacing) {
 
-                        Image(Constants.daxLogo)
+                        Image(.home)
                             .resizable()
                             .frame(width: Constants.iconSize, height: Constants.iconSize)
 
                         VStack(alignment: .leading) {
-                            Text(UserText.duckPlayerNativeOpenInDuckPlayer)
+                            Text(UserText.duckPlayerOptInPillTitle)
                                 .daxSubheadSemibold()
                                 .foregroundColor(Color(designSystemColor: .textPrimary))
                                 .multilineTextAlignment(.leading)
@@ -75,7 +74,7 @@ struct DuckPlayerEntryPillView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .layoutPriority(1)
 
-                            Text(UserText.duckPlayerTapToWatchWithoutAds)
+                            Text(UserText.duckPlayerOptInPillSubtitle)
                                 .daxFootnoteRegular()
                                 .foregroundColor(Color(designSystemColor: .textSecondary))
                                 .multilineTextAlignment(.leading)

@@ -17,10 +17,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Core
-import Onboarding
 import class UIKit.UIApplication
+import Common
+import Core
+import Foundation
+import Onboarding
 
 @MainActor
 final class OnboardingIntroViewModel: ObservableObject {
@@ -30,6 +31,12 @@ final class OnboardingIntroViewModel: ObservableObject {
         var showIntroViewContent = true
         var showIntroButton = false
         var animateIntroText = false
+    }
+
+    struct SkipOnboardingState {
+        var animateTitle = true
+        var animateMessage = false
+        var showContent = false
     }
 
     struct BrowserComparisonState {
@@ -58,6 +65,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         }
     }
 
+    @Published var skipOnboardingState = SkipOnboardingState()
     @Published var appIconPickerContentState = AppIconPickerContentState()
     @Published var addressBarPositionContentState = AddressBarPositionContentState()
     @Published var addToDockState = AddToDockState()
@@ -73,6 +81,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     private var currentIntroStep: OnboardingIntroStep
 
     private let defaultBrowserManager: DefaultBrowserManaging
+    private let contextualDaxDialogs: ContextualDaxDialogDisabling
     private let pixelReporter: LinearOnboardingPixelReporting
     private let onboardingManager: OnboardingManaging
     private let urlOpener: URLOpener
@@ -83,10 +92,11 @@ final class OnboardingIntroViewModel: ObservableObject {
         let onboardingManager = OnboardingManager()
         self.init(
             defaultBrowserManager: DefaultBrowserManager(),
+            contextualDaxDialogs: DaxDialogs.shared,
             pixelReporter: pixelReporter,
             onboardingManager: onboardingManager,
             urlOpener: UIApplication.shared,
-            currentOnboardingStep: onboardingManager.onboardingSteps.first ?? .introDialog,
+            currentOnboardingStep: onboardingManager.onboardingSteps.first ?? .introDialog(isReturningUser: false),
             appIconProvider: { AppIconManager.shared.appIcon },
             addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition }
         )
@@ -94,6 +104,7 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     init(
         defaultBrowserManager: DefaultBrowserManaging,
+        contextualDaxDialogs: ContextualDaxDialogDisabling,
         pixelReporter: LinearOnboardingPixelReporting,
         onboardingManager: OnboardingManaging,
         urlOpener: URLOpener,
@@ -102,6 +113,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         addressBarPositionProvider: @escaping () -> AddressBarPosition
     ) {
         self.defaultBrowserManager = defaultBrowserManager
+        self.contextualDaxDialogs = contextualDaxDialogs
         self.pixelReporter = pixelReporter
         self.onboardingManager = onboardingManager
         self.urlOpener = urlOpener
@@ -117,8 +129,27 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeInitialViewState()
     }
 
-    func startOnboardingAction() {
+    func startOnboardingAction(isResumingOnboarding: Bool = false) {
+        if isResumingOnboarding {
+            pixelReporter.measureResumeOnboardingCTAAction()
+        }
         makeNextViewState()
+    }
+
+    func skipOnboardingAction() {
+        pixelReporter.measureSkipOnboardingCTAAction()
+    }
+
+    func confirmSkipOnboardingAction() {
+        pixelReporter.measureConfirmSkipOnboardingCTAAction()
+        contextualDaxDialogs.disableContextualDaxDialogs()
+        onCompletingOnboardingIntro?()
+    }
+
+    func enrollUserInPiPVideoExperimentAndCheckIfShouldShowVideoTutorial() -> Bool {
+        pixelReporter.measureChooseBrowserCTAAction()
+
+        return shouldShowSetDefaultBrowserTutorialVideo()
     }
 
     func setDefaultBrowserAction() {
@@ -127,8 +158,15 @@ final class OnboardingIntroViewModel: ObservableObject {
         if let url = URL(string: urlPath) {
             urlOpener.open(url)
         }
-        pixelReporter.measureChooseBrowserCTAAction()
 
+        // If the user is in the treatment group do not transition to the next step as it will interrupt PiP.
+        // Manually stopping PiP on willEnterForeground event doesn't seem to work fine. Stopping it on didBecomeActive shows a UI glitch as the player tries to go back in place first.
+        guard !shouldShowSetDefaultBrowserTutorialVideo() else { return }
+
+        makeNextViewState()
+    }
+
+    func completedSetDefaultBrowserAction() {
         makeNextViewState()
     }
 
@@ -146,7 +184,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         }
     }
 
-    func addtoDockShowTutorialAction() {
+    func addToDockShowTutorialAction() {
         pixelReporter.measureAddToDockPromoShowTutorialCTAAction()
     }
 
@@ -197,8 +235,8 @@ private extension OnboardingIntroViewModel {
         }
 
         let viewState = switch introStep {
-        case .introDialog:
-            OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog, step: .hidden))
+        case .introDialog(let isReturningUser):
+            OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: isReturningUser), step: .hidden))
         case .browserComparison:
             OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog, step: stepInfo()))
         case .addToDockPromo:
@@ -234,33 +272,8 @@ private extension OnboardingIntroViewModel {
         setViewState(introStep: currentIntroStep)
     }
 
-    func makeViewState(for introStep: OnboardingIntroStep) -> OnboardingView.ViewState {
-        
-        func stepInfo() -> OnboardingView.ViewState.Intro.StepInfo {
-            guard let currentStepIndex = introSteps.firstIndex(of: introStep) else { return .hidden }
-
-            // Remove startOnboardingDialog from the count of total steps since we don't show the progress for that step.
-            return OnboardingView.ViewState.Intro.StepInfo(currentStep: currentStepIndex, totalSteps: introSteps.count - 1)
-        }
-
-        let viewState = switch introStep {
-        case .introDialog:
-            OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog, step: .hidden))
-        case .browserComparison:
-            OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog, step: stepInfo()))
-        case .addToDockPromo:
-            OnboardingView.ViewState.onboarding(.init(type: .addToDockPromoDialog, step: stepInfo()))
-        case .appIconSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .chooseAppIconDialog, step: stepInfo()))
-        case .addressBarPositionSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .chooseAddressBarPositionDialog, step: stepInfo()))
-        }
-
-        return viewState
-    }
-
     func measureDDGDefaultBrowserIfNeeded() {
-        guard onboardingManager.isEnrolledInSetAsDefaultBrowserExperiment else { return }
+        guard onboardingManager.isEnrolledInSetAsDefaultBrowserPipVideoExperiment else { return }
 
         defaultBrowserManager.defaultBrowserInfo()
             .onNewValue { newInfo in
@@ -286,6 +299,10 @@ private extension OnboardingIntroViewModel {
         case .chooseAddressBarPositionDialog:
             pixelReporter.measureAddressBarPositionSelectionImpression()
         }
+    }
+
+    func shouldShowSetDefaultBrowserTutorialVideo() -> Bool {
+        onboardingManager.resolveSetAsDefaultBrowserPipVideoExperimentCohort() == .treatment ? true : false
     }
 
 }

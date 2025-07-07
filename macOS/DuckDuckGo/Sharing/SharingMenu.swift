@@ -17,10 +17,18 @@
 //
 
 import Cocoa
+import PixelKit
 
 final class SharingMenu: NSMenu {
 
-    override init(title: String) {
+    enum Location: Equatable {
+        case mainMenu, moreOptionsMenu, addressBarTextField
+    }
+
+    let location: Location
+
+    init(title: String, location: Location) {
+        self.location = location
         super.init(title: title)
 
         self.autoenablesItems = true
@@ -46,7 +54,7 @@ final class SharingMenu: NSMenu {
     typealias SharingData = (title: String?, items: [Any])
     @MainActor
     private func sharingData() -> SharingData? {
-        guard let tabViewModel = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.selectedTabViewModel,
+        guard let tabViewModel = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.selectedTabViewModel,
               tabViewModel.canReload,
               !tabViewModel.isShowingErrorPage,
               let url = tabViewModel.tab.content.userEditableUrl else { return nil }
@@ -97,6 +105,9 @@ final class SharingMenu: NSMenu {
             return
         }
 
+        if location == .moreOptionsMenu {
+            PixelKit.fire(MoreOptionsMenuPixel.shareActionClicked, frequency: .daily)
+        }
         service.subject = sharingData.title
         service.perform(withItems: sharingData.items.filter { service.canPerform(withItems: [$0]) })
     }

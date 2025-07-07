@@ -30,7 +30,7 @@ public class TabsModel: NSObject, NSCoding {
     }
 
     private(set) var currentIndex: Int
-    private(set) var tabs: [Tab]
+    @Published private(set) var tabs: [Tab]
 
     var hasUnread: Bool {
         return tabs.contains(where: { !$0.viewed })

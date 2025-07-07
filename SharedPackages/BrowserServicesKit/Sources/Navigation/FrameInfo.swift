@@ -80,6 +80,12 @@ extension FrameInfo: Equatable {
         return lhs.handle == rhs.handle && lhs.webView == rhs.webView && lhs.isMainFrame == rhs.isMainFrame && lhs.url.matches(rhs.url) && lhs.securityOrigin == rhs.securityOrigin
     }
 }
+#else
+extension FrameInfo: Equatable {
+    public static func == (lhs: FrameInfo, rhs: FrameInfo) -> Bool {
+        return lhs.webView == rhs.webView && lhs.isMainFrame && rhs.isMainFrame && lhs.url.matches(rhs.url) && lhs.securityOrigin == rhs.securityOrigin
+    }
+}
 #endif
 
 extension SecurityOrigin {

@@ -17,14 +17,15 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Core
+import AIChat
 import BrowserServicesKit
+import Core
+import Foundation
+import SpecialErrorPages
+import Subscription
 import TrackerRadarKit
 import UserScript
 import WebKit
-import SpecialErrorPages
-import AIChat
 
 final class UserScripts: UserScriptsProvider {
 
@@ -36,6 +37,8 @@ final class UserScripts: UserScriptsProvider {
     let contentScopeUserScriptIsolated: ContentScopeUserScript
     let autoconsentUserScript: AutoconsentUserScript
     let aiChatUserScript: AIChatUserScript
+    let subscriptionUserScript: SubscriptionUserScript
+    let subscriptionNavigationHandler: SubscriptionURLNavigationHandler
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -63,7 +66,7 @@ final class UserScripts: UserScriptsProvider {
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig)
         autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
-        
+
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
         contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                         properties: sourceProvider.contentScopeProperties,
@@ -74,10 +77,20 @@ final class UserScripts: UserScriptsProvider {
                                                                 privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         autoconsentUserScript = AutoconsentUserScript(config: sourceProvider.privacyConfigurationManager.privacyConfig)
 
-        let aiChatScriptHandler = AIChatUserScriptHandler(featureFlagger: featureFlagger)
+        let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
+        let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
+
+        subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
+        subscriptionUserScript = SubscriptionUserScript(
+            platform: .ios,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+            paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
+            navigationDelegate: subscriptionNavigationHandler,
+            debugHost: aiChatDebugSettings.messagePolicyHostname)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
 
         // Special pages - Such as Duck Player
         specialPages = SpecialPagesUserScript()
@@ -108,13 +121,16 @@ final class UserScripts: UserScriptsProvider {
     // Initialize DuckPlayer scripts
     private func initializeDuckPlayer() {
         if let duckPlayer {
-            
             // Initialize scripts if nativeUI is disabled
             if !duckPlayer.settings.nativeUI {
                 youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: duckPlayer)
                 youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: duckPlayer)
                 youtubeOverlayScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
                 youtubePlayerUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
+            } else {
+                // Initialize DuckPlayer UserScript
+                let duckPlayerUserScript = DuckPlayerUserScriptYouTube(duckPlayer: duckPlayer)
+                contentScopeUserScriptIsolated.registerSubfeature(delegate: duckPlayerUserScript)
             }
         }
     }

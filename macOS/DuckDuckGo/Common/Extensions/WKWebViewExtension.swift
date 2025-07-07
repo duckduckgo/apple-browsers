@@ -18,9 +18,10 @@
 
 import Combine
 import Common
+import CommonObjCExtensions
 import Navigation
-import WebKit
 import os.log
+import WebKit
 
 extension WKWebView {
 

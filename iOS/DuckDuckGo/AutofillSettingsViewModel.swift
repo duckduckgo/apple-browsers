@@ -22,9 +22,12 @@ import Core
 import PrivacyDashboard
 import SwiftUI
 import BrowserServicesKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 protocol AutofillSettingsViewModelDelegate: AnyObject {
     func navigateToPasswords(viewModel: AutofillSettingsViewModel)
+    func navigateToCreditCards(viewModel: AutofillSettingsViewModel)
     func navigateToFileImport(viewModel: AutofillSettingsViewModel)
     func navigateToImportViaSync(viewModel: AutofillSettingsViewModel)
 }
@@ -32,13 +35,37 @@ protocol AutofillSettingsViewModelDelegate: AnyObject {
 final class AutofillSettingsViewModel: ObservableObject {
     
     weak var delegate: AutofillSettingsViewModelDelegate?
-    
+
+    var secureVault: (any AutofillSecureVault)?
     private let autofillNeverPromptWebsitesManager: AutofillNeverPromptWebsitesManager
     private let appSettings: AppSettings
     private let keyValueStore: KeyValueStoringDictionaryRepresentable
-    private var secureVault: (any AutofillSecureVault)?
     private let source: AutofillSettingsSource
-    
+    private let featureFlagger: FeatureFlagger
+
+    enum AutofillType {
+        case passwords
+        case creditCards
+
+        var icon: Image {
+            switch self {
+            case .passwords:
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.key)
+            case .creditCards:
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.creditCard)
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .passwords:
+                return UserText.autofillLoginListTitle
+            case .creditCards:
+                return UserText.autofillCreditCardListTitle
+            }
+        }
+    }
+
     @Published var passwordsCount: Int?
     @Published var savePasswordsEnabled: Bool {
         didSet {
@@ -54,32 +81,69 @@ final class AutofillSettingsViewModel: ObservableObject {
         }
     }
     @Published var showingResetConfirmation = false
-    
+    @Published var showCreditCards = false
+    @Published var creditCardsCount: Int?
+    var saveCreditCardsEnabled: Binding<Bool> {
+        Binding(
+            get: { self.showCreditCards ? self.appSettings.autofillCreditCardsEnabled : false },
+            set: { [weak self] newValue in
+                guard let self = self, self.showCreditCards else { return }
+                
+                self.appSettings.autofillCreditCardsEnabled = newValue
+                self.keyValueStore.set(false, forKey: UserDefaultsWrapper<Bool>.Key.autofillCreditCardsFirstTimeUser.rawValue)
+                NotificationCenter.default.post(name: AppUserDefaults.Notifications.autofillEnabledChange, object: self)
+
+                if newValue {
+                    Pixel.fire(pixel: .autofillCardsSettingsEnabled)
+                } else {
+                    Pixel.fire(pixel: .autofillCardsSettingsDisabled, withAdditionalParameters: ["source": source.rawValue])
+                }
+            }
+        )
+    }
+
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          keyValueStore: KeyValueStoringDictionaryRepresentable = UserDefaults.standard,
          autofillNeverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager,
          secureVault: (any AutofillSecureVault)? = nil,
-         source: AutofillSettingsSource) {
+         source: AutofillSettingsSource,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.autofillNeverPromptWebsitesManager = autofillNeverPromptWebsitesManager
         self.appSettings = appSettings
         self.keyValueStore = keyValueStore
         self.secureVault = secureVault
         self.source = source
-        
+        self.featureFlagger = featureFlagger
+
         savePasswordsEnabled = appSettings.autofillCredentialsEnabled
         updatePasswordsCount()
+
+        showCreditCards = featureFlagger.isFeatureOn(.autofillCreditCards)
+        if showCreditCards {
+            updateCreditCardsCount()
+        }
     }
-    
-    func updatePasswordsCount() {
+
+    func initSecureVaultIfRequired() {
         if secureVault == nil {
             do {
                 secureVault = try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
             } catch {
-                passwordsCount = nil
                 return
             }
         }
-        
+    }
+    
+    func refreshCounts() {
+        updatePasswordsCount()
+        if showCreditCards {
+            updateCreditCardsCount()
+        }
+    }
+
+    func updatePasswordsCount() {
+        initSecureVaultIfRequired()
+
         guard let vault = secureVault else {
             passwordsCount = nil
             return
@@ -92,6 +156,21 @@ final class AutofillSettingsViewModel: ObservableObject {
         }
     }
     
+    func updateCreditCardsCount() {
+        initSecureVaultIfRequired()
+
+        guard let vault = secureVault else {
+            passwordsCount = nil
+            return
+        }
+
+        do {
+            creditCardsCount = try vault.creditCardsCount()
+        } catch {
+            creditCardsCount = nil
+        }
+    }
+
     func footerAttributedString() -> AttributedString {
         let markdownString = UserText.autofillLearnMoreLinkTitle
         
@@ -110,7 +189,11 @@ final class AutofillSettingsViewModel: ObservableObject {
     func navigateToPasswords() {
         delegate?.navigateToPasswords(viewModel: self)
     }
-    
+
+    func navigateToCreditCards() {
+        delegate?.navigateToCreditCards(viewModel: self)
+    }
+
     func navigateToFileImport() {
         delegate?.navigateToFileImport(viewModel: self)
     }

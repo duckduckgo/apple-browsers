@@ -87,7 +87,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private var cancellables = Set<AnyCancellable>()
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
-    static private(set) var isOnboardingFinished: Bool
+    static var isOnboardingFinished: Bool
 
     let configuration: OnboardingConfiguration = {
         var systemSettings: SystemSettings
@@ -110,12 +110,32 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         return OnboardingConfiguration(stepDefinitions: stepDefinitions, exclude: [], order: order, env: env, locale: preferredLocale, platform: platform)
     }()
 
-    init(navigationDelegate: OnboardingNavigating,
-         dockCustomization: DockCustomization,
-         defaultBrowserProvider: DefaultBrowserProvider,
-         appearancePreferences: AppearancePreferences,
-         startupPreferences: StartupPreferences,
-         dataImportProvider: DataImportStatusProviding = BookmarksAndPasswordsImportStatusProvider()) {
+    convenience init(
+        navigationDelegate: OnboardingNavigating,
+        dockCustomization: DockCustomization,
+        defaultBrowserProvider: DefaultBrowserProvider,
+        appearancePreferences: AppearancePreferences,
+        startupPreferences: StartupPreferences,
+        bookmarkManager: BookmarkManager
+    ) {
+        self.init(
+            navigationDelegate: navigationDelegate,
+            dockCustomization: dockCustomization,
+            defaultBrowserProvider: defaultBrowserProvider,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager)
+        )
+    }
+
+    init(
+        navigationDelegate: OnboardingNavigating,
+        dockCustomization: DockCustomization,
+        defaultBrowserProvider: DefaultBrowserProvider,
+        appearancePreferences: AppearancePreferences,
+        startupPreferences: StartupPreferences,
+        dataImportProvider: DataImportStatusProviding
+    ) {
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
@@ -130,7 +150,6 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     @MainActor
     func goToAddressBar() {
-        PixelKit.fire(GeneralPixel.onboardingStepCompleteCustomize, frequency: .legacyDaily)
         onboardingHasFinished()
         let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
         navigation.replaceTabWith(tab)
@@ -195,20 +214,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     func stepCompleted(step: OnboardingSteps) {
-        switch step {
-        case .welcome:
-            PixelKit.fire(GeneralPixel.onboardingStepCompleteWelcome, frequency: .legacyDaily)
-        case .getStarted:
-            PixelKit.fire(GeneralPixel.onboardingStepCompleteGetStarted, frequency: .legacyDaily)
-        case .makeDefaultSingle:
-            PixelKit.fire(GeneralPixel.onboardingStepCompletePrivateByDefault, frequency: .legacyDaily)
-        case .systemSettings:
-            PixelKit.fire(GeneralPixel.onboardingStepCompleteSystemSettings, frequency: .legacyDaily)
-        case .duckPlayerSingle:
-            PixelKit.fire(GeneralPixel.onboardingStepCompleteCleanerBrowsing, frequency: .legacyDaily)
-        case .customize:
-            PixelKit.fire(GeneralPixel.onboardingStepCompleteCustomize, frequency: .legacyDaily)
-        }
+        Logger.general.error("Onboarding step: \("\(step)", privacy: .public)")
     }
 
     func reportException(with param: [String: String]) {

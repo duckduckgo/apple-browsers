@@ -84,11 +84,7 @@ final class PinnedTabsViewModel: ObservableObject {
 
     // MARK: -
 
-    init(
-        collection: TabCollection,
-        fireproofDomains: FireproofDomains = .shared,
-        bookmarkManager: BookmarkManager = LocalBookmarkManager.shared
-    ) {
+    init(collection: TabCollection, fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager) {
         tabsDidReorderPublisher = tabsDidReorderSubject.eraseToAnyPublisher()
         contextMenuActionPublisher = contextMenuActionSubject.eraseToAnyPublisher()
         self.fireproofDomains = fireproofDomains
@@ -176,7 +172,7 @@ extension PinnedTabsViewModel {
 
     func unpin(_ tab: Tab) {
         guard let index = items.firstIndex(of: tab) else {
-            Logger.bitWarden.error("PinnedTabsViewModel: Failed to get index of a tab")
+            Logger.pinnedTabs.error("PinnedTabsViewModel: Failed to get index of a tab")
             return
         }
         contextMenuActionSubject.send(.unpin(index))
@@ -184,7 +180,7 @@ extension PinnedTabsViewModel {
 
     func duplicate(_ tab: Tab) {
         guard let index = items.firstIndex(of: tab) else {
-            Logger.bitWarden.error("PinnedTabsViewModel: Failed to get index of a tab")
+            Logger.pinnedTabs.error("PinnedTabsViewModel: Failed to get index of a tab")
             return
         }
         contextMenuActionSubject.send(.duplicate(index))
@@ -192,7 +188,7 @@ extension PinnedTabsViewModel {
 
     func close(_ tab: Tab) {
         guard let index = items.firstIndex(of: tab) else {
-            Logger.bitWarden.error("PinnedTabsViewModel: Failed to get index of a tab")
+            Logger.pinnedTabs.error("PinnedTabsViewModel: Failed to get index of a tab")
             return
         }
         contextMenuActionSubject.send(.close(index))

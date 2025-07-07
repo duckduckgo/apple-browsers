@@ -32,7 +32,7 @@ let package = Package(
             targets: ["HistoryView"]),
     ],
     dependencies: [
-        .package(path: "../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../WebKitExtensions"),
         .package(path: "../UserScriptActionsManager"),
         .package(path: "../Utilities"),

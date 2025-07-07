@@ -61,7 +61,7 @@ final class BookmarkAllTabsDialogViewModel: BookmarkAllTabsDialogEditing {
     init(
         websites: [WebsiteInfo],
         foldersStore: BookmarkFoldersStore,
-        bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
+        bookmarkManager: BookmarkManager,
         dateFormatterConfigurationProvider: () -> DateFormatterConfiguration = DateFormatterConfiguration.defaultConfiguration
     ) {
         self.websites = websites

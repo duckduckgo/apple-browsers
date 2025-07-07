@@ -12,14 +12,23 @@ on:
 jobs:
   build-end-to-end-tests:
     name: Build End to End Tests
-    runs-on: macos-15-xlarge
+    runs-on: macos-15
     timeout-minutes: 30
+
+    env:
+      RUNS_ON: macos-15 # keep this in sync with runs-on above
 
     steps:
     - name: Check out the code
       uses: actions/checkout@v4
       with:
         submodules: recursive
+
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
 
     - name: Set cache key hash
       run: |
@@ -40,7 +49,7 @@ jobs:
           ${{ runner.os }}-ios-
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Build for tests
       run: |
@@ -52,6 +61,15 @@ jobs:
           -skipMacroValidation \
           ONLY_ACTIVE_ARCH=NO \
         | tee xcodebuild.log
+
+    - name: Report job duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_ios_e2e_tests_build
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
     - name: Store Binary
       uses: actions/upload-artifact@v4
@@ -74,6 +92,10 @@ jobs:
     needs: build-end-to-end-tests
     runs-on: macos-15
     timeout-minutes: 300
+
+    env:
+      RUNS_ON: macos-15 # keep this in sync with runs-on above
+
     strategy:
       matrix:
         test-tag: [release, privacy, securityTest, adClick]
@@ -85,6 +107,12 @@ jobs:
     - name: Check out the code
       uses: actions/checkout@v4 # Don't need submodules here as this is only for the tests folder
 
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
+
     - name: Retrieve Binary
       uses: actions/download-artifact@v4
       with:
@@ -93,7 +121,7 @@ jobs:
 
     - name: End to End tests
       id: upload
-      uses: loremattei/action-maestro-cloud@fix-timeout-handling
+      uses: mobile-dev-inc/action-maestro-cloud@v1.9.8
       with:
         api-key: ${{ secrets.ROBIN_API_KEY }}
         project-id: ${{ vars.ROBIN_PROJECT_KEY }}
@@ -103,8 +131,17 @@ jobs:
         workspace: .maestro
         include-tags: ${{ matrix.test-tag }}
         env: ONBOARDING_COMPLETED=true
-        ios-version: 17
-        fail-on-timeout: true
+        device-os: iOS-18-2
+        device-model: iPhone-16
+
+    - name: Report job duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_ios_e2e_tests_${{ matrix.test-tag }}
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
   notify-failure:
     name: Notify on failure

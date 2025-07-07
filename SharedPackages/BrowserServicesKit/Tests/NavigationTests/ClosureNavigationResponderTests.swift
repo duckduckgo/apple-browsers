@@ -399,6 +399,8 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
 
     @MainActor
     func testWhenWebContentProcessIsTerminated_webProcessDidTerminateAndNavigationDidFailReceived() throws {
+        throw XCTSkip("termination handler broken on macOS 15.5+")
+
         let eDidFail = expectation(description: "onDidFail")
         let eDidTerminate = expectation(description: "onDidTerminate")
         let responder = ClosureNavigationResponder(decidePolicy: { _, _ in
@@ -418,7 +420,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
         navigationDelegate.setResponders(.struct(responder))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 

@@ -31,12 +31,15 @@ struct FavoriteIconView: View {
 
     let favorite: Favorite
     let faviconLoading: FavoritesFaviconLoading?
+    let isExperimentalAppearanceEnabled: Bool
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 8)
+            Self.itemShape(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
                 .fill(Color(designSystemColor: .surface))
-                .shadow(color: .shade(0.12), radius: 0.5, y: 1)
+                .if(!isExperimentalAppearanceEnabled) {
+                    $0.shadow(color: .shade(0.12), radius: 0.5, y: 1)
+                }
                 .aspectRatio(1, contentMode: .fit)
 
             Image(uiImage: favicon.image)
@@ -45,7 +48,7 @@ struct FavoriteIconView: View {
                 .if(favicon.isUsingBorder) {
                     $0.padding(Constant.borderSize)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(Self.itemShape(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled))
         }
         .task {
             if favicon.isFake, let favicon = await faviconLoading?.loadFavicon(for: favorite, size: Constant.faviconSize) {
@@ -53,18 +56,28 @@ struct FavoriteIconView: View {
             }
         }
     }
+
+    static func itemShape(isExperimentalAppearanceEnabled: Bool) -> RoundedRectangle {
+        if isExperimentalAppearanceEnabled {
+            RoundedRectangle(cornerRadius: Constant.cornerRadiusExperimental, style: .continuous)
+        } else {
+            RoundedRectangle(cornerRadius: Constant.cornerRadius)
+        }
+    }
 }
 
 private struct Constant {
     static let faviconSize: CGFloat = 64
     static let borderSize: CGFloat = 12
+    static let cornerRadiusExperimental: CGFloat = 12
+    static let cornerRadius: CGFloat = 8
 }
 
 #Preview {
     VStack(spacing: 8) {
-        FavoriteIconView(favorite: Favorite.mock("apple.com"), faviconLoading: nil)
-        FavoriteIconView(favorite: Favorite.mock("duckduckgo.com"), faviconLoading: nil)
-        FavoriteIconView(favorite: Favorite.mock("foobar.com"), faviconLoading: nil)
+        FavoriteIconView(favorite: Favorite.mock("apple.com"), isExperimentalAppearanceEnabled: false, faviconLoading: nil)
+        FavoriteIconView(favorite: Favorite.mock("duckduckgo.com"), isExperimentalAppearanceEnabled: false, faviconLoading: nil)
+        FavoriteIconView(favorite: Favorite.mock("foobar.com"), isExperimentalAppearanceEnabled: false, faviconLoading: nil)
     }
 }
 
@@ -75,10 +88,10 @@ private extension Favorite {
 }
 
 extension FavoriteIconView {
-    init(favorite: Favorite, faviconLoading: FavoritesFaviconLoading? = nil) {
+    init(favorite: Favorite, isExperimentalAppearanceEnabled: Bool, faviconLoading: FavoritesFaviconLoading? = nil) {
         let favicon = faviconLoading?.existingFavicon(for: favorite, size: Constant.faviconSize)
         ?? faviconLoading?.fakeFavicon(for: favorite, size: Constant.faviconSize)
         ?? .empty
-        self.init(favicon: favicon, favorite: favorite, faviconLoading: faviconLoading)
+        self.init(favicon: favicon, favorite: favorite, faviconLoading: faviconLoading, isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
     }
 }

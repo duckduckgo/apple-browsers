@@ -42,11 +42,13 @@ read_command_line_arguments() {
 
 	case "$1" in
 		review)
+			release_type="review"
 			app_name="DuckDuckGo Review"
 			scheme="macOS Browser Review"
 			configuration="Review"
 			;;
 		release)
+			release_type="release"
 			app_name="DuckDuckGo"
 			scheme="macOS Browser"
 			configuration="Release"
@@ -108,6 +110,17 @@ create_dmg_preflight() {
 	create_dmg=1
 }
 
+check_dependencies() {
+	if ! command -v xz &> /dev/null; then
+		cat <<- EOF
+		xz is required for tar.xz compression. Install it with:
+		  $ brew install xz
+
+		EOF
+		die
+	fi
+}
+
 set_up_environment() {
 	workdir="${PWD}/release"
 	archive="${workdir}/DuckDuckGo.xcarchive"
@@ -126,7 +139,7 @@ set_up_environment() {
 	app_path="${workdir}/${app_name}.app"
 	dsym_path="${archive}/dSYMs"
 
-	output_app_zip_path="${workdir}/DuckDuckGo-${version_identifier}.zip"
+	output_app_tar_xz_path="${workdir}/DuckDuckGo-${version_identifier}.app.tar.xz"
 	output_dsym_zip_path="${workdir}/DuckDuckGo-${version_identifier}-dSYM.zip"
 }
 
@@ -275,10 +288,54 @@ staple_notarized_app() {
 }
 
 compress_app_and_dsym() {
-	echo "Compressing app and dSYMs ..."
+	echo "Creating tar.xz archive and compressing dSYMs ..."
 
-	ditto -c -k --keepParent "${app_path}" "${output_app_zip_path}"
+	# Change to workdir to avoid full path in tar archive
+	pushd "${workdir}" > /dev/null
+	
+	# Temporarily rename app bundle to include version for consistency in archive
+	local versioned_app_name="DuckDuckGo-${version_identifier}.app"
+	local original_app_name="${app_name}.app"
+	
+	if [[ "${original_app_name}" != "${versioned_app_name}" ]]; then
+		echo "Temporarily renaming app bundle for archive: ${versioned_app_name}"
+		mv -f "${original_app_name}" "${versioned_app_name}"
+	fi
+	
+	# Create tar archive of the versioned app bundle
+	echo "Creating tar archive..."
+	tar -cvf "DuckDuckGo-${version_identifier}.app.tar" "${versioned_app_name}"
+	
+	# Rename app bundle back to original name for compatibility with other workflows
+	if [[ "${original_app_name}" != "${versioned_app_name}" ]]; then
+		echo "Renaming app bundle back to original name: ${original_app_name}"
+		mv -f "${versioned_app_name}" "${original_app_name}"
+	fi
+	
+	# Compress with xz using maximum compression
+	echo "Compressing with xz (maximum compression)..."
+	xz -9 "DuckDuckGo-${version_identifier}.app.tar"
+	
+	popd > /dev/null
+	
+	# Create dSYM archive
 	ditto -c -k --keepParent "${dsym_path}" "${output_dsym_zip_path}"
+	
+	if [[ -f "${output_app_tar_xz_path}" ]]; then
+		echo "✅ App tar.xz archive created successfully: ${output_app_tar_xz_path}"
+		ls -lh "${output_app_tar_xz_path}"
+	else
+		echo "❌ ERROR: App tar.xz archive was not created"
+		exit 1
+	fi
+	
+	if [[ -f "${output_dsym_zip_path}" ]]; then
+		echo "✅ dSYM archive created successfully: ${output_dsym_zip_path}"
+		ls -lh "${output_dsym_zip_path}"
+	else
+		echo "❌ ERROR: dSYM archive was not created"
+		exit 1
+	fi
 }
 
 create_dmg() {
@@ -286,6 +343,7 @@ create_dmg() {
 
 	local dmg_dir="${workdir}/dmg"
 	local dmg_background="${cwd}/assets/dmg-background.png"
+	local dmg_icon="${cwd}/assets/dmg-${release_type}.icns"
 	dmg_output_path="${workdir}/duckduckgo-${version_identifier}.dmg"
 
 	rm -rf "${dmg_dir}" "${dmg_output_path}"
@@ -293,6 +351,7 @@ create_dmg() {
 	cp -R "${app_path}" "${dmg_dir}"
 	# Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
 	${filter_output} create-dmg --volname "${app_name}" \
+		--volicon "${dmg_icon}" \
 		--filesystem APFS \
 		--icon "${app_name}.app" 140 160 \
 		--background "${dmg_background}" \
@@ -309,11 +368,16 @@ export_app_version_to_environment() {
 	fi
 }
 
+
+
 main() {
 	# Load keychain-related functions first, because `clear-keychain`
 	# is required when parsing command-line arguments.
 	source "${cwd}/helpers/keychain.sh"
 	read_command_line_arguments "$@"
+	
+	# Check required dependencies
+	check_dependencies
 	
 	# Load Asana-related functions. This calls `_asana_preflight` which
 	# will check for Asana access token if needed (if asana task was passed to the script).
@@ -348,7 +412,7 @@ main() {
 	if [[ ${create_dmg} ]]; then
 		echo "App DMG image ready at ${dmg_output_path}"
 	fi
-	echo "Compressed app ready at ${output_app_zip_path}"
+	echo "Compressed app (tar.xz) ready at ${output_app_tar_xz_path}"
 	echo "Compressed debug symbols ready at ${output_dsym_zip_path}"
 
 	if [[ -n $CI ]]; then

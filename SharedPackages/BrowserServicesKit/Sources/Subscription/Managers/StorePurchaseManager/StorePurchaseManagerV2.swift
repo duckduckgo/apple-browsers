@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import StoreKit
 import os.log
@@ -25,7 +26,7 @@ public enum StoreError: Error {
     case failedVerification
 }
 
-public enum StorePurchaseManagerError: Error {
+public enum StorePurchaseManagerError: LocalizedError {
     case productNotFound
     case externalIDisNotAValidUUID
     case purchaseFailed
@@ -33,6 +34,29 @@ public enum StorePurchaseManagerError: Error {
     case transactionPendingAuthentication
     case purchaseCancelledByUser
     case unknownError
+
+    public var errorDescription: String? {
+        switch self {
+        case .productNotFound:
+            return "Product not found"
+        case .externalIDisNotAValidUUID:
+            return "External ID is not a valid UUID"
+        case .purchaseFailed:
+            return "Purchase failed"
+        case .transactionCannotBeVerified:
+            return "Transaction cannot be verified"
+        case .transactionPendingAuthentication:
+            return "Transaction pending authentication"
+        case .purchaseCancelledByUser:
+            return "Purchase cancelled by user"
+        case .unknownError:
+            return "Unknown error"
+        }
+    }
+
+    public var localizedDescription: String {
+        errorDescription ?? "Unknown"
+    }
 }
 
 public protocol StorePurchaseManagerV2 {
@@ -51,6 +75,9 @@ public protocol StorePurchaseManagerV2 {
     var purchasedProductIDs: [String] { get }
     var purchaseQueue: [String] { get }
     var areProductsAvailable: Bool { get }
+    /// Publisher that emits a boolean value indicating whether products are available.
+    /// The value is updated whenever the `availableProducts` array changes.
+    var areProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
     var currentStorefrontRegion: SubscriptionRegion { get }
 
     @MainActor func syncAppleIDAccount() async throws
@@ -58,6 +85,9 @@ public protocol StorePurchaseManagerV2 {
     @MainActor func updatePurchasedProducts() async
     @MainActor func mostRecentTransaction() async -> String?
     @MainActor func hasActiveSubscription() async -> Bool
+    /// Checks if the user is eligible for a free trial subscription offer.
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
+    func isUserEligibleForFreeTrial() -> Bool
 
     @MainActor func purchaseSubscription(with identifier: String, externalID: String) async -> Result<StorePurchaseManagerV2.TransactionJWS, StorePurchaseManagerError>
 }
@@ -76,6 +106,16 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
     @Published public private(set) var purchaseQueue: [String] = []
 
     public var areProductsAvailable: Bool { !availableProducts.isEmpty }
+
+    /// Publisher that emits a boolean value indicating whether products are available.
+    /// The value is updated whenever the `availableProducts` array changes.
+    public var areProductsAvailablePublisher: AnyPublisher<Bool, Never> {
+        $availableProducts
+            .map { !$0.isEmpty }
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
     public private(set) var currentStorefrontRegion: SubscriptionRegion = .usa
     private var transactionUpdates: Task<Void, Never>?
     private var storefrontChanges: Task<Void, Never>?
@@ -157,7 +197,12 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
 
             self.currentStorefrontRegion = storefrontRegion
             let applicableProductIdentifiers = storeSubscriptionConfiguration.subscriptionIdentifiers(for: storefrontRegion)
-            let availableProducts = try await productFetcher.products(for: applicableProductIdentifiers)
+            let storeKitProducts = try await productFetcher.products(for: applicableProductIdentifiers)
+            var availableProducts: [AppStoreSubscriptionProduct] = []
+            for product in storeKitProducts {
+                let product = await AppStoreSubscriptionProduct.create(product: product)
+                availableProducts.append(product)
+            }
             Logger.subscriptionStorePurchaseManager.log("updateAvailableProducts fetched \(availableProducts.count) products for \(storefrontCountryCode ?? "<nil>", privacy: .public)")
 
             if Set(availableProducts.map { $0.id }) != Set(self.availableProducts.map { $0.id }) {
@@ -167,6 +212,8 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
                 for id in availableProducts.compactMap({ $0.id }) {
                     _ = await subscriptionFeatureMappingCache.subscriptionFeatures(for: id)
                 }
+
+                NotificationCenter.default.post(name: .availableAppStoreProductsDidChange, object: self, userInfo: nil)
             }
         } catch {
             Logger.subscriptionStorePurchaseManager.error("Failed to fetch available products: \(String(reflecting: error), privacy: .public)")
@@ -224,6 +271,13 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         return !transactions.isEmpty
     }
 
+    /// Checks if the user is eligible for a free trial subscription offer.
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
+    public func isUserEligibleForFreeTrial() -> Bool {
+        Logger.subscription.info("[StorePurchaseManager] isUserEligibleForFreeTrial")
+        return availableProducts.contains { $0.isEligibleForFreeTrial == true }
+    }
+
     @MainActor
     public func purchaseSubscription(with identifier: String, externalID: String) async -> Result<TransactionJWS, StorePurchaseManagerError> {
 
@@ -262,6 +316,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
                 // Successful purchase
                 await transaction.finish()
                 await self.updatePurchasedProducts()
+                await self.updateAvailableProductsTrialEligibility()
                 return .success(verificationResult.jwsRepresentation)
             case let .unverified(_, error):
                 Logger.subscriptionStorePurchaseManager.log("purchaseSubscription result: success /unverified/ - \(String(reflecting: error), privacy: .public)")
@@ -345,6 +400,28 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
             }
         }
     }
+
+    /// Updates the free trial eligibility status for all available subscription products.
+    ///
+    /// This method iterates through all products in the `availableProducts` array and refreshes
+    /// their stored free trial eligibility status by querying the underlying App Store products.
+    /// This ensures that the products reflect the most current trial eligibility state.
+    ///
+    /// This method is typically called after significant subscription events that might affect
+    /// trial eligibility, such as:
+    /// - Successful purchases (users typically become ineligible for trials after purchasing)
+    /// - Transaction updates from the App Store
+    /// - Account restoration events
+    ///
+    /// Note: `Internal` for testing
+    internal func updateAvailableProductsTrialEligibility() async {
+        for index in self.availableProducts.indices {
+            Logger.subscription.info("[StorePurchaseManager] updateAvailableProductsTrialStatus subscription id: \(self.availableProducts[index].id)")
+            var mutableProduct = self.availableProducts[index]
+            await mutableProduct.refreshFreeTrialEligibility()
+            self.availableProducts[index] = mutableProduct
+        }
+    }
 }
 
 @available(macOS 12.0, iOS 15.0, *)
@@ -354,9 +431,10 @@ private extension SubscriptionOptionV2 {
         var offer: SubscriptionOptionOffer?
 
         if let introOffer = product.introductoryOffer, introOffer.isFreeTrial {
-
             let durationInDays = introOffer.periodInDays
-            let isUserEligible = await product.isEligibleForIntroOffer
+
+            // Get fresh eligibility data
+            let isUserEligible = await product.checkFreshFreeTrialEligibility()
 
             offer = .init(type: .freeTrial, id: introOffer.id ?? "", durationInDays: durationInDays, isUserEligible: isUserEligible)
         }

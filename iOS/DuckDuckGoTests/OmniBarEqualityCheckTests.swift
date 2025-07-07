@@ -70,6 +70,7 @@ final class OmniBarEqualityCheckTests: XCTestCase {
 }
 
 private struct DummyOmniBarState: OmniBarState, OmniBarLoadingBearerStateCreating {
+
     var name: String
     var isLoading: Bool
     var dependencies: OmnibarDependencyProvider
@@ -92,6 +93,7 @@ private struct DummyOmniBarState: OmniBarState, OmniBarLoadingBearerStateCreatin
     var showVoiceSearch = false
     var showAbort = false
     var showDismiss = false
+    var showShare = false
 
     var onEditingStoppedState: OmniBarState { DummyOmniBarState() }
     var onEditingStartedState: OmniBarState { DummyOmniBarState() }

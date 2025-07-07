@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 
 public protocol SyncAlertsPresenting {
@@ -32,7 +33,7 @@ public struct SyncAlertsPresenter: SyncAlertsPresenting {
                 switch response {
                 case .alertSecondButtonReturn:
                     alert.window.sheetParent?.endSheet(alert.window)
-                    WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .sync)
+                    Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .sync)
                 default:
                     break
                 }

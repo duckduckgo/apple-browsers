@@ -18,7 +18,7 @@
 //
 
 import SwiftUI
-import NetworkProtection
+import VPN
 import Subscription
 import Core
 import Networking
@@ -41,6 +41,7 @@ struct NetworkProtectionRootView: View {
         feedbackFormModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
                                                          apiService: DefaultAPIService(),
                                                          vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                         isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
                                                          source: .vpn)
     }
 
@@ -48,7 +49,7 @@ struct NetworkProtectionRootView: View {
         NetworkProtectionStatusView(statusModel: statusViewModel, feedbackFormModel: feedbackFormModel)
             .navigationTitle(UserText.netPNavTitle)
             .onFirstAppear {
-                Pixel.fire(pixel: .privacyProVPNSettings)
+                Pixel.fire(pixel: .privacyProVPNSettings, withAdditionalParameters: self.statusViewModel.featureDiscovery.addToParams([:], forFeature: .vpn))
             }
     }
 }

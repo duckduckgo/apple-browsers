@@ -67,7 +67,7 @@ struct OnboardingSuggestedSearchesProvider: OnboardingSuggestionsItemsProviding 
     }
 
     private var surpriseMe: ContextualOnboardingListItem {
-        var search = UserText.ContextualOnboarding.tryASearchOptionSurpriseMe
+        let search = UserText.ContextualOnboarding.tryASearchOptionSurpriseMe
         if var url = URL.makeSearchUrl(from: search) {
             url = url.appendingParameter(name: "ia", value: "images")
             url = url.appendingParameter(name: "iax", value: "images")

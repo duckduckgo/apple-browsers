@@ -24,7 +24,7 @@ import BrowserServicesKit
 import Persistence
 import Bookmarks
 import RemoteMessaging
-import NetworkProtection
+import VPN
 import Subscription
 
 extension DefaultVPNActivationDateStore: VPNActivationDateProviding {}
@@ -35,18 +35,24 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         bookmarksDatabase: CoreDataDatabase,
         appSettings: AppSettings,
         internalUserDecider: InternalUserDecider,
-        duckPlayerStorage: DuckPlayerStorage
+        duckPlayerStorage: DuckPlayerStorage,
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+        themeManager: ThemeManaging = ThemeManager.shared
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
         self.internalUserDecider = internalUserDecider
         self.duckPlayerStorage = duckPlayerStorage
+        self.featureFlagger = featureFlagger
+        self.themeManager = themeManager
     }
 
     let bookmarksDatabase: CoreDataDatabase
     let appSettings: AppSettings
     let duckPlayerStorage: DuckPlayerStorage
     let internalUserDecider: InternalUserDecider
+    let featureFlagger: FeatureFlagger
+    let themeManager: ThemeManaging
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -66,6 +72,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
         let activationDateStore = DefaultVPNActivationDateStore()
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1
+        let autofillUsageStore = AutofillUsageStore()
 
         var privacyProDaysSinceSubscribed: Int = -1
         var privacyProDaysUntilExpiry: Int = -1
@@ -83,7 +90,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 
-        if let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad) {
+        if let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) {
             privacyProDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
             privacyProDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
             privacyProPurchasePlatform = subscription.platform.rawValue
@@ -101,15 +108,35 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: subscription)
+                                                                        subscription: subscription,
+                                                                        autofillUsageStore: autofillUsageStore)
         } else {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: nil)
+                                                                        subscription: nil,
+                                                                        autofillUsageStore: autofillUsageStore)
         }
 
         let dismissedMessageIds = store.fetchDismissedRemoteMessageIDs()
         let shownMessageIds = store.fetchShownRemoteMessageIDs()
+
+        let enabledFeatureFlags: [String] = FeatureFlag.allCases.filter { flag in
+            guard flag.cohortType == nil else { return false }
+
+            let isFlagEnabled: Bool
+            switch flag {
+            case .visualUpdates:
+                // Use value established at launch instead of live feature flag.
+                // This prevents showing remote message that's based on this flag prematurely,
+                // i.e. before `visualUpdates` flag becomes effective after restart.
+                // See https://app.asana.com/1/137249556945/project/1206226850447395/task/1210454132810101
+                isFlagEnabled = themeManager.properties.isExperimentalThemingEnabled
+            default:
+                isFlagEnabled = featureFlagger.isFeatureOn(for: flag)
+            }
+
+            return isFlagEnabled
+        }.map(\.rawValue)
 
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
@@ -133,7 +160,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isDuckPlayerOnboarded: isDuckPlayerOnboarded,
                                                        isDuckPlayerEnabled: isDuckPlayerEnabled,
                                                        dismissedMessageIds: dismissedMessageIds,
-                                                       shownMessageIds: shownMessageIds),
+                                                       shownMessageIds: shownMessageIds,
+                                                       enabledFeatureFlags: enabledFeatureFlags),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds

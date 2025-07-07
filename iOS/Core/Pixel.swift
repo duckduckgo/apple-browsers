@@ -85,6 +85,8 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
+    public static let authVersion = "authVersion"
+    public static let lastUsed = "last_used"
 
     // Text size is the legacy name
     public static let textZoomInitial = "text_size_initial"
@@ -162,6 +164,9 @@ public struct PixelParameters {
     public static let privacyProKeychainAccessType = "access_type"
     public static let privacyProKeychainError = "error"
 
+    // Sync
+    public static let connectedDevices = "connected_devices"
+
     // Persistent pixel
     public static let originalPixelTimestamp = "originalPixelTimestamp"
     public static let retriedPixel = "retriedPixel"
@@ -175,6 +180,9 @@ public struct PixelParameters {
 
     // Background Tasks
     public static let backgroundTaskCategory = "category"
+
+    // Default Browser Prompt
+    public static let defaultBrowserPromptNumberOfModalsShown = "numberOfModalsShown"
 }
 
 public struct PixelValues {
@@ -254,8 +262,10 @@ public class Pixel {
                             includedParameters: [QueryParameters] = [.appVersion],
                             onComplete: @escaping (Error?) -> Void = { _ in }) {
         var newParams = params
-        if includedParameters.contains(.appVersion) {
-            newParams[PixelParameters.appVersion] = AppVersion.shared.versionAndBuildNumber
+
+        // Only add app version if not already present
+        if includedParameters.contains(.appVersion) && newParams[PixelParameters.appVersion] == nil {
+            newParams[PixelParameters.appVersion] = AppVersion.shared.versionNumber
         }
 
         guard !isDryRun else {

@@ -48,7 +48,8 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                 isDuckPlayerOnboarded: false,
                 isDuckPlayerEnabled: false,
                 dismissedMessageIds: [],
-                shownMessageIds: []
+                shownMessageIds: [],
+                enabledFeatureFlags: []
             ),
             percentileStore: MockRemoteMessagePercentileStore(),
             surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -91,7 +92,8 @@ class RemoteMessagingConfigProcessorTests: XCTestCase {
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
-                    shownMessageIds: []
+                    shownMessageIds: [],
+                    enabledFeatureFlags: []
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

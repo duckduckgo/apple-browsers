@@ -21,14 +21,16 @@ import UIKit
 
 import Subscription
 import Core
-import NetworkProtection
+import VPN
 import StoreKit
 import BrowserServicesKit
 import Networking
 
 final class SubscriptionDebugViewController: UITableViewController {
 
-    let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+    private let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+    private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+
     private var subscriptionManagerV1: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager!
     }
@@ -54,7 +56,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.customBaseSubscriptionURL: "Custom Base Subscription URL",
         Sections.pixels: "Promo Pixel Parameters",
         Sections.metadata: "StoreKit Metadata",
-        Sections.featureFlags: "Feature Flags"
+        Sections.regionOverride: "Region override for App Store Sandbox",
     ]
 
     enum Sections: Int, CaseIterable {
@@ -65,7 +67,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case customBaseSubscriptionURL
         case pixels
         case metadata
-        case featureFlags
+        case regionOverride
     }
 
     enum AuthorizationRows: Int, CaseIterable {
@@ -103,13 +105,12 @@ final class SubscriptionDebugViewController: UITableViewController {
         case countryCode
     }
 
-    enum FeatureFlagRows: Int, CaseIterable {
-        case privacyProFreeTrialJan25
+    enum RegionOverrideRows: Int, CaseIterable {
+        case currentRegionOverride
     }
 
     private var storefrontID = "Loading"
     private var storefrontCountryCode = "Loading"
-    private let freeTrialKey = FreeTrialsFeatureFlagExperiment.Constants.featureFlagOverrideKey
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         return Sections.allCases.count
@@ -138,6 +139,7 @@ final class SubscriptionDebugViewController: UITableViewController {
 
         cell.textLabel?.textColor = UIColor.label
         cell.detailTextLabel?.text = nil
+        cell.accessoryView = nil
         cell.accessoryType = .none
 
         switch Sections(rawValue: indexPath.section) {
@@ -229,11 +231,41 @@ final class SubscriptionDebugViewController: UITableViewController {
                 break
             }
 
-        case .featureFlags:
-            switch FeatureFlagRows(rawValue: indexPath.row) {
-            case .privacyProFreeTrialJan25:
-                cell.textLabel?.text = "privacyProFreeTrialJan25"
-                cell.accessoryType = UserDefaults.standard.bool(forKey: freeTrialKey) ? .checkmark : .none
+        case .regionOverride:
+            switch RegionOverrideRows(rawValue: indexPath.row) {
+            case .currentRegionOverride:
+                cell.textLabel?.text = "Current override"
+
+                var buttonConfiguration = UIButton.Configuration.plain()
+                let button = UIButton(configuration: buttonConfiguration)
+
+                let adjustMenuButtonWidth = {
+                    button.frame = CGRect(x: 0, y: 0, width: 200, height: 40)
+                    button.sizeToFit()
+                }
+
+                let currentRegionOverride = subscriptionUserDefaults.storefrontRegionOverride
+
+                button.menu = UIMenu(options: [.singleSelection], children: [
+                    UIAction(title: "None", state: currentRegionOverride == nil ? .on : .off, handler: { [weak self] _ in
+                        self?.subscriptionUserDefaults.storefrontRegionOverride = nil
+                        adjustMenuButtonWidth()
+                    }),
+                    UIAction(title: "USA", state: currentRegionOverride == .usa ? .on : .off, handler: { [weak self] _ in
+                        self?.subscriptionUserDefaults.storefrontRegionOverride = .usa
+                        adjustMenuButtonWidth()
+                    }),
+                    UIAction(title: "Rest of World", state: currentRegionOverride == .restOfWorld ? .on : .off, handler: { [weak self] _ in
+                        self?.subscriptionUserDefaults.storefrontRegionOverride = .restOfWorld
+                        adjustMenuButtonWidth()
+                    }),
+                ])
+
+                button.showsMenuAsPrimaryAction = true
+                button.changesSelectionAsPrimaryAction = true
+
+                cell.accessoryView = button
+                adjustMenuButtonWidth()
             case .none:
                 break
             }
@@ -254,7 +286,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .customBaseSubscriptionURL: return CustomBaseSubscriptionURLRows.allCases.count
         case .pixels: return PixelsRows.allCases.count
         case .metadata: return MetadataRows.allCases.count
-        case .featureFlags: return FeatureFlagRows.allCases.count
+        case .regionOverride: return RegionOverrideRows.allCases.count
         case .none: return 0
         }
     }
@@ -295,11 +327,8 @@ final class SubscriptionDebugViewController: UITableViewController {
             }
         case .metadata:
             break
-        case .featureFlags:
-            switch FeatureFlagRows(rawValue: indexPath.row) {
-            case .privacyProFreeTrialJan25: togglePrivacyProFreeTrialJan25Flag()
-            default: break
-            }
+        case .regionOverride:
+            break
         case .none:
             break
         }
@@ -320,7 +349,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                     """
         let alertController = UIAlertController(title: "⚠️ App restart required! The changes are persistent",
                                                 message: message,
-                                                preferredStyle: .actionSheet)
+                                                preferredStyle: UIDevice.current.userInterfaceIdiom == .pad ? .alert : .actionSheet)
         alertController.addAction(UIAlertAction(title: "Yes", style: .destructive) { [weak self] _ in
             Task {
                 switch envRows {
@@ -448,12 +477,6 @@ final class SubscriptionDebugViewController: UITableViewController {
         showAlert(title: "", message: message)
     }
 
-    private func togglePrivacyProFreeTrialJan25Flag() {
-        let currentValue = UserDefaults.standard.bool(forKey: freeTrialKey)
-        UserDefaults.standard.set(!currentValue, forKey: freeTrialKey)
-        tableView.reloadData()
-    }
-
     private func syncAppleIDAccount() {
         if !isAuthV2Enabled {
             syncAppleIDAccountV1()
@@ -516,7 +539,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             do {
                 let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
                 showAlert(title: "Token details", message: "\(tokenContainer.debugDescription)")
-            } catch OAuthClientError.missingTokens {
+            } catch OAuthClientError.missingTokenContainer {
                 showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
             } catch {
                 showAlert(title: "Error Validating Token", message: "\(error)")
@@ -551,7 +574,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func getSubscriptionDetailsV2() {
         Task {
             do {
-                let subscription = try await subscriptionManagerV2.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+                let subscription = try await subscriptionManagerV2.getSubscription(cachePolicy: .remoteFirst)
                 showAlert(title: "Subscription info", message: subscription.debugDescription)
             } catch {
                 showAlert(title: "Subscription info", message: "\(error)")
@@ -595,7 +618,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                     return entitlement.rawValue
                 }.joined(separator: "\n")
                 showAlert(title: "Available Entitlements", message: entitlementsDescription)
-            } catch OAuthClientError.missingTokens {
+            } catch OAuthClientError.missingTokenContainer {
                 showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
             } catch {
                 showAlert(title: "Error retrieving entitlements", message: "\(error)")
@@ -605,7 +628,6 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private func setEnvironment(_ environment: SubscriptionEnvironment.ServiceEnvironment) async {
 
-        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let currentSubscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         var newSubscriptionEnvironment = SubscriptionEnvironment.default
         newSubscriptionEnvironment.serviceEnvironment = environment
@@ -630,7 +652,6 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private func setCustomBaseSubscriptionURL(_ url: URL?) {
 
-        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let currentSubscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
 
         if currentSubscriptionEnvironment.customBaseSubscriptionURL != url {
@@ -699,7 +720,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                     """
         let alertController = UIAlertController(title: "⚠️ App restart required! The changes are persistent",
                                                 message: message,
-                                                preferredStyle: .actionSheet)
+                                                preferredStyle: UIDevice.current.userInterfaceIdiom == .pad ? .alert : .actionSheet)
         alertController.addAction(UIAlertAction(title: "Yes", style: .destructive) { [weak self] _ in
             self?.setCustomBaseSubscriptionURL(url)
             // Close the app

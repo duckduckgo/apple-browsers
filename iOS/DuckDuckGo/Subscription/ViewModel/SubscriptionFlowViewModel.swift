@@ -31,6 +31,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let purchaseURL: URL
 
+    private let urlOpener: URLOpener
     private var cancellables = Set<AnyCancellable>()
     private var canGoBackCancellable: AnyCancellable?
     private var urlCancellable: AnyCancellable?
@@ -67,11 +68,13 @@ final class SubscriptionFlowViewModel: ObservableObject {
          userScript: SubscriptionPagesUserScript,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          subscriptionManager: SubscriptionAuthV1toV2Bridge,
-         selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil) {
+         selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil,
+         urlOpener: URLOpener = UIApplication.shared) {
         self.purchaseURL = purchaseURL
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
+        self.urlOpener = urlOpener
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -124,12 +127,15 @@ final class SubscriptionFlowViewModel: ObservableObject {
                  case .identityTheftRestoration, .identityTheftRestorationGlobal:
                      UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
                      self.state.selectedFeature = .itr
+                 case .paidAIChat:
+                     UniquePixel.fire(pixel: .privacyProWelcomeAIChat)
+                     self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
                  case .unknown:
                      break
                  }
              }
          }
-        
+
         subFeature.transactionErrorPublisher
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
@@ -146,67 +152,43 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     @MainActor
     private func handleTransactionError(error: UseSubscriptionError) {
-
-        var isStoreError = false
-        var isBackendError = false
-
         // Reset the transaction Status
         self.setTransactionStatus(.idle)
         
         switch error {
         case .purchaseFailed:
-            isStoreError = true
+            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureStoreError,
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .purchaseFailed
         case .missingEntitlements:
-            isBackendError = true
+            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureBackendError,
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .missingEntitlements
         case .failedToGetSubscriptionOptions:
-            isStoreError = true
             state.transactionError = .failedToGetSubscriptionOptions
         case .failedToSetSubscription:
-            isBackendError = true
             state.transactionError = .failedToSetSubscription
-        case .failedToRestoreFromEmail, .failedToRestoreFromEmailSubscriptionInactive:
-            isBackendError = true
-            state.transactionError = .generalError
-        case .failedToRestorePastPurchase:
-            isStoreError = true
-            state.transactionError = .failedToRestorePastPurchase
-        case .subscriptionNotFound:
-            isStoreError = true
-            state.transactionError = .generalError
-        case .subscriptionExpired:
-            isStoreError = true
-            state.transactionError = .subscriptionExpired
-        case .hasActiveSubscription:
-            isStoreError = true
-            isBackendError = true
-            state.transactionError = .hasActiveSubscription
         case .cancelledByUser:
             state.transactionError = .cancelledByUser
         case .accountCreationFailed:
             DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureAccountNotCreated,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .generalError
-        default:
+        case .activeSubscriptionAlreadyPresent:
+            state.transactionError = .hasActiveSubscription
+        case .restoreFailedDueToNoSubscription:
+            // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
             state.transactionError = .generalError
-        }
-
-        if isStoreError {
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureStoreError,
+        case .restoreFailedDueToExpiredSubscription:
+            // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
+            state.transactionError = .subscriptionExpired
+        case .otherRestoreError:
+            // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
+            state.transactionError = .failedToRestorePastPurchase
+        case .generalError:
+            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureOther,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-        }
-
-        if isBackendError {
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureBackendError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-        }
-
-        if state.transactionError != .hasActiveSubscription &&
-           state.transactionError != .cancelledByUser {
-            // The observer of `transactionError` does the same calculation, if the error is anything else than .hasActiveSubscription then shows a "Something went wrong" alert
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailure,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            state.transactionError = .generalError
         }
     }
     
@@ -229,7 +211,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 guard let strongSelf = self else { return }
                 strongSelf.state.canNavigateBack = false
                 guard let currentURL = self?.webViewModel.url else { return }
-                if strongSelf.backButtonForURL(currentURL: currentURL) {
+                if strongSelf.shouldAllowWebViewBackNavigationForURL(currentURL: currentURL) {
                     DispatchQueue.main.async {
                         strongSelf.state.canNavigateBack = value
                     }
@@ -241,27 +223,42 @@ final class SubscriptionFlowViewModel: ObservableObject {
             .sink { [weak self] _ in
                 guard let strongSelf = self else { return }
                 strongSelf.state.canNavigateBack = false
-                guard let currentURL = self?.webViewModel.url else { return }
                 Task { await strongSelf.setTransactionStatus(.idle) }
 
-                let addEmailURL = strongSelf.subscriptionManager.url(for: .addEmail)
-                let addEmailSuccessURL = strongSelf.subscriptionManager.url(for: .addEmailToSubscriptionSuccess)
-                if currentURL.forComparison() == addEmailURL.forComparison() ||
-                    currentURL.forComparison() == addEmailSuccessURL.forComparison() {
+                if strongSelf.isCurrentURLMatchingPostPurchaseAddEmailFlow() {
                     strongSelf.state.viewTitle = UserText.subscriptionRestoreAddEmailTitle
                 } else {
                     strongSelf.state.viewTitle = UserText.subscriptionTitle
                 }
             }
-        
     }
 
-    private func backButtonForURL(currentURL: URL) -> Bool {
-        return currentURL.forComparison() != subscriptionManager.url(for: .baseURL).forComparison() &&
-        currentURL.forComparison() != subscriptionManager.url(for: .activateSuccess).forComparison() &&
-        currentURL.forComparison() != subscriptionManager.url(for: .purchase).forComparison()
+    private func shouldAllowWebViewBackNavigationForURL(currentURL: URL) -> Bool {
+        !isCurrentURL(matching: .purchase) &&
+        !isCurrentURL(matching: .welcome) &&
+        !isCurrentURL(matching: .activationFlowSuccess) &&
+        !isCurrentURL(matching: subscriptionManager.url(for: .baseURL).appendingPathComponent("add-email/success"))
     }
-    
+
+    private func isCurrentURLMatchingPostPurchaseAddEmailFlow() -> Bool {
+        // Not defined in SubscriptionURL as this flow is only triggered by FE as a part of post purchase flow. Only need for comparison.
+        let baseURL = subscriptionManager.url(for: .baseURL)
+        let addEmailURL = baseURL.appendingPathComponent("add-email")
+        let addEmailSuccessURL = baseURL.appendingPathComponent("add-email/success")
+
+        return isCurrentURL(matching: addEmailURL) || isCurrentURL(matching: addEmailSuccessURL)
+    }
+
+    private func isCurrentURL(matching subscriptionURL: SubscriptionURL) -> Bool {
+        let urlToCheck = subscriptionManager.url(for: subscriptionURL)
+        return isCurrentURL(matching: urlToCheck)
+    }
+
+    private func isCurrentURL(matching url: URL) -> Bool {
+        guard let currentURL = webViewModel.url else { return false }
+        return currentURL.forComparison() == url.forComparison()
+    }
+
     private func cleanUp() {
         transactionStatusTimer?.invalidate()
         canGoBackCancellable?.cancel()

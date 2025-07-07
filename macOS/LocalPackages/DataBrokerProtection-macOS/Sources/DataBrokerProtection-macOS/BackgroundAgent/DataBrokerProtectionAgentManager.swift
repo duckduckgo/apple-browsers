@@ -28,15 +28,23 @@ import Freemium
 import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
+import FeatureFlags
 
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {
 
+    static let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
+
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
-    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging, vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager {
+    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
+                                    configurationManager: DefaultConfigurationManager,
+                                    privacyConfigurationManager: DBPPrivacyConfigurationManager,
+                                    remoteBrokerDeliveryFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+                                    vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager? {
         guard let pixelKit = PixelKit.shared else {
-            fatalError("PixelKit not set up")
+            assertionFailure("PixelKit not set up")
+            return nil
         }
         let pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
@@ -46,15 +54,8 @@ public class DataBrokerProtectionAgentManagerProvider {
         let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(config: schedulingConfig)
 
         let notificationService = DefaultDataBrokerProtectionUserNotificationService(pixelHandler: pixelHandler, userNotificationCenter: UNUserNotificationCenter.current(), authenticationManager: authenticationManager)
-        let eventsHandler = DefaultOperationEventsHandler(userNotificationService: notificationService)
+        let eventsHandler = BrokerProfileJobEventsHandler(userNotificationService: notificationService)
 
-        Configuration.setURLProvider(DBPAgentConfigurationURLProvider())
-        let configStore = ConfigurationStore()
-        let privacyConfigurationManager = DBPPrivacyConfigurationManager()
-        let configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, store: configStore)
-        configurationManager.start()
-        // Load cached config (if any)
-        privacyConfigurationManager.reload(etag: configStore.loadEtag(for: .privacyConfiguration), data: configStore.loadData(for: .privacyConfiguration))
         let ipcServer = DefaultDataBrokerProtectionIPCServer(machServiceName: Bundle.main.bundleIdentifier!)
 
         let features = ContentScopeFeatureToggles(emailProtection: false,
@@ -67,7 +68,10 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                   inlineIconCredentials: false,
                                                   thirdPartyCredentialsProvider: false,
                                                   unknownUsernameCategorization: false,
-                                                  partialFormSaves: false)
+                                                  partialFormSaves: false,
+                                                  passwordVariantCategorization: false,
+                                                  inputFocusApi: false,
+                                                  autocompleteAttributeSupport: false)
         let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
                                                             sessionKey: UUID().uuidString,
                                                             messageSecret: UUID().uuidString,
@@ -78,24 +82,35 @@ public class DataBrokerProtectionAgentManagerProvider {
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
 
         let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
-        guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
-            fatalError("Failed to make secure storage vault")
+
+        let vault: DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>
+        do {
+            vault = try vaultFactory.makeVault(reporter: reporter)
+        } catch let error {
+            pixelHandler.fire(.backgroundAgentSetUpFailedSecureVaultInitFailed(error: error))
+            return nil
         }
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
+        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: remoteBrokerDeliveryFeatureFlagger,
+                                                    settings: dbpSettings,
+                                                    vault: vault,
+                                                    authenticationManager: authenticationManager,
+                                                    pixelHandler: sharedPixelsHandler,
+                                                    localBrokerProvider: localBrokerService)
+
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database)
 
-        let operationQueue = OperationQueue()
-        let operationsBuilder = DefaultDataBrokerOperationsCreator()
+        let jobQueue = OperationQueue()
+        let jobProvider = BrokerProfileJobProvider()
         let mismatchCalculator = DefaultMismatchCalculator(database: dataManager.database,
                                                            pixelHandler: sharedPixelsHandler)
 
-        let brokerUpdater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
-        let queueManager =  DefaultDataBrokerProtectionQueueManager(operationQueue: operationQueue,
-                                                                    operationsCreator: operationsBuilder,
-                                                                    mismatchCalculator: mismatchCalculator,
-                                                                    brokerUpdater: brokerUpdater,
-                                                                    pixelHandler: sharedPixelsHandler)
+        let queueManager =  BrokerProfileJobQueueManager(jobQueue: jobQueue,
+                                                         jobProvider: jobProvider,
+                                                         mismatchCalculator: mismatchCalculator,
+                                                         pixelHandler: sharedPixelsHandler)
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,
                                                                                    settings: dbpSettings)
@@ -103,28 +118,25 @@ public class DataBrokerProtectionAgentManagerProvider {
                                         settings: dbpSettings,
                                         servicePixel: backendServicePixels)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
-        let runnerProvider = DataBrokerJobRunnerProvider(privacyConfigManager: privacyConfigurationManager,
-                                                         contentScopeProperties: contentScopeProperties,
-                                                         emailService: emailService,
-                                                         captchaService: captchaService)
-
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
-
         let agentstopper = DefaultDataBrokerProtectionAgentStopper(dataManager: dataManager,
                                                                    entitlementMonitor: DataBrokerProtectionEntitlementMonitor(),
                                                                    authenticationManager: authenticationManager,
                                                                    pixelHandler: pixelHandler,
                                                                    freemiumDBPUserStateManager: freemiumDBPUserStateManager)
 
-        let executionConfig = DataBrokerExecutionConfig()
-        let operationDependencies = DefaultDataBrokerOperationDependencies(
+        let executionConfig = BrokerJobExecutionConfig()
+        let jobDependencies = BrokerProfileJobDependencies(
             database: dataManager.database,
-            config: executionConfig,
-            runnerProvider: runnerProvider,
+            contentScopeProperties: contentScopeProperties,
+            privacyConfig: privacyConfigurationManager,
+            executionConfig: executionConfig,
             notificationCenter: NotificationCenter.default,
             pixelHandler: sharedPixelsHandler,
             eventsHandler: eventsHandler,
             dataBrokerProtectionSettings: dbpSettings,
+            emailService: emailService,
+            captchaService: captchaService,
             vpnBypassService: vpnBypassService)
 
         return DataBrokerProtectionAgentManager(
@@ -133,11 +145,12 @@ public class DataBrokerProtectionAgentManagerProvider {
             ipcServer: ipcServer,
             queueManager: queueManager,
             dataManager: dataManager,
-            operationDependencies: operationDependencies,
+            jobDependencies: jobDependencies,
             sharedPixelsHandler: sharedPixelsHandler,
             pixelHandler: pixelHandler,
             agentStopper: agentstopper,
             configurationManager: configurationManager,
+            brokerUpdater: brokerUpdater,
             privacyConfigurationManager: privacyConfigurationManager,
             authenticationManager: authenticationManager,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager)
@@ -146,16 +159,17 @@ public class DataBrokerProtectionAgentManagerProvider {
 
 public final class DataBrokerProtectionAgentManager {
 
-    private let eventsHandler: EventMapping<OperationEvent>
+    private let eventsHandler: EventMapping<JobEvent>
     private var activityScheduler: DataBrokerProtectionBackgroundActivityScheduler
     private var ipcServer: DataBrokerProtectionIPCServer
-    private let queueManager: DataBrokerProtectionQueueManager
+    private var queueManager: BrokerProfileJobQueueManaging
     private let dataManager: DataBrokerProtectionDataManaging
-    private let operationDependencies: DataBrokerOperationDependencies
+    private let jobDependencies: BrokerProfileJobDependencyProviding
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let agentStopper: DataBrokerProtectionAgentStopper
     private let configurationManger: DefaultConfigurationManager
+    private let brokerUpdater: BrokerJSONServiceProvider
     private let privacyConfigurationManager: DBPPrivacyConfigurationManager
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -165,16 +179,17 @@ public final class DataBrokerProtectionAgentManager {
 
     private var didStartActivityScheduler = false
 
-    init(eventsHandler: EventMapping<OperationEvent>,
+    init(eventsHandler: EventMapping<JobEvent>,
          activityScheduler: DataBrokerProtectionBackgroundActivityScheduler,
          ipcServer: DataBrokerProtectionIPCServer,
-         queueManager: DataBrokerProtectionQueueManager,
+         queueManager: BrokerProfileJobQueueManaging,
          dataManager: DataBrokerProtectionDataManaging,
-         operationDependencies: DataBrokerOperationDependencies,
+         jobDependencies: BrokerProfileJobDependencyProviding,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>,
          agentStopper: DataBrokerProtectionAgentStopper,
          configurationManager: DefaultConfigurationManager,
+         brokerUpdater: BrokerJSONServiceProvider,
          privacyConfigurationManager: DBPPrivacyConfigurationManager,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -184,16 +199,18 @@ public final class DataBrokerProtectionAgentManager {
         self.ipcServer = ipcServer
         self.queueManager = queueManager
         self.dataManager = dataManager
-        self.operationDependencies = operationDependencies
+        self.jobDependencies = jobDependencies
         self.sharedPixelsHandler = sharedPixelsHandler
         self.pixelHandler = pixelHandler
         self.agentStopper = agentStopper
         self.configurationManger = configurationManager
+        self.brokerUpdater = brokerUpdater
         self.privacyConfigurationManager = privacyConfigurationManager
         self.authenticationManager = authenticationManager
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
 
         self.activityScheduler.delegate = self
+        self.queueManager.delegate = self
         self.ipcServer.serverDelegate = self
         self.ipcServer.activate()
     }
@@ -209,7 +226,7 @@ public final class DataBrokerProtectionAgentManager {
             activityScheduler.startScheduler()
             didStartActivityScheduler = true
             fireMonitoringPixels()
-            startFreemiumOrSubscriptionScheduledOperations(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil, completion: nil)
+            startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil, completion: nil)
 
             /// Monitors entitlement changes every 60 minutes to optimize system performance and resource utilization by avoiding unnecessary operations when entitlement is invalid.
             /// While keeping the agent active with invalid entitlement has no significant risk, setting the monitoring interval at 60 minutes is a good balance to minimize backend checks.
@@ -225,8 +242,7 @@ extension DataBrokerProtectionAgentManager {
         // Only send pixels for authenticated users
         guard authenticationManager.isUserAuthenticated else { return }
 
-        let database = operationDependencies.database
-
+        let database = jobDependencies.database
         let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: sharedPixelsHandler)
         let eventPixels = DataBrokerProtectionEventPixels(database: database, handler: sharedPixelsHandler)
         let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler)
@@ -251,17 +267,17 @@ private extension DataBrokerProtectionAgentManager {
     /// Starts either Subscription (scan and opt-out) or Freemium (scan-only) scheduled operations
     /// - Parameters:
     ///   - showWebView: Whether to show the web view or not
-    ///   - operationDependencies: Operation dependencies
+    ///   - jobDependencies: Operation dependencies
     ///   - errorHandler: Error handler
     ///   - completion: Completion handler
     func startFreemiumOrSubscriptionScheduledOperations(showWebView: Bool,
-                                                        operationDependencies: DataBrokerOperationDependencies,
+                                                        jobDependencies: BrokerProfileJobDependencyProviding,
                                                         errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
         if authenticationManager.isUserAuthenticated {
-            queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView, operationDependencies: operationDependencies, errorHandler: errorHandler, completion: completion)
+            queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
         } else {
-            queueManager.startScheduledScanOperationsIfPermitted(showWebView: showWebView, operationDependencies: operationDependencies, errorHandler: errorHandler, completion: completion)
+            queueManager.startScheduledScanOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
         }
     }
 }
@@ -274,10 +290,22 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
 
     func startScheduledOperations(completion: (() -> Void)?) {
         fireMonitoringPixels()
-        startFreemiumOrSubscriptionScheduledOperations(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil) {
+        startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
             completion?()
         }
     }
+}
+
+extension DataBrokerProtectionAgentManager: BrokerProfileJobQueueManagerDelegate {
+
+    public func queueManagerWillEnqueueOperations(_ queueManager: BrokerProfileJobQueueManaging) {
+        Task {
+            do {
+                try await brokerUpdater.checkForUpdates()
+            }
+        }
+    }
+
 }
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
@@ -286,13 +314,13 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
 
         eventsHandler.fire(.profileSaved)
         fireMonitoringPixels()
-        queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies) { [weak self] errors in
+        queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies) { [weak self] errors in
             guard let self = self else { return }
 
             if let errors = errors {
                 if let oneTimeError = errors.oneTimeError {
                     switch oneTimeError {
-                    case DataBrokerProtectionQueueError.interrupted:
+                    case BrokerProfileJobQueueError.interrupted:
                         self.pixelHandler.fire(.ipcServerImmediateScansInterrupted)
                         Logger.dataBrokerProtection.error("Interrupted during DataBrokerProtectionAgentManager.profileSaved in queueManager.startImmediateOperationsIfPermitted(), error: \(oneTimeError.localizedDescription, privacy: .public)")
                     default:
@@ -326,18 +354,16 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
 
     public func appLaunched() {
         fireMonitoringPixels()
-        startFreemiumOrSubscriptionScheduledOperations(showWebView: false,
-                                                         operationDependencies:
-                                                        operationDependencies, errorHandler: { [weak self] errors in
+        startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: { [weak self] errors in
             guard let self = self else { return }
 
             if let errors = errors {
                 if let oneTimeError = errors.oneTimeError {
                     switch oneTimeError {
-                    case DataBrokerProtectionQueueError.interrupted:
+                    case BrokerProfileJobQueueError.interrupted:
                         self.pixelHandler.fire(.ipcServerAppLaunchedScheduledScansInterrupted)
                         Logger.dataBrokerProtection.log("Interrupted during DataBrokerProtectionAgentManager.appLaunched in queueManager.startScheduledOperationsIfPermitted(), error: \(oneTimeError.localizedDescription, privacy: .public)")
-                    case DataBrokerProtectionQueueError.cannotInterrupt:
+                    case BrokerProfileJobQueueError.cannotInterrupt:
                         self.pixelHandler.fire(.ipcServerAppLaunchedScheduledScansBlocked)
                         Logger.dataBrokerProtection.log("Cannot interrupt during DataBrokerProtectionAgentManager.appLaunched in queueManager.startScheduledOperationsIfPermitted()")
                     default:
@@ -362,7 +388,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
             let profileQueries = try dataManager.profileQueriesCount()
             let durationSinceStart = Date().timeIntervalSince(startTime) * 1000
             self.sharedPixelsHandler.fire(.initialScanTotalDuration(duration: durationSinceStart.rounded(.towardZero),
-                                                             profileQueries: profileQueries))
+                                                                    profileQueries: profileQueries))
         } catch {
             Logger.dataBrokerProtection.log("Initial Scans Error when trying to fetch the profile to get the profile queries")
         }
@@ -378,21 +404,21 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
     public func startImmediateOperations(showWebView: Bool) {
         queueManager.startImmediateScanOperationsIfPermitted(showWebView: showWebView,
-                                                         operationDependencies: operationDependencies,
-                                                         errorHandler: nil,
-                                                         completion: nil)
+                                                             jobDependencies: jobDependencies,
+                                                             errorHandler: nil,
+                                                             completion: nil)
     }
 
     public func startScheduledOperations(showWebView: Bool) {
         startFreemiumOrSubscriptionScheduledOperations(showWebView: showWebView,
-                                                         operationDependencies: operationDependencies,
-                                                         errorHandler: nil,
-                                                         completion: nil)
+                                                       jobDependencies: jobDependencies,
+                                                       errorHandler: nil,
+                                                       completion: nil)
     }
 
     public func runAllOptOuts(showWebView: Bool) {
         queueManager.execute(.startOptOutOperations(showWebView: showWebView,
-                                                    operationDependencies: operationDependencies,
+                                                    jobDependencies: jobDependencies,
                                                     errorHandler: nil,
                                                     completion: nil))
     }

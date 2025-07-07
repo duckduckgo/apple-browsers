@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import WebKit
 import Combine
+import Common
+import WebKit
 
 extension Fire.BurningData {
     /**
@@ -61,8 +62,8 @@ final class FireViewModel {
     }
 
     @MainActor
-    init() {
-        fire = Fire(tld: ContentBlocking.shared.tld)
+    init(tld: TLD) {
+        fire = Fire(tld: tld)
     }
 
 }

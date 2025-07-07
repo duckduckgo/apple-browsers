@@ -16,6 +16,7 @@ on:
   pull_request:
     paths:
       - '.github/**'
+      - '.xcode-version'
       - 'SharedPackages/**'
       - 'macOS/**'
 
@@ -28,7 +29,7 @@ jobs:
       matrix:
         runner: [macos-15-xlarge]
         include:
-          - xcode-version: "16.2"
+          - xcode-version: "16.4"
             runner: macos-15-xlarge
 
     concurrency:
@@ -38,7 +39,7 @@ jobs:
     timeout-minutes: 32
     steps:
     - name: Register SSH keys for certificates repository and PIR fake broker repository access
-      uses: webfactory/ssh-agent@v0.9.0
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: |
                         ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
@@ -48,6 +49,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
 
     - name: Check out the PIR fake broker code
       uses: actions/checkout@v4
@@ -69,8 +76,11 @@ jobs:
         cd ..
         pnpm start:all &
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Sync code signing assets
       env:
@@ -103,12 +113,12 @@ jobs:
           ${{ runner.os }}-macos-
 
     - name: Select Xcode
-      run: |
-        # Override .xcode_version because 15.4 is not available on macos 13
-        echo "${{ matrix.xcode-version }}" > .xcode-version
-        sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: ${{ matrix.xcode-version }}
 
     - name: Run PIR e2e Tests
+      id: run-tests
       run: |
         launchctl setenv PRIVACYPRO_STAGING_TOKEN '${{ secrets.PRIVACYPRO_STAGING_TOKEN }}'
         set -o pipefail && xcodebuild test \
@@ -124,6 +134,16 @@ jobs:
           | tee pir-e2e-tests.log
       env:
           PRIVACYPRO_STAGING_TOKEN: ${{ secrets.PRIVACYPRO_STAGING_TOKEN }}
+
+    - name: Report job duration
+      if: success() || (always() && steps.run-tests.outcome == 'failure')
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_macos_pir_e2e_tests
+        pixel-params: |
+          runner: ${{ matrix.runner }}
 
     - name: Prepare test report
       if: always()

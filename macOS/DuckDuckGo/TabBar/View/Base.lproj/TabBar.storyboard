@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23091" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="uSf-9n-QMw">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="uSf-9n-QMw">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23091"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -34,7 +34,7 @@
                                 </constraints>
                             </visualEffectView>
                             <imageView hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="8kJ-Ja-bmu">
-                                <rect key="frame" x="749" y="0.0" width="96" height="38"/>
+                                <rect key="frame" x="751" y="0.0" width="96" height="38"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="96" id="CLi-Qs-wE3"/>
                                     <constraint firstAttribute="height" constant="38" id="Ls6-Rv-hTz"/>
@@ -278,7 +278,7 @@
                             <constraint firstItem="dN1-y1-5Xe" firstAttribute="leading" secondItem="efe-Pc-ueT" secondAttribute="trailing" id="hWs-AC-dwE"/>
                             <constraint firstItem="kOb-4q-pAe" firstAttribute="leading" secondItem="JQD-ov-FCr" secondAttribute="leading" priority="600" constant="76" id="i6Z-BW-hhH"/>
                             <constraint firstAttribute="bottom" secondItem="efe-Pc-ueP" secondAttribute="bottom" id="iYT-Di-UlL"/>
-                            <constraint firstAttribute="trailing" secondItem="8kJ-Ja-bmu" secondAttribute="trailing" id="jKc-Ox-sjo"/>
+                            <constraint firstAttribute="trailing" secondItem="8kJ-Ja-bmu" secondAttribute="trailing" constant="-2" id="jKc-Ox-sjo"/>
                             <constraint firstItem="1Zn-JZ-2g3" firstAttribute="leading" secondItem="G3c-kC-Gu9" secondAttribute="leading" id="kBj-jh-X0L"/>
                             <constraint firstItem="efe-Pc-ueT" firstAttribute="top" secondItem="JQD-ov-FCr" secondAttribute="top" priority="750" id="kNA-2I-L0U"/>
                             <constraint firstAttribute="bottom" secondItem="G3d-9f-GhJ" secondAttribute="bottom" id="m1b-9d-wVV"/>
@@ -290,19 +290,31 @@
                     </view>
                     <connections>
                         <outlet property="addTabButton" destination="Avv-iY-qO8" id="Rku-SK-49j"/>
+                        <outlet property="addTabButtonHeight" destination="yDP-bt-OPj" id="vB3-o7-ddy"/>
+                        <outlet property="addTabButtonWidth" destination="hs2-lp-uJL" id="OEX-Bf-A4R"/>
+                        <outlet property="backgroundColorView" destination="T1A-KU-P4c" id="2vx-0t-14l"/>
                         <outlet property="burnerWindowBackgroundView" destination="8kJ-Ja-bmu" id="l4s-4i-8eV"/>
                         <outlet property="collectionView" destination="OEu-5P-cRF" id="b95-c4-JM0"/>
                         <outlet property="draggingSpace" destination="Ako-KX-AM9" id="yya-hb-te7"/>
                         <outlet property="fireButton" destination="XV4-Ze-5j7" id="ZCC-wX-7hC"/>
+                        <outlet property="fireButtonHeightConstraint" destination="Dea-ni-6y6" id="Kiz-yu-ppN"/>
+                        <outlet property="fireButtonWidthConstraint" destination="9Ii-rC-Eca" id="nke-9d-5t2"/>
                         <outlet property="leftScrollButton" destination="7XG-Qm-Ksx" id="yre-8P-vb9"/>
+                        <outlet property="leftScrollButtonHeight" destination="bi3-CJ-RZk" id="nlt-sF-asP"/>
+                        <outlet property="leftScrollButtonWidth" destination="hQ5-kp-q6K" id="vr0-hJ-Ajw"/>
                         <outlet property="leftShadowImageView" destination="zsA-or-9Xo" id="wVp-jj-2UD"/>
+                        <outlet property="leftSideStackLeadingConstraint" destination="qU6-dU-yJw" id="eFI-TI-wxX"/>
+                        <outlet property="pinnedTabsContainerHeightConstraint" destination="1BZ-3V-sPc" id="sct-zW-gbZ"/>
                         <outlet property="pinnedTabsContainerView" destination="G3c-kC-Gu9" id="v78-CF-sIa"/>
                         <outlet property="pinnedTabsViewLeadingConstraint" destination="a7p-a2-dhE" id="0hK-dY-o7E"/>
                         <outlet property="pinnedTabsWindowDraggingView" destination="1Zn-JZ-2g3" id="Rld-aG-FZ2"/>
                         <outlet property="rightScrollButton" destination="2da-G7-xcP" id="4ka-kI-E1j"/>
+                        <outlet property="rightScrollButtonHeight" destination="loq-Q2-JPM" id="s2D-I8-x3T"/>
+                        <outlet property="rightScrollButtonWidth" destination="avH-Y7-ipU" id="wu1-q7-0vO"/>
                         <outlet property="rightShadowImageView" destination="u4N-Qc-LMf" id="QX4-lD-gfb"/>
                         <outlet property="rightSideStackView" destination="dN1-y1-5Xe" id="bxw-hd-Zm5"/>
                         <outlet property="scrollView" destination="O0X-yp-zLn" id="g9v-fn-qxC"/>
+                        <outlet property="scrollViewHeightConstraint" destination="7Y5-9k-rSZ" id="W5l-TS-ca9"/>
                         <outlet property="shadowView" destination="G3d-9f-GhJ" id="OSV-TN-lVS"/>
                         <outlet property="visualEffectBackgroundView" destination="8Av-Au-VBq" id="Ven-IO-fIa"/>
                         <outlet property="windowDraggingViewLeadingConstraint" destination="5k3-uY-xby" id="kVU-yU-9M4"/>
@@ -314,7 +326,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="Add" width="16" height="16"/>
+        <image name="Add" width="24" height="24"/>
         <image name="Burn" width="18" height="18"/>
         <image name="BurnerWindowGraphic" width="96" height="41"/>
         <image name="TabBarShadowLeft" width="5" height="34"/>

@@ -17,7 +17,9 @@
 //  limitations under the License.
 //
 
+import Foundation
 import NetworkExtension
+import VPN
 
 @available(iOS 17.0, *)
 public struct VPNWidgetTunnelController: Sendable {

@@ -141,31 +141,25 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
     @MainActor
     func test_WhenSyncIsTurnedOff_ErrorHandlerSyncDidTurnOffCalled() async {
-        let expectation = XCTestExpectation(description: "Sync Turned off")
-        Task {
-            _ = await vc.confirmAndDisableSync()
-        }
-        Task {
-            vc.onConfirmSyncDisable?()
-            expectation.fulfill()
-        }
+        let turnOff = Task { await vc.confirmAndDisableSync() }
+        await Task.yield()
 
-        await fulfillment(of: [expectation], timeout: 5.0)
+        vc.onConfirmSyncDisable?()
+        let didTurnOff = await turnOff.value
+
+        XCTAssertTrue(didTurnOff)
         XCTAssertTrue(errorHandler.syncDidTurnOffCalled)
     }
 
     @MainActor
     func test_WhenAccountRemoved_ErrorHandlerSyncDidTurnOffCalled() async {
-        let expectation = XCTestExpectation(description: "Sync Turned off")
+        let deletion = Task { await vc.confirmAndDeleteAllData() }
+        await Task.yield()
 
-        Task {
-            _ = await vc.confirmAndDeleteAllData()
-        }
-        Task {
-            vc.onConfirmAndDeleteAllData?()
-            expectation.fulfill()
-        }
-        await fulfillment(of: [expectation], timeout: 5.0)
+        vc.onConfirmAndDeleteAllData?()
+        let didDelete = await deletion.value
+
+        XCTAssertTrue(didDelete)
         XCTAssertTrue(errorHandler.syncDidTurnOffCalled)
     }
 
@@ -186,7 +180,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             throw SyncError.accountAlreadyExists
         }
 
-        _ = await vc.syncCodeEntered(code: testRecoveryCode)
+        _ = await vc.syncCodeEntered(code: testRecoveryCode, source: .qrCode)
 
         XCTAssert(secondLoginCalled)
     }
@@ -201,7 +195,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             throw SyncError.accountAlreadyExists
         }
 
-        _ = await vc.syncCodeEntered(code: testRecoveryCode)
+        _ = await vc.syncCodeEntered(code: testRecoveryCode, source: .qrCode)
 
         let deviceIDs = await vc.viewModel?.devices.flatMap(\.id)
         XCTAssertEqual(deviceIDs, ["1", "2"])
@@ -256,5 +250,3 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.viewModel?.devices = [SyncSettingsViewModel.Device(id: id, name: "iPhone", type: "iPhone", isThisDevice: true)]
     }
 }
-
-class MockFavoritesDisplayModeStoring: MockFavoriteDisplayModeStorage {}

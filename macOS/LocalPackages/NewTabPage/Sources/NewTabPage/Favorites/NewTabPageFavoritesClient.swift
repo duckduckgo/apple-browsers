@@ -51,6 +51,14 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
                 }
             }
             .store(in: &cancellables)
+
+        favoritesModel.faviconsDidLoadPublisher
+            .sink { [weak self] in
+                Task { @MainActor in
+                    self?.notifyFaviconsLoaded()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     enum MessageName: String, CaseIterable {
@@ -60,6 +68,7 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
         case move = "favorites_move"
         case onConfigUpdate = "favorites_onConfigUpdate"
         case onDataUpdate = "favorites_onDataUpdate"
+        case onRefresh = "favorites_onRefresh"
         case open = "favorites_open"
         case openContextMenu = "favorites_openContextMenu"
         case setConfig = "favorites_setConfig"
@@ -78,7 +87,7 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
     }
 
     private func add(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        await favoritesModel.addNew()
+        await favoritesModel.addNewFavorite(in: original.webView?.window)
         return nil
     }
 
@@ -120,6 +129,12 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
     }
 
     @MainActor
+    private func notifyFaviconsLoaded() {
+        let refresh = NewTabPageDataModel.FavoritesRefresh(items: [.favicons])
+        pushMessage(named: MessageName.onRefresh.rawValue, params: refresh)
+    }
+
+    @MainActor
     private func move(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let action: NewTabPageDataModel.FavoritesMoveAction = DecodableHelper.decode(from: params) else {
             return nil
@@ -130,10 +145,10 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
 
     @MainActor
     private func open(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let action: NewTabPageDataModel.FavoritesOpenAction = DecodableHelper.decode(from: params) else {
+        guard let action: NewTabPageDataModel.ActivityOpenAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        favoritesModel.openFavorite(withURL: action.url)
+        favoritesModel.openFavorite(withURL: action.url, target: action.target, sourceWindow: original.webView?.window)
         return nil
     }
 
@@ -142,7 +157,7 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
         guard let contextMenuAction: NewTabPageDataModel.FavoritesContextMenuAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        favoritesModel.showContextMenu(for: contextMenuAction.id)
+        favoritesModel.showContextMenu(for: contextMenuAction.id, window: original.webView?.window)
         return nil
     }
 }

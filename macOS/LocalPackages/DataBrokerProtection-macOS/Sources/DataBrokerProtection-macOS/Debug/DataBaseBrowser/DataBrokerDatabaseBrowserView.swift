@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import DataBrokerProtectionCore
 
 struct DataBrokerDatabaseBrowserView: View {
     @ObservedObject var viewModel: DataBrokerDatabaseBrowserViewModel
@@ -71,7 +72,7 @@ struct DatabaseView: View {
     private func dataView() -> some View {
         GeometryReader { geometry in
             ScrollView([.horizontal, .vertical]) {
-                VStack(alignment: .leading, spacing: 0) {
+                LazyVStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: 0) {
                         ForEach(data[0].data.keys.sorted(), id: \.self) { key in
                             VStack {
@@ -135,5 +136,11 @@ struct ColumnData: Identifiable {
 
     let fakeTables =  [fakeTable1, fakeTable2]
 
-    return DataBrokerDatabaseBrowserView(viewModel: DataBrokerDatabaseBrowserViewModel(tables: fakeTables))
+    DataBrokerDatabaseBrowserView(viewModel: DataBrokerDatabaseBrowserViewModel(tables: fakeTables, localBrokerService: MockLocalBrokerJSONService())
+    )
+}
+
+private struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
+    func bundledBrokers() throws -> [DataBroker]? { [] }
+    func checkForUpdates() async throws {}
 }

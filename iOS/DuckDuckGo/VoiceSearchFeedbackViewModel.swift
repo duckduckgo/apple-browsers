@@ -74,11 +74,13 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
         aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled
     }
 
-    internal init(speechRecognizer: SpeechRecognizerProtocol, aiChatSettings: AIChatSettingsProvider) {
+    internal init(speechRecognizer: SpeechRecognizerProtocol, aiChatSettings: AIChatSettingsProvider, preferredTarget: VoiceSearchTarget? = nil) {
         self.speechRecognizer = speechRecognizer
         self.aiChatSettings = aiChatSettings
 
-        if aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled {
+        if let preferredTarget = preferredTarget {
+            searchTarget = preferredTarget
+        } else if aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled {
             searchTarget = VoiceSearchTarget(rawValue: self.storedSearchTarget) ?? .SERP
         } else {
             searchTarget = .SERP

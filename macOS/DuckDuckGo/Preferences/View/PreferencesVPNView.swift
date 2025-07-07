@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import NetworkProtection
+import VPN
 import PixelKit
 import PreferencesUI_macOS
 import SwiftUI
@@ -40,9 +40,7 @@ extension Preferences {
 
                 PreferencePaneSection {
                     Button(UserText.openVPNButtonTitle) {
-                        Task { @MainActor in
-                            NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: nil)
-                        }
+                        model.openVPNViewInMainWindow()
                     }
                 }
                 .padding(.bottom, 12)
@@ -54,23 +52,6 @@ extension Preferences {
                     VPNLocationPreferenceItem(model: model.locationItem)
                 }
                 .padding(.bottom, 12)
-
-                if model.showLegacyExclusionsFeature {
-                    // SECTION: Excluded Sites
-
-                    PreferencePaneSection(UserText.vpnExcludedSitesTitle, spacing: 4) {
-                        Text(UserText.vpnExcludedDomainsDescription)
-                            .foregroundColor(.secondary)
-                            .padding(.bottom, 18)
-
-                        PreferencePaneSubSection {
-                            Button(UserText.vpnExcludedDomainsManageButtonTitle) {
-                                model.manageExcludedSites()
-                            }
-                        }
-                    }
-                    .padding(.bottom, 12)
-                }
 
                 // SECTION: General
 
@@ -112,7 +93,7 @@ extension Preferences {
                 }
                 .padding(.bottom, 12)
 
-                if model.showNewExclusionsFeature {
+                if model.showExclusionsFeature {
                     // SECTION: Exclusions
 
                     PreferencePaneSection {

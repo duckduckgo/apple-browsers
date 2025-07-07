@@ -18,6 +18,8 @@
 
 import Combine
 import Navigation
+import PersistenceTestingUtils
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -78,7 +80,10 @@ final class TabViewModelTests: XCTestCase {
         let urlString = "file:///Users/Dax/file.txt"
         let url = URL.makeURL(from: urlString)!
         let tab = Tab(content: .url(url, source: .link))
-        let appearancePreferences = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(showFullURL: false))
+        let appearancePreferences = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(showFullURL: false),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
         let tabViewModel = TabViewModel(tab: tab, appearancePreferences: appearancePreferences)
 
         let addressBarStringExpectation = expectation(description: "Address bar string")
@@ -98,7 +103,10 @@ final class TabViewModelTests: XCTestCase {
         let urlString = "file:///Users/Dax/file.txt"
         let url = URL.makeURL(from: urlString)!
         let tab = Tab(content: .url(url, source: .link))
-        let appearancePreferences = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(showFullURL: true))
+        let appearancePreferences = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(showFullURL: true),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
         let tabViewModel = TabViewModel(tab: tab, appearancePreferences: appearancePreferences)
 
         let addressBarStringExpectation = expectation(description: "Address bar string")
@@ -163,8 +171,9 @@ final class TabViewModelTests: XCTestCase {
     // MARK: - Title
 
     @MainActor
-    func testWhenURLIsNilThenTitleIsNewTab() {
-        let tabViewModel = TabViewModel.aTabViewModel
+    func testWhenNewTabPageIsOpenThenTitleIsNewTab() {
+        let tab = Tab(content: .newtab)
+        let tabViewModel = TabViewModel(tab: tab)
 
         XCTAssertEqual(tabViewModel.title, UserText.tabHomeTitle)
     }
@@ -234,9 +243,16 @@ final class TabViewModelTests: XCTestCase {
     // MARK: - Zoom
 
     @MainActor
-    func testThatDefaultValueForTabsWebViewIsOne() {
+    func testThatDefaultValueForTabsWebViewIsOne() throws {
         UserDefaultsWrapper<Any>.clearAll()
-        let tabVM = TabViewModel(tab: Tab(), appearancePreferences: AppearancePreferences(), accessibilityPreferences: AccessibilityPreferences())
+        let tabVM = TabViewModel(
+            tab: Tab(),
+            appearancePreferences: AppearancePreferences(
+                keyValueStore: try MockKeyValueFileStore(),
+                privacyConfigurationManager: MockPrivacyConfigurationManager()
+            ),
+            accessibilityPreferences: AccessibilityPreferences()
+        )
 
         XCTAssertEqual(tabVM.tab.webView.zoomLevel, DefaultZoomValue.percent100)
     }
@@ -253,13 +269,19 @@ final class TabViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenPreferencesDefaultZoomLevelIsSetAndANewTabIsOpenThenItsWebViewHasTheLatestValueOfZoomLevel() {
+    func testWhenPreferencesDefaultZoomLevelIsSetAndANewTabIsOpenThenItsWebViewHasTheLatestValueOfZoomLevel() throws {
         UserDefaultsWrapper<Any>.clearAll()
         let filteredCases = DefaultZoomValue.allCases.filter { $0 != AccessibilityPreferences.shared.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
         AccessibilityPreferences.shared.defaultPageZoom = randomZoomLevel
 
-        let tabVM = TabViewModel(tab: Tab(), appearancePreferences: AppearancePreferences())
+        let tabVM = TabViewModel(
+            tab: Tab(),
+            appearancePreferences: AppearancePreferences(
+                keyValueStore: try MockKeyValueFileStore(),
+                privacyConfigurationManager: MockPrivacyConfigurationManager()
+            )
+        )
 
         XCTAssertEqual(tabVM.tab.webView.zoomLevel, randomZoomLevel)
     }
@@ -307,7 +329,7 @@ final class TabViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func test_WhenPreferencesZoomPerWebsiteLevelIsSet_AndANewTabIsOpen_ThenItsWebViewHasTheLatestValueOfZoomLevel() {
+    func test_WhenPreferencesZoomPerWebsiteLevelIsSet_AndANewTabIsOpen_ThenItsWebViewHasTheLatestValueOfZoomLevel() throws {
         // GIVEN
         UserDefaultsWrapper<Any>.clearAll()
         let url = URL(string: "https://app.asana.com/0/1")!
@@ -318,14 +340,20 @@ final class TabViewModelTests: XCTestCase {
 
         // WHEN
         let tab = Tab(url: url)
-        let tabVM = TabViewModel(tab: tab, appearancePreferences: AppearancePreferences())
+        let tabVM = TabViewModel(
+            tab: tab,
+            appearancePreferences: AppearancePreferences(
+                keyValueStore: try MockKeyValueFileStore(),
+                privacyConfigurationManager: MockPrivacyConfigurationManager()
+            )
+        )
 
         // THEN
         XCTAssertEqual(tabVM.tab.webView.zoomLevel, randomZoomLevel)
     }
 
     @MainActor
-    func test_WhenPreferencesZoomPerWebsiteLevelIsSet_AndANewBurnerTabIsOpen_ThenItsWebViewHasTheDefaultZoomLevel() {
+    func test_WhenPreferencesZoomPerWebsiteLevelIsSet_AndANewBurnerTabIsOpen_ThenItsWebViewHasTheDefaultZoomLevel() throws {
         // GIVEN
         UserDefaultsWrapper<Any>.clearAll()
         let url = URL(string: "https://app.asana.com/0/1")!
@@ -336,7 +364,13 @@ final class TabViewModelTests: XCTestCase {
 
         // WHEN
         let burnerTab = Tab(content: .url(url, credential: nil, source: .ui), burnerMode: BurnerMode(isBurner: true))
-        let tabVM = TabViewModel(tab: burnerTab, appearancePreferences: AppearancePreferences())
+        let tabVM = TabViewModel(
+            tab: burnerTab,
+            appearancePreferences: AppearancePreferences(
+                keyValueStore: try MockKeyValueFileStore(),
+                privacyConfigurationManager: MockPrivacyConfigurationManager()
+            )
+        )
 
         // THEN
         XCTAssertEqual(tabVM.tab.webView.zoomLevel, AccessibilityPreferences.shared.defaultPageZoom)
@@ -390,7 +424,7 @@ final class TabViewModelTests: XCTestCase {
         UserDefaultsWrapper<Any>.clearAll()
         let tab = Tab(url: url)
         let tabVM = TabViewModel(tab: tab)
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 !=  AccessibilityPreferences.shared.defaultPageZoom}
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 !=  AccessibilityPreferences.shared.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
 
         // WHEN
@@ -409,7 +443,7 @@ final class TabViewModelTests: XCTestCase {
         UserDefaultsWrapper<Any>.clearAll()
         let burnerTab = Tab(content: .url(url, credential: nil, source: .ui), burnerMode: BurnerMode(isBurner: true))
         let tabVM = TabViewModel(tab: burnerTab)
-        let filteredCases = DefaultZoomValue.allCases.filter { $0 !=  AccessibilityPreferences.shared.defaultPageZoom}
+        let filteredCases = DefaultZoomValue.allCases.filter { $0 !=  AccessibilityPreferences.shared.defaultPageZoom }
         let randomZoomLevel = filteredCases.randomElement()!
 
         // WHEN
@@ -446,15 +480,12 @@ final class TabViewModelTests: XCTestCase {
         let hostURL = "https://app.asana.com/"
         UserDefaultsWrapper<Any>.clearAll()
         let (randomZoomLevel, nextZoomLevel, _) = randomLevelAndAdjacent()
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-                              styleMask: [.titled, .closable, .resizable],
-                              backing: .buffered, defer: false)
+        let window = MockWindow()
         window.contentView = NSView(frame: window.contentRect(forFrameRect: window.frame))
         AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
         let tab = Tab(url: url)
         window.contentView?.addSubview(tab.webView)
         tab.webView.frame = window.contentView!.bounds
-        window.makeKeyAndOrderFront(nil)
         let tabView = TabViewModel(tab: tab)
 
         // WHEN
@@ -475,15 +506,12 @@ final class TabViewModelTests: XCTestCase {
         let hostURL = "https://app.asana.com/"
         UserDefaultsWrapper<Any>.clearAll()
         let (randomZoomLevel, _, previousZoomLevel) = randomLevelAndAdjacent()
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-                              styleMask: [.titled, .closable, .resizable],
-                              backing: .buffered, defer: false)
+        let window = MockWindow()
         window.contentView = NSView(frame: window.contentRect(forFrameRect: window.frame))
         AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
         let tab = Tab(url: url)
         window.contentView?.addSubview(tab.webView)
         tab.webView.frame = window.contentView!.bounds
-        window.makeKeyAndOrderFront(nil)
         let tabView = TabViewModel(tab: tab)
 
         // WHEN
@@ -532,4 +560,11 @@ extension TabViewModel {
         self.tab.didCommit(navigation)
     }
 
+}
+
+private extension Tab {
+    @MainActor
+    convenience init(url: URL? = nil) {
+        self.init(content: url.map { TabContent.url($0, source: .link) } ?? .none)
+    }
 }

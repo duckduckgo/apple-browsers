@@ -18,7 +18,7 @@
 
 import Common
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import PixelKit
 import UDSHelper
@@ -30,12 +30,15 @@ final class NetworkProtectionIPCTunnelController {
 
     enum RequestError: CustomNSError {
         case notAuthorizedToEnableLoginItem
-        case internalLoginItemError(_ error: Error)
+        case enableLoginItemError(_ error: Error)
+        case ipcControlError(_ error: Error)
 
         var errorCode: Int {
             switch self {
             case .notAuthorizedToEnableLoginItem: return 0
-            case .internalLoginItemError: return 1
+            case .enableLoginItemError: return 1
+                // 100+
+            case .ipcControlError: return 100
             }
         }
 
@@ -43,7 +46,8 @@ final class NetworkProtectionIPCTunnelController {
             switch self {
             case .notAuthorizedToEnableLoginItem:
                 return [:]
-            case .internalLoginItemError(let error):
+            case .enableLoginItemError(let error),
+                    .ipcControlError(let error):
                 return [NSUnderlyingErrorKey: error as NSError]
             }
         }
@@ -75,11 +79,7 @@ final class NetworkProtectionIPCTunnelController {
     // MARK: - Login Items Manager
 
     private func enableLoginItems() async throws {
-        do {
-            try loginItemsManager.throwingEnableLoginItems(LoginItemsManager.networkProtectionLoginItems)
-        } catch {
-            throw RequestError.internalLoginItemError(error)
-        }
+        try loginItemsManager.throwingEnableLoginItems(LoginItemsManager.vpnLoginItems)
     }
 }
 
@@ -104,12 +104,17 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
                 throw RequestError.notAuthorizedToEnableLoginItem
             }
 
-            try await enableLoginItems()
+            do {
+                try await enableLoginItems()
+            } catch {
+                throw RequestError.enableLoginItemError(error)
+            }
 
             knownFailureStore.reset()
 
             ipcClient.start { [pixelKit] error in
                 if let error {
+                    let error = RequestError.ipcControlError(error)
                     handleFailure(error)
                 } else {
                     pixelKit?.fire(StartAttempt.success, frequency: .legacyDailyAndCount)
@@ -130,10 +135,15 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
         }
 
         do {
-            try await enableLoginItems()
+            do {
+                try await enableLoginItems()
+            } catch {
+                throw RequestError.enableLoginItemError(error)
+            }
 
             ipcClient.stop { [pixelKit] error in
                 if let error {
+                    let error = RequestError.ipcControlError(error)
                     handleFailure(error)
                 } else {
                     pixelKit?.fire(StopAttempt.success, frequency: .legacyDailyAndCount)
@@ -166,7 +176,7 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
         switch error {
         case RequestError.notAuthorizedToEnableLoginItem:
             Logger.networkProtection.error("IPC Controller not authorized to enable the login item: \(error.localizedDescription)")
-        case RequestError.internalLoginItemError(let error):
+        case RequestError.enableLoginItemError(let error):
             Logger.networkProtection.error("IPC Controller found an error while enabling the login item: \(error.localizedDescription)")
         default:
             Logger.networkProtection.error("IPC Controller found an unknown error: \(error.localizedDescription)")

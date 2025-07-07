@@ -19,6 +19,7 @@
 import Foundation
 
 enum BookmarksContentState: Equatable {
+    case loading
     case empty(emptyState: BookmarksEmptyStateContent)
     case nonEmpty
 }
@@ -27,6 +28,7 @@ final class BookmarkManagementDetailViewModel {
 
     private let bookmarkManager: BookmarkManager
     private let bookmarksSearchAndSortMetrics: BookmarksSearchAndSortMetrics
+    private let navigationEngagementMetrics: BookmarksNavigationEngagementMetrics
 
     private var currentSelectionState: BookmarkManagementSidebarViewController.SelectionState = .empty
     private var searchQuery = ""
@@ -37,14 +39,17 @@ final class BookmarkManagementDetailViewModel {
         !searchQuery.isBlank
     }
 
-    init(bookmarkManager: BookmarkManager, metrics: BookmarksSearchAndSortMetrics, mode: BookmarksSortMode = .manual) {
+    init(bookmarkManager: BookmarkManager, metrics: BookmarksSearchAndSortMetrics, navigationEngagementMetrics: BookmarksNavigationEngagementMetrics, mode: BookmarksSortMode = .manual) {
         self.bookmarkManager = bookmarkManager
         self.bookmarksSearchAndSortMetrics = metrics
+        self.navigationEngagementMetrics = navigationEngagementMetrics
         self.mode = mode
     }
 
     var contentState: BookmarksContentState {
-        if bookmarkManager.list?.topLevelEntities.isEmpty ?? true {
+        if bookmarkManager.isLoading {
+            return .loading
+        } else if bookmarkManager.list?.topLevelEntities.isEmpty ?? true {
             return .empty(emptyState: .noBookmarks)
         } else if !searchQuery.isEmpty && visibleBookmarks.isEmpty {
             return .empty(emptyState: .noSearchResults)
@@ -106,6 +111,10 @@ final class BookmarkManagementDetailViewModel {
         if !searchQuery.isBlank {
             bookmarksSearchAndSortMetrics.fireSearchResultClicked(origin: .manager)
         }
+    }
+
+    func onNavigateToBookmark(_ bookmark: Bookmark) {
+        navigationEngagementMetrics.fireNavigateToBookmark(isFavorite: bookmark.isFavorite)
     }
 
     // MARK: - Private

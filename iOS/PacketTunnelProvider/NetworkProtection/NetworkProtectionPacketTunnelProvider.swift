@@ -24,7 +24,7 @@ import Combine
 import Core
 import Networking
 import NetworkExtension
-import NetworkProtection
+import VPN
 import os.log
 import Subscription
 import WidgetKit
@@ -332,6 +332,12 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                 pixelEvent = .networkProtectionClientFailedToParseRegisteredServersResponse
             case .invalidAuthToken:
                 pixelEvent = .networkProtectionClientInvalidAuthToken
+            case .vpnAccessRevoked(let error):
+                pixelEvent = .networkProtectionVPNAccessRevoked
+                pixelError = error
+            case .unmanagedSubscriptionError(let error):
+                pixelEvent = .networkProtectionUnmanagedSubscriptionError
+                pixelError = error
             case .serverListInconsistency:
                 return
             case .failedToCastKeychainValueToData(let field):
@@ -448,8 +454,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                                                 userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
+            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                         userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
             let accountManager = DefaultAccountManager(accessTokenStorage: accessTokenStorage,
                                                        entitlementsCache: entitlementsCache,
                                                        subscriptionEndpointService: subscriptionEndpointService,
@@ -468,41 +476,32 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         } else {
             // MARK: Subscription V2
             Logger.networkProtection.log("Configure Subscription V2")
-            let configuration = URLSessionConfiguration.default
-            configuration.httpCookieStorage = nil
-            configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-            let urlSession = URLSession(configuration: configuration,
-                                        delegate: SessionDelegate(),
-                                        delegateQueue: nil)
-            let apiService = DefaultAPIService(urlSession: urlSession)
             let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
-            
-            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: apiService)
-            
+            let authService = DefaultOAuthService(baseURL: authEnvironment.url,
+                                                  apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
+
             // keychain storage
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
-                Pixel.fire(.privacyProKeychainAccessError, withAdditionalParameters: ["type": keychainType.rawValue, "error": error.errorDescription])
+            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
+                let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
+                                  PixelParameters.privacyProKeychainError: error.localizedDescription,
+                                  PixelParameters.source: KeychainErrorSource.vpn.rawValue,
+                                  PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
+                DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: parameters)
             }
             let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                                 legacyTokenStorage: legacyAccountStorage,
                                                 authService: authService)
-            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
+            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
-            
-            let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
-                switch type {
-                case .deadToken:
-                    // handled by the main app: Pixel.fire(pixel: .privacyProDeadTokenDetected)
-                    break
-                case .subscriptionIsActive, .v1MigrationFailed, .v1MigrationSuccessful: // handled by the main app only
-                    break
-                }
-            }
+            let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                                    oAuthClient: authClient,
+                                                                   userDefaults: UserDefaults.standard,
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,
@@ -515,7 +514,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             entitlementsCheck = {
                 Logger.networkProtection.log("Subscription Entitlements check...")
                 do {
-                    let isNetworkProtectionEnabled = try await subscriptionManager.isFeatureAvailableForUser(.networkProtection)
+                    let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                    let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)
                     Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
                     return .success(isNetworkProtectionEnabled)
                 } catch {
@@ -532,7 +532,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         let errorStore = NetworkProtectionTunnelErrorStore()
         let notificationsPresenter = NetworkProtectionUNNotificationPresenter()
 
-        let notificationsPresenterDecorator = NetworkProtectionNotificationsPresenterTogglableDecorator(
+        let notificationsPresenterDecorator = VPNNotificationsPresenterTogglableDecorator(
             settings: settings,
             defaults: .networkProtectionGroupDefaults,
             wrappee: notificationsPresenter
@@ -654,12 +654,17 @@ final class DefaultWireGuardInterface: WireGuardInterface {
 extension NetworkProtectionPacketTunnelProvider: AccountManagerKeychainAccessDelegate {
 
     public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
-        let parameters = [
-            PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-            PixelParameters.privacyProKeychainError: error.localizedDescription,
-            PixelParameters.source: "vpn"
-        ]
 
+        guard let expectedError = error as? AccountKeychainAccessError else {
+            assertionFailure("Unexpected error type: \(error)")
+            Logger.networkProtection.fault("Unexpected error type: \(error)")
+            return
+        }
+
+        let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
+                          PixelParameters.privacyProKeychainError: expectedError.errorDescription ?? "Unknown",
+                          PixelParameters.source: KeychainErrorSource.vpn.rawValue,
+                          PixelParameters.authVersion: KeychainErrorAuthVersion.v1.rawValue]
         DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
                                      pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                      withAdditionalParameters: parameters)

@@ -20,11 +20,7 @@ import Foundation
 import Onboarding
 import PixelKit
 
-typealias OnboardingPixelReporting =
-OnboardingSearchSuggestionsPixelReporting
-& OnboardingSiteSuggestionsPixelReporting
-& OnboardingDialogsReporting
-& OnboardingAddressBarReporting
+typealias OnboardingPixelReporting = OnboardingDialogsReporting & OnboardingAddressBarReporting
 
 protocol OnboardingAddressBarReporting: AnyObject {
     func measureAddressBarTypedIn()
@@ -33,50 +29,43 @@ protocol OnboardingAddressBarReporting: AnyObject {
 }
 
 protocol OnboardingDialogsReporting: AnyObject {
-    func measureFireButtonSkipped()
     func measureLastDialogShown()
     func measureFireButtonTryIt()
+    func measureDialogDismissed(dialogType: ContextualDialogType)
 }
 
 protocol OnboardingFireReporting: AnyObject {
     func measureFireButtonPressed()
 }
 
-final class OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting, OnboardingSiteSuggestionsPixelReporting {
+final class OnboardingPixelReporter {
 
-    private unowned let onboardingStateProvider: ContextualOnboardingStateUpdater
+    private weak var onboardingStateProvider: (ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater)?
     private let fire: (PixelKitEventV2, PixelKit.Frequency) -> Void
     private let userDefaults: UserDefaults
 
-    init(onboardingStateProvider: ContextualOnboardingStateUpdater = Application.appDelegate.onboardingStateMachine,
+    init(onboardingStateProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
+ = Application.appDelegate.onboardingContextualDialogsManager,
          userDefaults: UserDefaults = UserDefaults.standard,
          fireAction: @escaping (PixelKitEventV2, PixelKit.Frequency) -> Void = { event, frequency in PixelKit.fire(event, frequency: frequency) }) {
         self.onboardingStateProvider = onboardingStateProvider
         self.fire = fireAction
         self.userDefaults = userDefaults
     }
-
-    func measureSiteSuggetionOptionTapped() {
-        fire(ContextualOnboardingPixel.siteSuggetionOptionTapped, .uniqueByName)
-    }
-
-    func measureSearchSuggetionOptionTapped() {
-        fire(ContextualOnboardingPixel.searchSuggetionOptionTapped, .uniqueByName)
-    }
 }
 
 extension OnboardingPixelReporter: OnboardingAddressBarReporting {
     func measurePrivacyDashboardOpened() {
-        if onboardingStateProvider.state != .onboardingCompleted {
+        if onboardingStateProvider?.state != .onboardingCompleted {
             fire(ContextualOnboardingPixel.onboardingPrivacyDashboardOpened, .uniqueByName)
         }
     }
 
     func measureAddressBarTypedIn() {
-        if onboardingStateProvider.state == .showTryASearch {
+        if onboardingStateProvider?.lastDialog == .tryASearch {
             fire(ContextualOnboardingPixel.onboardingSearchCustom, .uniqueByName)
         }
-        if onboardingStateProvider.state == .showTryASite {
+        if onboardingStateProvider?.lastDialog == .tryASite {
             fire(ContextualOnboardingPixel.onboardingVisitSiteCustom, .uniqueByName)
         }
     }
@@ -94,19 +83,32 @@ extension OnboardingPixelReporter: OnboardingAddressBarReporting {
 
 extension OnboardingPixelReporter: OnboardingFireReporting {
     func measureFireButtonPressed() {
-        if onboardingStateProvider.state != .onboardingCompleted {
+        if onboardingStateProvider?.state != .onboardingCompleted {
             fire(ContextualOnboardingPixel.onboardingFireButtonPressed, .uniqueByName)
         }
     }
 }
 
 extension OnboardingPixelReporter: OnboardingDialogsReporting {
-    func measureLastDialogShown() {
-        fire(ContextualOnboardingPixel.onboardingFinished, .uniqueByName)
+    func measureDialogDismissed(dialogType: ContextualDialogType) {
+        switch dialogType {
+        case .tryASearch:
+            fire(ContextualOnboardingPixel.trySearchDismissed, .uniqueByName)
+        case .searchDone:
+            fire(ContextualOnboardingPixel.searchResultDismissed, .uniqueByName)
+        case .tryASite:
+            fire(ContextualOnboardingPixel.tryVisitSiteDismissed, .uniqueByName)
+        case .trackers:
+            fire(ContextualOnboardingPixel.trackersBlockedDismissed, .uniqueByName)
+        case .tryFireButton:
+            fire(ContextualOnboardingPixel.tryFireButtonDismissed, .uniqueByName)
+        case .highFive:
+            fire(ContextualOnboardingPixel.finalDialogDismissed, .uniqueByName)
+        }
     }
 
-    func measureFireButtonSkipped() {
-        fire(ContextualOnboardingPixel.onboardingFireButtonPromptSkipPressed, .uniqueByName)
+    func measureLastDialogShown() {
+        fire(ContextualOnboardingPixel.onboardingFinished, .uniqueByName)
     }
 
     func measureFireButtonTryIt() {

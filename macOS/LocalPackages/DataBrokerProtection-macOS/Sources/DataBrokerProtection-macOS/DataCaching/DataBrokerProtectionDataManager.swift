@@ -35,7 +35,7 @@ public protocol DBPProfileSavedNotifier {
 }
 
 public protocol DataBrokerProtectionDataManaging {
-    var cache: InMemoryDataCache { get }
+    var communicator: DBPUICommunicator { get }
     var delegate: DataBrokerProtectionDataManagerDelegate? { get set }
 
     init(database: DataBrokerProtectionRepository,
@@ -60,10 +60,9 @@ public protocol DataBrokerProtectionDataManagerDelegate: AnyObject {
 }
 
 public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
-
     private let profileSavedNotifier: DBPProfileSavedNotifier?
 
-    public let cache = InMemoryDataCache()
+    public let communicator = DBPUICommunicator()
 
     public weak var delegate: DataBrokerProtectionDataManagerDelegate?
 
@@ -74,7 +73,7 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
         self.database = database
 
         self.profileSavedNotifier = profileSavedNotifier
-        cache.delegate = self
+        communicator.delegate = self
     }
 
     public func saveProfile(_ profile: DataBrokerProtectionProfile) async throws {
@@ -83,17 +82,17 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
             profileSavedNotifier?.postProfileSavedNotificationIfPermitted()
         } catch {
             // We should still invalidate the cache if the save fails
-            cache.invalidate()
+            communicator.invalidateCache()
             throw error
         }
-        cache.invalidate()
-        cache.profile = profile
+        communicator.invalidateCache()
+        communicator.profile = profile
     }
 
     public func fetchProfile() throws -> DataBrokerProtectionProfile? {
-        if cache.profile != nil {
+        if communicator.profile != nil {
             Logger.dataBrokerProtection.log("Returning cached profile")
-            return cache.profile
+            return communicator.profile
         }
 
         return try fetchProfileFromDB()
@@ -109,7 +108,7 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
 
     private func fetchProfileFromDB() throws -> DataBrokerProtectionProfile? {
         if let profile = try database.fetchProfile() {
-            cache.profile = profile
+            communicator.profile = profile
             return profile
         } else {
             Logger.dataBrokerProtection.log("No profile found")
@@ -119,25 +118,25 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
 
     public func prepareProfileCache() throws {
         if let profile = try database.fetchProfile() {
-            cache.profile = profile
+            communicator.profile = profile
         } else {
             Logger.dataBrokerProtection.log("No profile found")
         }
     }
 
     public func fetchBrokerProfileQueryData(ignoresCache: Bool = false) throws -> [BrokerProfileQueryData] {
-        if !ignoresCache, !cache.brokerProfileQueryData.isEmpty {
+        if !ignoresCache, !communicator.brokerProfileQueryData.isEmpty {
             Logger.dataBrokerProtection.log("Returning cached brokerProfileQueryData")
-            return cache.brokerProfileQueryData
+            return communicator.brokerProfileQueryData
         }
 
         let queryData = try database.fetchAllBrokerProfileQueryData()
-        cache.brokerProfileQueryData = queryData
+        communicator.brokerProfileQueryData = queryData
         return queryData
     }
 
     public func prepareBrokerProfileQueryDataCache() throws {
-        cache.brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()
+        communicator.brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()
     }
 
     public func hasMatches() throws -> Bool {
@@ -189,7 +188,7 @@ private extension DataBrokerProtectionDataManager {
     }
 }
 
-extension DataBrokerProtectionDataManager: InMemoryDataCacheDelegate {
+extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
 
     public func saveCachedProfileToDatabase(_ profile: DataBrokerProtectionProfile) async throws {
         try await saveProfile(profile)
@@ -199,7 +198,7 @@ extension DataBrokerProtectionDataManager: InMemoryDataCacheDelegate {
 
     public func removeAllData() throws {
         try database.deleteProfileData()
-        cache.invalidate()
+        communicator.invalidateCache()
 
         delegate?.dataBrokerProtectionDataManagerDidDeleteData()
     }
@@ -215,35 +214,61 @@ extension DataBrokerProtectionDataManager: InMemoryDataCacheDelegate {
     public func isAuthenticatedUser() -> Bool {
         delegate?.isAuthenticatedUser() ?? true
     }
+
+    public func willRemoveOptOutFromDashboard(_ id: Int64) {
+        if let extractedProfile = try? database.fetchExtractedProfile(with: id) {
+            let event = HistoryEvent(extractedProfileId: id,
+                                     brokerId: extractedProfile.brokerId,
+                                     profileQueryId: extractedProfile.profileQueryId,
+                                     type: .matchRemovedByUser)
+            try? database.add(event)
+        }
+    }
 }
 
-public protocol InMemoryDataCacheDelegate: AnyObject {
+public typealias DBPUICommunicatorDelegate = UserProfileDelegate & UserActionDelegate
+
+public protocol UserProfileDelegate: AnyObject {
     func saveCachedProfileToDatabase(_ profile: DataBrokerProtectionProfile) async throws
     func removeAllData() throws
-    func willOpenSendFeedbackForm()
-    func willApplyVPNBypassSetting(_ bypass: Bool) async
     func isAuthenticatedUser() -> Bool
 }
 
-public final class InMemoryDataCache {
-    var profile: DataBrokerProtectionProfile?
-    var brokerProfileQueryData = [BrokerProfileQueryData]()
-    private let mapper = MapperToUI()
+public protocol UserActionDelegate: AnyObject {
+    func willOpenSendFeedbackForm()
+    func willApplyVPNBypassSetting(_ bypass: Bool) async
+    func willRemoveOptOutFromDashboard(_ id: Int64)
+}
 
-    weak var delegate: InMemoryDataCacheDelegate?
+public final class DBPUICommunicator {
+
+    var profile: DataBrokerProtectionProfile? {
+        get {
+            DataBrokerProtectionProfile(from: editablePartialProfile)
+        }
+        set {
+            if let newValue = newValue {
+                editablePartialProfile = DBPUIEditablePartialProfile(from: newValue)
+            } else {
+                editablePartialProfile = DBPUIEditablePartialProfile()
+            }
+        }
+    }
+    private var editablePartialProfile = DBPUIEditablePartialProfile()
+
+    var brokerProfileQueryData = [BrokerProfileQueryData]()
+    private let debugMetaDataMapper = UIDebugMetadataMapper()
+
+    weak var delegate: DBPUICommunicatorDelegate?
     weak var scanDelegate: DBPUIScanOps?
 
-    private let emptyProfile: DataBrokerProtectionProfile = {
-        DataBrokerProtectionProfile(names: [], addresses: [], phones: [], birthYear: -1)
-    }()
-
-    public func invalidate() {
+    public func invalidateCache() {
         profile = nil
         brokerProfileQueryData.removeAll()
     }
 }
 
-extension InMemoryDataCache: DBPUICommunicationDelegate {
+extension DBPUICommunicator: DBPUICommunicationDelegate {
 
     public func getHandshakeUserData() -> DBPUIHandshakeUserData? {
         let isAuthenticatedUser = delegate?.isAuthenticatedUser() ?? true
@@ -255,135 +280,50 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
         try await delegate?.saveCachedProfileToDatabase(profile)
     }
 
-    private func indexForName(matching name: DBPUIUserProfileName, in profile: DataBrokerProtectionProfile) -> Int? {
-        if let idx = profile.names.firstIndex(where: { $0.firstName == name.first && $0.lastName == name.last && $0.middleName == name.middle && $0.suffix == name.suffix }) {
-            return idx
-        }
-
-        return nil
-    }
-
-    private func indexForAddress(matching address: DBPUIUserProfileAddress, in profile: DataBrokerProtectionProfile) -> Int? {
-        if let idx = profile.addresses.firstIndex(where: { $0.street == address.street && $0.state == address.state && $0.city == address.city && $0.zipCode == address.zipCode}) {
-            return idx
-        }
-
-        return nil
-    }
-
-    private func isNameEmpty(_ name: DBPUIUserProfileName) -> Bool {
-        return name.first.isBlank || name.last.isBlank
-    }
-
-    private func addressIsEmpty(_ address: DBPUIUserProfileAddress) -> Bool {
-        return address.city.isBlank || address.state.isBlank
-    }
-
     public func getUserProfile() -> DBPUIUserProfile? {
-        let profile = profile ?? emptyProfile
+        guard let profile = profile else { return nil }
 
-        let names = profile.names.map { DBPUIUserProfileName(first: $0.firstName, middle: $0.middleName, last: $0.lastName, suffix: $0.suffix) }
-        let addresses = profile.addresses.map { DBPUIUserProfileAddress(street: $0.street, city: $0.city, state: $0.state, zipCode: $0.zipCode) }
-
-        return DBPUIUserProfile(names: names, birthYear: profile.birthYear, addresses: addresses)
+        return DBPUIUserProfile(from: profile)
     }
 
     public func deleteProfileData() throws {
-        profile = emptyProfile
+        profile = nil
         try delegate?.removeAllData()
     }
 
     public func addNameToCurrentUserProfile(_ name: DBPUIUserProfileName) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        guard !isNameEmpty(name) else { return false }
-
-        // No duplicates
-        guard indexForName(matching: name, in: profile) == nil else { return false }
-
-        var names = profile.names
-        names.append(DataBrokerProtectionProfile.Name(firstName: name.first, lastName: name.last, middleName: name.middle, suffix: name.suffix))
-
-        self.profile = DataBrokerProtectionProfile(names: names, addresses: profile.addresses, phones: profile.phones, birthYear: profile.birthYear)
-
-        return true
+        let success = editablePartialProfile.addName(name)
+        return success
     }
 
     public func setNameAtIndexInCurrentUserProfile(_ payload: DBPUINameAtIndex) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        var names = profile.names
-        if payload.index < names.count {
-            names[payload.index] = DataBrokerProtectionProfile.Name(firstName: payload.name.first, lastName: payload.name.last, middleName: payload.name.middle, suffix: payload.name.suffix)
-            self.profile = DataBrokerProtectionProfile(names: names, addresses: profile.addresses, phones: profile.phones, birthYear: profile.birthYear)
-            return true
-        }
-
-        return false
+        let success = editablePartialProfile.setNameAtIndex(payload)
+        return success
     }
 
     public func removeNameAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        var names = profile.names
-        if index.index < names.count {
-            names.remove(at: index.index)
-            self.profile = DataBrokerProtectionProfile(names: names, addresses: profile.addresses, phones: profile.phones, birthYear: profile.birthYear)
-            return true
-        }
-
-        return false
+        let success = editablePartialProfile.removeNameAtIndex(index.index)
+        return success
     }
 
     public func setBirthYearForCurrentUserProfile(_ year: DBPUIBirthYear) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        self.profile = DataBrokerProtectionProfile(names: profile.names, addresses: profile.addresses, phones: profile.phones, birthYear: year.year)
-
+        editablePartialProfile.birthYear = year
         return true
     }
 
     public func addAddressToCurrentUserProfile(_ address: DBPUIUserProfileAddress) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        guard !addressIsEmpty(address) else { return false }
-
-        // No duplicates
-        guard indexForAddress(matching: address, in: profile) == nil else { return false }
-
-        var addresses = profile.addresses
-        addresses.append(DataBrokerProtectionProfile.Address(city: address.city, state: address.state, street: address.street, zipCode: address.zipCode))
-
-        self.profile = DataBrokerProtectionProfile(names: profile.names, addresses: addresses, phones: profile.phones, birthYear: profile.birthYear)
-
-        return true
+        let success = editablePartialProfile.addAddress(address)
+        return success
     }
 
     public func setAddressAtIndexInCurrentUserProfile(_ payload: DBPUIAddressAtIndex) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        var addresses = profile.addresses
-        if payload.index < addresses.count {
-            addresses[payload.index] = DataBrokerProtectionProfile.Address(city: payload.address.city, state: payload.address.state,
-                                                                           street: payload.address.street, zipCode: payload.address.zipCode)
-            self.profile = DataBrokerProtectionProfile(names: profile.names, addresses: addresses, phones: profile.phones, birthYear: profile.birthYear)
-            return true
-        }
-
-        return false
+        let success = editablePartialProfile.setAddressAtIndex(payload)
+        return success
     }
 
     public func removeAddressAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool {
-        let profile = profile ?? emptyProfile
-
-        var addresses = profile.addresses
-        if index.index < addresses.count {
-            addresses.remove(at: index.index)
-            self.profile = DataBrokerProtectionProfile(names: profile.names, addresses: addresses, phones: profile.phones, birthYear: profile.birthYear)
-            return true
-        }
-
-        return false
+        let success = editablePartialProfile.removeAddressAtIndex(index.index)
+        return success
     }
 
     public func startScanAndOptOut() -> Bool {
@@ -396,28 +336,23 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
     public func getInitialScanState() async -> DBPUIInitialScanState {
         await scanDelegate?.updateCacheWithCurrentScans()
 
-        return mapper.initialScanState(brokerProfileQueryData)
+        return DBPUIInitialScanState(from: brokerProfileQueryData)
     }
 
-    public func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
+    public func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         await scanDelegate?.updateCacheWithCurrentScans()
 
-        return mapper.maintenanceScanState(brokerProfileQueryData)
+        return DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
     }
 
     public func getDataBrokers() async -> [DBPUIDataBroker] {
+
         brokerProfileQueryData
         // 1. We get all brokers (in this list brokers are repeated)
             .map { $0.dataBroker }
         // 2. We map the brokers to the UI model
             .flatMap { dataBroker -> [DBPUIDataBroker] in
-                var result: [DBPUIDataBroker] = []
-                result.append(DBPUIDataBroker(name: dataBroker.name, url: dataBroker.url, parentURL: dataBroker.parent, optOutUrl: dataBroker.optOutUrl))
-
-                for mirrorSite in dataBroker.mirrorSites {
-                    result.append(DBPUIDataBroker(name: mirrorSite.name, url: mirrorSite.url, parentURL: dataBroker.parent, optOutUrl: dataBroker.optOutUrl))
-                }
-                return result
+                return DBPUIDataBroker.brokerWithMirrorSites(from: dataBroker)
             }
         // 3. We delete duplicates
             .reduce(into: [DBPUIDataBroker]()) { (result, dataBroker) in
@@ -430,7 +365,7 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
     public func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata {
         let metadata = await scanDelegate?.getBackgroundAgentMetadata()
 
-        return mapper.mapToUIDebugMetadata(metadata: metadata, brokerProfileQueryData: brokerProfileQueryData)
+        return debugMetaDataMapper.mapToUIDebugMetadata(metadata: metadata, brokerProfileQueryData: brokerProfileQueryData)
     }
 
     public func openSendFeedbackModal() async {
@@ -439,5 +374,9 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
 
     public func applyVPNBypassSetting(_ bypass: Bool) async {
         await delegate?.willApplyVPNBypassSetting(bypass)
+    }
+
+    public func removeOptOutFromDashboard(_ id: Int64) async {
+        delegate?.willRemoveOptOutFromDashboard(id)
     }
 }

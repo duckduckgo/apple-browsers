@@ -19,7 +19,7 @@
 import Foundation
 import Networking
 import UserNotifications
-import NetworkProtection
+import VPN
 import BrowserServicesKit
 import Common
 import Subscription

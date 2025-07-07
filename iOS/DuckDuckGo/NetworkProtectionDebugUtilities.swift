@@ -19,7 +19,7 @@
 
 import Common
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkExtension
 
 /// Utility code to help implement our debug menu options for Network Protection.

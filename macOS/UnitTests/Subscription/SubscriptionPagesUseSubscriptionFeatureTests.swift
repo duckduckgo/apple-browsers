@@ -30,6 +30,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 
 @available(macOS 12.0, *)
+@MainActor
 final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     private struct Constants {
@@ -86,7 +87,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     var subscriptionEnvironment: SubscriptionEnvironment!
 
     var subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock!
-    var subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags>!
+    private var mockFeatureFlagger: MockFeatureFlagger!
 
     var appStorePurchaseFlow: AppStorePurchaseFlow!
     var appStoreRestoreFlow: AppStoreRestoreFlow!
@@ -99,8 +100,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
     var accountManager: AccountManager!
     var subscriptionManager: SubscriptionManager!
-    var mockFreemiumDBPExperimentManager: MockFreemiumDBPExperimentManager!
-    private var mockPixelHandler: MockFreemiumDBPExperimentPixelHandler!
+    private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
 
     var feature: SubscriptionPagesUseSubscriptionFeature!
@@ -108,7 +108,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     var pixelsFired: [String] = []
     var uiEventsHappened: [SubscriptionUIHandlerMock.UIHandlerMockPerformedAction] = []
 
-    @MainActor override func setUpWithError() throws {
+    override func setUpWithError() throws {
         // Mocks
         userDefaults = UserDefaults(suiteName: Constants.userDefaultsSuiteName)!
         userDefaults.removePersistentDomain(forName: Constants.userDefaultsSuiteName)
@@ -117,7 +117,9 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                             appVersion: "1.0.0",
                             defaultHeaders: [:],
                             defaults: userDefaults) { pixelName, _, _, _, _, _ in
-            self.pixelsFired.append(pixelName)
+            Task { @MainActor in
+                self.pixelsFired.append(pixelName)
+            }
         }
         pixelKit.clearFrequencyHistoryForAllPixels()
         PixelKit.setSharedForTesting(pixelKit: pixelKit)
@@ -140,7 +142,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                              settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
 
         subscriptionFeatureMappingCache = SubscriptionFeatureMappingCacheMock()
-        subscriptionFeatureFlagger = FeatureFlaggerMapping<SubscriptionFeatureFlags>(mapping: { $0.defaultState })
+        mockFeatureFlagger = MockFeatureFlagger()
 
         // Real AccountManager
         accountManager = DefaultAccountManager(storage: accountStorage,
@@ -171,8 +173,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         subscriptionAttributionPixelHandler = PrivacyProSubscriptionAttributionPixelHandler()
 
-        subscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true,
-                                                                              usesUnifiedFeedbackForm: false)
+        subscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false)
 
         // Real SubscriptionManager
         subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
@@ -182,8 +183,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                          subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
                                                          subscriptionEnvironment: subscriptionEnvironment)
 
-        mockFreemiumDBPExperimentManager = MockFreemiumDBPExperimentManager()
-        mockPixelHandler = MockFreemiumDBPExperimentPixelHandler()
+        mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
 
         feature = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
@@ -192,8 +192,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                           uiHandler: uiHandler,
                                                           subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                           freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
-                                                          freemiumDBPPixelExperimentManager: mockFreemiumDBPExperimentManager,
-                                                          freemiumDBPExperimentPixelHandler: mockPixelHandler)
+                                                          dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
+                                                          featureFlagger: mockFeatureFlagger)
         feature.with(broker: broker)
     }
 
@@ -455,7 +455,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     func testSubscriptionSelectedSuccessWhenPurchasingFirstTimeAndUserIsFreemium() async throws {
         // Given
         mockFreemiumDBPUserStateManager.didActivate = true
-        mockFreemiumDBPExperimentManager.pixelParameters = ["daysEnrolled": "1"]
         ensureUserUnauthenticatedState()
         XCTAssertEqual(subscriptionEnvironment.purchasePlatform, .appStore)
         XCTAssertFalse(accountManager.isUserAuthenticated)
@@ -494,8 +493,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseSuccess.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseSuccess.name + "_c",
                                      PrivacyProPixel.privacyProSubscriptionActivated.name])
-        XCTAssertEqual(mockPixelHandler.lastFiredEvent, FreemiumDBPExperimentPixel.subscription)
-        XCTAssertEqual(mockPixelHandler.lastPassedParameters?["daysEnrolled"], "1")
     }
 
     func testSubscriptionSelectedSuccessWhenRepurchasingForExpiredAppleSubscription() async throws {
@@ -588,11 +585,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertNil(result)
         XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProRestoreAfterPurchaseAttempt.name,
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_c"])
+                                     PrivacyProPixel.privacyProRestoreAfterPurchaseAttempt.name])
     }
 
     func testSubscriptionSelectedErrorWhenPurchasingWhenUnauthenticatedAndHavingActiveSubscriptionOnAppleID() async throws {
@@ -625,10 +618,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProRestoreAfterPurchaseAttempt.name,
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_c",
                                      PrivacyProPixel.privacyProRestorePurchaseStoreSuccess.name + "_d",
                                      PrivacyProPixel.privacyProRestorePurchaseStoreSuccess.name + "_c"])
     }
@@ -668,8 +657,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -719,8 +706,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -749,8 +734,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -779,8 +762,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -809,8 +790,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -839,8 +818,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -869,8 +846,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -1098,7 +1073,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredSubscription)
         mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = true
         feature.with(broker: broker)
-        let freeiumOrigin = PrivacyProSubscriptionAttributionPixelHandler.Consts.freemiumOrigin
+        let freeiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -1136,7 +1111,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = false
         feature.with(broker: broker)
-        let freeiumOrigin = PrivacyProSubscriptionAttributionPixelHandler.Consts.freemiumOrigin
+        let freeiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -1145,6 +1120,67 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         // Then
         XCTAssertNil(result)
         XCTAssertNotEqual(subscriptionAttributionPixelHandler.origin, freeiumOrigin)
+    }
+
+    // MARK: - Free Trials
+
+    func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialOptionsAvailable_ReturnsFreeTrialOptions() async throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
+        subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
+
+        let freeTrialOptions = SubscriptionOptions(
+            platform: .macos,
+            options: [SubscriptionOption(id: "free-trial-monthly-from-store-manager", cost: SubscriptionOptionCost(displayPrice: "0 USD", recurrence: "monthly"))],
+            features: [SubscriptionFeature(name: .networkProtection)]
+        )
+
+        storePurchaseManager.freeTrialSubscriptionOptionsResult = freeTrialOptions
+        storePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
+
+        // When
+        let result = try await feature.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
+
+        // Then
+        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptions)
+        XCTAssertEqual(subscriptionOptionsResult, freeTrialOptions)
+    }
+
+    func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialReturnsNil_ReturnsRegularOptions() async throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
+        subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
+
+        storePurchaseManager.freeTrialSubscriptionOptionsResult = nil
+        storePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
+
+        // When
+        let result = try await feature.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
+
+        // Then
+        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptions)
+        XCTAssertEqual(subscriptionOptionsResult, Constants.subscriptionOptions)
+    }
+
+    func testGetSubscriptionOptions_FreeTrialFlagOff_AndFreeTrialOptionsAvailable_ReturnsRegularOptions() async throws {
+        // Given
+        subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
+
+        let freeTrialOptions = SubscriptionOptions(
+            platform: .macos,
+            options: [SubscriptionOption(id: "free-trial-monthly-from-store-manager", cost: SubscriptionOptionCost(displayPrice: "0 USD", recurrence: "monthly"))],
+            features: [SubscriptionFeature(name: .networkProtection)]
+        )
+
+        storePurchaseManager.freeTrialSubscriptionOptionsResult = freeTrialOptions
+        storePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
+
+        // When
+        let result = try await feature.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
+
+        // Then
+        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptions)
+        XCTAssertEqual(subscriptionOptionsResult, Constants.subscriptionOptions)
     }
 }
 

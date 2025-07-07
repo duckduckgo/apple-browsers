@@ -138,4 +138,25 @@ final class DuckPlayerURLExtensionTests: XCTestCase {
         XCTAssertEqual(URL.youtubeNoCookie("abcdef12345", timestamp: "10d").absoluteString, "https://www.youtube-nocookie.com/embed/abcdef12345")
     }
 
+    func testIsYoutubeWatchWithHashtag() {
+        // Valid YouTube watch URL with a video ID and a hashtag
+        XCTAssertTrue("\(baseUrl)/watch?v=abcdef12345#t=2m30s".url!.isYoutubeWatchWithHashtag)
+        XCTAssertTrue("\(baseUrl)/watch?v=abcdef12345&list=123456#player".url!.isYoutubeWatchWithHashtag)
+
+        // YouTube watch URL with a video ID but no fragment
+        XCTAssertFalse("\(baseUrl)/watch?v=abcdef12345".url!.isYoutubeWatchWithHashtag)
+
+        // YouTube watch URL with an empty fragment
+        XCTAssertFalse("\(baseUrl)/watch?v=abcdef12345#".url!.isYoutubeWatchWithHashtag)
+
+        // URL that is not a YouTube watch page
+        XCTAssertFalse("\(baseUrl)/playlist?list=12345#player".url!.isYoutubeWatchWithHashtag)
+
+        // Non-YouTube URL with a fragment
+        XCTAssertFalse("https://duckduckgo.com/search?q=test#results".url!.isYoutubeWatchWithHashtag)
+
+        // YouTube watch URL missing video ID parameter
+        XCTAssertFalse("\(baseUrl)/watch?list=12345#player".url!.isYoutubeWatchWithHashtag)
+    }
+
 }

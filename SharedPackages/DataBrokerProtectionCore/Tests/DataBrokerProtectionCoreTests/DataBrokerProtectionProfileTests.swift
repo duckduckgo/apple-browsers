@@ -165,7 +165,8 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
                                                     pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                                                    vault: vault)
+                                                    vault: vault,
+                                                    localBrokerService: MockLocalBrokerJSONService())
 
         let profile = DataBrokerProtectionProfile(
             names: [
@@ -193,7 +194,8 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
                                                     pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                                                    vault: vault)
+                                                    vault: vault,
+                                                    localBrokerService: MockLocalBrokerJSONService())
 
         vault.brokers = [DataBroker.mock]
         vault.profileQueries = [ProfileQuery.mock]
@@ -238,7 +240,8 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
                                                     pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                                                    vault: vault)
+                                                    vault: vault,
+                                                    localBrokerService: MockLocalBrokerJSONService())
 
         vault.brokers = [DataBroker.mock]
         vault.profileQueries = [ProfileQuery.mock]
@@ -274,7 +277,7 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
     }
 }
 
-extension ProfileQuery: Comparable {
+extension ProfileQuery: @retroactive Comparable {
 
     public static func < (lhs: ProfileQuery, rhs: ProfileQuery) -> Bool {
         if lhs.firstName != rhs.firstName {

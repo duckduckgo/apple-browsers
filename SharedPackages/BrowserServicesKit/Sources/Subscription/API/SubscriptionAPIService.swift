@@ -19,13 +19,33 @@
 import Foundation
 import Common
 import os.log
+import Networking
 
-public enum APIServiceError: Swift.Error {
+public enum APIServiceError: Swift.Error, LocalizedError {
     case decodingError
     case encodingError
     case serverError(statusCode: Int, error: String?)
     case unknownServerError
     case connectionError
+
+    public var errorDescription: String? {
+        switch self {
+        case .decodingError:
+            return "Decoding error"
+        case .encodingError:
+            return "Encoding error"
+        case .serverError(statusCode: let statusCode, error: let error):
+            return "Server error (\(statusCode)): \(error ?? "No error description provided")"
+        case .unknownServerError:
+            return "Unknown server error"
+        case .connectionError:
+            return "Connection error"
+        }
+    }
+
+    public var localizedDescription: String {
+        errorDescription ?? "Unknown"
+    }
 }
 
 struct ErrorResponse: Decodable {
@@ -45,21 +65,23 @@ public enum APICachePolicy {
     public var subscriptionCachePolicy: SubscriptionCachePolicy {
         switch self {
         case .reloadIgnoringLocalCacheData:
-            return .reloadIgnoringLocalCacheData
+            return .remoteFirst
         case .returnCacheDataElseLoad:
-            return .returnCacheDataElseLoad
+            return .cacheFirst
         case .returnCacheDataDontLoad:
-            return .returnCacheDataDontLoad
+            return .cacheOnly
         }
     }
 }
 
 public struct DefaultSubscriptionAPIService: SubscriptionAPIService {
     private let baseURL: URL
+    private let userAgent: String
     private let session: URLSession
 
-    public init(baseURL: URL, session: URLSession) {
+    public init(baseURL: URL, userAgent: String, session: URLSession) {
         self.baseURL = baseURL
+        self.userAgent = userAgent
         self.session = session
     }
 
@@ -101,9 +123,9 @@ public struct DefaultSubscriptionAPIService: SubscriptionAPIService {
         let url = baseURL.appendingPathComponent(endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = method
-        if let headers = headers {
-            request.allHTTPHeaderFields = headers
-        }
+        request.allHTTPHeaderFields = headers ?? [:]
+        request.allHTTPHeaderFields?[HTTPHeaderKey.userAgent] = userAgent
+
         if let body = body {
             request.httpBody = body
         }

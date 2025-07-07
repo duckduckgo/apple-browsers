@@ -24,13 +24,15 @@ public enum SubscriptionURL {
 
     case baseURL
     case purchase
+    case welcome
     case faq
-    case activateViaEmail
-    case addEmail
+    case privacyPolicy
+    case helpPagesAddingEmail
+    case activationFlow
+    case activationFlowAddEmailStep
+    case activationFlowLinkViaEmailStep
+    case activationFlowSuccess
     case manageEmail
-    case activateSuccess
-    case addEmailToSubscriptionSuccess
-    case addEmailToSubscriptionOTP
     case manageSubscriptionsInAppStore
     case identityTheftRestoration
 
@@ -38,6 +40,8 @@ public enum SubscriptionURL {
         public static let defaultBaseSubscriptionURL = URL(string: "https://duckduckgo.com/subscriptions")!
         static let manageSubscriptionsInMacAppStoreURL = URL(string: "macappstores://apps.apple.com/account/subscriptions")!
         static let helpPagesURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
+        static let privacyPolicyURL = URL(string: "https://duckduckgo.com/pro/privacy-terms/")!
+        static let helpPagesAddingEmailURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email")!
     }
 
     public func subscriptionURL(withCustomBaseURL baseURL: URL = StaticURLs.defaultBaseSubscriptionURL, environment: SubscriptionEnvironment.ServiceEnvironment) -> URL {
@@ -47,20 +51,24 @@ public enum SubscriptionURL {
                 baseURL
             case .purchase:
                 baseURL
+            case .welcome:
+                baseURL.appendingPathComponent("welcome")
             case .faq:
                 StaticURLs.helpPagesURL
-            case .activateViaEmail:
-                baseURL.appendingPathComponent("activate")
-            case .addEmail:
-                baseURL.appendingPathComponent("add-email")
+            case .privacyPolicy:
+                StaticURLs.privacyPolicyURL
+            case .helpPagesAddingEmail:
+                StaticURLs.helpPagesAddingEmailURL
+            case .activationFlow:
+                baseURL.appendingPathComponent("activation-flow")
+            case .activationFlowAddEmailStep:
+                baseURL.appendingPathComponent("activation-flow/another-device/add-email")
+            case .activationFlowLinkViaEmailStep:
+                baseURL.appendingPathComponent("activation-flow/another-device/email")
+            case .activationFlowSuccess:
+                baseURL.appendingPathComponent("activation-flow/this-device/activate-by-email/success")
             case .manageEmail:
                 baseURL.appendingPathComponent("manage")
-            case .activateSuccess:
-                baseURL.appendingPathComponent("activate/success")
-            case .addEmailToSubscriptionSuccess:
-                baseURL.appendingPathComponent("add-email/success")
-            case .addEmailToSubscriptionOTP:
-                baseURL.appendingPathComponent("add-email/otp")
             case .manageSubscriptionsInAppStore:
                 StaticURLs.manageSubscriptionsInMacAppStoreURL
             case .identityTheftRestoration:
@@ -77,11 +85,35 @@ public enum SubscriptionURL {
 
     private var hasStagingVariant: Bool {
         switch self {
-        case .faq, .manageSubscriptionsInAppStore:
+        case .faq, .privacyPolicy, .helpPagesAddingEmail, .manageSubscriptionsInAppStore:
             false
         default:
             true
         }
+    }
+}
+
+extension SubscriptionURL {
+
+    /**
+     * Creates URL components for a subscription purchase URL with the specified origin parameter.
+     *
+     * This method constructs a subscription purchase URL by:
+     * 1. Using the base purchase URL
+     * 2. Appending the origin parameter to track where the subscription request originated from
+     * 3. Converting the resulting URL into URLComponents
+     *
+     * - Parameters:
+     *   - origin: A string identifying where the subscription request originated from (e.g., "funnel_appsettings_ios")
+     *   - environment: The subscription environment to use (defaults to production)
+     *
+     * - Returns: URLComponents containing the subscription URL with the origin parameter, or nil if the URL could not be parsed
+     */
+    public static func purchaseURLComponentsWithOrigin(_ origin: String, environment: SubscriptionEnvironment.ServiceEnvironment = .production) -> URLComponents? {
+        let url = SubscriptionURL.purchase
+            .subscriptionURL(environment: environment)
+            .appendingParameter(name: AttributionParameter.origin, value: origin)
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)
     }
 }
 
@@ -106,7 +138,7 @@ extension URL {
         }
 
         if let queryItems = components.queryItems, !queryItems.isEmpty {
-            components.queryItems = queryItems.filter { !["environment", "origin"].contains($0.name) }
+            components.queryItems = queryItems.filter { !["environment", "origin", "using"].contains($0.name) }
             if components.queryItems?.isEmpty ?? true {
                 components.queryItems = nil
             }

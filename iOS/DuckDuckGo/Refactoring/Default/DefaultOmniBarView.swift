@@ -22,19 +22,32 @@ import UIKit
 import Core
 import PrivacyDashboard
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckPlayer
 import os.log
 import BrowserServicesKit
 
 extension DefaultOmniBarView: NibLoading {}
 
-public enum OmniBarIcon: String {
-    case duckPlayer = "DuckPlayerURLIcon"
-    case specialError = "Globe-24"
+public enum OmniBarIcon {
+    case duckPlayer
+    case specialError
+
+    var image: UIImage {
+        switch self {
+        case .duckPlayer:
+            return UIImage(resource: .duckPlayerURLIcon)
+        case .specialError:
+            return DesignSystemImages.Glyphs.Size24.globe
+        }
+    }
+
 }
 
-class DefaultOmniBarView: UIView {
+final class DefaultOmniBarView: UIView {
 
+    // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
+    // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
     public static let didLayoutNotification = Notification.Name("com.duckduckgo.app.OmniBarDidLayout")
     
     @IBOutlet weak var searchLoupe: UIView!
@@ -45,19 +58,21 @@ class DefaultOmniBarView: UIView {
     @IBOutlet weak var notificationContainer: OmniBarNotificationContainerView!
     @IBOutlet weak var textField: TextFieldWithInsets!
     @IBOutlet weak var editingBackground: RoundedRectangleView!
+    @IBOutlet weak var separatorView: UIView!
+
     @IBOutlet weak var clearButton: UIButton!
     @IBOutlet weak var menuButton: UIButton!
     @IBOutlet weak var settingsButton: UIButton!
-    @IBOutlet weak var separatorView: UIView!
     @IBOutlet weak var cancelButton: UIButton!
     @IBOutlet weak var refreshButton: UIButton!
+    @IBOutlet weak var shareButton: UIButton!
     @IBOutlet weak var voiceSearchButton: UIButton!
     @IBOutlet weak var abortButton: UIButton!
-
     @IBOutlet weak var bookmarksButton: UIButton!
     @IBOutlet weak var backButton: UIButton!
     @IBOutlet weak var forwardButton: UIButton!
     @IBOutlet weak var accessoryButton: UIButton!
+    @IBOutlet weak var dismissButton: UIButton!
 
     private(set) var menuButtonContent = MenuButton()
 
@@ -71,38 +86,47 @@ class DefaultOmniBarView: UIView {
     @IBOutlet var omniBarTrailingConstraint: NSLayoutConstraint!
     @IBOutlet var separatorToBottom: NSLayoutConstraint!
 
-    @IBOutlet weak var dismissButton: UIButton!
-
     /// A container view designed to maintain visual consistency among various items within this space.
     /// Additionally, it facilitates smooth animations for the elements it contains.
     @IBOutlet weak var leftIconContainerView: UIView!
 
-    weak var omniDelegate: OmniBarDelegate?
-    fileprivate var state: OmniBarState!
-    private(set) var accessoryType: OmniBarAccessoryType = .share {
+    let expectedHeight: CGFloat = DefaultOmniBarView.expectedHeight
+    static let expectedHeight: CGFloat = 52
+
+    var onTextEntered: (() -> Void)?
+    var onVoiceSearchButtonPressed: (() -> Void)?
+    var onAbortButtonPressed: (() -> Void)?
+    var onClearButtonPressed: (() -> Void)?
+    var onPrivacyIconPressed: (() -> Void)?
+    var onMenuButtonPressed: (() -> Void)?
+    var onTrackersViewPressed: (() -> Void)?
+    var onSettingsButtonPressed: (() -> Void)?
+    var onCancelPressed: (() -> Void)?
+    var onRefreshPressed: (() -> Void)?
+    var onSharePressed: (() -> Void)?
+    var onBackPressed: (() -> Void)?
+    var onForwardPressed: (() -> Void)?
+    var onBookmarksPressed: (() -> Void)?
+    var onAccessoryPressed: (() -> Void)?
+    var onDismissPressed: (() -> Void)?
+    var onSettingsLongPress: (() -> Void)?
+    var onAccessoryLongPress: (() -> Void)?
+
+    var accessoryType: OmniBarAccessoryType = .chat {
         didSet {
             switch accessoryType {
             case .chat:
-                accessoryButton.setImage(UIImage(named: "AIChat-24"), for: .normal)
-            case .share:
-                accessoryButton.setImage(UIImage(named: "Share-24"), for: .normal)
+                accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
+                accessoryButton.accessibilityLabel = UserText.duckAiFeatureName
             }
         }
     }
 
-    private var privacyIconAndTrackersAnimator = PrivacyIconAndTrackersAnimator()
-    private var notificationAnimator = OmniBarNotificationAnimator()
-    private let privacyIconContextualOnboardingAnimator = PrivacyIconContextualOnboardingAnimator()
-    private var dismissButtonAnimator: UIViewPropertyAnimator?
-
     // Set up a view to add a custom icon to the Omnibar
-    private var customIconView: UIImageView = UIImageView(frame: CGRect(x: 4, y: 8, width: 26, height: 26))
+    private(set) var customIconView: UIImageView = UIImageView(frame: CGRect(x: 4, y: 8, width: 26, height: 26))
 
-    static func loadFromXib(dependencies: OmnibarDependencyProvider) -> DefaultOmniBarView {
-        let omniBar = DefaultOmniBarView.load(nibName: "OmniBar")
-        omniBar.state = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-        omniBar.refreshState(omniBar.state)
-        return omniBar
+    static func create() -> DefaultOmniBarView {
+        DefaultOmniBarView.load(nibName: "OmniBar")
     }
 
     required init?(coder: NSCoder) {
@@ -110,26 +134,41 @@ class DefaultOmniBarView: UIView {
     }
 
     // Tests require this
-    init(dependencies: OmnibarDependencyProvider, frame: CGRect) {
-        self.state = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
+    override init(frame: CGRect) {
         super.init(frame: frame)
     }
 
     override func awakeFromNib() {
         super.awakeFromNib()
+
+        configureImages()
+
         configureMenuButton()
-        configureTextField()
         configureSettingsLongPressButton()
         configureShareLongPressButton()
-        registerNotifications()
 
         configureSeparator()
-        configureEditingMenu()
-        enableInteractionsWithPointer()
-        
-        privacyInfoContainer.isHidden = true
 
         decorate()
+    }
+
+    private func configureImages() {
+        clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall, for: .normal)
+        settingsButton.setImage(DesignSystemImages.Glyphs.Size24.settings, for: .normal)
+        shareButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
+        voiceSearchButton.setImage(DesignSystemImages.Glyphs.Size24.microphone, for: .normal)
+        abortButton.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
+        bookmarksButton.setImage(DesignSystemImages.Glyphs.Size24.bookmarks, for: .normal)
+        backButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft, for: .normal)
+        forwardButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRight, for: .normal)
+        dismissButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall, for: .normal)
+        refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall, for: .normal)
+
+        // Cancel button is text and not even used
+        // Accessory button set elsewhere
+        // Menu button set elsewhere
+
+        (searchLoupe as? UIImageView)?.image = DesignSystemImages.Glyphs.Size24.findSearchSmall
     }
 
     private func configureSettingsLongPressButton() {
@@ -146,102 +185,28 @@ class DefaultOmniBarView: UIView {
 
     @objc private func handleSettingsLongPress(_ gesture: UILongPressGestureRecognizer) {
         if gesture.state == .began {
-            omniDelegate?.onSettingsLongPressed()
+            onSettingsLongPress?()
         }
     }
 
     @objc private func handleShareLongPress(_ gesture: UILongPressGestureRecognizer) {
         if gesture.state == .began {
-            omniDelegate?.onAccessoryLongPressed(accessoryType: accessoryType)
+            onAccessoryLongPress?()
         }
     }
 
-    private func registerNotifications() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(textDidChange),
-                                               name: UITextField.textDidChangeNotification,
-                                               object: textField)
-
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(reloadSpeechRecognizerAvailability),
-                                               name: .speechRecognizerDidChangeAvailability,
-                                               object: nil)
-    }
-        
-    private func enableInteractionsWithPointer() {
-        backButton.isPointerInteractionEnabled = true
-        forwardButton.isPointerInteractionEnabled = true
-        settingsButton.isPointerInteractionEnabled = true
-        cancelButton.isPointerInteractionEnabled = true
-        bookmarksButton.isPointerInteractionEnabled = true
-        accessoryButton.isPointerInteractionEnabled = true
-        menuButton.isPointerInteractionEnabled = true
-
-        refreshButton.isPointerInteractionEnabled = true
-        refreshButton.pointerStyleProvider = { button, _, _ -> UIPointerStyle? in
-            return .init(effect: .lift(.init(view: button)))
-        }
-    }
-    
     private func configureMenuButton() {
         menuButton.addSubview(menuButtonContent)
         menuButton.isAccessibilityElement = true
         menuButton.accessibilityTraits = .button
     }
-    
-    private func configureTextField() {
-        let theme = ThemeManager.shared.currentTheme
-        textField.attributedPlaceholder = NSAttributedString(string: UserText.searchDuckDuckGo,
-                                                             attributes: [.foregroundColor: theme.searchBarTextPlaceholderColor])
-        textField.delegate = self
-        
-        textField.textDragInteraction?.isEnabled = false
-        
-        textField.onCopyAction = { field in
-            guard let range = field.selectedTextRange else { return }
-            UIPasteboard.general.string = field.text(in: range)
-        }
-    }
-    
-    var textFieldTapped = true
 
     private func configureSeparator() {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            separatorHeightConstraint.constant = 0.0
-        } else {
-            separatorHeightConstraint.constant = 1.0 / UIScreen.main.scale
-        }
+        separatorHeightConstraint.constant = 1.0 / UIScreen.main.scale
     }
 
-    private func configureEditingMenu() {
-        let title = UserText.actionPasteAndGo
-        UIMenuController.shared.menuItems = [UIMenuItem(title: title, action: #selector(self.pasteURLAndGo))]
-    }
-    
     var textFieldBottomSpacing: CGFloat {
         return (bounds.size.height - (searchContainer.frame.origin.y + searchContainer.frame.size.height)) / 2.0
-    }
-    
-    @objc func textDidChange() {
-        let newQuery = textField.text ?? ""
-        omniDelegate?.onOmniQueryUpdated(newQuery)
-        if newQuery.isEmpty {
-            refreshState(state.onTextClearedState)
-        } else {
-            refreshState(state.onTextEnteredState)
-        }
-    }
-
-    @objc func pasteURLAndGo(sender: UIMenuItem) {
-        guard let pastedText = UIPasteboard.general.string else { return }
-        textField.text = pastedText
-        onQuerySubmitted()
-    }
-    
-    @objc private func reloadSpeechRecognizerAvailability() {
-        assert(Thread.isMainThread)
-        state = state.onReloadState
-        refreshState(state)
     }
     
     func showSeparator() {
@@ -260,203 +225,198 @@ class DefaultOmniBarView: UIView {
         separatorToBottom.constant = 0
     }
 
-    func cancel() {
-        refreshState(state.onEditingStoppedState)
+    @IBAction private func onTextEntered(_ sender: Any) {
+        onTextEntered?()
     }
 
-    func startBrowsing() {
-        refreshState(state.onBrowsingStartedState)
+    @IBAction private func onVoiceSearchButtonPressed(_ sender: UIButton) {
+        onVoiceSearchButtonPressed?()
     }
 
-    func stopBrowsing() {
-        refreshState(state.onBrowsingStoppedState)
+    @IBAction private func onAbortButtonPressed(_ sender: Any) {
+        onAbortButtonPressed?()
     }
 
-    func startLoading() {
-        refreshState(state.withLoading())
+    @IBAction private func onClearButtonPressed(_ sender: Any) {
+        onClearButtonPressed?()
     }
 
-    func stopLoading() {
-        refreshState(state.withoutLoading())
+    @IBAction private func onPrivacyIconPressed(_ sender: Any) {
+        onPrivacyIconPressed?()
     }
 
-    func removeTextSelection() {
-        textField.selectedTextRange = nil
+    @IBAction private func onMenuButtonPressed(_ sender: UIButton) {
+        onMenuButtonPressed?()
     }
 
-    func updateAccessoryType(_ type: OmniBarAccessoryType) {
-        DispatchQueue.main.async { self.accessoryType = type }
+    @IBAction private func onTrackersViewPressed(_ sender: Any) {
+        onTrackersViewPressed?()
     }
 
-    public func hidePrivacyIcon() {
-        privacyInfoContainer.privacyIcon.isHidden = true
+    @IBAction private func onSettingsButtonPressed(_ sender: Any) {
+        onSettingsButtonPressed?()
     }
 
-    public func resetPrivacyIcon(for url: URL?) {
-        cancelAllAnimations()
-        privacyInfoContainer.privacyIcon.isHidden = false
-        
-        let icon = PrivacyIconLogic.privacyIcon(for: url)
-        privacyInfoContainer.privacyIcon.updateIcon(icon)
-        customIconView.isHidden = true
+    @IBAction private func onCancelPressed(_ sender: Any) {
+        onCancelPressed?()
     }
     
-    public func updatePrivacyIcon(for privacyInfo: PrivacyInfo?) {
-        guard let privacyInfo = privacyInfo,
-              !privacyInfoContainer.isAnimationPlaying,
-              !privacyIconAndTrackersAnimator.isAnimatingForDaxDialog
-        else { return }
-        
-        if privacyInfo.url.isDuckPlayer {
-            showCustomIcon(icon: .duckPlayer)
-            return
-        }
-
-        if privacyInfo.isSpecialErrorPageVisible {
-            showCustomIcon(icon: .specialError)
-            return
-        }
-
-        let icon = PrivacyIconLogic.privacyIcon(for: privacyInfo)
-        privacyInfoContainer.privacyIcon.updateIcon(icon)
-        privacyInfoContainer.privacyIcon.isHidden = false
-        customIconView.isHidden = true
+    @IBAction private func onRefreshPressed(_ sender: Any) {
+        onRefreshPressed?()
     }
     
-    // Support static custom icons, for things like internal pages, for example
-    func showCustomIcon(icon: OmniBarIcon) {
-        privacyInfoContainer.privacyIcon.isHidden = true
-        customIconView.image = UIImage(named: icon.rawValue)
-        privacyInfoContainer.addSubview(customIconView)
-        customIconView.isHidden = false
+    @IBAction private func onBackPressed(_ sender: Any) {
+        onBackPressed?()
     }
     
-    public func startTrackersAnimation(_ privacyInfo: PrivacyInfo, forDaxDialog: Bool) {
-        guard state.allowsTrackersAnimation, !privacyInfoContainer.isAnimationPlaying else { return }
-        
-        privacyIconAndTrackersAnimator.configure(privacyInfoContainer, with: privacyInfo)
-
-        if TrackerAnimationLogic.shouldAnimateTrackers(for: privacyInfo.trackerInfo) {
-            if forDaxDialog {
-                privacyIconAndTrackersAnimator.startAnimationForDaxDialog(in: self, with: privacyInfo)
-            } else {
-                privacyIconAndTrackersAnimator.startAnimating(in: self, with: privacyInfo)
-            }
-        } else {
-            privacyIconAndTrackersAnimator.completeForNoAnimation()
-        }
+    @IBAction private func onForwardPressed(_ sender: Any) {
+        onForwardPressed?()
     }
     
-    public func cancelAllAnimations() {
-        privacyIconAndTrackersAnimator.cancelAnimations(in: self)
-        notificationAnimator.cancelAnimations(in: self)
-        privacyIconContextualOnboardingAnimator.dismissPrivacyIconAnimation(privacyInfoContainer.privacyIcon)
+    @IBAction private func onBookmarksPressed(_ sender: Any) {
+        onBookmarksPressed?()
     }
 
-    public func completeAnimationForDaxDialog() {
-        privacyIconAndTrackersAnimator.completeAnimationForDaxDialog(in: self)
+    @IBAction private func onAccessoryPressed(_ sender: Any) {
+        onAccessoryPressed?()
     }
 
-    func showOrScheduleCookiesManagedNotification(isCosmetic: Bool) {
-        let type: OmniBarNotificationType = isCosmetic ? .cookiePopupHidden : .cookiePopupManaged
+    @IBAction private func onDismissPressed(_ sender: Any) {
+        onDismissPressed?()
+    }
+
+    @IBAction private func onSharePressed(_ sender: Any) {
+        onSharePressed?()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // To be removed in favor of AppUserDefaults.Notifications.addressBarPositionChanged subscription
+        // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
+        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self.frame.height)
+    }
+}
+
+extension DefaultOmniBarView {
+    
+    private func decorate() {
+        let theme = ThemeManager.shared.currentTheme
+        backgroundColor = theme.omniBarBackgroundColor
+        tintColor = theme.barTintColor
+
+        editingBackground?.backgroundColor = theme.searchBarBackgroundColor
+        editingBackground?.borderColor = theme.searchBarBackgroundColor
+
+        searchStackContainer?.tintColor = theme.barTintColor
         
-        enqueueAnimationIfNeeded { [weak self] in
-            guard let self else { return }
-            self.notificationAnimator.showNotification(type, in: self)
-        }
+        textField.textColor = theme.searchBarTextColor
+        textField.tintColor = UIColor(designSystemColor: .accent)
+        textField.keyboardAppearance = theme.keyboardAppearance
+        clearButton.tintColor = UIColor(designSystemColor: .icons)
+        voiceSearchButton.tintColor = UIColor(designSystemColor: .icons)
+        
+        searchLoupe.tintColor = UIColor(designSystemColor: .iconsSecondary)
+        cancelButton.setTitleColor(theme.barTintColor, for: .normal)
+    }
+}
+
+extension DefaultOmniBarView: OmniBarView {
+
+    var text: String? {
+        get { textField.text }
+        set { textField.text = newValue }
+    }
+    
+    var searchContainerWidth: CGFloat {
+        // 24 is accomodating for the padding
+        searchStackContainer.frame.width + 24
     }
 
-    func showOrScheduleOnboardingPrivacyIconAnimation() {
-        enqueueAnimationIfNeeded { [weak self] in
-            guard let self else { return }
-            self.privacyIconContextualOnboardingAnimator.showPrivacyIconAnimation(in: self)
-        }
+    var privacyIconView: UIView? {
+        privacyInfoContainer.privacyIcon
     }
 
-    func dismissOnboardingPrivacyIconAnimation() {
-        privacyIconContextualOnboardingAnimator.dismissPrivacyIconAnimation(privacyInfoContainer.privacyIcon)
+    var progressView: ProgressView? {
+        nil
+    }
+}
+
+// MARK: - OmniBarStatusUpdateable conformance
+extension DefaultOmniBarView {
+
+    var isPrivacyInfoContainerHidden: Bool {
+        get { privacyInfoContainer.isHidden }
+        set { setVisibility(privacyInfoContainer, hidden: newValue) }
     }
 
-    private func enqueueAnimationIfNeeded(_ block: @escaping () -> Void) {
-        if privacyIconAndTrackersAnimator.state == .completed {
-            block()
-        } else {
-            privacyIconAndTrackersAnimator.onAnimationCompletion(block)
-        }
+    var isClearButtonHidden: Bool {
+        get { clearButton.isHidden }
+        set { setVisibility(clearButton, hidden: newValue) }
     }
 
-    func selectTextToEnd(_ offset: Int) {
-        guard let fromPosition = textField.position(from: textField.beginningOfDocument, offset: offset) else { return }
-        textField.selectedTextRange = textField.textRange(from: fromPosition, to: textField.endOfDocument)
+    var isMenuButtonHidden: Bool {
+        get { menuButton.isHidden }
+        set { setVisibility(menuButton, hidden: newValue) }
     }
 
-    fileprivate func refreshState(_ newState: any OmniBarState) {
-        let oldState: OmniBarState = self.state
-        if state.requiresUpdate(transitioningInto: newState) {
-            Logger.general.debug("OmniBar entering \(newState.description) from \(self.state.description)")
-
-            if state.isDifferentState(than: newState) {
-                if newState.clearTextOnStart {
-                    clear()
-                }
-                cancelAllAnimations()
-            }
-            state = newState
-        }
-
-        searchFieldContainer.adjustTextFieldOffset(for: state)
-
-        updateLeftIconContainerState(oldState: oldState, newState: state)
-
-        setVisibility(privacyInfoContainer, hidden: !state.showPrivacyIcon)
-        setVisibility(clearButton, hidden: !state.showClear)
-        setVisibility(menuButton, hidden: !state.showMenu)
-        setVisibility(settingsButton, hidden: !state.showSettings)
-        setVisibility(cancelButton, hidden: !state.showCancel)
-        setVisibility(refreshButton, hidden: !state.showRefresh)
-        setVisibility(voiceSearchButton, hidden: !state.showVoiceSearch)
-        setVisibility(abortButton, hidden: !state.showAbort)
-
-        setVisibility(backButton, hidden: !state.showBackButton)
-        setVisibility(forwardButton, hidden: !state.showForwardButton)
-        setVisibility(bookmarksButton, hidden: !state.showBookmarksButton)
-        setVisibility(accessoryButton, hidden: !state.showAccessoryButton)
-
-        searchContainerCenterConstraint.isActive = state.hasLargeWidth
-        searchContainerMaxWidthConstraint.isActive = state.hasLargeWidth
-        leftButtonsSpacingConstraint.constant = state.hasLargeWidth ? 24 : 0
-        rightButtonsSpacingConstraint.constant = state.hasLargeWidth ? 24 : trailingConstraintValueForSmallWidth
-
-        if state.showVoiceSearch && state.showClear {
-            searchStackContainer.setCustomSpacing(13, after: voiceSearchButton)
-        }
-
-        if oldState.showAccessoryButton != state.showAccessoryButton {
-            refreshOmnibarPaddingConstraintsForAccessoryButton()
-        }
-
-        UIView.animate(withDuration: 0.0) { [weak self] in
-            self?.layoutIfNeeded()
-        }
+    var isSettingsButtonHidden: Bool {
+        get { settingsButton.isHidden }
+        set { setVisibility(settingsButton, hidden: newValue) }
     }
 
-    func updateOmniBarPadding(left: CGFloat, right: CGFloat) {
-        omniBarLeadingConstraint.constant = (state.hasLargeWidth ? 24 : 8) + left
-        omniBarTrailingConstraint.constant = (state.hasLargeWidth ? 24 : trailingConstraintValueForSmallWidth) + right
+    var isCancelButtonHidden: Bool {
+        get { cancelButton.isHidden }
+        set { setVisibility(cancelButton, hidden: newValue) }
     }
 
-    /// When a setting that affects the accessory button is modified, `refreshState` is called.
-    /// This requires updating the padding to ensure consistent layout.
-    func refreshOmnibarPaddingConstraintsForAccessoryButton() {
-        omniBarTrailingConstraint.constant = (state.hasLargeWidth ? 24 : trailingConstraintValueForSmallWidth) + (UIApplication.shared.firstKeyWindow?.safeAreaInsets.right ?? 0)
+    var isRefreshButtonHidden: Bool {
+        get { refreshButton.isHidden }
+        set { setVisibility(refreshButton, hidden: newValue) }
     }
 
-    private var trailingConstraintValueForSmallWidth: CGFloat {
-        if state.showAccessoryButton || state.showSettings {
-            return 14
-        } else {
-            return 4
-        }
+    var isShareButtonHidden: Bool {
+        get { shareButton.isHidden }
+        set { setVisibility(shareButton, hidden: newValue) }
+    }
+
+    var isVoiceSearchButtonHidden: Bool {
+        get { voiceSearchButton.isHidden }
+        set { setVisibility(voiceSearchButton, hidden: newValue) }
+    }
+
+    var isAbortButtonHidden: Bool {
+        get { abortButton.isHidden }
+        set { setVisibility(abortButton, hidden: newValue) }
+    }
+
+    var isBackButtonHidden: Bool {
+        get { backButton.isHidden }
+        set { setVisibility(backButton, hidden: newValue) }
+    }
+
+    var isForwardButtonHidden: Bool {
+        get { forwardButton.isHidden }
+        set { setVisibility(forwardButton, hidden: newValue) }
+    }
+
+    var isBookmarksButtonHidden: Bool {
+        get { bookmarksButton.isHidden }
+        set { setVisibility(bookmarksButton, hidden: newValue) }
+    }
+
+    var isAccessoryButtonHidden: Bool {
+        get { accessoryButton.isHidden }
+        set { setVisibility(accessoryButton, hidden: newValue) }
+    }
+
+    var isSearchLoupeHidden: Bool {
+        get { searchLoupe.isHidden }
+        set { setVisibility(searchLoupe, hidden: newValue) }
+    }
+
+    var isDismissButtonHidden: Bool {
+        get { dismissButton.isHidden }
+        set { setVisibility(dismissButton, hidden: newValue) }
     }
 
     /*
@@ -468,313 +428,5 @@ class DefaultOmniBarView: UIView {
         if view.isHidden != hidden {
             view.isHidden = hidden
         }
-    }
-
-    @discardableResult override func becomeFirstResponder() -> Bool {
-        textFieldTapped = false
-        defer {
-            textFieldTapped = true
-        }
-        return textField.becomeFirstResponder()
-    }
-
-    @discardableResult override func resignFirstResponder() -> Bool {
-        return textField.resignFirstResponder()
-    }
-
-    private func clear() {
-        textField.text = nil
-        omniDelegate?.onOmniQueryUpdated("")
-    }
-
-    func refreshText(forUrl url: URL?, forceFullURL: Bool = false) {
-        guard !textField.isEditing else { return }
-        guard let url = url else {
-            textField.text = nil
-            return
-        }
-
-        if let query = url.searchQuery {
-            textField.text = query
-        } else {
-            textField.attributedText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: textField.isEditing || forceFullURL)
-        }
-    }
-
-    @IBAction func onTextEntered(_ sender: Any) {
-        onQuerySubmitted()
-    }
-
-    func onQuerySubmitted() {
-        if let suggestion = omniDelegate?.selectedSuggestion() {
-            omniDelegate?.onOmniSuggestionSelected(suggestion)
-        } else {
-            guard let query = textField.text?.trimmingWhitespace(), !query.isEmpty else {
-                return
-            }
-            resignFirstResponder()
-
-            if let url = URL(trimmedAddressBarString: query), url.isValid {
-                omniDelegate?.onOmniQuerySubmitted(url.absoluteString)
-            } else {
-                omniDelegate?.onOmniQuerySubmitted(query)
-            }
-        }
-    }
-
-    @IBAction func onVoiceSearchButtonPressed(_ sender: UIButton) {
-        omniDelegate?.onVoiceSearchPressed()
-    }
-
-    @IBAction func onAbortButtonPressed(_ sender: Any) {
-        omniDelegate?.onAbortPressed()
-    }
-
-    @IBAction func onClearButtonPressed(_ sender: Any) {
-        omniDelegate?.onClearPressed()
-        refreshState(state.onTextClearedState)
-    }
-
-    @IBAction func onPrivacyIconPressed(_ sender: Any) {
-        let isPrivacyIconHighlighted = privacyIconContextualOnboardingAnimator.isPrivacyIconHighlighted(privacyInfoContainer.privacyIcon)
-        omniDelegate?.onPrivacyIconPressed(isHighlighted: isPrivacyIconHighlighted)
-    }
-
-    @IBAction func onMenuButtonPressed(_ sender: UIButton) {
-        omniDelegate?.onMenuPressed()
-    }
-
-    @IBAction func onTrackersViewPressed(_ sender: Any) {
-        cancelAllAnimations()
-        textField.becomeFirstResponder()
-    }
-
-    @IBAction func onSettingsButtonPressed(_ sender: Any) {
-        Pixel.fire(pixel: .addressBarSettings)
-        omniDelegate?.onSettingsPressed()
-    }
-
-    @IBAction func onCancelPressed(_ sender: Any) {
-        omniDelegate?.onCancelPressed()
-        refreshState(state.onEditingStoppedState)
-    }
-    
-    @IBAction func onRefreshPressed(_ sender: Any) {
-        Pixel.fire(pixel: .refreshPressed)
-        cancelAllAnimations()
-        omniDelegate?.onRefreshPressed()
-    }
-    
-    @IBAction func onBackPressed(_ sender: Any) {
-        omniDelegate?.onBackPressed()
-    }
-    
-    @IBAction func onForwardPressed(_ sender: Any) {
-        omniDelegate?.onForwardPressed()
-    }
-    
-    @IBAction func onBookmarksPressed(_ sender: Any) {
-        Pixel.fire(pixel: .bookmarksButtonPressed,
-                   withAdditionalParameters: [PixelParameters.originatedFromMenu: "0"])
-        omniDelegate?.onBookmarksPressed()
-    }
-
-    @IBAction func onAccessoryPressed(_ sender: Any) {
-        omniDelegate?.onAccessoryPressed(accessoryType: accessoryType)
-    }
-
-    @IBAction func onDismissPressed(_ sender: Any) {
-        omniDelegate?.onCancelPressed()
-        refreshState(state.onEditingStoppedState)
-    }
-
-    func enterPhoneState() {
-        refreshState(state.onEnterPhoneState)
-    }
-    
-    func enterPadState() {
-        refreshState(state.onEnterPadState)
-    }
-    
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self)
-    }
-}
-
-extension DefaultOmniBarView: UITextFieldDelegate {
-    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-        self.refreshState(self.state.onEditingStartedState)
-        return true
-    }
-
-    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        omniDelegate?.onTextFieldWillBeginEditing(self, tapped: textFieldTapped)
-        return true
-    }
-
-    func textFieldDidBeginEditing(_ textField: UITextField) {
-        DispatchQueue.main.async {
-            let highlightText = self.omniDelegate?.onTextFieldDidBeginEditing(self) ?? true
-            self.refreshState(self.state.onEditingStartedState)
-            
-            if highlightText {
-                self.textField.selectAll(nil)
-            }
-            self.omniDelegate?.onDidBeginEditing()
-        }
-    }
-    
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        omniDelegate?.onEnterPressed()
-        return true
-    }
-
-    func textFieldDidEndEditing(_ textField: UITextField) {
-        switch omniDelegate?.onEditingEnd() {
-        case .dismissed, .none:
-            refreshState(state.onEditingStoppedState)
-        case .suspended:
-            refreshState(state.onEditingSuspendedState)
-        }
-        self.omniDelegate?.onDidEndEditing()
-    }
-}
-
-extension DefaultOmniBarView {
-    
-    private func decorate() {
-        let theme = ThemeManager.shared.currentTheme
-        backgroundColor = theme.omniBarBackgroundColor
-        tintColor = theme.barTintColor
-        
-        configureTextField()
-
-        editingBackground?.backgroundColor = theme.searchBarBackgroundColor
-        editingBackground?.borderColor = theme.searchBarBackgroundColor
-
-        privacyIconAndTrackersAnimator.resetImageProvider()
-        
-        searchStackContainer?.tintColor = theme.barTintColor
-        
-        if let url = textField.text.flatMap({ URL(trimmedAddressBarString: $0.trimmingWhitespace()) }) {
-            textField.attributedText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: textField.isEditing)
-        }
-        textField.textColor = theme.searchBarTextColor
-        textField.tintColor = UIColor(designSystemColor: .accent)
-        textField.keyboardAppearance = theme.keyboardAppearance
-        clearButton.tintColor = UIColor(designSystemColor: .icons)
-        voiceSearchButton.tintColor = UIColor(designSystemColor: .icons)
-        
-        searchLoupe.tintColor = UIColor(designSystemColor: .icons)
-        searchLoupe.alpha = 0.5
-        cancelButton.setTitleColor(theme.barTintColor, for: .normal)
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            privacyIconAndTrackersAnimator.resetImageProvider()
-        }
-    }
-}
-
-extension DefaultOmniBarView {
-
-    private func updateLeftIconContainerState(oldState: any OmniBarState, newState: any OmniBarState) {
-        if oldState.showSearchLoupe && newState.showDismiss {
-            animateTransition(from: searchLoupe, to: dismissButton)
-        } else if oldState.showDismiss && newState.showSearchLoupe {
-            animateTransition(from: dismissButton, to: searchLoupe)
-        } else if dismissButtonAnimator == nil || dismissButtonAnimator?.isRunning == false {
-            updateLeftContainerVisibility(state: newState)
-        }
-
-        if !state.showDismiss && !newState.showSearchLoupe {
-            leftIconContainerView.isHidden = true
-        } else {
-            leftIconContainerView.isHidden = false
-        }
-    }
-
-    private func updateLeftContainerVisibility(state: any OmniBarState) {
-        setVisibility(searchLoupe, hidden: !state.showSearchLoupe)
-        setVisibility(dismissButton, hidden: !state.showDismiss)
-        dismissButton.alpha = state.showDismiss ? 1 : 0
-        searchLoupe.alpha = state.showSearchLoupe ? 0.5 : 0
-    }
-
-    private func animateTransition(from oldView: UIView, to newView: UIView) {
-        dismissButtonAnimator?.stopAnimation(true)
-        let animationOffset: CGFloat = 20
-        let animationDuration: CGFloat = 0.7
-        let animationDampingRatio: CGFloat = 0.6
-
-        newView.alpha = 0
-        newView.transform = CGAffineTransform(translationX: -animationOffset, y: 0)
-        newView.isHidden = false
-        oldView.isHidden = false
-
-        let targetAlpha: CGFloat = (newView == searchLoupe) ? 0.5 : 1.0
-
-        dismissButtonAnimator = UIViewPropertyAnimator(duration: animationDuration, dampingRatio: animationDampingRatio) {
-            oldView.alpha = 0
-            oldView.transform = CGAffineTransform(translationX: -animationOffset, y: 0)
-            newView.alpha = targetAlpha
-            newView.transform = .identity
-        }
-
-        dismissButtonAnimator?.isInterruptible = true
-
-        dismissButtonAnimator?.addCompletion { position in
-            if position == .end {
-                oldView.isHidden = true
-                oldView.transform = .identity
-            }
-        }
-
-        dismissButtonAnimator?.startAnimation()
-    }
-}
-
-extension DefaultOmniBarView: OmniBarView {
-    var text: String? {
-        get { textField.text }
-        set { textField.text = newValue }
-    }
-    
-    var backButtonMenu: UIMenu? {
-        get { backButton.menu }
-        set { backButton.menu = newValue }
-    }
-    
-    var forwardButtonMenu: UIMenu? {
-        get { forwardButton.menu }
-        set { forwardButton.menu = newValue }
-    }
-    
-    var menuButtonView: UIButton {
-        menuButton
-    }
-
-    var bookmarksButtonView: UIButton {
-        bookmarksButton
-    }
-    
-    var accessoryButtonView: UIButton {
-        accessoryButton
-    }
-    
-    var searchContainerWidth: CGFloat {
-        searchStackContainer.frame.width
-    }
-
-    var searchContainerView: UIView {
-        searchContainer
-    }
-
-    var privacyIconView: UIView? {
-        privacyInfoContainer.privacyIcon
     }
 }

@@ -96,8 +96,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         reporter.report(subscriptionActivationError: errorToBeHandled)
 
         // Then
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c"])
+        XCTAssertPrivacyPixelsFired([])
     }
 
     func testReporterForFailedToSetSubscriptionError() async throws {
@@ -108,85 +107,42 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         reporter.report(subscriptionActivationError: errorToBeHandled)
 
         // Then
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_c"])
-    }
-
-    func testReporterForFailedToRestoreFromEmailError() async throws {
-        // Given
-        let errorToBeHandled: SubscriptionError = .failedToRestoreFromEmail
-
-        // When
-        reporter.report(subscriptionActivationError: errorToBeHandled)
-
-        // Then
-        let expectedPixels = Set([PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_d",
-                                  PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_c"])
-        XCTAssertEqual(pixelsFired, expectedPixels)
-    }
-
-    func testReporterForFailedToRestoreFromEmailSubscriptionInactiveError() async throws {
-        // Given
-        let errorToBeHandled: SubscriptionError = .failedToRestoreFromEmailSubscriptionInactive
-
-        // When
-        reporter.report(subscriptionActivationError: errorToBeHandled)
-
-        // Then
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_c"])
-    }
-
-    func testReporterForFailedToRestorePastPurchaseError() async throws {
-        // Given
-        let errorToBeHandled: SubscriptionError = .failedToRestorePastPurchase
-
-        // When
-        reporter.report(subscriptionActivationError: errorToBeHandled)
-
-        // Then
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c"])
+        XCTAssertPrivacyPixelsFired([])
     }
 
     func testReporterForSubscriptionNotFoundError() async throws {
         // Given
-        let errorToBeHandled: SubscriptionError = .subscriptionNotFound
+        let errorToBeHandled: SubscriptionError = .restoreFailedDueToNoSubscription
 
         // When
         reporter.report(subscriptionActivationError: errorToBeHandled)
 
         // Then
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound.name + "_d",
+        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound.name + "_d",
                                      PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound.name + "_c"])
     }
 
     func testReporterForSubscriptionExpiredError() async throws {
         // Given
-        let errorToBeHandled: SubscriptionError = .subscriptionExpired
+        let errorToBeHandled: SubscriptionError = .restoreFailedDueToExpiredSubscription
 
         // When
         reporter.report(subscriptionActivationError: errorToBeHandled)
 
         // Then
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c"])
+        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound.name + "_d",
+                                     PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound.name + "_c"])
     }
 
     func testReporterForHasActiveSubscriptionError() async throws {
         // Given
-        let errorToBeHandled: SubscriptionError = .hasActiveSubscription
+        let errorToBeHandled: SubscriptionError = .activeSubscriptionAlreadyPresent
 
         // When
         reporter.report(subscriptionActivationError: errorToBeHandled)
 
         // Then
-        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_c"])
+        XCTAssertPrivacyPixelsFired([])
     }
 
     func testReporterForCancelledByUserError() async throws {
@@ -225,13 +181,14 @@ final class SubscriptionErrorReporterTests: XCTestCase {
 
     func testReporterForGeneralError() async throws {
         // Given
-        let errorToBeHandled: SubscriptionError = .generalError
+        let errorToBeHandled: SubscriptionError = .otherPurchaseError
 
         // When
         reporter.report(subscriptionActivationError: errorToBeHandled)
 
         // Then
-        XCTAssertPrivacyPixelsFired([])
+        XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseFailureOther.name + "_d",
+                                     PrivacyProPixel.privacyProPurchaseFailureOther.name + "_c"])
     }
 
     public func XCTAssertPrivacyPixelsFired(_ pixels: [String], file: StaticString = #file, line: UInt = #line) {

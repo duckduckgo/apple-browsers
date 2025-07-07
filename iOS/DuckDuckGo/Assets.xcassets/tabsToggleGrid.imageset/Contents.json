@@ -1,17 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "tabsToggleGrid-Light.pdf",
-      "idiom" : "universal"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "dark"
-        }
-      ],
-      "filename" : "tabsToggleGrid-Dark.pdf",
+      "filename" : "Grid-Light.svg",
       "idiom" : "universal"
     }
   ],
@@ -20,6 +10,7 @@
     "version" : 1
   },
   "properties" : {
-    "preserves-vector-representation" : true
+    "preserves-vector-representation" : true,
+    "template-rendering-intent" : "template"
   }
 }

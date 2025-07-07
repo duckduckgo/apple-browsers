@@ -108,7 +108,6 @@ struct Foreground: ForegroundHandling {
             }
         )
 
-        services.keyValueFileStoreTestService.onForeground()
         services.vpnService.resume()
         services.configurationService.resume()
         services.reportingService.resume()
@@ -118,6 +117,7 @@ struct Foreground: ForegroundHandling {
         services.syncService.resume()
         services.remoteMessagingService.resume()
         services.statisticsService.resume()
+        services.defaultBrowserPromptService.resume()
 
         appDependencies.mainCoordinator.onForeground()
     }

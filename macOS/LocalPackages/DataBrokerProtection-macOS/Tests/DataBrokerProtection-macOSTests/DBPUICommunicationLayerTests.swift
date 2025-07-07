@@ -121,7 +121,7 @@ private final class MockDelegate: DBPUICommunicationDelegate {
         DBPUIInitialScanState(resultsFound: [], scanProgress: .init(currentScans: 0, totalScans: 0, scannedBrokers: []))
     }
 
-    func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
+    func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         DBPUIScanAndOptOutMaintenanceState(
             inProgressOptOuts: [],
             completedOptOuts: [],
@@ -141,6 +141,8 @@ private final class MockDelegate: DBPUICommunicationDelegate {
     func openSendFeedbackModal() async {}
 
     func applyVPNBypassSetting(_ bypass: Bool) async {}
+
+    func removeOptOutFromDashboard(_ id: Int64) async {}
 }
 
 private final class MockWebSettings: DataBrokerProtectionWebUIURLSettingsRepresentable {

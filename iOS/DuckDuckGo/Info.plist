@@ -12,6 +12,7 @@
 		<string>com.duckduckgo.app.remoteMessageRefresh</string>
 		<string>com.duckduckgo.app.maliciousSiteProtectionHashPrefixSetRefresh</string>
 		<string>com.duckduckgo.app.maliciousSiteProtectionFilterSetRefresh</string>
+		<string>com.duckduckgo.app.dbp.backgroundProcessing</string>
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
@@ -215,6 +216,7 @@
 	<array>
 		<string>fetch</string>
 		<string>processing</string>
+		<string>audio</string>
 	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>

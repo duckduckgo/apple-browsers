@@ -37,90 +37,93 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
     }
 
     func testGoBackWithSameDocumentNavigation() throws {
-        os_log(.info, log: .default, "THIS IS TEST MESSAGE")
-        print("this is printed message")
-
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
         var eDidFinish = expectation(description: "#1")
-        responder(at: 0).onDidFinish = { _ in eDidFinish.fulfill() }
+        responder(at: 0).onDidFinish = { _ in
+            Logger.general.info("expectation \(eDidFinish.description): didFinish")
+            eDidFinish.fulfill()
+        }
         responder(at: 0).onNavigationAction = { navigationAction, _ in .allow }
 
-        print("#1 load URL")
+        // #1 load URL
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
         waitForExpectations(timeout: 5)
 
-        print("#2 load URL#namedlink1")
+        // #2 load URL#namedlink1
         eDidFinish = expectation(description: "#2")
         responder(at: 0).onSameDocumentNavigation = { _, type in
-            if type == .sessionStatePop { eDidFinish.fulfill() }
+            if type == .sessionStatePop {
+                Logger.general.info("expectation \(eDidFinish.description): sessionStatePop")
+                eDidFinish.fulfill()
+            }
         }
         withWebView { webView in
             _=webView.load(req(urls.localHashed1))
         }
         waitForExpectations(timeout: 5)
 
-        print("#3 load URL#namedlink2")
+        // #3 load URL#namedlink2
         eDidFinish = expectation(description: "#3")
         withWebView { webView in
             webView.evaluateJavaScript("window.location.href = '\(urls.localHashed2.string)'")
         }
         waitForExpectations(timeout: 5)
 
-        print("#4 load URL#namedlink3")
+        // #4 load URL#namedlink3
         eDidFinish = expectation(description: "#4")
         withWebView { webView in
             webView.evaluateJavaScript("window.location.href = '\(urls.localHashed3.string)'")
         }
         waitForExpectations(timeout: 5)
 
-        print("#4.1 go back to URL#namedlink2")
+        // #4.1 go back to URL#namedlink2
         eDidFinish = expectation(description: "#4.1")
         withWebView { webView in
             _=webView.goBack()
         }
         waitForExpectations(timeout: 5)
-        print("#4.2 go back to URL#namedlink1")
+        // #4.2 go back to URL#namedlink1
         eDidFinish = expectation(description: "#4.2")
         withWebView { webView in
             _=webView.goBack()
         }
         waitForExpectations(timeout: 5)
-        print("#4.3 go forward to URL#namedlink2")
+        // #4.3 go forward to URL#namedlink2
         eDidFinish = expectation(description: "#4.3")
         withWebView { webView in
             _=webView.goForward()
         }
         waitForExpectations(timeout: 5)
-        print("#4.4 go forward to URL#namedlink3")
+        // #4.4 go forward to URL#namedlink3
         eDidFinish = expectation(description: "#4.4")
         withWebView { webView in
             _=webView.goForward()
         }
         waitForExpectations(timeout: 5)
 
-        print("#5 load URL#")
+        // #5 load URL#
         eDidFinish = expectation(description: "#5")
         withWebView { webView in
             webView.evaluateJavaScript("window.location.href = '\(urls.localHashed.string)'")
         }
         waitForExpectations(timeout: 5)
 
-        print("#6 load URL")
+        // #6 load URL
         eDidFinish = expectation(description: "#6")
         withWebView { webView in
             _=webView.load(req(urls.local))
         }
         waitForExpectations(timeout: 5)
 
-        print("#7 go back to URL#")
+        // #7 go back to URL#
         // !! here‘s the WebKit bug: no forward item will be present here
         eDidFinish = expectation(description: "#7")
         withWebView { webView in
@@ -128,7 +131,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         }
         waitForExpectations(timeout: 5)
 
-        print("#8 go back to URL#namedlink")
+        // #8 go back to URL#namedlink
         eDidFinish = expectation(description: "#8")
         withWebView { webView in
             _=webView.goBack()
@@ -193,7 +196,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
             // #7 go back to URL#
             .willStart(Nav(action: NavAction(/*#15*/req(urls.localHashed, defaultHeaders.allowingExtraKeys), .backForw(-1), from: history[14], src: main(urls.local)), .approved, isCurrent: false)),
             .didSameDocumentNavigation(Nav(action: NavAction(/*#16*/req(urls.localHashed, [:]), .sameDocumentNavigation(.sessionStatePop), from: history[14], src: main(urls.localHashed)), .finished), 3),
-            .didSameDocumentNavigation(Nav(action: navAct(15), .approved, isCurrent: false), 0),
+            .didSameDocumentNavigation(Nav(action: navAct(15), .finished, isCurrent: false), 0),
 
             // #8 go back to URL#namedlink
             .willStart(Nav(action: NavAction(req(urls.localHashed, defaultHeaders.allowingExtraKeys), .backForw(-1), from: history[16], src: main(urls.localHashed)), .approved, isCurrent: false)),
@@ -207,7 +210,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             XCTAssertEqual(request.path, "/")
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -231,7 +234,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
             }
         }
 
-        print("#1 push /1, /3, /2, go back")
+        // #1 push /1, /3, /2, go back
         withWebView { webView in
             webView.evaluateJavaScript("history.pushState({page: 1}, '1', '/1')", in: nil, in: WKContentWorld.page) { _ in
                 webView.evaluateJavaScript("history.pushState({page: 3}, '3', '/3')", in: nil, in: WKContentWorld.page) { _ in
@@ -245,7 +248,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         }
         waitForExpectations(timeout: 5)
 
-        print("#2 navigate from pseudo `/3` to `/3#hashed`")
+        // #2 navigate from pseudo `/3` to `/3#hashed`
         var eDidGoBack = expectation(description: "onDidGoToNamedLink")
         customCallbacksHandler.didSameDocumentNavigation = { _, type in
             if type == .sessionStatePop { eDidGoBack.fulfill() }
@@ -255,14 +258,14 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         }
         waitForExpectations(timeout: 5)
 
-        print("#3 go back")
+        // #3 go back
         eDidGoBack = expectation(description: "onDidGoBack")
         withWebView { webView in
             _=webView.goBack()
         }
         waitForExpectations(timeout: 5)
 
-        print("#4 go back")
+        // #4 go back
         eDidGoBack = expectation(description: "onDidGoBack 2")
         withWebView { webView in
             _=webView.goBack()
@@ -300,7 +303,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             XCTAssertEqual(request.path, "/")
-            return .ok(.html(data.sameDocumentTestData.string()!))
+            return .ok(.html(data.sameDocumentTestData.utf8String()!))
         }]
         try server.start(8084)
 
@@ -378,7 +381,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })), .weak(customCallbacksHandler))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.sameDocumentClientRedirectData.string()!))
+            return .ok(.html(data.sameDocumentClientRedirectData.utf8String()!))
         }]
         try server.start(8084)
 
@@ -420,7 +423,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })), .weak(customCallbacksHandler))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.sessionStatePushClientRedirectData.string()!))
+            return .ok(.html(data.sessionStatePushClientRedirectData.utf8String()!))
         }]
         try server.start(8084)
 

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 enum BookmarksEmptyStateContent {
     case noBookmarks
     case noSearchResults
@@ -34,29 +36,29 @@ enum BookmarksEmptyStateContent {
 
     var title: String {
         switch self {
-        case .noBookmarks: return UserText.bookmarksEmptyStateTitle
-        case .noSearchResults: return UserText.bookmarksEmptySearchResultStateTitle
+        case .noBookmarks: UserText.bookmarksEmptyStateTitle
+        case .noSearchResults: UserText.bookmarksEmptySearchResultStateTitle
         }
     }
 
     var description: String {
         switch self {
-        case .noBookmarks: return UserText.bookmarksEmptyStateMessage
-        case .noSearchResults: return UserText.bookmarksEmptySearchResultStateMessage
+        case .noBookmarks: UserText.bookmarksEmptyStateMessage
+        case .noSearchResults: UserText.bookmarksEmptySearchResultStateMessage
         }
     }
 
-    var image: NSImage {
+    var image: NSImage? {
         switch self {
-        case .noBookmarks: return .bookmarksEmpty
-        case .noSearchResults: return .bookmarkEmptySearch
+        case .noBookmarks: .bookmarksEmpty
+        case .noSearchResults: .bookmarkEmptySearch
         }
     }
 
     var shouldHideImportButton: Bool {
         switch self {
-        case .noBookmarks: return false
-        case .noSearchResults: return true
+        case .noBookmarks: false
+        case .noSearchResults: true
         }
     }
 }

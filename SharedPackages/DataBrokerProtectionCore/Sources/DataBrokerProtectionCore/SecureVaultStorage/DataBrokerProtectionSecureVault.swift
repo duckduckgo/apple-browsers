@@ -22,14 +22,14 @@ import SecureStorage
 
 public typealias DataBrokerProtectionVaultFactory = SecureVaultFactory<DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>>
 
-public func createDataBrokerProtectionSecureVaultFactory(appGroupName: String, databaseFileURL: URL) -> DataBrokerProtectionVaultFactory {
+public func createDataBrokerProtectionSecureVaultFactory(appGroupName: String?, databaseFileURL: URL) -> DataBrokerProtectionVaultFactory {
     return SecureVaultFactory<DefaultDataBrokerProtectionSecureVault>(
         makeCryptoProvider: {
             return DataBrokerProtectionCryptoProvider()
         }, makeKeyStoreProvider: { _ in
             return DataBrokerProtectionKeyStoreProvider(appGroupName: appGroupName)
-        }, makeDatabaseProvider: { key in
-            try DefaultDataBrokerProtectionDatabaseProvider.create(file: databaseFileURL, key: key)
+        }, makeDatabaseProvider: { key, reporter in
+            try DefaultDataBrokerProtectionDatabaseProvider.create(file: databaseFileURL, key: key, reporter: reporter)
         }
     )
 }
@@ -100,7 +100,7 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent]
 
     func save(extractedProfile: ExtractedProfile, brokerId: Int64, profileQueryId: Int64) throws -> Int64
-    func fetchExtractedProfile(with id: Int64) throws -> ExtractedProfile?
+    func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)?
     func fetchExtractedProfiles(for brokerId: Int64, with profileQueryId: Int64) throws -> [ExtractedProfile]
     func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile]
     func updateRemovedDate(for extractedProfileId: Int64, with date: Date?) throws
@@ -415,10 +415,12 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         return try self.providers.database.save(mapper.mapToDB(extractedProfile, brokerId: brokerId, profileQueryId: profileQueryId))
     }
 
-    public func fetchExtractedProfile(with id: Int64) throws -> ExtractedProfile? {
+    public func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)? {
         if let extractedProfile = try self.providers.database.fetchExtractedProfile(with: id) {
             let mapper = MapperToModel(mechanism: l2Decrypt(data:))
-            return try mapper.mapToModel(extractedProfile)
+            return try (brokerId: extractedProfile.brokerId,
+                        profileQueryId: extractedProfile.profileQueryId,
+                        profile: mapper.mapToModel(extractedProfile))
         } else {
             return nil // No extracted profile found
         }

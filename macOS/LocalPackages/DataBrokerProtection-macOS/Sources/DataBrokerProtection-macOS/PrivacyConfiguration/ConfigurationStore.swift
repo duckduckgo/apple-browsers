@@ -25,7 +25,7 @@ import Configuration
 import PixelKit
 import DataBrokerProtectionCore
 
-final class ConfigurationStore: ConfigurationStoring {
+public final class ConfigurationStore: ConfigurationStoring {
 
     private static let fileLocations: [Configuration: String] = [
         .privacyConfiguration: "macos-config.json",
@@ -57,7 +57,7 @@ final class ConfigurationStore: ConfigurationStoring {
         }
     }
 
-    init(defaults: KeyValueStoring = UserDefaults.config) {
+    public init(defaults: KeyValueStoring = UserDefaults.config) {
         self.defaults = defaults
     }
 
@@ -65,7 +65,7 @@ final class ConfigurationStore: ConfigurationStoring {
         Logger.config.log("privacyConfigurationEtag \(self.privacyConfigurationEtag ?? "", privacy: .public)")
     }
 
-    func loadData(for config: Configuration) -> Data? {
+    public func loadData(for config: Configuration) -> Data? {
         let file = fileUrl(for: config)
         var data: Data?
         var coordinatorError: NSError?
@@ -77,7 +77,7 @@ final class ConfigurationStore: ConfigurationStoring {
                 let nserror = error as NSError
 
                 if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
-                    PixelKit.fire(DebugEvent(DataBrokerProtectionSharedPixels.errorLoadingCachedConfig(error)))
+                    PixelKit.fire(DebugEvent(DataBrokerProtectionMacOSPixels.errorLoadingCachedConfig(error)))
                 }
             }
         }
@@ -89,18 +89,18 @@ final class ConfigurationStore: ConfigurationStoring {
         return data
     }
 
-    func loadEtag(for configuration: Configuration) -> String? {
+    public func loadEtag(for configuration: Configuration) -> String? {
         guard configuration == .privacyConfiguration else { return nil }
 
         return privacyConfigurationEtag
     }
 
-    func loadEmbeddedEtag(for configuration: Configuration) -> String? {
+    public func loadEmbeddedEtag(for configuration: Configuration) -> String? {
         // If we embed the full config some day we need to load the etag for it here
         return nil
     }
 
-    func saveData(_ data: Data, for configuration: Configuration) throws {
+    public func saveData(_ data: Data, for configuration: Configuration) throws {
         guard configuration == .privacyConfiguration else { throw Error.unsupportedConfig }
         let file = fileUrl(for: configuration)
         var coordinatorError: NSError?
@@ -118,13 +118,13 @@ final class ConfigurationStore: ConfigurationStoring {
         }
     }
 
-    func saveEtag(_ etag: String, for configuration: Configuration) throws {
+    public func saveEtag(_ etag: String, for configuration: Configuration) throws {
         guard configuration == .privacyConfiguration else { throw Error.unsupportedConfig }
 
         privacyConfigurationEtag = etag
     }
 
-    func fileUrl(for config: Configuration) -> URL {
+    public func fileUrl(for config: Configuration) -> URL {
         let fm = FileManager.default
 
         guard let dir = fm.containerURL(forSecurityApplicationGroupIdentifier: Bundle.main.configAppGroup) else {

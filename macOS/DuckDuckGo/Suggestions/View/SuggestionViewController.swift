@@ -41,8 +41,10 @@ final class SuggestionViewController: NSViewController {
     @IBOutlet weak var tableView: NSTableView!
     @IBOutlet weak var tableViewHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var pixelPerfectConstraint: NSLayoutConstraint!
+    @IBOutlet weak var backgroundViewTopConstraint: NSLayoutConstraint!
 
     let suggestionContainerViewModel: SuggestionContainerViewModel
+    let visualStyle: VisualStyleProviding
     let isBurner: Bool
 
     required init?(coder: NSCoder) {
@@ -51,9 +53,11 @@ final class SuggestionViewController: NSViewController {
 
     required init?(coder: NSCoder,
                    suggestionContainerViewModel: SuggestionContainerViewModel,
-                   isBurner: Bool) {
+                   isBurner: Bool,
+                   visualStyle: VisualStyleProviding) {
         self.suggestionContainerViewModel = suggestionContainerViewModel
         self.isBurner = isBurner
+        self.visualStyle = visualStyle
 
         super.init(coder: coder)
     }
@@ -74,6 +78,11 @@ final class SuggestionViewController: NSViewController {
         addTrackingArea()
         subscribeToSuggestionResult()
         subscribeToSelectionIndex()
+
+        backgroundViewTopConstraint.constant = visualStyle.addressBarStyleProvider.topSpaceForSuggestionWindow
+        backgroundView.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
+        innerBorderView.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
+        backgroundView.backgroundColor = visualStyle.colorsProvider.suggestionsBackgroundColor
     }
 
     override func viewWillAppear() {
@@ -83,7 +92,8 @@ final class SuggestionViewController: NSViewController {
         self.view.window!.backgroundColor = .clear
 
         addEventMonitors()
-        tableView.rowHeight = suggestionContainerViewModel.isHomePage ? 34 : 28
+
+        tableView.rowHeight = visualStyle.addressBarStyleProvider.sizeForSuggestionRow(isHomePage: suggestionContainerViewModel.isHomePage)
     }
 
     override func viewDidDisappear() {
@@ -98,6 +108,7 @@ final class SuggestionViewController: NSViewController {
         tableView.sizeToFit()
         let column = tableView.tableColumns.first
         column?.width = tableView.frame.width
+        tableView.reloadData()
     }
 
     private func setupTableView() {
@@ -225,9 +236,14 @@ final class SuggestionViewController: NSViewController {
 
         let rowHeight = tableView.rowHeight
 
-        tableViewHeightConstraint.constant = CGFloat(suggestionContainerViewModel.numberOfSuggestions) * rowHeight
-            + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
-            + (tableView.enclosingScrollView?.contentInsets.bottom ?? 0)
+        if visualStyle.addressBarStyleProvider.shouldLeaveBottomPaddingInSuggestions {
+            tableViewHeightConstraint.constant = CGFloat(suggestionContainerViewModel.numberOfSuggestions) * rowHeight
+                + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
+                + (tableView.enclosingScrollView?.contentInsets.bottom ?? 0)
+        } else {
+            tableViewHeightConstraint.constant = CGFloat(suggestionContainerViewModel.numberOfSuggestions) * rowHeight
+                + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
+        }
     }
 
     private func closeWindow() {
@@ -251,7 +267,7 @@ final class SuggestionViewController: NSViewController {
 
         selectedRowCache = tableView.selectedRow
 
-        HistoryCoordinator.shared.removeUrlEntry(url) { [weak self] error in
+        NSApp.delegateTyped.historyCoordinator.removeUrlEntry(url) { [weak self] error in
             guard let self = self, error == nil else {
                 return
             }
@@ -279,6 +295,7 @@ extension SuggestionViewController: NSTableViewDelegate {
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         let cell = tableView.makeView(withIdentifier: SuggestionTableCellView.identifier, owner: self) as? SuggestionTableCellView ?? SuggestionTableCellView()
+        cell.visualStyle = visualStyle
 
         guard let suggestionViewModel = suggestionContainerViewModel.suggestionViewModel(at: row) else {
             assertionFailure("SuggestionViewController: Failed to get suggestion")
@@ -296,6 +313,9 @@ extension SuggestionViewController: NSTableViewDelegate {
             assertionFailure("SuggestionViewController: Making of table row view failed")
             return nil
         }
+
+        suggestionTableRowView.visualStyle = visualStyle
+
         return suggestionTableRowView
     }
 

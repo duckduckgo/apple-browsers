@@ -17,10 +17,9 @@
 //
 
 import Foundation
+import PixelKit
 
 final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
-
-    static let shared = DataClearingPreferences()
 
     @Published
     var isLoginDetectionEnabled: Bool {
@@ -36,6 +35,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
             NotificationCenter.default.post(name: .autoClearDidChange,
                                             object: nil,
                                             userInfo: nil)
+            pixelFiring?.fire(SettingsPixel.dataClearingSettingToggled, frequency: .uniqueByName)
         }
     }
 
@@ -52,10 +52,10 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
 
     @MainActor
     func presentManageFireproofSitesDialog() {
-        let fireproofDomainsWindowController = FireproofDomainsViewController.create().wrappedInWindowController()
+        let fireproofDomainsWindowController = FireproofDomainsViewController.create(fireproofDomains: fireproofDomains, faviconManager: faviconManager).wrappedInWindowController()
 
         guard let fireproofDomainsWindow = fireproofDomainsWindowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+              let parentWindowController = windowControllersManager.lastKeyMainWindowController
         else {
             assertionFailure("DataClearingPreferences: Failed to present FireproofDomainsViewController")
             return
@@ -64,14 +64,28 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         parentWindowController.window?.beginSheet(fireproofDomainsWindow)
     }
 
-    init(persistor: FireButtonPreferencesPersistor = FireButtonPreferencesUserDefaultsPersistor()) {
+    init(
+        persistor: FireButtonPreferencesPersistor = FireButtonPreferencesUserDefaultsPersistor(),
+        fireproofDomains: FireproofDomains,
+        faviconManager: FaviconManagement,
+        windowControllersManager: WindowControllersManagerProtocol,
+        pixelFiring: PixelFiring? = nil
+    ) {
         self.persistor = persistor
+        self.fireproofDomains = fireproofDomains
+        self.faviconManager = faviconManager
+        self.windowControllersManager = windowControllersManager
+        self.pixelFiring = pixelFiring
         isLoginDetectionEnabled = persistor.loginDetectionEnabled
         isAutoClearEnabled = persistor.autoClearEnabled
         isWarnBeforeClearingEnabled = persistor.warnBeforeClearingEnabled
     }
 
     private var persistor: FireButtonPreferencesPersistor
+    private let fireproofDomains: FireproofDomains
+    private let faviconManager: FaviconManagement
+    private let windowControllersManager: WindowControllersManagerProtocol
+    private let pixelFiring: PixelFiring?
 }
 
 protocol FireButtonPreferencesPersistor {

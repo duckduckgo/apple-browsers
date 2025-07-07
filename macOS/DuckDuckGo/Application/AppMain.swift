@@ -18,6 +18,10 @@
 
 import AppKit
 
+#if !APPSTORE
+import LetsMove
+#endif
+
 @main
 struct AppMain {
 

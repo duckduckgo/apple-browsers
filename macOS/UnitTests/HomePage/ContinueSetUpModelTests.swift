@@ -46,7 +46,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         duckPlayerPreferences = DuckPlayerPreferencesPersistorMock()
         privacyConfigManager = MockPrivacyConfigurationManager()
         let config = MockPrivacyConfiguration()
-        privacyConfigManager.privacyConfig = config
+        privacyConfigManager.mockPrivacyConfig = config
         dockCustomizer = DockCustomizerMock()
 
         vm = HomePage.Models.ContinueSetUpModel(
@@ -97,7 +97,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         XCTAssertFalse(vm.isMoreOrLessButtonNeeded)
@@ -113,7 +114,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, expectedMatrix)
@@ -317,7 +319,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, [[]])
@@ -332,7 +335,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
         vm.shouldShowAllFeatures = true
         let expectedMatrix = expectedFeatureMatrixWithout(types: [])
@@ -421,7 +425,7 @@ extension HomePage.Models.ContinueSetUpModel {
             "networkProtection": "disabled"
         ] as! [String: String]
         let manager = MockPrivacyConfigurationManager()
-        manager.privacyConfig = privacyConfig
+        manager.mockPrivacyConfig = privacyConfig
 
         return HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: defaultBrowserProvider,

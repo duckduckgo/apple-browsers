@@ -18,12 +18,13 @@
 
 import Common
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 import NetworkExtension
 import SystemExtensions
 import LoginItems
 import NetworkProtectionIPC
+import VPNAppState
 
 /// Utility code to help implement our debug menu options for the VPN.
 ///
@@ -40,9 +41,16 @@ final class NetworkProtectionDebugUtilities {
 
     private let settings: VPNSettings
 
+    // MARK: - App State
+
+    private let vpnAppState: VPNAppState
+
     // MARK: - Initializers
 
-    init(loginItemsManager: LoginItemsManager = .init(), settings: VPNSettings = .init(defaults: .netP)) {
+    init(loginItemsManager: LoginItemsManager = .init(),
+         settings: VPNSettings = .init(defaults: .netP),
+         vpnAppState: VPNAppState = .init(defaults: .netP)) {
+
         self.loginItemsManager = loginItemsManager
         self.settings = settings
 
@@ -50,6 +58,7 @@ final class NetworkProtectionDebugUtilities {
 
         self.ipcClient = ipcClient
         self.vpnUninstaller = VPNUninstaller(ipcClient: ipcClient)
+        self.vpnAppState = vpnAppState
     }
 
     // MARK: - Debug commands for the extension
@@ -71,6 +80,14 @@ final class NetworkProtectionDebugUtilities {
 
     func resetSiteIssuesAlert() {
         UserDefaults.netP.resetVPNReportSiteIssuesDontAskAgain()
+    }
+
+    func resetVPNDisableExclusionSuggesitons() {
+        vpnAppState.resetDontAskAgainExclusionSuggestion()
+    }
+
+    func disableLoginItems() {
+        vpnUninstaller.removeAgents()
     }
 
     func removeVPNNetworkExtensionAndAgents() async throws {

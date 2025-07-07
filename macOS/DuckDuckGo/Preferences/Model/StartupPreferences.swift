@@ -39,38 +39,27 @@ struct StartupPreferencesUserDefaultsPersistor: StartupPreferencesPersistor {
 
 final class StartupPreferences: ObservableObject, PreferencesTabOpening {
 
-    static let shared = StartupPreferences()
     private let pinningManager: LocalPinningManager
     private var appearancePreferences: AppearancePreferences
     private var persistor: StartupPreferencesPersistor
     private var pinnedViewsNotificationCancellable: AnyCancellable?
-    private var dataClearingPreferences: DataClearingPreferences
-    private var dataClearingPreferencesNotificationCancellable: AnyCancellable?
 
     init(pinningManager: LocalPinningManager = .shared,
-         appearancePreferences: AppearancePreferences = .shared,
          persistor: StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
-         dataClearingPreferences: DataClearingPreferences = .shared) {
+         appearancePreferences: AppearancePreferences) {
         self.pinningManager = pinningManager
         self.appearancePreferences = appearancePreferences
         self.persistor = persistor
-        self.dataClearingPreferences = dataClearingPreferences
         restorePreviousSession = persistor.restorePreviousSession
         launchToCustomHomePage = persistor.launchToCustomHomePage
         customHomePageURL = persistor.customHomePageURL
         updateHomeButtonState()
         listenToPinningManagerNotifications()
-        listenToDataClearingPreferencesNotifications()
-        checkDataClearingStatus()
     }
 
     @Published var restorePreviousSession: Bool {
         didSet {
             persistor.restorePreviousSession = restorePreviousSession
-            if restorePreviousSession {
-                PixelExperiment.fireOnboardingSessionRestoreEnabledPixel()
-                PixelExperiment.fireOnboardingSessionRestoreEnabled5to7Pixel()
-            }
         }
     }
 
@@ -136,21 +125,6 @@ final class StartupPreferences: ObservableObject, PreferencesTabOpening {
                 return
             }
             self.updateHomeButtonState()
-        }
-    }
-
-    private func checkDataClearingStatus() {
-        if dataClearingPreferences.isAutoClearEnabled {
-            restorePreviousSession = false
-        }
-    }
-
-    private func listenToDataClearingPreferencesNotifications() {
-        dataClearingPreferencesNotificationCancellable = NotificationCenter.default.publisher(for: .autoClearDidChange).sink { [weak self] _ in
-            guard let self = self else {
-                return
-            }
-            self.checkDataClearingStatus()
         }
     }
 

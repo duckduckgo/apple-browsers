@@ -51,6 +51,12 @@ extension Preferences {
             }
         }
 
+        private func setPinnedTabsMode(_ newMode: PinnedTabsMode) {
+            guard tabsModel.pinnedTabsMode != newMode else { return }
+            tabsModel.pinnedTabsMode = newMode
+            firePinnedTabsPixel(newMode)
+        }
+
         var body: some View {
             PreferencePane(UserText.general) {
 
@@ -100,10 +106,9 @@ extension Preferences {
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession")
                         }, label: {})
                         .pickerStyle(.radioGroup)
-                        .disabled(dataClearingModel.isAutoClearEnabled)
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker")
-                        if dataClearingModel.isAutoClearEnabled {
+                        if dataClearingModel.isAutoClearEnabled && startupModel.restorePreviousSession {
                             VStack(alignment: .leading, spacing: 1) {
                                 TextMenuItemCaption(UserText.disableAutoClearToEnableSessionRestore)
                                 TextButton(UserText.showDataClearingSettings) {
@@ -129,7 +134,6 @@ extension Preferences {
                                     Text(UserText.newTabPositionMode(for: position)).tag(position)
                                 }
                             }
-                            .fixedSize()
                         }
                         HStack {
                             Picker(UserText.pinnedTabs, selection: Binding(
@@ -142,20 +146,17 @@ extension Preferences {
                                             pendingSelection = newValue
                                             showWarningAlert = true
                                         } else {
-                                            tabsModel.pinnedTabsMode = newValue
-                                            firePinnedTabsPixel(newValue)
+                                            setPinnedTabsMode(newValue)
                                         }
                                     } else {
-                                        tabsModel.pinnedTabsMode = newValue
-                                        firePinnedTabsPixel(newValue)
+                                        setPinnedTabsMode(newValue)
                                     }
                                 }
                             )) {
                                 ForEach(PinnedTabsMode.allCases, id: \.self) { mode in
                                     Text(UserText.pinnedTabsMode(for: mode)).tag(mode)
                                 }
-                            }
-                            .fixedSize()
+                            }.accessibilityIdentifier("PreferencesGeneralView.pinnedTabsModePicker")
                         }
                         .alert(isPresented: $showWarningAlert) {
                             Alert(
@@ -210,7 +211,6 @@ extension Preferences {
                                     Text(UserText.homeButtonMode(for: position)).tag(position)
                                 }
                             }
-                            .fixedSize()
                             .onChange(of: startupModel.homeButtonPosition) { _ in
                                 startupModel.updateHomeButton()
                             }
@@ -247,32 +247,6 @@ extension Preferences {
 
                         ToggleMenuItem(UserText.downloadsAlwaysAsk,
                                        isOn: $downloadsModel.alwaysRequestDownloadLocation).accessibilityIdentifier("PreferencesGeneralView.alwaysAskWhereToSaveFiles")
-                    }
-                }
-
-                // SECTION: Phishing Detection
-                if featureFlagger.maliciousSiteProtectionFeatureFlags().isMaliciousSiteProtectionEnabled {
-                    let toggleText = featureFlagger.isFeatureOn(.scamSiteProtection) ? UserText.maliciousSiteDetectionIsEnabled : UserText.maliciousSiteDetectionIsEnabledDeprecated
-                    PreferencePaneSection(UserText.maliciousSiteDetectionHeader, spacing: 0) {
-                        PreferencePaneSubSection {
-                            ToggleMenuItem(toggleText,
-                                           isOn: $maliciousSiteDetectionModel.isEnabled)
-                            .onChange(of: maliciousSiteDetectionModel.isEnabled) { newValue in
-                                PixelKit.fire(MaliciousSiteProtection.Event.settingToggled(to: newValue))
-                            }
-                        }
-                        TextButton(UserText.learnMore) {
-                            tabsModel.openNewTab(with: .maliciousSiteProtectionLearnMore)
-                        }
-                        .padding(.leading, 19)
-                        .padding(.top, 0)
-
-                        Text(UserText.maliciousDetectionEnabledWarning)
-                            .opacity(maliciousSiteDetectionModel.isEnabled ? 0 : 1)
-                            .font(.footnote)
-                            .foregroundColor(.red)
-                            .padding(.leading, 19)
-                            .padding(.top, 5)
                     }
                 }
             }

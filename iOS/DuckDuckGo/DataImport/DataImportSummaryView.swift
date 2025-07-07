@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import BrowserServicesKit
 import Lottie
@@ -211,7 +212,7 @@ struct DataImportSummaryView: View {
             VStack(spacing: 0) {
                 HStack {
                     HStack(spacing: 12) {
-                        Image(isSuccess ? .checkRecolorable24 : .crossRecolorable24)
+                        Image(uiImage: isSuccess ? DesignSystemImages.Glyphs.Size24.checkRecolorable : DesignSystemImages.Glyphs.Size24.crossRecolorable)
                         Text(label)
                             .daxBodyRegular()
                             .foregroundStyle(Color(designSystemColor: .textPrimary))

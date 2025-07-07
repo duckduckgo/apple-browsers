@@ -324,13 +324,13 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
         server.middleware = [{ [data] request in
             guard request.path == "/" else { return nil }
-            return .ok(.html(data.htmlWithOpenInNewWindow.string()!))
+            return .ok(.html(data.htmlWithOpenInNewWindow.utf8String()!))
         }, { [data, urls] request in
             guard request.path == urls.local2.path else { return nil }
-            return .ok(.html(data.metaRedirect.string()!))
+            return .ok(.html(data.metaRedirect.utf8String()!))
         }, { [data, urls] request in
             guard request.path == urls.local3.path else { return nil }
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -416,7 +416,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         }
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -474,7 +474,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         }
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -538,7 +538,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         }
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -593,7 +593,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegateProxy.finishEventsDispatchTime = .instant
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -656,7 +656,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegateProxy.finishEventsDispatchTime = .instant
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -720,7 +720,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegateProxy.finishEventsDispatchTime = .instant
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.htmlWithOpenInNewWindowLink.string()!))
+            return .ok(.html(data.htmlWithOpenInNewWindowLink.utf8String()!))
         }]
         try server.start(8084)
 
@@ -773,7 +773,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -805,7 +805,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -837,7 +837,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -870,7 +870,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })), .weak(customCallbacksHandler))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -1221,7 +1221,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
         withWebView { webView in
             _=webView.navigator(distributedNavigationDelegate: navigationDelegate)
-                .loadHTMLString(data.html.string()!, baseURL: urls.local1, withExpectedNavigationType: .custom(.init(rawValue: "custom")))
+                .loadHTMLString(data.html.utf8String()!, baseURL: urls.local1, withExpectedNavigationType: .custom(.init(rawValue: "custom")))
         }
         waitForExpectations(timeout: 5)
 
@@ -1474,7 +1474,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         waitForExpectations(timeout: 5)
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -1514,7 +1514,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
                 try! writer.write(data.empty)
             }
         }, { [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -1601,7 +1601,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         waitForExpectations(timeout: 5)
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -1627,6 +1627,8 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
     }
 
     func testWhenWebContentProcessIsTerminated_webProcessDidTerminateAndNavigationDidFailReceived() throws {
+        throw XCTSkip("termination handler broken on macOS 15.5+")
+
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         responder(at: 0).onNavigationResponse = { [unowned webView=withWebView(do: { $0 })] _ in
@@ -1643,7 +1645,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         }
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 

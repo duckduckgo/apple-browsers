@@ -49,7 +49,7 @@ struct SettingsDuckPlayerView: View {
 
             if !viewModel.shouldDisplayDuckPlayerContingencyMessage {
                 VStack(alignment: .center) {
-                    Image("SettingsDuckPlayerHero")
+                    Image(.settingsDuckPlayerHero)
                         .padding(.top, -20) // Adjust for the image padding
 
                     Text(UserText.duckPlayerFeatureName)
@@ -69,8 +69,10 @@ struct SettingsDuckPlayerView: View {
                 .listRowBackground(Color.clear)
             }
 
-            Section {
-                if !viewModel.state.duckPlayerNativeUI {
+           
+            // Duck Player Classic UI
+            if !viewModel.duckPlayerNativeUI.wrappedValue {
+                Section {
                     SettingsPickerCellView(label: UserText.settingsOpenVideosInDuckPlayerLabel,
                                         options: DuckPlayerMode.allCases,
                                         selectedOption: viewModel.duckPlayerModeBinding)
@@ -81,51 +83,40 @@ struct SettingsDuckPlayerView: View {
                                             accessory: .toggle(isOn: viewModel.duckPlayerOpenInNewTabBinding))
                     }
                 }
-
-            }
-
-            /// Experimental features for internal users
-            if viewModel.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone {
-
-                if viewModel.appSettings.duckPlayerNativeUI {
-                    Section(footer: Text(UserText.duckPlayerNativeUseOnSERPFooter)) {
-                        SettingsCellView(label: UserText.duckPlayerNativeUseOnSERPLabel,
-                                        accessory: .toggle(isOn: viewModel.duckPlayerNativeUISERPEnabled))
-                                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
-                    }
-
-                    Section(footer: Text(UserText.duckPlayerNativeUseOnYoutubeFooter)) {
-                       SettingsPickerCellView(label: UserText.duckPlayerNativeUseOnYoutubeLabel,
-                                        options: NativeDuckPlayerYoutubeMode.allCases,
-                                        selectedOption: viewModel.duckPlayerNativeYoutubeModeBinding)
-                                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
-                    }
-
-                    Section(footer: Text(UserText.duckPlayerNativeAutoplayVideosDescription)) {
-                        SettingsCellView(label: UserText.duckPlayerNativeAutoplayVideos,
-                                        accessory: .toggle(isOn: viewModel.duckPlayerAutoplay))
-                                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
-                    }
-
+            } else {
+                // Duck Player Native UI
+                Section(footer: Text(UserText.duckPlayerSearchResultsFooter)) {
+                    SettingsCellView(label: UserText.duckPlayerSearchResultsLabel,
+                                     accessory: .toggle(isOn: viewModel.duckPlayerNativeUISERPEnabled))
+                                     .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
                 }
 
-                Section("Experimental", content: {
-                    SettingsCellView(label: "Use Native UI",
-                                   accessory: .toggle(isOn: viewModel.duckPlayerNativeUI))
-                        .onChange(of: viewModel.state.duckPlayerNativeUI) { _ in
-                            showNewTabAlert = true
-                        }
-                })
+                Section(footer: Text(UserText.duckPlayerYoutubeFooter)) {
+                SettingsPickerCellView(label: UserText.duckPlayerYoutubeLabel,
+                                    options: NativeDuckPlayerYoutubeMode.allCases,
+                                    selectedOption: viewModel.duckPlayerNativeYoutubeModeBinding)
+                                    .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+                }
 
+                Section(footer: Text(UserText.duckPlayerAutoplayFooter)) {
+                    SettingsCellView(label: UserText.duckPlayerAutoplayLabel,
+                                    accessory: .toggle(isOn: viewModel.duckPlayerAutoplay))
+                                    .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+                }
             }
+
         }
         .applySettingsListModifiers(title: UserText.duckPlayerFeatureName,
                                     displayMode: .inline,
                                     viewModel: viewModel)
-        .alert("Note to testers", isPresented: $showNewTabAlert) {
-            Button("OK", role: .cancel) { }
+        .onAppear {
+            DailyPixel.fireDailyAndCount(pixel: .duckPlayerSettingsOpen,
+                                         withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .duckPlayer))
+        }
+        .alert(UserText.duckPlayerTabAlertTitle, isPresented: $showNewTabAlert) {
+            Button(UserText.duckPlayerTabAlertOK, role: .cancel) { }
         } message: {
-            Text("Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect.")
+            Text(UserText.duckPlayerTabAlertMessage)
         }
     }
 }

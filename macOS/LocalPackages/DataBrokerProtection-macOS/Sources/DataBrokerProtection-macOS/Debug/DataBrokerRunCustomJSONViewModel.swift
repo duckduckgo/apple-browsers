@@ -23,6 +23,7 @@ import Common
 import ContentScopeScripts
 import Combine
 import os.log
+import PixelKit
 
 struct ExtractedAddress: Codable {
     let state: String
@@ -131,6 +132,7 @@ struct ScanResult {
     let extractedProfile: ExtractedProfile
 }
 
+// swiftlint:disable force_try
 final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var birthYear: String = ""
     @Published var results = [ScanResult]()
@@ -148,7 +150,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     private let emailService: EmailService
     private let captchaService: CaptchaService
-    private let runnerProvider: JobRunnerProvider
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = EventMapping { event, _, _, _ in
         print(event)
@@ -169,7 +170,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                                   inlineIconCredentials: false,
                                                   thirdPartyCredentialsProvider: false,
                                                   unknownUsernameCategorization: false,
-                                                  partialFormSaves: false)
+                                                  partialFormSaves: false,
+                                                  passwordVariantCategorization: false,
+                                                  inputFocusApi: false,
+                                                  autocompleteAttributeSupport: false)
 
         let sessionKey = UUID().uuidString
         let messageSecret = UUID().uuidString
@@ -189,16 +193,16 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                              settings: dbpSettings,
                                              servicePixel: backendServicePixels)
 
-        self.runnerProvider = DataBrokerJobRunnerProvider(
-            privacyConfigManager: privacyConfigurationManager,
-            contentScopeProperties: contentScopeProperties,
-            emailService: self.emailService,
-            captchaService: self.captchaService)
         self.privacyConfigManager = privacyConfigurationManager
         self.contentScopeProperties = contentScopeProperties
 
-        let fileResources = FileResources()
-        self.brokers = (try? fileResources.fetchBrokerFromResourceFiles()) ?? [DataBroker]()
+        let pixelKit = PixelKit.shared!
+        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+        let vault = try! vaultFactory.makeVault(reporter: reporter)
+        self.brokers = try! vault.fetchAllBrokers()
     }
 
     func runAllBrokers() {
@@ -370,7 +374,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 let dataBroker = try decoder.decode(DataBroker.self, from: data)
                 self.selectedDataBroker = dataBroker
                 let brokerProfileQueryData = createBrokerProfileQueryData(for: dataBroker)
-                let runner = runnerProvider.getJobRunner()
                 let group = DispatchGroup()
 
                 for query in brokerProfileQueryData {
@@ -378,7 +381,17 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
                     Task {
                         do {
-                            let extractedProfiles = try await runner.scan(query, stageCalculator: FakeStageDurationCalculator(), pixelHandler: fakePixelHandler, showWebView: true) { true }
+                            let runner = BrokerProfileScanSubJobWebRunner(
+                                privacyConfig: self.privacyConfigManager,
+                                prefs: self.contentScopeProperties,
+                                query: query,
+                                emailService: self.emailService,
+                                captchaService: self.captchaService,
+                                stageDurationCalculator: FakeStageDurationCalculator(),
+                                pixelHandler: fakePixelHandler,
+                                shouldRunNextStep: { true }
+                            )
+                            let extractedProfiles = try await runner.scan(query, showWebView: true) { true }
 
                             DispatchQueue.main.async {
                                 for extractedProfile in extractedProfiles {
@@ -409,7 +422,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     @MainActor
     func runOptOut(scanResult: ScanResult) {
-        let runner = runnerProvider.getJobRunner()
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: scanResult.dataBroker,
             profileQuery: scanResult.profileQuery,
@@ -417,9 +429,20 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         )
         Task {
             do {
-                try await runner.optOut(profileQuery: brokerProfileQueryData, extractedProfile: scanResult.extractedProfile, stageCalculator: FakeStageDurationCalculator(), pixelHandler: fakePixelHandler, showWebView: true) {
-                    true
-                }
+                let runner = BrokerProfileOptOutSubJobWebRunner(
+                    privacyConfig: self.privacyConfigManager,
+                    prefs: self.contentScopeProperties,
+                    query: brokerProfileQueryData,
+                    emailService: self.emailService,
+                    captchaService: self.captchaService,
+                    stageCalculator: FakeStageDurationCalculator(),
+                    pixelHandler: fakePixelHandler,
+                    shouldRunNextStep: { true }
+                )
+
+                try await runner.optOut(profileQuery: brokerProfileQueryData,
+                                        extractedProfile: scanResult.extractedProfile,
+                                        showWebView: true) { true }
 
                 DispatchQueue.main.async {
                     self.showAlert = true
@@ -508,6 +531,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 final class FakeStageDurationCalculator: StageDurationCalculator {
     var attemptId: UUID = UUID()
     var isImmediateOperation: Bool = false
+    var tries = 1
 
     func durationSinceLastStage() -> Double {
         0.0
@@ -569,6 +593,12 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     }
 
     func setLastActionId(_ actionID: String) {
+    }
+
+    func resetTries() {
+    }
+
+    func incrementTries() {
     }
 }
 
@@ -663,3 +693,4 @@ extension ScrapedData {
         }
     }
 }
+// swiftlint:enable force_try

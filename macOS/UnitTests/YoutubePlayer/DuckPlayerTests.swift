@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import NewTabPage
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -34,6 +35,11 @@ final class DuckPlayerTests: XCTestCase {
             preferences: .init(persistor: DuckPlayerPreferencesPersistorMock()),
             privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
+    }
+
+    override func tearDown() {
+        duckPlayer = nil
+        super.tearDown()
     }
 
     func testThatImageForFaviconViewReturnsHardcodedFaviconForDuckPlayer() {

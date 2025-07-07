@@ -28,12 +28,10 @@ class FeatureFlagsSettingViewModel: ObservableObject {
 
     @Published var featureFlags: [FeatureFlag] = []
     @Published var experiments: [FeatureFlag] = []
-    @Published var cssExperiments: [ContentScopeExperimentsFeatureFlag] = []
 
     init() {
-        self.featureFlags = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType == nil }
-        self.experiments = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType != nil }
-        self.cssExperiments = ContentScopeExperimentsFeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType != nil }
+        self.featureFlags = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType == nil }.sorted(by: { $0.rawValue < $1.rawValue })
+        self.experiments = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType != nil }.sorted(by: { $0.rawValue < $1.rawValue })
     }
 
     var isInternalUser: Bool {

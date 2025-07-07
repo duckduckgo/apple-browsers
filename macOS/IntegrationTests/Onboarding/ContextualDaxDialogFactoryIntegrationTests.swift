@@ -24,48 +24,47 @@ final class ContextualDaxDialogFactoryIntegrationTests: XCTestCase {
 
     private var factory: ContextualDaxDialogsFactory!
     private var delegate: CapturingOnboardingNavigationDelegate!
+    private var fireCoordinator: FireCoordinator!
 
-    override func setUpWithError() throws {
+    @MainActor override func setUpWithError() throws {
         try super.setUpWithError()
-        factory = DefaultContextualDaxDialogViewFactory()
+        fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        factory = DefaultContextualDaxDialogViewFactory(fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
     }
 
     @MainActor override func tearDownWithError() throws {
         factory = nil
         delegate = nil
+        fireCoordinator = nil
         try super.tearDownWithError()
     }
 
     @MainActor func testWhenMakeViewForTryFireButtonThenOnboardingTryFireButtonDialogViewCreatedAndOnActionExpectedActionOccurs() throws {
         // GIVEN
         var onDismissRun = false
-        var onGotItPressedRun = false
         let dialogType = ContextualDialogType.tryFireButton
         let onDismiss = { onDismissRun = true }
-        let onGotItPressed = { onGotItPressedRun = true }
 
         // WHEN
-        let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: {})
+        let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: {}, onFireButtonPressed: {})
 
         // THEN
         let view = try XCTUnwrap(find(OnboardingFireDialog.self, in: result))
 
         // WHEN
-        view.viewModel.skip()
         view.viewModel.tryFireButton()
 
         // THEN
-        XCTAssertFalse(onDismissRun)
-        XCTAssertTrue(onGotItPressedRun)
+        XCTAssertTrue(onDismissRun)
         let expectation = self.expectation(description: "Wait for FirePopover to appear")
         self.waitForPopoverToAppear(expectation: expectation)
         wait(for: [expectation], timeout: 3.0)
-        WindowControllersManager.shared.lastKeyMainWindowController?.window?.close()
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window?.close()
     }
 
     @MainActor private func waitForPopoverToAppear(expectation: XCTestExpectation) {
-        if let popover = FireCoordinator.firePopover, popover.isShown {
+        if let popover = fireCoordinator.firePopover, popover.isShown {
             // Fulfill the expectation if the popover is shown
             expectation.fulfill()
         } else {

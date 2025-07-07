@@ -21,6 +21,10 @@ name: 02_login_account
 - runFlow:
     file: ../shared/set_internal_user_from_settings.yaml
 
+    # Set Dev environment
+- runFlow:
+    file: ../shared/set_sync_dev_environment.yaml
+
 # Login
 - assertVisible: Sync & Backup
 - tapOn: Sync & Backup

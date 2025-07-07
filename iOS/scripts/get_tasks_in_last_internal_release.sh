@@ -31,7 +31,7 @@ get_task_id() {
 	local task_id
 	task_id="$(perl -pe 's|.*https://app.asana.com/0/[0-9]+/([0-9]+)(?:/f)?|\1|; \
                 s|.*https://app.asana.com/1/[0-9]+(?:/[0-9a-z/]*)?/task/([0-9]+)(:?/[0-9a-z/]*)?(?:\?focus=true)?|\1|; \
-                s|.*https://app.asana.com/1/[0-9]+/inbox/[0-9]+/item/([0-9]+)/story/([0-9]+)|\1|' <<< "$url")"
+                s|.*https://app.asana.com/1/[0-9]+/inbox/[0-9]+/item/([0-9]+)/story/([0-9]+)(?:\?focus=true)?|\1|' <<< "$url")"
 	if [[ -n "$task_id" ]]; then
 		local http_code
 		http_code="$(curl -fLSs "${asana_api_url}/tasks/${task_id}?opt_fields=gid" \

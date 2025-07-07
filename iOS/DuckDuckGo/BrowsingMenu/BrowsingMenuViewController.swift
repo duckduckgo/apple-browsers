@@ -60,6 +60,8 @@ final class BrowsingMenuViewController: UIViewController {
     private let menuEntries: [BrowsingMenuEntry]
     private let appSettings: AppSettings
 
+    var onDismiss: (() -> Void)?
+
     class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> BrowsingMenuViewController {
         UIStoryboard(name: "BrowsingMenuViewController", bundle: nil).instantiateInitialViewController { coder in
             BrowsingMenuViewController(headerEntries: headerEntries, menuEntries: menuEntries, appSettings: appSettings, coder: coder)
@@ -84,6 +86,13 @@ final class BrowsingMenuViewController: UIViewController {
         configureHeader()
 
         decorate()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if isBeingDismissed {
+            onDismiss?()
+        }
     }
 
     private func configureHeader() {
@@ -214,7 +223,7 @@ final class BrowsingMenuViewController: UIViewController {
         bottomConstraintIPad.isActive = isIPad
 
         // Make it go above WebView in Landscape
-        topConstraint.constant = frame.minY + (isIPhoneLandscape ? -10 : 5)
+        topConstraint.constant = (isIPhoneLandscape ? 10 : 0)
         // Move menu up in Landscape, as bottom toolbar shrinks
 
         bottomConstraint.constant = windowBounds.maxY - frame.maxY - (isIPhoneLandscape ? 2 : 10)
@@ -315,7 +324,7 @@ extension BrowsingMenuViewController {
     
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
-        
+        configureArrow(with: theme.browsingMenuBackgroundColor)
         configureShadow(for: theme)
         
         for headerButton in headerButtons {

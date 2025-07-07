@@ -134,7 +134,7 @@ final class WebViewTests: XCTestCase {
 
     @MainActor
     func testThatResetZoomLevelResetsZoom() {
-        let tabVM = TabViewModel(tab: Tab())
+        let tabVM = TabViewModel(tab: Tab(content: .none))
         let randomZoomLevel = DefaultZoomValue.percent300
         // Select Default zoom
         AccessibilityPreferences.shared.defaultPageZoom = randomZoomLevel
@@ -156,7 +156,7 @@ final class WebViewTests: XCTestCase {
 
     @MainActor
     func testThatResetZoomLevelResetsMagnification() {
-        let tabVM = TabViewModel(tab: Tab())
+        let tabVM = TabViewModel(tab: Tab(content: .none))
 
         // Set MAgnification
         tabVM.tab.webView.magnification = 3.0

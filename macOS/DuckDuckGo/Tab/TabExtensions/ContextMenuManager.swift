@@ -17,23 +17,15 @@
 //
 
 import AppKit
+import AIChat
 import Combine
 import Foundation
 import WebKitExtensions
+import BrowserServicesKit
 
 enum NavigationDecision {
     case allow(NewWindowPolicy)
     case cancel
-
-    /**
-     * Replaces `.tab` with `.window` when user prefers windows over tabs.
-     */
-    func preferringTabsToWindows(_ prefersTabsToWindows: Bool) -> NavigationDecision {
-        guard case .allow(let targetKind) = self, !prefersTabsToWindows else {
-            return self
-        }
-        return .allow(targetKind.preferringTabsToWindows(prefersTabsToWindows))
-    }
 }
 
 @MainActor
@@ -46,6 +38,9 @@ final class ContextMenuManager: NSObject {
     private var linkURL: String?
 
     private var tabsPreferences: TabsPreferences
+    private let isLoadedInSidebar: Bool
+    private let featureFlagger: FeatureFlagger
+    private let aiChatPromptHandler: AIChatPromptHandler
 
     private var isEmailAddress: Bool {
         guard let linkURL, let url = URL(string: linkURL) else {
@@ -65,8 +60,14 @@ final class ContextMenuManager: NSObject {
 
     @MainActor
     init(contextMenuScriptPublisher: some Publisher<ContextMenuUserScript?, Never>,
-         tabsPreferences: TabsPreferences = TabsPreferences.shared) {
+         tabsPreferences: TabsPreferences = TabsPreferences.shared,
+         isLoadedInSidebar: Bool = false,
+         featureFlagger: FeatureFlagger,
+         aiChatPromptHandler: AIChatPromptHandler = .shared) {
         self.tabsPreferences = tabsPreferences
+        self.isLoadedInSidebar = isLoadedInSidebar
+        self.featureFlagger = featureFlagger
+        self.aiChatPromptHandler = aiChatPromptHandler
         super.init()
 
         userScriptCancellable = contextMenuScriptPublisher.sink { [weak self] contextMenuScript in
@@ -102,7 +103,8 @@ extension ContextMenuManager {
         .downloadImage: handleDownloadImageItem,
         .searchWeb: handleSearchWebItem,
         .reload: handleReloadItem,
-        .openFrameInNewWindow: handleOpenFrameInNewWindowItem
+        .openFrameInNewWindow: handleOpenFrameInNewWindowItem,
+        .inspectElement: handleInspectElementItem
     ]
 
     private var isCurrentWindowBurner: Bool {
@@ -124,10 +126,16 @@ extension ContextMenuManager {
     }
 
     private func handleOpenLinkInNewWindowItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
-        if isCurrentWindowBurner || !isWebViewSupportedScheme {
+        if !isWebViewSupportedScheme {
             menu.removeItem(at: index)
+        } else if isCurrentWindowBurner {
+            let newFireWindowItem = self.openLinkInNewFireWindowMenuItem(from: item)
+            menu.replaceItem(at: index, with: newFireWindowItem)
         } else {
-            menu.replaceItem(at: index, with: self.openLinkInNewWindowMenuItem(from: item))
+            let newWindowItem = self.openLinkInNewWindowMenuItem(from: item)
+            let newFireWindowItem = self.openLinkInNewFireWindowMenuItem(from: item)
+            menu.replaceItem(at: index, with: newWindowItem)
+            menu.insertItem(newFireWindowItem, at: index + 1)
         }
     }
 
@@ -198,11 +206,26 @@ extension ContextMenuManager {
     }
 
     private func handleSearchWebItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
-        menu.replaceItem(at: index, with: self.searchMenuItem(makeBurner: isCurrentWindowBurner))
+        let isSummarizationAvailable = featureFlagger.isFeatureOn(.aiChatTextSummarization) && featureFlagger.isFeatureOn(.aiChatSidebar)
+        var currentIndex = index
+        if isSummarizationAvailable {
+            menu.insertItem(.separator(), at: currentIndex)
+            currentIndex += 1
+        }
+        menu.replaceItem(at: currentIndex, with: self.searchMenuItem(makeBurner: isCurrentWindowBurner))
+        if isSummarizationAvailable {
+            menu.insertItem(summarizeMenuItem(), at: currentIndex + 1)
+        }
     }
 
     private func handleReloadItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
+        guard !isLoadedInSidebar else { return }
         menu.insertItem(self.bookmarkPageMenuItem(), at: index + 1)
+    }
+
+    private func handleInspectElementItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
+        guard isLoadedInSidebar, !featureFlagger.internalUserDecider.isInternalUser else { return }
+        menu.removeItem(at: index)
     }
 }
 
@@ -255,6 +278,11 @@ private extension ContextMenuManager {
         makeMenuItem(withTitle: item.title, action: #selector(openLinkInNewWindow), from: item, with: .openLinkInNewWindow)
     }
 
+    func openLinkInNewFireWindowMenuItem(from item: NSMenuItem) -> NSMenuItem {
+        let menuItem = makeMenuItem(withTitle: UserText.openLinkInNewBurnerWindow, action: #selector(openLinkInNewFireWindow), from: item, with: .openLinkInNewWindow)
+        return menuItem
+    }
+
     func openFrameInNewWindowMenuItem(from item: NSMenuItem) -> NSMenuItem {
         makeMenuItem(withTitle: item.title, action: #selector(openFrameInNewWindow), from: item, with: .openFrameInNewWindow)
     }
@@ -303,6 +331,10 @@ private extension ContextMenuManager {
     func searchMenuItem(makeBurner: Bool) -> NSMenuItem {
         let action = makeBurner ? #selector(searchInBurner) : #selector(search)
         return NSMenuItem(title: UserText.searchWithDuckDuckGo, action: action, target: self)
+    }
+
+    func summarizeMenuItem() -> NSMenuItem {
+        NSMenuItem(title: "Summarize with Duck.ai", action: #selector(summarize), target: self, keyEquivalent: [.command, .shift, "\r"])
     }
 
     private func makeMenuItem(withTitle title: String, action: Selector, from item: NSMenuItem, with identifier: WKMenuItemIdentifier, keyEquivalent: String? = nil) -> NSMenuItem {
@@ -356,6 +388,17 @@ private extension ContextMenuManager {
         NSPasteboard.general.copy(selectedText)
     }
 
+    func summarize(_ sender: NSMenuItem) {
+        guard let selectedText else {
+            assertionFailure("Failed to get selected text")
+            return
+        }
+
+        NotificationCenter.default.post(name: .aiChatSummarizationRequest,
+                                        object: AIChatSummarizationRequest(text: selectedText, source: .contextMenu),
+                                        userInfo: nil)
+    }
+
     func openLinkInNewTab(_ sender: NSMenuItem) {
         openLinkInNewTabCommon(sender, burner: false)
     }
@@ -381,6 +424,14 @@ private extension ContextMenuManager {
     }
 
     func openLinkInNewWindow(_ sender: NSMenuItem) {
+        openLinkInNewWindowCommon(sender, burner: false)
+    }
+
+    func openLinkInNewFireWindow(_ sender: NSMenuItem) {
+        openLinkInNewWindowCommon(sender, burner: true)
+    }
+
+    func openLinkInNewWindowCommon(_ sender: NSMenuItem, burner: Bool) {
         guard let originalItem = sender.representedObject as? NSMenuItem,
               let identifier = originalItem.identifier.map(WKMenuItemIdentifier.init),
               identifier == .openLinkInNewWindow,
@@ -390,8 +441,13 @@ private extension ContextMenuManager {
             return
         }
 
-        onNewWindow = { _ in
-            .allow(.window(active: true, burner: false))
+        onNewWindow = { navigationAction in
+            if burner {
+                WindowsManager.openNewWindow(with: navigationAction?.request.url ?? .blankPage, source: .link, isBurner: true)
+                return .cancel
+            } else {
+                return .allow(.window(active: true, burner: false))
+            }
         }
         NSApp.sendAction(action, to: originalItem.target, from: originalItem)
     }
@@ -445,7 +501,7 @@ private extension ContextMenuManager {
             guard let url = navigationAction?.request.url else { return .cancel }
 
             let title = selectedText ?? url.absoluteString
-            LocalBookmarkManager.shared.makeBookmark(for: url, title: title, isFavorite: false)
+            NSApp.delegateTyped.bookmarkManager.makeBookmark(for: url, title: title, isFavorite: false)
 
             return .cancel
         }

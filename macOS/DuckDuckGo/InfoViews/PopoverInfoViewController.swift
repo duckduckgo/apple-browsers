@@ -131,9 +131,9 @@ struct InfoView: View {
         Text(.init(info))
             .onURLTap { url in
                 if let pane = PreferencePaneIdentifier(url: url) {
-                    WindowControllersManager.shared.showPreferencesTab(withSelectedPane: pane)
+                    Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: pane)
                 } else {
-                    WindowControllersManager.shared.showTab(with: .url(url, source: .link))
+                    Application.appDelegate.windowControllersManager.showTab(with: .url(url, source: .link))
                 }
             }
             .padding(16)

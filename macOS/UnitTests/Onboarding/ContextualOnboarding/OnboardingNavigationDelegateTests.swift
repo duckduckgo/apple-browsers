@@ -20,18 +20,27 @@ import XCTest
 import Onboarding
 @testable import DuckDuckGo_Privacy_Browser
 
+@available(macOS 12.0, *)
 final class OnboardingNavigationDelegateTests: XCTestCase {
 
     var tab: Tab!
+    var schemeHandler: TestSchemeHandler!
+    static let testHtml = "<html><head><title>Title</title></head><body>test</body></html>"
 
     @MainActor
     override func setUpWithError() throws {
         try super.setUpWithError()
-        tab = Tab()
+
+        schemeHandler = TestSchemeHandler { _ in
+            return .ok(.html(Self.testHtml))
+        }
+
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
     }
 
     override func tearDownWithError() throws {
         tab = nil
+        schemeHandler = nil
         try super.tearDownWithError()
     }
 
@@ -47,7 +56,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
         pollForCondition(
             condition: { self.tab.url == expectedUrl },
             expectation: expectation,
-            timeout: 3.0, // Timeout of 3 seconds
+            timeout: 1.0, // Timeout of 1 second
             retryInterval: 0.1 // Check every 0.1 seconds
         )
         wait(for: [expectation], timeout: 3.0)
@@ -66,10 +75,10 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
         pollForCondition(
             condition: { self.tab.url == expectedUrl },
             expectation: expectation,
-            timeout: 3.0,
+            timeout: 1.0,
             retryInterval: 0.1
         )
-        wait(for: [expectation], timeout: 3.0)
+        wait(for: [expectation], timeout: 1.0)
     }
 
     private func pollForCondition(condition: @escaping () -> Bool,

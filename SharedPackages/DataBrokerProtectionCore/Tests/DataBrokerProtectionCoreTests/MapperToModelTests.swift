@@ -22,7 +22,7 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class MapperToModelTests: XCTestCase {
 
-    private var sut = MapperToModel(mechanism: {_ in Data()})
+    private var sut = MapperToModel(mechanism: { _ in Data() })
     private var jsonDecoder: JSONDecoder!
     private var jsonEncoder: JSONEncoder!
 
@@ -42,10 +42,11 @@ final class MapperToModelTests: XCTestCase {
             schedulingConfig: DataBrokerScheduleConfig(retryError: 1, confirmOptOutScan: 2, maintenanceScan: 3, maxAttempts: -1),
             parent: "ParentBroker",
             mirrorSites: [],
-            optOutUrl: "https://example.com/opt-out"
+            optOutUrl: "https://example.com/opt-out",
+            eTag: ""
         )
         let jsonData = try jsonEncoder.encode(brokerData)
-        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: jsonData, version: "1.0", url: "https://example.com")
+        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: jsonData, version: "1.0", url: "https://example.com", eTag: "")
 
         // When
         let result = try sut.mapToModel(brokerDB)
@@ -72,7 +73,7 @@ final class MapperToModelTests: XCTestCase {
                 "schedulingConfig": {"retryError": 1, "confirmOptOutScan": 2, "maintenanceScan": 3, "maxAttempts": -1}
             }
             """.data(using: .utf8)!
-        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "https://example.com")
+        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "https://example.com", eTag: "")
 
         // When
         let result = try sut.mapToModel(brokerDB)
@@ -90,7 +91,7 @@ final class MapperToModelTests: XCTestCase {
                 "invalidKey": "value"
             }
             """.data(using: .utf8)!
-        let brokerDB = BrokerDB(id: 1, name: "InvalidBroker", json: invalidJsonData, version: "1.0", url: "https://example.com")
+        let brokerDB = BrokerDB(id: 1, name: "InvalidBroker", json: invalidJsonData, version: "1.0", url: "https://example.com", eTag: "")
 
         // When & Then
         XCTAssertThrowsError(try sut.mapToModel(brokerDB)) { error in
@@ -108,7 +109,7 @@ final class MapperToModelTests: XCTestCase {
                 "schedulingConfig": {"retryError": 1, "confirmOptOutScan": 2, "maintenanceScan": 3, "maxAttempts": -1}
             }
             """.data(using: .utf8)!
-        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "")
+        let brokerDB = BrokerDB(id: 1, name: "TestBroker", json: brokerData, version: "1.0", url: "", eTag: "")
 
         // When
         let result = try sut.mapToModel(brokerDB)

@@ -20,7 +20,7 @@ import AppKit
 import BrowserServicesKit
 import Combine
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
@@ -69,32 +69,18 @@ final class VPNPreferencesModel: ObservableObject {
         }
     }
 
-    private var isAppExclusionsFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.networkProtectionAppExclusions)
-    }
-
     var isRiskySitesProtectionFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection)
     }
 
-    private var isExclusionsFeatureAvailableInBuild: Bool {
+    /// Whether new app exclusions should be shown
+    ///
+    var showExclusionsFeature: Bool {
 #if APPSTORE
         vpnAppState.isUsingSystemExtension
 #else
         true
 #endif
-    }
-
-    /// Whether legacy app exclusions should be shown
-    ///
-    var showLegacyExclusionsFeature: Bool {
-        isExclusionsFeatureAvailableInBuild && !isAppExclusionsFeatureEnabled
-    }
-
-    /// Whether new app exclusions should be shown
-    ///
-    var showNewExclusionsFeature: Bool {
-        isExclusionsFeatureAvailableInBuild && isAppExclusionsFeatureEnabled
     }
 
     @Published
@@ -329,18 +315,24 @@ final class VPNPreferencesModel: ObservableObject {
     // MARK: - Actions
 
     @MainActor
+    func openVPNViewInMainWindow() {
+        PixelKit.fire(PrivacyProPixel.privacyProVPNSettings)
+        NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: nil)
+    }
+
+    @MainActor
     func manageExcludedApps() {
-        WindowControllersManager.shared.showVPNAppExclusions()
+        Application.appDelegate.windowControllersManager.showVPNAppExclusions()
     }
 
     @MainActor
     func manageExcludedSites() {
-        WindowControllersManager.shared.showVPNDomainExclusions()
+        Application.appDelegate.windowControllersManager.showVPNDomainExclusions()
     }
 
     @MainActor
     func openNewTab(with url: URL) {
-        WindowControllersManager.shared.show(url: url, source: .ui, newTab: true)
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     private func updateDNSSettings() {

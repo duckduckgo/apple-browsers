@@ -21,34 +21,42 @@ import os.log
 
 public enum OAuthClientError: Error, LocalizedError, Equatable {
     case internalError(String)
-    case missingTokens
-    case missingRefreshToken
+    case missingTokenContainer
     case unauthenticated
     /// When both access token and refresh token are expired
     case refreshTokenExpired
     case invalidTokenRequest
+    case authMigrationNotPerformed
+    case unknownAccount
 
     public var errorDescription: String? {
         switch self {
         case .internalError(let error):
             return "Internal error: \(error)"
-        case .missingTokens:
-            return "No token available"
-        case .missingRefreshToken:
-            return "No refresh token available, please re-authenticate"
+        case .missingTokenContainer:
+            return "No tokens available"
         case .unauthenticated:
             return "The account is not authenticated, please re-authenticate"
         case .refreshTokenExpired:
             return "The refresh token is expired, the token is unrecoverable please re-authenticate"
         case .invalidTokenRequest:
             return "Invalid token request"
+        case .authMigrationNotPerformed:
+            return "Auth migration not needed"
+        case .unknownAccount:
+            return "Unknown account"
         }
+    }
+
+    public var localizedDescription: String {
+        errorDescription ?? "Unknown"
     }
 }
 
 /// Provides the locally stored tokens container
 public protocol AuthTokenStoring {
-    var tokenContainer: TokenContainer? { get set }
+    func getTokenContainer() throws -> TokenContainer?
+    func saveTokenContainer(_ tokenContainer: TokenContainer?) throws
 }
 
 /// Provides the legacy AuthToken V1
@@ -84,7 +92,9 @@ public protocol OAuthClient {
 
     var isUserAuthenticated: Bool { get }
 
-    var currentTokenContainer: TokenContainer? { get set }
+    func currentTokenContainer() throws -> TokenContainer?
+
+    func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws
 
     /// Returns a tokens container based on the policy
     /// - `.local`: Returns what's in the storage, as it is, throws an error if no token is available
@@ -95,8 +105,8 @@ public protocol OAuthClient {
     func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer
 
     /// Migrate access token v1 to auth token v2 if needed
-    /// - Returns: A valid TokenContainer if a token v1 is found in the LegacyTokenContainer, nil if no v1 token is available. Throws an error in case of failures during the migration
-    func migrateV1Token() async throws -> TokenContainer?
+    /// - Throws: An error in case of failures during the migration or a `OAuthClientError.authMigrationNotPerformed` if the migration is not needed or not possible
+    func migrateV1Token() async throws
 
     /// Use the TokenContainer provided
     func adopt(tokenContainer: TokenContainer)
@@ -112,7 +122,7 @@ public protocol OAuthClient {
     /// Exchange token v1 for tokens v2
     /// - Parameter accessTokenV1: The legacy auth token
     /// - Returns: A TokenContainer with access and refresh tokens
-    func exchange(accessTokenV1: String) async throws -> TokenContainer
+    @discardableResult func exchange(accessTokenV1: String) async throws -> TokenContainer
 
     // MARK: Logout
 
@@ -131,17 +141,14 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         static let redirectURI = "com.duckduckgo:/authcb"
         static let availableScopes = [ "privacypro" ]
 
-#if DEBUG
         /// The seconds before the expiry date when we consider a token effectively expired
-        static let tokenExpiryBufferInterval: TimeInterval = .seconds(30)
-#else
-        static let tokenExpiryBufferInterval: TimeInterval = .minutes(10)
-#endif
+        static let tokenExpiryBufferInterval: TimeInterval = .seconds(45)
     }
 
     private let authService: any OAuthService
     private var tokenStorage: any AuthTokenStoring
     private var legacyTokenStorage: (any LegacyAuthTokenStoring)?
+    private var migrationOngoingTask: Task<Void, Error>?
 
     public init(tokensStorage: any AuthTokenStoring,
                 legacyTokenStorage: (any LegacyAuthTokenStoring)?,
@@ -165,7 +172,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     func getVerificationCodes() async throws -> (codeVerifier: String, codeChallenge: String) {
         Logger.OAuthClient.log("Getting verification codes")
-        let codeVerifier = OAuthCodesGenerator.codeVerifier
+        let codeVerifier = try OAuthCodesGenerator.generateCodeVerifier()
         guard let codeChallenge = OAuthCodesGenerator.codeChallenge(codeVerifier: codeVerifier) else {
             Logger.OAuthClient.error("Failed to get verification codes")
             throw OAuthClientError.internalError("Failed to generate code challenge")
@@ -203,20 +210,21 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     // MARK: - Public
 
     public var isUserAuthenticated: Bool {
-        tokenStorage.tokenContainer != nil
+        let tokenContainer = try? tokenStorage.getTokenContainer()
+        return tokenContainer != nil
     }
 
-    public var currentTokenContainer: TokenContainer? {
-        get  {
-            tokenStorage.tokenContainer
-        }
-        set {
-            tokenStorage.tokenContainer = newValue
-        }
+    public func currentTokenContainer() throws -> TokenContainer? {
+        try tokenStorage.getTokenContainer()
     }
 
+    public func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws {
+        try tokenStorage.saveTokenContainer(tokenContainer)
+    }
+
+    // swiftlint:disable:next cyclomatic_complexity
     public func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
-        let localTokenContainer = tokenStorage.tokenContainer
+        let localTokenContainer = try tokenStorage.getTokenContainer()
 
         if policy != .local,
            let localTokenContainer,
@@ -226,11 +234,10 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
 
         switch policy {
-
         case .local:
             guard let localTokenContainer else {
                 Logger.OAuthClient.log("Tokens not found")
-                throw OAuthClientError.missingTokens
+                throw OAuthClientError.missingTokenContainer
             }
             Logger.OAuthClient.log("Local tokens found, expiry: \(localTokenContainer.decodedAccessToken.exp.value, privacy: .public)")
             return localTokenContainer
@@ -238,37 +245,44 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         case .localValid:
             guard let localTokenContainer else {
                 Logger.OAuthClient.log("Tokens not found")
-                throw OAuthClientError.missingTokens
+                throw OAuthClientError.missingTokenContainer
             }
             let tokenExpiryDate = localTokenContainer.decodedAccessToken.exp.value
             Logger.OAuthClient.log("Local tokens found, expiry: \(tokenExpiryDate, privacy: .public)")
 
             // If the token expires in less than `Constants.tokenExpiryBufferInterval` minutes we treat it as already expired
-            let expiresSoon = tokenExpiryDate.timeIntervalSinceNow < Constants.tokenExpiryBufferInterval
+            let expirationInterval = tokenExpiryDate.timeIntervalSinceNow
+            let expiresSoon = expirationInterval < Constants.tokenExpiryBufferInterval
             if localTokenContainer.decodedAccessToken.isExpired() || expiresSoon {
-                Logger.OAuthClient.log("Refreshing local expired token")
+                Logger.OAuthClient.log("Refreshing local already expired token")
+                return try await getTokens(policy: .localForceRefresh)
+            } else if expiresSoon {
+                Logger.OAuthClient.log("Refreshing local token expiring in \(expirationInterval)s")
                 return try await getTokens(policy: .localForceRefresh)
             } else {
                 return localTokenContainer
             }
 
         case .localForceRefresh:
-            guard let refreshToken = localTokenContainer?.refreshToken else {
-                Logger.OAuthClient.log("Refresh token not found")
-                throw OAuthClientError.missingRefreshToken
+            guard let localTokenContainer else {
+                Logger.OAuthClient.log("Tokens not found")
+                throw OAuthClientError.missingTokenContainer
             }
             do {
-                let refreshTokenResponse = try await authService.refreshAccessToken(clientID: Constants.clientID, refreshToken: refreshToken)
+                let refreshTokenResponse = try await authService.refreshAccessToken(clientID: Constants.clientID, refreshToken: localTokenContainer.refreshToken)
                 let refreshedTokens = try await decode(accessToken: refreshTokenResponse.accessToken, refreshToken: refreshTokenResponse.refreshToken)
                 Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
-                tokenStorage.tokenContainer = refreshedTokens
+                try tokenStorage.saveTokenContainer(refreshedTokens)
                 return refreshedTokens
-            } catch OAuthServiceError.authAPIError(let code) where code == OAuthRequest.BodyErrorCode.invalidTokenRequest {
+            } catch OAuthServiceError.authAPIError(let code) where code == .invalidTokenRequest {
                 Logger.OAuthClient.error("Failed to refresh token: invalidTokenRequest")
                 throw OAuthClientError.invalidTokenRequest
-            } catch OAuthServiceError.authAPIError(let code) {
-                Logger.OAuthClient.error("Failed to refresh token: \(code.rawValue, privacy: .public), \(code.description, privacy: .public)")
-                throw OAuthServiceError.authAPIError(code: code)
+            } catch OAuthServiceError.authAPIError(let code) where code == .unknownAccount {
+                Logger.OAuthClient.error("Failed to refresh token: unknownAccount")
+                throw OAuthClientError.unknownAccount
+            } catch {
+                Logger.OAuthClient.error("Failed to refresh token: \(error.localizedDescription, privacy: .public)")
+                throw error
             }
 
         case .createIfNeeded:
@@ -277,52 +291,55 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             } catch {
                 Logger.OAuthClient.log("Local token not found, creating a new account")
                 do {
-                    let tokens = try await createAccount()
-                    tokenStorage.tokenContainer = tokens
-                    return tokens
+                    let tokenContainer = try await createAccount()
+                    try tokenStorage.saveTokenContainer(tokenContainer)
+                    return tokenContainer
                 } catch {
-                    Logger.OAuthClient.fault("Failed to create account: \(error, privacy: .public)")
+                    Logger.OAuthClient.fault("Failed to create account: \(error.localizedDescription, privacy: .public)")
                     throw error
                 }
             }
         }
     }
 
-    /// Tries to retrieve the v1 auth token stored locally, if present performs a migration to v2 and removes the old token
-    public func migrateV1Token() async throws -> TokenContainer? {
-        guard !isUserAuthenticated else {
-            Logger.OAuthClient.log("Migration not needed, user is already authenticated")
-            return nil
+    /// Tries to retrieve the v1 auth token stored locally, if present performs a migration to v2
+    public func migrateV1Token() async throws {
+
+        if let task = migrationOngoingTask {
+            return try await task.value
         }
 
-        guard let legacyTokenStorage else {
-            Logger.OAuthClient.fault("Auth migration attempted without a LegacyTokenStorage")
-            return nil
-        }
+        let task = Task {
+            defer { migrationOngoingTask = nil }
 
-        guard let legacyToken = legacyTokenStorage.token,
-              !legacyToken.isEmpty else {
-            Logger.OAuthClient.log("No V1 token available, migration not needed")
-            return nil
-        }
+            guard !isUserAuthenticated else {
+                throw OAuthClientError.authMigrationNotPerformed
+            }
 
-        Logger.OAuthClient.log("Migrating legacy token...")
-        do {
-            let tokenContainer = try await exchange(accessTokenV1: legacyToken)
+            guard let legacyTokenStorage else {
+                Logger.OAuthClient.fault("Auth migration attempted without a LegacyTokenStorage")
+                throw OAuthClientError.authMigrationNotPerformed
+            }
+
+            guard let legacyToken = legacyTokenStorage.token,
+                  !legacyToken.isEmpty else {
+                throw OAuthClientError.authMigrationNotPerformed
+            }
+
+            Logger.OAuthClient.log("Migrating v1 token...")
+            try await exchange(accessTokenV1: legacyToken)
             Logger.OAuthClient.log("Tokens migrated successfully")
 
             // NOTE: We don't remove the old token to allow roll back to Auth V1
-
-            return tokenContainer
-        } catch {
-            Logger.OAuthClient.error("Failed to migrate legacy token: \(error, privacy: .public)")
-            throw error
         }
+
+        migrationOngoingTask = task
+        return try await task.value
     }
 
     public func adopt(tokenContainer: TokenContainer) {
         Logger.OAuthClient.log("Adopting TokenContainer")
-        tokenStorage.tokenContainer = tokenContainer
+        try? tokenStorage.saveTokenContainer(tokenContainer)
     }
 
     // MARK: Create
@@ -343,28 +360,28 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         let (codeVerifier, codeChallenge) = try await getVerificationCodes()
         let authSessionID = try await authService.authorize(codeChallenge: codeChallenge)
         let authCode = try await authService.login(withSignature: signature, authSessionID: authSessionID)
-        let tokens = try await getTokens(authCode: authCode, codeVerifier: codeVerifier)
-        tokenStorage.tokenContainer = tokens
+        let tokenContainer = try await getTokens(authCode: authCode, codeVerifier: codeVerifier)
+        try tokenStorage.saveTokenContainer(tokenContainer)
         Logger.OAuthClient.log("Activation completed")
-        return tokens
+        return tokenContainer
     }
 
     // MARK: Exchange V1 to V2 token
 
-    public func exchange(accessTokenV1: String) async throws -> TokenContainer {
+    @discardableResult public func exchange(accessTokenV1: String) async throws -> TokenContainer {
         Logger.OAuthClient.log("Exchanging access token V1 to V2")
         let (codeVerifier, codeChallenge) = try await getVerificationCodes()
         let authSessionID = try await authService.authorize(codeChallenge: codeChallenge)
         let authCode = try await authService.exchangeToken(accessTokenV1: accessTokenV1, authSessionID: authSessionID)
         let tokenContainer = try await getTokens(authCode: authCode, codeVerifier: codeVerifier)
-        tokenStorage.tokenContainer = tokenContainer
+        try tokenStorage.saveTokenContainer(tokenContainer)
         return tokenContainer
     }
 
     // MARK: Logout
 
     public func logout() async throws {
-        let existingToken = tokenStorage.tokenContainer?.accessToken
+        let existingToken = try tokenStorage.getTokenContainer()?.accessToken
         removeLocalAccount()
 
         // Also removing V1
@@ -372,13 +389,15 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         legacyTokenStorage?.token = nil
 
         if let existingToken {
-            Logger.OAuthClient.log("Logging out")
-            try await authService.logout(accessToken: existingToken)
+            Task { // Not waiting for an answer
+                Logger.OAuthClient.log("Invalidating the V2 token")
+                try? await authService.logout(accessToken: existingToken)
+            }
         }
     }
 
     public func removeLocalAccount() {
         Logger.OAuthClient.log("Removing local account")
-        tokenStorage.tokenContainer = nil
+        try? tokenStorage.saveTokenContainer(nil)
     }
 }

@@ -76,12 +76,12 @@ final class SaveIdentityViewController: NSViewController {
             PixelKit.fire(GeneralPixel.autofillItemSaved(kind: .identity))
         } catch {
             Logger.general.error("Failed to store identity \(error.localizedDescription)")
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
         }
     }
 
     @IBAction func onOpenPreferencesClicked(sender: NSButton) {
-        WindowControllersManager.shared.showPreferencesTab()
+        Application.appDelegate.windowControllersManager.showPreferencesTab()
         self.delegate?.shouldCloseSaveIdentityViewController(self)
     }
 

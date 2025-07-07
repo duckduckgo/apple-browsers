@@ -31,13 +31,14 @@ extension SubscriptionManagerV2Tests {
         let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
                                                               purchasePlatform: .appStore,
                                                               customBaseSubscriptionURL: customBaseSubscriptionURL)
-
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         let subscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: subscriptionEnvironment,
-            pixelHandler: { _ in },
+            pixelHandler: MockPixelHandler(),
             isInternalUserEnabled: isInternalUserEnabled
         )
 
@@ -56,13 +57,14 @@ extension SubscriptionManagerV2Tests {
         let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
                                                               purchasePlatform: .appStore,
                                                               customBaseSubscriptionURL: customBaseSubscriptionURL)
-
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
         let subscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: subscriptionEnvironment,
-            pixelHandler: { _ in },
+            pixelHandler: MockPixelHandler(),
             isInternalUserEnabled: isInternalUserEnabled
         )
 
@@ -79,13 +81,14 @@ extension SubscriptionManagerV2Tests {
 
         let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .production,
                                                               purchasePlatform: .appStore)
-
+        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.subscriptionUnitTests.\(UUID().uuidString)")!
         let subscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
+            userDefaults: userDefaults,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: subscriptionEnvironment,
-            pixelHandler: { _ in },
+            pixelHandler: MockPixelHandler(),
             isInternalUserEnabled: isInternalUserEnabled
         )
 

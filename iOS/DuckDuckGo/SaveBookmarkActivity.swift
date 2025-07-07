@@ -46,8 +46,9 @@ class SaveBookmarkActivity: UIActivity {
         return isFavorite ? .saveFavoriteInDuckDuckGo : .saveBookmarkInDuckDuckGo
     }
 
+    // These are styled to match iOS shareshare, but we should try to use system ones if possible in future
     override var activityImage: UIImage {
-        return (isFavorite ? UIImage(named: "sharesheet-favorite") : UIImage(named: "sharesheet-bookmark")) ?? #imageLiteral(resourceName: "LogoShare")
+        return isFavorite ? UIImage(resource: .sharesheetFavorite) : UIImage(resource: .sharesheetBookmark)
     }
 
     override func canPerform(withActivityItems activityItems: [Any]) -> Bool {

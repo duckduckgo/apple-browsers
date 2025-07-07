@@ -19,32 +19,132 @@
 
 import Testing
 import class UIKit.UIDevice
+@testable import Core
 @testable import DuckDuckGo
 
 struct OnboardingManagerTests {
 
-    @Test("Check correct onboarding steps are returned for iPad")
-    func checkOnboardingSteps_iPhone() async throws {
-        // GIVEN
-        let sut = OnboardingManager(featureFlagger: MockFeatureFlagger(), variantManager: MockVariantManager(), isIphone: true)
+    struct OnboardingStepsNewUser {
+        let variantManagerMock = MockVariantManager(
+            currentVariant: VariantIOS(
+                name: "test_variant",
+                weight: 0,
+                isIncluded: VariantIOS.When.always,
+                features: []
+            )
+        )
 
-        // WHEN
-        let result = sut.onboardingSteps
+        @Test("Check correct onboarding steps are returned for iPhone")
+        func checkOnboardingSteps_iPhone() async throws {
+            // GIVEN
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock, isIphone: true)
 
-        // THEN
-        #expect(result == OnboardingIntroStep.defaultIPhoneFlow)
+            // WHEN
+            let result = sut.onboardingSteps
+
+            // THEN
+            #expect(result == OnboardingIntroStep.newUserSteps(isIphone: true))
+        }
+
+        @Test("Check correct onboarding steps are returned for iPad")
+        func checkOnboardingSteps_iPad() {
+            // GIVEN
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock, isIphone: false)
+
+            // WHEN
+            let result = sut.onboardingSteps
+
+            // THEN
+            #expect(result == OnboardingIntroStep.newUserSteps(isIphone: false))
+        }
+
     }
 
-    @Test("Check correct onboarding steps are returned for iPad")
-    func checkOnboardingSteps_iPad() {
-        // GIVEN
-        let sut = OnboardingManager(featureFlagger: MockFeatureFlagger(), variantManager: MockVariantManager(), isIphone: false)
+    struct OnboardingStepsReturningUser {
+        let variantManagerMock = MockVariantManager(
+            currentVariant: VariantIOS(
+                name: "ru",
+                weight: 0,
+                isIncluded: VariantIOS.When.always,
+                features: []
+            )
+        )
 
-        // WHEN
-        let result = sut.onboardingSteps
+        @Test("Check correct onboarding steps are returned for iPhone")
+        func checkOnboardingSteps_iPhone() async throws {
+            // GIVEN
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock, isIphone: true)
 
-        // THEN
-        #expect(result == OnboardingIntroStep.defaultIPadFlow)
+            // WHEN
+            let result = sut.onboardingSteps
+
+            // THEN
+            #expect(result == OnboardingIntroStep.returningUserSteps(isIphone: true))
+        }
+
+        @Test("Check correct onboarding steps are returned for iPad")
+        func checkOnboardingSteps_iPad() {
+            // GIVEN
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock, isIphone: false)
+
+            // WHEN
+            let result = sut.onboardingSteps
+
+            // THEN
+            #expect(result == OnboardingIntroStep.returningUserSteps(isIphone: false))
+        }
+
+    }
+
+    struct NewUserValue {
+
+        @Test(
+            "Check correct user type value is returned",
+            arguments: zip(
+                [
+                    OnboardingUserType.notSet,
+                    .newUser,
+                    .returningUser,
+                ],
+                [
+                    true,
+                    true,
+                    false,
+                ]
+            )
+        )
+        func checkUserType(_ userType: OnboardingUserType, expectedResult: Bool) {
+            // GIVEN
+            let settingsMock = AppSettingsMock()
+            settingsMock.onboardingUserType = userType
+            let variant = VariantIOS(name: "test_variant", weight: 0, isIncluded: VariantIOS.When.always, features: [])
+            let variantManagerMock = MockVariantManager(currentVariant: variant)
+            let sut = OnboardingManager(appDefaults: settingsMock, featureFlagger: MockFeatureFlagger(), variantManager: variantManagerMock)
+
+            // WHEN
+            let result = sut.isNewUser
+
+            // THEN
+            #expect(result == expectedResult)
+        }
+
+    }
+
+    struct URLSettingsProvider {
+
+        @Test("Check Right Settings URL is returned")
+        func checkCorrectSettingsURLIsReturned() {
+            // GIVEN
+            let sut = OnboardingManager(appDefaults: AppSettingsMock(), featureFlagger: MockFeatureFlagger(), variantManager: MockVariantManager())
+            let expectedSettingsURL = UIApplication.openSettingsURLString
+
+            // WHEN
+            let result = sut.settingsURLPath
+
+            // THEN
+            #expect(result == expectedSettingsURL)
+        }
+
     }
 
 }

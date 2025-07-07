@@ -19,10 +19,11 @@ disabled_rules:
   - static_over_final_class
   - non_optional_string_data_conversion
   - mark
+  - redundant_sendable
 
 opt_in_rules:
   - file_header
-  # - explicit_init
+  - closure_spacing
 
 custom_rules:
   explicit_non_final_class:
@@ -70,8 +71,8 @@ file_header:
 
 # General Config
 excluded:
-  - SharedPackages/BrowserServicesKit/Package.swift
-  - SharedPackages/BrowserServicesKit/.build
+  - SharedPackages/*/Package.swift
+  - SharedPackages/*/.build
   - SharedPackages/BrowserServicesKit/scripts/
   - SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Model/AnyDecodable.swift
   - SharedPackages/BrowserServicesKit/Sources/Common/Concurrency/AsyncStream.swift
@@ -79,13 +80,15 @@ excluded:
   - iOS/DuckDuckGo/UserText.swift
   - iOS/fastlane/SnapshotHelper.swift
   - iOS/LocalPackages/*/Package.swift
+  - iOS/LocalPackages/*/.build
   - iOS/PacketTunnelProvider/ProxyServer
+  - iOS/scripts
   - iOS/.ruby-lsp
   - macOS/DuckDuckGo/Common/Localizables/UserText.swift
   - macOS/LocalPackages/*/Package.swift
+  - macOS/LocalPackages/*/.build
   - macOS/scripts
   - macOS/DerivedData
   - macOS/release
-  - macOS/DerivedData
   - macOS/.ruby-lsp
   - macOS/vendor

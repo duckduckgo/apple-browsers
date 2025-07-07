@@ -17,6 +17,8 @@ tags:
 - inputText: "https://privacy-test-pages.site"
 - pressKey: Enter
 
+- assertVisible: ".*Privacy Test Pages.*"
+
 # Add site to favorites from menu
 - assertVisible: "Browsing menu"
 - tapOn: "Browsing menu"
@@ -44,7 +46,10 @@ tags:
 - tapOn: 
     id: "searchEntry"
 - inputText: "pri"
-- assertVisible: "Bookmark-Fav-24"
+
+# Wildcard because identifiers of list items contain suffix to make them unique
+- assertVisible: 
+    id: "Autocomplete.Suggestions.ListItem.Favorite-pri.*"
 - tapOn: "Cancel"
 
 # Check favorites from bookmarks screen

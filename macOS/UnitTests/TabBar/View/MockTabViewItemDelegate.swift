@@ -16,7 +16,10 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
+import WebKit
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class MockTabViewItemDelegate: TabBarViewItemDelegate {
@@ -29,12 +32,17 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
     var audioState: WKWebView.AudioState?
     var isTabBarItemAlreadyBookmarked = false
 
+    private(set) var tabBarViewItemWillOpenContextMenuCalled = false
     private(set) var tabBarViewItemBookmarkThisPageActionCalled = false
     private(set) var tabBarViewItemRemoveBookmarkActionCalled = false
     private(set) var tabBarViewItemBookmarkAllOpenTabsActionCalled = false
 
     func tabBarViewItem(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem, isMouseOver: Bool) {
 
+    }
+
+    func tabBarViewItemWillOpenContextMenu(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+        tabBarViewItemWillOpenContextMenuCalled = true
     }
 
     func tabBarViewItemCloseAction(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
@@ -122,6 +130,14 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
     }
 
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, replaceContentWithDroppedStringValue: String) {
+
+    }
+
+    func tabBarViewItemCrashAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+
+    }
+
+    func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool) {
 
     }
 

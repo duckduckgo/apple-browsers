@@ -1,0 +1,28 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Import-Color-16_svg__a)">
+    <path fill="#888" d="M10 2.25a1.25 1.25 0 0 0-1.122-1.243L8.75 1h-1.5C6.56 1 6 1.56 6 2.25v3c0 .69.56 1.25 1.25 1.25h1.5c.69 0 1.25-.56 1.25-1.25v-3Zm1 3A2.25 2.25 0 0 1 8.75 7.5h-1.5A2.25 2.25 0 0 1 5 5.25v-3A2.25 2.25 0 0 1 7.25 0h1.5l.23.012A2.25 2.25 0 0 1 11 2.25v3Z"/>
+    <path fill="#E2A412" d="M7.417 14A5 5 0 0 1 15 8.001V4.5a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1V13a1 1 0 0 0 1 1h5.417Z"/>
+    <path fill="url(#Import-Color-16_svg__b)" d="M5 3H3v11.5h2V3Zm8 0h-2v4.1a5.021 5.021 0 0 1 2 0V3Z"/>
+    <path fill="url(#Import-Color-16_svg__c)" d="M6.84 15c.478 0 .768-.562.577-1"/>
+    <path fill="#3969EF" d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/>
+    <path fill="url(#Import-Color-16_svg__d)" d="M15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0Zm1 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/>
+    <path fill="#fff" d="M10.146 12.354a.5.5 0 0 1 .707-.708l.647.647V10.5l.01-.1a.5.5 0 0 1 .98 0l.01.1v1.793l.646-.647.079-.064a.5.5 0 0 1 .693.693l-.064.079-1.5 1.5a.5.5 0 0 1-.708 0l-1.5-1.5Z"/>
+  </g>
+  <defs>
+    <linearGradient id="Import-Color-16_svg__b" x1="8" x2="8" y1="3.2" y2="14.4" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FC3"/>
+      <stop offset="1" stop-color="#F9BE1A"/>
+    </linearGradient>
+    <linearGradient id="Import-Color-16_svg__c" x1="8" x2="8" y1="3" y2="15.219" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C18010"/>
+      <stop offset="1" stop-color="#92540C"/>
+    </linearGradient>
+    <linearGradient id="Import-Color-16_svg__d" x1="12" x2="12" y1="8.5" y2="15.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2B55CA"/>
+      <stop offset="1" stop-color="#1E42A4"/>
+    </linearGradient>
+    <clipPath id="Import-Color-16_svg__a">
+      <path fill="#fff" d="M0 16h16V0H0z"/>
+    </clipPath>
+  </defs>
+</svg>

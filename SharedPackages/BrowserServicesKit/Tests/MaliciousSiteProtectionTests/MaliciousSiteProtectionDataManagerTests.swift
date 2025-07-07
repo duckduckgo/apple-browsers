@@ -211,12 +211,18 @@ class MaliciousSiteProtectionDataManagerTests: XCTestCase {
 
     func testWriteAndLoadData() async throws {
         // Get and write data
-        let expectedHashPrefixes = Set(["aabb"])
-        let expectedFilterSet = Set([Filter(hash: "dummyhash", regex: "dummyregex")])
+        let expectedHashPrefixes = ["aabb"]
+        let expectedHashPrefixesSet = Set(expectedHashPrefixes)
+        let expectedHashPrefixChangeSet = APIClient.ChangeSetResponse(insert: expectedHashPrefixes, delete: [], revision: 65, replace: true)
+        let expectedFilters = [Filter(hash: "updated", regex: "updated")]
+        let expectedFilterSet = Set(expectedFilters)
+        let expectedFiltersChangeSet = APIClient.ChangeSetResponse(insert: expectedFilters, delete: [], revision: 65, replace: true)
         let expectedRevision = 65
+        embeddedDataProvider.filterSet = expectedFilterSet
+        embeddedDataProvider.hashPrefixes = expectedHashPrefixesSet
 
-        try await dataManager.store(HashPrefixSet(revision: expectedRevision, items: expectedHashPrefixes), for: .hashPrefixes(threatKind: .phishing))
-        try await dataManager.store(FilterDictionary(revision: expectedRevision, items: expectedFilterSet), for: .filterSet(threatKind: .phishing))
+        try await dataManager.updateDataSet(with: .hashPrefixes(threatKind: .phishing), changeSet: expectedHashPrefixChangeSet)
+        try await dataManager.updateDataSet(with: .filterSet(threatKind: .phishing), changeSet: expectedFiltersChangeSet)
 
         let actualFilterSet = await dataManager.dataSet(for: .filterSet(threatKind: .phishing))
         let actualHashPrefix = await dataManager.dataSet(for: .hashPrefixes(threatKind: .phishing))
@@ -224,7 +230,7 @@ class MaliciousSiteProtectionDataManagerTests: XCTestCase {
         let actualHashPrefixRevision = actualFilterSet.revision
 
         XCTAssertEqual(actualFilterSet, FilterDictionary(revision: expectedRevision, items: expectedFilterSet))
-        XCTAssertEqual(actualHashPrefix.set, expectedHashPrefixes)
+        XCTAssertEqual(actualHashPrefix.set, expectedHashPrefixesSet)
         XCTAssertEqual(actualFilterSetRevision, 65)
         XCTAssertEqual(actualHashPrefixRevision, 65)
 
@@ -237,7 +243,7 @@ class MaliciousSiteProtectionDataManagerTests: XCTestCase {
         let reloadedHashPrefixRevision = actualFilterSet.revision
 
         XCTAssertEqual(reloadedFilterSet, FilterDictionary(revision: expectedRevision, items: expectedFilterSet))
-        XCTAssertEqual(reloadedHashPrefix.set, expectedHashPrefixes)
+        XCTAssertEqual(reloadedHashPrefix.set, expectedHashPrefixesSet)
         XCTAssertEqual(reloadedFilterSetRevision, 65)
         XCTAssertEqual(reloadedHashPrefixRevision, 65)
     }
@@ -260,10 +266,15 @@ class MaliciousSiteProtectionDataManagerTests: XCTestCase {
         XCTAssertEqual(loadedHashPrefixes.set, initialHashPrefixes)
 
         // Update in-memory data
-        let updatedFilterSet = Set([Filter(hash: "updated", regex: "updated")])
-        let updatedHashPrefixes = Set(["updatedPrefix"])
-        try await dataManager.store(HashPrefixSet(revision: 1, items: updatedHashPrefixes), for: .hashPrefixes(threatKind: .phishing))
-        try await dataManager.store(FilterDictionary(revision: 1, items: updatedFilterSet), for: .filterSet(threatKind: .phishing))
+        let updatedFilters = [Filter(hash: "updated", regex: "updated")]
+        let updatedFilterSet = Set(updatedFilters)
+        let filtersChangeSet = APIClient.ChangeSetResponse(insert: updatedFilters, delete: [], revision: 1, replace: true)
+        let updatedHashPrefixes = ["updatedPrefix"]
+        let updatedHashPrefixesSet = Set(updatedHashPrefixes)
+        let hashPrefixesChangeSet = APIClient.ChangeSetResponse(insert: updatedHashPrefixes, delete: [], revision: 1, replace: true)
+
+        try await dataManager.updateDataSet(with: .hashPrefixes(threatKind: .phishing), changeSet: hashPrefixesChangeSet)
+        try await dataManager.updateDataSet(with: .filterSet(threatKind: .phishing), changeSet: filtersChangeSet)
 
         let actualFilterSet = await dataManager.dataSet(for: .filterSet(threatKind: .phishing))
         let actualHashPrefix = await dataManager.dataSet(for: .hashPrefixes(threatKind: .phishing))
@@ -271,7 +282,7 @@ class MaliciousSiteProtectionDataManagerTests: XCTestCase {
         let actualHashPrefixRevision = actualFilterSet.revision
 
         XCTAssertEqual(actualFilterSet, FilterDictionary(revision: 1, items: updatedFilterSet))
-        XCTAssertEqual(actualHashPrefix.set, updatedHashPrefixes)
+        XCTAssertEqual(actualHashPrefix.set, updatedHashPrefixesSet)
         XCTAssertEqual(actualFilterSetRevision, 1)
         XCTAssertEqual(actualHashPrefixRevision, 1)
 
@@ -289,28 +300,36 @@ class MaliciousSiteProtectionDataManagerTests: XCTestCase {
         XCTAssertEqual(reloadedHashPrefixRevision, 1)
     }
 
-    func testSuccessfulWriteOfDataDoesNotThrowError() async throws {
+    func testSuccessfulUpdateOfDataDoesNotThrowError() async throws {
         // GIVEN
         fileStore.writeSuccess = true
-        let expectedHashPrefixes = Set(["aabb"])
-        let expectedFilterSet = Set([Filter(hash: "dummyhash", regex: "dummyregex")])
         let expectedRevision = 65
+        let expectedHashPrefixes = ["aabb"]
+        let expectedHashPrefixChangeSet = APIClient.ChangeSetResponse(insert: expectedHashPrefixes, delete: [], revision: expectedRevision, replace: true)
+        let expectedFilters = [Filter(hash: "dummyhash", regex: "dummyregex")]
+        let expectedFiltersChangeSet = APIClient.ChangeSetResponse(insert: expectedFilters, delete: [], revision: expectedRevision, replace: true)
+        embeddedDataProvider.filterSet = Set(expectedFilters)
+        embeddedDataProvider.hashPrefixes = Set(expectedHashPrefixes)
 
         // WHEN
-        await XCTAssertNoThrow(try await dataManager.store(HashPrefixSet(revision: expectedRevision, items: expectedHashPrefixes), for: .hashPrefixes(threatKind: .phishing)))
-        await XCTAssertNoThrow(try await dataManager.store(FilterDictionary(revision: expectedRevision, items: expectedFilterSet), for: .filterSet(threatKind: .phishing)))
+        await XCTAssertNoThrow(try await dataManager.updateDataSet(with: .hashPrefixes(threatKind: .phishing), changeSet: expectedHashPrefixChangeSet))
+        await XCTAssertNoThrow(try await dataManager.updateDataSet(with: .filterSet(threatKind: .phishing), changeSet: expectedFiltersChangeSet))
     }
 
-    func testUnsuccessfulWriteOfDataThrowsError() async {
+    func testUnsuccessfulUpdateOfDataThrowsError() async {
         // GIVEN
         fileStore.writeSuccess = false
-        let expectedHashPrefixes = Set(["aabb"])
-        let expectedFilterSet = Set([Filter(hash: "dummyhash", regex: "dummyregex")])
         let expectedRevision = 65
+        let expectedHashPrefixes = ["aabb"]
+        let expectedHashPrefixChangeSet = APIClient.ChangeSetResponse(insert: expectedHashPrefixes, delete: [], revision: expectedRevision, replace: true)
+        let expectedFilters = [Filter(hash: "dummyhash", regex: "dummyregex")]
+        let expectedFiltersChangeSet = APIClient.ChangeSetResponse(insert: expectedFilters, delete: [], revision: expectedRevision, replace: true)
+        embeddedDataProvider.filterSet = Set(expectedFilters)
+        embeddedDataProvider.hashPrefixes = Set(expectedHashPrefixes)
 
         // WHEN
-        await XCTAssertThrowsError(try await dataManager.store(HashPrefixSet(revision: expectedRevision, items: expectedHashPrefixes), for: .hashPrefixes(threatKind: .phishing)))
-        await XCTAssertThrowsError(try await dataManager.store(FilterDictionary(revision: expectedRevision, items: expectedFilterSet), for: .filterSet(threatKind: .phishing)))
+        await XCTAssertThrowsError(try await dataManager.updateDataSet(with: .hashPrefixes(threatKind: .phishing), changeSet: expectedHashPrefixChangeSet))
+        await XCTAssertThrowsError(try await dataManager.updateDataSet(with: .filterSet(threatKind: .phishing), changeSet: expectedFiltersChangeSet))
     }
 
 }

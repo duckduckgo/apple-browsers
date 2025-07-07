@@ -94,18 +94,22 @@ extension MirrorSite {
         ScannedBroker(name: name, url: url, status: status)
     }
 
-    /// Determines whether a mirror site should be included in scan result calculations based on the provided date.
+    /// Determines whether a mirror site was extant on a particular date. Used to see if the mirror site should be included in scan result calculations
     ///
-    /// - Parameter date: The date for which to check if the mirror site should be included. Defaults to the current date.
-    /// - Returns: A Boolean value indicating whether the mirror site should be included.
+    /// - Parameter date: The date to check if the mirror site was extant on.
+    /// - Returns: A Boolean value indicating whether the mirror site was extant.
     ///   - `true`: If the profile was added before the given date and has not been removed, or if it was removed but the provided date is between the `addedAt` and `removedAt` timestamps.
     ///   - `false`: If the profile was either added after the given date or has been removed before the given date.
-    public func shouldWeIncludeMirrorSite(for date: Date = Date()) -> Bool {
+    public func wasExtant(on date: Date) -> Bool {
         if let removedAt = self.removedAt {
             return self.addedAt < date && date < removedAt
         } else {
             return self.addedAt < date
         }
+    }
+
+    public func isExtant() -> Bool {
+        return wasExtant(on: Date())
     }
 }
 
@@ -124,6 +128,7 @@ public struct DataBroker: Codable, Sendable {
     public let parent: String?
     public let mirrorSites: [MirrorSite]
     public let optOutUrl: String
+    public var eTag: String
 
     public var isFakeBroker: Bool {
         name.contains("fake") // A future improvement will be to add a property in the JSON file.
@@ -138,6 +143,11 @@ public struct DataBroker: Codable, Sendable {
         case parent
         case mirrorSites
         case optOutUrl
+        case eTag
+    }
+
+    enum Constants {
+        static let defaultETag = "MIGRATED_OLD_BROKER_WITH_NO_ETAG"
     }
 
     init(id: Int64? = nil,
@@ -148,7 +158,8 @@ public struct DataBroker: Codable, Sendable {
          schedulingConfig: DataBrokerScheduleConfig,
          parent: String? = nil,
          mirrorSites: [MirrorSite] = [MirrorSite](),
-         optOutUrl: String
+         optOutUrl: String,
+         eTag: String
     ) {
         self.id = id
         self.name = name
@@ -165,6 +176,7 @@ public struct DataBroker: Codable, Sendable {
         self.parent = parent
         self.mirrorSites = mirrorSites
         self.optOutUrl = optOutUrl
+        self.eTag = eTag
     }
 
     public init(from decoder: Decoder) throws {
@@ -198,7 +210,17 @@ public struct DataBroker: Codable, Sendable {
 
         optOutUrl = (try? container.decode(String.self, forKey: .optOutUrl)) ?? ""
 
+        do {
+            eTag = try container.decode(String.self, forKey: .eTag)
+        } catch {
+            eTag = Constants.defaultETag
+        }
+
         id = nil
+    }
+
+    public mutating func setETag(_ eTag: String) {
+        self.eTag = eTag
     }
 
     public func scanStep() throws -> Step {

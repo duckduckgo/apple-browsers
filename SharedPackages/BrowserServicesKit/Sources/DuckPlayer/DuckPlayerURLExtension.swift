@@ -82,6 +82,22 @@ extension URL {
         return host.contains("youtube.com") && path == "/watch"
     }
 
+    /// Returns true if the URL is a YouTube watch page that includes both a video ID and a hashtag.
+    /// This is useful for identifying YouTube URLs that navigate to specific sections of a video.
+    public var isYoutubeWatchWithHashtag: Bool {
+        guard isYoutubeWatch, let fragment = fragment, !fragment.isEmpty else {
+            return false
+        }
+
+        // Ensure the URL has a video ID parameter
+        guard let components = URLComponents(url: self, resolvingAgainstBaseURL: false),
+              components.queryItems?.contains(where: { $0.name == "v" }) == true else {
+            return false
+        }
+
+        return true
+    }
+
     public var isYoutubeWatchMainPage: Bool {
         return isYoutubeWatch && fragment == nil
     }

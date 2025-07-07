@@ -19,6 +19,7 @@
 import Foundation
 import Subscription
 import PixelKit
+import Networking
 
 // swiftlint:disable private_over_fileprivate
 #if APPSTORE
@@ -33,7 +34,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProSubscriptionActive
     case privacyProOfferScreenImpression
     case privacyProPurchaseAttempt
-    case privacyProPurchaseFailure
+    case privacyProPurchaseFailureOther
     case privacyProPurchaseFailureStoreError
     case privacyProPurchaseFailureBackendError
     case privacyProPurchaseFailureAccountNotCreated
@@ -50,14 +51,18 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProRestoreAfterPurchaseAttempt
     case privacyProSubscriptionActivated
     case privacyProWelcomeAddDevice
-    case privacyProAddDeviceEnterEmail
     case privacyProWelcomeVPN
     case privacyProWelcomePersonalInformationRemoval
+    case privacyProWelcomeAIChat
     case privacyProWelcomeIdentityRestoration
     case privacyProSubscriptionSettings
     case privacyProVPNSettings
     case privacyProPersonalInformationRemovalSettings
+    case privacyProPersonalInformationRemovalSettingsImpression
+    case privacyProPaidAIChatSettings
+    case privacyProPaidAIChatSettingsImpression
     case privacyProIdentityRestorationSettings
+    case privacyProIdentityRestorationSettingsImpression
     case privacyProSubscriptionManagementEmail
     case privacyProSubscriptionManagementPlanBilling
     case privacyProSubscriptionManagementRemoval
@@ -69,17 +74,19 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProAddEmailSuccess
     case privacyProWelcomeFAQClick
     // Auth v2
-    case privacyProDeadTokenDetected
-    case authV1MigrationFailed
-    case authV1MigrationSucceeded
-    case setSubscriptionInvalidSubscriptionValues
+    case privacyProInvalidRefreshTokenDetected(AuthV2PixelHandler.Source)
+    case privacyProInvalidRefreshTokenSignedOut
+    case privacyProInvalidRefreshTokenRecovered
+    case privacyProAuthV2MigrationFailed(AuthV2PixelHandler.Source, Error)
+    case privacyProAuthV2MigrationSucceeded(AuthV2PixelHandler.Source)
+    case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, AuthV2PixelHandler.Source, Error)
 
     var name: String {
         switch self {
         case .privacyProSubscriptionActive: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_active"
         case .privacyProOfferScreenImpression: return "m_mac_\(appDistribution)_privacy-pro_offer_screen_impression"
         case .privacyProPurchaseAttempt: return "m_mac_\(appDistribution)_privacy-pro_terms-conditions_subscribe_click"
-        case .privacyProPurchaseFailure: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_other"
+        case .privacyProPurchaseFailureOther: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_other"
         case .privacyProPurchaseFailureStoreError: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_store"
         case .privacyProPurchaseFailureBackendError: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_backend"
         case .privacyProPurchaseFailureAccountNotCreated: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_account-creation"
@@ -96,14 +103,19 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProRestoreAfterPurchaseAttempt: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-after-purchase-attempt_success"
         case .privacyProSubscriptionActivated: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_activated_u"
         case .privacyProWelcomeAddDevice: return "m_mac_\(appDistribution)_privacy-pro_welcome_add-device_click_u"
-        case .privacyProAddDeviceEnterEmail: return "m_mac_\(appDistribution)_privacy-pro_add-device_enter-email_click"
         case .privacyProWelcomeVPN: return "m_mac_\(appDistribution)_privacy-pro_welcome_vpn_click_u"
         case .privacyProWelcomePersonalInformationRemoval: return "m_mac_\(appDistribution)_privacy-pro_welcome_personal-information-removal_click_u"
+        case .privacyProWelcomeAIChat:
+            return "m_mac_\(appDistribution)_privacy-pro_welcome_ai-chat_click_u"
         case .privacyProWelcomeIdentityRestoration: return "m_mac_\(appDistribution)_privacy-pro_welcome_identity-theft-restoration_click_u"
         case .privacyProSubscriptionSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_screen_impression"
         case .privacyProVPNSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_vpn_click"
         case .privacyProPersonalInformationRemovalSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_personal-information-removal_click"
+        case .privacyProPersonalInformationRemovalSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_personal-information-removal_impression"
+        case .privacyProPaidAIChatSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_paid-ai-chat_click"
+        case .privacyProPaidAIChatSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_paid-ai-chat_impression"
         case .privacyProIdentityRestorationSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_click"
+        case .privacyProIdentityRestorationSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_impression"
         case .privacyProSubscriptionManagementEmail: return "m_mac_\(appDistribution)_privacy-pro_manage-email_edit_click"
         case .privacyProSubscriptionManagementPlanBilling: return "m_mac_\(appDistribution)_privacy-pro_settings_change-plan-or-billing_click"
         case .privacyProSubscriptionManagementRemoval: return "m_mac_\(appDistribution)_privacy-pro_settings_remove-from-device_click"
@@ -114,11 +126,13 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProOfferYearlyPriceClick: return "m_mac_\(appDistribution)_privacy-pro_offer_yearly-price_click"
         case .privacyProAddEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_add-email_success_u"
         case .privacyProWelcomeFAQClick: return "m_mac_\(appDistribution)_privacy-pro_welcome_faq_click_u"
-            // Auth v2 // todo align with android
-        case .privacyProDeadTokenDetected: return "m_privacy-pro_dead_token_detected"
-        case .authV1MigrationFailed: return "m_privacy-pro_v1migration_failed"
-        case .authV1MigrationSucceeded: return "m_privacy-pro_v1migration_succeeded"
-        case .setSubscriptionInvalidSubscriptionValues: return "m_privacy-pro_invalid_subscriptionvalues"
+            // Auth v2
+        case .privacyProInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
+        case .privacyProInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"
+        case .privacyProInvalidRefreshTokenRecovered: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_recovered"
+        case .privacyProAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
+        case .privacyProAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
+        case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
         }
     }
 
@@ -126,14 +140,36 @@ enum PrivacyProPixel: PixelKitEventV2 {
         return nil
     }
 
+    private struct PrivacyProPixelsDefaults {
+        static let errorKey = "error"
+        static let policyCacheKey = "policycache"
+        static let sourceKey = "source"
+    }
+
     var parameters: [String: String]? {
-        return nil
+        switch self {
+        case .privacyProInvalidRefreshTokenDetected(let source),
+                .privacyProAuthV2MigrationSucceeded(let source):
+            return [PrivacyProPixelsDefaults.sourceKey: source.description]
+        case .privacyProAuthV2GetTokensError(let policy, let source, let error):
+            return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
+                    PrivacyProPixelsDefaults.policyCacheKey: policy.description,
+                    PrivacyProPixelsDefaults.sourceKey: source.description]
+        case .privacyProAuthV2MigrationFailed(let source, let error):
+            return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
+                    PrivacyProPixelsDefaults.sourceKey: source.description]
+        default:
+            return nil
+        }
     }
 }
 
 enum PrivacyProErrorPixel: PixelKitEventV2 {
 
-    case privacyProKeychainAccessError(accessType: AccountKeychainAccessType, accessError: any Error)
+    case privacyProKeychainAccessError(accessType: AccountKeychainAccessType,
+                                       accessError: AccountKeychainAccessError,
+                                       source: KeychainErrorSource,
+                                       authVersion: KeychainErrorAuthVersion )
 
     var name: String {
         switch self {
@@ -143,10 +179,12 @@ enum PrivacyProErrorPixel: PixelKitEventV2 {
 
     var parameters: [String: String]? {
         switch self {
-        case .privacyProKeychainAccessError(let accessType, let accessError):
+        case .privacyProKeychainAccessError(let accessType, let accessError, let source, let authVersion):
             return [
-                "type": accessType.rawValue,
-                "error": accessError.localizedDescription
+                "access_type": accessType.rawValue,
+                "error": accessError.errorDescription ?? "Unknown",
+                "source": source.rawValue,
+                "authVersion": authVersion.rawValue
             ]
         }
     }

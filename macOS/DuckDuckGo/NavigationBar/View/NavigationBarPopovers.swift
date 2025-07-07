@@ -20,7 +20,7 @@ import Foundation
 import BrowserServicesKit
 import AppKit
 import Combine
-import NetworkProtection
+import VPN
 import NetworkProtectionUI
 import NetworkProtectionIPC
 import PixelKit
@@ -60,7 +60,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private(set) var savePaymentMethodPopover: SavePaymentMethodPopover?
     private(set) var autofillPopoverPresenter: AutofillPopoverPresenter
     private(set) var downloadsPopover: DownloadsPopover?
-    private(set) var aiChatOnboardingPopover: AIChatOnboardingPopover?
     private(set) var autofillOnboardingPopover: AutofillToolbarOnboardingPopover?
     private(set) var historyViewOnboardingPopover: HistoryViewOnboardingPopover?
 
@@ -74,12 +73,31 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private(set) var zoomPopover: ZoomPopover?
     private weak var zoomPopoverDelegate: NSPopoverDelegate?
 
+    private let bookmarkManager: BookmarkManager
+    private let bookmarkDragDropManager: BookmarkDragDropManager
+    private let contentBlocking: ContentBlockingProtocol
+    private let fireproofDomains: FireproofDomains
+    private let permissionManager: PermissionManagerProtocol
     private let networkProtectionPopoverManager: NetPPopoverManager
     private let isBurner: Bool
 
     private var popoverIsShownCancellables = Set<AnyCancellable>()
 
-    init(networkProtectionPopoverManager: NetPPopoverManager, autofillPopoverPresenter: AutofillPopoverPresenter, isBurner: Bool) {
+    init(
+        bookmarkManager: BookmarkManager,
+        bookmarkDragDropManager: BookmarkDragDropManager,
+        contentBlocking: ContentBlockingProtocol,
+        fireproofDomains: FireproofDomains,
+        permissionManager: PermissionManagerProtocol,
+        networkProtectionPopoverManager: NetPPopoverManager,
+        autofillPopoverPresenter: AutofillPopoverPresenter,
+        isBurner: Bool
+    ) {
+        self.bookmarkManager = bookmarkManager
+        self.bookmarkDragDropManager = bookmarkDragDropManager
+        self.contentBlocking = contentBlocking
+        self.fireproofDomains = fireproofDomains
+        self.permissionManager = permissionManager
         self.networkProtectionPopoverManager = networkProtectionPopoverManager
         self.autofillPopoverPresenter = autofillPopoverPresenter
         self.isBurner = isBurner
@@ -229,28 +247,11 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
             privacyDashboardPopover?.close()
         }
 
-        if aiChatOnboardingPopover?.isShown ?? false {
-            aiChatOnboardingPopover?.close()
-        }
-
         if autofillOnboardingPopover?.isShown ?? false {
             autofillOnboardingPopover?.close()
         }
 
         return true
-    }
-
-    func showAIChatOnboardingPopover(from button: MouseOverButton,
-                                     withDelegate delegate: NSPopoverDelegate,
-                                     ctaCallback: @escaping (Bool) -> Void) {
-        guard closeTransientPopovers() else { return }
-        let popover = aiChatOnboardingPopover ?? AIChatOnboardingPopover(ctaCallback: ctaCallback)
-
-        PixelKit.fire(GeneralPixel.aichatToolbarOnboardingPopoverShown,
-                      includeAppVersionParameter: true)
-        popover.delegate = delegate
-        aiChatOnboardingPopover = popover
-        show(popover, positionedBelow: button)
     }
 
     func showHistoryViewOnboardingPopover(from button: MouseOverButton,
@@ -278,7 +279,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     func showBookmarkListPopover(from button: MouseOverButton, withDelegate delegate: NSPopoverDelegate, forTab tab: Tab?) {
         guard closeTransientPopovers() else { return }
 
-        let popover = bookmarkListPopover ?? BookmarkListPopover()
+        let popover = bookmarkListPopover ?? BookmarkListPopover(bookmarkManager: bookmarkManager, dragDropManager: bookmarkDragDropManager)
         bookmarkListPopover = popover
         popover.delegate = delegate
 
@@ -286,14 +287,14 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
             popover.viewController.currentTabWebsite = .init(tab)
         }
 
-        LocalBookmarkManager.shared.requestSync()
+        bookmarkManager.requestSync()
         show(popover, positionedBelow: button)
     }
 
     func showEditBookmarkPopover(with bookmark: Bookmark, isNew: Bool, from button: MouseOverButton, withDelegate delegate: NSPopoverDelegate) {
         guard closeTransientPopovers() else { return }
 
-        let bookmarkPopover = AddBookmarkPopover()
+        let bookmarkPopover = AddBookmarkPopover(bookmarkManager: bookmarkManager)
         bookmarkPopover.delegate = self
         bookmarkPopover.isNew = isNew
         bookmarkPopover.bookmark = bookmark
@@ -321,10 +322,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         zoomPopover?.close()
     }
 
-    func closeAIChatOnboardingPopover() {
-        aiChatOnboardingPopover?.close()
-    }
-
     func closeHistoryViewOnboardingViewPopover() {
         historyViewOnboardingPopover?.close()
     }
@@ -336,7 +333,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     func openPrivacyDashboard(for tabViewModel: TabViewModel, from button: MouseOverButton, entryPoint: PrivacyDashboardEntryPoint) {
         guard closeTransientPopovers() else { return }
 
-        let popover = PrivacyDashboardPopover(entryPoint: entryPoint)
+        let popover = PrivacyDashboardPopover(entryPoint: entryPoint, contentBlocking: contentBlocking, permissionManager: permissionManager)
         popover.delegate = self
         self.privacyDashboardPopover = popover
         self.subscribePrivacyDashboardPendingUpdates(for: popover)
@@ -438,10 +435,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         bookmarkListPopover = nil
     }
 
-    func aiChatOnboardingPopoverClosed() {
-        aiChatOnboardingPopover = nil
-    }
-
     func autofillOnboardingPopoverClosed() {
         autofillOnboardingPopover = nil
     }
@@ -459,7 +452,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     }
 
     private func showSaveCredentialsPopover(usingView view: NSView, withDelegate delegate: NSPopoverDelegate) {
-        let popover = SaveCredentialsPopover()
+        let popover = SaveCredentialsPopover(fireproofDomains: fireproofDomains)
         popover.delegate = delegate
         saveCredentialsPopover = popover
         show(popover, positionedBelow: view)

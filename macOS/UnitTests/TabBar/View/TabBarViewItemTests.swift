@@ -17,26 +17,38 @@
 //
 
 import Combine
+import WebKit
 import XCTest
-@testable import Subscription
+
 @testable import DuckDuckGo_Privacy_Browser
+@testable import Subscription
 
 final class TabBarViewItemTests: XCTestCase {
 
     var delegate: MockTabViewItemDelegate!
     var menu: NSMenu!
+    var fireproofDomains: MockFireproofDomains!
     var tabBarViewItem: TabBarViewItem!
 
     @MainActor
     override func setUp() {
         delegate = MockTabViewItemDelegate()
         menu = NSMenu()
+        fireproofDomains = MockFireproofDomains(domains: [])
         tabBarViewItem = TabBarViewItem()
+        tabBarViewItem.fireproofDomains = fireproofDomains
         tabBarViewItem.delegate = delegate
     }
 
     override func tearDown() {
         delegate.clear()
+    }
+
+    @MainActor
+    func testThatMenuNeedsUpdateCallsContextMenuDelegateCallback() {
+        XCTAssertFalse(delegate.tabBarViewItemWillOpenContextMenuCalled)
+        tabBarViewItem.menuNeedsUpdate(menu)
+        XCTAssertTrue(delegate.tabBarViewItemWillOpenContextMenuCalled)
     }
 
     @MainActor
@@ -66,6 +78,16 @@ final class TabBarViewItemTests: XCTestCase {
         XCTAssertEqual(submenu.item(at: 0)?.title, UserText.closeTabsToTheLeft)
         XCTAssertEqual(submenu.item(at: 1)?.title, UserText.closeTabsToTheRight)
         XCTAssertEqual(submenu.item(at: 2)?.title, UserText.closeAllOtherTabs)
+    }
+
+    @MainActor
+    func testThatCrashTabItemIsNotShownIfUserCannotKillWebContentProcess() {
+        let tabBarViewModel = TabBarViewModelMock(audioState: .unmuted(isPlayingAudio: true))
+        tabBarViewModel.canKillWebContentProcess = false
+        tabBarViewItem.subscribe(to: tabBarViewModel)
+        tabBarViewItem.menuNeedsUpdate(menu)
+
+        XCTAssertFalse(menu.items.contains { $0.title == Tab.crashTabMenuOptionTitle })
     }
 
     @MainActor
@@ -190,8 +212,7 @@ final class TabBarViewItemTests: XCTestCase {
     @MainActor
     func testWhenFireproofableThenUrlFireProofSiteItemIsDisabled() {
         // Update url
-        let tab = Tab()
-        tab.url = URL(string: "https://www.apple.com")!
+        let tab = Tab(content: .url(URL(string: "https://www.apple.com")!, source: .appOpenUrl))
         delegate.mockedCurrentTab = tab
         let vm = TabViewModel(tab: tab)
         tabBarViewItem.subscribe(to: vm)
@@ -311,6 +332,8 @@ private class TabBarViewModelMock: TabBarViewModel {
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> {
         $audioState.eraseToAnyPublisher()
     }
+    var canKillWebContentProcess: Bool = false
+    var crashIndicatorModel = TabCrashIndicatorModel()
     init(width: CGFloat = 0, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
         self.width = width
         self.title = title

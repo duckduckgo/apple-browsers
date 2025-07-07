@@ -141,7 +141,6 @@ final class PrivacyDashboardViewController: UIViewController {
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
                 UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
             }
-            SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .privacyToggleUsed)
         }
         
         contentBlockingManager.scheduleCompilation()
@@ -357,7 +356,10 @@ extension PrivacyDashboardViewController {
                                 jsPerformance: webVitalsResult,
                                 userRefreshCount: breakageAdditionalInfo.userRefreshCount,
                                 variant: PixelExperiment.cohort?.rawValue ?? "",
-                                cookieConsentInfo: privacyInfo.cookieConsentManaged)
+                                cookieConsentInfo: privacyInfo.cookieConsentManaged,
+                                debugFlags: privacyInfo.debugFlags,
+                                privacyExperiments: privacyInfo.privacyExperimentCohorts,
+                                isPirEnabled: nil)
     }
 
 }

@@ -35,6 +35,7 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
+        let showShare = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -69,6 +70,7 @@ struct SmallOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
+        let showShare = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -103,6 +105,7 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
+        let showShare = false
         let showMenu = false
         let showSettings = false
         let showDismiss = false
@@ -137,6 +140,7 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
+        let showShare = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -172,6 +176,7 @@ struct SmallOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
+        let showShare = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -199,7 +204,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        let showAccessoryButton = true
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = true
         let showSearchLoupe = false
@@ -208,6 +213,7 @@ struct SmallOmniBarState {
         let showClear = false
         var showAbort: Bool { isLoading }
         var showRefresh: Bool { !isLoading }
+        let showShare: Bool = true
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -241,6 +247,7 @@ struct SmallOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
+        let showShare = false
         let showMenu = false
         let showSettings = false
         let showDismiss = true

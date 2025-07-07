@@ -16,13 +16,15 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Combine
+import Common
+import LoginItems
+import PixelKitTestingUtilities
+import XCTest
+
 @testable import DataBrokerProtection_macOS
 @testable import DataBrokerProtectionCore
-import BrowserServicesKit
-import LoginItems
-import XCTest
-import PixelKitTestingUtilities
-import Combine
 @testable import DuckDuckGo_Privacy_Browser
 @testable import PixelKit
 
@@ -44,23 +46,22 @@ final class DBPEndToEndTests: XCTestCase {
         loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
         loginItemsManager.enableLoginItems([LoginItem.dbpBackgroundAgent])
 
-        communicationLayer = DBPUICommunicationLayer(webURLSettings:
-                                                        DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
+        communicationLayer = DBPUICommunicationLayer(webURLSettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
                                                      privacyConfig: PrivacyConfigurationManagingMock())
-        communicationLayer.delegate = pirProtectionManager.dataManager.cache
+        communicationLayer.delegate = pirProtectionManager.dataManager!.communicator
 
-        communicationDelegate = pirProtectionManager.dataManager.cache
+        communicationDelegate = pirProtectionManager.dataManager!.communicator
 
         viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS))
 
-        pirProtectionManager.dataManager.cache.scanDelegate = viewModel
+        pirProtectionManager.dataManager!.communicator.scanDelegate = viewModel
 
-        let database = pirProtectionManager.dataManager.database
+        let database = pirProtectionManager.dataManager!.database
         try database.deleteProfileData()
     }
 
     override func tearDown() async throws {
-        try pirProtectionManager.dataManager.database.deleteProfileData()
+        try pirProtectionManager.dataManager!.database.deleteProfileData()
         loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
     }
 
@@ -97,8 +98,8 @@ final class DBPEndToEndTests: XCTestCase {
 
         // Local state set up
         let dataManager = pirProtectionManager.dataManager
-        let database = dataManager.database
-        let cache = pirProtectionManager.dataManager.cache
+        let database = dataManager!.database
+        let communicator = pirProtectionManager.dataManager!.communicator
         try database.deleteProfileData()
         XCTAssert(try database.fetchAllBrokerProfileQueryData().isEmpty)
 
@@ -113,7 +114,7 @@ final class DBPEndToEndTests: XCTestCase {
         /*
          1/ We save a profile
          */
-        cache.profile = mockProfile
+        communicator.profile = mockProfile
         Task { @MainActor in
             _ = try await communicationLayer.saveProfile(params: [], original: WKScriptMessage())
         }
@@ -169,7 +170,7 @@ final class DBPEndToEndTests: XCTestCase {
         await awaitFulfillment(of: schedulerStartsExpectation,
                                withTimeout: 100,
                                whenCondition: {
-            try! self.pirProtectionManager.dataManager.prepareBrokerProfileQueryDataCache()
+            try! self.pirProtectionManager.dataManager!.prepareBrokerProfileQueryDataCache()
             return await self.communicationDelegate.getBackgroundAgentMetadata().lastStartedSchedulerOperationTimestamp != nil
         })
 
@@ -238,7 +239,7 @@ final class DBPEndToEndTests: XCTestCase {
             let queries = try! database.fetchAllBrokerProfileQueryData()
             let optOutJobs = queries.flatMap { $0.optOutJobData }
             let events = optOutJobs.flatMap { $0.historyEvents }
-            let optOutsRequested = events.filter{ $0.type == .optOutRequested }
+            let optOutsRequested = events.filter { $0.type == .optOutRequested }
             return optOutsRequested.count > 0
         })
         print("Stage 5 passed: We finish running the opt out jobs")
@@ -293,7 +294,7 @@ final class DBPEndToEndTests: XCTestCase {
                 let queries = try! database.fetchAllBrokerProfileQueryData()
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
                 let events = optOutJobs.flatMap { $0.historyEvents }
-                let optOutsConfirmed = events.filter{ $0.type == .optOutConfirmed }
+                let optOutsConfirmed = events.filter { $0.type == .optOutConfirmed }
                 return optOutsConfirmed.count > 0
             }
         })
@@ -419,8 +420,9 @@ private extension DBPEndToEndTests {
     // A useful function for debugging responses from the fake broker
     func prettyPrintJSONData(_ data: Data) {
         if let json = try? JSONSerialization.jsonObject(with: data, options: .mutableContainers),
-           let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted) {
-            print(String(decoding: jsonData, as: UTF8.self))
+           let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
+           let jsonString = jsonData.utf8String() {
+            print(jsonString)
         } else {
             print("json data malformed")
         }
@@ -466,7 +468,7 @@ private extension DBPEndToEndTests {
 
         var trackerAllowlist = BrowserServicesKit.PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
 
-        func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> Bool {
+        func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool {
             false
         }
 
@@ -474,7 +476,7 @@ private extension DBPEndToEndTests {
             .disabled(.disabledInConfig)
         }
 
-        func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> Bool {
+        func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
             false
         }
 
@@ -520,10 +522,6 @@ private extension DBPEndToEndTests {
 
         func userDisabledProtection(forDomain: String) {
 
-        }
-
-        func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> Bool {
-            false
         }
 
         func stateFor(subfeatureID: SubfeatureID, parentFeatureID: ParentFeatureID, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState {

@@ -70,8 +70,8 @@ final class CredentialProviderListDetailsViewModel: ObservableObject {
     }
 
     var userVisiblePassword: String {
-        let passwordHider = PasswordHider(password: password)
-        return isPasswordHidden ? passwordHider.hiddenPassword : passwordHider.password
+        let textMasker = TextMasker(text: password)
+        return isPasswordHidden ? textMasker.maskedText : textMasker.originalText
     }
 
     var usernameDisplayString: String {
@@ -173,7 +173,7 @@ final class CredentialProviderListDetailsHeaderViewModel: ObservableObject {
     @Published var title: String = ""
     @Published var subtitle: String = ""
     @Published var domain: String = ""
-    @Published var favicon: UIImage = UIImage(named: "Logo")!
+    @Published var favicon: UIImage = UIImage(resource: .logo)
 
     func updateData(with account: SecureVaultModels.WebsiteAccount, tld: TLD, autofillDomainNameUrlMatcher: AutofillDomainNameUrlMatcher, autofillDomainNameUrlSort: AutofillDomainNameUrlSort) {
         self.title = account.name(tld: tld, autofillDomainNameUrlMatcher: autofillDomainNameUrlMatcher)

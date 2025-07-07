@@ -19,7 +19,7 @@
 
 import Foundation
 import ActivityKit
-import NetworkProtection
+import VPN
 
 @available(iOS 17.0, *)
 final class VPNSnoozeLiveActivityManager: ObservableObject {

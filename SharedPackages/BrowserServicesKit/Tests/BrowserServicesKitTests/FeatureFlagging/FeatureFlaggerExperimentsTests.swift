@@ -26,6 +26,10 @@ enum TestExperimentFlags: String, CaseIterable {
 }
 
 extension TestExperimentFlags: FeatureFlagDescribing {
+    var defaultValue: Bool {
+        false
+    }
+
     var supportsLocalOverriding: Bool { true }
 
     var source: FeatureFlagSource {
@@ -78,11 +82,14 @@ final class FeatureFlaggerExperimentsTests: XCTestCase {
     var experimentManager: ExperimentCohortsManager!
     var manager: PrivacyConfigurationManager!
     var locale: Locale!
-    var featureFlagger: FeatureFlagger!
+    var featureFlagger: (FeatureFlagger & ContentScopeExperimentsManaging)!
 
     let subfeatureName = "credentialsSaving"
 
     override func setUp() {
+        // Set environment variable to allow DefaultFeatureFlagger in tests
+        setenv("TESTS_FEATUREFLAGGER_MODE", "1", 1)
+
         locale = Locale(identifier: "fr_US")
         mockEmbeddedData = MockEmbeddedDataProvider(data: featureJson, etag: "test")
         let mockInternalUserStore = MockInternalUserStoring()
@@ -103,6 +110,9 @@ final class FeatureFlaggerExperimentsTests: XCTestCase {
         mockStore = nil
         experimentManager = nil
         manager = nil
+
+        // Clean up environment variable
+        unsetenv("TESTS_FEATUREFLAGGER_MODE")
     }
 
     func testCohortOnlyAssignedWhenCallingStateForSubfeature() {
@@ -1229,6 +1239,180 @@ final class FeatureFlaggerExperimentsTests: XCTestCase {
 
         activeExperiments = featureFlagger.allActiveExperiments
         XCTAssertTrue(activeExperiments.isEmpty)
+    }
+
+    func testContentScopeExperimentsEnrolledOnResolveContentScopeScriptActiveExperiments() {
+        featureJson = """
+        {
+          "features": {
+            "contentScopeExperiments": {
+              "state": "enabled",
+              "exceptions": [],
+              "features": {
+                "experiment1": {
+                  "state": "enabled",
+                  "cohorts": [
+                    {
+                      "name": "control",
+                      "weight": 1
+                    },
+                    {
+                      "name": "blue",
+                      "weight": 0
+                    }
+                  ]
+                },
+                "experiment2": {
+                  "state": "enabled",
+                  "cohorts": [
+                    {
+                      "name": "control",
+                      "weight": 0
+                    },
+                    {
+                      "name": "blue",
+                      "weight": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+        """.data(using: .utf8)!
+
+        manager.reload(etag: "", data: featureJson)
+
+        // we haven't called resolveContentScopeScriptActiveExperiments yet, so cohorts should not be yet assigned
+        XCTAssertNil(mockStore.experiments)
+        XCTAssertNil(experimentManager.cohort(for: "experiment1"))
+        XCTAssertNil(experimentManager.cohort(for: "experiment2"))
+
+        // we call resolveContentScopeScriptActiveExperiments(), then we should assign cohort
+        let experiments = featureFlagger.resolveContentScopeScriptActiveExperiments()
+
+        // Check cohorts are assigned
+        XCTAssertFalse(mockStore.experiments?.isEmpty ?? true)
+        XCTAssertEqual(experiments["experiment1"]?.cohortID, "control")
+        XCTAssertEqual(experiments["experiment2"]?.cohortID, "blue")
+        XCTAssertEqual(experiments["experiment1"]?.parentID, "contentScopeExperiments")
+        XCTAssertEqual(experiments["experiment2"]?.parentID, "contentScopeExperiments")
+        XCTAssertEqual(experimentManager.cohort(for: "experiment1"), "control")
+        XCTAssertEqual(experimentManager.cohort(for: "experiment2"), "blue")
+    }
+
+    func testContentScopeExperimentsDoesNotEnrolDisabledExperiments() {
+        featureJson = """
+        {
+          "features": {
+            "contentScopeExperiments": {
+              "state": "enabled",
+              "exceptions": [],
+              "features": {
+                "experiment1": {
+                  "state": "enabled",
+                  "cohorts": [
+                    {
+                      "name": "control",
+                      "weight": 1
+                    },
+                    {
+                      "name": "blue",
+                      "weight": 0
+                    }
+                  ]
+                },
+                "experiment2": {
+                  "state": "disabled",
+                  "cohorts": [
+                    {
+                      "name": "control",
+                      "weight": 0
+                    },
+                    {
+                      "name": "blue",
+                      "weight": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+        """.data(using: .utf8)!
+
+        manager.reload(etag: "", data: featureJson)
+
+        // we haven't called resolveContentScopeScriptActiveExperiments yet, so cohorts should not be yet assigned
+        XCTAssertNil(mockStore.experiments)
+        XCTAssertNil(experimentManager.cohort(for: "experiment1"))
+        XCTAssertNil(experimentManager.cohort(for: "experiment2"))
+
+        // we call resolveContentScopeScriptActiveExperiments(), then we should assign cohort
+        let experiments = featureFlagger.resolveContentScopeScriptActiveExperiments()
+
+        // Check cohorts are assigned
+        XCTAssertFalse(mockStore.experiments?.isEmpty ?? true)
+        XCTAssertEqual(experiments["experiment1"]?.cohortID, "control")
+        XCTAssertNil(experiments["experiment2"])
+        XCTAssertEqual(experiments["experiment1"]?.parentID, "contentScopeExperiments")
+        XCTAssertEqual(experimentManager.cohort(for: "experiment1"), "control")
+    }
+
+    func testContentScopeExperimentsDoesNotEnrollAnyExperimentWhenParentFeatureDisabled() {
+        featureJson = """
+        {
+          "features": {
+            "contentScopeExperiments": {
+              "state": "disabled",
+              "exceptions": [],
+              "features": {
+                "experiment1": {
+                  "state": "enabled",
+                  "cohorts": [
+                    {
+                      "name": "control",
+                      "weight": 1
+                    },
+                    {
+                      "name": "blue",
+                      "weight": 0
+                    }
+                  ]
+                },
+                "experiment2": {
+                  "state": "enabled",
+                  "cohorts": [
+                    {
+                      "name": "control",
+                      "weight": 0
+                    },
+                    {
+                      "name": "blue",
+                      "weight": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+        """.data(using: .utf8)!
+
+        manager.reload(etag: "", data: featureJson)
+
+        // we haven't called resolveContentScopeScriptActiveExperiments yet, so cohorts should not be yet assigned
+        XCTAssertNil(mockStore.experiments)
+        XCTAssertNil(experimentManager.cohort(for: "experiment1"))
+        XCTAssertNil(experimentManager.cohort(for: "experiment2"))
+
+        // we call resolveContentScopeScriptActiveExperiments(), then we should try to assign cohorts
+        let experiments = featureFlagger.resolveContentScopeScriptActiveExperiments()
+
+        // Check cohorts are assigned
+        XCTAssertTrue(mockStore.experiments?.isEmpty ?? true)
+        XCTAssertNil(experiments["experiment1"])
+        XCTAssertNil(experiments["experiment2"])
     }
 
 }

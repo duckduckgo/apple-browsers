@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 
 final class CookieNotificationAnimationModel: ObservableObject {
@@ -30,11 +31,14 @@ final class CookieNotificationAnimationModel: ObservableObject {
     let duration: CGFloat
     let secondPhaseDelay: CGFloat
     let halfDuration: CGFloat
+    let addressBarIconsProvider: AddressBarCookiesIconsProviding
 
-    init(duration: CGFloat = AnimationDefaultConsts.totalDuration) {
+    init(duration: CGFloat = AnimationDefaultConsts.totalDuration,
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.duration = duration
         self.halfDuration = duration / 2.0
         self.secondPhaseDelay = self.halfDuration
+        self.addressBarIconsProvider = visualStyle.iconsProvider.addressBarCookiesIconsProvider
     }
 }
 

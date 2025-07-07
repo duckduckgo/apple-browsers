@@ -19,6 +19,7 @@
 import Foundation
 import MaliciousSiteProtection
 import SpecialErrorPages
+import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

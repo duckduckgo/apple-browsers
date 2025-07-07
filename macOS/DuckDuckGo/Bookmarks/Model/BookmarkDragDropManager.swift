@@ -23,8 +23,6 @@ import os.log
 
 final class BookmarkDragDropManager {
 
-    static let shared = BookmarkDragDropManager()
-
     static let draggedTypes: [NSPasteboard.PasteboardType] = [
         .string,
         .URL,
@@ -34,7 +32,7 @@ final class BookmarkDragDropManager {
 
     private let bookmarkManager: BookmarkManager
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
+    init(bookmarkManager: BookmarkManager) {
         self.bookmarkManager = bookmarkManager
     }
 
@@ -53,6 +51,10 @@ final class BookmarkDragDropManager {
             return .none
         default:
             guard destination is BookmarkFolder || destination is PseudoFolder else { return .none }
+
+            if let url = info.draggingPasteboard.url {
+                return bookmarkManager.isUrlBookmarked(url: url) ? .none : .copy
+            }
 
             if info.draggingPasteboard.availableType(from: [.URL]) != nil {
                 return .copy

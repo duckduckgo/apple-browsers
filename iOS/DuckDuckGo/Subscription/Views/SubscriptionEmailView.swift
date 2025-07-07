@@ -21,6 +21,7 @@ import SwiftUI
 import Foundation
 import Core
 import Combine
+import DataBrokerProtection_iOS
 
 struct SubscriptionEmailView: View {
         
@@ -34,7 +35,7 @@ struct SubscriptionEmailView: View {
     @State private var isShowingITR = false
     @State private var isShowingDBP = false
     @State private var isShowingNetP = false
-    
+
     enum Constants {
         static let navButtonPadding: CGFloat = 20.0
         static let backButtonImage = "chevron.left"
@@ -48,10 +49,15 @@ struct SubscriptionEmailView: View {
         NavigationLink(destination: LazyView(SubscriptionITPView().navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
-        NavigationLink(destination: LazyView(SubscriptionPIRView().navigationViewStyle(.stack)),
-                       isActive: $isShowingDBP,
-                       label: { EmptyView() })
-                        
+        if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
+            NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!).navigationViewStyle(.stack)),
+                           isActive: $isShowingDBP,
+                           label: { EmptyView() })
+        } else {
+            NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView().navigationViewStyle(.stack)),
+                           isActive: $isShowingDBP,
+                           label: { EmptyView() })
+        }
         baseView
         
         .toolbar {
@@ -141,17 +147,37 @@ struct SubscriptionEmailView: View {
     }
     
     // MARK: -
-    
+
+    @ViewBuilder
     private var baseView: some View {
-        ZStack {
-            VStack {
-                AsyncHeadlessWebView(viewModel: viewModel.webViewModel)
-                    .background()
+        if #available(iOS 16.0, *) {
+            // For activation/restore flow hide the toolbar background
+            ZStack {
+                VStack {
+                    AsyncHeadlessWebView(viewModel: viewModel.webViewModel)
+                        .background()
+                }
+            }
+            .toolbarBackground(navigationBarVisibility, for: .navigationBar)
+        } else {
+            ZStack {
+                VStack {
+                    AsyncHeadlessWebView(viewModel: viewModel.webViewModel)
+                        .background()
+                }
             }
         }
     }
-    
-    @ViewBuilder
+
+    private var navigationBarVisibility: Visibility {
+        switch viewModel.state.currentFlow {
+        case .activationFlow, .restoreFlow:
+            return .hidden
+        case .manageEmailFlow:
+            return .visible
+        }
+    }
+
     private var browserBackButton: some View {
         Button(action: {
             Task { await viewModel.navigateBack() }

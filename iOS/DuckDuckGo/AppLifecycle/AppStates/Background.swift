@@ -46,7 +46,7 @@ struct Background: BackgroundHandling {
     func onTransition() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
-        services.keyValueFileStoreTestService.onBackground()
+        services.dbpService.onBackground()
         services.vpnService.suspend()
         services.authenticationService.suspend()
         services.autoClearService.suspend()

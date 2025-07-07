@@ -45,6 +45,11 @@ read_command_line_arguments() {
 
 	shift $((OPTIND-1))
 
+	if (( $# == 0 )); then
+		echo "Nothing to do"
+		exit 0
+	fi
+
 	if (( $# < 4 )); then
 		print_usage_and_exit "Missing arguments"
 	fi

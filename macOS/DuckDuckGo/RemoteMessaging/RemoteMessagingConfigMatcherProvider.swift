@@ -21,13 +21,41 @@ import BrowserServicesKit
 import Persistence
 import Bookmarks
 import RemoteMessaging
-import NetworkProtection
+import VPN
 import Subscription
 import Freemium
+import FeatureFlags
 
 extension DefaultWaitlistActivationDateStore: VPNActivationDateProviding {}
 
 final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherProviding {
+
+    convenience init(
+        database: CoreDataDatabase,
+        bookmarksDatabase: CoreDataDatabase,
+        appearancePreferences: AppearancePreferences,
+        startupPreferencesPersistor: @escaping @autoclosure () -> StartupPreferencesPersistor = StartupPreferencesUserDefaultsPersistor(),
+        duckPlayerPreferencesPersistor: @escaping @autoclosure () -> DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
+        pinnedTabsManagerProvider: PinnedTabsManagerProviding,
+        internalUserDecider: InternalUserDecider,
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        featureFlagger: FeatureFlagger,
+        visualStyle: VisualStyleProviding
+    ) {
+        self.init(
+            bookmarksDatabase: bookmarksDatabase,
+            appearancePreferences: appearancePreferences,
+            startupPreferencesPersistor: startupPreferencesPersistor(),
+            duckPlayerPreferencesPersistor: duckPlayerPreferencesPersistor(),
+            pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+            internalUserDecider: internalUserDecider,
+            statisticsStore: LocalStatisticsStore(pixelDataStore: LocalPixelDataStore(database: database)),
+            variantManager: DefaultVariantManager(database: database),
+            subscriptionManager: subscriptionManager,
+            featureFlagger: featureFlagger,
+            visualStyle: visualStyle
+        )
+    }
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -36,9 +64,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         duckPlayerPreferencesPersistor: @escaping @autoclosure () -> DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
-        statisticsStore: StatisticsStore = LocalStatisticsStore(),
-        variantManager: VariantManager = DefaultVariantManager(),
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge
+        statisticsStore: @escaping @autoclosure () -> StatisticsStore,
+        variantManager: @escaping @autoclosure () -> VariantManager,
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        featureFlagger: FeatureFlagger,
+        visualStyle: VisualStyleProviding
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
@@ -49,6 +79,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.statisticsStore = statisticsStore
         self.variantManager = variantManager
         self.subscriptionManager = subscriptionManager
+        self.featureFlagger = featureFlagger
+        self.visualStyle = visualStyle
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -57,9 +89,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let duckPlayerPreferencesPersistor: () -> DuckPlayerPreferencesPersistor
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
     let internalUserDecider: InternalUserDecider
-    let statisticsStore: StatisticsStore
-    let variantManager: VariantManager
+    let statisticsStore: () -> StatisticsStore
+    let variantManager: () -> VariantManager
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let featureFlagger: FeatureFlagger
+    let visualStyle: VisualStyleProviding
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -77,6 +111,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let activationDateStore = DefaultWaitlistActivationDateStore(source: .netP)
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1
 
+        let autofillUsageStore = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
+
         var privacyProDaysSinceSubscribed = -1
         var privacyProDaysUntilExpiry = -1
         var isPrivacyProSubscriptionActive = false
@@ -85,8 +121,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var privacyProPurchasePlatform: String?
         let surveyActionMapper: RemoteMessagingSurveyActionMapping
 
+        let statisticsStore = self.statisticsStore()
+
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad)
+            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
             privacyProDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
             privacyProDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
             privacyProPurchasePlatform = subscription.platform.rawValue
@@ -106,13 +144,15 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
                 statisticsStore: statisticsStore,
                 vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
-                subscription: subscription
+                subscription: subscription,
+                autofillUsageStore: autofillUsageStore
             )
         } catch {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
                 statisticsStore: statisticsStore,
                 vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
-                subscription: nil
+                subscription: nil,
+                autofillUsageStore: autofillUsageStore
             )
         }
 
@@ -136,13 +176,22 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             pinnedTabsManagerProvider.currentPinnedTabManagers.map { $0.tabCollection.tabs.count }.reduce(0, +)
         }
 
+        let enabledFeatureFlags: [String] = FeatureFlag.allCases.filter { flag in
+            switch flag {
+            case .visualUpdates:
+                /// For visual updates we need to make sure the user is seeing the new style in order to show the remote message.
+                return visualStyle.isNewStyle
+            default: return flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
+            }
+        }.map(\.rawValue)
+
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
-                                                     variantManager: variantManager,
+                                                     variantManager: variantManager(),
                                                      isInternalUser: internalUserDecider.isInternalUser,
                                                      isInstalledMacAppStore: isInstalledMacAppStore),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
-                                                       variantManager: variantManager,
+                                                       variantManager: variantManager(),
                                                        bookmarksCount: bookmarksCount,
                                                        favoritesCount: favoritesCount,
                                                        appTheme: appearancePreferences.currentThemeName.rawValue,
@@ -162,7 +211,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isDuckPlayerOnboarded: duckPlayerPreferencesPersistor.youtubeOverlayAnyButtonPressed,
                                                        isDuckPlayerEnabled: duckPlayerPreferencesPersistor.duckPlayerModeBool != false,
                                                        isCurrentFreemiumPIRUser: isCurrentFreemiumDBPUser,
-                                                       dismissedDeprecatedMacRemoteMessageIds: deprecatedRemoteMessageStorage.dismissedMessageIDs()
+                                                       dismissedDeprecatedMacRemoteMessageIds: deprecatedRemoteMessageStorage.dismissedMessageIDs(),
+                                                       enabledFeatureFlags: enabledFeatureFlags
                                                       ),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,

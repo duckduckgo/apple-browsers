@@ -20,6 +20,8 @@
 import SwiftUI
 import UIKit
 import Networking
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SettingsOthersView: View {
 
@@ -30,7 +32,7 @@ struct SettingsOthersView: View {
             // About
             NavigationLink(destination: AboutView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAboutSection,
-                                 image: Image("LogoIcon"),
+                                 image: Image(.logoIcon),
                                  accessory: .rightDetail("v\(viewModel.state.version)"))
             }
 
@@ -39,6 +41,7 @@ struct SettingsOthersView: View {
                 let formViewModel = UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                  apiService: DefaultAPIService(),
                                                                  vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                                 isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
                                                                  source: .settings)
                 NavigationLink {
                     UnifiedFeedbackCategoryView(UserText.subscriptionFeedback, options: UnifiedFeedbackFlowCategory.allCases, selection: $viewModel.selectedFeedbackFlow) {
@@ -60,18 +63,18 @@ struct SettingsOthersView: View {
                     }
                 } label: {
                     SettingsCellView(label: UserText.subscriptionFeedback,
-                                     image: Image("SettingsFeedback"))
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.feedback))
                 }
             } else {
                 SettingsCellView(label: UserText.settingsFeedback,
-                                 image: Image("SettingsFeedback"),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.feedback),
                                  action: { viewModel.presentLegacyView(.feedback) },
                                  isButton: true)
             }
 
             // DuckDuckGo on Other Platforms
             SettingsCellView(label: UserText.duckduckgoOnOtherPlatforms,
-                             image: Image("SettingsOtherPlatforms"),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.downloads),
                              action: { viewModel.openOtherPlatforms() },
                              webLinkIndicator: true,
                              isButton: true)

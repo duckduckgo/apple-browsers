@@ -19,6 +19,7 @@
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
+import PixelKit
 
 extension Preferences {
 
@@ -27,7 +28,7 @@ extension Preferences {
 
         var body: some View {
             PreferencePane {
-                TextMenuTitle(UserText.aiChat)
+                TextMenuTitle(UserText.aiFeatures)
                 PreferencePaneSubSection {
                     VStack(alignment: .leading, spacing: 1) {
                         TextMenuItemCaption(UserText.aiChatPreferencesCaption)
@@ -37,15 +38,70 @@ extension Preferences {
                     }
                 }
 
-                PreferencePaneSection {
-                    if model.shouldShowToolBarShortcutOption {
-                        ToggleMenuItem(UserText.aiChatShowInToolbarToggle,
-                                       isOn: $model.showShortcutInToolbar)
+                PreferencePaneSection(UserText.duckAIShortcuts) {
+                    ToggleMenuItem(UserText.aiChatShowInAddressBarToggle,
+                                   isOn: $model.showShortcutInAddressBar)
+                    .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
+                    .onChange(of: model.showShortcutInAddressBar) { newValue in
+                        if newValue {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOn,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        } else {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOff,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        }
                     }
-                    if model.shouldShowApplicationMenuShortcutOption {
-                        ToggleMenuItem(UserText.aiChatShowInApplicationMenuToggle,
-                                       isOn: $model.showShortcutInApplicationMenu)
+
+                    ToggleMenuItem(UserText.aiChatShowInApplicationMenuToggle,
+                                   isOn: $model.showShortcutInApplicationMenu)
+                    .accessibilityIdentifier("Preferences.AIChat.showInApplicationMenuToggle")
+                    .onChange(of: model.showShortcutInApplicationMenu) { newValue in
+                        if newValue {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsApplicationMenuShortcutTurnedOn,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        } else {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsApplicationMenuShortcutTurnedOff,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        }
                     }
+
+                    if model.shouldShowOpenAIChatInSidebarToggle {
+                        ToggleMenuItem(UserText.aiChatOpenInSidebarToggle,
+                                       isOn: $model.openAIChatInSidebar)
+                        .accessibilityIdentifier("Preferences.AIChat.openInSidebarToggle")
+                        .onChange(of: model.openAIChatInSidebar) { newValue in
+                            if newValue {
+    //                            PixelKit.fire(AIChatPixel.aiChatSettingsOpenInSidebarTurnedOn,
+    //                                          frequency: .dailyAndCount,
+    //                                          includeAppVersionParameter: true)
+                            } else {
+    //                            PixelKit.fire(AIChatPixel.aiChatSettingsOpenInSidebarTurnedOff,
+    //                                          frequency: .dailyAndCount,
+    //                                          includeAppVersionParameter: true)
+                            }
+                        }
+                    }
+                }
+
+                PreferencePaneSection(UserText.searchAssistSettings) {
+                    TextMenuItemCaption(UserText.searchAssistSettingsDescription)
+                        .padding(.top, -6)
+                        .padding(.bottom, 6)
+                    Button {
+                        model.openSearchAssistSettings()
+                    } label: {
+                        HStack {
+                            Text(UserText.searchAssistSettingsLink)
+                            Image(.externalAppScheme)
+                        }
+                        .foregroundColor(Color.linkBlue)
+                        .cursor(.pointingHand)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }

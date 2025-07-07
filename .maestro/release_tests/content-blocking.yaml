@@ -39,7 +39,7 @@ tags:
 - assertVisible: "Don't Send"
 - tapOn: "Don't Send"
 
-- tapOn: "Refresh Page"
+- runFlow: ../shared/pull_to_refresh.yaml
 - extendedWaitUntil: 
     notVisible: "Nonsense text that won't exist"
     timeout: 2000

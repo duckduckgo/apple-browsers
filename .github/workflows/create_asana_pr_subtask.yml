@@ -7,9 +7,8 @@ on:
 jobs:
 
     create-asana-pr-subtask-if-needed:
-
+        if: ${{ github.event.requested_reviewer.login != 'Copilot' }}
         name: "Create the PR subtask in Asana"
-
         runs-on: ubuntu-latest
 
         steps:
@@ -21,7 +20,7 @@ jobs:
             task_id=$(grep -i "task/issue url.*https://app.asana.com/" <<< "$BODY" \
               | perl -pe 's|.*https://app.asana.com/0/[0-9]+/([0-9]+)(?:/f)?|\1|; \
                 s|.*https://app.asana.com/1/[0-9]+(?:/[0-9a-z/]*)?/task/([0-9]+)(:?/[0-9a-z/]*)?(?:\?focus=true)?|\1|; \
-                s|.*https://app.asana.com/1/[0-9]+/inbox/[0-9]+/item/([0-9]+)/story/([0-9]+)|\1|'
+                s|.*https://app.asana.com/1/[0-9]+/inbox/[0-9]+/item/([0-9]+)/story/([0-9]+)(?:\?focus=true)?|\1|'
             )
             echo "task_id=${task_id//[^0-9]/}" >> $GITHUB_OUTPUT
 
@@ -31,3 +30,4 @@ jobs:
             access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
             asana-task-id: ${{ steps.get-task-id.outputs.task_id }}
             github-reviewer-user: ${{ github.event.requested_reviewer.login }}
+            github-token: ${{ secrets.GH_RO_PAT }}

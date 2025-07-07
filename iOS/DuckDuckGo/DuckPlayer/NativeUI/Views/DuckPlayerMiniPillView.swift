@@ -116,7 +116,7 @@ struct DuckPlayerMiniPillView: View {
                         .clipShape(RoundedRectangle(cornerRadius: Constants.thumbnailCornerRadius))
 
                         VStack(alignment: .leading) {
-                            Text(UserText.duckPlayerNativeResumeInDuckPlayer)
+                            Text(UserText.duckPlayerResumeInDuckPlayer)
                                 .daxSubheadSemibold()
                                 .foregroundColor(Color(designSystemColor: .textPrimary))
                                 .multilineTextAlignment(.leading)
@@ -127,7 +127,7 @@ struct DuckPlayerMiniPillView: View {
                                 .daxFootnoteRegular()
                                 .foregroundColor(Color(designSystemColor: .textSecondary))
                                 .multilineTextAlignment(.leading)
-                                .lineLimit(2)
+                                .lineLimit(1)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .layoutPriority(1)

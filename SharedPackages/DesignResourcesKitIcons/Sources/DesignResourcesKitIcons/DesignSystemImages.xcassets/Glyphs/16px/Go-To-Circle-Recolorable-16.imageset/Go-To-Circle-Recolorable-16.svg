@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g fill-rule="evenodd" clip-path="url(#Go-To-Circle-Recolorable-16_svg__a)" clip-rule="evenodd">
+    <path fill="#888" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16Z"/>
+    <path fill="#fff" d="M10.227 8.25H7.375a2.125 2.125 0 0 0-2.125 2.125.625.625 0 1 1-1.25 0A3.375 3.375 0 0 1 7.375 7h2.852L9.034 5.667a.625.625 0 1 1 .932-.834l1.677 1.875a1.375 1.375 0 0 1 0 1.834l-1.677 1.875a.625.625 0 0 1-.932-.834l1.193-1.333Z"/>
+  </g>
+  <defs>
+    <clipPath id="Go-To-Circle-Recolorable-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

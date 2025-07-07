@@ -30,6 +30,7 @@ final class FireViewController: NSViewController {
 
     private(set) var fireViewModel: FireViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
+    private let visualStyle: VisualStyleProviding
     private var cancellables = Set<AnyCancellable>()
 
     private lazy var fireDialogViewController: FirePopoverViewController = {
@@ -37,6 +38,8 @@ final class FireViewController: NSViewController {
         return storyboard.instantiateController(identifier: "FirePopoverViewController")
     }()
 
+    @IBOutlet weak var fakeFireButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var fakeFireButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var deletingDataLabel: NSTextField!
     @IBOutlet weak var fakeFireButton: NSButton!
     @IBOutlet weak var progressIndicatorWrapper: NSView!
@@ -46,7 +49,7 @@ final class FireViewController: NSViewController {
     private var fireAnimationViewLoadingTask: Task<(), Never>?
     private(set) lazy var fireIndicatorVisibilityManager = FireIndicatorVisibilityManager { [weak self] in self?.view.superview }
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel? = nil) -> FireViewController {
+    static func create(tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel) -> FireViewController {
         NSStoryboard(name: "Fire", bundle: nil).instantiateInitialController { coder in
             self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireViewModel)
         }!
@@ -56,9 +59,12 @@ final class FireViewController: NSViewController {
         fatalError("TabBarViewController: Bad initializer")
     }
 
-    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel? = nil) {
+    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
+          fireViewModel: FireViewModel,
+          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.tabCollectionViewModel = tabCollectionViewModel
-        self.fireViewModel = fireViewModel ?? FireCoordinator.fireViewModel
+        self.fireViewModel = fireViewModel
+        self.visualStyle = visualStyle
 
         super.init(coder: coder)
     }
@@ -69,6 +75,9 @@ final class FireViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        fakeFireButton.image = visualStyle.iconsProvider.fireButtonStyleProvider.icon
+        fakeFireButtonWidthConstraint.constant = visualStyle.tabBarButtonSize
+        fakeFireButtonHeightConstraint.constant = visualStyle.tabBarButtonSize
         deletingDataLabel.stringValue = UserText.fireDialogDelitingData
         if case .normal = AppVersion.runType {
             fireAnimationViewLoadingTask = Task.detached(priority: .userInitiated) {
@@ -184,7 +193,7 @@ final class FireViewController: NSViewController {
         var playFireAnimation = true
 
         // Animate just on the active window
-        let lastKeyWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+        let lastKeyWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
         if view.window?.windowController !== lastKeyWindowController {
             playFireAnimation = false
         }

@@ -341,14 +341,6 @@ extension AutofillLoginDetailsViewController {
 
         view.backgroundColor = theme.backgroundColor
 
-        navigationController?.navigationBar.barTintColor = theme.barBackgroundColor
-        navigationController?.navigationBar.tintColor = theme.navigationBarTintColor
-
-        let appearance = UINavigationBarAppearance()
-        appearance.shadowColor = .clear
-        appearance.backgroundColor = theme.backgroundColor
-
-        navigationController?.navigationBar.standardAppearance = appearance
-        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        decorateNavigationBar()
     }
 }

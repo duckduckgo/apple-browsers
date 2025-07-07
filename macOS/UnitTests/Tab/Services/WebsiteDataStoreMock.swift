@@ -23,6 +23,10 @@ import XCTest
 
 final class WebCacheManagerMock: WebCacheManager {
 
+    init() {
+        super.init(fireproofDomains: MockFireproofDomains(domains: []))
+    }
+
     var clearCalled = false
     override func clear(baseDomains: Set<String>? = nil) async {
         clearCalled = true

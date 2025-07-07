@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="G9p-Sf-e96">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23727" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="G9p-Sf-e96">
     <device id="retina4_7" orientation="portrait" appearance="dark"/>
     <dependencies>
-        <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23721"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
@@ -45,7 +44,7 @@
                                                 <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="puo-AS-QV7" customClass="RoundedRectangleView" customModule="DuckDuckGo" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="0.0" width="327" height="206"/>
                                                     <subviews>
-                                                        <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="8Og-aa-efh">
+                                                        <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="8Og-aa-efh" customClass="HitTestStackView" customModule="DuckDuckGo" customModuleProvider="target">
                                                             <rect key="frame" x="273" y="6" width="48" height="24"/>
                                                             <subviews>
                                                                 <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="q09-Zc-YX5">
@@ -55,7 +54,7 @@
                                                                         <constraint firstAttribute="height" constant="24" id="B1W-gV-eii"/>
                                                                     </constraints>
                                                                 </imageView>
-                                                                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="G2C-qh-g3T">
+                                                                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="G2C-qh-g3T" customClass="EnlargedHitAreaButton" customModule="DuckDuckGo" customModuleProvider="target">
                                                                     <rect key="frame" x="24" y="0.0" width="24" height="24"/>
                                                                     <accessibility key="accessibilityConfiguration" label="Close Tab"/>
                                                                     <constraints>
@@ -178,7 +177,7 @@
                                                 <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="PJG-u5-taI" customClass="RoundedRectangleView" customModule="DuckDuckGo" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="0.0" width="327" height="70"/>
                                                     <subviews>
-                                                        <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="lk6-g3-EJO">
+                                                        <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="lk6-g3-EJO" customClass="HitTestStackView" customModule="DuckDuckGo" customModuleProvider="target">
                                                             <rect key="frame" x="263" y="23" width="48" height="24"/>
                                                             <subviews>
                                                                 <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="dZD-kS-WDA">
@@ -188,7 +187,7 @@
                                                                         <constraint firstAttribute="width" constant="24" id="adc-cz-ySa"/>
                                                                     </constraints>
                                                                 </imageView>
-                                                                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="2en-CB-bYH">
+                                                                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="2en-CB-bYH" customClass="EnlargedHitAreaButton" customModule="DuckDuckGo" customModuleProvider="target">
                                                                     <rect key="frame" x="24" y="0.0" width="24" height="24"/>
                                                                     <accessibility key="accessibilityConfiguration" label="Close Tab"/>
                                                                     <constraints>
@@ -334,8 +333,8 @@
                     </view>
                     <connections>
                         <outlet property="collectionView" destination="XZT-ek-lrC" id="iNF-Uj-4dl"/>
+                        <outlet property="titleBarView" destination="3Kd-yL-Gby" id="Q0T-rr-eAN"/>
                         <outlet property="toolbar" destination="PrD-ff-flI" id="6c2-zx-gsM"/>
-                        <outlet property="topBarView" destination="3Kd-yL-Gby" id="Q0T-rr-eAN"/>
                         <segue destination="JZX-S3-Ir9" kind="presentation" identifier="ActionSheetDaxDialog" modalPresentationStyle="overFullScreen" modalTransitionStyle="crossDissolve" id="Zno-fp-7xb"/>
                     </connections>
                 </viewController>
@@ -351,8 +350,17 @@
                         <rect key="frame" x="0.0" y="0.0" width="800" height="40"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="eRo-Z1-BzV">
+                                <rect key="frame" x="768" y="0.0" width="32" height="40"/>
+                            </view>
+                            <stackView opaque="NO" contentMode="scaleToFill" ambiguous="YES" spacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="aDD-d2-KuN">
+                                <rect key="frame" x="784" y="2" width="0.0" height="36"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" priority="250" id="Frc-XT-onX"/>
+                                </constraints>
+                            </stackView>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" directionalLockEnabled="YES" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="1wM-Ln-7ly">
-                                <rect key="frame" x="8" y="0.0" width="618" height="40"/>
+                                <rect key="frame" x="8" y="0.0" width="760" height="40"/>
                                 <color key="backgroundColor" systemColor="systemOrangeColor"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" scrollDirection="horizontal" minimumLineSpacing="0.0" minimumInteritemSpacing="0.0" id="4DC-C5-QHY">
                                     <size key="itemSize" width="128" height="128"/>
@@ -456,71 +464,29 @@
                                     </collectionViewCell>
                                 </cells>
                             </collectionView>
-                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="eRo-Z1-BzV">
-                                <rect key="frame" x="626" y="0.0" width="174" height="40"/>
-                            </view>
-                            <stackView opaque="NO" contentMode="scaleToFill" distribution="equalSpacing" spacing="24" translatesAutoresizingMaskIntoConstraints="NO" id="aDD-d2-KuN">
-                                <rect key="frame" x="638" y="-2" width="138" height="44"/>
-                                <subviews>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="cYd-YU-sSj">
-                                        <rect key="frame" x="0.0" y="0.0" width="30" height="44"/>
-                                        <accessibility key="accessibilityConfiguration" label="Add new tab"/>
-                                        <constraints>
-                                            <constraint firstAttribute="width" constant="30" id="nob-CW-zXt"/>
-                                        </constraints>
-                                        <state key="normal" image="Add"/>
-                                        <connections>
-                                            <action selector="onNewTabPressed" destination="LNa-Pc-RyW" eventType="touchUpInside" id="nKg-dF-UQL"/>
-                                        </connections>
-                                    </button>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Hcx-F2-HgO">
-                                        <rect key="frame" x="54" y="0.0" width="30" height="44"/>
-                                        <accessibility key="accessibilityConfiguration" label="Clear tabs and data"/>
-                                        <constraints>
-                                            <constraint firstAttribute="width" constant="30" id="VVN-wr-Trj"/>
-                                        </constraints>
-                                        <state key="normal" image="sharesheet-burndata"/>
-                                        <connections>
-                                            <action selector="onFireButtonPressed" destination="LNa-Pc-RyW" eventType="touchUpInside" id="Sqt-ap-yN7"/>
-                                        </connections>
-                                    </button>
-                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="0eS-1F-EgF">
-                                        <rect key="frame" x="108" y="0.0" width="30" height="44"/>
-                                        <accessibility key="accessibilityConfiguration">
-                                            <accessibilityTraits key="traits" button="YES"/>
-                                            <bool key="isElement" value="YES"/>
-                                        </accessibility>
-                                        <constraints>
-                                            <constraint firstAttribute="width" constant="30" id="hLu-Tm-uj6"/>
-                                            <constraint firstAttribute="height" constant="44" id="hlc-iN-dB9"/>
-                                        </constraints>
-                                    </view>
-                                </subviews>
-                            </stackView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="xZV-8A-KoM"/>
                         <constraints>
                             <constraint firstItem="1wM-Ln-7ly" firstAttribute="top" secondItem="8BH-do-lHc" secondAttribute="top" id="28V-cD-7Ty"/>
+                            <constraint firstItem="aDD-d2-KuN" firstAttribute="centerY" secondItem="8BH-do-lHc" secondAttribute="centerY" id="8Mp-g2-mVt"/>
                             <constraint firstAttribute="trailing" secondItem="eRo-Z1-BzV" secondAttribute="trailing" id="AXl-ER-GiJ"/>
                             <constraint firstAttribute="bottom" secondItem="1wM-Ln-7ly" secondAttribute="bottom" id="Ign-CF-bTN"/>
+                            <constraint firstItem="aDD-d2-KuN" firstAttribute="top" relation="greaterThanOrEqual" secondItem="8BH-do-lHc" secondAttribute="top" id="MmQ-jI-s9Q"/>
+                            <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="aDD-d2-KuN" secondAttribute="bottom" id="N8j-Q1-GG3"/>
                             <constraint firstItem="1wM-Ln-7ly" firstAttribute="leading" secondItem="8BH-do-lHc" secondAttribute="leading" constant="8" id="RGE-7m-yXx"/>
                             <constraint firstItem="1wM-Ln-7ly" firstAttribute="height" secondItem="8BH-do-lHc" secondAttribute="height" id="c2u-Ow-7wx"/>
                             <constraint firstItem="eRo-Z1-BzV" firstAttribute="top" secondItem="8BH-do-lHc" secondAttribute="top" id="cOB-V5-0Al"/>
-                            <constraint firstAttribute="trailing" secondItem="aDD-d2-KuN" secondAttribute="trailing" constant="24" id="drm-rF-cl7"/>
+                            <constraint firstAttribute="trailing" secondItem="aDD-d2-KuN" secondAttribute="trailing" constant="16" id="drm-rF-cl7"/>
                             <constraint firstAttribute="bottom" secondItem="eRo-Z1-BzV" secondAttribute="bottom" id="ehD-xW-kb9"/>
-                            <constraint firstItem="aDD-d2-KuN" firstAttribute="top" secondItem="8BH-do-lHc" secondAttribute="top" constant="-2" id="gao-OH-EED"/>
                             <constraint firstItem="eRo-Z1-BzV" firstAttribute="leading" secondItem="1wM-Ln-7ly" secondAttribute="trailing" id="owJ-aY-lUW"/>
-                            <constraint firstItem="aDD-d2-KuN" firstAttribute="leading" secondItem="1wM-Ln-7ly" secondAttribute="trailing" constant="12" id="z6F-x8-cQ6"/>
+                            <constraint firstItem="aDD-d2-KuN" firstAttribute="leading" secondItem="1wM-Ln-7ly" secondAttribute="trailing" constant="16" id="z6F-x8-cQ6"/>
                         </constraints>
                     </view>
                     <size key="freeformSize" width="800" height="40"/>
                     <connections>
-                        <outlet property="addTabButton" destination="cYd-YU-sSj" id="Esy-Fe-JSs"/>
                         <outlet property="buttonsBackground" destination="eRo-Z1-BzV" id="X83-Xq-Aup"/>
                         <outlet property="buttonsStack" destination="aDD-d2-KuN" id="5zW-Qb-KIe"/>
                         <outlet property="collectionView" destination="1wM-Ln-7ly" id="cCP-cW-HWP"/>
-                        <outlet property="fireButton" destination="Hcx-F2-HgO" id="JuZ-vT-v3y"/>
-                        <outlet property="tabSwitcherContainer" destination="0eS-1F-EgF" id="YUq-xZ-LsO"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="2qS-F2-HbF" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -537,12 +503,10 @@
         </scene>
     </scenes>
     <resources>
-        <image name="Add" width="24" height="24"/>
         <image name="Close-24" width="24" height="24"/>
         <image name="GlobeSmall" width="24" height="24"/>
         <image name="Remove" width="24" height="24"/>
         <image name="TabUnread" width="24" height="24"/>
-        <image name="sharesheet-burndata" width="24" height="24"/>
         <namedColor name="icons">
             <color red="0.0" green="0.0" blue="0.0" alpha="0.8399999737739563" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
@@ -550,10 +514,10 @@
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemOrangeColor">
-            <color red="1" green="0.58431372550000005" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="1" green="0.58431372549019611" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemTealColor">
-            <color red="0.18823529410000001" green="0.69019607839999997" blue="0.78039215689999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.18823529411764706" green="0.69019607843137254" blue="0.7803921568627451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemYellowColor">
             <color red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

@@ -13,7 +13,7 @@ let package = Package(
             targets: ["SubscriptionUI"]),
     ],
     dependencies: [
-        .package(path: "../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../PreferencesUI-macOS"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../FeatureFlags")

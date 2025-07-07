@@ -124,7 +124,7 @@ final class URLEventHandler {
         DispatchQueue.main.async {
             if url.isFileURL && url.pathExtension == WebKitDownloadTask.downloadExtension {
                 guard let mainViewController = {
-                    if let mainWindowController = WindowControllersManager.shared.lastKeyMainWindowController {
+                    if let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
                         return mainWindowController.mainViewController
                     }
                     return WindowsManager.openNewWindow(with: .newtab, source: .ui, isBurner: false)?.contentViewController as? MainViewController
@@ -138,7 +138,7 @@ final class URLEventHandler {
             }
 
             if url.scheme?.isNetworkProtectionScheme == false && url.scheme?.isDataBrokerProtectionScheme == false {
-                WindowControllersManager.shared.show(url: url, source: .appOpenUrl, newTab: true)
+                Application.appDelegate.windowControllersManager.show(url: url, source: .appOpenUrl, newTab: true)
             }
         }
     }
@@ -150,7 +150,7 @@ final class URLEventHandler {
         case DataBrokerProtectionNotificationCommand.showDashboard.url:
             NotificationCenter.default.post(name: DataBrokerProtectionNotifications.shouldReloadUI, object: nil)
             DispatchQueue.main.async {
-                WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
+                Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection)
             }
         default:
             return

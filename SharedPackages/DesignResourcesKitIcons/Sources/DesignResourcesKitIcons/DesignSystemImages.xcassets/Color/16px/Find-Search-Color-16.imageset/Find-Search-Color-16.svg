@@ -1,0 +1,12 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Find-Search-Color-16_svg__a)">
+    <path fill="#CCDAFF" d="M14 7A7 7 0 1 1 0 7a7 7 0 0 1 14 0Z"/>
+    <path fill="#fff" d="M3.021 10.028a6.5 6.5 0 0 1 7.007-7.007 5 5 0 0 0-7.007 7.007Z"/>
+    <path fill="#666" fill-rule="evenodd" d="M11.584 12.29a7 7 0 1 1 .707-.707l3.563 3.563a.5.5 0 0 1-.708.707l-3.562-3.562ZM13 7A6 6 0 1 1 1 7a6 6 0 0 1 12 0Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <clipPath id="Find-Search-Color-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

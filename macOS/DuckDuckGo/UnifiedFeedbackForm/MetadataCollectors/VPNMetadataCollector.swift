@@ -20,7 +20,7 @@ import Foundation
 import AppKit
 import Common
 import LoginItems
-import NetworkProtection
+import VPN
 import NetworkExtension
 import NetworkProtectionIPC
 import NetworkProtectionUI
@@ -145,10 +145,6 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             dataVolumeObserver: ipcClient.dataVolumeObserver,
             knownFailureObserver: KnownFailureObserverThroughDistributedNotifications()
         )
-
-        // Force refresh just in case. A refresh is requested when the IPC client is created, but distributed notifications don't guarantee delivery
-        // so we'll play it safe and add one more attempt.
-        self.statusReporter.forceRefresh()
 
         self.settings = VPNSettings(defaults: defaults)
         updateSettings()

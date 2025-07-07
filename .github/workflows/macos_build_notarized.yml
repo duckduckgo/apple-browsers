@@ -89,13 +89,14 @@ jobs:
       dsym-url: ${{ steps.upload-dsyms-to-s3-test-build.outputs.dsym-url }}
 
     env:
+      RUNS_ON: macos-15-xlarge # keep this in sync with runs-on above
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       branch: ${{ inputs.branch || github.ref_name }}
 
     steps:
     - name: Register SSH key for certificates repository access
-      uses: webfactory/ssh-agent@v0.9.0
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -105,8 +106,17 @@ jobs:
         submodules: recursive
         ref: ${{ env.branch }}
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
+
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Sync code signing assets
       env:
@@ -136,7 +146,7 @@ jobs:
         fi
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Archive and notarize the app
       id: archive
@@ -156,6 +166,15 @@ jobs:
           ./scripts/archive.sh ${{ env.release-type }}
         fi
 
+    - name: Report job duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_macos_notarized_build
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
+
     - name: Set app name and version
       id: set-outputs
       run: |
@@ -166,14 +185,27 @@ jobs:
     - name: Upload app artifact
       uses: actions/upload-artifact@v4
       with:
-        name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app
-        path: ${{ github.workspace }}/macOS/release/DuckDuckGo-${{ env.app-version }}.zip
+        name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app.tar.xz
+        path: ${{ github.workspace }}/macOS/release/DuckDuckGo-${{ env.app-version }}.app.tar.xz
 
     - name: Upload dSYMs artifact
       uses: actions/upload-artifact@v4
       with:
         name: DuckDuckGo-${{ env.release-type }}-dSYM-${{ env.app-version }}
         path: ${{ github.workspace }}/macOS/release/${{ steps.set-outputs.outputs.dsym-name }}
+
+    - name: Update Sentry grouping rules
+      if: ${{ env.upload-to == 's3' }}
+      id: update-grouping-rules
+      continue-on-error: true
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+        DSYM_S3_PATH: s3://${{ vars.DSYM_BUCKET_NAME }}/${{ vars.MACOS_DSYM_BUCKET_RULES_PREFIX }}/
+      run: |
+        bundle exec fastlane run generate_sentry_grouping_rules platform:macos output_file:grouping-rules.txt
+        aws s3 cp grouping-rules.txt ${{ env.DSYM_S3_PATH }}
 
     - name: Upload dSYMs to S3
       if: ${{ env.upload-to == 's3' }}
@@ -245,6 +277,7 @@ jobs:
       asana-task-url: ${{ github.event.inputs.asana-task-url || inputs.asana-task-url }}
       upload-to: ${{ needs.export-notarized-app.outputs.upload-to }}
       release-type: ${{ github.event.inputs.release-type || inputs.release-type }}
+      RUNS_ON: macos-15 # keep this in sync with runs-on above
 
     steps:
 
@@ -261,20 +294,48 @@ jobs:
           macOS/Gemfile
           macOS/Gemfile.lock
           macOS/fastlane
+          macOS/scripts/assets
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
+
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Fetch app bundle
       uses: actions/download-artifact@v4
       with:
-        name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app
+        name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app.tar.xz
         path: ${{ github.workspace }}/macOS/dmg
+
+    - name: Install xz
+      run: brew install xz
 
     - name: Extract app bundle
       run: |
-        ditto -xk DuckDuckGo-${{ env.app-version }}.zip .
-        rm -f DuckDuckGo-${{ env.app-version }}.zip
+        tar -xf DuckDuckGo-${{ env.app-version }}.app.tar.xz
+        rm -f DuckDuckGo-${{ env.app-version }}.app.tar.xz
+        
+        # Rename extracted app to match expected name for DMG creation
+        extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
+        if [[ -n "${extracted_app}" ]]; then
+          extracted_app_name=$(basename "${extracted_app}")
+          expected_app_name="${{ env.app-name }}.app"
+          if [[ "${extracted_app_name}" != "${expected_app_name}" ]]; then
+            echo "Renaming extracted app from '${extracted_app_name}' to '${expected_app_name}'"
+            mv -f "${extracted_app}" "${expected_app_name}"
+          else
+            echo "Extracted app already has the correct name: ${expected_app_name}"
+          fi
+        else
+          echo "⚠️  Warning: No .app bundle found after extraction"
+        fi
       working-directory: ${{ github.workspace }}/macOS/dmg
 
     - name: Install create-dmg
@@ -286,18 +347,26 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       run: |
         dmg="duckduckgo-${{ env.app-version }}.dmg"
-        curl -fLSs $(gh api https://api.github.com/repos/${{ github.repository }}/contents/macOS/scripts/assets/dmg-background.png?ref=${{ github.ref }} --jq .download_url) \
-            --output dmg-background.png
         # Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
         create-dmg --volname "${{ env.app-name }}" \
+            --volicon "scripts/assets/dmg-${{ env.release-type }}.icns" \
             --filesystem APFS \
             --icon "${{ env.app-name }}.app" 140 160 \
-            --background "dmg-background.png" \
+            --background "scripts/assets/dmg-background.png" \
             --window-size 600 400 \
             --icon-size 120 \
             --app-drop-link 430 160 "${dmg}" \
             "dmg"
         echo "dmg=${dmg}" >> $GITHUB_OUTPUT
+
+    - name: Report job duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_macos_create_dmg
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
     - name: Upload DMG artifact
       uses: actions/upload-artifact@v4
@@ -392,8 +461,11 @@ jobs:
             macOS/Gemfile.lock
             macOS/fastlane
 
-      - name: Set up fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
 
       - name: Send Mattermost message
         if: ${{ env.success || env.failure }} # Don't execute when cancelled

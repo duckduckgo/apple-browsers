@@ -102,6 +102,7 @@ public enum RemoteMessageResponse {
         case appStore = "appstore"
         case dismiss
         case survey = "survey"
+        case navigation
     }
 
     enum JsonPlaceholder: String, CaseIterable {
@@ -112,6 +113,8 @@ public enum RemoteMessageResponse {
         case macComputer = "MacComputer"
         case newForMacAndWindows = "NewForMacAndWindows"
         case privacyShield = "PrivacyShield"
+        case aiChat = "Duck.ai"
+        case visualDesignUpdate = "VisualDesignUpdate"
     }
 
     public enum StatusError: Error {

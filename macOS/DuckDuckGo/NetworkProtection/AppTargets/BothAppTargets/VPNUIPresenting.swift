@@ -21,40 +21,61 @@ protocol VPNUIPresenting {
     func showVPNAppExclusions()
 
     @MainActor
+    func showVPNAppExclusions(addApp: Bool)
+
+    @MainActor
     func showVPNDomainExclusions()
+
+    @MainActor
+    func showVPNDomainExclusions(domain: String?)
 }
 
 extension WindowControllersManager: VPNUIPresenting {
 
     @MainActor
     func showVPNAppExclusions() {
+        showVPNAppExclusions(addApp: false)
+    }
+
+    @MainActor
+    func showVPNAppExclusions(addApp: Bool) {
         showPreferencesTab(withSelectedPane: .vpn)
 
-        let windowController = ExcludedAppsViewController.create().wrappedInWindowController()
+        let viewController = ExcludedAppsViewController.create()
+        let windowController = viewController.wrappedInWindowController()
 
-        guard let window = windowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
-        else {
+        guard let window = windowController.window, let parentWindowController = lastKeyMainWindowController else {
             assertionFailure("Failed to present ExcludedAppsViewController")
             return
         }
 
         parentWindowController.window?.beginSheet(window)
+        if addApp {
+            viewController.addApp()
+        }
     }
 
     @MainActor
     func showVPNDomainExclusions() {
+        showVPNDomainExclusions(domain: nil)
+    }
+
+    @MainActor
+    func showVPNDomainExclusions(domain: String?) {
         showPreferencesTab(withSelectedPane: .vpn)
 
-        let windowController = ExcludedDomainsViewController.create().wrappedInWindowController()
+        let viewController = ExcludedDomainsViewController.create()
+        let windowController = viewController.wrappedInWindowController()
 
-        guard let window = windowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
-        else {
+        guard let window = windowController.window, let parentWindowController = lastKeyMainWindowController else {
             assertionFailure("Failed to present ExcludedDomainsViewController")
             return
         }
 
         parentWindowController.window?.beginSheet(window)
+
+        if let domain {
+            viewController.addDomain(domain: domain)
+        }
     }
 }

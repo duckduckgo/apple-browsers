@@ -23,6 +23,7 @@ import UserScript
 import WebKit
 import Subscription
 import SpecialErrorPages
+import AIChat
 
 @MainActor
 final class UserScripts: UserScriptsProvider {
@@ -51,6 +52,7 @@ final class UserScripts: UserScriptsProvider {
     let releaseNotesUserScript: ReleaseNotesUserScript?
 #endif
     let aiChatUserScript: AIChatUserScript?
+    let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript?
     let faviconScript = FaviconUserScript()
 
@@ -59,17 +61,27 @@ final class UserScripts: UserScriptsProvider {
         clickToLoadScript = ClickToLoadUserScript()
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
+        let aiChatDebugURLSettings = AIChatDebugURLSettings()
         aiChatUserScript = AIChatUserScript(handler: AIChatUserScriptHandler(storage: DefaultAIChatPreferencesStorage()),
-                                            urlSettings: AIChatDebugURLSettings())
+                                            urlSettings: aiChatDebugURLSettings)
+        subscriptionUserScript = SubscriptionUserScript(
+            platform: .macos,
+            subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
+            paidAIChatFlagStatusProvider: { NSApp.delegateTyped.featureFlagger.isFeatureOn(.paidAIChat) },
+            navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
+            debugHost: aiChatDebugURLSettings.customURLHostname
+        )
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
         let sessionKey = sourceProvider.sessionKey ?? ""
         let messageSecret = sourceProvider.messageSecret ?? ""
+        let currentCohorts = sourceProvider.currentCohorts ?? []
         let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                            sessionKey: sessionKey,
                                            messageSecret: messageSecret,
-                                           featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig))
+                                           featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
+                                           currentCohorts: currentCohorts)
         contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         contentScopeUserScriptIsolated = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
 
@@ -114,6 +126,10 @@ final class UserScripts: UserScriptsProvider {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         }
 
+        if let subscriptionUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
+        }
+
         if let youtubeOverlayScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: youtubeOverlayScript)
         }
@@ -142,7 +158,6 @@ final class UserScripts: UserScriptsProvider {
         }
 
         var delegate: Subfeature
-        let freemiumDBPPixelExperimentManager = FreemiumDBPPixelExperimentManager(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
         if !Application.appDelegate.isAuthV2Enabled {
             guard let subscriptionManager = Application.appDelegate.subscriptionManagerV1 else {
                 assertionFailure("SubscriptionManager is not available")
@@ -154,8 +169,7 @@ final class UserScripts: UserScriptsProvider {
                                                                accountManager: subscriptionManager.accountManager)
             delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                stripePurchaseFlow: stripePurchaseFlow,
-                                                               uiHandler: Application.appDelegate.subscriptionUIHandler,
-                                                               freemiumDBPPixelExperimentManager: freemiumDBPPixelExperimentManager)
+                                                               uiHandler: Application.appDelegate.subscriptionUIHandler)
         } else {
             guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else {
                 assertionFailure("subscriptionManager is not available")
@@ -165,7 +179,7 @@ final class UserScripts: UserScriptsProvider {
             delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                                  stripePurchaseFlow: stripePurchaseFlow,
                                                                  uiHandler: Application.appDelegate.subscriptionUIHandler,
-                                                                 freemiumDBPPixelExperimentManager: freemiumDBPPixelExperimentManager)
+                                                                 aiChatURL: AIChatRemoteSettings().aiChatURL)
         }
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)

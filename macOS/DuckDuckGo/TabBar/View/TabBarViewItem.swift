@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Cocoa
+import AppKit
 import Combine
+import WebKit
 
 struct OtherTabBarViewItemsState {
 
@@ -28,12 +29,16 @@ struct OtherTabBarViewItemsState {
 
 protocol TabBarViewModel {
     var tabContent: Tab.TabContent { get }
+    var title: String { get }
     var titlePublisher: Published<String>.Publisher { get }
     var faviconPublisher: Published<NSImage?>.Publisher { get }
     var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { get }
     var usedPermissionsPublisher: Published<Permissions>.Publisher { get }
     var audioState: WKWebView.AudioState { get }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { get }
+    var canKillWebContentProcess: Bool { get }
+    var crashIndicatorModel: TabCrashIndicatorModel { get }
+
 }
 extension TabViewModel: TabBarViewModel {
     var titlePublisher: Published<String>.Publisher { $title }
@@ -42,6 +47,8 @@ extension TabViewModel: TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { $usedPermissions }
     var audioState: WKWebView.AudioState { tab.audioState }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { tab.audioStatePublisher }
+    var canKillWebContentProcess: Bool { tab.canKillWebContentProcess }
+    var crashIndicatorModel: TabCrashIndicatorModel { tab.crashIndicatorModel }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -54,6 +61,7 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemIsAlreadyBookmarked(_: TabBarViewItem) -> Bool
     @MainActor func tabBarViewAllItemsCanBeBookmarked(_: TabBarViewItem) -> Bool
 
+    @MainActor func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem)
     @MainActor func tabBarViewItemCloseAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemTogglePermissionAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemCloseOtherAction(_: TabBarViewItem)
@@ -73,7 +81,10 @@ protocol TabBarViewItemDelegate: AnyObject {
 
     @MainActor func otherTabBarViewItemsState(for tabBarViewItem: TabBarViewItem) -> OtherTabBarViewItemsState
 
+    @MainActor func tabBarViewItemCrashAction(_: TabBarViewItem)
+    @MainActor func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool)
 }
+
 final class TabBarItemCellView: NSView {
 
     enum WidthStage {
@@ -88,7 +99,7 @@ final class TabBarItemCellView: NSView {
         init(width: CGFloat) {
             switch width {
             case 0..<61: self = .withoutTitle
-            case 61..<120: self = .withoutCloseButton
+            case 61..<88: self = .withoutCloseButton
             default: self = .full
             }
         }
@@ -109,16 +120,30 @@ final class TabBarItemCellView: NSView {
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
     }
 
+    private var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+
     fileprivate let faviconImageView = {
         let faviconImageView = NSImageView()
         faviconImageView.imageScaling = .scaleProportionallyDown
         return faviconImageView
     }()
 
+    fileprivate let crashIndicatorButton = {
+        let crashIndicatorButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.crashButtonAction))
+        crashIndicatorButton.bezelStyle = .shadowlessSquare
+        crashIndicatorButton.normalTintColor = .audioTabIcon
+        crashIndicatorButton.mouseDownColor = .buttonMouseDown
+        crashIndicatorButton.mouseOverColor = .buttonMouseOver
+        crashIndicatorButton.imagePosition = .imageOnly
+        crashIndicatorButton.imageScaling = .scaleNone
+        crashIndicatorButton.image = .tabCrash
+        crashIndicatorButton.isHidden = true
+        return crashIndicatorButton
+    }()
+
     fileprivate let audioButton = {
         let audioButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.audioButtonAction))
         audioButton.bezelStyle = .shadowlessSquare
-        audioButton.cornerRadius = 2
         audioButton.normalTintColor = .audioTabIcon
         audioButton.mouseDownColor = .buttonMouseDown
         audioButton.mouseOverColor = .buttonMouseOver
@@ -135,7 +160,6 @@ final class TabBarItemCellView: NSView {
         titleTextField.drawsBackground = false
         titleTextField.isBordered = false
         titleTextField.font = NSFont.systemFont(ofSize: 13)
-        titleTextField.textColor = .labelColor
         titleTextField.lineBreakMode = .byClipping
         return titleTextField
     }()
@@ -143,7 +167,6 @@ final class TabBarItemCellView: NSView {
     fileprivate lazy var permissionButton = {
         let permissionButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.permissionButtonAction))
         permissionButton.bezelStyle = .shadowlessSquare
-        permissionButton.cornerRadius = 2
         permissionButton.normalTintColor = .button
         permissionButton.mouseDownColor = .buttonMouseDown
         permissionButton.mouseOverColor = .buttonMouseOver
@@ -155,7 +178,6 @@ final class TabBarItemCellView: NSView {
     fileprivate lazy var closeButton = {
         let closeButton = MouseOverButton(image: .close, target: nil, action: #selector(TabBarViewItem.closeButtonAction))
         closeButton.bezelStyle = .shadowlessSquare
-        closeButton.cornerRadius = 2
         closeButton.normalTintColor = .button
         closeButton.mouseDownColor = .buttonMouseDown
         closeButton.mouseOverColor = .buttonMouseOver
@@ -171,17 +193,36 @@ final class TabBarItemCellView: NSView {
         set {
             closeButton.target = newValue
             audioButton.target = newValue
+            crashIndicatorButton.target = newValue
             permissionButton.target = newValue
         }
     }
 
     fileprivate let mouseOverView = {
         let mouseOverView = MouseOverView()
-        mouseOverView.mouseOverColor = .tabMouseOver
         return mouseOverView
     }()
 
-    fileprivate let rightSeparatorView = ColorView(frame: .zero, backgroundColor: .separator)
+    fileprivate let roundedBackgroundColorView = {
+        let view = ColorView(frame: .zero)
+        view.alphaValue = 0.8
+        return view
+    }()
+
+    fileprivate let rightSeparatorView = ColorView(frame: .zero)
+
+    fileprivate lazy var rightRampView: RampView = {
+        let view = RampView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
+    fileprivate lazy var leftRampView: RampView = {
+        let view = RampView()
+        view.isFlippedHorizontally = true
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
 
     fileprivate lazy var borderLayer: CALayer = {
         let layer = CALayer()
@@ -226,23 +267,44 @@ final class TabBarItemCellView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
         translatesAutoresizingMaskIntoConstraints = false
+        clipsToBounds = !visualStyle.tabStyleProvider.shouldShowSShapedTab
 
-        clipsToBounds = true
-
-        mouseOverView.cornerRadius = 8
+        mouseOverView.cornerRadius = visualStyle.tabStyleProvider.standardTabCornerRadius
         mouseOverView.maskedCorners = [
             .layerMinXMaxYCorner,
             .layerMaxXMaxYCorner
         ]
-        mouseOverView.layer?.addSublayer(borderLayer)
+        mouseOverView.mouseOverColor = visualStyle.tabStyleProvider.hoverTabColor
+
+        if visualStyle.tabStyleProvider.shouldShowSShapedTab {
+            addSubview(leftRampView)
+            addSubview(rightRampView)
+        } else {
+            mouseOverView.layer?.addSublayer(borderLayer)
+        }
+
+        titleTextField.textColor = .labelColor
 
         addSubview(mouseOverView)
+        if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+            roundedBackgroundColorView.cornerRadius = 6
+            crashIndicatorButton.setCornerRadius(5)
+            audioButton.setCornerRadius(5)
+            closeButton.setCornerRadius(5)
+            addSubview(roundedBackgroundColorView)
+        }
         addSubview(faviconImageView)
+        addSubview(crashIndicatorButton)
         addSubview(audioButton)
         addSubview(titleTextField)
         addSubview(permissionButton)
         addSubview(closeButton)
         addSubview(rightSeparatorView)
+
+        closeButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+        permissionButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+        audioButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+        crashIndicatorButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
     }
 
     required init?(coder: NSCoder) {
@@ -252,12 +314,31 @@ final class TabBarItemCellView: NSView {
     override func layout() {
         super.layout()
         mouseOverView.frame = bounds
+        if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+            let padding: CGFloat = 4
+            let height = bounds.height - (padding * 2)
+            let y = bounds.midY - (height / 2)
+            roundedBackgroundColorView.frame = NSRect(x: bounds.origin.x + padding,
+                                                      y: y,
+                                                      width: bounds.width - (padding * 2),
+                                                      height: height)
+        }
 
-        withoutAnimation {
-            borderLayer.frame = bounds
-            leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-            rightPixelMask.frame = CGRect(x: borderLayer.bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-            topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: borderLayer.bounds.width, height: borderLayer.bounds.height - TabShadowConfig.dividerSize)
+        if visualStyle.tabStyleProvider.shouldShowSShapedTab {
+            withoutAnimation {
+                rightRampView.frame = CGRect(x: bounds.width, y: 0, width: RampView.Consts.rampWidth, height: RampView.Consts.rampHeight)
+                leftRampView.frame = CGRect(x: -RampView.Consts.rampWidth, y: 0, width: RampView.Consts.rampWidth, height: RampView.Consts.rampHeight)
+                leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
+                rightPixelMask.frame = CGRect(x: bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
+                topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: bounds.width, height: bounds.height - TabShadowConfig.dividerSize)
+            }
+        } else {
+            withoutAnimation {
+                borderLayer.frame = bounds
+                leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
+                rightPixelMask.frame = CGRect(x: borderLayer.bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
+                topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: borderLayer.bounds.width, height: borderLayer.bounds.height - TabShadowConfig.dividerSize)
+            }
         }
 
         switch widthStage {
@@ -267,16 +348,21 @@ final class TabBarItemCellView: NSView {
             layoutForCompactMode()
         }
 
-        rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - 10, width: 1, height: 20)
+        let tabStyleProvider = visualStyle.tabStyleProvider
+        rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - (tabStyleProvider.separatorHeight / 2), width: 1, height: tabStyleProvider.separatorHeight)
+        rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
     }
 
     private func layoutForNormalMode() {
-        var minX: CGFloat = 9
+        var minX: CGFloat = 12
         if faviconImageView.isShown {
             faviconImageView.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
             minX = faviconImageView.frame.maxX + 4
         }
-        if audioButton.isShown {
+        if crashIndicatorButton.isShown {
+            crashIndicatorButton.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
+            minX = crashIndicatorButton.frame.maxX
+        } else if audioButton.isShown {
             audioButton.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
             minX = audioButton.frame.maxX
         }
@@ -290,6 +376,8 @@ final class TabBarItemCellView: NSView {
         if permissionButton.isShown {
             permissionButton.frame = NSRect(x: maxX - 20, y: bounds.midY - 12, width: 24, height: 24)
         }
+
+        minX += visualStyle.tabStyleProvider.tabSpacing
 
         titleTextField.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
         updateTitleTextFieldMask()
@@ -309,7 +397,7 @@ final class TabBarItemCellView: NSView {
     }
 
     private func layoutForCompactMode() {
-        let numberOfElements: CGFloat = (faviconImageView.isShown ? 1 : 0) + (audioButton.isShown ? 1 : 0) + (permissionButton.isShown ? 1 : 0) + (closeButton.isShown ? 1 : 0) + (titleTextField.isShown ? 1 : 0)
+        let numberOfElements: CGFloat = (faviconImageView.isShown ? 1 : 0) + (crashIndicatorButton.isShown || audioButton.isShown ? 1 : 0) + (permissionButton.isShown ? 1 : 0) + (closeButton.isShown ? 1 : 0) + (titleTextField.isShown ? 1 : 0)
         let elementWidth: CGFloat = 16
         var totalWidth = numberOfElements * elementWidth
         // tighten elements to fit all
@@ -326,7 +414,10 @@ final class TabBarItemCellView: NSView {
             titleTextField.frame = NSRect(x: 4, y: bounds.midY - 8, width: bounds.maxX - 8, height: 16)
             updateTitleTextFieldMask()
         }
-        if audioButton.isShown {
+        if crashIndicatorButton.isShown {
+            crashIndicatorButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+            x = crashIndicatorButton.frame.maxX + spacing
+        } else if audioButton.isShown {
             audioButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
             x = audioButton.frame.maxX + spacing
         }
@@ -344,10 +435,11 @@ final class TabBarItemCellView: NSView {
 
     override func updateLayer() {
         NSAppearance.withAppAppearance {
-            borderLayer.borderColor = NSColor.tabShadowLine.cgColor
+            if !visualStyle.tabStyleProvider.shouldShowSShapedTab {
+                borderLayer.borderColor = NSColor.tabShadowLine.cgColor
+            }
         }
     }
-
 }
 
 @MainActor
@@ -355,9 +447,6 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     static let identifier = NSUserInterfaceItemIdentifier(rawValue: "TabBarViewItem")
 
-    enum Height {
-        static let standard: CGFloat = 34
-    }
     enum Width {
         static let minimum: CGFloat = 52
         static let minimumSelected: CGFloat = 120
@@ -392,8 +481,12 @@ final class TabBarViewItem: NSCollectionViewItem {
         }
     }
 
+    weak var fireproofDomains: FireproofDomains?
+
     private var currentURL: URL?
     private var cancellables = Set<AnyCancellable>()
+
+    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
 
     weak var delegate: TabBarViewItemDelegate?
     var tabViewModel: TabBarViewModel? {
@@ -421,7 +514,6 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     override func loadView() {
         view = TabBarItemCellView()
-
     }
 
     override func viewDidLoad() {
@@ -456,6 +548,23 @@ final class TabBarViewItem: NSCollectionViewItem {
             if isSelected {
                 isDragged = false
             }
+
+            /// This fixes a bug where the hover state of the non-selected tab
+            /// will be drawn above the selected tab, which messes with the s-shaped
+            /// given that is drawn out of bounds
+            view.wantsLayer = true
+            view.layer?.zPosition = isSelected ? 1 : 0
+
+            if isSelected && visualStyle.tabStyleProvider.applyTabShadow {
+                view.layer?.shadowColor = NSColor.shadowPrimary.cgColor
+                view.layer?.shadowOffset = CGSize(width: 0, height: -2)
+                view.layer?.shadowRadius = 6
+                view.layer?.masksToBounds = false
+                view.layer?.shadowOpacity = 1
+            } else {
+                view.layer?.shadowOpacity = 0
+            }
+
             updateSubviews()
             updateUsedPermissions()
         }
@@ -536,6 +645,11 @@ final class TabBarViewItem: NSCollectionViewItem {
         self.delegate?.tabBarViewItemMuteUnmuteSite(self)
     }
 
+    @objc fileprivate func crashButtonAction(_ sender: NSButton) {
+        // toggle, because when the popover is displayed, clicking the button should hide it
+        tabViewModel?.crashIndicatorModel.isShowingPopover.toggle()
+    }
+
     @objc fileprivate func permissionButtonAction(_ sender: NSButton) {
         delegate?.tabBarViewItemTogglePermissionAction(self)
     }
@@ -583,6 +697,28 @@ final class TabBarViewItem: NSCollectionViewItem {
         tabViewModel.audioStatePublisher.sink { [weak self] audioState in
             self?.updateAudioPlayState(audioState)
         }.store(in: &cancellables)
+
+        tabViewModel.crashIndicatorModel.$isShowingIndicator
+            .sink { [weak self] isShowingIndicator in
+                guard let self else {
+                    return
+                }
+                if isShowingIndicator {
+                    showCrashIndicatorButton()
+                } else {
+                    hideCrashIndicatorButton()
+                }
+            }
+            .store(in: &cancellables)
+
+        tabViewModel.crashIndicatorModel.$isShowingPopover
+            .sink { [weak self] isShowingPopover in
+                guard let self else {
+                    return
+                }
+                delegate?.tabBarViewItemDidUpdateCrashInfoPopoverVisibility(self, sender: cell.crashIndicatorButton, shouldShow: isShowingPopover)
+            }
+            .store(in: &cancellables)
     }
 
     func clear() {
@@ -590,6 +726,16 @@ final class TabBarViewItem: NSCollectionViewItem {
         usedPermissions = Permissions()
         cell.faviconImageView.image = nil
         cell.titleTextField.stringValue = ""
+    }
+
+    private func showCrashIndicatorButton() {
+        cell.crashIndicatorButton.isHidden = false
+    }
+
+    func hideCrashIndicatorButton() {
+        tabViewModel?.crashIndicatorModel.isShowingPopover = false
+        cell.crashIndicatorButton.isHidden = true
+        cell.needsLayout = true
     }
 
     private var isDragged = false {
@@ -607,12 +753,27 @@ final class TabBarViewItem: NSCollectionViewItem {
         withoutAnimation {
             if isSelected || isDragged {
                 cell.mouseOverView.mouseOverColor = nil
-                cell.mouseOverView.backgroundColor = .navigationBarBackground
+                cell.mouseOverView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
+                cell.roundedBackgroundColorView.isHidden = true
             } else {
-                cell.mouseOverView.mouseOverColor = .tabMouseOver
-                cell.mouseOverView.backgroundColor = nil
+                if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+                    cell.mouseOverView.mouseOverColor = nil
+                    cell.mouseOverView.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
+                    cell.roundedBackgroundColorView.backgroundColor = visualStyle.tabStyleProvider.hoverTabColor
+                    cell.roundedBackgroundColorView.isHidden = !isMouseOver || isSelected
+                } else {
+                    cell.mouseOverView.mouseOverColor = .tabMouseOver
+                    cell.mouseOverView.backgroundColor = nil
+                }
+
             }
-            cell.borderLayer.isHidden = !isSelected
+
+            if visualStyle.tabStyleProvider.shouldShowSShapedTab {
+                cell.rightRampView.isHidden = !(isSelected || isDragged)
+                cell.leftRampView.isHidden = !(isSelected || isDragged)
+            } else {
+                cell.borderLayer.isHidden = !isSelected
+            }
         }
 
         let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected
@@ -622,7 +783,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.titleTextField.isShown = !widthStage.isTitleHidden || (cell.faviconImageView.image == nil && !showCloseButton)
 
         // Adjust colors for burner window
-        if isBurner && cell.faviconImageView.image === TabViewModel.Favicon.burnerHome {
+        if isBurner && cell.titleTextField.stringValue == UserText.burnerTabHomeTitle {
             cell.faviconImageView.contentTintColor = .textColor
         } else {
             cell.faviconImageView.contentTintColor = nil
@@ -652,6 +813,20 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func updateSeparatorView() {
+        let shouldHideForHover = visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover && isMouseOver
+        let rightItemIsHovered: Bool = {
+            guard visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover,
+                  let indexPath = collectionView?.indexPath(for: self),
+                  let rightItem = collectionView?.item(at: IndexPath(item: indexPath.item + 1, section: indexPath.section)) as? TabBarViewItem
+            else { return false }
+            return rightItem.isMouseOver
+        }()
+
+        if shouldHideForHover || rightItemIsHovered {
+            cell.rightSeparatorView.isHidden = true
+            return
+        }
+
         let newIsHidden = isSelected || isDragged || isLeftToSelected
         if cell.rightSeparatorView.isHidden != newIsHidden {
             cell.rightSeparatorView.isHidden = newIsHidden
@@ -693,6 +868,12 @@ final class TabBarViewItem: NSCollectionViewItem {
 extension TabBarViewItem: NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
+        /// Trigger context menu callback from here.
+        /// It can't be called from `mouseClickView(_:rightMouseDownEvent:)`
+        /// because that one is called after handling the right click,
+        /// which means it would be delivered only after the context menu was closed.
+        delegate?.tabBarViewItemWillOpenContextMenu(self)
+
         // Initial setup
         menu.removeAllItems()
         let otherItemsState = delegate?.otherTabBarViewItemsState(for: self) ?? .init(hasItemsToTheLeft: true,
@@ -727,6 +908,17 @@ extension TabBarViewItem: NSMenuDelegate {
         if !isBurner {
             addMoveToNewWindowMenuItem(to: menu, areThereOtherTabs: areThereOtherTabs)
         }
+
+        if tabViewModel?.canKillWebContentProcess == true {
+            menu.addItem(.separator())
+            addCrashMenuItem(to: menu)
+        }
+    }
+
+    private func addCrashMenuItem(to menu: NSMenu) {
+        let crashMenuItem = NSMenuItem(title: Tab.crashTabMenuOptionTitle, action: #selector(crashMenuItemAction(_:)), keyEquivalent: "")
+        crashMenuItem.target = self
+        menu.addItem(crashMenuItem)
     }
 
     private func addDuplicateMenuItem(to menu: NSMenu) {
@@ -734,6 +926,10 @@ extension TabBarViewItem: NSMenuDelegate {
         duplicateMenuItem.target = self
         duplicateMenuItem.isEnabled = delegate?.tabBarViewItemCanBeDuplicated(self) ?? false
         menu.addItem(duplicateMenuItem)
+    }
+
+    @objc private func crashMenuItemAction(_ sender: NSButton) {
+        delegate?.tabBarViewItemCrashAction(self)
     }
 
     private func addPinMenuItem(to menu: NSMenu) {
@@ -764,11 +960,15 @@ extension TabBarViewItem: NSMenuDelegate {
     }
 
     private func addFireproofMenuItem(to menu: NSMenu) {
+        guard let fireproofDomains else {
+            assertionFailure("TabBarViewItem.fireproofDomains is not set")
+            return
+        }
         var menuItem = NSMenuItem(title: UserText.fireproofSite, action: #selector(fireproofSiteAction(_:)), keyEquivalent: "")
         menuItem.isEnabled = false
 
         if let url = currentURL, url.canFireproof {
-            if FireproofDomains.shared.isFireproof(fireproofDomain: url.host ?? "") {
+            if fireproofDomains.isFireproof(fireproofDomain: url.host ?? "") {
                 menuItem = NSMenuItem(title: UserText.removeFireproofing, action: #selector(removeFireproofingAction(_:)), keyEquivalent: "")
             }
             menuItem.isEnabled = true
@@ -852,13 +1052,19 @@ extension TabBarViewItem: MouseClickViewDelegate {
             return event
         } : nil
 
-        delegate?.tabBarViewItem(self, isMouseOver: isMouseOver)
-        self.isMouseOver = isMouseOver
+        // Notify the tab to the left to update its separator when this tab is hovered/unhovered
+        if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+            if let indexPath = collectionView?.indexPath(for: self),
+               indexPath.item > 0,
+               let leftItem = collectionView?.item(at: IndexPath(item: indexPath.item - 1, section: indexPath.section)) as? TabBarViewItem {
+                leftItem.updateSeparatorView()
+            }
+        }
     }
 
     func mouseClickView(_ mouseClickView: MouseClickView, otherMouseDownEvent: NSEvent) {
         // close on middle-click
-        guard otherMouseDownEvent.buttonNumber == 2 else { return }
+        guard case .middle = otherMouseDownEvent.button else { return }
 
         guard let indexPath = self.collectionView?.indexPath(for: self) else {
             // doubleclick event arrived at point when we're already removed
@@ -1013,6 +1219,8 @@ extension TabBarViewItem {
             var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> {
                 $audioState.eraseToAnyPublisher()
             }
+            let crashIndicatorModel: TabCrashIndicatorModel = TabCrashIndicatorModel()
+            var canKillWebContentProcess: Bool = false
             init(width: CGFloat, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
                 self.width = width
                 self.title = title
@@ -1024,11 +1232,15 @@ extension TabBarViewItem {
             }
         }
 
+        private let tabVisualProvider: TabStyleProviding
+
         let sections: [[TabBarViewModelMock]]
         var collectionViews = [NSCollectionView]()
 
-        init(sections: [[TabBarViewModelMock]]) {
+        init(sections: [[TabBarViewModelMock]],
+             visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
             self.sections = sections
+            self.tabVisualProvider = visualStyle.tabStyleProvider
             super.init(nibName: nil, bundle: nil)
         }
 
@@ -1101,7 +1313,7 @@ extension TabBarViewItem {
         func collectionView(_ cv: NSCollectionView, layout: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
             let section = collectionViews.firstIndex(where: { $0 === cv })!
             let item = sections[section][indexPath.item]
-            return NSSize(width: item.width, height: TabBarViewItem.Height.standard)
+            return NSSize(width: item.width, height: tabVisualProvider.standardTabHeight)
         }
 
         func tabBarViewItem(_: TabBarViewItem, isMouseOver: Bool) {}
@@ -1110,6 +1322,7 @@ extension TabBarViewItem {
         func tabBarViewItemCanBeBookmarked(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemIsAlreadyBookmarked(_: TabBarViewItem) -> Bool { false }
         func tabBarViewAllItemsCanBeBookmarked(_: TabBarViewItem) -> Bool { false }
+        func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem) {}
         func tabBarViewItemCloseAction(_: TabBarViewItem) {}
         func tabBarViewItemTogglePermissionAction(_ item: TabBarViewItem) {
             // swiftlint:disable:next force_cast
@@ -1158,6 +1371,8 @@ extension TabBarViewItem {
         func otherTabBarViewItemsState(for: TabBarViewItem) -> OtherTabBarViewItemsState {
             .init(hasItemsToTheLeft: false, hasItemsToTheRight: false)
         }
+        func tabBarViewItemCrashAction(_: TabBarViewItem) {}
+        func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool) {}
     }
 }
 #endif

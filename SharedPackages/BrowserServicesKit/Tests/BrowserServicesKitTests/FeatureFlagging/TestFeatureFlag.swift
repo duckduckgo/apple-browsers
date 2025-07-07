@@ -19,6 +19,10 @@
 import BrowserServicesKit
 
 enum TestFeatureFlag: String, FeatureFlagDescribing {
+    var defaultValue: Bool {
+        false
+    }
+
     var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
         case .nonOverridableFlag, .overridableFlagDisabledByDefault, .overridableFlagEnabledByDefault:

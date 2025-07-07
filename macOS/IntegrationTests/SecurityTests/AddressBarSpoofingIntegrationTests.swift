@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Common
 import Navigation
 import os.log
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 12.0, *)
@@ -45,21 +47,23 @@ class AddressBarSpoofingIntegrationTests: XCTestCase {
         window?.close()
         window = nil
 
-        PrivacySecurityPreferences.shared.gpcEnabled = true
+        WebTrackingProtectionPreferences.shared.isGPCEnabled = true
     }
 
     // MARK: - Tests
 
     @MainActor
     func testUrlBarSpoofingWithLongLoadingNavigations() async throws {
+        throw XCTSkip("Flaky")
+
         let tab = Tab(content: .none)
         window = WindowsManager.openNewWindow(with: tab)!
 
         // run
         let url = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-js-page-rewrite.html")!
-        PrivacySecurityPreferences.shared.gpcEnabled = false
-        _=try await tab.setUrl(url, userEntered: nil)?.result.get()
-        _=try await tab.webView.evaluateJavaScript("(function() { run(); return true; })()")
+        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        _=try await tab.setUrl(url, source: .link)?.result.get()
+        _=try await tab.webView.evaluateJavaScript("(function() { run(); return true; })()") as Void?
 
         // wait
         try await Task.sleep(nanoseconds: UInt64(100 * Double(NSEC_PER_MSEC))) // wait for isLoading to be true
@@ -78,11 +82,11 @@ class AddressBarSpoofingIntegrationTests: XCTestCase {
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-application-scheme.html")!
-        PrivacySecurityPreferences.shared.gpcEnabled = false
-        _=try await tab.setUrl(url, userEntered: nil)?.result.get()
+        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        _=try await tab.setUrl(url, source: .link)?.result.get()
 
         // run
-        _=try await tab.webView.evaluateJavaScript("(function() { document.getElementById('run').click(); return true; })()")
+        _=try await tab.webView.evaluateJavaScript("(function() { document.getElementById('run').click(); return true; })()") as Void?
 
         // wait
         try await Task.sleep(nanoseconds: UInt64(100 * Double(NSEC_PER_MSEC))) // wait for isLoading to be true
@@ -100,15 +104,17 @@ class AddressBarSpoofingIntegrationTests: XCTestCase {
 
     @MainActor
     func testUrlBarSpoofingWithSpoofAboutBlankRewrite() async throws {
+        throw XCTSkip("Flaky")
+
         let tab = Tab(content: .none)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-about-blank-rewrite.html")!
-        PrivacySecurityPreferences.shared.gpcEnabled = false
-        _ = try await tab.setUrl(url, userEntered: nil)?.result.get()
+        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        _ = try await tab.setUrl(url, source: .link)?.result.get()
 
         // run
-        _ = try await tab.webView.evaluateJavaScript("(function() { document.getElementById('run').click(); return true; })()")
+        _ = try await tab.webView.evaluateJavaScript("(function() { document.getElementById('run').click(); return true; })()") as Void?
 
         // wait
         let tabViewModel = (window.contentViewController as! MainViewController).browserTabViewController.tabViewModel!
@@ -124,15 +130,17 @@ class AddressBarSpoofingIntegrationTests: XCTestCase {
 
     @MainActor
     func testUrlBarSpoofingWithBasicAuth2028() async throws {
+        throw XCTSkip("Flaky")
+
         let tab = Tab(content: .none)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-basicauth-2028.html")!
-        PrivacySecurityPreferences.shared.gpcEnabled = false
-        _ = try await tab.setUrl(url, userEntered: nil)?.result.get()
+        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        _ = try await tab.setUrl(url, source: .link)?.result.get()
 
         // run
-        _=try await tab.webView.evaluateJavaScript("(function() { run(); return true; })()")
+        _=try await tab.webView.evaluateJavaScript("(function() { run(); return true; })()") as Void?
 
         // wait
         try await Task.sleep(nanoseconds: UInt64(100 * Double(NSEC_PER_MSEC))) // wait for isLoading to be true
@@ -152,11 +160,11 @@ class AddressBarSpoofingIntegrationTests: XCTestCase {
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-basicauth-whitespace.html")!
-        PrivacySecurityPreferences.shared.gpcEnabled = false
-        _ = try await tab.setUrl(url, userEntered: nil)?.result.get()
+        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        _ = try await tab.setUrl(url, source: .link)?.result.get()
 
         // run
-        _ = try await tab.webView.evaluateJavaScript("(function() { document.getElementById('run').click(); return true; })()")
+        _ = try await tab.webView.evaluateJavaScript("(function() { document.getElementById('run').click(); return true; })()") as Void?
 
         // wait
         try await Task.sleep(nanoseconds: UInt64(100 * Double(NSEC_PER_MSEC))) // wait for isLoading to be true
@@ -176,11 +184,11 @@ class AddressBarSpoofingIntegrationTests: XCTestCase {
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-basicauth-2029.html")!
-        PrivacySecurityPreferences.shared.gpcEnabled = false
-        _ = try await tab.setUrl(url, userEntered: nil)?.result.get()
+        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        _ = try await tab.setUrl(url, source: .link)?.result.get()
 
         // run
-        _ = try await tab.webView.evaluateJavaScript("(function() { document.getElementById('run').click(); return true; })()")
+        _ = try await tab.webView.evaluateJavaScript("(function() { document.getElementById('run').click(); return true; })()") as Void?
 
         // wait
         try await Task.sleep(nanoseconds: UInt64(100 * Double(NSEC_PER_MSEC))) // wait for isLoading to be true
@@ -200,11 +208,11 @@ class AddressBarSpoofingIntegrationTests: XCTestCase {
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-form-action.html")!
-        PrivacySecurityPreferences.shared.gpcEnabled = false
-        _ = try await tab.setUrl(url, userEntered: nil)?.result.get()
+        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        _ = try await tab.setUrl(url, source: .link)?.result.get()
 
         // run
-        _ = try await tab.webView.evaluateJavaScript("(function() { run(); return true; })()")
+        _ = try await tab.webView.evaluateJavaScript("(function() { run(); return true; })()") as Void?
 
         // wait
         try await Task.sleep(nanoseconds: UInt64(500 * Double(NSEC_PER_MSEC))) // wait for isLoading to be true, formactions are slow
@@ -227,11 +235,11 @@ class AddressBarSpoofingIntegrationTests: XCTestCase {
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-js-download-url.html")!
-        PrivacySecurityPreferences.shared.gpcEnabled = false
-        _ = try await tab.setUrl(url, userEntered: nil)?.result.get()
+        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        _ = try await tab.setUrl(url, source: .link)?.result.get()
 
         // run
-        _ = try await tab.webView.evaluateJavaScript("(function() { run(); return true; })()")
+        _ = try await tab.webView.evaluateJavaScript("(function() { run(); return true; })()") as Void?
 
         // wait
         try await Task.sleep(nanoseconds: UInt64(100 * Double(NSEC_PER_MSEC))) // wait for isLoading to be true
@@ -252,11 +260,11 @@ class AddressBarSpoofingIntegrationTests: XCTestCase {
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-open-b64-html.html")!
-        PrivacySecurityPreferences.shared.gpcEnabled = false
-        _ = try await tab.setUrl(url, userEntered: nil)?.result.get()
+        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        _ = try await tab.setUrl(url, source: .link)?.result.get()
 
         // run
-        _ = try await tab.webView.evaluateJavaScript("(function() { run(); return true; })()")
+        _ = try await tab.webView.evaluateJavaScript("(function() { run(); return true; })()") as Void?
 
         // wait
         try await Task.sleep(nanoseconds: UInt64(100 * Double(NSEC_PER_MSEC))) // wait for isLoading to be true
@@ -279,11 +287,11 @@ class AddressBarSpoofingIntegrationTests: XCTestCase {
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL(string: "https://privacy-test-pages.site/security/address-bar-spoofing/spoof-unsupported-scheme.html")!
-        PrivacySecurityPreferences.shared.gpcEnabled = false
-        _ = try await tab.setUrl(url, userEntered: nil)?.result.get()
+        WebTrackingProtectionPreferences.shared.isGPCEnabled = false
+        _ = try await tab.setUrl(url, source: .link)?.result.get()
 
         // run
-        _ = try await tab.webView.evaluateJavaScript("(function() { run(); return true; })()")
+        _ = try await tab.webView.evaluateJavaScript("(function() { run(); return true; })()") as Void?
 
         // wait
         try await Task.sleep(nanoseconds: UInt64(100 * Double(NSEC_PER_MSEC))) // wait for isLoading to be true

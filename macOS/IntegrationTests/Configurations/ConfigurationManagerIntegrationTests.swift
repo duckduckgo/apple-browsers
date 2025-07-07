@@ -25,13 +25,27 @@ final class ConfigurationManagerIntegrationTests: XCTestCase {
 
     override func setUpWithError() throws {
         // use default privacyConfiguration link
-        _ = AppConfigurationURLProvider(customPrivacyConfiguration: AppConfigurationURLProvider.Constants.defaultPrivacyConfigurationURL)
-        configManager = ConfigurationManager()
+        _ = AppConfigurationURLProvider(
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            customPrivacyConfiguration: AppConfigurationURLProvider.Constants.defaultPrivacyConfigurationURL
+        )
+        let privacyFeatures = Application.appDelegate.privacyFeatures
+        configManager = ConfigurationManager(
+            trackerDataManager: privacyFeatures.contentBlocking.trackerDataManager,
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            contentBlockingManager: privacyFeatures.contentBlocking.contentBlockingManager,
+            httpsUpgrade: privacyFeatures.httpsUpgrade
+        )
     }
 
     override func tearDownWithError() throws {
         // use default privacyConfiguration link
-        _ = AppConfigurationURLProvider(customPrivacyConfiguration: AppConfigurationURLProvider.Constants.defaultPrivacyConfigurationURL)
+        _ = AppConfigurationURLProvider(
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            customPrivacyConfiguration: AppConfigurationURLProvider.Constants.defaultPrivacyConfigurationURL
+        )
         configManager = nil
     }
 
@@ -39,22 +53,30 @@ final class ConfigurationManagerIntegrationTests: XCTestCase {
     func testTdsAreFetchedFromURLBasedOnPrivacyConfigExperiment() async {
         // GIVEN
         await configManager.refreshNow()
-        let etag = ContentBlocking.shared.trackerDataManager.fetchedData?.etag
+        let etag = await Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.fetchedData?.etag
         // use test privacyConfiguration link with tds experiments
-        _ = AppConfigurationURLProvider(customPrivacyConfiguration: URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/config/test/macos-config.json")!)
+        _ = AppConfigurationURLProvider(
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            customPrivacyConfiguration: URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/config/test/macos-config.json")!
+        )
 
         // WHEN
         await configManager.refreshNow()
 
         // THEN
-        var newEtag = ContentBlocking.shared.trackerDataManager.fetchedData?.etag
+        let newEtag = await Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.fetchedData?.etag
         XCTAssertNotEqual(etag, newEtag)
         XCTAssertEqual(newEtag, "\"2ce60c57c3d384f986ccbe2c422aac44\"")
 
         // RESET
-        _ = AppConfigurationURLProvider(customPrivacyConfiguration: AppConfigurationURLProvider.Constants.defaultPrivacyConfigurationURL)
+        _ = AppConfigurationURLProvider(
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger(),
+            customPrivacyConfiguration: AppConfigurationURLProvider.Constants.defaultPrivacyConfigurationURL
+        )
         await configManager.refreshNow()
-        let resetEtag  = ContentBlocking.shared.trackerDataManager.fetchedData?.etag
+        let resetEtag = await Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.fetchedData?.etag
         XCTAssertNotEqual(newEtag, resetEtag)
     }
 

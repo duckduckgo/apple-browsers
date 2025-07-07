@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Sparkle
-import PixelKit
+import AppKit
 import BrowserServicesKit
 import Combine
+import Foundation
 import os.log
+import PixelKit
+import Sparkle
 
 #if SPARKLE
 
@@ -104,34 +105,28 @@ enum UpdateCycleProgress: CustomStringConvertible {
 }
 
 final class UpdateUserDriver: NSObject, SPUUserDriver {
-    private enum Checkpoint: Equatable {
-        // Pauses before downloading the update
-        // Flow: Manual update -> [Pause] -> Download -> Install
-        case download
-
-        // Pauses before restarting the app to apply the update
-        // Flow: Auto update -> Download -> [Pause] -> Install
-        case restart
-    }
-
     private var internalUserDecider: InternalUserDecider
-    private var checkpoint: Checkpoint
+    private var areAutomaticUpdatesEnabled: Bool
 
     // Resume the update process when the user explicitly chooses to do so
     private var onResuming: (() -> Void)? {
         didSet {
-            pendingUpdateSince = Date()
+            if useLegacyAutoRestartLogic {
+                updateLastUpdateDownloadedDate()
+            }
         }
     }
 
     @UserDefaultsWrapper(key: .pendingUpdateSince, defaultValue: .distantPast)
     private var pendingUpdateSince: Date
 
-    var daysSinceLastUpdateCheck: Int {
-        Calendar.current.dateComponents([.day], from: pendingUpdateSince, to: Date()).day ?? Int.max
+    func updateLastUpdateDownloadedDate() {
+        pendingUpdateSince = Date()
     }
 
-    private var ignoresCheckpoint = false
+    var timeIntervalSinceLastUpdateDownloaded: TimeInterval {
+        Date().timeIntervalSince(pendingUpdateSince)
+    }
 
     // Dismiss the current update for the time being but keep the downloaded file around
     private var onDismiss: () -> Void = {}
@@ -148,10 +143,23 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
 
     private(set) var sparkleUpdateState: SPUUserUpdateState?
 
-    init(internalUserDecider: InternalUserDecider, hasPendingObsoleteUpdate: Bool, areAutomaticUpdatesEnabled: Bool) {
+    // MARK: - Feature Flags support
+
+    private let featureFlagger: FeatureFlagger
+
+    private var useLegacyAutoRestartLogic: Bool {
+        !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
+    }
+
+    // MARK: - Initializers
+
+    init(internalUserDecider: InternalUserDecider,
+         areAutomaticUpdatesEnabled: Bool,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+
+        self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
-        self.ignoresCheckpoint = hasPendingObsoleteUpdate
-        self.checkpoint = areAutomaticUpdatesEnabled ? .restart : .download
+        self.areAutomaticUpdatesEnabled = areAutomaticUpdatesEnabled
     }
 
     func resume() {
@@ -197,7 +205,7 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
             reply(.dismiss)
         }
 
-        if checkpoint == .download && !ignoresCheckpoint {
+        if !areAutomaticUpdatesEnabled {
             onResuming = { reply(.install) }
             updateProgress = .updateCycleDone(.pausedAtDownloadCheckpoint)
             Logger.updates.log("Updater paused at download checkpoint (manual update pending user decision)")
@@ -261,7 +269,14 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
             Logger.updates.log("Updater dismissing obsolete update")
         }
 
-        if checkpoint == .restart && !ignoresCheckpoint {
+        guard useLegacyAutoRestartLogic else {
+            onResuming = { reply(.install) }
+            updateProgress = .updateCycleDone(.pausedAtRestartCheckpoint)
+            Logger.updates.log("Updater paused at restart checkpoint")
+            return
+        }
+
+        if areAutomaticUpdatesEnabled {
             onResuming = { reply(.install) }
             updateProgress = .updateCycleDone(.pausedAtRestartCheckpoint)
             Logger.updates.log("Updater paused at restart checkpoint (automatic update pending user decision)")

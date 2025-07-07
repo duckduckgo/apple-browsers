@@ -13,14 +13,22 @@ on:
   pull_request:
     paths:
       - '.github/**'
+      - '.xcode-version'
       - 'SharedPackages/**'
       - 'macOS/**'
+  schedule:
+    - cron: '10,40 4,5 * * *'
   workflow_call:
     inputs:
       branch:
         description: "Branch name"
         required: false
         type: string
+      skip-asana:
+        description: "Skip Asana task creation on tests failure"
+        required: false
+        type: boolean
+        default: true
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -29,6 +37,8 @@ on:
       APPLE_API_KEY_ISSUER:
         required: true
       ASANA_ACCESS_TOKEN:
+        required: true
+      GH_RO_PAT:
         required: true
       MATCH_PASSWORD:
         required: true
@@ -116,17 +126,25 @@ jobs:
             flavor: Non-Sandbox
           - cache-key: sandbox-
             flavor: Sandbox
+          - runs-on: macos-15
+            flavor: Non-Sandbox
+          - runs-on: macos-15-xlarge
+            flavor: Sandbox
 
-    runs-on: macos-15-xlarge
+    runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 30
+
+    env:
+      WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
     outputs:
       private-api-check-report: ${{ steps.private-api.outputs.report }}
       commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
+      pr_reviewers: ${{ steps.fetch_commit_author.outputs.pr_reviewers }}
 
     steps:
     - name: Register SSH key for certificates repository access
-      uses: webfactory/ssh-agent@v0.9.0
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -143,8 +161,17 @@ jobs:
         submodules: recursive
         ref: ${{ inputs.branch || github.ref_name }}
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Start measuring duration
+      id: start-duration-tests
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
+
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Sync code signing assets
       env:
@@ -175,9 +202,10 @@ jobs:
           ${{ runner.os }}-macos-${{ matrix.cache-key }}
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Build and run unit tests
+      id: run-unit-tests
       run: |
         echo "Runner ${RUNNER_NAME} (${RUNNER_TRACKING_ID})"
         export OS_ACTIVITY_MODE=debug
@@ -195,6 +223,7 @@ jobs:
           || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-unittests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-unittests.xcresult && exit 1; }
 
     - name: Run integration tests
+      id: run-integration-tests
       run: |
         set -o pipefail && xcodebuild test \
           -scheme "${{ matrix.scheme }}" \
@@ -235,6 +264,14 @@ jobs:
           fi
         fi
 
+    - name: Upload JUnit XML as artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: macos-${{ matrix.flavor }}-unittests.xml
+        path: macOS/${{ matrix.flavor }}*.xml
+        retention-days: 7
+
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v4
       if: always() # always run even if the previous step fails
@@ -244,10 +281,9 @@ jobs:
         check_retries: true
 
     - name: Update Asana with failed unit tests
-      if: always() # always run even if the previous step fails
+      if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-        WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
       run: |
         # Extract failed tests from the junit report
         # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
@@ -257,6 +293,28 @@ jobs:
             | sort -u -k 1,2 \
             | xargs -L 1 ./scripts/report-failed-unit-test.sh
         done
+
+    - name: Report job duration
+      if: success() || (always() && steps.run-integration-tests.outcome == 'failure')
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration-tests.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_macos_${{ matrix.flavor }}_unit_tests
+        pixel-params: |
+          runner: ${{ matrix.runs-on }}
+
+    - name: Send Unit Tests Status Pixel
+      if: always() && github.ref_name == 'main'
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: m_ci_apple_status_mac_main_${{ matrix.flavor }}_unit_tests_${{ steps.run-unit-tests.outcome }}
+
+    - name: Send Integration Tests Status Pixel
+      if: always() && github.ref_name == 'main'
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: m_ci_apple_status_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}
 
     - name: Upload failed unit tests log
       uses: actions/upload-artifact@v4
@@ -290,15 +348,12 @@ jobs:
         path: macOS/${{ matrix.flavor }}-integrationtests.xcresult
         retention-days: 7
 
-    - name: Fetch latest commit author
-      if: always() && github.ref_name == 'main'
+    - name: Fetch latest commit author and PR reviewers
+      if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
       id: fetch_commit_author
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        head_commit=$(git rev-parse HEAD)
-        author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
-        echo "commit_author=${author}" >> $GITHUB_OUTPUT
+      uses: ./.github/actions/fetch-commit-info
+      with:
+        github-token: ${{ github.token }}
 
   private-api:
     name: Private API Report
@@ -316,12 +371,14 @@ jobs:
     # workflow_call is used by bump_internal_release and is followed by a proper release job
     if: github.actor != 'dependabot[bot]' && (github.event_name == 'push' || github.event_name == 'pull_request')
 
-    runs-on: macos-15-xlarge
+    runs-on: macos-15
     timeout-minutes: 30
+    env:
+      RUNS_ON: macos-15 # keep this in sync with runs-on above
 
     steps:
     - name: Register SSH key for certificates repository access
-      uses: webfactory/ssh-agent@v0.9.0
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -330,8 +387,17 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Start measuring duration
+      id: start-duration-release-build
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
+
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Sync code signing assets
       env:
@@ -361,7 +427,7 @@ jobs:
           ${{ runner.os }}-spm-test-release-${{ matrix.cache-key }}
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Build the app
       run: |
@@ -373,6 +439,15 @@ jobs:
           -skipPackagePluginValidation -skipMacroValidation \
           | tee release-xcodebuild.log \
           | xcbeautify
+
+    - name: Report job duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration-release-build.outputs.start-timestamp }}
+        pixel-name: m_ci_apple_duration_macos_release_build
+        pixel-params: |
+          runner: ${{ env.RUNS_ON }}
 
     - name: Upload failed test log
       uses: actions/upload-artifact@v4
@@ -405,7 +480,7 @@ jobs:
     name: Create Asana Task
     needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
 
-    if: failure() && github.ref_name == 'main' && github.run_attempt == 1
+    if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
 
     runs-on: ubuntu-latest
 
@@ -419,12 +494,14 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.tests.outputs.commit_author }}
+          pr-reviewers: ${{ needs.tests.outputs.pr_reviewers }}
+          github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:
     name: Close Asana Task
     needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
 
-    if: success() && github.ref_name == 'main' && github.run_attempt > 1
+    if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true
 
     runs-on: ubuntu-latest
 
@@ -437,3 +514,4 @@ jobs:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_POST_MERGE_SECTION_ID }}
+          github-token: ${{ secrets.GH_RO_PAT }}

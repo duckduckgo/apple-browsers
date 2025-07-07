@@ -50,7 +50,7 @@ final class AuthMigratorTests: XCTestCase {
                                pixelHandler: testPixelHandler,
                                isAuthV2Enabled: true)
 
-        XCTAssertTrue(sut.isMigrated)
+        XCTAssertTrue(sut.isReadyToUseAuthV2)
     }
 
     func test_isMigrated_whenAuthV2Enabled_andMigrationPossible_andUserNotAuthenticated_returnsFalse() {
@@ -60,7 +60,7 @@ final class AuthMigratorTests: XCTestCase {
                                pixelHandler: testPixelHandler,
                                isAuthV2Enabled: true)
 
-        XCTAssertFalse(sut.isMigrated)
+        XCTAssertFalse(sut.isReadyToUseAuthV2)
     }
 
     func test_isMigrated_whenAuthV2Enabled_andMigrationNotPossible_returnsTrue() {
@@ -69,7 +69,7 @@ final class AuthMigratorTests: XCTestCase {
                                pixelHandler: testPixelHandler,
                                isAuthV2Enabled: true)
 
-        XCTAssertTrue(sut.isMigrated)
+        XCTAssertTrue(sut.isReadyToUseAuthV2)
     }
 
     func test_isMigrated_whenAuthV2Disabled_andUserAuthenticated_returnsTrue() {
@@ -78,7 +78,7 @@ final class AuthMigratorTests: XCTestCase {
                                pixelHandler: testPixelHandler,
                                isAuthV2Enabled: false)
 
-        XCTAssertTrue(sut.isMigrated)
+        XCTAssertTrue(sut.isReadyToUseAuthV2)
     }
 
     func test_isMigrated_whenAuthV2Disabled_andUserNotAuthenticated_returnsFalse() {
@@ -87,7 +87,7 @@ final class AuthMigratorTests: XCTestCase {
                                pixelHandler: testPixelHandler,
                                isAuthV2Enabled: false)
 
-        XCTAssertFalse(sut.isMigrated)
+        XCTAssertFalse(sut.isReadyToUseAuthV2)
     }
 
     // MARK: - migrateAuthV1toAuthV2IfNeeded tests

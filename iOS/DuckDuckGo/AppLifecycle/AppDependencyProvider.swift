@@ -171,7 +171,7 @@ final class AppDependencyProvider: DependencyProvider {
                                                     pixelHandler: pixelHandler,
                                                     isAuthV2Enabled: isAuthV2Enabled)
 
-        shouldUseAuthV2 = isAuthV2Enabled && subscriptionAuthMigrator.isMigrated
+        shouldUseAuthV2 = isAuthV2Enabled && subscriptionAuthMigrator.isReadyToUseAuthV2
 
         vpnSettings.isAuthV2Enabled = shouldUseAuthV2
         dbpSettings.isAuthV2Enabled = shouldUseAuthV2

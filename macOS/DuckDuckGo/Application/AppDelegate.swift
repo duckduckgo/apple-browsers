@@ -455,7 +455,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                     pixelHandler: pixelHandler,
                                                     isAuthV2Enabled: isAuthV2Enabled)
-        self.shouldUseAuthV2 = isAuthV2Enabled && subscriptionAuthMigrator.isMigrated
+        self.shouldUseAuthV2 = isAuthV2Enabled && subscriptionAuthMigrator.isReadyToUseAuthV2
 
         if self.shouldUseAuthV2 {
             // MARK: V2

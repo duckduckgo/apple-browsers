@@ -30,7 +30,7 @@ public class AuthMigrator {
     /// - migrationFailed(Error)
     let pixelHandler: SubscriptionPixelHandler
 
-    public var isMigrated: Bool {
+    public var isReadyToUseAuthV2: Bool {
         if isAuthV2Enabled {
             if oAuthClient.isMigrationPossible {
                 return oAuthClient.isUserAuthenticated

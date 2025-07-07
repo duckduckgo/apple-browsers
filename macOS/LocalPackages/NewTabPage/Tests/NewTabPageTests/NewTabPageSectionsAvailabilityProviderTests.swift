@@ -17,7 +17,6 @@
 //
 
 import XCTest
-//import BrowserServicesKit
 import DuckDuckGo_Privacy_Browser
 
 final class NewTabPageSectionsAvailabilityProviderTests: XCTestCase {

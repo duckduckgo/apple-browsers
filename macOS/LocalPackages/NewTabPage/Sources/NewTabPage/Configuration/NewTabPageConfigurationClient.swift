@@ -120,7 +120,6 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         return widgets
     }
 
-
     private func fetchWidgetConfigs() -> [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] {
         var configs: [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] = [
             .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),

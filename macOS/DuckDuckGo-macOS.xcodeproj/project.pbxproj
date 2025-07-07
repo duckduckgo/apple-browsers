@@ -2310,6 +2310,7 @@
 		84BDE7272E1BD35E0082075D /* WKWebViewMockingExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F56566299A414300A04298 /* WKWebViewMockingExtension.swift */; };
 		84BDE7282E1BD3830082075D /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
 		84BDE72A2E1BE3C60082075D /* NoARCObjCTestsExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84BDE7292E1BE3C60082075D /* NoARCObjCTestsExtensions */; };
+		84BDE72B2E1BF4CE0082075D /* EncryptionMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BA1A6F5258C4F9600F6F690 /* EncryptionMocks.swift */; };
 		84C176392DF02556001DEEC7 /* CommonObjCExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84C176382DF02556001DEEC7 /* CommonObjCExtensions */; };
 		84C1763B2DF02567001DEEC7 /* CommonObjCExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84C1763A2DF02567001DEEC7 /* CommonObjCExtensions */; };
 		84C176502DF0462F001DEEC7 /* LetsMove in Frameworks */ = {isa = PBXBuildFile; productRef = 84C1764F2DF0462F001DEEC7 /* LetsMove */; };
@@ -14035,6 +14036,7 @@
 				9D84E43E2CD4E6B40046CD8B /* DBPEndToEndTests.swift in Sources */,
 				84BDE7282E1BD3830082075D /* Logger+UnitTests.swift in Sources */,
 				84BDE7272E1BD35E0082075D /* WKWebViewMockingExtension.swift in Sources */,
+				84BDE72B2E1BF4CE0082075D /* EncryptionMocks.swift in Sources */,
 				84BDE7242E1BD0DE0082075D /* TestRunHelper.swift in Sources */,
 				84BDE7262E1BD28D0082075D /* NSErrorAdditionalInfo.swift in Sources */,
 				84BDE7252E1BD20B0082075D /* FileManagerTempDirReplacement.swift in Sources */,

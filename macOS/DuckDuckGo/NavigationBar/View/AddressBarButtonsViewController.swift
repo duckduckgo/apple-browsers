@@ -394,6 +394,13 @@ final class AddressBarButtonsViewController: NSViewController {
             shouldSelectNewTab: shouldSelectNewTab
         )
 
+        // Close the sidebar if it's currently open and the user preference is set to open AI chat in new tabs
+        // This ensures consistent behavior when the sidebar is unexpectedly open but shouldn't be the default action
+        if !aiChatMenuConfig.openAIChatInSidebar,
+           let tabID = tabViewModel?.tab.uuid, aiChatSidebarPresenter.isSidebarOpen(for: tabID) {
+            aiChatSidebarPresenter.toggleSidebar()
+        }
+
         if featureFlagger.isFeatureOn(.aiChatSidebar),
            aiChatMenuConfig.openAIChatInSidebar,
            let tab = tabViewModel?.tab,

@@ -63,9 +63,10 @@ final class SafariBookmarksReader {
     private var currentOperationType: ImportError.OperationType = .readPlist
     private let otherBookmarksFolderTitle: String
 
-    init(safariBookmarksFileURL: URL, otherBookmarksFolderTitle: String = UserText.otherBookmarksImportedFolderTitle) {
+    init(safariBookmarksFileURL: URL, otherBookmarksFolderTitle: String = UserText.otherBookmarksImportedFolderTitle, featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.safariBookmarksFileURL = safariBookmarksFileURL
-        self.otherBookmarksFolderTitle = otherBookmarksFolderTitle
+        // TODO: Replace with localized string after copy review
+        self.otherBookmarksFolderTitle = featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport) ? "Bookmarks" : otherBookmarksFolderTitle
     }
 
     func readBookmarks() -> DataImportResult<ImportedBookmarks> {

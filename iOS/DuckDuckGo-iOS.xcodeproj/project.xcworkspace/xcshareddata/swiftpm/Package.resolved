@@ -55,15 +55,6 @@
       }
     },
     {
-      "identity" : "grdb.swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/GRDB.swift.git",
-      "state" : {
-        "revision" : "5b2f6a81099d26ae0f9e38788f51490cd6a4b202",
-        "version" : "2.4.2"
-      }
-    },
-    {
       "identity" : "gzipswift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/1024jp/GzipSwift.git",

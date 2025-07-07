@@ -332,4 +332,44 @@ final class AppearancePreferencesTests: XCTestCase {
 
         pixelFiringMock.verifyExpectations()
     }
+
+    func testWhenOmnibarFeatureFlagIsOnThenIsOmnibarAvailableIsTrue() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.newTabPageOmnibar]
+
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertTrue(model.isOmnibarAvailable, "Omnibar should be available when feature flag is ON")
+    }
+
+    func testWhenOmnibarFeatureFlagIsOffThenIsOmnibarAvailableIsFalse() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = []
+
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertFalse(model.isOmnibarAvailable, "Omnibar should NOT be available when feature flag is OFF")
+    }
+
+    func testWhenIsOmnibarVisibleIsUpdatedThenValueChanges() {
+        let persistor = AppearancePreferencesPersistorMock(isOmnibarVisible: true)
+        let model = AppearancePreferences(
+            persistor: persistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+
+        XCTAssertTrue(model.isOmnibarVisible, "Initial value should be true")
+
+        model.isOmnibarVisible = false
+        XCTAssertFalse(model.isOmnibarVisible, "Value should change to false")
+    }
 }

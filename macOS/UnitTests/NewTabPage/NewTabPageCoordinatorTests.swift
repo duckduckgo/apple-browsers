@@ -53,6 +53,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         notificationCenter = NotificationCenter()
         keyValueStore = try MockKeyValueFileStore()
         firePixelCalls.removeAll()
+        featureFlagger = MockFeatureFlagger()
 
         let appearancePreferencesPersistor = AppearancePreferencesPersistorMock()
         appearancePreferences = AppearancePreferences(

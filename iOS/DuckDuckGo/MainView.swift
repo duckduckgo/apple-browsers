@@ -30,9 +30,6 @@ class MainViewFactory {
     private let coordinator: MainViewCoordinator
     private let featureFlagger: FeatureFlagger
     private let omnibarDependencies: OmnibarDependencyProvider
-    private var isExperimentalThemingEnabled: Bool {
-        omnibarDependencies.themingProperties.isExperimentalThemingEnabled
-    }
     
     var superview: UIView {
         coordinator.superview
@@ -50,13 +47,11 @@ class MainViewFactory {
                                     aiChatSettings: AIChatSettingsProvider,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
                                     featureFlagger: FeatureFlagger,
-                                    themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties,
                                     suggestionTrayDependencies: SuggestionTrayDependencies? = nil) -> MainViewCoordinator {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
-                                                      themingProperties: themingProperties,
                                                       suggestionTrayDependencies: suggestionTrayDependencies)
 
 
@@ -95,12 +90,7 @@ extension MainViewFactory {
     }
     
     private func createProgressView() {
-        if isExperimentalThemingEnabled {
-            coordinator.progress = coordinator.omniBar!.barView.progressView
-        } else {
-            coordinator.progress = ProgressView()
-            superview.addSubview(coordinator.progress)
-        }
+        coordinator.progress = coordinator.omniBar!.barView.progressView
     }
 
     private func createOmniBar() {
@@ -214,28 +204,7 @@ extension MainViewFactory {
         constrainStatusBackground()
         constrainTabBarContainer()
         constrainNavigationBarContainer()
-        constrainProgress()
         constrainToolbar()
-    }
-
-    private func constrainProgress() {
-        guard !isExperimentalThemingEnabled else { return }
-
-        let progress = coordinator.progress!
-        let navigationBarContainer = coordinator.navigationBarContainer!
-
-        let progressBarTop = progress.constrainView(navigationBarContainer, by: .top, to: .bottom)
-        let progressBarBottom = progress.constrainView(navigationBarContainer, by: .bottom, to: .top)
-
-        coordinator.constraints.progressBarTop = progressBarTop
-        coordinator.constraints.progressBarBottom = progressBarBottom
-
-        NSLayoutConstraint.activate([
-            progress.constrainView(navigationBarContainer, by: .trailing),
-            progress.constrainView(navigationBarContainer, by: .leading),
-            progress.constrainAttribute(.height, to: 3),
-            progressBarTop,
-        ])
     }
     
     private func constrainNavigationBarContainer() {

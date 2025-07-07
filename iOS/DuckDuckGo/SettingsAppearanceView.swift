@@ -54,17 +54,6 @@ struct SettingsAppearanceView: View {
                 SettingsCellView(label: UserText.settingsFullURL,
                                  accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
             }
-
-            if viewModel.isInternalUser {
-                Section {
-                    SettingsCellView(label: UserText.settingsExperimentalMainSwitch,
-                                     accessory: .toggle(isOn: viewModel.experimentalThemingBinding))
-                } header: {
-                    Text(UserText.settingsExperimentalSection)
-                } footer: {
-                    Text(UserText.settingsExperimentalSectionFooter)
-                }
-            }
         }
         .applySettingsListModifiers(title: UserText.settingsAppearanceSection,
                                     displayMode: .inline,

@@ -32,7 +32,6 @@ class SwipeTabsCoordinator: NSObject {
     weak var tabPreviewsSource: TabPreviewsSource!
     weak var appSettings: AppSettings!
     private let omnibarDependencies: OmnibarDependencyProvider
-    private let themingProperties: ExperimentalThemingProperties
 
     let selectTab: (Int) -> Void
     let newTab: () -> Void
@@ -63,8 +62,7 @@ class SwipeTabsCoordinator: NSObject {
          omnibarAccessoryHandler: OmnibarAccessoryHandler,
          selectTab: @escaping (Int) -> Void,
          newTab: @escaping () -> Void,
-         onSwipeStarted: @escaping () -> Void,
-         themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
+         onSwipeStarted: @escaping () -> Void) {
         
         self.coordinator = coordinator
         self.tabPreviewsSource = tabPreviewsSource
@@ -74,7 +72,6 @@ class SwipeTabsCoordinator: NSObject {
         self.selectTab = selectTab
         self.newTab = newTab
         self.onSwipeStarted = onSwipeStarted
-        self.themingProperties = themingProperties
                 
         super.init()
         
@@ -114,7 +111,7 @@ class SwipeTabsCoordinator: NSObject {
     weak var currentView: UIView?
 
     private var omniBarHeight: CGFloat {
-        themingProperties.isExperimentalThemingEnabled ? UpdatedOmniBarView.expectedHeight : DefaultOmniBarView.expectedHeight
+        UpdatedOmniBarView.expectedHeight
     }
 
     func invalidateLayout() {
@@ -169,7 +166,6 @@ class SwipeTabsCoordinator: NSObject {
             if let omniBarCell = cell as? OmniBarCell {
                 omniBarCell.roundCornersMaskView?.removeFromSuperview()
                 omniBarCell.roundCornersMaskView = nil
-                omniBarCell.addMaskViewIfNeeded()
             }
         }
     }
@@ -262,10 +258,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
 
         preview?.frame.origin.x = coordinator.contentContainer.frame.width * CGFloat(modifier)
-        if themingProperties.isRoundedCornersTreatmentEnabled {
-            preview?.clipsToBounds = true
-            preview?.layer.cornerRadius = 12
-        }
     }
     
     private func createPreviewFromImage(_ image: UIImage) {
@@ -438,32 +430,6 @@ class OmniBarCell: UICollectionViewCell {
                 omniBarView.topAnchor.constraint(equalTo: topAnchor),
                 omniBarView.bottomAnchor.constraint(equalTo: bottomAnchor),
             ])
-
-            addMaskViewIfNeeded()
-        }
-    }
-
-    func addMaskViewIfNeeded() {
-        guard let omniBarView = omniBar?.barView else { return }
-
-        if ThemeManager.shared.properties.isRoundedCornersTreatmentEnabled,
-           AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .bottom,
-           isPortrait {
-            let maskView = RoundedCornersMaskView(cornerRadius: 12.0,
-                                                  cornerColor: UIColor(designSystemColor: .background),
-                                                  cornersPosition: .bottom)
-            addSubview(maskView)
-            roundCornersMaskView = maskView
-
-            maskView.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                maskView.widthAnchor.constraint(equalTo: omniBarView.widthAnchor),
-                maskView.bottomAnchor.constraint(equalTo: omniBarView.topAnchor),
-                maskView.centerXAnchor.constraint(equalTo: omniBarView.centerXAnchor),
-                maskView.heightAnchor.constraint(equalToConstant: 25)
-            ])
-            bringSubviewToFront(maskView)
-                
         }
     }
 

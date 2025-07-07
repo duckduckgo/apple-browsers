@@ -52,7 +52,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         hvc = NewTabPageViewController(
             tab: Tab(),
             isNewTabPageCustomizationEnabled: false,
-            isExperimentalAppearanceEnabled: false,
             interactionModel: MockFavoritesListInteracting(),
             homePageMessagesConfiguration: homePageConfiguration,
             variantManager: variantManager,

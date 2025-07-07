@@ -194,7 +194,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         featureFlagOverridesPublisher: featureFlagOverridesPublishingHandler.flagDidChangePublisher,
         loginItemsManager: LoginItemsManager(),
         defaults: .netP)
-    private var networkProtectionSubscriptionEventHandler: NetworkProtectionSubscriptionEventHandler?
+    private var vpnSubscriptionEventHandler: VPNSubscriptionEventsHandler?
 
     private var vpnXPCClient: VPNControllerXPCClient {
         VPNControllerXPCClient.shared
@@ -716,7 +716,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let tunnelController = NetworkProtectionIPCTunnelController(ipcClient: vpnXPCClient)
         let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
 
-        networkProtectionSubscriptionEventHandler = NetworkProtectionSubscriptionEventHandler(subscriptionManager: subscriptionAuthV1toV2Bridge,
+        vpnSubscriptionEventHandler = VPNSubscriptionEventsHandler(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                                               tunnelController: tunnelController,
                                                                                               vpnUninstaller: vpnUninstaller)
 
@@ -851,7 +851,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         UserDefaultsWrapper<Any>.clearRemovedKeys()
 
-        networkProtectionSubscriptionEventHandler?.registerForSubscriptionAccountManagerEvents()
+        vpnSubscriptionEventHandler?.registerForSubscriptionAccountManagerEvents()
 
         UNUserNotificationCenter.current().delegate = self
 

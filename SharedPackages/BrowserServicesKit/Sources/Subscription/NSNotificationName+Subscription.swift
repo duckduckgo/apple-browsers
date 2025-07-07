@@ -38,26 +38,20 @@ public extension NSNotification.Name {
 public struct EntitlementsDidChangePayload {
 
     private let entitlementsKey = "entitlements"
-    private let previousEntitlementsKey = "previousEntitlementsKey"
     public let entitlements: [SubscriptionEntitlement]
-    public let previousEntitlements: [SubscriptionEntitlement]
     public var notificationUserInfo: [AnyHashable: Any] {
-        return [entitlementsKey: entitlements,
-        previousEntitlementsKey: previousEntitlements]
+        return [entitlementsKey: entitlements]
     }
 
-    public init(entitlements: [SubscriptionEntitlement], previousEntitlements: [SubscriptionEntitlement]) {
+    public init(entitlements: [SubscriptionEntitlement]) {
         self.entitlements = entitlements
-        self.previousEntitlements = previousEntitlements
     }
 
     public init?(notificationUserInfo: [AnyHashable: Any]) {
-        guard let entitlements = notificationUserInfo[entitlementsKey] as? [SubscriptionEntitlement],
-              let previousEntitlements = notificationUserInfo[previousEntitlementsKey] as? [SubscriptionEntitlement] else {
+        guard let entitlements = notificationUserInfo[entitlementsKey] as? [SubscriptionEntitlement] else {
                   assertionFailure("Missing required payload entitlements")
                   return nil
               }
         self.entitlements = entitlements
-        self.previousEntitlements = previousEntitlements
     }
 }

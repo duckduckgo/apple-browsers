@@ -1,5 +1,5 @@
 //
-//  NetworkProtectionNotificationsPresenterTogglableDecorator.swift
+//  VPNNotificationsPresenterTogglableDecorator.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -18,12 +18,12 @@
 
 import Foundation
 
-final public class NetworkProtectionNotificationsPresenterTogglableDecorator: NetworkProtectionNotificationsPresenter {
+final public class VPNNotificationsPresenterTogglableDecorator: VPNNotificationsPresenting {
     private let settings: VPNSettings
     private let defaults: UserDefaults
-    private let wrappeePresenter: NetworkProtectionNotificationsPresenter
+    private let wrappeePresenter: VPNNotificationsPresenting
 
-    public init(settings: VPNSettings, defaults: UserDefaults, wrappee: NetworkProtectionNotificationsPresenter) {
+    public init(settings: VPNSettings, defaults: UserDefaults, wrappee: VPNNotificationsPresenting) {
         self.settings = settings
         self.defaults = defaults
         self.wrappeePresenter = wrappee

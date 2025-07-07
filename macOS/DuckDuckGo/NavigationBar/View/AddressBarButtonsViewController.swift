@@ -412,6 +412,8 @@ final class AddressBarButtonsViewController: NSViewController {
         } else {
             aiChatTabOpener.openAIChatTab(nil, with: behavior)
         }
+
+        updateAskAIChatButtonVisibility()
     }
 
     func openPrivacyDashboardPopover(entryPoint: PrivacyDashboardEntryPoint = .dashboard) {
@@ -558,7 +560,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private var isAskAIChatButtonExpanded: Bool = false
 
-    private func updateAskAIChatButtonVisibility() {
+    private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
         guard featureFlagger.isFeatureOn(.aiChatSidebar),
               aiChatMenuConfig.shouldDisplayAddressBarShortcut,
               !(tabViewModel?.tab.url?.isDuckAIURL ?? false) else {
@@ -566,7 +568,7 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        let isSidebarOpen: Bool = {
+        let isSidebarOpen: Bool = isSidebarOpen ?? {
             guard let tabID = tabViewModel?.tab.uuid else { return false }
             return aiChatSidebarPresenter.isSidebarOpen(for: tabID)
         }()
@@ -601,6 +603,10 @@ final class AddressBarButtonsViewController: NSViewController {
 
             isAskAIChatButtonExpanded = true
 
+            askAIChatButton.isEnabled = true
+            askAIChatButton.setButtonType(.momentaryPushIn)
+            askAIChatButton.state = .off
+
             self.askAIChatButton.imagePosition = .imageLeading
             let fittingSize = askAIChatButton.sizeThatFits(CGSize(width: 1000, height: visualStyle.addressBarStyleProvider.addressBarButtonSize))
             targetWidth = max(fittingSize.width + Constants.askAiChatButtonHorizontalPadding,
@@ -618,7 +624,7 @@ final class AddressBarButtonsViewController: NSViewController {
             isAskAIChatButtonExpanded = false
 
             askAIChatButton.imagePosition = .imageOnly
-//            askAIChatButton.layer?.backgroundColor = NSColor.clear.cgColor
+            askAIChatButton.layer?.backgroundColor = NSColor.clear.cgColor
             askAIChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
 
             if isSidebarOpen {
@@ -1101,6 +1107,7 @@ final class AddressBarButtonsViewController: NSViewController {
                     return
                 }
                 updateAIChatButtonForSidebar(change.isShown)
+                updateAskAIChatButtonVisibility(isSidebarOpen: change.isShown)
             }
             .store(in: &cancellables)
     }

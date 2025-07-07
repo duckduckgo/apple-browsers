@@ -91,14 +91,18 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                     webViewHandler: WebViewHandler? = nil,
                     actionsHandler: ActionsHandler? = nil,
                     showWebView: Bool) async throws -> [ExtractedProfile] {
-        var task: Task<Void, Never>?
-
-        return try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { continuation in
-                self.continuation = continuation
-                task = Task {
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            self.continuation = continuation
+            
+            Task {
+                do {
+                    try Task.checkCancellation()
+                    
                     await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
-
+                    
+                    try Task.checkCancellation()
+                    
                     do {
                         let scanStep = try query.dataBroker.scanStep()
                         if let actionsHandler = actionsHandler {
@@ -106,20 +110,21 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                         } else {
                             self.actionsHandler = ActionsHandler(step: scanStep)
                         }
+                        
+                        try Task.checkCancellation()
+                        
                         if self.shouldRunNextStep() {
                             await executeNextStep()
                         } else {
-                            failed(with: Task.isCancelled ? DataBrokerProtectionError.jobTimeout : .cancelled)
+                            failed(with: DataBrokerProtectionError.cancelled)
                         }
                     } catch {
                         failed(with: DataBrokerProtectionError.unknown(error.localizedDescription))
                     }
-                }
-            }
-        } onCancel: {
-            Task {
-                await MainActor.run {
-                    task?.cancel()
+                } catch is CancellationError {
+                    failed(with: DataBrokerProtectionError.jobTimeout)
+                } catch {
+                    failed(with: error)
                 }
             }
         }
@@ -149,8 +154,20 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public func executeNextStep() async {
         resetRetriesCount()
         Logger.action.debug("SCAN Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
+        
+        guard !Task.isCancelled else {
+            failed(with: DataBrokerProtectionError.jobTimeout)
+            await webViewHandler?.finish()
+            return
+        }
 
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
+        
+        guard !Task.isCancelled else {
+            failed(with: DataBrokerProtectionError.jobTimeout)
+            await webViewHandler?.finish()
+            return
+        }
 
         if let action = actionsHandler?.nextAction(), self.shouldRunNextStep() {
             Logger.action.debug("Next action: \(String(describing: action.actionType.rawValue), privacy: .public)")

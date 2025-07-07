@@ -76,6 +76,7 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsNativePrompt: Bool
     public let supportsNativeChatInput: Bool
     public let supportsURLChatIDRestoration: Bool
+    public let supportsFullChatRestoration: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -84,7 +85,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsOpeningSettings: true,
                                         supportsNativePrompt: false,
                                         supportsNativeChatInput: false,
-                                        supportsURLChatIDRestoration: false)
+                                        supportsURLChatIDRestoration: false,
+                                        supportsFullChatRestoration: false)
 #endif
 
 #if os(macOS)
@@ -93,7 +95,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsOpeningSettings: true,
                                         supportsNativePrompt: true,
                                         supportsNativeChatInput: false,
-                                        supportsURLChatIDRestoration: false)
+                                        supportsURLChatIDRestoration: false,
+                                        supportsFullChatRestoration: false)
 #endif
     }
 
@@ -102,7 +105,8 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsOpeningSettings: Bool,
                 supportsNativePrompt: Bool,
                 supportsNativeChatInput: Bool,
-                supportsURLChatIDRestoration: Bool) {
+                supportsURLChatIDRestoration: Bool,
+                supportsFullChatRestoration: Bool) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -110,6 +114,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsNativePrompt = supportsNativePrompt
         self.supportsNativeChatInput = supportsNativeChatInput
         self.supportsURLChatIDRestoration = supportsURLChatIDRestoration
+        self.supportsFullChatRestoration = supportsFullChatRestoration
     }
 }
 

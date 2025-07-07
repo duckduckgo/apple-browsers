@@ -20,6 +20,8 @@
 import Core
 import UIKit
 
+import BrowserServicesKit
+
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
 ///   - This state is typically associated with the `application(_:didFinishLaunchingWithOptions:)` method.
@@ -107,10 +109,13 @@ struct Launching: LaunchingHandling {
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
                                               didFinishLaunchingStartTime: didFinishLaunchingStartTime,
-                                              keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+                                              keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+        )
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
+
+        let mainController = mainCoordinator.controller
 
         syncService.presenter = mainCoordinator.controller
         let vpnService = VPNService(mainCoordinator: mainCoordinator)
@@ -122,6 +127,13 @@ struct Launching: LaunchingHandling {
         let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
         let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
         let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
+        // Set Default Browser Prompt Service to display SAD prompts to active users.
+        let defaultBrowserPromptService = DefaultBrowserPromptService(
+            presentingController: mainCoordinator.controller,
+            featureFlagger: featureFlagger,
+            privacyConfigManager: privacyConfigurationManager,
+            keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
 
         // MARK: - App Services aggregation
         // This object serves as a central hub for app-wide services that:
@@ -143,7 +155,9 @@ struct Launching: LaunchingHandling {
                                crashCollectionService: crashCollectionService,
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
                                statisticsService: statisticsService,
-                               keyValueFileStoreService: appKeyValueFileStoreService)
+                               keyValueFileStoreService: appKeyValueFileStoreService,
+                               defaultBrowserPromptService: defaultBrowserPromptService
+        )
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window

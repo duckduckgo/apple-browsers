@@ -39,7 +39,7 @@ package final class MockDefaultBrowserPromptFeatureFlagProvider: DefaultBrowserP
 }
 
 package final class MockDefaultBrowserPromptFeatureFlagSettingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider {
-    package var featureSettings: [String: Any] = [:]
+    package var defaultBrowserPromptFeatureSettings: [String: Any] = [:]
 
     package init() {}
 }

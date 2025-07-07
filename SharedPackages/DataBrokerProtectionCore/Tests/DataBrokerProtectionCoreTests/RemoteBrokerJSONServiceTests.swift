@@ -28,13 +28,11 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
     let repository = BrokerUpdaterRepositoryMock()
     let resources = ResourcesRepositoryMock()
     let pixelHandler = MockDataBrokerProtectionPixelsHandler()
-    let vaultMaker: () -> DataBrokerProtectionSecureVaultMock? = {
-        try? DataBrokerProtectionSecureVaultMock(providers:
-                                                    SecureStorageProviders(
-                                                        crypto: EmptySecureStorageCryptoProviderMock(),
-                                                        database: SecureStorageDatabaseProviderMock(),
-                                                        keystore: EmptySecureStorageKeyStoreProviderMock()))
-    }
+    let vault: DataBrokerProtectionSecureVaultMock = try! DataBrokerProtectionSecureVaultMock(providers:
+                                                                                                SecureStorageProviders(
+                                                                                                    crypto: EmptySecureStorageCryptoProviderMock(),
+                                                                                                    database: SecureStorageDatabaseProviderMock(),
+                                                                                                    keystore: EmptySecureStorageKeyStoreProviderMock()))
     var settings: DataBrokerProtectionSettings!
     let fileManager = MockFileManager()
     let authenticationManager = MockAuthenticationManager()
@@ -51,14 +49,14 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
     override func setUp() {
         localBrokerJSONService = LocalBrokerJSONService(repository: repository,
                                                         resources: resources,
-                                                        vaultMaker: vaultMaker,
+                                                        vault: vault,
                                                         pixelHandler: pixelHandler)
 
         let defaults = UserDefaults(suiteName: "com.dbp.tests.\(UUID().uuidString)")!
         settings = DataBrokerProtectionSettings(defaults: defaults)
         remoteBrokerJSONService = RemoteBrokerJSONService(featureFlagger: MockFeatureFlagger(),
                                                           settings: settings,
-                                                          vaultMaker: vaultMaker,
+                                                          vault: vault,
                                                           fileManager: fileManager,
                                                           urlSession: urlSession,
                                                           authenticationManager: authenticationManager,
@@ -70,7 +68,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         MockURLProtocol.requestHandlerQueue.removeAll()
         repository.reset()
         resources.reset()
-        (localBrokerJSONService.vault as? DataBrokerProtectionSecureVaultMock)?.reset()
+        vault.reset()
     }
 
     func testCheckForUpdatesFollowsRateLimit() async {

@@ -224,14 +224,21 @@ final class DuckPlayerNativeUIPresenter {
 
         if pillType == .welcome {
             // Create the welcome pill view model
-            let welcomePillViewModel = DuckPlayerWelcomePillViewModel { [weak self] in
-                self?.videoPlaybackRequest.send((videoID, timestamp, .welcome))
-            }
+            let welcomePillViewModel = DuckPlayerWelcomePillViewModel(
+                onOpen: { [weak self] in
+                    self?.videoPlaybackRequest.send((videoID, timestamp, .welcome))
+                },
+                onClose: { [weak self] in
+                    self?.dismissPill(programatic: false)
+                }
+            )
 
             // Create the container view with the welcome pill
             return DuckPlayerContainer.Container(
                 viewModel: containerViewModel,
                 hasBackground: false,
+                showDragHandle: false,
+                allowDragGesture: false,
                 onDismiss: { [weak self] programatic in
                     self?.dismissPill(programatic: programatic)
                 },
@@ -505,8 +512,13 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     @MainActor
     // swiftlint:disable:next cyclomatic_complexity
     func presentPill(for videoID: String, in hostViewController: DuckPlayerHosting, timestamp: TimeInterval?) {
-        
+
         if duckPlayerSettings.nativeUIYoutubeMode == .never {
+            return
+        }
+        
+        // Check if webView exists and has a non-YouTube watch URL
+        if let webView = hostViewController.webView, let url = webView.url, !url.isYoutubeWatch {
             return
         }
 

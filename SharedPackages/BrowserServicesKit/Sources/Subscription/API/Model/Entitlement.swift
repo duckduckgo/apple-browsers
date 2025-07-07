@@ -18,8 +18,12 @@
 
 import Foundation
 
-public struct Entitlement: Codable, Equatable {
+public struct Entitlement: Codable, Equatable, Hashable {
     public let product: ProductName
+
+    public init(product: Entitlement.ProductName) {
+        self.product = product
+    }
 
     public enum ProductName: String, Codable {
         case networkProtection = "Network Protection"

@@ -52,6 +52,7 @@ final class AIChatSidebarViewController: NSViewController {
     weak var delegate: AIChatSidebarViewControllerDelegate?
     public var aiChatPayload: AIChatPayload?
     private(set) var currentAIChatURL: URL
+    private let burnerMode: BurnerMode
     private let visualStyle: VisualStyleProviding
 
     private var openInNewTabButton: MouseOverButton!
@@ -60,13 +61,15 @@ final class AIChatSidebarViewController: NSViewController {
     private var separator: NSView!
     private var topBar: NSView!
 
-    private lazy var aiTab: Tab = Tab(content: .url(currentAIChatURL, source: .ui), isLoadedInSidebar: true)
+    private lazy var aiTab: Tab = Tab(content: .url(currentAIChatURL, source: .ui), burnerMode: burnerMode, isLoadedInSidebar: true)
 
     private var cancellables = Set<AnyCancellable>()
 
     init(currentAIChatURL: URL,
+         burnerMode: BurnerMode,
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.currentAIChatURL = currentAIChatURL
+        self.burnerMode = burnerMode
         self.visualStyle = visualStyle
         super.init(nibName: nil, bundle: nil)
     }

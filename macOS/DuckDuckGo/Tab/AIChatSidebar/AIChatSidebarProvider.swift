@@ -30,7 +30,7 @@ protocol AIChatSidebarProviding: AnyObject {
     /// Returns the chat sidebar instance for the specified tab.
     /// - Parameter tabID: The unique identifier of the tab
     /// - Returns: An `AIChatSidebar` instance associated with the tab
-    func sidebar(for tabID: TabIdentifier) -> AIChatSidebar
+    func sidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar
 
     /// Checks if a sidebar is currently being displayed for the specified tab.
     /// - Parameter tabID: The unique identifier of the tab
@@ -69,9 +69,9 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         self.sidebarsByTab = sidebarsByTab ?? [:]
     }
 
-    func sidebar(for tabID: TabIdentifier) -> AIChatSidebar {
+    func sidebar(for tabID: TabIdentifier, burnerMode: BurnerMode) -> AIChatSidebar {
         guard let sidebar = sidebarsByTab[tabID] else {
-            let sidebar = AIChatSidebar()
+            let sidebar = AIChatSidebar(burnerMode: burnerMode)
             sidebarsByTab[tabID] = sidebar
             return sidebar
         }

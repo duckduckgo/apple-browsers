@@ -108,6 +108,6 @@ final class MockVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
         .eraseToAnyPublisher()
 
     var shouldShowFireAnimation: Bool {
-        return false
+        return true
     }
 }

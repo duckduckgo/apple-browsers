@@ -50,7 +50,6 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.1.0"),
-        .package(url: "https://github.com/duckduckgo/GRDB.swift.git", exact: "2.4.2"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.5.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
@@ -63,6 +62,11 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
     ],
     targets: [
+        .binaryTarget(
+            name: "GRDB",
+            url: "https://github.com/duckduckgo/GRDB.swift/releases/download/3.0.0/GRDB.xcframework.zip",
+            checksum: "41f01022f6a35986393e063e1ef386fd896646ed032f7d0419c4b02fa3afe61d"
+        ),
         .target(
             name: "BrowserServicesKit",
             dependencies: [
@@ -326,7 +330,7 @@ let package = Package(
                 "BrowserServicesKit",
                 "Common",
                 "DDGSync",
-                .product(name: "GRDB", package: "GRDB.swift"),
+                "GRDB",
                 "Persistence",
                 "SecureStorage",
             ],
@@ -339,7 +343,7 @@ let package = Package(
             dependencies: [
                 "Common",
                 "PixelKit",
-                .product(name: "GRDB", package: "GRDB.swift"),
+                "GRDB",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

@@ -34,6 +34,7 @@ struct ChromiumPreferences: Decodable {
     }
 
     struct NewTabPage: Decodable {
+        // Typo in the original JSON schema: "shortcust_visible" instead of "shortcuts_visible"
         let shortcustVisible: Bool?
         let useMostVisitedTiles: Bool?
     }

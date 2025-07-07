@@ -104,7 +104,7 @@ extension Preferences {
                 PreferencePaneSection(UserText.newTabBottomPopoverTitle) {
 
                     PreferencePaneSubSection {
-                        ToggleMenuItem(UserText.newTabOmnibarSectionTitle, isOn: $model.isOmnibarVisible)
+                        ToggleMenuItem(UserText.newTabOmnibarSectionTitle, isOn: $model.isOmnibarVisible).accessibilityIdentifier("Preferences.AppearanceView.showOmnibarToggle")
                         ToggleMenuItem(UserText.newTabFavoriteSectionTitle, isOn: $model.isFavoriteVisible).accessibilityIdentifier("Preferences.AppearanceView.showFavoritesToggle")
                         ToggleMenuItem(UserText.newTabProtectionsReportSectionTitle, isOn: $model.isProtectionsReportVisible)
                     }

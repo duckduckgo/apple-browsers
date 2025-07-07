@@ -46,7 +46,7 @@ final class AIChatViewControllerManager {
 
     private var aiChatUserScript: AIChatUserScript?
     private var payloadHandler = AIChatPayloadHandler()
-    private var shouldInvalidateOnNextOpen = false
+    private let subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
@@ -57,7 +57,6 @@ final class AIChatViewControllerManager {
     private var cancellables = Set<AnyCancellable>()
     private var sessionTimer: AIChatSessionTimer?
     private var pixelMetricHandler: (any AIChatPixelMetricHandling)?
-    private var subscriptionCancellables = Set<AnyCancellable>()
 
     // MARK: - Initialization
 
@@ -66,7 +65,8 @@ final class AIChatViewControllerManager {
          userAgentManager: UserAgentManager = DefaultUserAgentManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,
          featureFlagger: FeatureFlagger,
-         aiChatSettings: AIChatSettingsProvider) {
+         aiChatSettings: AIChatSettingsProvider,
+         subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler()) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
@@ -74,8 +74,7 @@ final class AIChatViewControllerManager {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
-
-        setupSubscriptionStateObservers()
+        self.subscriptionAIChatStateHandler = subscriptionAIChatStateHandler
     }
 
     // MARK: - Public Methods
@@ -87,12 +86,16 @@ final class AIChatViewControllerManager {
                     on viewController: UIViewController) {
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
 
+        if subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
+            stopSessionTimer()
+        }
+
         pixelMetricHandler = AIChatPixelMetricHandler(timeElapsedInMinutes: sessionTimer?.timeElapsedInMinutes())
         pixelMetricHandler?.fireOpenAIChat()
 
         /// If we have a query or payload, let's clean the previous session and start fresh
-        if query != nil || payload != nil || shouldInvalidateOnNextOpen {
-            shouldInvalidateOnNextOpen = false
+        if query != nil || payload != nil || subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
+            subscriptionAIChatStateHandler.reset()
             Task {
                 await cleanUpSession()
                 setupAndPresentAIChat(query, payload: payload, autoSend: autoSend, on: viewController)
@@ -143,6 +146,7 @@ final class AIChatViewControllerManager {
 
     private func stopSessionTimer() {
         sessionTimer?.cancel()
+        sessionTimer = nil
     }
 
     private var isKeepSessionEnabled: Bool {
@@ -191,33 +195,6 @@ final class AIChatViewControllerManager {
             payloadHandler.setData(payload)
             aiChatViewController.reload()
         }
-    }
-
-    private func setupSubscriptionStateObservers() {
-        NotificationCenter.default.publisher(for: .subscriptionDidChange)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                self?.handleSubscriptionStateChange(notification)
-            }
-            .store(in: &subscriptionCancellables)
-
-        NotificationCenter.default.publisher(for: .accountDidSignIn)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                self?.handleSubscriptionStateChange(notification)
-            }
-            .store(in: &subscriptionCancellables)
-
-        NotificationCenter.default.publisher(for: .accountDidSignOut)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                self?.handleSubscriptionStateChange(notification)
-            }
-            .store(in: &subscriptionCancellables)
-    }
-
-    private func handleSubscriptionStateChange(_ notification: Notification, ) {
-        shouldInvalidateOnNextOpen = true
     }
 
     private func isInspectableWebViewEnabled() -> Bool {

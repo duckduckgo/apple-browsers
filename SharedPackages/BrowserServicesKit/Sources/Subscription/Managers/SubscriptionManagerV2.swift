@@ -177,7 +177,13 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
 public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
-    var oAuthClient: any OAuthClient
+    @globalActor
+    public struct CacheActor {
+        public actor ActorType { }
+        public static let shared: ActorType = ActorType()
+    }
+
+    let oAuthClient: any OAuthClient
     private let _storePurchaseManager: StorePurchaseManagerV2?
     private let subscriptionEndpointService: SubscriptionEndpointServiceV2
     private let pixelHandler: SubscriptionPixelHandler
@@ -198,7 +204,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 tokenRecoveryHandler: TokenRecoveryHandler? = nil,
                 initForPurchase: Bool = true,
                 legacyAccountStorage: AccountKeychainStorage? = nil,
-                isInternalUserEnabled: @escaping () -> Bool =   { false }) {
+                isInternalUserEnabled: @escaping () -> Bool = { false }) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
         self.userDefaults = userDefaults
@@ -401,7 +407,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             let tokenContainer = try oAuthClient.currentTokenContainer()
             return tokenContainer != nil
         } catch {
-            return cachedIsUserAuthenticated
+            return userDefaults.isUserAuthenticated
         }
     }
 
@@ -409,6 +415,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         return (try? oAuthClient.currentTokenContainer())?.decodedAccessToken.email
     }
 
+    @CacheActor
     var cachedUserEntitlements: [SubscriptionEntitlement] {
         get {
             userDefaults.userEntitlements
@@ -426,6 +433,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         }
     }
 
+    @CacheActor
     var cachedIsUserAuthenticated: Bool {
         get {
             userDefaults.isUserAuthenticated
@@ -447,10 +455,14 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             }
 
             if newValue == false {
+                Task { @CacheActor in
                 self.cachedUserEntitlements = []
             }
         }
     }
+    }
+
+    // MARK: -
 
     @discardableResult public func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         Logger.subscription.debug("Get tokens \(policy.description, privacy: .public)")
@@ -459,12 +471,16 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
             let newEntitlements = resultTokenContainer.decodedAccessToken.subscriptionEntitlements
 
-            cachedUserEntitlements = newEntitlements
-            cachedIsUserAuthenticated = true
+            Task { @CacheActor in
+                cachedUserEntitlements = newEntitlements
+                cachedIsUserAuthenticated = true
+            }
             return resultTokenContainer
         } catch OAuthClientError.missingTokenContainer {
             // Expected when no tokens are available
-            cachedUserEntitlements = []
+            Task { @CacheActor in
+                cachedUserEntitlements = []
+            }
             throw SubscriptionManagerError.noTokenAvailable
         } catch {
             pixelHandler.handle(pixelType: .getTokensError(policy, error))
@@ -509,8 +525,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func exchange(tokenV1: String) async throws -> TokenContainer {
         let tokenContainer = try await oAuthClient.exchange(accessTokenV1: tokenV1)
+        Task { @CacheActor in
             cachedIsUserAuthenticated = true
             cachedUserEntitlements = tokenContainer.decodedAccessToken.subscriptionEntitlements
+        }
         return tokenContainer
     }
 
@@ -526,13 +544,17 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         // It’s important to force refresh the token to immediately branch from the one received.
         // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
         let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
+        Task { @CacheActor in
             cachedIsUserAuthenticated = true
             cachedUserEntitlements = refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements
         }
+    }
 
     public func removeLocalAccount() {
         Logger.subscription.log("Removing local account")
+        Task { @CacheActor in
             cachedIsUserAuthenticated = false
+        }
         oAuthClient.removeLocalAccount()
     }
 
@@ -541,12 +563,16 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         try? await oAuthClient.logout()
         clearSubscriptionCache()
         if notifyUI {
+            Task { @CacheActor in
                 cachedIsUserAuthenticated = false
+            }
         } else {
             // skipping cached setter for avoiding notification
+            Task { @CacheActor in
                 userDefaults.isUserAuthenticated = false
                 userDefaults.userEntitlements = []
             }
+        }
         Logger.subscription.log("Removing V1 Account")
         try? legacyAccountStorage?.clearAuthenticationState()
     }

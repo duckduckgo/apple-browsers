@@ -20,9 +20,17 @@
 import Combine
 import Foundation
 
+/// Manages AI Chat refresh state when subscription status changes.
+///
+/// When a user's subscription changes (sign-in, sign-out, or plan change),
+/// AI Chat needs to reload to reflect the new subscription features and limits.
 protocol SubscriptionAIChatStateHandling {
+    /// Indicates if AI Chat should refresh due to subscription changes.
+    ///
+    /// Becomes `true` when subscription status changes.
     var shouldForceAIChatRefresh: Bool { get }
 
+    /// Clears the refresh flag after AI Chat has been reloaded.
     func reset()
 }
 

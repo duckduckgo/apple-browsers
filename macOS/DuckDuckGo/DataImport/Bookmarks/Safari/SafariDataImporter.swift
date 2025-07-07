@@ -42,11 +42,13 @@ final class SafariDataImporter: DataImporter {
     private var source: DataImport.Source {
         profile.browser.importSource
     }
+    private let featureFlagger: FeatureFlagger
 
-    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager) {
+    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager, featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.profile = profile
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
+        self.featureFlagger = featureFlagger
     }
 
     var importableTypes: [DataImport.DataType] {
@@ -84,7 +86,8 @@ final class SafariDataImporter: DataImporter {
         let bookmarkResult = bookmarkReader.readBookmarks()
 
         let summary = bookmarkResult.map { bookmarks in
-            bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true)
+            let maxFavoritesCount = featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport) ? 12 : nil
+            return bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: maxFavoritesCount)
         }
 
         if case .success = summary {

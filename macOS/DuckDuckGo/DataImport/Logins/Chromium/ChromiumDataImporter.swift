@@ -119,7 +119,7 @@ internal class ChromiumDataImporter: DataImporter {
             try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 0.5))
 
-            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault)
+            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault, maxFavoritesCount: nil)
 
             await importFavicons()
 

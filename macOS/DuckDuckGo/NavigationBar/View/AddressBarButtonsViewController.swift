@@ -1165,6 +1165,14 @@ final class AddressBarButtonsViewController: NSViewController {
             attributedTitle.append(NSAttributedString(string: " "))
             attributedTitle.append(NSAttributedString(string: "⇧↵", attributes: shortcutAttributes))
 
+            // Invisible part of the string required to add padding to the buttons as whitespace is trimmed and results in glitchy animation
+            let invisibleAttributes: [NSAttributedString.Key: Any] = [
+                .foregroundColor: NSColor.clear,
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize)
+            ]
+
+            attributedTitle.append(NSAttributedString(string: ".", attributes: invisibleAttributes))
+
             return attributedTitle
         }()
     }

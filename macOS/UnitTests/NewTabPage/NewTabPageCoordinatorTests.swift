@@ -57,7 +57,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         let appearancePreferencesPersistor = AppearancePreferencesPersistorMock()
         appearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: featureFlagger
         )
 
         customizationModel = NewTabPageCustomizationModel(

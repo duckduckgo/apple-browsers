@@ -26,6 +26,7 @@ import NewTabPage
 import Persistence
 import PixelKit
 import os.log
+import Combine
 
 protocol AppearancePreferencesPersistor {
     var showFullURL: Bool { get set }
@@ -256,6 +257,10 @@ final class AppearancePreferences: ObservableObject {
         }
     }
 
+    var isOmnibarAvailable: Bool {
+        return featureFlagger.isFeatureOn(.newTabPageOmnibar)
+    }
+
     @Published var isOmnibarVisible: Bool {
         didSet {
             persistor.isOmnibarVisible = isOmnibarVisible
@@ -383,14 +388,16 @@ final class AppearancePreferences: ObservableObject {
         privacyConfigurationManager: PrivacyConfigurationManaging,
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
-        dateTimeProvider: @escaping () -> Date = Date.init
+        dateTimeProvider: @escaping () -> Date = Date.init,
+        featureFlagger: FeatureFlagger
     ) {
         self.init(
             persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore),
             privacyConfigurationManager: privacyConfigurationManager,
             pixelFiring: pixelFiring,
             newTabPageNavigator: newTabPageNavigator,
-            dateTimeProvider: dateTimeProvider
+            dateTimeProvider: dateTimeProvider,
+            featureFlagger: featureFlagger
         )
     }
 
@@ -399,13 +406,15 @@ final class AppearancePreferences: ObservableObject {
         privacyConfigurationManager: PrivacyConfigurationManaging,
         pixelFiring: PixelFiring? = nil,
         newTabPageNavigator: NewTabPageNavigator = DefaultNewTabPageNavigator(),
-        dateTimeProvider: @escaping () -> Date = Date.init
+        dateTimeProvider: @escaping () -> Date = Date.init,
+        featureFlagger: FeatureFlagger
     ) {
         self.persistor = persistor
         self.privacyConfigurationManager = privacyConfigurationManager
         self.pixelFiring = pixelFiring
         self.newTabPageNavigator = newTabPageNavigator
         self.dateTimeProvider = dateTimeProvider
+        self.featureFlagger = featureFlagger
 
         /// when adding new properties, make sure to update `reload()` to include them there.
         isContinueSetUpCardsViewOutdated = persistor.continueSetUpCardsNumberOfDaysDemonstrated >= Constants.dismissNextStepsCardsAfterDays
@@ -422,6 +431,8 @@ final class AppearancePreferences: ObservableObject {
         homePageCustomBackground = persistor.homePageCustomBackground.flatMap(CustomBackground.init)
         centerAlignedBookmarksBarBool = persistor.centerAlignedBookmarksBar
         showTabsAndBookmarksBarOnFullScreen = persistor.showTabsAndBookmarksBarOnFullScreen
+
+        subscribeToOmnibarFeatureFlagChanges()
     }
 
     /// This function reloads preferences with persisted values.
@@ -449,6 +460,8 @@ final class AppearancePreferences: ObservableObject {
     private var pixelFiring: PixelFiring?
     private var newTabPageNavigator: NewTabPageNavigator
     private let dateTimeProvider: () -> Date
+    private let featureFlagger: FeatureFlagger
+    private var cancellables = Set<AnyCancellable>()
 
     private func requestSync() {
         Task { @MainActor in
@@ -456,5 +469,18 @@ final class AppearancePreferences: ObservableObject {
             Logger.sync.debug("Requesting sync if enabled")
             syncService.scheduler.notifyDataChanged()
         }
+    }
+
+    private func subscribeToOmnibarFeatureFlagChanges() {
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .newTabPageOmnibar }
+            .sink { _ in
+                self.objectWillChange.send()
+            }
+            .store(in: &cancellables)
     }
 }

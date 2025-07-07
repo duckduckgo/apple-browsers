@@ -36,10 +36,10 @@ final class NewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabili
     internal init(featureFlagger: any FeatureFlagger) {
         self.featureFlagger = featureFlagger
 
-        subscribeToFeatureFlagOverrideChanges()
+        subscribeToOmnibarFeatureFlagChanges()
     }
 
-    private func subscribeToFeatureFlagOverrideChanges() {
+    private func subscribeToOmnibarFeatureFlagChanges() {
         guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
             return
         }

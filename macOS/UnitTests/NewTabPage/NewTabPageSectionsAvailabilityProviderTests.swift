@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import DuckDuckGo_Privacy_Browser
+@testable import DuckDuckGo_Privacy_Browser
 
 final class NewTabPageSectionsAvailabilityProviderTests: XCTestCase {
 
@@ -36,14 +36,14 @@ final class NewTabPageSectionsAvailabilityProviderTests: XCTestCase {
     }
 
     func testIsOmnibarAvailable_WhenFeatureFlagIsOn_ReturnsTrue() {
-        featureFlagger.enabledFeatures = [.newTabPageOmnibar]
+        featureFlagger.enabledFeatureFlags = [.newTabPageOmnibar]
         provider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
 
         XCTAssertTrue(provider.isOmnibarAvailable)
     }
 
     func testIsOmnibarAvailable_WhenFeatureFlagIsOff_ReturnsFalse() {
-        featureFlagger.enabledFeatures = []
+        featureFlagger.enabledFeatureFlags = []
         provider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
 
         XCTAssertFalse(provider.isOmnibarAvailable)

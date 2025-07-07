@@ -19,6 +19,7 @@
 import AppKit
 import Foundation
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct SecureVaultSorting: Equatable {
 
@@ -44,9 +45,9 @@ struct SecureVaultSorting: Equatable {
         var image: NSImage? {
             switch self {
             case .allItems: return nil
-            case .logins: return .loginGlyph
-            case .identities: return .identityGlyph
-            case .cards: return .creditCardGlyph
+            case .logins: return NSApp.delegateTyped.visualStyle.isNewStyle ? DesignSystemImages.Glyphs.Size16.keyLogin : .loginGlyph
+            case .identities: return NSApp.delegateTyped.visualStyle.isNewStyle ? DesignSystemImages.Glyphs.Size16.profile : .identityGlyph
+            case .cards: return NSApp.delegateTyped.visualStyle.isNewStyle ? DesignSystemImages.Glyphs.Size16.creditCard : .creditCardGlyph
             }
         }
 

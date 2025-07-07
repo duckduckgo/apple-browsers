@@ -38,7 +38,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 final class AddressBarButtonsViewController: NSViewController {
 
     private enum Constants {
-        static let askAiChatButtonHorizontalPadding: CGFloat = 16
+        static let askAiChatButtonHorizontalPadding: CGFloat = 6
         static let askAiChatButtonAnimationDuration: TimeInterval = 0.2
     }
 
@@ -607,34 +607,47 @@ final class AddressBarButtonsViewController: NSViewController {
             askAIChatButton.setButtonType(.momentaryPushIn)
             askAIChatButton.state = .off
 
-            self.askAIChatButton.imagePosition = .imageLeading
+            // Calculate expanded button width
             let fittingSize = askAIChatButton.sizeThatFits(CGSize(width: 1000, height: visualStyle.addressBarStyleProvider.addressBarButtonSize))
-            targetWidth = max(fittingSize.width + Constants.askAiChatButtonHorizontalPadding,
-                               visualStyle.addressBarStyleProvider.addressBarButtonSize)
+            targetWidth = max(fittingSize.width, visualStyle.addressBarStyleProvider.addressBarButtonSize)
 
+            askAIChatButton.backgroundColor = visualStyle.colorsProvider.buttonMouseOverColor
+            askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
+
+            // Animate button expanding
             NSAnimationContext.runAnimationGroup { context in
                 context.allowsImplicitAnimation = true
                 context.duration = Constants.askAiChatButtonAnimationDuration
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)
 
-                askAIChatButton.animator().layer?.backgroundColor = visualStyle.colorsProvider.buttonMouseOverColor.cgColor
                 askAIChatButtonWidthConstraint.animator().constant = targetWidth
             }
         } else {
             isAskAIChatButtonExpanded = false
 
-            askAIChatButton.imagePosition = .imageOnly
-            askAIChatButton.layer?.backgroundColor = NSColor.clear.cgColor
-            askAIChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+            askAIChatButton.backgroundColor = .clear
+            askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
 
             if isSidebarOpen {
+                // Disabled state
                 askAIChatButton.isEnabled = false
                 askAIChatButton.setButtonType(.toggle)
                 askAIChatButton.state = .on
+
+                askAIChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
             } else {
                 askAIChatButton.isEnabled = true
                 askAIChatButton.setButtonType(.momentaryPushIn)
                 askAIChatButton.state = .off
+
+                // Animate button shrinking
+                NSAnimationContext.runAnimationGroup { context in
+                    context.allowsImplicitAnimation = true
+                    context.duration = Constants.askAiChatButtonAnimationDuration
+                    context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+
+                    askAIChatButtonWidthConstraint.animator().constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+                }
             }
         }
     }
@@ -1121,8 +1134,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func configureAskAIChatButton() {
-        // Image and its styling
-        askAIChatButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage
+        askAIChatButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.aiChatButtonImage.withPadding(left: Constants.askAiChatButtonHorizontalPadding)
 
         askAIChatButton.imageHugsTitle = true
         askAIChatButton.imagePosition = .imageLeading
@@ -1152,6 +1164,7 @@ final class AddressBarButtonsViewController: NSViewController {
             attributedTitle.append(NSAttributedString(string: UserText.askAIChatButtonTitle, attributes: mainAttributes))
             attributedTitle.append(NSAttributedString(string: " "))
             attributedTitle.append(NSAttributedString(string: "⇧↵", attributes: shortcutAttributes))
+//            attributedTitle.append(NSAttributedString(string: " "))
 
             return attributedTitle
         }()

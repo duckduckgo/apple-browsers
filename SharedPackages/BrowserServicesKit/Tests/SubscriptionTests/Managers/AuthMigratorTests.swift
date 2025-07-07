@@ -44,7 +44,7 @@ final class AuthMigratorTests: XCTestCase {
     // MARK: - isMigrated tests
 
     func test_isMigrated_whenAuthV2Enabled_andMigrationPossible_andUserAuthenticated_returnsTrue() {
-        mockOAuthClient.isMigrationPossible = true
+        mockOAuthClient.isV1TokenPresent = true
         mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         let sut = AuthMigrator(oAuthClient: mockOAuthClient,
                                pixelHandler: testPixelHandler,
@@ -54,7 +54,7 @@ final class AuthMigratorTests: XCTestCase {
     }
 
     func test_isMigrated_whenAuthV2Enabled_andMigrationPossible_andUserNotAuthenticated_returnsFalse() {
-        mockOAuthClient.isMigrationPossible = true
+        mockOAuthClient.isV1TokenPresent = true
         mockOAuthClient.internalCurrentTokenContainer = nil
         let sut = AuthMigrator(oAuthClient: mockOAuthClient,
                                pixelHandler: testPixelHandler,
@@ -64,7 +64,7 @@ final class AuthMigratorTests: XCTestCase {
     }
 
     func test_isMigrated_whenAuthV2Enabled_andMigrationNotPossible_returnsTrue() {
-        mockOAuthClient.isMigrationPossible = false
+        mockOAuthClient.isV1TokenPresent = false
         let sut = AuthMigrator(oAuthClient: mockOAuthClient,
                                pixelHandler: testPixelHandler,
                                isAuthV2Enabled: true)

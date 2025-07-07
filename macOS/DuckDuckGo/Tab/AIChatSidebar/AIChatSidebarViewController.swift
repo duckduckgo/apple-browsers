@@ -110,6 +110,7 @@ final class AIChatSidebarViewController: NSViewController {
         // Initial mask update
         updateWebViewMask()
         subscribeToURLChanges()
+        subscribeToUserInteractionDialogChanges()
     }
 
     private func createAndSetupSeparator(in container: NSView) {
@@ -256,6 +257,19 @@ final class AIChatSidebarViewController: NSViewController {
         .store(in: &cancellables)
     }
 
+    private func subscribeToUserInteractionDialogChanges() {
+        aiTab.$userInteractionDialog
+            .dropFirst()
+            .sink { [weak self] userInteractionDialog in
+                NotificationCenter.default.post(
+                    name: .aiChatSidebarUserInteractionDialogChanged,
+                    object: self,
+                    userInfo: [NSNotification.Name.UserInfoKeys.userInteractionDialog: userInteractionDialog as Any]
+                )
+            }
+            .store(in: &cancellables)
+    }
+
     @objc private func openInNewTabButtonClicked() {
         let aiChatRestorationData = aiTab.aiChat?.aiChatUserScript?.handler.messageHandling.getDataForMessageType(.chatRestorationData) as? AIChatRestorationData
 
@@ -298,4 +312,12 @@ extension AIChatSidebarViewController: TabDelegate {
     func closeTab(_ tab: Tab) {}
     func websiteAutofillUserScriptCloseOverlay(_ websiteAutofillUserScript: BrowserServicesKit.WebsiteAutofillUserScript?) {}
     func websiteAutofillUserScript(_ websiteAutofillUserScript: BrowserServicesKit.WebsiteAutofillUserScript, willDisplayOverlayAtClick: CGPoint?, serializedInputContext: String, inputPosition: CGRect) {}
+}
+
+extension NSNotification.Name {
+    static let aiChatSidebarUserInteractionDialogChanged = NSNotification.Name("aiChatSidebarUserInteractionDialogChanged")
+
+    enum UserInfoKeys {
+        static let userInteractionDialog = "userInteractionDialog"
+    }
 }

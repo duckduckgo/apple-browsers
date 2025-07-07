@@ -97,8 +97,6 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
     }
 
     override func tearDown() async throws {
-        try await super.tearDown()
-
         userDefaults = nil
 
         PixelKit.tearDown()
@@ -118,6 +116,8 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
         uiHandler = nil
 
         subscriptionAppStoreRestorer = nil
+        pixelKit = nil
+        subscriptionFeatureMappingCache = nil
     }
 
     // MARK: - Tests for restoreAppStoreSubscription

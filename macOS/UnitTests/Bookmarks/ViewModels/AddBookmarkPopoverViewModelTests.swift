@@ -41,6 +41,13 @@ final class AddBookmarkPopoverViewModelTests: XCTestCase {
         }
     }
 
+    override func tearDown() {
+        viewModel = nil
+        bookmarkManager = nil
+        bookmarkStoreMock = nil
+        foldersStore = nil
+    }
+
     @MainActor
     func testWhenBookmarkFavoriteStateIsUpdatedThenBookmarkIsUpdated() throws {
         viewModel.isBookmarkFavorite = true

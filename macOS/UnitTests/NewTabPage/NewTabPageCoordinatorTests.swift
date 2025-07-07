@@ -102,6 +102,16 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         )
     }
 
+    override func tearDown() {
+        appearancePreferences = nil
+        coordinator = nil
+        customizationModel = nil
+        featureFlagger = nil
+        firePixelCalls = []
+        keyValueStore = nil
+        notificationCenter = nil
+    }
+
     func testWhenNewTabPageAppearsThenPixelIsSent() {
         notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
         XCTAssertEqual(firePixelCalls.count, 1)

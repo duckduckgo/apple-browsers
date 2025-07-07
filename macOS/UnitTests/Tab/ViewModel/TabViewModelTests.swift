@@ -28,6 +28,10 @@ final class TabViewModelTests: XCTestCase {
 
     var cancellables = Set<AnyCancellable>()
 
+    override func tearDown() {
+        cancellables = []
+    }
+
     // MARK: - Can reload
 
     @MainActor

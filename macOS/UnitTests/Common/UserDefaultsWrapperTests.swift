@@ -25,7 +25,11 @@ private extension UserDefaultsWrapperKey {
 
 final class UserDefaultsWrapperTests: XCTestCase {
 
-    private let defaults = UserDefaultsMock()
+    private var defaults: UserDefaultsMock! = UserDefaultsMock()
+
+    override func tearDown() {
+        defaults = nil
+    }
 
     // MARK: String
 

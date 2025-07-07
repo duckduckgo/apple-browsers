@@ -29,16 +29,16 @@ final class FileDownloadManagerTests: XCTestCase {
     var workspace: TestWorkspace!
     var dm: FileDownloadManager!
     var preferences: DownloadsPreferences!
-    let fm = FileManager.default
+    var fm: FileManager! = FileManager.default
     let testFile = "downloaded file"
 
     var chooseDestination: (@MainActor (String?, [UTType], @MainActor (URL?, UTType?) -> Void) -> Void)?
     var fileIconFlyAnimationOriginalRect: ((WebKitDownloadTask) -> NSRect?)?
 
-    let response = URLResponse(url: .duckDuckGo,
-                               mimeType: "text/html",
-                               expectedContentLength: 150,
-                               textEncodingName: nil)
+    var response: URLResponse! = URLResponse(url: .duckDuckGo,
+                                             mimeType: "text/html",
+                                             expectedContentLength: 150,
+                                             textEncodingName: nil)
 
     override func setUp() {
         defaults = UserDefaults(suiteName: testGroupName)!
@@ -59,6 +59,12 @@ final class FileDownloadManagerTests: XCTestCase {
         self.chooseDestination = nil
         self.fileIconFlyAnimationOriginalRect = nil
         preferences.alwaysRequestDownloadLocation = false
+        defaults = nil
+        dm = nil
+        fm = nil
+        preferences = nil
+        response = nil
+        workspace = nil
     }
 
     @MainActor

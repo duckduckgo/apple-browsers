@@ -72,6 +72,10 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         CookiePopupProtectionPreferences.shared.isAutoconsentEnabled = true
     }
 
+    override func tearDown() {
+        userScript = nil
+    }
+
     func replyToJson(msg: Any) -> String {
         let jsonData = try? JSONSerialization.data(withJSONObject: msg, options: .sortedKeys)
         return String(data: jsonData!, encoding: .ascii)!

@@ -72,7 +72,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     }
 
     var userDefaults: UserDefaults!
-    var broker: UserScriptMessageBroker = UserScriptMessageBroker(context: "testBroker")
+    var broker: UserScriptMessageBroker! = UserScriptMessageBroker(context: "testBroker")
     var uiHandler: SubscriptionUIHandlerMock!
     var pixelKit: PixelKit!
 
@@ -200,8 +200,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
-        try super.tearDownWithError()
-
         userDefaults = nil
         pixelsFired.removeAll()
         uiEventsHappened.removeAll()
@@ -230,6 +228,15 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         subscriptionManager = nil
 
         feature = nil
+
+        broker = nil
+        mockFeatureFlagger = nil
+        mockFreemiumDBPUserStateManager = nil
+        mockPixelHandler = nil
+        pixelKit = nil
+        subscriptionAttributionPixelHandler = nil
+        subscriptionFeatureMappingCache = nil
+        uiHandler = nil
     }
 
     // MARK: - Tests for getSubscription

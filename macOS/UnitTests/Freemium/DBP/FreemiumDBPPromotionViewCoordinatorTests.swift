@@ -50,12 +50,17 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         )
     }
 
+    override var allowedNonNilVariables: Set<String> {
+        ["notificationCenter"]
+    }
+
     override func tearDownWithError() throws {
         sut = nil
         mockUserStateManager = nil
         mockFeature = nil
         mockPresenter = nil
         mockPixelHandler = nil
+        cancellables = []
     }
 
     func testInitialPromotionVisibility_whenFeatureIsAvailable_andNotDismissed() {

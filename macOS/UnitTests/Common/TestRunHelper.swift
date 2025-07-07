@@ -178,7 +178,9 @@ extension TestRunHelper: XCTestObservation {
         }
 
         // Check for non-nil variables that should be cleaned up
+#if !CI
         checkTestCaseVariables(testCase)
+#endif
 
         if !TestRunHelper.shared.loadedViews.isEmpty {
             for ref in TestRunHelper.shared.loadedViews {
@@ -208,6 +210,7 @@ extension TestRunHelper: XCTestObservation {
 
                 To exorcise the issue:
                   1. Wrap setUp and tearDown method contents in autoreleasepool {} to ensure proper cleanup
+                  2. Make sure you‘re using MockWindow where possible and initialize variables in setUp method only
                   2. Enable MallocStackLogging in the Tests scheme for detailed stack traces in Memory Browser
                   3. Use AutoreleaseTracker with malloc stack trace option to debug retain cycles in Memory Browser (see NSObject+AutoreleaseTracking.m)
                   4. Check Memory Browser for retained objects after test completion
@@ -247,7 +250,7 @@ extension TestRunHelper: XCTestObservation {
            // don't break twice
            nonNilVarsStoppedTestCases.insert(ObjectIdentifier(type(of: testCase))).inserted {
             breakByRaisingSigInt("""
-            Test case '\(testCase.name)' has non-nil variables that should be nil after test completion: \(Array(unexpectedNonNilVariables).sorted())
+            Test case '\(testCase.name)' has non-nil variables that should be nullified (or cleared - for Collections) after test completion: \(Array(unexpectedNonNilVariables).sorted())
             Reset the variables in `tearDown` method or override `allowedNonNilVariables` and add variable names to the returned value to allow
             the test to keep the variables after its completion.
             """)

@@ -59,6 +59,10 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
 
     override func tearDown() async throws {
         try? FileManager.default.removeItem(at: storageLocation)
+        appearancePreferences = nil
+        model = nil
+        sendPixelEvents = []
+        userBackgroundImagesManager = nil
     }
 
     func testThatCustomBackgroundIsNilByDefault() {

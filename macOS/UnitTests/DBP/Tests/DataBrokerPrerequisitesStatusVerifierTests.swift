@@ -21,13 +21,11 @@ import XCTest
 import DataBrokerProtection_macOS
 
 final class DataBrokerPrerequisitesStatusVerifierTests: XCTestCase {
-    private let statusChecker = MockDBPLoginItemStatusChecker()
-
-    override func setUpWithError() throws {
-    }
+    private var statusChecker: MockDBPLoginItemStatusChecker! = MockDBPLoginItemStatusChecker()
 
     override func tearDownWithError() throws {
         statusChecker.reset()
+        statusChecker = nil
     }
 
     func testIncorrectDirectory_thenReturnIncorrectDirectoryStatus() {

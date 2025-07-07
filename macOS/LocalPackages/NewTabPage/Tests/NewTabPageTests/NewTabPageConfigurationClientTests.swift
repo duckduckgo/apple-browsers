@@ -20,6 +20,7 @@ import AppKit
 import Combine
 import XCTest
 @testable import NewTabPage
+import BrowserServicesKit
 
 final class NewTabPageConfigurationClientTests: XCTestCase {
     private var client: NewTabPageConfigurationClient!
@@ -35,6 +36,7 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         contextMenuPresenter = CapturingNewTabPageContextMenuPresenter()
         eventMapper = CapturingNewTabPageConfigurationEventHandler()
         client = NewTabPageConfigurationClient(
+            sectionsAvailabilityProvider: MockNewTabPageSectionsAvailabilityProvider(),
             sectionsVisibilityProvider: sectionsVisibilityProvider,
             customBackgroundProvider: CapturingNewTabPageCustomBackgroundProvider(),
             contextMenuPresenter: contextMenuPresenter,

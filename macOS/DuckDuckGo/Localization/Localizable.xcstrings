@@ -7593,49 +7593,49 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Automatically clear tabs and browsing data when DuckDuckGo quits"
+            "value" : "Automatically delete tabs and browsing data when DuckDuckGo quits"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Borra automáticamente las pestañas y los datos de navegación cuando se cierra DuckDuckGo"
+            "value" : "Elimina automáticamente las pestañas y los datos de navegación cuando se cierra DuckDuckGo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Effacer automatiquement les onglets et les données de navigation lorsque DuckDuckGo se ferme"
+            "value" : "Supprimer automatiquement les onglets et les données de navigation lorsque DuckDuckGo se ferme"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cancella automaticamente schede e dati di navigazione quando chiudi DuckDuckGo"
+            "value" : "Elimina automaticamente schede e dati di navigazione quando chiudi DuckDuckGo"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tabbladen en browsegegevens automatisch wissen wanneer DuckDuckGo stopt"
+            "value" : "Tabbladen en browsegegevens automatisch verwijderen wanneer DuckDuckGo wordt afgesloten"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Automatycznie czyść karty i dane przeglądania przy wychodzeniu z DuckDuckGo"
+            "value" : "Automatycznie usuwaj karty i dane przeglądania przy wychodzeniu z DuckDuckGo"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Limpar automaticamente os separadores e os dados de navegação quando o DuckDuckGo fecha"
+            "value" : "Eliminar automaticamente os separadores e os dados de navegação quando o DuckDuckGo fecha"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Автоматически закрывать вкладки и стирать данные о посещении сайтов при завершении работы DuckDuckGo."
+            "value" : "Автоматически удалять вкладки и данные о посещении сайтов при завершении работы DuckDuckGo"
           }
         }
       }
@@ -25171,6 +25171,126 @@
         }
       }
     },
+    "fire.animation.section.setting" : {
+      "comment" : "Section header in Data Clearing related to the Fire Animation.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animation"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Animation"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animazione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animatie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animacja"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animação"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Анимация"
+          }
+        }
+      }
+    },
+    "fire.animation.toggle.value" : {
+      "comment" : "Checkbox to toggle the fire animation to be on or off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beim Löschen von Daten eine Inferno-Animation anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show inferno animation when deleting data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar la animación Inferno al eliminar datos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher une animation inferno lors de la suppression de données"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra un’animazione inferno durante l’eliminazione dei dati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toon een inferno-animatie bij het verwijderen van gegevens"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż animację inferno podczas usuwania danych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar animação inferno ao excluir dados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать анимацию инферно при удалении данных"
+          }
+        }
+      }
+    },
     "fire.current-window.description" : {
       "comment" : "Description of the 'Current Window' configuration option for the fire button",
       "extractionState" : "extracted_with_value",
@@ -27031,6 +27151,18 @@
         }
       }
     },
+    "freemium.dbp.menu.item" : {
+      "comment" : "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Personal Information Scan"
+          }
+        }
+      }
+    },
     "general.feedback-form.category.ai-chat" : {
       "comment" : "Description for the feedback form when the issue is related to Duck.ai",
       "extractionState" : "extracted_with_value",
@@ -27043,18 +27175,6 @@
         }
       },
       "shouldTranslate" : false
-    },
-    "freemium.dbp.menu.item" : {
-      "comment" : "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Personal Information Scan"
-          }
-        }
-      }
     },
     "general.feedback-form.category.itr" : {
       "comment" : "Description for the feedback form when the issue is related to Identity Theft Restoration (ITR)",
@@ -77839,55 +77959,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Warne mich, dass Tabs und Daten beim Beenden gelöscht werden"
+            "value" : "Darauf hinweisen, dass Tabs und Daten beim Beenden gelöscht werden"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Warn me that tabs and data will be cleared when quitting"
+            "value" : "Warn me that tabs and data will be deleted when quitting"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Advertirme de que las pestañas y los datos se borrarán al salir"
+            "value" : "Avisarme de que las pestañas y los datos se eliminarán al salir"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "M'avertir que les onglets et les données seront effacés à la fermeture"
+            "value" : "M'avertir que les onglets et les données seront supprimés à la fermeture"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avvisa prima di cancellare schede e dati all'uscita"
+            "value" : "Avvisa prima di eliminare schede e dati all'uscita"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Waarschuwen dat tabbladen en gegevens worden gewist bij het afsluiten"
+            "value" : "Waarschuwen dat tabbladen en gegevens worden verwijderd bij het afsluiten"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ostrzegaj, że karty i dane zostaną wyczyszczone przy wychodzeniu"
+            "value" : "Ostrzegaj, że karty i dane zostaną usunięte przy wychodzeniu"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avisar-me que os separadores e os dados serão limpos ao sair"
+            "value" : "Avisar-me que os separadores e os dados serão eliminados ao sair"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Показывать предупреждение о сбросе вкладок и данных при выходе"
+            "value" : "Предупреждать о закрытии вкладок и удалении данных при выходе"
           }
         }
       }

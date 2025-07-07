@@ -41,7 +41,16 @@ extension Preferences {
 
                 }
 
-                // SECTION 2: Fireproof Site
+                // SECTION 2: Enable/Disable Fire Animation
+                if model.shouldShowDisableFireAnimationSection {
+                    PreferencePaneSection(UserText.fireAnimationSectionHeader) {
+                        PreferencePaneSubSection {
+                            ToggleMenuItem(UserText.showFireAnimationToggleText, isOn: $model.isFireAnimationEnabled)
+                        }
+                    }
+                }
+
+                // SECTION 3: Fireproof Site
                 PreferencePaneSection(UserText.fireproofSites) {
 
                     PreferencePaneSubSection {

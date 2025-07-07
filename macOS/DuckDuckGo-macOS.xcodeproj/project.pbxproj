@@ -2309,6 +2309,7 @@
 		84BDE7262E1BD28D0082075D /* NSErrorAdditionalInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = B630E7FD29C887ED00363609 /* NSErrorAdditionalInfo.swift */; };
 		84BDE7272E1BD35E0082075D /* WKWebViewMockingExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F56566299A414300A04298 /* WKWebViewMockingExtension.swift */; };
 		84BDE7282E1BD3830082075D /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
+		84BDE72A2E1BE3C60082075D /* NoARCObjCTestsExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84BDE7292E1BE3C60082075D /* NoARCObjCTestsExtensions */; };
 		84C176392DF02556001DEEC7 /* CommonObjCExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84C176382DF02556001DEEC7 /* CommonObjCExtensions */; };
 		84C1763B2DF02567001DEEC7 /* CommonObjCExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 84C1763A2DF02567001DEEC7 /* CommonObjCExtensions */; };
 		84C176502DF0462F001DEEC7 /* LetsMove in Frameworks */ = {isa = PBXBuildFile; productRef = 84C1764F2DF0462F001DEEC7 /* LetsMove */; };
@@ -5826,6 +5827,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9D84E42C2CD4E66F0046CD8B /* Common in Frameworks */,
+				84BDE72A2E1BE3C60082075D /* NoARCObjCTestsExtensions in Frameworks */,
 				9D84E42D2CD4E66F0046CD8B /* PixelKitTestingUtilities in Frameworks */,
 				9D84E42E2CD4E66F0046CD8B /* SnapshotTesting in Frameworks */,
 				9D84E42F2CD4E66F0046CD8B /* AppKitExtensions in Frameworks */,
@@ -11225,6 +11227,7 @@
 				9D84E4042CD4E66F0046CD8B /* PixelKitTestingUtilities */,
 				9D84E4062CD4E66F0046CD8B /* AppKitExtensions */,
 				9D84E4072CD4E66F0046CD8B /* Common */,
+				84BDE7292E1BE3C60082075D /* NoARCObjCTestsExtensions */,
 			);
 			productName = "Integration Tests";
 			productReference = 9D84E43C2CD4E66F0046CD8B /* DBPE2ETests.xctest */;
@@ -17445,6 +17448,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B6DA44152616C13800DD1EC2 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
 			productName = OHHTTPStubsSwift;
+		};
+		84BDE7292E1BE3C60082075D /* NoARCObjCTestsExtensions */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NoARCObjCTestsExtensions;
 		};
 		84C176382DF02556001DEEC7 /* CommonObjCExtensions */ = {
 			isa = XCSwiftPackageProductDependency;

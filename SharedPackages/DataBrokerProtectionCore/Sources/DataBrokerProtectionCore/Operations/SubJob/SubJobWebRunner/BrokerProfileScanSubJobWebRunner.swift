@@ -86,7 +86,6 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         return try await self.run(inputValue: (), showWebView: showWebView)
     }
 
-    @MainActor
     public func run(inputValue: InputValue,
                     webViewHandler: WebViewHandler? = nil,
                     actionsHandler: ActionsHandler? = nil,
@@ -98,7 +97,6 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 self.continuation = continuation
                 task = Task {
                     await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
-
                     do {
                         let scanStep = try query.dataBroker.scanStep()
                         if let actionsHandler = actionsHandler {
@@ -117,11 +115,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 }
             }
         } onCancel: {
-            Task {
-                await MainActor.run {
-                    task?.cancel()
-                }
-            }
+            task?.cancel()
         }
     }
 

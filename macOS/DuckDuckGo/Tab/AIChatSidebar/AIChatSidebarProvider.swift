@@ -27,12 +27,12 @@ protocol AIChatSidebarProviding: AnyObject {
     /// The width of the chat sidebar in points.
     var sidebarWidth: CGFloat { get }
 
-    /// Returns the existing chat sidebar instance for the specified tab, if one exists.
+    /// Returns the existing cached chat sidebar instance for the specified tab, if one exists.
     /// - Parameter tabID: The unique identifier of the tab
     /// - Returns: An `AIChatSidebar` instance associated with the tab, or `nil` if no sidebar exists
     func getSidebar(for tabID: TabIdentifier) -> AIChatSidebar?
 
-    /// Creates a new chat sidebar instance for the specified tab.
+    /// Creates and caches a new chat sidebar instance for the specified tab.
     /// - Parameters:
     ///   - tabID: The unique identifier of the tab
     ///   - burnerMode: The burner mode configuration for the sidebar

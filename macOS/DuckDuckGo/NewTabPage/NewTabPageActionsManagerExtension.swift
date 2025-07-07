@@ -44,6 +44,7 @@ extension NewTabPageActionsManager {
         keyValueStore: KeyValueStoring = UserDefaults.standard,
         featureFlagger: FeatureFlagger
     ) {
+        let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
         let favoritesModel = NewTabPageFavoritesModel(
             actionsHandler: DefaultFavoritesActionsHandler(bookmarkManager: bookmarkManager),
@@ -77,8 +78,9 @@ extension NewTabPageActionsManager {
             )
         )
 
-        var scriptClients: [NewTabPageUserScriptClient] = [
+        self.init(scriptClients: [
             NewTabPageConfigurationClient(
+                sectionsAvailabilityProvider: availabilityProvider,
                 sectionsVisibilityProvider: appearancePreferences,
                 customBackgroundProvider: customizationProvider,
                 linkOpener: NewTabPageLinkOpener(),
@@ -100,14 +102,9 @@ extension NewTabPageActionsManager {
             NewTabPageFavoritesClient(favoritesModel: favoritesModel, preferredFaviconSize: Int(Favicon.SizeCategory.medium.rawValue)),
             NewTabPageProtectionsReportClient(model: protectionsReportModel),
             NewTabPagePrivacyStatsClient(model: privacyStatsModel),
-            NewTabPageRecentActivityClient(model: recentActivityModel)
-        ]
-
-        if featureFlagger.isFeatureOn(.newTabPageOmnibar) {
-            scriptClients.append(NewTabPageOmnibarClient(model: NewTabPageOmnibarModel()))
-        }
-
-        self.init(scriptClients: scriptClients)
+            NewTabPageRecentActivityClient(model: recentActivityModel),
+            NewTabPageOmnibarClient(model: NewTabPageOmnibarModel())
+        ])
     }
 }
 

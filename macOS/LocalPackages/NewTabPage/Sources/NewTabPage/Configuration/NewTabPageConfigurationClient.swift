@@ -23,6 +23,10 @@ import os.log
 import UserScriptActionsManager
 import WebKit
 
+public protocol NewTabPageSectionsAvailabilityProviding: AnyObject {
+    var isOmnibarAvailable: Bool { get }
+}
+
 public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
     var isOmnibarVisible: Bool { get set }
     var isFavoritesVisible: Bool { get set }
@@ -44,6 +48,7 @@ public enum NewTabPageConfigurationEvent: Equatable {
 public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     private var cancellables = Set<AnyCancellable>()
+    private let sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding
     private let sectionsVisibilityProvider: NewTabPageSectionsVisibilityProviding
     private let customBackgroundProvider: NewTabPageCustomBackgroundProviding
     private let contextMenuPresenter: NewTabPageContextMenuPresenting
@@ -51,12 +56,14 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     private let eventMapper: EventMapping<NewTabPageConfigurationEvent>?
 
     public init(
+        sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding,
         sectionsVisibilityProvider: NewTabPageSectionsVisibilityProviding,
         customBackgroundProvider: NewTabPageCustomBackgroundProviding,
         contextMenuPresenter: NewTabPageContextMenuPresenting = DefaultNewTabPageContextMenuPresenter(),
         linkOpener: NewTabPageLinkOpening,
         eventMapper: EventMapping<NewTabPageConfigurationEvent>?
     ) {
+        self.sectionsAvailabilityProvider = sectionsAvailabilityProvider
         self.sectionsVisibilityProvider = sectionsVisibilityProvider
         self.customBackgroundProvider = customBackgroundProvider
         self.contextMenuPresenter = contextMenuPresenter
@@ -67,7 +74,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         Publishers.Merge3(
             sectionsVisibilityProvider.isOmnibarVisiblePublisher,
             sectionsVisibilityProvider.isFavoritesVisiblePublisher,
-            sectionsVisibilityProvider.isProtectionsReportVisiblePublisher
+            sectionsVisibilityProvider.isProtectionsReportVisiblePublisher,
         )
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -98,22 +105,33 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     }
 
     private func fetchWidgets() -> [NewTabPageDataModel.NewTabPageConfiguration.Widget] {
-        [
+        var widgets: [NewTabPageDataModel.NewTabPageConfiguration.Widget] = [
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
             .init(id: .nextSteps),
-            .init(id: .omnibar),
             .init(id: .favorites),
             .init(id: .protections)
         ]
+
+        if sectionsAvailabilityProvider.isOmnibarAvailable {
+            widgets.append(.init(id: .omnibar))
+        }
+
+        return widgets
     }
 
+
     private func fetchWidgetConfigs() -> [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] {
-        [
-            .init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible),
+        var configs: [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] = [
             .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
             .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible)
         ]
+
+        if sectionsAvailabilityProvider.isOmnibarAvailable {
+            configs.append(.init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible))
+        }
+
+        return configs
     }
 
     private func notifyWidgetConfigsDidChange() {

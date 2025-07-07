@@ -553,7 +553,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility() {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar),
+              aiChatMenuConfig.shouldDisplayAddressBarShortcut else {
             askAIChatButton.isHidden = true
             return
         }

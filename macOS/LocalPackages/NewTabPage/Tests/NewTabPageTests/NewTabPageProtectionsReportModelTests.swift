@@ -158,98 +158,98 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
 
     // MARK: - Burn Animation Tests
 
-//    func testWhenInitializedWithShowBurnAnimationTrueThenShouldShowBurnAnimationIsTrue() {
-//        XCTAssertTrue(model.shouldShowBurnAnimation)
-//    }
-//
-//    func testWhenInitializedWithShowBurnAnimationFalseThenShouldShowBurnAnimationIsFalse() {
-//        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
-//                                                 settingsPersistor: settingsPersistor,
-//                                                 burnAnimationSettingChanges: Just(false).eraseToAnyPublisher(),
-//                                                 showBurnAnimation: false)
-//        XCTAssertFalse(model.shouldShowBurnAnimation)
-//    }
-//
-//    func testWhenBurnAnimationSettingChangesToTrueThenShouldShowBurnAnimationIsTrue() async {
-//        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
-//                                                 settingsPersistor: settingsPersistor,
-//                                                 burnAnimationSettingChanges: Just(false).eraseToAnyPublisher(),
-//                                                 showBurnAnimation: false)
-//
-//        let burnAnimationSubject = PassthroughSubject<Bool, Never>()
-//        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
-//                                                 settingsPersistor: settingsPersistor,
-//                                                 burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-//                                                 showBurnAnimation: false)
-//
-//        XCTAssertFalse(model.shouldShowBurnAnimation)
-//
-//        let expectation = expectation(description: "shouldShowBurnAnimation should be updated")
-//        let cancellable = model.$shouldShowBurnAnimation
-//            .dropFirst()
-//            .sink { shouldShow in
-//                if shouldShow {
-//                    expectation.fulfill()
-//                }
-//            }
-//
-//        burnAnimationSubject.send(true)
-//
-//        await fulfillment(of: [expectation], timeout: 1.0)
-//        XCTAssertTrue(model.shouldShowBurnAnimation)
-//        cancellable.cancel()
-//    }
-//
-//    func testWhenBurnAnimationSettingChangesToFalseThenShouldShowBurnAnimationIsFalse() async {
-//        let burnAnimationSubject = PassthroughSubject<Bool, Never>()
-//        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
-//                                                 settingsPersistor: settingsPersistor,
-//                                                 burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-//                                                 showBurnAnimation: true)
-//
-//        XCTAssertTrue(model.shouldShowBurnAnimation)
-//
-//        let expectation = expectation(description: "shouldShowBurnAnimation should be updated")
-//        let cancellable = model.$shouldShowBurnAnimation
-//            .dropFirst()
-//            .sink { shouldShow in
-//                if !shouldShow {
-//                    expectation.fulfill()
-//                }
-//            }
-//
-//        burnAnimationSubject.send(false)
-//
-//        await fulfillment(of: [expectation], timeout: 1.0)
-//        XCTAssertFalse(model.shouldShowBurnAnimation)
-//        cancellable.cancel()
-//    }
-//
-//    func testWhenBurnAnimationSettingChangesMultipleTimesThenShouldShowBurnAnimationFollowsChanges() async {
-//        let burnAnimationSubject = PassthroughSubject<Bool, Never>()
-//        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
-//                                                 settingsPersistor: settingsPersistor,
-//                                                 burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-//                                                 showBurnAnimation: true)
-//
-//        var receivedValues: [Bool] = []
-//        let expectation = expectation(description: "shouldShowBurnAnimation should receive multiple updates")
-//        expectation.expectedFulfillmentCount = 3
-//
-//        let cancellable = model.$shouldShowBurnAnimation
-//            .dropFirst()
-//            .sink { shouldShow in
-//                receivedValues.append(shouldShow)
-//                expectation.fulfill()
-//            }
-//
-//        burnAnimationSubject.send(false)
-//        burnAnimationSubject.send(true)
-//        burnAnimationSubject.send(false)
-//
-//        await fulfillment(of: [expectation], timeout: 1.0)
-//        XCTAssertEqual(receivedValues, [false, true, false])
-//        XCTAssertFalse(model.shouldShowBurnAnimation)
-//        cancellable.cancel()
-//    }
+    func testWhenInitializedWithShowBurnAnimationTrueThenShouldShowBurnAnimationIsTrue() {
+        XCTAssertTrue(model.shouldShowBurnAnimation)
+    }
+
+    func testWhenInitializedWithShowBurnAnimationFalseThenShouldShowBurnAnimationIsFalse() {
+        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 settingsPersistor: settingsPersistor,
+                                                 burnAnimationSettingChanges: Just(false).eraseToAnyPublisher(),
+                                                 showBurnAnimation: false)
+        XCTAssertFalse(model.shouldShowBurnAnimation)
+    }
+
+    func testWhenBurnAnimationSettingChangesToTrueThenShouldShowBurnAnimationIsTrue() async {
+        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 settingsPersistor: settingsPersistor,
+                                                 burnAnimationSettingChanges: Just(false).eraseToAnyPublisher(),
+                                                 showBurnAnimation: false)
+
+        let burnAnimationSubject = PassthroughSubject<Bool, Never>()
+        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 settingsPersistor: settingsPersistor,
+                                                 burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
+                                                 showBurnAnimation: false)
+
+        XCTAssertFalse(model.shouldShowBurnAnimation)
+
+        let expectation = expectation(description: "shouldShowBurnAnimation should be updated")
+        let cancellable = model.$shouldShowBurnAnimation
+            .dropFirst()
+            .sink { shouldShow in
+                if shouldShow {
+                    expectation.fulfill()
+                }
+            }
+
+        burnAnimationSubject.send(true)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertTrue(model.shouldShowBurnAnimation)
+        cancellable.cancel()
+    }
+
+    func testWhenBurnAnimationSettingChangesToFalseThenShouldShowBurnAnimationIsFalse() async {
+        let burnAnimationSubject = PassthroughSubject<Bool, Never>()
+        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 settingsPersistor: settingsPersistor,
+                                                 burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
+                                                 showBurnAnimation: true)
+
+        XCTAssertTrue(model.shouldShowBurnAnimation)
+
+        let expectation = expectation(description: "shouldShowBurnAnimation should be updated")
+        let cancellable = model.$shouldShowBurnAnimation
+            .dropFirst()
+            .sink { shouldShow in
+                if !shouldShow {
+                    expectation.fulfill()
+                }
+            }
+
+        burnAnimationSubject.send(false)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertFalse(model.shouldShowBurnAnimation)
+        cancellable.cancel()
+    }
+
+    func testWhenBurnAnimationSettingChangesMultipleTimesThenShouldShowBurnAnimationFollowsChanges() async {
+        let burnAnimationSubject = PassthroughSubject<Bool, Never>()
+        model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 settingsPersistor: settingsPersistor,
+                                                 burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
+                                                 showBurnAnimation: true)
+
+        var receivedValues: [Bool] = []
+        let expectation = expectation(description: "shouldShowBurnAnimation should receive multiple updates")
+        expectation.expectedFulfillmentCount = 3
+
+        let cancellable = model.$shouldShowBurnAnimation
+            .dropFirst()
+            .sink { shouldShow in
+                receivedValues.append(shouldShow)
+                expectation.fulfill()
+            }
+
+        burnAnimationSubject.send(false)
+        burnAnimationSubject.send(true)
+        burnAnimationSubject.send(false)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedValues, [false, true, false])
+        XCTAssertFalse(model.shouldShowBurnAnimation)
+        cancellable.cancel()
+    }
 }

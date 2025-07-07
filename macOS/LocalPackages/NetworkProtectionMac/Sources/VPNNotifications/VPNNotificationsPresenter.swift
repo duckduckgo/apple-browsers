@@ -1,5 +1,5 @@
 //
-//  NetworkProtectionUNNotificationsPresenter.swift
+//  VPNNotificationsPresenter.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -31,7 +31,7 @@ extension UNNotificationAction {
 
     /// "Reconnect" notification action button
     static let reconnectAction = UNNotificationAction(identifier: Identifier.reconnect.rawValue,
-                                                      title: UserText.networkProtectionSupersededReconnectActionTitle,
+                                                      title: UserText.vpnSupersededReconnectActionTitle,
                                                       options: [.authenticationRequired])
 
 }
@@ -48,14 +48,14 @@ extension UNNotificationCategory {
 
 /// This class takes care of requesting the presentation of notifications using UNNotificationCenter
 ///
-final class NetworkProtectionUNNotificationsPresenter: NSObject, NetworkProtectionNotificationsPresenter {
+public final class VPNNotificationsPresenter: NSObject, VPNNotificationsPresenting {
 
     private static let threadIdentifier = "com.duckduckgo.NetworkProtectionNotificationsManager.threadIdentifier"
 
     private let appLauncher: AppLauncher
     private let userNotificationCenter: UNUserNotificationCenter
 
-    init(appLauncher: AppLauncher, userNotificationCenter: UNUserNotificationCenter = .current()) {
+    public init(appLauncher: AppLauncher, userNotificationCenter: UNUserNotificationCenter = .current()) {
         self.appLauncher = appLauncher
         self.userNotificationCenter = userNotificationCenter
 
@@ -64,7 +64,7 @@ final class NetworkProtectionUNNotificationsPresenter: NSObject, NetworkProtecti
 
     // MARK: - Setup
 
-    func requestAuthorization() {
+    public func requestAuthorization() {
         userNotificationCenter.delegate = self
         requestAlertAuthorization()
     }
@@ -104,57 +104,57 @@ final class NetworkProtectionUNNotificationsPresenter: NSObject, NetworkProtecti
 
     // MARK: - Presenting user notifications
 
-    func showConnectedNotification(serverLocation: String?, snoozeEnded: Bool) {
+    public func showConnectedNotification(serverLocation: String?, snoozeEnded: Bool) {
         // Should include the serverLocation in the subtitle, but due to a bug with the current server in the PacketTunnelProvider
         // this is not currently working on macOS. Add the necessary copy as on iOS when this is fixed.
         let subtitle: String
         if let serverLocation {
-            subtitle = UserText.networkProtectionConnectionSuccessNotificationSubtitle(serverLocation: serverLocation)
+            subtitle = UserText.vpnConnectionSuccessNotificationSubtitle(serverLocation: serverLocation)
         } else {
-            subtitle = UserText.networkProtectionConnectionSuccessNotificationSubtitle
+            subtitle = UserText.vpnConnectionSuccessNotificationSubtitle
         }
-        let content = notificationContent(title: UserText.networkProtectionConnectionSuccessNotificationTitle,
+        let content = notificationContent(title: UserText.vpnConnectionSuccessNotificationTitle,
                                           subtitle: subtitle)
         showNotification(.connected, content)
     }
 
-    func showReconnectingNotification() {
-        let content = notificationContent(title: UserText.networkProtectionConnectionInterruptedNotificationTitle,
-                                          subtitle: UserText.networkProtectionConnectionInterruptedNotificationSubtitle)
+    public func showReconnectingNotification() {
+        let content = notificationContent(title: UserText.vpnConnectionInterruptedNotificationTitle,
+                                          subtitle: UserText.vpnConnectionInterruptedNotificationSubtitle)
         showNotification(.reconnecting, content)
     }
 
-    func showConnectionFailureNotification() {
-        let content = notificationContent(title: UserText.networkProtectionConnectionFailureNotificationTitle,
-                                          subtitle: UserText.networkProtectionConnectionFailureNotificationSubtitle)
+    public func showConnectionFailureNotification() {
+        let content = notificationContent(title: UserText.vpnConnectionFailureNotificationTitle,
+                                          subtitle: UserText.vpnConnectionFailureNotificationSubtitle)
         showNotification(.disconnected, content)
     }
 
-    func showSupersededNotification() {
-        let content = notificationContent(title: UserText.networkProtectionSupersededNotificationTitle,
-                                          subtitle: UserText.networkProtectionSupersededNotificationSubtitle,
+    public func showSupersededNotification() {
+        let content = notificationContent(title: UserText.vpnSupersededNotificationTitle,
+                                          subtitle: UserText.vpnSupersededNotificationSubtitle,
                                           category: .superseded)
         showNotification(.superseded, content)
     }
 
-    func showEntitlementNotification() {
-        let content = notificationContent(title: UserText.networkProtectionEntitlementExpiredNotificationTitle,
-                                          subtitle: UserText.networkProtectionEntitlementExpiredNotificationBody)
+    public func showEntitlementNotification() {
+        let content = notificationContent(title: UserText.vpnEntitlementExpiredNotificationTitle,
+                                          subtitle: UserText.vpnEntitlementExpiredNotificationBody)
         showNotification(.expiredEntitlement, content)
     }
 
-    func showSnoozingNotification(duration: TimeInterval) {
+    public func showSnoozingNotification(duration: TimeInterval) {
         assertionFailure("macOS does not support VPN snooze")
     }
 
-    func showTestNotification() {
+    public func showTestNotification() {
         // These strings are deliberately hardcoded as we don't want them localized, they're only for debugging:
         let content = notificationContent(title: "Test notification",
                                           subtitle: "Test notification")
         showNotification(.test, content)
     }
 
-    private func showNotification(_ identifier: NetworkProtectionNotificationIdentifier, _ content: UNNotificationContent) {
+    private func showNotification(_ identifier: VPNNotificationIdentifier, _ content: UNNotificationContent) {
         let request = UNNotificationRequest(identifier: identifier.rawValue, content: content, trigger: .none)
 
         requestAlertAuthorization { authorized in
@@ -170,22 +170,22 @@ final class NetworkProtectionUNNotificationsPresenter: NSObject, NetworkProtecti
 
 }
 
-public enum NetworkProtectionNotificationIdentifier: String {
-    case disconnected = "network-protection.notification.disconnected"
-    case reconnecting = "network-protection.notification.reconnecting"
-    case connected = "network-protection.notification.connected"
-    case superseded = "network-protection.notification.superseded"
-    case expiredEntitlement = "network-protection.notification.expired-entitlement"
-    case test = "network-protection.notification.test"
+public enum VPNNotificationIdentifier: String {
+    case disconnected = "ddg-vpn.notification.disconnected"
+    case reconnecting = "ddg-vpn.notification.reconnecting"
+    case connected = "ddg-vpn.notification.connected"
+    case superseded = "ddg-vpn.notification.superseded"
+    case expiredEntitlement = "ddg-vpn.notification.expired-entitlement"
+    case test = "ddg-vpn.notification.test"
 }
 
-extension NetworkProtectionUNNotificationsPresenter: UNUserNotificationCenterDelegate {
+extension VPNNotificationsPresenter: UNUserNotificationCenterDelegate {
 
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+    public func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         return .banner
     }
 
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+    public func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
 
         try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showStatus)
     }

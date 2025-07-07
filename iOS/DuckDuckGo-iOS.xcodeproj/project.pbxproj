@@ -272,9 +272,11 @@
 		4B75EA9226A266CB00018634 /* PrintingUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B75EA9126A266CB00018634 /* PrintingUserScript.swift */; };
 		4B94B79E2D4831D90014AAB8 /* SyncUI-iOS in Frameworks */ = {isa = PBXBuildFile; productRef = 4B94B79D2D4831D90014AAB8 /* SyncUI-iOS */; };
 		4BB7CBB02AF59C310014A35F /* VPNWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */; };
-		4BBBBA872B02E85400D965DA /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BBBBA862B02E85400D965DA /* DesignResourcesKit */; };
 		4BBBBA922B03291700D965DA /* VPNWaitlistUserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */; };
 		4BC21A2F27238B7500229F0E /* RunLoopExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC21A2C272388BD00229F0E /* RunLoopExtensionTests.swift */; };
+		4BC5E8632E174D5400391C19 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC5E8622E174D5400391C19 /* DesignResourcesKit */; };
+		4BC5E8652E174D5C00391C19 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC5E8642E174D5C00391C19 /* DesignResourcesKit */; };
+		4BC5E8672E174D6A00391C19 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC5E8662E174D6A00391C19 /* DesignResourcesKit */; };
 		4BC8948C2C7902E6009AA141 /* WireGuard in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC8948B2C7902E6009AA141 /* WireGuard */; };
 		4BC95E792D7416A1002FAB32 /* Crashes in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E782D7416A1002FAB32 /* Crashes */; };
 		4BC95E7B2D7416AD002FAB32 /* Navigation in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC95E7A2D7416AD002FAB32 /* Navigation */; };
@@ -1453,7 +1455,6 @@
 		C1CAAA7A2CF8BE0200C37EE6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C1CAAA792CF8BE0200C37EE6 /* Assets.xcassets */; };
 		C1CAAA7B2CF8C8ED00C37EE6 /* Core.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F143C2E41E4A4CD400CFDE3A /* Core.framework */; };
 		C1CAAA812CF8C8F400C37EE6 /* DuckUI in Frameworks */ = {isa = PBXBuildFile; productRef = C1CAAA802CF8C8F400C37EE6 /* DuckUI */; };
-		C1CAAA832CF8C8FF00C37EE6 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = C1CAAA822CF8C8FF00C37EE6 /* DesignResourcesKit */; };
 		C1CAAA852CF8C9EA00C37EE6 /* UIResponderExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CAAA842CF8C9EA00C37EE6 /* UIResponderExtension.swift */; };
 		C1CAAA882CF9FFE100C37EE6 /* CredentialProviderListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CAAA872CF9FFE100C37EE6 /* CredentialProviderListViewController.swift */; };
 		C1CAAA8A2CF9FFF300C37EE6 /* CredentialProviderListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CAAA892CF9FFF300C37EE6 /* CredentialProviderListViewModel.swift */; };
@@ -1752,7 +1753,6 @@
 		F4147354283BF834004AA7A5 /* AutofillContentScopeFeatureToggles.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4147353283BF834004AA7A5 /* AutofillContentScopeFeatureToggles.swift */; };
 		F41C2DA326C1925700F9A760 /* BookmarksAndFolders.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = F41C2DA126C1925600F9A760 /* BookmarksAndFolders.xcdatamodeld */; };
 		F41C2DA526C1975E00F9A760 /* LegacyBookmarksCoreDataStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41C2DA426C1975E00F9A760 /* LegacyBookmarksCoreDataStorage.swift */; };
-		F42D541D29DCA40B004C4FF1 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = F42D541C29DCA40B004C4FF1 /* DesignResourcesKit */; };
 		F44D279C27F331BB0037F371 /* AutofillLoginPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44D279727F331BB0037F371 /* AutofillLoginPromptView.swift */; };
 		F44D279E27F331BB0037F371 /* AutofillLoginPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44D279927F331BB0037F371 /* AutofillLoginPromptViewModel.swift */; };
 		F44D279F27F331BB0037F371 /* AutofillLoginPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44D279A27F331BB0037F371 /* AutofillLoginPromptViewController.swift */; };
@@ -2204,6 +2204,7 @@
 		4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNWidget.swift; sourceTree = "<group>"; };
 		4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNWaitlistUserText.swift; sourceTree = "<group>"; };
 		4BC21A2C272388BD00229F0E /* RunLoopExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunLoopExtensionTests.swift; sourceTree = "<group>"; };
+		4BC5E8602E174B6A00391C19 /* DesignResourcesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKit; path = ../SharedPackages/DesignResourcesKit; sourceTree = SOURCE_ROOT; };
 		4BCBE45D2BA7E81F00FC75A1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4BCBE45F2BA7E87100FC75A1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4BCD14662B05B682000B1E4C /* NetworkProtectionTermsAndConditionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionTermsAndConditionsStore.swift; sourceTree = "<group>"; };
@@ -4062,13 +4063,13 @@
 				BB631D162DE0D9020099977D /* DesignResourcesKitIcons in Frameworks */,
 				F1D43AFA2B99C1D300BAB743 /* BareBonesBrowserKit in Frameworks */,
 				7B2CCBA52D11ABBA00FE5852 /* VPNWidgetSupport in Frameworks */,
+				4BC5E8632E174D5400391C19 /* DesignResourcesKit in Frameworks */,
 				9D6891E72DAD2DF800819662 /* DataBrokerProtection-iOS in Frameworks */,
 				F143C2EB1E4A4CD400CFDE3A /* Core.framework in Frameworks */,
 				4BC95E792D7416A1002FAB32 /* Crashes in Frameworks */,
 				4BC95E7B2D7416AD002FAB32 /* Navigation in Frameworks */,
 				4BC95E7F2D7416C1002FAB32 /* PrivacyDashboard in Frameworks */,
 				31E69A63280F4CB600478327 /* DuckUI in Frameworks */,
-				F42D541D29DCA40B004C4FF1 /* DesignResourcesKit in Frameworks */,
 				9F454D242E05489200B8CC5A /* SetDefaultBrowserCore in Frameworks */,
 				9FDD72052D895D8C0016246B /* CombineSchedulers in Frameworks */,
 				9F254AF12CF8D5250063B308 /* MaliciousSiteProtection in Frameworks */,
@@ -4106,7 +4107,7 @@
 				85DF714624F7FE6100C89288 /* Core.framework in Frameworks */,
 				7B2CCBA32D11ABB100FE5852 /* VPNWidgetSupport in Frameworks */,
 				8512EA4F24ED30D20073EE19 /* WidgetKit.framework in Frameworks */,
-				4BBBBA872B02E85400D965DA /* DesignResourcesKit in Frameworks */,
+				4BC5E8652E174D5C00391C19 /* DesignResourcesKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4201,8 +4202,8 @@
 				C1CAAA812CF8C8F400C37EE6 /* DuckUI in Frameworks */,
 				C1EF5B232CC0457B002980E6 /* AuthenticationServices.framework in Frameworks */,
 				856086612DE47E5600AA3DC7 /* DesignResourcesKitIcons in Frameworks */,
+				4BC5E8672E174D6A00391C19 /* DesignResourcesKit in Frameworks */,
 				C1CAAA7B2CF8C8ED00C37EE6 /* Core.framework in Frameworks */,
-				C1CAAA832CF8C8FF00C37EE6 /* DesignResourcesKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4840,6 +4841,7 @@
 				311F87622DB1556B0011DFB3 /* AIChat */,
 				31D49A3C2DC294E500262F26 /* UIComponents */,
 				BB631D142DE0D8B70099977D /* DesignResourcesKitIcons */,
+				4BC5E8602E174B6A00391C19 /* DesignResourcesKit */,
 			);
 			path = LocalPackages;
 			sourceTree = "<group>";
@@ -5631,7 +5633,6 @@
 				31E69A60280F4BAD00478327 /* LocalPackages */,
 				84E341931E2F7EFB00BDBA6F /* Products */,
 				85A313962028E78A00327D00 /* release_notes.txt */,
-				9876DF292DEEE0FD00E30713 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -5907,7 +5908,7 @@
 				F1849C682D6E3C98000589A4 /* DebugScreensViewController.swift */,
 				F1849C692D6E3C98000589A4 /* DebugScreensViewModel.swift */,
 				F1849C6A2D6E3C98000589A4 /* DebugScreensViewModel+Screens.swift */,
-                9FF967CC2E12182100E45B54 /* DefaultBrowserPromptDebugView */,
+				9FF967CC2E12182100E45B54 /* DefaultBrowserPromptDebugView */,
 				F1849C6F2D6E3D17000589A4 /* DiagnosticReport.swift */,
 				65BD16382D8DA439000795DE /* DuckPlayerDebugSettingsView.swift */,
 				564441A02D4D2089003C53B8 /* FeatureFlagsDebugSettings */,
@@ -6233,13 +6234,6 @@
 				987130C2294AAB9E00AB05E0 /* BookmarksTestHelpers.swift */,
 			);
 			name = BSK;
-			sourceTree = "<group>";
-		};
-		9876DF292DEEE0FD00E30713 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 		98A54A8222AFCB2C00E541F4 /* Instruments */ = {
@@ -8775,7 +8769,6 @@
 				31E69A62280F4CB600478327 /* DuckUI */,
 				F4D7F633298C00C3006C3AE9 /* FindInPageIOSJSSupport */,
 				3760DFEC299315EF0045A446 /* Waitlist */,
-				F42D541C29DCA40B004C4FF1 /* DesignResourcesKit */,
 				0238E44E29C0FAA100615E30 /* FindInPageIOSJSSupport */,
 				F1D43AF92B99C1D300BAB743 /* BareBonesBrowserKit */,
 				9F8FE9482BAE50E50071E372 /* Lottie */,
@@ -8845,10 +8838,10 @@
 			);
 			name = WidgetsExtension;
 			packageProductDependencies = (
-				4BBBBA862B02E85400D965DA /* DesignResourcesKit */,
 				7B2CCBA22D11ABB100FE5852 /* VPNWidgetSupport */,
 				856086622DE47E7700AA3DC7 /* DesignResourcesKitIcons */,
 				7BC26C9D2DFC0CA000E52480 /* VPN */,
+				4BC5E8642E174D5C00391C19 /* DesignResourcesKit */,
 			);
 			productName = WidgetsExtension;
 			productReference = 8512EA4D24ED30D20073EE19 /* WidgetsExtension.appex */;
@@ -9219,7 +9212,6 @@
 				F486D2FD25069744002D07D7 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
 				F486D3022506975E002D07D7 /* XCRemoteSwiftPackageReference "swifter" */,
 				C14882EB27F211A000D59F0C /* XCRemoteSwiftPackageReference "SwiftSoup" */,
-				F42D541B29DCA40B004C4FF1 /* XCRemoteSwiftPackageReference "DesignResourcesKit" */,
 				0238E44D29C0FAA100615E30 /* XCRemoteSwiftPackageReference "ios-js-support" */,
 				854007E52B57FB020001BD98 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 				B6F997C22B8F374300476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */,
@@ -14379,14 +14371,6 @@
 				version = 0.1.0;
 			};
 		};
-		F42D541B29DCA40B004C4FF1 /* XCRemoteSwiftPackageReference "DesignResourcesKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/duckduckgo/DesignResourcesKit";
-			requirement = {
-				kind = exactVersion;
-				version = 5.1.0;
-			};
-		};
 		F486D2EF25069482002D07D7 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
@@ -14457,9 +14441,16 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = "SyncUI-iOS";
 		};
-		4BBBBA862B02E85400D965DA /* DesignResourcesKit */ = {
+		4BC5E8622E174D5400391C19 /* DesignResourcesKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = F42D541B29DCA40B004C4FF1 /* XCRemoteSwiftPackageReference "DesignResourcesKit" */;
+			productName = DesignResourcesKit;
+		};
+		4BC5E8642E174D5C00391C19 /* DesignResourcesKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DesignResourcesKit;
+		};
+		4BC5E8662E174D6A00391C19 /* DesignResourcesKit */ = {
+			isa = XCSwiftPackageProductDependency;
 			productName = DesignResourcesKit;
 		};
 		4BC8948B2C7902E6009AA141 /* WireGuard */ = {
@@ -14792,11 +14783,6 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = DuckUI;
 		};
-		C1CAAA822CF8C8FF00C37EE6 /* DesignResourcesKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F42D541B29DCA40B004C4FF1 /* XCRemoteSwiftPackageReference "DesignResourcesKit" */;
-			productName = DesignResourcesKit;
-		};
 		CB6CC7E32CD2529000320907 /* BrokenSitePrompt */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = BrokenSitePrompt;
@@ -14814,11 +14800,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F1D43AF82B99C1D300BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */;
 			productName = BareBonesBrowserKit;
-		};
-		F42D541C29DCA40B004C4FF1 /* DesignResourcesKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F42D541B29DCA40B004C4FF1 /* XCRemoteSwiftPackageReference "DesignResourcesKit" */;
-			productName = DesignResourcesKit;
 		};
 		F486D31C2506980E002D07D7 /* Swifter */ = {
 			isa = XCSwiftPackageProductDependency;

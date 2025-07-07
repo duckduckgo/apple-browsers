@@ -33,7 +33,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "5.1.0"),
+        .package(path: "../DesignResourcesKit"),
         .package(path: "../DesignResourcesKitIcons")
     ],
     targets: [

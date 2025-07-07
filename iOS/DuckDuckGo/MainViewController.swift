@@ -1750,23 +1750,38 @@ class MainViewController: UIViewController {
         NotificationCenter.default.publisher(for: .settingsDeepLinkNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
-                switch notification.object as? SettingsViewModel.SettingsDeepLinkSection {
-                
-                case .duckPlayer:
-                    let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
-                        deepLinkTarget = .duckPlayer
-                    self?.launchSettings(deepLinkTarget: deepLinkTarget)
-                case .subscriptionFlow(let components):
-                    self?.launchSettings(deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
-                case .subscriptionSettings:
-                    self?.launchSettings(deepLinkTarget: .subscriptionSettings)
-                case .restoreFlow:
-                    self?.launchSettings(deepLinkTarget: .restoreFlow)
-                default:
-                    return
+                guard let self else { return }
+                let handleSettingsDeepLink = {
+                    self.handleSettingsDeepLink(notification)
                 }
+                if let presentedViewController {
+                    if !(presentedViewController is SettingsUINavigationController) {
+                        presentedViewController.dismiss(animated: true, completion: handleSettingsDeepLink)
+                        return
+                    }
+                }
+                
+                handleSettingsDeepLink()
             }
             .store(in: &settingsDeepLinkcancellables)
+    }
+    
+    private func handleSettingsDeepLink(_ notification: Notification) {
+        switch notification.object as? SettingsViewModel.SettingsDeepLinkSection {
+        
+        case .duckPlayer:
+            let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
+                deepLinkTarget = .duckPlayer
+            launchSettings(deepLinkTarget: deepLinkTarget)
+        case .subscriptionFlow(let components):
+            launchSettings(deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
+        case .subscriptionSettings:
+            launchSettings(deepLinkTarget: .subscriptionSettings)
+        case .restoreFlow:
+            launchSettings(deepLinkTarget: .restoreFlow)
+        default:
+            return
+        }
     }
 
     private func subscribeToAIChatSettingsEvents() {
@@ -1911,7 +1926,7 @@ class MainViewController: UIViewController {
     }
 
     private func presentExpiredEntitlementNotification() {
-        let presenter = NetworkProtectionNotificationsPresenterTogglableDecorator(
+        let presenter = VPNNotificationsPresenterTogglableDecorator(
             settings: AppDependencyProvider.shared.vpnSettings,
             defaults: .networkProtectionGroupDefaults,
             wrappee: NetworkProtectionUNNotificationPresenter()

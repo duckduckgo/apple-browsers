@@ -165,10 +165,12 @@ public struct CrashLogMessageExtractor {
 
     let fileManager: FileManager
     let diagnosticsDirectory: URL
+    let dateProvider: () -> Date
 
-    public init(fileManager: FileManager? = nil, diagnosticsDirectory: URL? = nil) {
+    public init(fileManager: FileManager? = nil, diagnosticsDirectory: URL? = nil, dateProvider: @escaping () -> Date = Date.init) {
         self.fileManager = fileManager ?? .default
         self.diagnosticsDirectory = diagnosticsDirectory ?? Self.diagnosticsDirectory ?? self.fileManager.diagnosticsDirectory
+        self.dateProvider = dateProvider
     }
 
     /// Write exception diagnostics as JSON data, including the exception name, reason, and `userInfo` dictionary,
@@ -186,7 +188,8 @@ public struct CrashLogMessageExtractor {
         Logger.general.log("😵 crashing on: \(message, privacy: .public)")
 
         // save crash log with `2024-05-20T12:11:33Z-%pid%.log` file name format
-        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let date = dateProvider()
+        let timestamp = ISO8601DateFormatter().string(from: date)
         let fileName = "\(timestamp)-\(ProcessInfo().processIdentifier).log"
         let fileURL = diagnosticsDirectory.appendingPathComponent(fileName)
 

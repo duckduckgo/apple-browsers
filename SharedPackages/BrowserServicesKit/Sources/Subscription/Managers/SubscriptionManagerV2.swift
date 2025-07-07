@@ -447,15 +447,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             }
 
             if newValue == false {
-                Task { @CacheActor in
-                    self.cachedUserEntitlements = []
-                }
+                self.cachedUserEntitlements = []
             }
         }
     }
-
-    // MARK: -
-    private let cacheActor = CacheActor()
 
     @discardableResult public func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         Logger.subscription.debug("Get tokens \(policy.description, privacy: .public)")
@@ -464,16 +459,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
             let newEntitlements = resultTokenContainer.decodedAccessToken.subscriptionEntitlements
 
-            Task { @CacheActor in
-                cachedUserEntitlements = newEntitlements
-                cachedIsUserAuthenticated = true
-            }
+            cachedUserEntitlements = newEntitlements
+            cachedIsUserAuthenticated = true
             return resultTokenContainer
         } catch OAuthClientError.missingTokenContainer {
             // Expected when no tokens are available
-            Task { @CacheActor in
-                cachedUserEntitlements = []
-            }
+            cachedUserEntitlements = []
             throw SubscriptionManagerError.noTokenAvailable
         } catch {
             pixelHandler.handle(pixelType: .getTokensError(policy, error))

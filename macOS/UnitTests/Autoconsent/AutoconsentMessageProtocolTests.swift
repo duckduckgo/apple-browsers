@@ -36,13 +36,6 @@ class AutoconsentMessageProtocolTests: XCTestCase {
             keyValueStore: try MockKeyValueFileStore(),
             privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
-        let dataClearingPreferences = DataClearingPreferences(
-            persistor: MockFireButtonPreferencesPersistor(),
-            fireproofDomains: MockFireproofDomains(domains: []),
-            faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: MockFeatureFlagger()
-        )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences,
@@ -124,25 +117,25 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
     }
 
-//    @MainActor
-//    func testEval() {
-//        let message = MockWKScriptMessage(name: "eval", body: [
-//            "type": "eval",
-//            "id": "some id",
-//            "code": "1+1==2"
-//        ], webView: WKWebView())
-//        let expect = expectation(description: "testEval")
-//        userScript.handleMessage(
-//            replyHandler: {(msg: Any?, _: String?) in
-//                expect.fulfill()
-//                XCTAssertEqual(self.replyToJson(msg: msg!), """
-//                {"id":"some id","result":true,"type":"evalResp"}
-//                """)
-//            },
-//            message: message
-//        )
-//        waitForExpectations(timeout: 5.0)
-//    }
+    @MainActor
+    func testEval() {
+        let message = MockWKScriptMessage(name: "eval", body: [
+            "type": "eval",
+            "id": "some id",
+            "code": "1+1==2"
+        ], webView: WKWebView())
+        let expect = expectation(description: "testEval")
+        userScript.handleMessage(
+            replyHandler: {(msg: Any?, _: String?) in
+                expect.fulfill()
+                XCTAssertEqual(self.replyToJson(msg: msg!), """
+                {"id":"some id","result":true,"type":"evalResp"}
+                """)
+            },
+            message: message
+        )
+        waitForExpectations(timeout: 5.0)
+    }
 
     @MainActor
     func testPopupFoundNoPromptIfEnabled() {

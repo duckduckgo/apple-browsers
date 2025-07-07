@@ -86,6 +86,7 @@ final class AIChatViewControllerManager {
                     on viewController: UIViewController) {
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
 
+        /// Reset the session timer if the subscription state has changed, as we will force a refresh on AI Chat
         if subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
             stopSessionTimer()
         }

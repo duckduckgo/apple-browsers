@@ -269,7 +269,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .privacyProFreeTrial:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .paidAIChat:
-			return .disabled
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
@@ -289,7 +289,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .newTabPageOmnibar:
             return .disabled
         case .subscriptionRebranding:
-            return .disabled
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         }
     }
 }

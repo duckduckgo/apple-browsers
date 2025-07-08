@@ -19,19 +19,20 @@
 import Foundation
 import SecureStorage
 
+#if os(iOS)
 final public class SafariPaymentCardsImporter: DataImporter {
-    
+
     private struct ImportError: DataImportError {
         enum OperationType: Int {
             case cannotReadFile
             case invalidJSON
             case malformedData
         }
-        
+
         var action: DataImportAction { .generic }
         let type: OperationType
         let underlyingError: Error?
-        
+
         var errorType: DataImport.ErrorType {
             switch type {
             case .cannotReadFile, .invalidJSON, .malformedData:
@@ -39,12 +40,12 @@ final public class SafariPaymentCardsImporter: DataImporter {
             }
         }
     }
-    
+
     private let fileURL: URL?
     private let jsonContent: String?
     private let creditCardImporter: CreditCardImporter
     private let vault: (any AutofillSecureVault)?
-    
+
     public init(fileURL: URL?,
                 jsonContent: String? = nil,
                 creditCardImporter: CreditCardImporter,
@@ -54,13 +55,13 @@ final public class SafariPaymentCardsImporter: DataImporter {
         self.creditCardImporter = creditCardImporter
         self.vault = vault
     }
-    
+
     // MARK: - DataImporter Protocol
-    
+
     public var importableTypes: [DataImport.DataType] {
         return [.creditCards]
     }
-    
+
     public func importData(types: Set<DataImport.DataType>) -> DataImportTask {
         .detachedWithProgress { updateProgress in
             do {
@@ -73,13 +74,13 @@ final public class SafariPaymentCardsImporter: DataImporter {
             return [:]
         }
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func importCreditCardsSync(updateProgress: @escaping DataImportProgressCallback) async throws -> DataImportResult<DataImport.DataTypeSummary> {
-        
+
         try updateProgress(.importingCreditCards(numberOfCreditCards: nil, fraction: 0.0))
-        
+
         let fileContents: String
         do {
             if let jsonContent = jsonContent {
@@ -92,20 +93,20 @@ final public class SafariPaymentCardsImporter: DataImporter {
         } catch {
             return .failure(ImportError(type: .cannotReadFile, underlyingError: error))
         }
-        
+
         do {
             try updateProgress(.importingCreditCards(numberOfCreditCards: nil, fraction: 0.2))
-            
+
             let creditCards = try Self.extractCreditCards(from: fileContents)
-            
+
             try updateProgress(.importingCreditCards(numberOfCreditCards: creditCards.count, fraction: 0.5))
-            
+
             let summary = try creditCardImporter.importCreditCards(creditCards, vault: vault) { count in
                 try updateProgress(.importingCreditCards(numberOfCreditCards: count, fraction: 0.5 + 0.5 * (Double(count) / Double(creditCards.count))))
             }
-            
+
             try updateProgress(.importingCreditCards(numberOfCreditCards: creditCards.count, fraction: 1.0))
-            
+
             return .success(summary)
         } catch is CancellationError {
             throw CancellationError()
@@ -115,28 +116,28 @@ final public class SafariPaymentCardsImporter: DataImporter {
             return .failure(ImportError(type: .malformedData, underlyingError: error))
         }
     }
-    
+
     // MARK: - Static Methods
-    
+
     public static func extractCreditCards(from jsonContent: String) throws -> [ImportedCreditCard] {
         guard let data = jsonContent.data(using: .utf8) else {
             throw ImportError(type: .invalidJSON, underlyingError: nil)
         }
-        
+
         let paymentCardData: SafariPaymentCardJSON
-        
+
         do {
             paymentCardData = try JSONDecoder().decode(SafariPaymentCardJSON.self, from: data)
         } catch {
             throw ImportError(type: .invalidJSON, underlyingError: error)
         }
-        
+
         let creditCards = paymentCardData.paymentCards.compactMap { card -> ImportedCreditCard? in
             // Convert microseconds to Date if available
             let lastUsedDate: Date? = card.cardLastUsedTimeUsec.map { usec in
                 Date(timeIntervalSince1970: Double(usec) / 1_000_000.0)
             }
-            
+
             return ImportedCreditCard(
                 title: card.cardName,
                 cardNumber: card.cardNumber,
@@ -147,10 +148,10 @@ final public class SafariPaymentCardsImporter: DataImporter {
                 lastUsedTime: lastUsedDate
             )
         }
-        
+
         return creditCards
     }
-    
+
     static public func totalValidCreditCards(in fileURL: URL) -> Int {
         guard let fileContents = try? String(contentsOf: fileURL, encoding: .utf8),
               let cards = try? extractCreditCards(from: fileContents) else {
@@ -158,7 +159,7 @@ final public class SafariPaymentCardsImporter: DataImporter {
         }
         return cards.count
     }
-    
+
     static public func totalValidCreditCards(in jsonContent: String) -> Int {
         guard let cards = try? extractCreditCards(from: jsonContent) else {
             return 0
@@ -171,7 +172,7 @@ final public class SafariPaymentCardsImporter: DataImporter {
 
 private struct SafariPaymentCardJSON: Codable {
     let paymentCards: [PaymentCard]
-    
+
     struct PaymentCard: Codable {
         let cardNumber: String
         let cardName: String?
@@ -179,7 +180,7 @@ private struct SafariPaymentCardJSON: Codable {
         let cardExpirationMonth: Int?
         let cardExpirationYear: Int?
         let cardLastUsedTimeUsec: Double?
-        
+
         enum CodingKeys: String, CodingKey {
             case cardNumber = "card_number"
             case cardName = "card_name"
@@ -189,8 +190,9 @@ private struct SafariPaymentCardJSON: Codable {
             case cardLastUsedTimeUsec = "card_last_used_time_usec"
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case paymentCards = "payment_cards"
     }
 }
+//#endif

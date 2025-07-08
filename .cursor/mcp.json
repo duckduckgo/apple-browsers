@@ -2,7 +2,7 @@
     "mcpServers": {
       "doc-bot": {
         "command": "npx",
-        "args": ["@afterxleep/doc-bot"]
+        "args": ["@afterxleep/doc-bot@latest"]
       }
     }
   }

@@ -46,7 +46,6 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     private var _isFinished = false
 
     deinit {
-        Logger.dataBrokerProtection.log("Deinit BrokerProfileJob: \(String(describing: self.id.uuidString), privacy: .public)")
     }
 
     init(dataBrokerID: Int64,
@@ -91,10 +90,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     }
 
     public override func main() {
-        Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.main() - Starting job for broker: \(self.dataBrokerID, privacy: .public)")
         Task {
             await runJob()
-            Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.main() - runJob completed for broker: \(self.dataBrokerID, privacy: .public)")
             finish()
         }
     }
@@ -102,66 +99,24 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     public static func eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: [BrokerProfileQueryData], jobType: JobType, priorityDate: Date?) -> [BrokerJobData] {
         let jobsData: [BrokerJobData]
 
-        Logger.dataBrokerProtection.log("🔍 eligibleJobsSortedByPreferredRunOrder - jobType: \(String(describing: jobType), privacy: .public), priorityDate: \(String(describing: priorityDate), privacy: .public)")
-        Logger.dataBrokerProtection.log("🔍 Total brokerProfileQueriesData count: \(brokerProfileQueriesData.count, privacy: .public)")
-
         switch jobType {
         case .optOut:
             jobsData = brokerProfileQueriesData.flatMap { $0.optOutJobData }
-            Logger.dataBrokerProtection.log("🔍 .optOut - found \(jobsData.count, privacy: .public) opt-out jobs")
         case .manualScan, .scheduledScan:
             jobsData = brokerProfileQueriesData.filter { $0.profileQuery.deprecated == false }.compactMap { $0.scanJobData }
-            Logger.dataBrokerProtection.log("🔍 .scan - found \(jobsData.count, privacy: .public) scan jobs")
         case .all:
             jobsData = brokerProfileQueriesData.flatMap { $0.jobsData }
-            let optOutCount = brokerProfileQueriesData.flatMap { $0.optOutJobData }.count
-            let scanCount = brokerProfileQueriesData.compactMap { $0.scanJobData }.count
-            Logger.dataBrokerProtection.log("🔍 .all - found \(jobsData.count, privacy: .public) total jobs (opt-outs: \(optOutCount, privacy: .public), scans: \(scanCount, privacy: .public))")
-        }
-
-        // Log job details before filtering
-        for (index, queryData) in brokerProfileQueriesData.enumerated() {
-            let brokerName = queryData.dataBroker.name
-            for job in queryData.jobsData {
-                if let optOut = job as? OptOutJobData {
-                    Logger.dataBrokerProtection.log("🔍 Pre-filter OptOut - broker: \(brokerName, privacy: .public) (id:\(optOut.brokerId, privacy: .public)), preferredRunDate: \(String(describing: optOut.preferredRunDate), privacy: .public), lastRunDate: \(String(describing: optOut.lastRunDate), privacy: .public), isRemovedByUser: \(optOut.isRemovedByUser, privacy: .public)")
-                } else if let scan = job as? ScanJobData {
-                    Logger.dataBrokerProtection.log("🔍 Pre-filter Scan - broker: \(brokerName, privacy: .public) (id:\(scan.brokerId, privacy: .public)), preferredRunDate: \(String(describing: scan.preferredRunDate), privacy: .public)")
-                }
-            }
         }
 
         let filteredAndSortedJobData: [BrokerJobData]
 
         if let priorityDate = priorityDate {
-            let beforeFilter = jobsData.count
             filteredAndSortedJobData = jobsData
                 .filteredByNilOrEarlierPreferredRunDateThan(date: priorityDate)
                 .sortedByEarliestPreferredRunDateFirst()
-            Logger.dataBrokerProtection.log("🔍 Filtered by priorityDate - before: \(beforeFilter, privacy: .public), after: \(filteredAndSortedJobData.count, privacy: .public)")
         } else {
-            let beforeFilter = jobsData.count
             filteredAndSortedJobData = jobsData
                 .excludingUserRemoved()
-            Logger.dataBrokerProtection.log("🔍 Filtered excludingUserRemoved - before: \(beforeFilter, privacy: .public), after: \(filteredAndSortedJobData.count, privacy: .public)")
-        }
-
-        // Log filtered results
-        Logger.dataBrokerProtection.log("🔍 Final filtered job count: \(filteredAndSortedJobData.count, privacy: .public)")
-
-        // Need to map back to broker names for filtered results
-        for job in filteredAndSortedJobData {
-            if let optOut = job as? OptOutJobData {
-                let brokerName = brokerProfileQueriesData.first { queryData in
-                    queryData.optOutJobData.contains { $0.brokerId == optOut.brokerId && $0.profileQueryId == optOut.profileQueryId }
-                }?.dataBroker.name ?? "Unknown"
-                Logger.dataBrokerProtection.log("🔍 Post-filter OptOut selected - broker: \(brokerName, privacy: .public) (id:\(optOut.brokerId, privacy: .public)), preferredRunDate: \(String(describing: optOut.preferredRunDate), privacy: .public)")
-            } else if let scan = job as? ScanJobData {
-                let brokerName = brokerProfileQueriesData.first { queryData in
-                    queryData.scanJobData.brokerId == scan.brokerId && queryData.scanJobData.profileQueryId == scan.profileQueryId
-                }?.dataBroker.name ?? "Unknown"
-                Logger.dataBrokerProtection.log("🔍 Post-filter Scan selected - broker: \(brokerName, privacy: .public) (id:\(scan.brokerId, privacy: .public))")
-            }
         }
 
         return filteredAndSortedJobData
@@ -170,29 +125,21 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     private func runJob() async {
         let allBrokerProfileQueryData: [BrokerProfileQueryData]
 
-        Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.runJob() - Fetching all broker profile data")
         do {
             allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData()
-            Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.runJob() - Fetched \(allBrokerProfileQueryData.count, privacy: .public) broker profiles")
         } catch {
-            Logger.dataBrokerProtection.error("🎯 DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
+            Logger.dataBrokerProtection.error("DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
             return
         }
 
         let brokerProfileQueriesData = allBrokerProfileQueryData.filter { $0.dataBroker.id == dataBrokerID }
 
-        let brokerName = brokerProfileQueriesData.first?.dataBroker.name ?? "Unknown"
-        Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.runJob() - Processing broker: \(brokerName, privacy: .public) (id:\(self.dataBrokerID, privacy: .public)), jobType: \(String(describing: self.jobType), privacy: .public)")
-
         let filteredAndSortedJobData = Self.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: brokerProfileQueriesData,
                                                                                   jobType: jobType,
                                                                                   priorityDate: priorityDate)
 
-        Logger.dataBrokerProtection.log("🎯 filteredAndSortedOperationsData count: \(filteredAndSortedJobData.count, privacy: .public) for broker: \(brokerName, privacy: .public) (id:\(self.dataBrokerID, privacy: .public))")
-
         for jobData in filteredAndSortedJobData {
             if isCancelled {
-                Logger.dataBrokerProtection.log("Cancelled operation, returning...")
                 return
             }
 
@@ -205,10 +152,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
             }
 
             do {
-                Logger.dataBrokerProtection.log("🎯 Running operation: \(String(describing: jobData), privacy: .public) for broker: \(brokerName, privacy: .public)")
-
                 if jobData is ScanJobData {
-                    Logger.dataBrokerProtection.log("🎯 Starting SCAN job for broker: \(brokerName, privacy: .public)")
                     try await withTimeout(jobDependencies.executionConfig.scanJobTimeout) { [self] in
                         try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScan(
                             brokerProfileQueryData: brokerProfileData,
@@ -220,7 +164,6 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                             })
                     }
                 } else if let optOutJobData = jobData as? OptOutJobData {
-                    Logger.dataBrokerProtection.log("🎯 Starting OPT-OUT job for broker: \(brokerName, privacy: .public), profile: \(String(describing: optOutJobData.extractedProfile.name), privacy: .public)")
                     try await withTimeout(jobDependencies.executionConfig.optOutJobTimeout) { [self] in
                         try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOut(
                             for: optOutJobData.extractedProfile,
@@ -236,7 +179,6 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 }
 
                 let sleepInterval = jobDependencies.executionConfig.intervalBetweenSameBrokerJobs
-                Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")
                 try await Task.sleep(nanoseconds: UInt64(sleepInterval) * 1_000_000_000)
             } catch {
                 Logger.dataBrokerProtection.error("Error: \(error.localizedDescription, privacy: .public)")
@@ -251,7 +193,6 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     }
 
     private func finish() {
-        Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.finish() - Finishing job for broker: \(self.dataBrokerID, privacy: .public)")
         willChangeValue(forKey: #keyPath(isExecuting))
         willChangeValue(forKey: #keyPath(isFinished))
 
@@ -260,8 +201,6 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
         didChangeValue(forKey: #keyPath(isExecuting))
         didChangeValue(forKey: #keyPath(isFinished))
-
-        Logger.dataBrokerProtection.log("🎯 Finished operation: \(self.id.uuidString, privacy: .public) for broker: \(self.dataBrokerID, privacy: .public)")
     }
 }
 

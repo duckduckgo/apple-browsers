@@ -52,20 +52,17 @@ struct BrokerProfileOptOutSubJob {
 
         // 2. Validate that profile hasn't already been opted-out:
         guard extractedProfile.removedDate == nil else {
-            Logger.dataBrokerProtection.log("🏴‍☠️ OPTOUT: [\(brokerProfileQueryData.dataBroker.name, privacy: .public)] Profile already removed, skipping...")
             return
         }
 
         // 3. Validate that profile is eligible to be opted-out now:
         guard !brokerProfileQueryData.dataBroker.performsOptOutWithinParent() else {
-            Logger.dataBrokerProtection.log("🏴‍☠️ OPTOUT: [\(brokerProfileQueryData.dataBroker.name, privacy: .public)] Broker opts out in parent, skipping...")
             return
         }
 
         // 4. Validate that profile isn't manually removed by user (using "This isn't me")
         guard let events = try? dependencies.database.fetchOptOutHistoryEvents(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId),
               !events.doesBelongToUserRemovedRecord else {
-            Logger.dataBrokerProtection.log("🏴‍☠️ OPTOUT: [\(brokerProfileQueryData.dataBroker.name, privacy: .public)] Manually removed by user, skipping...")
             return
         }
 
@@ -80,12 +77,9 @@ struct BrokerProfileOptOutSubJob {
 
         // 6. Record the start of the opt-out job:
         stageDurationCalculator.fireOptOutStart()
-        Logger.dataBrokerProtection.log("🏴‍☠️ OPTOUT: [\(brokerProfileQueryData.dataBroker.name, privacy: .public)] Starting opt-out operation for profile ID: \(extractedProfileId, privacy: .public)")
-        Logger.dataBrokerProtection.log("Running opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
         // 7. Set up a defer block to report opt-out job completion regardless of its success:
         defer {
-            Logger.dataBrokerProtection.log("🏴‍☠️ OPTOUT DEFER: Executing defer block for broker: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
             reportOptOutJobCompletion(
                 brokerProfileQueryData: brokerProfileQueryData,
                 extractedProfileId: extractedProfileId,
@@ -94,14 +88,12 @@ struct BrokerProfileOptOutSubJob {
                 database: dependencies.database,
                 notificationCenter: dependencies.notificationCenter
             )
-            Logger.dataBrokerProtection.log("🏴‍☠️ OPTOUT DEFER: [\(brokerProfileQueryData.dataBroker.name, privacy: .public)] Completed opt-out job reporting")
         }
 
         // 8. Perform the opt-out:
         do {
             // 8a. Mark the profile as having its opt-out job started:
             try dependencies.database.add(.init(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutStarted))
-            Logger.dataBrokerProtection.log("🏴‍☠️ OPTOUT: [\(brokerProfileQueryData.dataBroker.name, privacy: .public)] Added .optOutStarted event to database")
 
             // 8b. Perform the opt-out itself:
             let runner = dependencies.createOptOutRunner(
@@ -119,7 +111,6 @@ struct BrokerProfileOptOutSubJob {
             let tries = try fetchTotalNumberOfOptOutAttempts(database: dependencies.database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutValidate()
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
-            Logger.dataBrokerProtection.log("🏴‍☠️ OPTOUT: [\(brokerProfileQueryData.dataBroker.name, privacy: .public)] Opt-out submitted successfully, attempt #\(tries, privacy: .public)")
 
             let updater = OperationPreferredDateUpdater(database: dependencies.database)
             try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker, profileQueryId: profileQueryId)
@@ -130,7 +121,6 @@ struct BrokerProfileOptOutSubJob {
                                                  lastStageDate: stageDurationCalculator.lastStateTime,
                                                  startTime: stageDurationCalculator.startTime)
             try dependencies.database.add(.init(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested))
-            Logger.dataBrokerProtection.log("🏴‍☠️ OPTOUT: [\(brokerProfileQueryData.dataBroker.name, privacy: .public)] Added .optOutRequested event to database")
             try incrementOptOutAttemptCountIfNeeded(
                 database: dependencies.database,
                 brokerId: brokerId,
@@ -139,10 +129,8 @@ struct BrokerProfileOptOutSubJob {
             )
         } catch {
             // 9. Catch errors from the opt-out job and report them:
-            Logger.dataBrokerProtection.log("🏴‍☠️ OPTOUT ERROR: [\(brokerProfileQueryData.dataBroker.name, privacy: .public)] Opt-out failed with error: \(error.localizedDescription, privacy: .public), error type: \(String(describing: error), privacy: .public)")
             let tries = try? fetchTotalNumberOfOptOutAttempts(database: dependencies.database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
-            Logger.dataBrokerProtection.log("🏴‍☠️ OPTOUT ERROR: [\(brokerProfileQueryData.dataBroker.name, privacy: .public)] preferredRunDate WILL be updated via handleOperationError")
             handleOperationError(
                 origin: .optOut,
                 brokerId: brokerId,
@@ -162,8 +150,6 @@ struct BrokerProfileOptOutSubJob {
                                            profileQueryId: Int64,
                                            database: DataBrokerProtectionRepository,
                                            notificationCenter: NotificationCenter) {
-        Logger.dataBrokerProtection.log("Finished opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
-
         try? database.updateLastRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
         do {
             try updateOperationDataDates(
@@ -264,7 +250,6 @@ struct BrokerProfileOptOutSubJob {
                 database: database
             )
         } catch {
-            Logger.dataBrokerProtection.log("Can't update operation date after error")
         }
 
         Logger.dataBrokerProtection.error("Error on operation : \(error.localizedDescription, privacy: .public)")

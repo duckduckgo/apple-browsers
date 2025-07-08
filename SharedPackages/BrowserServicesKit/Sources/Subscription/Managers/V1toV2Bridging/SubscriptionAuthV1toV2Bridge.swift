@@ -130,7 +130,7 @@ extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
         } catch {
             // Fallback to the cached user entitlements in case of keychain reading error
             Logger.subscription.debug("Failed to read user entitlements from keychain: \(error, privacy: .public)")
-            return await self.cachedUserEntitlements.contains(feature.subscriptionEntitlement)
+            return await self.cacheManager.getUserEntitlements().contains(feature.subscriptionEntitlement)
         }
     }
 

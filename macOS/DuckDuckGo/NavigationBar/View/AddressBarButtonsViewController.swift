@@ -623,6 +623,11 @@ final class AddressBarButtonsViewController: NSViewController {
                 askAIChatButtonWidthConstraint.animator().constant = targetWidth
             }
         } else {
+            guard isAskAIChatButtonExpanded else {
+                // Ignore any subsequent calls
+                return
+            }
+
             isAskAIChatButtonExpanded = false
 
             askAIChatButton.backgroundColor = .clear

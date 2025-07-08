@@ -780,7 +780,8 @@ final class LocalBookmarkStore: BookmarkStore {
         var parent = root
         var markFavorites = markRootBookmarksAsFavoritesByDefault
         if root.children?.count != 0 {
-            markFavorites = false
+            // Keep adding favorites from the root folder if there is a specified limit for favorites
+            markFavorites = markRootBookmarksAsFavoritesByDefault ? maxFavoritesCount != nil : false
             parent = BookmarkEntity.makeFolder(title: "\(UserText.bookmarkImportedFromFolder) \(importSourceName)",
                                                parent: root,
                                                context: context)
@@ -880,6 +881,11 @@ final class LocalBookmarkStore: BookmarkStore {
     private func addFavoritesInOrder(_ allFavorites: [(bookmark: BookmarkEntity, index: Int?)], limit: Int?, in context: NSManagedObjectContext) {
         let favoritesFolders = BookmarkUtils.fetchFavoritesFolders(for: favoritesDisplayMode, in: context)
         let existingFavoriteURLs = Set(favoritesFolders.flatMap { $0.favoritesArray }.compactMap { $0.urlObject?.naked })
+        let availableFavoriteSlots = limit.map { max(0, $0 - existingFavoriteURLs.count) } ?? Int.max
+
+        guard availableFavoriteSlots > 0 else {
+            return
+        }
 
         allFavorites
             .sorted { ($0.index ?? Int.max) < ($1.index ?? Int.max) }
@@ -889,7 +895,7 @@ final class LocalBookmarkStore: BookmarkStore {
                       !existingFavoriteURLs.contains(url) else { return nil }
                 return favorite.bookmark
             }
-            .prefix(limit ?? Int.max)
+            .prefix(availableFavoriteSlots)
             .forEach { $0.addToFavorites(folders: favoritesFolders) }
 
         // Send pixel for success: https://app.asana.com/1/137249556945/task/1210674932129670

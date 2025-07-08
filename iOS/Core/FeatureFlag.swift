@@ -338,7 +338,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .showSettingsCompleteSetupSection:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
         case .scheduledSetDefaultBrowserPrompts:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPrompts))
         case .subscriptionRebranding:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRebranding))
         }

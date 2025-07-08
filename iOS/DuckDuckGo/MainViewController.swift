@@ -319,7 +319,7 @@ class MainViewController: UIViewController {
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
-        self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
+        self.isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         self.keyValueStore = keyValueStore
         super.init(nibName: nil, bundle: nil)
         
@@ -1811,7 +1811,7 @@ class MainViewController: UIViewController {
                     guard let self else { return }
 
                     let hasEntitlement = await self.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
-                    let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+                    let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
                     let isSubscriptionActive = try? await self.subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
                     if hasEntitlement && self.lastKnownEntitlementsExpired {
@@ -1938,7 +1938,7 @@ class MainViewController: UIViewController {
     private func onNetworkProtectionAccountSignIn(_ notification: Notification) {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
             PixelKit.fire(
@@ -1963,7 +1963,7 @@ class MainViewController: UIViewController {
 
     func checkSubscriptionEntitlements() {
         Task {
-            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
             let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
 
@@ -1999,7 +1999,7 @@ class MainViewController: UIViewController {
                 return
             }
             let hasEntitlement = payload.entitlements.contains(.networkProtection)
-            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
             let hasEntitlements = (try? await subscriptionManager.isEnabled(feature: .networkProtection)) ?? false
 
@@ -2042,7 +2042,7 @@ class MainViewController: UIViewController {
     private func onNetworkProtectionAccountSignOut(_ notification: Notification) {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            let isAuthV2Enabled = AppDependencyProvider.shared.isAuthV2Enabled
+            let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
             PixelKit.fire(

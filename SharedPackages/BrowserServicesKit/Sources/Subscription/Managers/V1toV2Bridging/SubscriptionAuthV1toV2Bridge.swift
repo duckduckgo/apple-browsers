@@ -20,6 +20,7 @@ import Foundation
 import Combine
 import Common
 import Networking
+import os.log
 
 /// Temporary bridge between auth v1 and v2, this is implemented by SubscriptionManager V1 and V2
 public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider {
@@ -56,46 +57,6 @@ extension SubscriptionAuthV1toV2Bridge {
 
     public func isEnabled(feature: Entitlement.ProductName) async throws -> Bool {
         try await isFeatureAvailableAndEnabled(feature: feature, cachePolicy: .returnCacheDataElseLoad)
-    }
-}
-
-extension Entitlement.ProductName {
-
-    public var subscriptionEntitlement: SubscriptionEntitlement {
-        switch self {
-        case .networkProtection:
-            return .networkProtection
-        case .dataBrokerProtection:
-            return .dataBrokerProtection
-        case .identityTheftRestoration:
-            return .identityTheftRestoration
-        case .identityTheftRestorationGlobal:
-            return .identityTheftRestorationGlobal
-        case .paidAIChat:
-            return .paidAIChat
-        case .unknown:
-            return .unknown
-        }
-    }
-}
-
-extension SubscriptionEntitlement {
-
-    public var product: Entitlement.ProductName {
-        switch self {
-        case .networkProtection:
-            return .networkProtection
-        case .dataBrokerProtection:
-            return .dataBrokerProtection
-        case .identityTheftRestoration:
-            return .identityTheftRestoration
-        case .identityTheftRestorationGlobal:
-            return .identityTheftRestorationGlobal
-        case .paidAIChat:
-            return .paidAIChat
-        case .unknown:
-            return .unknown
-        }
     }
 }
 
@@ -163,13 +124,13 @@ extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
 
     public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async -> Bool {
         do {
-            guard let tokenContainer = try self.oAuthClient.currentTokenContainer() else {
-                return false
-            }
-            return tokenContainer.decodedAccessToken.subscriptionEntitlements.contains(where: { $0.product == feature })
+            guard isUserAuthenticated else { return false }
+            let tokenContainer = try await getTokenContainer(policy: .localValid)
+            return tokenContainer.decodedAccessToken.subscriptionEntitlements.contains(feature.subscriptionEntitlement)
         } catch {
             // Fallback to the cached user entitlements in case of keychain reading error
-            return self.cachedUserEntitlements.contains(where: { $0.product == feature })
+            Logger.subscription.debug("Failed to read user entitlements from keychain: \(error, privacy: .public)")
+            return self.cachedUserEntitlements.contains(feature.subscriptionEntitlement)
         }
     }
 

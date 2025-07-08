@@ -104,7 +104,7 @@ final class VPNSubscriptionEventsHandler {
 
     @MainActor
     private func handleEntitlementsChange(hasEntitlements: Bool, trigger: VPNSubscriptionStatusPixel.Trigger) async {
-        let isAuthV2Enabled = NSApp.delegateTyped.isAuthV2Enabled
+        let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
         // For trigger == .clientCheck we only fire pixels if there's an actual change, because they're not guaranteed
@@ -188,7 +188,7 @@ final class VPNSubscriptionEventsHandler {
                 return
             }
 
-            let isAuthV2Enabled = NSApp.delegateTyped.isAuthV2Enabled
+            let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
             PixelKit.fire(
@@ -207,7 +207,7 @@ final class VPNSubscriptionEventsHandler {
         Task {
             print("[NetP Subscription] Deleted NetP auth token after signing out from Privacy Pro")
 
-            let isAuthV2Enabled = await NSApp.delegateTyped.isAuthV2Enabled
+            let isAuthV2Enabled = await NSApp.delegateTyped.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
 
             PixelKit.fire(

@@ -82,7 +82,7 @@ final class CrashLogMessageExtractorTests: XCTestCase {
         let fileName = "\(date)-\(ProcessInfo().processIdentifier).log"
         let dir = fm.temporaryDirectory
         let url = dir.appendingPathComponent(fileName)
-        extractor = CrashLogMessageExtractor(diagnosticsDirectory: dir)
+        extractor = CrashLogMessageExtractor(diagnosticsDirectory: dir, dateProvider: { referenceDate })
 
         let exception =  NSException(name: NSExceptionName(rawValue: "TestException"), reason: "Test crash message /with/file/path", userInfo: ["key1": "value1"])
         exception.setValue(["callStackSymbols": [

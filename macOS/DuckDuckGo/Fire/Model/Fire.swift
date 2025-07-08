@@ -25,6 +25,7 @@ import WebKit
 import SecureStorage
 import History
 import PrivacyStats
+import FeatureFlags
 import os.log
 
 final class Fire {
@@ -49,6 +50,7 @@ final class Fire {
     let tld: TLD
     let getVisitedLinkStore: () -> WKVisitedLinkStoreWrapper?
     let getPrivacyStats: () async -> PrivacyStatsCollecting
+    let visualizeFireAnimationDecider: VisualizeFireAnimationDecider
 
     private var dispatchGroup: DispatchGroup?
 
@@ -56,10 +58,10 @@ final class Fire {
         case specificDomains(_ domains: Set<String>, shouldPlayFireAnimation: Bool)
         case all
 
-        var shouldPlayFireAnimation: Bool {
+        func shouldPlayFireAnimation(decider: VisualizeFireAnimationDecider) -> Bool {
             switch self {
             case .all, .specificDomains(_, shouldPlayFireAnimation: true):
-                return true
+                return decider.shouldShowFireAnimation
             // We don't present the fire animation if user burns from the privacy feed
             case .specificDomains(_, shouldPlayFireAnimation: false):
                 return false
@@ -78,13 +80,13 @@ final class Fire {
                         selectedDomains: Set<String>,
                         customURLToOpen: URL?)
 
-        var shouldPlayFireAnimation: Bool {
+        func shouldPlayFireAnimation(decider: VisualizeFireAnimationDecider) -> Bool {
             switch self {
             // We don't present the fire animation if user burns from the privacy feed
             case .none:
                 return false
             case .tab, .window, .allWindows:
-                return true
+                return decider.shouldShowFireAnimation
             }
         }
     }
@@ -110,7 +112,8 @@ final class Fire {
          syncDataProviders: SyncDataProviders? = nil,
          secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
-         getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil
+         getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
+         visualizeFireAnimationDecider: VisualizeFireAnimationDecider? = nil
     ) {
         self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
@@ -130,6 +133,7 @@ final class Fire {
         self.getPrivacyStats = getPrivacyStats ?? { NSApp.delegateTyped.privacyStats }
         self.getVisitedLinkStore = getVisitedLinkStore ?? { WKWebViewConfiguration.sharedVisitedLinkStore }
         self.autoconsentManagement = autoconsentManagement ?? AutoconsentManagement.shared
+        self.visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? NSApp.delegateTyped.visualizeFireAnimationDecider
         if let stateRestorationManager = stateRestorationManager {
             self.stateRestorationManager = stateRestorationManager
         } else {
@@ -149,7 +153,7 @@ final class Fire {
         let domains = domainsToBurn(from: entity)
         assert(domains.areAllETLDPlus1(tld: tld))
 
-        burningData = .specificDomains(domains, shouldPlayFireAnimation: entity.shouldPlayFireAnimation)
+        burningData = .specificDomains(domains, shouldPlayFireAnimation: entity.shouldPlayFireAnimation(decider: visualizeFireAnimationDecider))
 
         burnLastSessionState()
         burnDeletedBookmarks()
@@ -198,7 +202,7 @@ final class Fire {
     }
 
     @MainActor
-    func burnAll(opening url: URL = .newtab, completion: (() -> Void)? = nil) {
+    func burnAll(isBurnOnExit: Bool = false, opening url: URL = .newtab, completion: (() -> Void)? = nil) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -207,6 +211,12 @@ final class Fire {
         burningData = .all
 
         let entity = BurningEntity.allWindows(mainWindowControllers: windowControllerManager.mainWindowControllers, selectedDomains: Set(), customURLToOpen: url)
+
+        // Close windows first if fire animation is disabled
+        let shouldCloseWindowsFirst = !visualizeFireAnimationDecider.shouldShowFireAnimation
+        if shouldCloseWindowsFirst {
+            closeWindows(entity: entity, isBurnOnExit: isBurnOnExit)
+        }
 
         burnLastSessionState()
         burnDeletedBookmarks()
@@ -240,7 +250,10 @@ final class Fire {
 
             group.notify(queue: .main) {
                 self.dispatchGroup = nil
-                self.closeWindows(entity: entity)
+                // Only close windows at the end if we didn't close them at the beginning
+                if !shouldCloseWindowsFirst {
+                    self.closeWindows(entity: entity, isBurnOnExit: isBurnOnExit)
+                }
 
                 self.burningData = nil
                 completion?()
@@ -308,7 +321,7 @@ final class Fire {
     // MARK: - Closing windows
 
     @MainActor
-    private func closeWindows(entity: BurningEntity) {
+    private func closeWindows(entity: BurningEntity, isBurnOnExit: Bool = false) {
 
         /// This function returns the dropping point of the closed window,
         /// useful for opening a new window after burning in the exact same place.
@@ -334,7 +347,7 @@ final class Fire {
             if pinnedTabsManagerProvider.pinnedTabsMode == .shared || tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
                 newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
             }
-        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _):
+        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _, ):
             newWindowDroppingPoint = NSApp.keyWindow?.frame.droppingPoint
             mainWindowControllers.forEach {
                 if pinnedTabsManagerProvider.pinnedTabsMode == .shared || $0.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
@@ -349,7 +362,8 @@ final class Fire {
         // Open a new window in case there is none
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            if self.windowControllerManager.mainWindowControllers.count == 0 {
+            /// When we are burning on exit we do not need to open a new window.
+            if self.windowControllerManager.mainWindowControllers.count == 0 && !isBurnOnExit {
                 if case let .allWindows(_, _, customURL) = entity, let customURL {
                     WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false, droppingPoint: newWindowDroppingPoint)
                 } else {

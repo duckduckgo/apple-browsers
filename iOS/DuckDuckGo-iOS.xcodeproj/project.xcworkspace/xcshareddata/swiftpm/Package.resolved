@@ -42,16 +42,7 @@
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
         "revision" : "144965a993714b67dc6429b6c344e4b7db9c722c",
-        "version" : "10.4.0"
-      }
-    },
-    {
-      "identity" : "designresourceskit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/DesignResourcesKit",
-      "state" : {
-        "revision" : "fed494b3f8603537fcd115ceaf3cb2ae4b5518d7",
-        "version" : "5.0.0"
+        "version" : "10.6.0"
       }
     },
     {
@@ -61,15 +52,6 @@
       "state" : {
         "revision" : "7532135989abb6ddbde48632b7222e0abed7d253",
         "version" : "18.1.0"
-      }
-    },
-    {
-      "identity" : "grdb.swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/GRDB.swift.git",
-      "state" : {
-        "revision" : "5b2f6a81099d26ae0f9e38788f51490cd6a4b202",
-        "version" : "2.4.2"
       }
     },
     {

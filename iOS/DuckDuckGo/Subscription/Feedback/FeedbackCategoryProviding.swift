@@ -198,9 +198,9 @@ enum PaidAIChatFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackF
 
     var url: URL {
         switch self {
-        case .accessSubscriptionModels: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
-        case .loginThirdPartyBrowser: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
-        case .somethingElse: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
+        case .accessSubscriptionModels: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/access-subscriber-AI-models/")!
+        case .loginThirdPartyBrowser: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/activating/")!
+        case .somethingElse: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/")!
         }
     }
 }

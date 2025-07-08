@@ -53,11 +53,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         static let logoOffset: CGFloat = 18
     }
 
-    private enum ViewVisibility {
-        case visible
-        case hidden
-    }
-
     var textAreaView: UIView {
         switchBarVC.textEntryViewController.textEntryView
     }
@@ -81,6 +76,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var navigationActionBarViewModel: NavigationActionBarViewModel?
     private var actionBarBottomConstraint: NSLayoutConstraint?
 
+    // MARK: - Swipe Container
+    private var swipeScrollView: UIScrollView!
+    private var searchPageContainer: UIView!
+    private var chatPageContainer: UIView!
+    private var isUpdatingScrollViewProgrammatically = false
+
     private let transitionAnimator = OmniBarEditingStateAnimator()
 
     internal init(switchBarHandler: any SwitchBarHandling) {
@@ -100,6 +101,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         super.viewDidLoad()
 
         installSwitchBarVC()
+        installSwipeContainer()
         installSuggestionsTray()
         installDaxLogoView()
         installNavigationActionBar()
@@ -121,6 +123,16 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         super.viewDidAppear(animated)
 
         DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        
+        // Update scroll view content size and position when bounds change
+        if swipeScrollView != nil {
+            swipeScrollView.contentSize = CGSize(width: view.bounds.width * 2, height: 0)
+            updateScrollViewPosition(animated: false)
+        }
     }
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
@@ -156,6 +168,60 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         setupSubscriptions()
     }
 
+    private func installSwipeContainer() {
+        // Create the scroll view with pagination
+        swipeScrollView = UIScrollView()
+        swipeScrollView.isPagingEnabled = true
+        swipeScrollView.showsHorizontalScrollIndicator = false
+        swipeScrollView.showsVerticalScrollIndicator = false
+        swipeScrollView.delegate = self
+        swipeScrollView.bounces = false
+        swipeScrollView.translatesAutoresizingMaskIntoConstraints = false
+        
+        view.addSubview(swipeScrollView)
+        
+        // Create container views for each page
+        searchPageContainer = UIView()
+        searchPageContainer.translatesAutoresizingMaskIntoConstraints = false
+        
+        chatPageContainer = UIView()
+        chatPageContainer.backgroundColor = .clear
+        chatPageContainer.translatesAutoresizingMaskIntoConstraints = false
+        
+        swipeScrollView.addSubview(searchPageContainer)
+        swipeScrollView.addSubview(chatPageContainer)
+        
+        // Set up constraints
+        NSLayoutConstraint.activate([
+            // Scroll view constraints
+            swipeScrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            swipeScrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            swipeScrollView.topAnchor.constraint(equalTo: switchBarVC.view.bottomAnchor, constant: 4),
+            swipeScrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            
+            // Search page constraints
+            searchPageContainer.leadingAnchor.constraint(equalTo: swipeScrollView.leadingAnchor),
+            searchPageContainer.topAnchor.constraint(equalTo: swipeScrollView.topAnchor),
+            searchPageContainer.bottomAnchor.constraint(equalTo: swipeScrollView.bottomAnchor),
+            searchPageContainer.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor),
+            searchPageContainer.heightAnchor.constraint(equalTo: swipeScrollView.heightAnchor),
+            
+            // Chat page constraints  
+            chatPageContainer.leadingAnchor.constraint(equalTo: searchPageContainer.trailingAnchor),
+            chatPageContainer.trailingAnchor.constraint(equalTo: swipeScrollView.trailingAnchor),
+            chatPageContainer.topAnchor.constraint(equalTo: swipeScrollView.topAnchor),
+            chatPageContainer.bottomAnchor.constraint(equalTo: swipeScrollView.bottomAnchor),
+            chatPageContainer.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor),
+            chatPageContainer.heightAnchor.constraint(equalTo: swipeScrollView.heightAnchor)
+        ])
+        
+        // Set scroll view content size to accommodate both pages
+        swipeScrollView.contentSize = CGSize(width: view.bounds.width * 2, height: 0)
+        
+        // Set initial position based on current mode
+        updateScrollViewPosition(animated: false)
+    }
+
     private func handleQueryUpdate(_ query: String) {
         handleSuggestionTrayWithQuery(query)
     }
@@ -169,23 +235,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             }
             .store(in: &cancellables)
 
-        switchBarHandler.toggleStatePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] newState in
-                guard let self = self else { return }
-                switch newState {
-                case .search:
-                    if self.switchBarHandler.currentText.isEmpty {
-                        self.showSuggestionTray(.favorites)
-                    } else {
-                        self.showSuggestionTray(.autocomplete(query: self.switchBarHandler.currentText))
-                    }
-                case .aiChat:
-                    self.setSuggestionTrayVisibility(.hidden)
-                    self.setLogoVisibility(.visible)
-                }
-            }
-            .store(in: &cancellables)
+        // Use the new swipe container subscription method
+        updateSubscriptionsForSwipeContainer()
 
         switchBarHandler.textSubmissionPublisher
             .receive(on: DispatchQueue.main)
@@ -215,7 +266,12 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     func setUpForInitialSelectedState() {
         switchBarVC.textEntryViewController.selectAllText()
-        showSuggestionTray(.favorites)
+        
+        // Ensure we're on the search page and show favorites
+        if switchBarHandler.currentToggleState == .search {
+            showSuggestionTray(.favorites)
+        }
+        updateScrollViewPosition(animated: false)
     }
 
     private func installDaxLogoView() {
@@ -342,11 +398,8 @@ extension OmniBarEditingStateViewController {
     }
 
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
-        guard switchBarHandler.currentToggleState == .search else { return }
-
         let canShowSuggestion = suggestionTrayViewController?.canShow(for: type) == true
         suggestionTrayViewController?.view.isHidden = !canShowSuggestion
-        daxLogoHostingController?.view.isHidden = canShowSuggestion
 
         if canShowSuggestion {
             suggestionTrayViewController?.fill()
@@ -354,14 +407,6 @@ extension OmniBarEditingStateViewController {
         }
     }
 
-
-    private func setSuggestionTrayVisibility(_ visibility: ViewVisibility) {
-        suggestionTrayViewController?.view.isHidden = visibility == .hidden
-    }
-
-    private func setLogoVisibility(_ visibility: ViewVisibility) {
-        daxLogoHostingController?.view.isHidden = visibility == .hidden
-    }
 
     private func installSuggestionsTray() {
         guard let dependencies = suggestionTrayDependencies else { return }
@@ -380,21 +425,22 @@ extension OmniBarEditingStateViewController {
             return
         }
         addChild(controller)
-        view.addSubview(controller.view)
+        searchPageContainer.addSubview(controller.view)
         suggestionTrayViewController = controller
         controller.view.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            controller.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 6),
-            controller.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -6),
-            controller.view.topAnchor.constraint(equalTo: switchBarVC.view.bottomAnchor, constant: 4),
+            controller.view.leadingAnchor.constraint(equalTo: searchPageContainer.leadingAnchor, constant: 6),
+            controller.view.trailingAnchor.constraint(equalTo: searchPageContainer.trailingAnchor, constant: -6),
+            controller.view.topAnchor.constraint(equalTo: searchPageContainer.topAnchor),
+            controller.view.bottomAnchor.constraint(equalTo: searchPageContainer.bottomAnchor)
         ])
 
         controller.autocompleteDelegate = self
         controller.favoritesOverlayDelegate = self
         suggestionTrayViewController = controller
 
-        view.bringSubviewToFront(switchBarVC.view)
+        controller.didMove(toParent: self)
     }
 }
 
@@ -500,5 +546,64 @@ extension OmniBarEditingStateViewController {
             return nil
         }
         return url.absoluteString
+    }
+}
+
+// MARK: - Swipe Container Management
+extension OmniBarEditingStateViewController: UIScrollViewDelegate {
+    
+    private func updateScrollViewPosition(animated: Bool) {
+        guard swipeScrollView != nil else { return }
+        
+        isUpdatingScrollViewProgrammatically = true
+        
+        let targetX: CGFloat = switchBarHandler.currentToggleState == .search ? 0 : view.bounds.width
+        swipeScrollView.setContentOffset(CGPoint(x: targetX, y: 0), animated: animated)
+        
+        // Reset flag after a brief delay to allow the scroll view to settle
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.isUpdatingScrollViewProgrammatically = false
+        }
+    }
+    
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        guard !isUpdatingScrollViewProgrammatically else { return }
+        
+        let pageWidth = scrollView.frame.width
+        let currentPage = Int(scrollView.contentOffset.x / pageWidth)
+        
+        let newMode: TextEntryMode = currentPage == 0 ? .search : .aiChat
+        
+        if newMode != switchBarHandler.currentToggleState {
+            switchBarHandler.setToggleState(newMode)
+        }
+    }
+}
+
+// MARK: - Mode Synchronization  
+extension OmniBarEditingStateViewController {
+    
+    private func updateSubscriptionsForSwipeContainer() {
+        switchBarHandler.toggleStatePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newState in
+                guard let self = self else { return }
+                
+                // Update scroll view position
+                self.updateScrollViewPosition(animated: true)
+                
+                switch newState {
+                case .search:
+                    if self.switchBarHandler.currentText.isEmpty {
+                        self.showSuggestionTray(.favorites)
+                    } else {
+                        self.showSuggestionTray(.autocomplete(query: self.switchBarHandler.currentText))
+                    }
+                case .aiChat:
+                    // Chat page is transparent, logo will be visible behind it
+                    break
+                }
+            }
+            .store(in: &cancellables)
     }
 }

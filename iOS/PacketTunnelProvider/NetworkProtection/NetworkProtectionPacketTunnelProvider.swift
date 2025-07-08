@@ -550,10 +550,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         startMonitoringMemoryPressureEvents()
         observeServerChanges()
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
-
-        Task {
-            await self.subscriptionAuthMigrator.migrateAuthV1toAuthV2IfNeeded()
-        }
     }
 
     deinit {

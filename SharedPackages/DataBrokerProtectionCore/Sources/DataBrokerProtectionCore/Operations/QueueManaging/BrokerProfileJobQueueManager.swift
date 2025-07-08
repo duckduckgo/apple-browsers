@@ -154,6 +154,7 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
                                                        jobDependencies: BrokerProfileJobDependencyProviding,
                                                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                        completion: (() -> Void)?) {
+        Logger.dataBrokerProtection.log("📋 QueueManager: startScheduledAllOperationsIfPermitted called")
         startScheduledJobsIfPermitted(for: .all,
                                       showWebView: showWebView,
                                       jobDependencies: jobDependencies,
@@ -268,6 +269,8 @@ private extension BrokerProfileJobQueueManager {
                  errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                  completion: (() -> Void)?) {
 
+        Logger.dataBrokerProtection.log("📋 QueueManager.addJobs - jobType: \(String(describing: jobType), privacy: .public), priorityDate: \(String(describing: priorityDate), privacy: .public)")
+        
         jobQueue.maxConcurrentOperationCount = jobDependencies.executionConfig.concurrentJobsFor(jobType)
 
         let jobs: [BrokerProfileJob]
@@ -278,6 +281,8 @@ private extension BrokerProfileJobQueueManager {
                                                     errorDelegate: self,
                                                     jobDependencies: jobDependencies)
 
+            Logger.dataBrokerProtection.log("📋 QueueManager.addJobs - created \(jobs.count, privacy: .public) jobs")
+            
             for job in jobs {
                 jobQueue.addOperation(job)
             }

@@ -100,24 +100,66 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     public static func eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: [BrokerProfileQueryData], jobType: JobType, priorityDate: Date?) -> [BrokerJobData] {
         let jobsData: [BrokerJobData]
 
+        Logger.dataBrokerProtection.log("🔍 eligibleJobsSortedByPreferredRunOrder - jobType: \(String(describing: jobType), privacy: .public), priorityDate: \(String(describing: priorityDate), privacy: .public)")
+        Logger.dataBrokerProtection.log("🔍 Total brokerProfileQueriesData count: \(brokerProfileQueriesData.count, privacy: .public)")
+
         switch jobType {
         case .optOut:
             jobsData = brokerProfileQueriesData.flatMap { $0.optOutJobData }
+            Logger.dataBrokerProtection.log("🔍 .optOut - found \(jobsData.count, privacy: .public) opt-out jobs")
         case .manualScan, .scheduledScan:
             jobsData = brokerProfileQueriesData.filter { $0.profileQuery.deprecated == false }.compactMap { $0.scanJobData }
+            Logger.dataBrokerProtection.log("🔍 .scan - found \(jobsData.count, privacy: .public) scan jobs")
         case .all:
             jobsData = brokerProfileQueriesData.flatMap { $0.jobsData }
+            let optOutCount = brokerProfileQueriesData.flatMap { $0.optOutJobData }.count
+            let scanCount = brokerProfileQueriesData.compactMap { $0.scanJobData }.count
+            Logger.dataBrokerProtection.log("🔍 .all - found \(jobsData.count, privacy: .public) total jobs (opt-outs: \(optOutCount, privacy: .public), scans: \(scanCount, privacy: .public))")
+        }
+
+        // Log job details before filtering
+        for (index, queryData) in brokerProfileQueriesData.enumerated() {
+            let brokerName = queryData.dataBroker.name
+            for job in queryData.jobsData {
+                if let optOut = job as? OptOutJobData {
+                    Logger.dataBrokerProtection.log("🔍 Pre-filter OptOut - broker: \(brokerName, privacy: .public) (id:\(optOut.brokerId, privacy: .public)), preferredRunDate: \(String(describing: optOut.preferredRunDate), privacy: .public), lastRunDate: \(String(describing: optOut.lastRunDate), privacy: .public), isRemovedByUser: \(optOut.isRemovedByUser, privacy: .public)")
+                } else if let scan = job as? ScanJobData {
+                    Logger.dataBrokerProtection.log("🔍 Pre-filter Scan - broker: \(brokerName, privacy: .public) (id:\(scan.brokerId, privacy: .public)), preferredRunDate: \(String(describing: scan.preferredRunDate), privacy: .public)")
+                }
+            }
         }
 
         let filteredAndSortedJobData: [BrokerJobData]
 
         if let priorityDate = priorityDate {
+            let beforeFilter = jobsData.count
             filteredAndSortedJobData = jobsData
                 .filteredByNilOrEarlierPreferredRunDateThan(date: priorityDate)
                 .sortedByEarliestPreferredRunDateFirst()
+            Logger.dataBrokerProtection.log("🔍 Filtered by priorityDate - before: \(beforeFilter, privacy: .public), after: \(filteredAndSortedJobData.count, privacy: .public)")
         } else {
+            let beforeFilter = jobsData.count
             filteredAndSortedJobData = jobsData
                 .excludingUserRemoved()
+            Logger.dataBrokerProtection.log("🔍 Filtered excludingUserRemoved - before: \(beforeFilter, privacy: .public), after: \(filteredAndSortedJobData.count, privacy: .public)")
+        }
+
+        // Log filtered results
+        Logger.dataBrokerProtection.log("🔍 Final filtered job count: \(filteredAndSortedJobData.count, privacy: .public)")
+        
+        // Need to map back to broker names for filtered results
+        for job in filteredAndSortedJobData {
+            if let optOut = job as? OptOutJobData {
+                let brokerName = brokerProfileQueriesData.first { queryData in
+                    queryData.optOutJobData.contains { $0.brokerId == optOut.brokerId && $0.profileQueryId == optOut.profileQueryId }
+                }?.dataBroker.name ?? "Unknown"
+                Logger.dataBrokerProtection.log("🔍 Post-filter OptOut selected - broker: \(brokerName, privacy: .public) (id:\(optOut.brokerId, privacy: .public)), preferredRunDate: \(String(describing: optOut.preferredRunDate), privacy: .public)")
+            } else if let scan = job as? ScanJobData {
+                let brokerName = brokerProfileQueriesData.first { queryData in
+                    queryData.scanJobData.brokerId == scan.brokerId && queryData.scanJobData.profileQueryId == scan.profileQueryId
+                }?.dataBroker.name ?? "Unknown"
+                Logger.dataBrokerProtection.log("🔍 Post-filter Scan selected - broker: \(brokerName, privacy: .public) (id:\(scan.brokerId, privacy: .public))")
+            }
         }
 
         return filteredAndSortedJobData
@@ -134,12 +176,15 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         }
 
         let brokerProfileQueriesData = allBrokerProfileQueryData.filter { $0.dataBroker.id == dataBrokerID }
+        
+        let brokerName = brokerProfileQueriesData.first?.dataBroker.name ?? "Unknown"
+        Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.runJob() - Processing broker: \(brokerName, privacy: .public) (id:\(self.dataBrokerID, privacy: .public))")
 
         let filteredAndSortedJobData = Self.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: brokerProfileQueriesData,
                                                                                   jobType: jobType,
                                                                                   priorityDate: priorityDate)
 
-        Logger.dataBrokerProtection.log("filteredAndSortedOperationsData count: \(filteredAndSortedJobData.count, privacy: .public) for brokerID \(self.dataBrokerID, privacy: .public)")
+        Logger.dataBrokerProtection.log("🎯 filteredAndSortedOperationsData count: \(filteredAndSortedJobData.count, privacy: .public) for broker: \(brokerName, privacy: .public) (id:\(self.dataBrokerID, privacy: .public))")
 
         for jobData in filteredAndSortedJobData {
             if isCancelled {

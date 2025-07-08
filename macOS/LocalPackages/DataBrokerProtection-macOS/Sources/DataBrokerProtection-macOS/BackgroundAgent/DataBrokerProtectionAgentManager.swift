@@ -289,8 +289,10 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
     }
 
     func startScheduledOperations(completion: (() -> Void)?) {
+        Logger.dataBrokerProtection.log("🚀 SCHEDULER: startScheduledOperations triggered at \(Date(), privacy: .public)")
         fireMonitoringPixels()
         startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+            Logger.dataBrokerProtection.log("🚀 SCHEDULER: startScheduledOperations completed at \(Date(), privacy: .public)")
             completion?()
         }
     }

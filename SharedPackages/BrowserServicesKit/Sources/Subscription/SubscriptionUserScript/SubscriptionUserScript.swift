@@ -91,6 +91,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
         return .init(accessToken: accessToken)
     }
 
+    @MainActor
     func getFeatureConfig(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetFeatureConfigurationResponse {
         return .init(usePaidDuckAi: paidAIChatFlagStatusProvider())
     }
@@ -143,7 +144,6 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
     public weak var broker: UserScriptMessageBroker?
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
-        print("SABRINA \(methodName)")
         switch MessageName(rawValue: methodName) {
         case .handshake:
             return handler.handshake

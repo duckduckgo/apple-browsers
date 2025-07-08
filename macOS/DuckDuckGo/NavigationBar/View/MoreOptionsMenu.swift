@@ -589,7 +589,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 return privacyProItem
             }
         } else {
-            let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
+            let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem(isSubscriptionRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding)))
                 .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
 
             privacyProItem.submenu = SubscriptionSubMenu(targeting: self,

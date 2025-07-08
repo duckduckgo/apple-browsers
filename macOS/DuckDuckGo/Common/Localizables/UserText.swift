@@ -1534,7 +1534,6 @@ struct UserText {
         }
         return "Privacy Pro"
     }
-    static let subscriptionOptionsMenuItem = "Privacy Pro"
     static let subscriptionOptionsMenuItemFreeTrialBadge = NSLocalizedString("subscription.free-trial.settings.menu.item", value: "TRY FOR FREE", comment: "Title for Subscription Free Trial promotion item in the options menu")
 
     static let identityTheftRestorationOptionsMenuItem = "Identity Theft Restoration"

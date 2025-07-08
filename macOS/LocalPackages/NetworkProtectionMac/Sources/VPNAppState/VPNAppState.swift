@@ -59,16 +59,6 @@ public final class VPNAppState {
 
     // MARK: - AuthV2 migration support
 
-    public var isMigratedToAuthV2: Bool {
-        get {
-            defaults.isVPNMigratedToAuthV2
-        }
-
-        set {
-            defaults.isVPNMigratedToAuthV2 = newValue
-        }
-    }
-
     public func resetIsMigratedToAuthV2() {
         defaults.resetIsVPNMigratedToAuthV2()
     }
@@ -77,11 +67,11 @@ public final class VPNAppState {
 
     public var isAuthV2Enabled: Bool {
         get {
-            defaults.isAuthV2Enabled
+            defaults.isUsingAuthV2
         }
 
         set {
-            defaults.isAuthV2Enabled = newValue
+            defaults.isUsingAuthV2 = newValue
         }
     }
 

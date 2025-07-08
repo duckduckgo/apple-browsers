@@ -24,15 +24,23 @@ import XCTest
 final class AutofillDeleteAllPasswordsExecutorTests: XCTestCase {
 
     private var sut: AutofillDeleteAllPasswordsExecutor!
-    private let mockAuthenticator = UserAuthenticatorMock()
+    private var mockAuthenticator: UserAuthenticatorMock! = .init()
     private var secureVault: MockSecureVault<MockDatabaseProvider>!
-    private let scheduler = CapturingScheduler()
+    private var scheduler: CapturingScheduler! = CapturingScheduler()
     private var syncService: DDGSyncing!
 
     override func setUpWithError() throws {
         secureVault = try MockSecureVaultFactory.makeVault(reporter: nil)
         syncService = MockDDGSyncing(authState: .inactive, scheduler: scheduler, isSyncInProgress: false)
         sut = .init(userAuthenticator: mockAuthenticator, secureVault: secureVault, syncService: syncService)
+    }
+
+    override func tearDown() {
+        sut = nil
+        mockAuthenticator = nil
+        secureVault = nil
+        scheduler = nil
+        syncService = nil
     }
 
     func testExecuteCallsAuthenticate() async throws {

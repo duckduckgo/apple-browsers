@@ -25,6 +25,11 @@ final class FreemiumDBPPresenterTests: XCTestCase {
     private var mockWindowControllerManager: MockWindowControllerManager!
     private var mockFreemiumDBPStateManager: MockFreemiumDBPUserStateManager!
 
+    override func tearDown() {
+        mockWindowControllerManager = nil
+        mockFreemiumDBPStateManager = nil
+    }
+
     @MainActor
     func testWhenCallShowFreemiumDBPThenShowPIRTabIsCalledAndActivatedStateIsSet() async throws {
         // Given

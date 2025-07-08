@@ -23,7 +23,11 @@ import XCTest
 
 class BookmarkManagedObjectTests: XCTestCase {
 
-    let container = CoreData.legacyBookmarkContainer()
+    var container: NSPersistentContainer! = CoreData.legacyBookmarkContainer()
+
+    override func tearDown() {
+        container = nil
+    }
 
     func testWhenSavingBookmarksWithValidData_ThenSavingIsSuccessful() {
         let context = container.viewContext

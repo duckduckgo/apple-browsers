@@ -85,6 +85,19 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         sut.with(broker: broker)
     }
 
+    override func tearDown() {
+        mockFeatureFlagger = nil
+        mockFreemiumDBPUserStateManager = nil
+        mockNotificationCenter = nil
+        mockPixelHandler = nil
+        mockStorePurchaseManager = nil
+        mockSubscriptionFeatureAvailability = nil
+        mockUIHandler = nil
+        subscriptionManagerV2 = nil
+        subscriptionSuccessPixelHandler = nil
+        sut = nil
+    }
+
     // MARK: - Free Trials
 
     @MainActor

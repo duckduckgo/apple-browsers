@@ -29,6 +29,11 @@ final class UserDefaultsHistoryViewOnboardingViewSettingsPersistorTests: XCTestC
         persistor = UserDefaultsHistoryViewOnboardingViewSettingsPersistor(keyValueStore)
     }
 
+    override func tearDown() {
+        keyValueStore = nil
+        persistor = nil
+    }
+
     func testWhenDidShowOnboardingViewIsNotPersistedThenItIsFalseByDefault() {
         keyValueStore.store = [:]
         XCTAssertFalse(persistor.didShowOnboardingView)

@@ -59,6 +59,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     private let pixelFiring: PixelFiring?
     private let sidebarPresenceWillChangeSubject = PassthroughSubject<AIChatSidebarPresenceChange, Never>()
 
+    private var isAnimatingSidebarTransition: Bool = false
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -104,7 +105,8 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
     func toggleSidebar() {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
-        guard let currentTabID = sidebarHost.currentTabID else { return }
+        guard !isAnimatingSidebarTransition,
+              let currentTabID = sidebarHost.currentTabID else { return }
 
         let willShowSidebar = !sidebarProvider.isShowingSidebar(for: currentTabID)
 
@@ -117,6 +119,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     }
 
     private func updateSidebarConstraints(for tabID: TabIdentifier, isShowingSidebar: Bool, withAnimation: Bool) {
+        isAnimatingSidebarTransition = true
         sidebarPresenceWillChangeSubject.send(.init(tabID: tabID, isShown: isShowingSidebar))
 
         if isShowingSidebar {
@@ -138,7 +141,10 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
                 context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
                 sidebarHost.sidebarContainerLeadingConstraint?.animator().constant = newConstraintValue
             } completionHandler: { [weak self, tabID = sidebarHost.currentTabID] in
-                guard let self, let tabID, !isShowingSidebar else { return }
+                guard let self else { return }
+                self.isAnimatingSidebarTransition = false
+
+                guard let tabID, !isShowingSidebar else { return }
                 self.sidebarProvider.handleSidebarDidClose(for: tabID)
             }
         } else {
@@ -147,6 +153,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
             if let tabID = sidebarHost.currentTabID, !isShowingSidebar {
                 sidebarProvider.handleSidebarDidClose(for: tabID)
             }
+            self.isAnimatingSidebarTransition = false
         }
     }
 
@@ -211,6 +218,8 @@ extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
 extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
 
     func didClickOpenInNewTabButton(currentAIChatURL: URL, aiChatRestorationData: AIChatRestorationData?) {
+        self.toggleSidebar()
+
         Task { @MainActor in
             if let data = aiChatRestorationData {
                 aiChatTabOpener.openNewAIChatTab(withChatRestorationData: data)

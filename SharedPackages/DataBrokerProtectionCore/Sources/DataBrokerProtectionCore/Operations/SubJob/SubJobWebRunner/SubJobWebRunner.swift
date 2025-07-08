@@ -146,7 +146,7 @@ public extension SubJobWebRunning {
             stageCalculator.setStage(.emailReceive)
             let url =  try await emailService.getConfirmationLink(
                 from: email,
-                numberOfRetries: 100, // Move to constant
+                numberOfRetries: 10, // Move to constant
                 pollingInterval: action.pollingTime,
                 attemptId: stageCalculator.attemptId,
                 shouldRunNextStep: shouldRunNextStep

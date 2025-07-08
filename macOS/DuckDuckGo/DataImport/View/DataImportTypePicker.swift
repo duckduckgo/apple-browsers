@@ -22,16 +22,62 @@ import BrowserServicesKit
 struct DataImportTypePicker: View {
 
     @Binding var viewModel: DataImportViewModel
+    @State private var isDataTypePickerExpanded: Bool
 
-    init(viewModel: Binding<DataImportViewModel>) {
+    init(viewModel: Binding<DataImportViewModel>, isDataTypePickerExpanded: Bool) {
         _viewModel = viewModel
+        _isDataTypePickerExpanded = State(initialValue: isDataTypePickerExpanded)
     }
 
     var body: some View {
-        VStack(alignment: .leading) {
-            Text("What do you want to import?",
-                 comment: "Data Import section title for checkboxes of data type to import: Passwords or Bookmarks.")
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                if isDataTypePickerExpanded {
+                    Text(UserText.importDataImportTypeTitleSelected)
+                } else {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if case .all = viewModel.dataTypesSelection {
+                            Text(UserText.importDataImportTypeTitleCollapsedAll)
+                        } else {
+                            Text(UserText.importDataImportTypeTitleSelected)
+                        }
 
+                        subtitleText
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                Spacer()
+                Button(action: {
+                    isDataTypePickerExpanded.toggle()
+                }) {
+                    Image(.chevronCircleRight16)
+                        .resizable()
+                        .frame(width: 16, height: 16)
+                        .rotationEffect(.degrees(isDataTypePickerExpanded ? 90 : 0))
+                }
+                .buttonStyle(.plain)
+            }
+            if isDataTypePickerExpanded {
+                pickerBody
+            }
+        }
+    }
+
+    private var subtitleText: Text {
+        switch viewModel.dataTypesSelection {
+        case .all:
+            Text(UserText.importDataImportTypeSubtitleBookmarksAndPasswords)
+        case .single(let type):
+            Text(type.displayName)
+        case .none:
+            Text(UserText.importDataImportTypeSubtitleNone)
+        }
+    }
+
+    @ViewBuilder
+    private var pickerBody: some View {
+        VStack(alignment: .leading) {
             ForEach(DataImport.DataType.allCases, id: \.self) { dataType in
                 // display all types for a browser disabling unavailable options
                 if viewModel.importSource.isBrowser
@@ -52,13 +98,23 @@ struct DataImportTypePicker: View {
                        !viewModel.importSource.supportedDataTypes.contains(.passwords) {
                         Text("\(viewModel.importSource.importSourceName) does not support storing passwords",
                              comment: "Data Import disabled checkbox message about a browser (%@) not supporting storing passwords")
-                            .foregroundColor(Color(.disabledControlTextColor))
+                        .foregroundColor(Color(.disabledControlTextColor))
                     }
                 }
             }
         }
+        .padding(.leading, 8)
+        .padding(.trailing, 0)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background(Color.blackWhite3)
+        .cornerRadius(5)
+        .clipShape(RoundedRectangle(cornerRadius: 5))
+        .overlay(
+            RoundedRectangle(cornerRadius: 5)
+                .stroke(Color.decorationTertiary, lineWidth: 1)
+        )
     }
-
 }
 
 extension DataImportViewModel {

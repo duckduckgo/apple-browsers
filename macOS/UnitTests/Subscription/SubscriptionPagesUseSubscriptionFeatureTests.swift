@@ -72,7 +72,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     }
 
     var userDefaults: UserDefaults!
-    var broker: UserScriptMessageBroker = UserScriptMessageBroker(context: "testBroker")
+    var broker: UserScriptMessageBroker! = UserScriptMessageBroker(context: "testBroker")
     var uiHandler: SubscriptionUIHandlerMock!
     var pixelKit: PixelKit!
 
@@ -109,6 +109,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     var uiEventsHappened: [SubscriptionUIHandlerMock.UIHandlerMockPerformedAction] = []
 
     override func setUpWithError() throws {
+        try super.setUpWithError()
+
         // Mocks
         userDefaults = UserDefaults(suiteName: Constants.userDefaultsSuiteName)!
         userDefaults.removePersistentDomain(forName: Constants.userDefaultsSuiteName)
@@ -226,6 +228,15 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         subscriptionManager = nil
 
         feature = nil
+
+        broker = nil
+        mockFeatureFlagger = nil
+        mockFreemiumDBPUserStateManager = nil
+        mockPixelHandler = nil
+        pixelKit = nil
+        subscriptionAttributionPixelHandler = nil
+        subscriptionFeatureMappingCache = nil
+        uiHandler = nil
     }
 
     // MARK: - Tests for getSubscription
@@ -572,7 +583,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(subscriptionEnvironment.purchasePlatform, .appStore)
 
         storePurchaseManager.hasActiveSubscriptionResult = true
-        await uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+        uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -595,7 +606,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(subscriptionEnvironment.purchasePlatform, .appStore)
 
         storePurchaseManager.hasActiveSubscriptionResult = true
-        await uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+        uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
         storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
         authService.storeLoginResult = .success(StoreLoginResponse(authToken: Constants.authToken,
                                                                    email: Constants.email,
@@ -632,7 +643,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         storePurchaseManager.mostRecentTransactionResult = Constants.mostRecentTransactionJWS
 
         authService.createAccountResult = .failure(Constants.invalidTokenError)
-        await uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+        uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
         authService.storeLoginResult = .success(StoreLoginResponse(authToken: Constants.authToken,
                                                                    email: Constants.email,
                                                                    externalID: Constants.externalID,
@@ -690,7 +701,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         storePurchaseManager.hasActiveSubscriptionResult = false
         subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
         storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.productNotFound)
-        await uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+        uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -718,7 +729,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         storePurchaseManager.hasActiveSubscriptionResult = false
         subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
         storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.externalIDisNotAValidUUID)
-        await uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+        uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -746,7 +757,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         storePurchaseManager.hasActiveSubscriptionResult = false
         subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
         storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.purchaseFailed)
-        await uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+        uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -774,7 +785,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         storePurchaseManager.hasActiveSubscriptionResult = false
         subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
         storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.transactionCannotBeVerified)
-        await uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+        uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -802,7 +813,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         storePurchaseManager.hasActiveSubscriptionResult = false
         subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
         storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.transactionPendingAuthentication)
-        await uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+        uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -830,7 +841,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         storePurchaseManager.hasActiveSubscriptionResult = false
         subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredStripeSubscription)
         storePurchaseManager.purchaseSubscriptionResult = .failure(StorePurchaseManagerError.unknownError)
-        await uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
+        uiHandler.setAlertResponse(alertResponse: .alertFirstButtonReturn)
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -857,7 +868,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         ensureUserAuthenticatedState()
 
         let uiHandlerCalledExpectation = expectation(description: "onActivateSubscription")
-        await uiHandler.setDidPerformActionCallback { action in
+        uiHandler.setDidPerformActionCallback { action in
             if action == .didPresentSubscriptionAccessViewController {
                 uiHandlerCalledExpectation.fulfill()
             }
@@ -899,7 +910,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let notificationPostedExpectation = expectation(forNotification: .openPersonalInformationRemoval, object: nil)
         let uiHandlerCalledExpectation = expectation(description: "uiHandlerCalled")
 
-        await uiHandler.setDidPerformActionCallback { action in
+        uiHandler.setDidPerformActionCallback { action in
             if action == .didShowTab(.dataBrokerProtection) {
                 uiHandlerCalledExpectation.fulfill()
             }
@@ -922,7 +933,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         let uiHandlerCalledExpectation = expectation(description: "uiHandlerCalled")
 
-        await uiHandler.setDidPerformActionCallback { action in
+        uiHandler.setDidPerformActionCallback { action in
             if case let .didShowTab(.identityTheftRestoration(url)) = action {
                 if url == self.subscriptionManager.url(for: .identityTheftRestoration) {
                     uiHandlerCalledExpectation.fulfill()

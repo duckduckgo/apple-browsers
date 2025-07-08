@@ -754,11 +754,12 @@ final class TabBarViewItem: NSCollectionViewItem {
             if isSelected || isDragged {
                 cell.mouseOverView.mouseOverColor = nil
                 cell.mouseOverView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
+                cell.roundedBackgroundColorView.isHidden = true
             } else {
                 if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
                     cell.mouseOverView.mouseOverColor = nil
                     cell.mouseOverView.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
-                    cell.roundedBackgroundColorView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
+                    cell.roundedBackgroundColorView.backgroundColor = visualStyle.tabStyleProvider.hoverTabColor
                     cell.roundedBackgroundColorView.isHidden = !isMouseOver || isSelected
                 } else {
                     cell.mouseOverView.mouseOverColor = .tabMouseOver

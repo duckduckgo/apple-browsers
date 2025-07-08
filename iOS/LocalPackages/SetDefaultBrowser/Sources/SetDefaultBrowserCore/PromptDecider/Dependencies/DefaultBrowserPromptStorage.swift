@@ -29,7 +29,7 @@ public protocol DefaultBrowserPromptStorage: AnyObject {
     var isPromptPermanentlyDismissed: Bool { get set }
 }
 
-package extension DefaultBrowserPromptStorage {
+public extension DefaultBrowserPromptStorage {
 
     /// A boolean value Indicating whether the user has seen at least the first modal.
     var hasSeenFirstModal: Bool {

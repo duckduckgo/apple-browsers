@@ -264,7 +264,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     // MARK: - User Notifications
 
-    private let notificationsPresenter: NetworkProtectionNotificationsPresenter
+    private let notificationsPresenter: VPNNotificationsPresenting
 
     // MARK: - Registration Key
 
@@ -436,7 +436,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private let providerEvents: EventMapping<Event>
     public let entitlementCheck: (() async -> Result<Bool, Error>)?
 
-    public init(notificationsPresenter: NetworkProtectionNotificationsPresenter,
+    public init(notificationsPresenter: VPNNotificationsPresenting,
                 tunnelHealthStore: NetworkProtectionTunnelHealthStore,
                 controllerErrorStore: NetworkProtectionTunnelErrorStore,
                 knownFailureStore: NetworkProtectionKnownFailureStore = NetworkProtectionKnownFailureStore(),

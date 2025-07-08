@@ -83,7 +83,7 @@ jobs:
 
       - name: Start log stream in background
         run: |
-          log stream --predicate 'process == "xctest"' --style syslog > xctest.log 2>&1 &
+          log stream --debug --info --predicate 'process == "xctest" OR process == "swiftpm-xctest-helper"' --style syslog > xctest.log 2>&1 &
           echo $! > log_stream.pid
 
       - name: Run tests

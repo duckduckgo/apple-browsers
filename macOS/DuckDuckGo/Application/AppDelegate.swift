@@ -166,7 +166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let visualStyle: VisualStyleProviding
     private let visualStyleDecider: VisualStyleDecider
 
-    let shouldUseAuthV2: Bool
+    let isUsingAuthV2: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     let subscriptionManagerV1: (any SubscriptionManager)?
     let subscriptionManagerV2: (any SubscriptionManagerV2)?
@@ -347,10 +347,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 #endif
 
+        let featureFlagger: FeatureFlagger
+        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType)  {
+            featureFlagger = MockFeatureFlagger()
+            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
+
+        } else {
+            let featureFlagOverrides = FeatureFlagLocalOverrides(
+                keyValueStore: UserDefaults.appConfiguration,
+                actionHandler: featureFlagOverridesPublishingHandler
+            )
+            let defaultFeatureFlagger = DefaultFeatureFlagger(
+                internalUserDecider: internalUserDecider,
+                privacyConfigManager: privacyConfigurationManager,
+                localOverrides: featureFlagOverrides,
+                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
+                    internalUserDecider.isInternalUser || isRunningUITests
+                },
+                experimentManager: ExperimentCohortsManager(
+                    store: ExperimentsDataStore(),
+                    fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
+                ),
+                for: FeatureFlag.self
+            )
+            featureFlagger = defaultFeatureFlagger
+            self.contentScopeExperimentsManager = defaultFeatureFlagger
+
+            featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
+        }
+        self.featureFlagger = featureFlagger
+
         appearancePreferences = AppearancePreferences(
             keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyConfigurationManager,
-            pixelFiring: PixelKit.shared
+            pixelFiring: PixelKit.shared,
+            featureFlagger: featureFlagger
         )
 
 #if DEBUG
@@ -387,35 +418,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        let featureFlagger: FeatureFlagger
-        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType)  {
-            featureFlagger = MockFeatureFlagger()
-            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
-
-        } else {
-            let featureFlagOverrides = FeatureFlagLocalOverrides(
-                keyValueStore: UserDefaults.appConfiguration,
-                actionHandler: featureFlagOverridesPublishingHandler
-            )
-            let defaultFeatureFlagger = DefaultFeatureFlagger(
-                internalUserDecider: internalUserDecider,
-                privacyConfigManager: privacyConfigurationManager,
-                localOverrides: featureFlagOverrides,
-                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
-                    internalUserDecider.isInternalUser || isRunningUITests
-                },
-                experimentManager: ExperimentCohortsManager(
-                    store: ExperimentsDataStore(),
-                    fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
-                ),
-                for: FeatureFlag.self
-            )
-            featureFlagger = defaultFeatureFlagger
-            self.contentScopeExperimentsManager = defaultFeatureFlagger
-
-            featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
-        }
-        self.featureFlagger = featureFlagger
         pinnedTabsManagerProvider = PinnedTabsManagerProvider()
 
 #if DEBUG || REVIEW
@@ -455,9 +457,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                     pixelHandler: pixelHandler,
                                                     isAuthV2Enabled: isAuthV2Enabled)
-        self.shouldUseAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
+        self.isUsingAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
 
-        if self.shouldUseAuthV2 {
+        if self.isUsingAuthV2 {
             // MARK: V2
             Logger.general.log("Configuring Subscription V2")
             var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
@@ -543,7 +545,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionAuthV1toV2Bridge = subscriptionManager
         }
 
-        VPNAppState(defaults: .netP).isAuthV2Enabled = shouldUseAuthV2
+        VPNAppState(defaults: .netP).isAuthV2Enabled = isUsingAuthV2
 
         let windowControllersManager = WindowControllersManager(
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
@@ -718,7 +720,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Update DBP environment and match the Subscription environment
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
         dbpSettings.alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
-        dbpSettings.isAuthV2Enabled = shouldUseAuthV2
+        dbpSettings.isAuthV2Enabled = isUsingAuthV2
 
         // Also update the stored run type so the login item knows if tests are running
         dbpSettings.updateStoredRunType()

@@ -45,7 +45,8 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         let appearancePreferencesPersistor = AppearancePreferencesPersistorMock()
         appearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         visibleFeedProvider = MockNewTabPageProtectionsReportVisibleFeedProvider()

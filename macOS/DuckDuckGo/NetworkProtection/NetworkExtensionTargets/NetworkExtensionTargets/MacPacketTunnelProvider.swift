@@ -476,7 +476,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
             Logger.networkProtection.log("Subscription Entitlements check...")
-            if !Self.shouldUseAuthV2 {
+            if !Self.isUsingAuthV2 {
                 Logger.networkProtection.log("Using Auth V1")
                 return await accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: .reloadIgnoringLocalCacheData)
             } else {
@@ -497,7 +497,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         let tokenHandlerProvider: () -> any SubscriptionTokenHandling = {
 
-            if Self.shouldUseAuthV2 {
+            if Self.isUsingAuthV2 {
                 Logger.networkProtection.debug("tokenHandlerProvider: Using Auth V2")
                 return subscriptionManager
             } else {
@@ -594,6 +594,12 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     override func startTunnel(options: [String: NSObject]? = nil) async throws {
 
         try await super.startTunnel(options: options)
+
+        if !Self.isUsingAuthV2 {
+            // Auth V2 cleanup in case of rollback
+            Logger.subscription.debug("Cleaning up Auth V2 token")
+            try? tokenStorageV2.saveTokenContainer(nil)
+        }
     }
 
     // MARK: - Pixels

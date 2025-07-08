@@ -43,7 +43,7 @@ extension NetworkProtectionLocationListCompositeRepository {
         let settings = Application.appDelegate.vpnSettings
 
         var tokenHandler: any SubscriptionTokenHandling
-        if !Application.appDelegate.shouldUseAuthV2 {
+        if !Application.appDelegate.isUsingAuthV2 {
             tokenHandler = NetworkProtectionKeychainTokenStore()
         } else {
             // swiftlint:disable:next force_cast

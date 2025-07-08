@@ -1,5 +1,5 @@
 //
-//  AIChatSummarizationRequest.swift
+//  UserDefaults+isUsingAuthV2.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,21 +16,32 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 
-/// This struct represents an object that's posted in `aiChatSummarizationRequest` notification.
-struct AIChatSummarizationRequest: Equatable {
-    /// The text to be summarized
-    let text: String
+extension UserDefaults {
 
-    /// The source of the summarize action
-    let source: Source
+    @objc
+    public dynamic var isUsingAuthV2: Bool {
+        get {
+            bool(forKey: #keyPath(isUsingAuthV2))
+        }
 
-    enum Source: String {
-        case contextMenu = "context-menu", keyboardShortcut = "keyboard-shortcut"
+        set {
+            guard newValue != bool(forKey: #keyPath(isUsingAuthV2)) else {
+                return
+            }
+
+            guard newValue else {
+                removeObject(forKey: #keyPath(isUsingAuthV2))
+                return
+            }
+
+            set(newValue, forKey: #keyPath(isUsingAuthV2))
+        }
     }
-}
 
-extension NSNotification.Name {
-    static let aiChatSummarizationRequest = Notification.Name(rawValue: "com.duckduckgo.notification.aiChatSummarizationRequest")
+    func resetIsAuthV2Enabled() {
+        removeObject(forKey: #keyPath(isUsingAuthV2))
+    }
 }

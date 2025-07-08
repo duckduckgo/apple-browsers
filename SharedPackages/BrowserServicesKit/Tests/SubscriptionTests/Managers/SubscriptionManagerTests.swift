@@ -96,10 +96,7 @@ final class SubscriptionManagerTests: XCTestCase {
 
     func testSetupForAppStore() async throws {
         // Given
-        storePurchaseManager.onUpdateAvailableProducts = {
-            self.storePurchaseManager.areProductsAvailable = true
-        }
-
+        self.storePurchaseManager.areProductsAvailable = true
         // When
         // triggered on DefaultSubscriptionManager's init
         try await Task.sleep(seconds: 0.5)

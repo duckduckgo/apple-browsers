@@ -32,10 +32,6 @@ final class VPNAppEventsHandler {
 
         self.appState = appState
         self.tunnelController = tunnelController
-
-        if !appState.isAuthV2Enabled {
-            appState.resetIsMigratedToAuthV2()
-        }
     }
 
     func appDidFinishLaunching() {
@@ -45,24 +41,11 @@ final class VPNAppEventsHandler {
             versionStore.lastAgentVersionRun = currentVersion
         }
 
-        let restartTunnel = { [appState, tunnelController] in
+        let restartTunnel = {
             self.tunnelController.ensureRiskyDomainsEnabledIfNeeded()
             Logger.networking.info("App updated from \(versionStore.lastAgentVersionRun ?? "null", privacy: .public) to \(currentVersion, privacy: .public): updating login items")
 
-            if appState.isAuthV2Enabled && !appState.isMigratedToAuthV2 {
-                Task {
-                    guard await tunnelController.isConnected else {
-                        return
-                    }
-
-                    await tunnelController.stop()
-                    try await Task.sleep(interval: .seconds(2))
-                    await tunnelController.start()
-                    appState.isMigratedToAuthV2 = true
-                }
-            } else {
-                self.restartTunnel()
-            }
+            self.restartTunnel()
         }
 
 #if DEBUG || REVIEW // Since DEBUG and REVIEW builds may not change version No. we want them to always reset.

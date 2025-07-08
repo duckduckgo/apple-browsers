@@ -39,7 +39,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     
     private var accountManager: AccountManager?
     private let subscriptionManager: (any SubscriptionManagerV2)?
-    let subscriptionAuthMigrator: AuthMigrator
 
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
@@ -441,41 +440,32 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             subscriptionEnvironment.serviceEnvironment = .staging
         }
 
-        // Configure Subscription
+        // MARK: - Configure Subscription
 
         var tokenHandler: any SubscriptionTokenHandling
         var entitlementsCheck: (() async -> Result<Bool, Error>)
-
-        // Configure V2 for migration
-
-        let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
-        let authService = DefaultOAuthService(baseURL: authEnvironment.url,
-                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
-
-        // keychain storage
-        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
-            let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-                              PixelParameters.privacyProKeychainError: error.localizedDescription,
-                              PixelParameters.source: KeychainErrorSource.vpn.rawValue,
-                              PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
-            DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                         withAdditionalParameters: parameters)
-        }
-        let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-        let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
-                                            legacyTokenStorage: legacyAccountStorage,
-                                            authService: authService)
-        let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
-        subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
-                                                    pixelHandler: pixelHandler,
-                                                    isAuthV2Enabled: settings.isAuthV2Enabled)
-        Self.shouldUseAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
-
-        if Self.shouldUseAuthV2 {
+        Self.isUsingAuthV2 = settings.isAuthV2Enabled
+        if Self.isUsingAuthV2 {
             Logger.networkProtection.log("Configure Subscription V2")
+            let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
+            let authService = DefaultOAuthService(baseURL: authEnvironment.url,
+                                                  apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
 
+            // keychain storage
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
+                let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
+                                  PixelParameters.privacyProKeychainError: error.localizedDescription,
+                                  PixelParameters.source: KeychainErrorSource.vpn.rawValue,
+                                  PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
+                DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: parameters)
+            }
+            let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                                legacyTokenStorage: nil, // Only the main app can migrate
+                                                authService: authService)
+            let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
@@ -561,10 +551,6 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         startMonitoringMemoryPressureEvents()
         observeServerChanges()
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
-
-        Task {
-            await self.subscriptionAuthMigrator.migrateAuthV1toAuthV2IfNeeded()
-        }
     }
 
     deinit {

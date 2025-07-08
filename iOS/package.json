@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "scripts": {
     "test": "echo 'no test required'",
-    "rebuild-autoconsent": "rollup -c"
+    "rebuild-autoconsent": "rollup -c",
+    "validate-pixel-defs": "validate-ddg-pixel-defs ./PixelDefinitions && prettier ./PixelDefinitions --check",
+    "pixel-lint.fix": "prettier ./PixelDefinitions --write"
   },
   "devDependencies": {
+    "@duckduckgo/pixel-schema": "github:duckduckgo/pixel-schema",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.0.6",
     "rollup": "^2.61.0",

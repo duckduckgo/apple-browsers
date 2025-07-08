@@ -40,9 +40,11 @@ struct AIChatTextSummarizationRequest: Equatable {
     }
 }
 
-/// This protocol describes API for text summarization
+/// This protocol describes APIs for summarization in AI Chat.
 @MainActor
 protocol AIChatSummarizing {
+
+    /// Handle text summarization.
     func summarize(_ request: AIChatTextSummarizationRequest)
 }
 
@@ -68,6 +70,10 @@ final class AIChatSummarizer: AIChatSummarizing {
         self.pixelFiring = pixelFiring
     }
 
+    /// This function performs text summarization for the provided `request`.
+    ///
+    /// Depending on AI Chat sidebar feature availability and on the sidebar settings,
+    /// summarization will happen either in a tab sidebar or in a new tab.
     @MainActor
     func summarize(_ request: AIChatTextSummarizationRequest) {
         guard featureFlagger.isFeatureOn(.aiChatTextSummarization) else {
@@ -75,11 +81,11 @@ final class AIChatSummarizer: AIChatSummarizing {
         }
 
         let promptText = """
-                You are an expert summarizer AI. Your purpose is to read the provided text and generate a concise, accurate, and easy-to-understand summary. Summarize the following text in a neutral, encyclopedic tone. The summary should be a single paragraph and should not exceed 50 words. Use the same language as the original text.
-                <text>
-                \(request.text)
-                </text>
-                """
+            You are an expert summarizer AI. Your purpose is to read the provided text and generate a concise, accurate, and easy-to-understand summary. Summarize the following text in a neutral, encyclopedic tone. The summary should be a single paragraph and should not exceed 50 words. Use the same language as the original text.
+            <text>
+            \(request.text)
+            </text>
+            """
 
         let prompt = AIChatNativePrompt.queryPrompt(promptText, autoSubmit: true)
         pixelFiring?.fire(AIChatPixel.aiChatSummarizeText(source: request.source), frequency: .dailyAndStandard)

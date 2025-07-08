@@ -388,6 +388,7 @@ struct DataImportView: ModalView {
         .background(Color(NSColor(red: 1, green: 0, blue: 0, alpha: 0.2)))
     }
 
+#if DEBUG || REVIEW
     private var noFailure: String { "No failure" }
     private var zeroSuccess: String { "Success (0 imported)" }
     private var allFailureReasons: [String?] {
@@ -424,6 +425,7 @@ struct DataImportView: ModalView {
                 .frame(width: 150, alignment: .leading)
         }
     }
+#endif
 
 }
 

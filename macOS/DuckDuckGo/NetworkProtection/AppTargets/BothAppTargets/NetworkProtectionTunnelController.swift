@@ -790,7 +790,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     @MainActor
     func restart() async {
-        await stop(disableOnDemand: false)
+        guard vpnAppState.isAuthV2Enabled,
+            let internalManager else {
+
+            // This is a temporary thing because we know this method works well
+            // in case we need to roll back auth v2
+            await stop(disableOnDemand: false)
+            return
+        }
+
+        await stop(disableOnDemand: true)
+        await start()
+        try? await enableOnDemand(tunnelManager: internalManager)
     }
 
     // MARK: - On Demand & Kill Switch

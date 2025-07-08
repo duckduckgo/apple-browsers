@@ -2650,6 +2650,12 @@
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-snarveier";
 
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Søkefelt";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Søk på nettet eller spør Duck.ai direkte fra adressefeltet";
+
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Innstillinger for Search Assist";
 

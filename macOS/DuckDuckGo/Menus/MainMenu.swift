@@ -786,7 +786,7 @@ final class MainMenu: NSMenu {
                                   subscriptionManagerV1: Application.appDelegate.subscriptionManagerV1,
                                   subscriptionManagerV2: Application.appDelegate.subscriptionManagerV2,
                                   subscriptionUserDefaults: subscriptionUserDefaults,
-                                  isAuthV2Enabled: Application.appDelegate.isAuthV2Enabled)
+                                  isAuthV2Enabled: Application.appDelegate.isUsingAuthV2)
 
             NSMenuItem(title: "TipKit") {
                 NSMenuItem(title: "Reset", action: #selector(AppDelegate.resetTipKit))

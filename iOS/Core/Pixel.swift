@@ -180,6 +180,9 @@ public struct PixelParameters {
 
     // Background Tasks
     public static let backgroundTaskCategory = "category"
+
+    // Default Browser Prompt
+    public static let defaultBrowserPromptNumberOfModalsShown = "numberOfModalsShown"
 }
 
 public struct PixelValues {

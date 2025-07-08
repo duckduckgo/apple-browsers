@@ -242,7 +242,6 @@ New: \(subscription.debugDescription, privacy: .public)
         cacheSerialQueue.sync {
             subscriptionCache.reset()
         }
-// TBD check if needed: NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: nil)
     }
 
     // MARK: -

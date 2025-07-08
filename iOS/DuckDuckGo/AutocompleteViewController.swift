@@ -92,6 +92,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
                                            isExperimentalThemingEnabled: themingProperties.isExperimentalThemingEnabled)
         super.init(rootView: AutocompleteView(model: model))
         self.model.delegate = self
+        self.model.isPad = isPad
     }
     
     @MainActor required dynamic init?(coder aDecoder: NSCoder) {

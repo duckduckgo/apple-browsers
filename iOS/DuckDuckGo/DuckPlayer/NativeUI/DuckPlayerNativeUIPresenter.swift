@@ -224,14 +224,21 @@ final class DuckPlayerNativeUIPresenter {
 
         if pillType == .welcome {
             // Create the welcome pill view model
-            let welcomePillViewModel = DuckPlayerWelcomePillViewModel { [weak self] in
-                self?.videoPlaybackRequest.send((videoID, timestamp, .welcome))
-            }
+            let welcomePillViewModel = DuckPlayerWelcomePillViewModel(
+                onOpen: { [weak self] in
+                    self?.videoPlaybackRequest.send((videoID, timestamp, .welcome))
+                },
+                onClose: { [weak self] in
+                    self?.dismissPill(programatic: false)
+                }
+            )
 
             // Create the container view with the welcome pill
             return DuckPlayerContainer.Container(
                 viewModel: containerViewModel,
                 hasBackground: false,
+                showDragHandle: false,
+                allowDragGesture: false,
                 onDismiss: { [weak self] programatic in
                     self?.dismissPill(programatic: programatic)
                 },

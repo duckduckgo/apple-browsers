@@ -52,6 +52,8 @@ public enum FeatureFlag: String, CaseIterable {
     case historyView
 
     case autoUpdateInDEBUG
+
+    /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1210099321661462?focus=true
     case updatesWontAutomaticallyRestartApp
 
     case autofillPartialFormSaves
@@ -124,6 +126,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
     case updatedBookmarksFavoritesImport
 
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210522798790015?focus=true
+    case disableFireAnimation
+
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1210625630564796?focus=true
     case newTabPageOmnibar
 }
@@ -180,6 +185,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatTextSummarization,
                 .shortHistoryMenu,
                 .updatedBookmarksFavoritesImport,
+                .disableFireAnimation,
                 .newTabPageOmnibar:
             return true
         case .debugMenu,
@@ -222,7 +228,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.updatesWontAutomaticallyRestartApp))
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .autocompleteTabs:
@@ -281,6 +287,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.shortHistoryMenu))
         case .updatedBookmarksFavoritesImport:
             return .disabled
+        case .disableFireAnimation:
+            return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
             return .disabled
         }

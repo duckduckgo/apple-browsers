@@ -108,6 +108,7 @@ enum GeneralPixel: PixelKitEventV2 {
     // Fire Button
     case fireButtonFirstBurn
     case fireButton(option: FireButtonOption)
+    case fireAnimationSetting(enabled: Bool)
 
     /**
      * Event Trigger: User opens the fire popover (fire button details view).
@@ -678,6 +679,8 @@ enum GeneralPixel: PixelKitEventV2 {
             return "m_mac_fire_button_first_burn"
         case .fireButton(option: let option):
             return "m_mac_fire_button_\(option)"
+        case .fireAnimationSetting(let enabled):
+            return "m_mac_fire_animation_\(enabled ? "on" : "off")"
         case .fireButtonDetailsViewed:
             return "m_mac_fire_button_details_viewed"
 

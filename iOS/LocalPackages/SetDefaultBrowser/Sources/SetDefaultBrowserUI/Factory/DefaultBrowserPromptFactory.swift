@@ -28,21 +28,18 @@ public enum DefaultBrowserPromptFactory {
         featureFlagSettingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider,
         promptActivityStore: DefaultBrowserPromptStorage,
         userTypeProviding: DefaultBrowserPromptUserTypeProviding,
-        userActivityStore: DefaultBrowsePromptUserActivityStorage,
+        userActivityManager: DefaultBrowserPromptUserActivityManaging,
         checkDefaultBrowserContextStorage: DefaultBrowserContextStorage,
         checkDefaultBrowserDebugEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>,
         promptUserInteractionEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>,
         isOnboardingCompletedProvider: @escaping () -> Bool,
-        installDateProvider: @escaping () -> Date?
+        installDateProvider: @escaping () -> Date?,
+        currentDateProvider: @escaping () -> Date
     ) -> DefaultBrowserPromptPresenting {
 
         let featureFlagger = DefaultBrowserPromptFeatureFlag(
             settingsProvider: featureFlagSettingsProvider,
             featureFlagProvider: featureFlagProvider
-        )
-
-        let userActivityMonitor = DefaultBrowsePromptUserActivityMonitor(
-            store: userActivityStore,
         )
 
         let defaultBrowserManager = DefaultBrowserManager(
@@ -54,18 +51,20 @@ public enum DefaultBrowserPromptFactory {
             featureFlagger: featureFlagger,
             store: promptActivityStore,
             userTypeProvider: userTypeProviding,
-            userActivityProvider: userActivityMonitor,
+            userActivityProvider: userActivityManager,
             defaultBrowserManager: defaultBrowserManager,
-            installDateProvider: installDateProvider
+            installDateProvider: installDateProvider,
+            dateProvider: currentDateProvider
         )
 
         let coordinator = DefaultBrowserPromptCoordinator(
             isOnboardingCompleted: isOnboardingCompletedProvider,
             promptStore: promptActivityStore,
-            userActivityManager: userActivityMonitor,
+            userActivityManager: userActivityManager,
             promptTypeDecider: promptTypeDecider,
             urlOpener: UIApplication.shared,
-            eventMapper: promptUserInteractionEventMapper
+            eventMapper: promptUserInteractionEventMapper,
+            dateProvider: currentDateProvider
         )
 
         return DefaultBrowserModalPresenter(coordinator: coordinator)

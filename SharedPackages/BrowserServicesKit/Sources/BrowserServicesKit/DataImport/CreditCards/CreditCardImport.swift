@@ -20,7 +20,7 @@ import Foundation
 import SecureStorage
 
 public struct ImportedCreditCard: Equatable {
-    
+
     let title: String?
     let cardNumber: String
     let cardholderName: String?
@@ -28,7 +28,7 @@ public struct ImportedCreditCard: Equatable {
     let expirationMonth: Int?
     let expirationYear: Int?
     let lastUsedTime: Date?
-    
+
     public init(title: String?,
                 cardNumber: String,
                 cardholderName: String?,
@@ -44,7 +44,7 @@ public struct ImportedCreditCard: Equatable {
         self.expirationYear = expirationYear
         self.lastUsedTime = lastUsedTime
     }
-    
+
     // Helper to get microseconds as Int64 if needed
     var lastUsedTimeMicroseconds: Int64? {
         guard let lastUsedTime = lastUsedTime else { return nil }

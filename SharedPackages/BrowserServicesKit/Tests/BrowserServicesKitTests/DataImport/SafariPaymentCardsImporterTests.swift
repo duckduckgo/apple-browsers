@@ -477,7 +477,7 @@ final class SafariPaymentCardsImporterTests: XCTestCase {
         mockCreditCardImporter.shouldThrowCancellationError = true
 
         let result = await importer.importData(types: [.creditCards]).task.value
-
+        
         XCTAssertTrue(result.isEmpty)
     }
 }
@@ -503,4 +503,4 @@ private class MockCreditCardImporter: CreditCardImporter {
         return expectedSummary
     }
 }
-//#endif
+#endif

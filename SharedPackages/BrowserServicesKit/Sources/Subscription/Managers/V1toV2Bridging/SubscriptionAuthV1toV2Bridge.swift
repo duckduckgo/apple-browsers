@@ -30,7 +30,7 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
     func isFeatureAvailableAndEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool
     /// If the user is allowed to use the feature, base on the TokenContainer entitlements
     /// This is used by VPN and PIR
-    func isFeatureEnabledForUser(feature: Entitlement.ProductName) async -> Bool
+    func isFeatureEnabledForUser(feature: Entitlement.ProductName) async throws -> Bool
 
     func currentSubscriptionFeatures() async -> [Entitlement.ProductName]
     func signOut(notifyUI: Bool) async
@@ -62,13 +62,13 @@ extension SubscriptionAuthV1toV2Bridge {
 
 extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
-    public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async -> Bool {
+    public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async throws -> Bool {
         let result = await accountManager.hasEntitlement(forProductName: feature, cachePolicy: .returnCacheDataDontLoad)
         switch result {
         case .success(let hasEntitlements):
             return hasEntitlements
-        case .failure:
-            return false
+        case .failure(let error):
+            throw error
         }
     }
 
@@ -122,7 +122,7 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
 extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
 
-    public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async -> Bool {
+    public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async throws -> Bool {
         do {
             guard isUserAuthenticated else { return false }
             let tokenContainer = try await getTokenContainer(policy: .localValid)

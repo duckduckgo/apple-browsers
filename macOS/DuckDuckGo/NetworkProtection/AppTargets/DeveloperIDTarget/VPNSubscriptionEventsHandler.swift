@@ -60,8 +60,9 @@ final class VPNSubscriptionEventsHandler {
 
     private func checkEntitlements() {
         Task {
-            let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
-            await handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheck)
+            if let hasEntitlement = try? await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection) {
+                await handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheck)
+            }
         }
     }
 
@@ -71,9 +72,10 @@ final class VPNSubscriptionEventsHandler {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 Logger.networkProtection.log("System wake notification received, checking entitlements")
-                Task {
-                    let hasEntitlement = await self?.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection) ?? false
-                    await self?.handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheckOnWake)
+                Task { [weak self] in
+                    if let hasEntitlement = try? await self?.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection) {
+                        await self?.handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheckOnWake)
+                    }
                 }
             }
             .store(in: &cancellables)

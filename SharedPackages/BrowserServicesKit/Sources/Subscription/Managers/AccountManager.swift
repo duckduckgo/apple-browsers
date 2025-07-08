@@ -209,7 +209,7 @@ public final class DefaultAccountManager: AccountManager {
     private func fetchRemoteEntitlements() async -> Result<[Entitlement], Error> {
         guard let accessToken else {
             entitlementsCache.reset()
-            return .failure(EntitlementsError.noAccessToken)
+            return .success([])
         }
 
         switch await authEndpointService.validateToken(accessToken: accessToken) {

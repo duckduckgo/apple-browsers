@@ -80,8 +80,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private var swipeScrollView: UIScrollView!
     private var searchPageContainer: UIView!
     private var chatPageContainer: UIView!
-    private var isUpdatingScrollViewProgrammatically = false
-
     private let transitionAnimator = OmniBarEditingStateAnimator()
 
     internal init(switchBarHandler: any SwitchBarHandling) {

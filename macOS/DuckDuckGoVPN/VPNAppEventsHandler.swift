@@ -32,10 +32,6 @@ final class VPNAppEventsHandler {
 
         self.appState = appState
         self.tunnelController = tunnelController
-
-        if !appState.isAuthV2Enabled {
-            appState.resetIsMigratedToAuthV2()
-        }
     }
 
     func appDidFinishLaunching() {

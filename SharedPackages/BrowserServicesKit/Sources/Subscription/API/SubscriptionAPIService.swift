@@ -27,6 +27,7 @@ public enum APIServiceError: Swift.Error, LocalizedError {
     case serverError(statusCode: Int, error: String?)
     case unknownServerError
     case connectionError
+    case invalidToken
 
     public var errorDescription: String? {
         switch self {
@@ -40,6 +41,8 @@ public enum APIServiceError: Swift.Error, LocalizedError {
             return "Unknown server error"
         case .connectionError:
             return "Connection error"
+        case .invalidToken:
+            return "Invalid Token"
         }
     }
 
@@ -102,6 +105,8 @@ public struct DefaultSubscriptionAPIService: SubscriptionAPIService {
                     Logger.subscription.error("Service error: APIServiceError.decodingError")
                     return .failure(.decodingError)
                 }
+            } else if httpResponse.statusCode == 401 {
+                return .failure(.invalidToken)
             } else {
                 var errorString: String?
 

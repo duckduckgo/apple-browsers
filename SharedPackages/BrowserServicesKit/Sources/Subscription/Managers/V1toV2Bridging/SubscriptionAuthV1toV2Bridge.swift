@@ -68,7 +68,12 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
         case .success(let hasEntitlements):
             return hasEntitlements
         case .failure(let error):
-            throw error
+            switch error {
+            case APIServiceError.invalidToken:
+                return false
+            default:
+                throw error
+            }
         }
     }
 

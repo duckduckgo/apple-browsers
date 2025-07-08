@@ -16,7 +16,13 @@
 //  limitations under the License.
 //
 
+import WebKit
+
 public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
+
+    enum MessageName: String, CaseIterable {
+        case getConfig = "omnibar_getConfig"
+    }
 
     private let model: NewTabPageOmnibarModel
 
@@ -25,4 +31,15 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         super.init()
     }
 
+    public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
+        userScript.registerMessageHandlers([
+            MessageName.getConfig.rawValue: { [weak self] in try await self?.getConfig(params: $0, original: $1) }
+        ])
+    }
+
+    private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        // In future, the mode will be stored locally and provided in initial configuration below
+        let mode = NewTabPageDataModel.OmnibarMode.search
+        return NewTabPageDataModel.OmnibarConfig(mode: mode)
+    }
 }

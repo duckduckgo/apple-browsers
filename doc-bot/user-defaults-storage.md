@@ -1,8 +1,8 @@
 ---
 alwaysApply: false
-title: "Property Wrappers & Settings Storage"
-description: "Updated user defaults storage patterns to recommend KVO with KeyValueStore instead of property wrappers"
-keywords: ["KVO", "KeyValueStore", "UserDefaults", "settings", "storage", "persistor", "deprecated", "property wrappers"]
+title: "User Defaults Storage Patterns"
+description: "Modern user defaults storage patterns using KVO with KeyValueStore (formerly property wrappers)"
+keywords: ["user defaults", "KVO", "KeyValueStore", "settings", "storage", "persistor", "UserDefaults", "property wrappers", "deprecated"]
 ---
 
 # User Defaults Settings Storage and Reading

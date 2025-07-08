@@ -59,7 +59,7 @@ class ZipContentSelectionViewModelTests: XCTestCase {
     
     func testContentHeight_EnforcesMinimumHeight() {
         viewModel.contentHeight = 300
-        XCTAssertEqual(mockDelegate.lastContentHeight, 360)
+        XCTAssertEqual(mockDelegate.lastContentHeight, 380)
     }
     
     func testOptionsSelected_NotifiesDelegateWithSelectedTypes() {

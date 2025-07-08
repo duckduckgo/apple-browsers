@@ -124,7 +124,7 @@ extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
 
     public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async -> Bool {
         do {
-            guard isUserAuthenticated else { return false }
+            guard await isUserAuthenticated else { return false }
             let tokenContainer = try await getTokenContainer(policy: .localValid)
             return tokenContainer.decodedAccessToken.subscriptionEntitlements.contains(feature.subscriptionEntitlement)
         } catch {

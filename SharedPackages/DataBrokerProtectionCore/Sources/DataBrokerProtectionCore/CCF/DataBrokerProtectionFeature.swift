@@ -60,7 +60,7 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     deinit {
-        removeTimer()
+        removeTimers()
     }
 
     public func handler(forMethodNamed methodName: String) -> Handler? {

@@ -67,6 +67,11 @@ struct ExperimentalColorPalette: ColorPaletteDefinition {
     // System
     private static let lines = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
 
+    // Decorations
+    private static let decorationPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.3), darkColor: xF9F9F9.opacity(0.36))
+    private static let decorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.48), darkColor: xF9F9F9.opacity(0.64))
+    private static let decorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.60), darkColor: xF9F9F9.opacity(0.74))
+
     static func dynamicColor(for color: DesignSystemColor) -> DynamicColor {
         switch color {
         case .urlBar: return urlBar
@@ -89,6 +94,9 @@ struct ExperimentalColorPalette: ColorPaletteDefinition {
         case .controlsFillPrimary: return controlsFillPrimary
         case .controlsFillSecondary: return controlsFillSecondary
         case .controlsFillTertiary: return controlsFillTertiary
+        case .decorationPrimary: return decorationPrimary
+        case .decorationSecondary: return decorationSecondary
+        case .decorationTertiary: return decorationTertiary
 
         default:
             return DefaultColorPalette.dynamicColor(for: color)

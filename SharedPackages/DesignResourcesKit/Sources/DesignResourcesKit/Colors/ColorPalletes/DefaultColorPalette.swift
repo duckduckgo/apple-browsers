@@ -168,6 +168,10 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .buttonsDeleteGhostText: return buttonsDeleteGhostText
         case .buttonsDeleteGhostTextPressed: return buttonsDeleteGhostTextPressed
         case .buttonsDeleteGhostTextDisabled: return buttonsDeleteGhostTextDisabled
+
+        case .decorationPrimary, .decorationSecondary, .decorationTertiary:
+            assertionFailure("This color should be used in experimental palette only.")
+            return border
         }
     }
 

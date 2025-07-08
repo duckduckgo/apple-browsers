@@ -122,4 +122,10 @@ public enum DesignSystemColor {
     case buttonsDeleteGhostText
     case buttonsDeleteGhostTextPressed
     case buttonsDeleteGhostTextDisabled
+
+    // Decorations
+    case decorationPrimary
+    case decorationSecondary
+    case decorationTertiary
+
 }

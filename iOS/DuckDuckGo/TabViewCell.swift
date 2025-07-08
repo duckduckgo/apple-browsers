@@ -36,11 +36,15 @@ final class TabViewCell: UICollectionViewCell {
 
         static let swipeToDeleteAlpha: CGFloat = 0.5
 
-        static let cellCornerRadius: CGFloat = 8.0
-        static let cellHeaderHeight: CGFloat = 36.0
+        static let borderRadius: CGFloat = 12.0
+
+        static let cellCornerRadius: CGFloat = 12.0 // does ios support this when long pressing?
+        static let cellHeaderHeight: CGFloat = 32.0
         static let cellLogoSize: CGFloat = 68.0
 
-        static let selectedBorderWidth: CGFloat = 4.0
+        static let previewCornerRadius: CGFloat = 8.0
+
+        static let selectedBorderWidth: CGFloat = 2.0
         static let unselectedBorderWidth: CGFloat = 0.0
     }
 
@@ -99,15 +103,22 @@ final class TabViewCell: UICollectionViewCell {
     @IBOutlet var previewTopConstraint: NSLayoutConstraint?
     @IBOutlet var previewBottomConstraint: NSLayoutConstraint?
     @IBOutlet var previewTrailingConstraint: NSLayoutConstraint?
-
+    /// Note that backgroundView and selectedBackgroundView are provided by UICollectionViewCell and we don't use them for legacy and design reasons, so ignore them.
     func setupSubviews() {
 
+        preview?.layer.cornerRadius = Constants.previewCornerRadius
+        preview?.layer.masksToBounds = true
+        preview?.layer.borderWidth = 2
+        preview?.layer.borderColor = UIColor.red.cgColor
+
         backgroundColor = .clear
-        backgroundView?.backgroundColor = .clear
+        
+        background?.layer.cornerRadius = Constants.borderRadius
+        background?.backgroundColor = .clear
 
-        border.layer.cornerRadius = 16
+        border.layer.cornerRadius = Constants.borderRadius
 
-        layer.cornerRadius = 12
+        layer.cornerRadius = Constants.cellCornerRadius
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOffset = CGSize(width: 0, height: 1)
         layer.shadowRadius = 3.0
@@ -292,7 +303,7 @@ final class TabViewCell: UICollectionViewCell {
 
     func updateCurrentTabBorder() {
         let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
-        border.layer.borderColor = UIColor(designSystemColor: isSelectionModeEnabled ? .accent : .textPrimary).cgColor
+        border.layer.borderColor = UIColor(designSystemColor: isSelectionModeEnabled ? .accent : .decorationTertiary).cgColor
         border.layer.borderWidth = showBorder ? Constants.selectedBorderWidth : Constants.unselectedBorderWidth
     }
 
@@ -324,7 +335,7 @@ final class TabViewCell: UICollectionViewCell {
 
         updateCurrentTabBorder()
 
-        removeButton.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
+        removeButton.setImage(DesignSystemImages.Glyphs.Size16.closeSolidAlt, for: .normal)
         if let link = tab.link {
             removeButton.accessibilityLabel = UserText.closeTab(withTitle: link.displayTitle, atAddress: link.url.host ?? "")
             title.accessibilityLabel = UserText.openTab(withTitle: link.displayTitle, atAddress: link.url.host ?? "")

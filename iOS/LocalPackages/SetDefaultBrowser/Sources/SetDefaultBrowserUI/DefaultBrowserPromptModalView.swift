@@ -36,7 +36,7 @@ struct DefaultBrowserPromptModalView: View {
 
         VStack(spacing: Metrics.Container.itemsVerticalSpacing) {
             Header(action: closeAction)
-                .padding(.top, Metrics.Header.verticalPadding.build(v: verticalSizeClass, h: horizontalSizeClass))
+                .padding(.top, Metrics.Header.verticalPadding)
                 .padding(.horizontal, Metrics.Header.horizontalPadding)
 
             Spacer(minLength: Metrics.Container.topSpacerMinLength)
@@ -49,7 +49,6 @@ struct DefaultBrowserPromptModalView: View {
             Footer(setDefaultBrowserAction: setAsDefaultAction, doNotAskAgainAction: doNotAskAgainAction)
                 .padding(.horizontal, horizontalPadding)
         }
-        .padding(.top, Metrics.Container.topPadding)
         .padding(.bottom)
         .background(Color(designSystemColor: .surface))
     }
@@ -138,13 +137,12 @@ private enum Metrics {
         static let itemsVerticalSpacing: CGFloat = 0
         static let topSpacerMinLength: CGFloat = 0
         static let bottomSpacerMinLength: CGFloat = 10
-        static let topPadding: CGFloat = 16
         static let horizontalPadding = MetricBuilder<CGFloat>(iPhone: 24, iPad: 92).iPhone(landscape: 10)
     }
 
     enum Header {
         static let closeButtonSize: CGFloat = 24
-        static let verticalPadding = MetricBuilder<CGFloat>(default: 0).landscape(10)
+        static let verticalPadding: CGFloat = 16
         static let horizontalPadding: CGFloat = 14
     }
 

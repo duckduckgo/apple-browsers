@@ -457,10 +457,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
             if newValue == false {
                 Task { @CacheActor in
-                self.cachedUserEntitlements = []
+                    self.cachedUserEntitlements = []
+                }
             }
         }
-    }
     }
 
     // MARK: -

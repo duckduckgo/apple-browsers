@@ -1,7 +1,7 @@
 //
-//  AppearancePreferencesMock.swift
+//  MockNewTabPageSectionsAvailabilityProviding.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,16 +16,9 @@
 //  limitations under the License.
 //
 
-#if DEBUG
-import PersistenceTestingUtils
-import BrowserServicesKit
+import Combine
+import NewTabPage
 
-extension AppearancePreferences {
-    static let mock = AppearancePreferences(
-        // swiftlint:disable:next force_try
-        persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: try! MockKeyValueFileStore()),
-        privacyConfigurationManager: MockPrivacyConfigurationManager(),
-        featureFlagger: MockFeatureFlagger()
-    )
+final class MockNewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding {
+    var isOmnibarAvailable: Bool = true
 }
-#endif

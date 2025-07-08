@@ -34,7 +34,8 @@ class AutoconsentMessageProtocolTests: XCTestCase {
 
         let appearancePreferences = AppearancePreferences(
             keyValueStore: try MockKeyValueFileStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
         let dataClearingPreferences = DataClearingPreferences(
             persistor: MockFireButtonPreferencesPersistor(),

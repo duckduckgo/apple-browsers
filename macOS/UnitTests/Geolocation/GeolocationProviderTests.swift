@@ -188,7 +188,7 @@ final class GeolocationProviderTests: XCTestCase {
         let location2 = CLLocation(latitude: 10.1, longitude: -13.5)
 
         geolocationServiceMock.onSubscriptionReceived = { [geolocationServiceMock] _ in
-            geolocationServiceMock.currentLocationPublished = .success(location1)
+            geolocationServiceMock!.currentLocationPublished = .success(location1)
         }
         let e1 = expectation(description: "location1 received")
         let e2 = expectation(description: "location2 received")
@@ -341,11 +341,11 @@ final class GeolocationProviderTests: XCTestCase {
         geolocationServiceMock.currentLocationPublished = .success(location1)
         let e = expectation(description: "re-subscribed")
         geolocationServiceMock.onSubscriptionReceived = { [geolocationServiceMock] _ in
-            if geolocationServiceMock.history == [.locationPublished, .subscribed] {
+            if geolocationServiceMock!.history == [.locationPublished, .subscribed] {
                 DispatchQueue.main.async {
                     self.appIsActive.send(false)
                 }
-            } else if geolocationServiceMock.history == [.locationPublished, .subscribed, .cancelled, .subscribed] {
+            } else if geolocationServiceMock!.history == [.locationPublished, .subscribed, .cancelled, .subscribed] {
                 e.fulfill()
             } else {
                 XCTFail("Unexpected call sequence")

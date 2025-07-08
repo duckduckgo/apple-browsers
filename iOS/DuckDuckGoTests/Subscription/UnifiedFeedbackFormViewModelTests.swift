@@ -286,9 +286,9 @@ struct UnifiedFeedbackFormViewModelTests {
     }
 
     @Test func testDuckAiSubcategories_HaveCorrectFAQUrls() {
-        let accessSubscriptionModelsUrl = "https://duckduckgo.com/duckduckgo-help-pages/duckai/access-subscriber-AI-models"
-        let loginThirdPartyBrowserUrl = "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/activating"
-        let somethingElseUrl = "https://duckduckgo.com/duckduckgo-help-pages/duckai"
+        let accessSubscriptionModelsUrl = "https://duckduckgo.com/duckduckgo-help-pages/duckai/access-subscriber-AI-models/"
+        let loginThirdPartyBrowserUrl = "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/activating/"
+        let somethingElseUrl = "https://duckduckgo.com/duckduckgo-help-pages/duckai/"
 
         #expect(PaidAIChatFeedbackSubcategory.accessSubscriptionModels.url.absoluteString == accessSubscriptionModelsUrl)
         #expect(PaidAIChatFeedbackSubcategory.loginThirdPartyBrowser.url.absoluteString == loginThirdPartyBrowserUrl)

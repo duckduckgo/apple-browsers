@@ -1998,10 +1998,9 @@ class MainViewController: UIViewController {
                 Logger.subscription.fault("Missing entitlements payload")
                 return
             }
-            let hasEntitlement = payload.entitlements.contains(.networkProtection)
+            let hasEntitlements = payload.entitlements.contains(.networkProtection)
             let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
-            let hasEntitlements = (try? await subscriptionManager.isEnabled(feature: .networkProtection)) ?? false
 
             if hasEntitlements {
                 PixelKit.fire(

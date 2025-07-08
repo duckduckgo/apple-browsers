@@ -132,7 +132,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// - Parameter webView: The `WKWebView` whose URL is used to determine the referrer.
     private func setReferrer(webView: WKWebView) {
 
-        guard let url = webView.url else { return }
+        guard let url = webView.url, !url.absoluteString.isEmpty else { return }
 
         // SERP as a referrer
         if url.isDuckDuckGoSearch {
@@ -316,6 +316,9 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return .notHandled(.featureOff) }
 
+        // Notify user script of URL change for all URLs
+        notifyUserScriptOfURLChange(webView: webView, newURL: newURL)
+
         // Skip if the new URL is a YouTube watch page with a hashtag
         // This is a special case where YouTube navigates to/from intenal UI (Search, setttings, etc)
         if let previousID = previousURL?.youtubeVideoParams?.0,
@@ -382,7 +385,6 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Present Duck Player Pill (Native entry point)
         if duckPlayer.settings.nativeUIYoutubeMode == .ask {
             lastHandledVideoID = videoID
-            notifyUserScriptOfURLChange(webView: webView, newURL: newURL)
             presentDuckPlayerPill(for: videoID, timestamp: nil)
             return .handled(.duckPlayerEnabled)
         }
@@ -390,7 +392,6 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Present Duck Player
         if duckPlayer.settings.nativeUIYoutubeMode == .auto {
             lastHandledVideoID = videoID
-            notifyUserScriptOfURLChange(webView: webView, newURL: newURL)
             Task { @MainActor in await pauseVideoStart(webView: webView) }
             presentDuckPlayerPill(for: videoID, timestamp: nil)
             presentDuckPlayer(for: videoID, timestamp: nil)

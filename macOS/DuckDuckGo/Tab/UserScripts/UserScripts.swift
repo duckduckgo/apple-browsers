@@ -158,7 +158,7 @@ final class UserScripts: UserScriptsProvider {
         }
 
         var delegate: Subfeature
-        if !Application.appDelegate.isAuthV2Enabled {
+        if !Application.appDelegate.isUsingAuthV2 {
             guard let subscriptionManager = Application.appDelegate.subscriptionManagerV1 else {
                 assertionFailure("SubscriptionManager is not available")
                 return
@@ -186,7 +186,7 @@ final class UserScripts: UserScriptsProvider {
         userScripts.append(subscriptionPagesUserScript)
 
         let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                                                                        isAuthV2Enabled: Application.appDelegate.isAuthV2Enabled)
+                                                                                        isAuthV2Enabled: Application.appDelegate.isUsingAuthV2)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
     }

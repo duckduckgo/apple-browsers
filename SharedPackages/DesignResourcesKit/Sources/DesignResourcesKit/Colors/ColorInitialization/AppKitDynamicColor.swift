@@ -1,5 +1,5 @@
 //
-//  AIChatSummarizationRequest.swift
+//  AppKitDynamicColor.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,21 +16,26 @@
 //  limitations under the License.
 //
 
-import Foundation
+import SwiftUI
 
-/// This struct represents an object that's posted in `aiChatSummarizationRequest` notification.
-struct AIChatSummarizationRequest: Equatable {
-    /// The text to be summarized
-    let text: String
+#if canImport(AppKit)
+extension DynamicColor {
+    var nsColor: NSColor {
+        NSColor(name: nil, dynamicProvider: dynamicProvider)
+    }
 
-    /// The source of the summarize action
-    let source: Source
+    var dynamicProvider: (NSAppearance) -> NSColor {
+        { appearance in
+            switch appearance.bestMatch(from: [.aqua, .darkAqua]) {
+            case .aqua: return NSColor(lightColor)
+            case .darkAqua: return NSColor(darkColor)
+            default: return NSColor(lightColor)
+            }
+        }
+    }
 
-    enum Source: String {
-        case contextMenu = "context-menu", keyboardShortcut = "keyboard-shortcut"
+    var color: Color {
+        Color(nsColor)
     }
 }
-
-extension NSNotification.Name {
-    static let aiChatSummarizationRequest = Notification.Name(rawValue: "com.duckduckgo.notification.aiChatSummarizationRequest")
-}
+#endif

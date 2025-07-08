@@ -312,7 +312,8 @@ extension OmniBarEditingStateViewController: AutocompleteViewControllerDelegate 
     }
 
     func autocomplete(pressedPlusButtonForSuggestion suggestion: Suggestion) {
-
+        guard let textToUpdate = extractText(from: suggestion) else { return }
+        switchBarHandler.updateCurrentText(textToUpdate)
     }
 
     func autocompleteWasDismissed() {
@@ -465,5 +466,39 @@ extension OmniBarEditingStateViewController {
                 self.view.layoutIfNeeded()
             }
         )
+    }
+}
+
+// MARK: - Extract Suggestions
+extension OmniBarEditingStateViewController {
+    private func extractText(from suggestion: Suggestion) -> String? {
+        switch suggestion {
+        case .phrase(let phrase):
+            return phrase
+        case .website(let url):
+            return extractTextFromURL(url)
+        case .bookmark(let title, _, _, _):
+            return title
+        case .historyEntry(let title, _, _):
+            return title
+        case .openTab:
+            return nil
+
+        case .unknown(let value),
+                .internalPage(let value, _, _):
+            assertionFailure("Unexpected suggestion type: \(value)")
+            return nil
+        }
+    }
+
+    private func extractTextFromURL(_ url: URL) -> String? {
+        if url.isDuckDuckGoSearch, let query = url.searchQuery {
+            return query
+        }
+
+        if url.isBookmarklet() {
+            return nil
+        }
+        return url.absoluteString
     }
 }

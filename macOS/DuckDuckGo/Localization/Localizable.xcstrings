@@ -27031,6 +27031,18 @@
         }
       }
     },
+    "freemium.dbp.menu.item" : {
+      "comment" : "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Personal Information Scan"
+          }
+        }
+      }
+    },
     "general.feedback-form.category.ai-chat" : {
       "comment" : "Description for the feedback form when the issue is related to Duck.ai",
       "extractionState" : "extracted_with_value",
@@ -27043,18 +27055,6 @@
         }
       },
       "shouldTranslate" : false
-    },
-    "freemium.dbp.menu.item" : {
-      "comment" : "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Personal Information Scan"
-          }
-        }
-      }
     },
     "general.feedback-form.category.itr" : {
       "comment" : "Description for the feedback form when the issue is related to Identity Theft Restoration (ITR)",
@@ -40781,6 +40781,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Страница новой вкладки"
+          }
+        }
+      }
+    },
+    "newTab.favorites.section.omnibar" : {
+      "comment" : "Title of the Search section in the home page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search"
           }
         }
       }

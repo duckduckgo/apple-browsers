@@ -63,7 +63,7 @@ enum AIChatPixel: PixelKitEventV2 {
     // MARK: - Summarization
 
     /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
-    case aiChatSummarizeText(source: AIChatSummarizationRequest.Source)
+    case aiChatSummarizeText(source: AIChatTextSummarizationRequest.Source)
 
     /// Event Trigger: User clicks "Show more" on a (collapsed by default) summarize prompt in Duck.ai tab or sidebar
     case aiChatSummarizePromptExpanded

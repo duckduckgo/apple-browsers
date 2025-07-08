@@ -796,9 +796,13 @@ extension MainViewController {
                 guard let selectedText, !selectedText.isEmpty else {
                     return
                 }
-                NotificationCenter.default.post(name: .aiChatSummarizationRequest,
-                                                object: AIChatSummarizationRequest(text: selectedText, source: .keyboardShortcut),
-                                                userInfo: nil)
+                let request = AIChatTextSummarizationRequest(
+                    text: selectedText,
+                    websiteURL: browserTabViewController.webView?.url,
+                    websiteTitle: browserTabViewController.webView?.title,
+                    source: .keyboardShortcut
+                )
+                aiChatSummarizer.summarize(request)
             } catch {
                 Logger.aiChat.error("Failed to get selected text from the webView")
             }

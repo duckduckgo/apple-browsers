@@ -82,7 +82,8 @@ final class TabViewModelTests: XCTestCase {
         let tab = Tab(content: .url(url, source: .link))
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(showFullURL: false),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
         let tabViewModel = TabViewModel(tab: tab, appearancePreferences: appearancePreferences)
 
@@ -105,7 +106,8 @@ final class TabViewModelTests: XCTestCase {
         let tab = Tab(content: .url(url, source: .link))
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(showFullURL: true),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
         let tabViewModel = TabViewModel(tab: tab, appearancePreferences: appearancePreferences)
 
@@ -249,7 +251,8 @@ final class TabViewModelTests: XCTestCase {
             tab: Tab(),
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
-                privacyConfigurationManager: MockPrivacyConfigurationManager()
+                privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                featureFlagger: MockFeatureFlagger()
             ),
             accessibilityPreferences: AccessibilityPreferences()
         )
@@ -279,7 +282,8 @@ final class TabViewModelTests: XCTestCase {
             tab: Tab(),
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
-                privacyConfigurationManager: MockPrivacyConfigurationManager()
+                privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                featureFlagger: MockFeatureFlagger()
             )
         )
 
@@ -344,7 +348,8 @@ final class TabViewModelTests: XCTestCase {
             tab: tab,
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
-                privacyConfigurationManager: MockPrivacyConfigurationManager()
+                privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                featureFlagger: MockFeatureFlagger()
             )
         )
 
@@ -368,7 +373,8 @@ final class TabViewModelTests: XCTestCase {
             tab: burnerTab,
             appearancePreferences: AppearancePreferences(
                 keyValueStore: try MockKeyValueFileStore(),
-                privacyConfigurationManager: MockPrivacyConfigurationManager()
+                privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                featureFlagger: MockFeatureFlagger()
             )
         )
 

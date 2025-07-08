@@ -273,12 +273,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     private let tokenHandlerProvider: () -> any SubscriptionTokenHandling
     @objc
-    public static var shouldUseAuthV2: Bool {
+    public static var isUsingAuthV2: Bool {
         get {
-            UserDefaults.standard.bool(forKey: #keyPath(shouldUseAuthV2))
+            UserDefaults.standard.bool(forKey: #keyPath(isUsingAuthV2))
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: #keyPath(shouldUseAuthV2))
+            UserDefaults.standard.set(newValue, forKey: #keyPath(isUsingAuthV2))
         }
     }
 
@@ -515,7 +515,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         loadTesterEnabled(from: options)
 #if os(macOS)
         loadAuthVersion(from: options)
-        if !Self.shouldUseAuthV2 {
+        if !Self.isUsingAuthV2 {
             try await loadAuthToken(from: options)
         } else {
             try await loadTokenContainer(from: options)
@@ -602,13 +602,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         switch options.isAuthV2Enabled {
         case .set(let newAuthVersion):
             Logger.networkProtection.log("Set new isAuthV2Enabled")
-            Self.shouldUseAuthV2 = newAuthVersion
+            Self.isUsingAuthV2 = newAuthVersion
         case .useExisting:
             Logger.networkProtection.log("Use existing isAuthV2Enabled")
         case .reset:
             Logger.networkProtection.log("Reset isAuthV2Enabled")
         }
-        Logger.networkProtection.log("Load isAuthV2Enabled: \(Self.shouldUseAuthV2, privacy: .public)")
+        Logger.networkProtection.log("Load isAuthV2Enabled: \(Self.isUsingAuthV2, privacy: .public)")
     }
 
     private func loadAuthToken(from options: StartupOptions) async throws {

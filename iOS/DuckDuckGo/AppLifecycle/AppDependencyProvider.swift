@@ -60,7 +60,7 @@ protocol DependencyProvider {
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge { get }
     var subscriptionManager: (any SubscriptionManager)? { get }
     var subscriptionManagerV2: (any SubscriptionManagerV2)? { get }
-    var shouldUseAuthV2: Bool { get }
+    var isUsingAuthV2: Bool { get }
     var subscriptionAuthMigrator: AuthMigrator { get }
 
     // DBP
@@ -92,7 +92,7 @@ final class AppDependencyProvider: DependencyProvider {
     let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     var subscriptionManager: (any SubscriptionManager)?
     var subscriptionManagerV2: (any SubscriptionManagerV2)?
-    let shouldUseAuthV2: Bool
+    let isUsingAuthV2: Bool
     public let subscriptionAuthMigrator: AuthMigrator
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
@@ -171,14 +171,14 @@ final class AppDependencyProvider: DependencyProvider {
                                                     pixelHandler: pixelHandler,
                                                     isAuthV2Enabled: isAuthV2Enabled)
 
-        shouldUseAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
+        isUsingAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
 
-        vpnSettings.isAuthV2Enabled = shouldUseAuthV2
-        dbpSettings.isAuthV2Enabled = shouldUseAuthV2
+        vpnSettings.isAuthV2Enabled = isUsingAuthV2
+        dbpSettings.isAuthV2Enabled = isUsingAuthV2
         vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
         dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
-        if shouldUseAuthV2 {
+        if isUsingAuthV2 {
             Logger.subscription.debug("Configuring Subscription V2")
 
             var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent)

@@ -471,9 +471,9 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                     pixelHandler: pixelHandler,
                                                     isAuthV2Enabled: settings.isAuthV2Enabled)
-        Self.shouldUseAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
+        Self.isUsingAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
 
-        if Self.shouldUseAuthV2 {
+        if Self.isUsingAuthV2 {
             Logger.networkProtection.log("Configure Subscription V2")
 
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),

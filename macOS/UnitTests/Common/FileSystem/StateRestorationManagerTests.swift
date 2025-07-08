@@ -34,6 +34,8 @@ final class StateRestorationManagerTests: XCTestCase {
 
     override func tearDown() {
         srm = nil
+        fileStore = nil
+        state = nil
     }
 
     @MainActor

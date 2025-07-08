@@ -55,6 +55,12 @@ final class DefaultHistoryViewTabOpenerTests: XCTestCase {
         tabOpener.dialogPresenter = dialogPresenter
     }
 
+    override func tearDown() {
+        dialogPresenter = nil
+        tabOpener = nil
+        urlOpener = nil
+    }
+
     // MARK: - open
 
     @MainActor

@@ -43,7 +43,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     var subscriptionManager: SubscriptionManagerMock!
 
-    private var mockFreemiumDBPPresenter = MockFreemiumDBPPresenter()
+    private var mockFreemiumDBPPresenter: MockFreemiumDBPPresenter! = .init()
     private var mockFreemiumDBPFeature: MockFreemiumDBPFeature!
     private var mockNotificationCenter: MockNotificationCenter!
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
@@ -92,7 +92,18 @@ final class MoreOptionsMenuTests: XCTestCase {
         capturingActionDelegate = nil
         subscriptionManager = nil
         moreOptionsMenu = nil
-        super.tearDown()
+        defaultBrowserProvider = nil
+        dockCustomizer = nil
+        fireproofDomains = nil
+        internalUserDecider = nil
+        mockFeatureFlagger = nil
+        mockFreemiumDBPFeature = nil
+        mockFreemiumDBPPresenter = nil
+        mockFreemiumDBPUserStateManager = nil
+        mockNotificationCenter = nil
+        mockPixelHandler = nil
+        networkProtectionVisibilityMock = nil
+        storePurchaseManager = nil
     }
 
     @MainActor

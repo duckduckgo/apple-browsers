@@ -22,8 +22,13 @@ import PixelKitTestingUtilities
 @testable import PixelKit
 
 final class BookmarkManagementDetailViewModelTests: XCTestCase {
-    private let testUserDefault = UserDefaults(suiteName: #function)!
-    private let metrics = BookmarksSearchAndSortMetrics()
+    private var testUserDefault: UserDefaults! = UserDefaults(suiteName: #function)!
+    private var metrics: BookmarksSearchAndSortMetrics! = BookmarksSearchAndSortMetrics()
+
+    override func tearDown() {
+        testUserDefault = nil
+        metrics = nil
+    }
 
     // MARK: - Empty selection state tests
 

@@ -34,7 +34,8 @@ class AutoconsentMessageProtocolTests: XCTestCase {
 
         let appearancePreferences = AppearancePreferences(
             keyValueStore: try MockKeyValueFileStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
@@ -64,6 +65,10 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         )
 
         CookiePopupProtectionPreferences.shared.isAutoconsentEnabled = true
+    }
+
+    override func tearDown() {
+        userScript = nil
     }
 
     func replyToJson(msg: Any) -> String {

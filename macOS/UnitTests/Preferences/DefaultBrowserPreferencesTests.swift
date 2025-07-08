@@ -50,6 +50,10 @@ final class DefaultBrowserPreferencesTests: XCTestCase {
         provider = DefaultBrowserProviderMock()
     }
 
+    override func tearDown() {
+        provider = nil
+    }
+
     func testWhenInitializedThenIsDefaultIsTakenFromProvider() throws {
         provider.isDefault = true
         XCTAssertTrue(DefaultBrowserPreferences(defaultBrowserProvider: provider).isDefault)

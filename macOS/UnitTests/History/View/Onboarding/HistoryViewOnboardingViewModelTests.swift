@@ -34,6 +34,12 @@ final class HistoryViewOnboardingViewModelTests: XCTestCase {
         )
     }
 
+    override func tearDown() {
+        settingsStorage = nil
+        viewModel = nil
+        ctaCalls = []
+    }
+
     func testThatMarkAsShownUpdatesStorageAndDoesNotTriggerCTA() throws {
         viewModel.markAsShown()
         XCTAssertEqual(ctaCalls.count, 0)

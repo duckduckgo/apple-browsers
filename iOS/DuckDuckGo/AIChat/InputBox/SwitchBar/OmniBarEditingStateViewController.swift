@@ -267,9 +267,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     func setUpForInitialSelectedState() {
         switchBarVC.textEntryViewController.selectAllText()
         
-        // Ensure we're on the search page and show favorites
         if switchBarHandler.currentToggleState == .search {
-            showSuggestionTray(.favorites)
+            self.showSuggestionTray(.favorites)
         }
         updateScrollViewPosition(animated: false)
     }
@@ -332,8 +331,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         ])
         
         hostingController.didMove(toParent: self)
-        
-        // The action bar state is now automatically managed by the ViewModel
     }
     
     // MARK: - Navigation Action Bar Handlers
@@ -350,8 +347,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             switchBarHandler.submitText(currentText)
         }
     }
-    
-
 }
 
 extension OmniBarEditingStateViewController: AutocompleteViewControllerDelegate {
@@ -398,18 +393,25 @@ extension OmniBarEditingStateViewController {
     }
 
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {
-        let canShowSuggestion = suggestionTrayViewController?.canShow(for: type) == true
-        suggestionTrayViewController?.view.isHidden = !canShowSuggestion
-
+        guard let suggestionTray = suggestionTrayViewController else { return }
+        
+        let canShowSuggestion = suggestionTray.canShow(for: type)
+        
         if canShowSuggestion {
-            suggestionTrayViewController?.fill()
-            suggestionTrayViewController?.show(for: type)
+            suggestionTray.fill()
+            suggestionTray.show(for: type)
+            
+            suggestionTray.view.isHidden = false
+        } else {
+            suggestionTray.view.isHidden = true
         }
     }
 
 
     private func installSuggestionsTray() {
         guard let dependencies = suggestionTrayDependencies else { return }
+        guard suggestionTrayViewController == nil else { return }
+        
         let storyboard = UIStoryboard(name: "SuggestionTray", bundle: nil)
 
         guard let controller = storyboard.instantiateInitialViewController(creator: { coder in
@@ -429,6 +431,9 @@ extension OmniBarEditingStateViewController {
         suggestionTrayViewController = controller
         controller.view.translatesAutoresizingMaskIntoConstraints = false
 
+        /// Prevent flash during initial load
+        controller.view.isHidden = true
+
         NSLayoutConstraint.activate([
             controller.view.leadingAnchor.constraint(equalTo: searchPageContainer.leadingAnchor, constant: 6),
             controller.view.trailingAnchor.constraint(equalTo: searchPageContainer.trailingAnchor, constant: -6),
@@ -438,9 +443,10 @@ extension OmniBarEditingStateViewController {
 
         controller.autocompleteDelegate = self
         controller.favoritesOverlayDelegate = self
-        suggestionTrayViewController = controller
 
         controller.didMove(toParent: self)
+        
+        view.layoutIfNeeded()
     }
 }
 
@@ -554,21 +560,11 @@ extension OmniBarEditingStateViewController: UIScrollViewDelegate {
     
     private func updateScrollViewPosition(animated: Bool) {
         guard swipeScrollView != nil else { return }
-        
-        isUpdatingScrollViewProgrammatically = true
-        
         let targetX: CGFloat = switchBarHandler.currentToggleState == .search ? 0 : view.bounds.width
         swipeScrollView.setContentOffset(CGPoint(x: targetX, y: 0), animated: animated)
-        
-        // Reset flag after a brief delay to allow the scroll view to settle
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.isUpdatingScrollViewProgrammatically = false
-        }
     }
     
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        guard !isUpdatingScrollViewProgrammatically else { return }
-        
         let pageWidth = scrollView.frame.width
         let currentPage = Int(scrollView.contentOffset.x / pageWidth)
         
@@ -589,18 +585,16 @@ extension OmniBarEditingStateViewController {
             .sink { [weak self] newState in
                 guard let self = self else { return }
                 
-                // Update scroll view position
                 self.updateScrollViewPosition(animated: true)
                 
                 switch newState {
                 case .search:
-                    if self.switchBarHandler.currentText.isEmpty {
-                        self.showSuggestionTray(.favorites)
-                    } else {
-                        self.showSuggestionTray(.autocomplete(query: self.switchBarHandler.currentText))
-                    }
+                        if self.switchBarHandler.currentText.isEmpty {
+                            self.showSuggestionTray(.favorites)
+                        } else {
+                            self.showSuggestionTray(.autocomplete(query: self.switchBarHandler.currentText))
+                        }
                 case .aiChat:
-                    // Chat page is transparent, logo will be visible behind it
                     break
                 }
             }

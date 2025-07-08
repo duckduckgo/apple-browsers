@@ -46,7 +46,8 @@ protocol AIChatSidebarPresenting {
     /// Emits events whenever sidebar is shown or hidden for a tab.
     var sidebarPresenceWillChangePublisher: AnyPublisher<AIChatSidebarPresenceChange, Never> { get }
 
-    func handleSummarizationPrompt(_ prompt: AIChatNativePrompt)
+    /// Consumes `prompt` and presents it in the sidebar. Appends to existing conversation if that was present.
+    func presentSidebar(for prompt: AIChatNativePrompt)
 }
 
 final class AIChatSidebarPresenter: AIChatSidebarPresenting {
@@ -148,7 +149,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         }
     }
 
-    func handleSummarizationPrompt(_ prompt: AIChatNativePrompt) {
+    func presentSidebar(for prompt: AIChatNativePrompt) {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
         guard let currentTabID = sidebarHost.currentTabID else { return }
 
@@ -157,7 +158,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         if !isShowingSidebar {
             AIChatPromptHandler.shared.setData(prompt)
 
-            // If not showing the sidebar, open it with the summarization prompt
+            // If not showing the sidebar, open it with the prompt
             updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
         } else {
             let sidebarViewController = sidebarProvider.sidebar(for: currentTabID).sidebarViewController

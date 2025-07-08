@@ -77,6 +77,7 @@ public final class CrashCollection {
                 .map { diagnostic in
                     var params = [
                         "appVersion": "\(diagnostic.applicationVersion).\(diagnostic.metaData.applicationBuildVersion)",
+                        "bundle": diagnostic.metaData.dictionaryRepresentation()["bundleIdentifier"] as? String ?? "",
                         "code": "\(diagnostic.exceptionCode ?? -1)",
                         "type": "\(diagnostic.exceptionType ?? -1)",
                         "signal": "\(diagnostic.signal ?? -1)",

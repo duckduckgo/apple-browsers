@@ -892,9 +892,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if APPSTORE
         crashCollection.startAttachingCrashLogMessages { pixelParameters, payloads, completion in
+            
             pixelParameters.forEach { parameters in
-                PixelKit.fire(GeneralPixel.crash, withAdditionalParameters: parameters, includeAppVersionParameter: false)
-                PixelKit.fire(GeneralPixel.crashDaily, frequency: .legacyDailyNoSuffix, withAdditionalParameters: parameters, includeAppVersionParameter: false)
+
+                // Calculate appIdentifier for what crashed - nil for main bundle, otherwise the app identifier is the bundle identifier minus the main bundle identifier.
+                var params = parameters
+                var appIdentifier: String?
+                if let bundle = params.removeValue(forKey: "bundle"),
+                   let mainBundle = Bundle.main.bundleIdentifier {
+                    if bundle != mainBundle {
+                        appIdentifier = bundle.dropping(prefix: mainBundle).removingCharacters(in: .punctuationCharacters).lowercased()
+                    }
+                }
+
+                PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), withAdditionalParameters: parameters, includeAppVersionParameter: false)
+                PixelKit.fire(GeneralPixel.crashDaily(appIdentifier: appIdentifier), frequency: .legacyDailyNoSuffix, withAdditionalParameters: parameters, includeAppVersionParameter: false)
             }
 
             guard let lastPayload = payloads.last else {

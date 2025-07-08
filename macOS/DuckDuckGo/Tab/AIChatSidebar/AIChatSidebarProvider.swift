@@ -65,7 +65,7 @@ protocol AIChatSidebarProviding: AnyObject {
 final class AIChatSidebarProvider: AIChatSidebarProviding {
 
     enum Constants {
-        static let sidebarWidth: CGFloat = 450
+        static let sidebarWidth: CGFloat = 400
     }
 
     var sidebarWidth: CGFloat { Constants.sidebarWidth }

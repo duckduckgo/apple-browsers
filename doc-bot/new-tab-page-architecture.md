@@ -2,7 +2,7 @@
 alwaysApply: false
 title: "New Tab Page Architecture & Implementation Guide"
 description: "Comprehensive guide for New Tab Page implementation including widget architecture and multi-tab synchronization"
-keywords: ["macOS", "New Tab Page", "NTP", "widgets", "user script", "favorites", "privacy stats", "recent activity", "remote messages", "macOS", "NewTabPageActionsManager", "widget architecture"]
+keywords: ["macOS only", "New Tab Page", "NTP", "widgets", "user script", "favorites", "privacy stats", "recent activity", "remote messages", "macOS", "NewTabPageActionsManager", "widget architecture"]
 ---
 
 # New Tab Page (NTP) Architecture

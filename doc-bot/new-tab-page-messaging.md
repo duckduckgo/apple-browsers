@@ -2,19 +2,7 @@
 alwaysApply: false
 title: "New Tab Page Messaging & JSON-RPC Implementation"
 description: "JSON-RPC messaging patterns and content-scope-scripts integration for New Tab Page"
-keywords: ["NTP messaging", "JSON-RPC", "content-scope-scripts", "user script communication", "WebKit messaging", "message handlers", "NewTabPageUserScript", "WKScriptMessageHandler"]
----
-
-# New Tab Page Messaging & JSON-RPC Implementation
-
-**Description:** JSON-RPC messaging patterns between New Tab Page user scripts and native code, including content-scope-scripts integration
-
-**Keywords:** NTP messaging, JSON-RPC, content-scope-scripts, user script communication, WebKit messaging, message handlers
-
-**Always Apply:** No (Contextual Rule)
-
-**File:** new-tab-page-messaging.md
-
+keywords: ["macOS only","NTP messaging", "JSON-RPC", "content-scope-scripts", "user script communication", "WebKit messaging", "message handlers", "NewTabPageUserScript", "WKScriptMessageHandler"]
 ---
 
 # NTP Messaging Architecture

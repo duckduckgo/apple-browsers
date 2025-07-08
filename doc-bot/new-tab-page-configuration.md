@@ -2,19 +2,7 @@
 alwaysApply: false
 title: "New Tab Page Configuration Management"
 description: "Configuration patterns for New Tab Page widgets including visibility and settings management"
-keywords: ["NTP configuration", "widget visibility", "NewTabPageConfigurationClient", "widget settings", "configuration persistence", "widget availability", "configuration migration"]
----
-
-# New Tab Page Configuration Management
-
-**Description:** Configuration patterns for New Tab Page widgets including visibility management, widget availability, and settings persistence
-
-**Keywords:** NTP configuration, widget visibility, NewTabPageConfigurationClient, widget settings, configuration persistence
-
-**Always Apply:** No (Contextual Rule)
-
-**File:** new-tab-page-configuration.md
-
+keywords: ["macOS only","NTP configuration", "widget visibility", "NewTabPageConfigurationClient", "widget settings", "configuration persistence", "widget availability", "configuration migration"]
 ---
 
 # NTP Configuration Management

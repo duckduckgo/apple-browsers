@@ -2,7 +2,7 @@
 alwaysApply: false
 title: "New Tab Page Widget Development Guidelines"
 description: "Detailed patterns for developing individual NTP widgets with comprehensive testing strategies"
-keywords: ["macOS", "NTP widgets", "favorites widget", "privacy stats widget", "recent activity", "remote messages", "widget testing", "mocks", "capturing pattern", "NewTabPageFavoritesClient", "widget development"]
+keywords: ["macOS only", "NTP widgets", "favorites widget", "privacy stats widget", "recent activity", "remote messages", "widget testing", "mocks", "capturing pattern", "NewTabPageFavoritesClient", "widget development"]
 ---
 # NTP Widget Development Patterns
 

@@ -132,6 +132,8 @@ struct DataImportViewModel {
     /// collected import summary for current import operation per selected import source
     private(set) var summary: [DataTypeImportResult]
 
+    private(set) var errors: [[DataType: any DataImportError]] = []
+
     private var userReportText: String = ""
 
 #if DEBUG || REVIEW
@@ -312,6 +314,7 @@ struct DataImportViewModel {
     /// handle recoverable errors (request primary password or file permission)
     @MainActor
     private mutating func handleErrors(_ summary: [DataType: any DataImportError]) -> Bool {
+        errors.append(summary)
         for error in summary.values {
             switch error {
             // chromium user denied keychain prompt error

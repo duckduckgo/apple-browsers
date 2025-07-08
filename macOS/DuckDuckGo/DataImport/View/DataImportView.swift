@@ -30,6 +30,9 @@ struct DataImportView: ModalView {
     @State var model: DataImportViewModel
     let title: String
 
+    @State private var isInternalUser = false
+    let internalUserDecider: InternalUserDecider = Application.appDelegate.internalUserDecider
+
     init(model: DataImportViewModel = DataImportViewModel(), title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool) {
         self._model = State(initialValue: model)
         self.title = title
@@ -43,9 +46,15 @@ struct DataImportView: ModalView {
     }
     @State private var progress: ProgressState?
 
-#if DEBUG || REVIEW
     @State private var debugViewDisabled: Bool = false
+
+    private var shouldShowDebugView: Bool {
+#if DEBUG || REVIEW
+        return !debugViewDisabled
+#else
+        return (!debugViewDisabled && isInternalUser) || (!model.errors.isEmpty && isInternalUser)
 #endif
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -72,15 +81,16 @@ struct DataImportView: ModalView {
                 .padding(.bottom, 16)
                 .padding(.trailing, 20)
 
-#if DEBUG || REVIEW
-            if !debugViewDisabled {
+            if shouldShowDebugView {
                 debugView()
             }
-#endif
         }
         .font(.system(size: 13))
         .frame(width: 420)
         .fixedSize()
+        .onReceive(internalUserDecider.isInternalUserPublisher.removeDuplicates()) {
+            isInternalUser = $0
+        }
     }
 
     @ViewBuilder
@@ -220,8 +230,8 @@ struct DataImportView: ModalView {
                     DataImportNoDataView(source: model.importSource, dataType: dataType)
                         .padding(.bottom, 24)
                 // if browser importer failed - display error message
-                } else if let error = model.error(for: dataType) {
-                    DataImportErrorView(source: model.importSource, dataType: dataType, error: error)
+                } else if model.error(for: dataType) != nil {
+                    DataImportErrorView(source: model.importSource, dataType: dataType)
                         .padding(.bottom, 24)
                 }
 
@@ -326,12 +336,31 @@ struct DataImportView: ModalView {
         }
     }
 
-#if DEBUG || REVIEW
     private func debugView() -> some View {
 
         VStack(alignment: .leading, spacing: 10) {
             Divider()
 
+            if model.errors.count > 0 {
+                Text(verbatim: "ERRORS:" as String).bold()
+                    .padding(.top, 10)
+                    .padding(.leading, 20)
+
+                ForEach(model.errors.indices, id: \.self) { idx in
+                    if let (key, value) = model.errors[idx].first {
+                        if #available(macOS 12.0, *) {
+                            Text(verbatim: "\(key.rawValue.uppercased()): \(value)").textSelection(.enabled)
+                        } else {
+                            Text(verbatim: "\(key.rawValue.uppercased()): \(value)")
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 10)
+
+                Divider()
+            }
+#if DEBUG || REVIEW
             HStack {
                 Text("REVIEW:" as String).bold()
                     .padding(.top, 10)
@@ -353,6 +382,7 @@ struct DataImportView: ModalView {
                     .padding(.leading, 20)
                     .padding(.trailing, 20)
             }
+#endif
         }
         .padding(.bottom, 10)
         .background(Color(NSColor(red: 1, green: 0, blue: 0, alpha: 0.2)))
@@ -394,7 +424,6 @@ struct DataImportView: ModalView {
                 .frame(width: 150, alignment: .leading)
         }
     }
-#endif
 
 }
 

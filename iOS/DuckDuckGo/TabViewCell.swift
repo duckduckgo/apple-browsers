@@ -103,13 +103,12 @@ final class TabViewCell: UICollectionViewCell {
     @IBOutlet var previewTopConstraint: NSLayoutConstraint?
     @IBOutlet var previewBottomConstraint: NSLayoutConstraint?
     @IBOutlet var previewTrailingConstraint: NSLayoutConstraint?
+
     /// Note that backgroundView and selectedBackgroundView are provided by UICollectionViewCell and we don't use them for legacy and design reasons, so ignore them.
     func setupSubviews() {
 
         preview?.layer.cornerRadius = Constants.previewCornerRadius
         preview?.layer.masksToBounds = true
-        preview?.layer.borderWidth = 2
-        preview?.layer.borderColor = UIColor.red.cgColor
 
         backgroundColor = .clear
         
@@ -142,7 +141,6 @@ final class TabViewCell: UICollectionViewCell {
             preview?.removeConstraint(constraint)
         }
 
-        previewTopConstraint?.constant = Constants.cellHeaderHeight
         previewBottomConstraint?.isActive = !strechContainerVerically
         previewTrailingConstraint?.isActive = strechContainerVerically
 
@@ -158,7 +156,6 @@ final class TabViewCell: UICollectionViewCell {
             previewAspectRatio = nil
         }
 
-        previewTopConstraint?.constant = 0
         previewBottomConstraint?.isActive = true
         previewTrailingConstraint?.isActive = true
     }

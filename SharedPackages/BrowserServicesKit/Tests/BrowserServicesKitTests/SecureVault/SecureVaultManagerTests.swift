@@ -1455,10 +1455,6 @@ private class MockSecureVaultManagerDelegate: SecureVaultManagerDelegate {
 
     func secureVaultManager(_: BrowserServicesKit.SecureVaultManager, promptUserWithGeneratedPassword password: String, completionHandler: @escaping (Bool) -> Void) {}
 
-    func secureVaultManager(_: SecureVaultManager,
-                            promptUserToImportCredentialsForDomain domain: String,
-                            completionHandler: @escaping (Bool) -> Void) {}
-
     func secureVaultManager(_: SecureVaultManager, didAutofill type: AutofillType, withObjectId objectId: String) {}
 
     func secureVaultManager(_: SecureVaultManager, didRequestAuthenticationWithCompletionHandler: @escaping (Bool) -> Void) {}

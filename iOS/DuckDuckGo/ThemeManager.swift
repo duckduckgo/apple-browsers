@@ -26,7 +26,6 @@ protocol ThemeManaging {
     var currentTheme: Theme { get }
     var currentInterfaceStyle: UIUserInterfaceStyle { get }
 
-    func updateColorScheme()
     func setThemeStyle(_ style: ThemeStyle)
 
     func updateUserInterfaceStyle(window: UIWindow?)
@@ -57,12 +56,6 @@ class ThemeManager: ThemeManaging {
 
     init(settings: AppSettings = AppUserDefaults(), featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         appSettings = settings
-
-        updateColorScheme()
-    }
-
-    public func updateColorScheme() {
-        DesignSystemPalette.current = .experimental
     }
 
     public func setThemeStyle(_ style: ThemeStyle) {

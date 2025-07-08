@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 
 public enum StepType: String, Codable, Equatable, Sendable {
     case scan
@@ -76,13 +77,13 @@ public struct Step: Codable, Sendable {
 
         for list in actions {
             guard let typeValue = list["actionType"] as? String else { continue }
-
+            
             guard let actionType = ActionType(rawValue: typeValue) else {
                 throw DecodingError.unsupportedActionType
             }
-
+            
             let jsonData = try JSONSerialization.data(withJSONObject: list, options: .prettyPrinted)
-
+            
             switch actionType {
             case .click:
                 let action = try JSONDecoder().decode(ClickAction.self, from: jsonData)
@@ -108,6 +109,8 @@ public struct Step: Codable, Sendable {
             case .emailConfirmation:
                 let action = try JSONDecoder().decode(EmailConfirmationAction.self, from: jsonData)
                 actionList.append(action)
+            case .condition:
+                continue
             }
         }
 

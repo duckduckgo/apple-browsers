@@ -233,7 +233,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
             }
             .store(in: &cancellables)
 
-        // Use the new swipe container subscription method
         updateSubscriptionsForSwipeContainer()
 
         switchBarHandler.textSubmissionPublisher

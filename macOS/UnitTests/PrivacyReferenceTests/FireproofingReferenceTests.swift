@@ -25,8 +25,8 @@ import XCTest
 
 final class FireproofingReferenceTests: XCTestCase {
     private var referenceTests = [Test]()
-    private let dataStore = WKWebsiteDataStore.default()
-    private let fireproofDomains = Application.appDelegate.fireproofDomains
+    private let dataStore: WKWebsiteDataStore! = WKWebsiteDataStore.default()
+    private let fireproofDomains: FireproofDomains! = Application.appDelegate.fireproofDomains
 
     private enum Resource {
         static let tests = "privacy-reference-tests/storage-clearing/tests.json"
@@ -41,6 +41,10 @@ final class FireproofingReferenceTests: XCTestCase {
     private func sanitizedSite(_ site: String) -> String {
         let url = URL(string: site)!
         return url.host ?? site
+    }
+
+    override var allowedNonNilVariables: Set<String> {
+        ["dataStore", "fireproofDomains"]
     }
 
     override func tearDownWithError() throws {

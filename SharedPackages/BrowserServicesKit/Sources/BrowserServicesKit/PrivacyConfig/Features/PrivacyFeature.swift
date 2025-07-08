@@ -46,6 +46,7 @@ public enum PrivacyFeature: String {
     case sync
     case privacyDashboard
     case history
+    case updatesWontAutomaticallyRestartApp
     case performanceMetrics
     case privacyPro
     case sslCertificates
@@ -79,6 +80,7 @@ public enum PrivacyFeature: String {
     case intentionallyLocalOnlyFeatureForTests
     case tabCrashRecovery
     case delayedWebviewPresentation
+    case disableFireAnimation
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

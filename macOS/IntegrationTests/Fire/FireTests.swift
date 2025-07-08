@@ -29,9 +29,12 @@ final class FireTests: XCTestCase {
 
     @MainActor
     override func tearDown() {
-        WindowsManager.closeWindows()
-        for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
-            Application.appDelegate.windowControllersManager.unregister(controller)
+        autoreleasepool {
+            WindowsManager.closeWindows()
+            for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
+                Application.appDelegate.windowControllersManager.unregister(controller)
+            }
+            cancellables = []
         }
     }
 
@@ -67,6 +70,7 @@ final class FireTests: XCTestCase {
 
     @MainActor
     func testWhenBurnAll_ThenPinnedTabsArePersisted() {
+
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()

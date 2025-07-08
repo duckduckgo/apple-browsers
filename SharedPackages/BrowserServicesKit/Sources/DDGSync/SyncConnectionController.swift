@@ -81,7 +81,7 @@ public protocol SyncConnectionControlling {
     func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool
 }
 
-public actor SyncConnectionController: SyncConnectionControlling {
+public class SyncConnectionController: SyncConnectionControlling {
     private let deviceName: String
     private let deviceType: String
     private let syncService: DDGSyncing

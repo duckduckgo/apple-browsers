@@ -28,6 +28,11 @@ final class RecentActivityFavoritesHandlerTests: XCTestCase {
         handler.loadBookmarks()
     }
 
+    override func tearDown() {
+        bookmarkStoreMock = nil
+        handler = nil
+    }
+
     func testWhenURLIsBookmarkedThenBookmarkIsReturned() async throws {
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [
             Bookmark(id: "1", url: "https://example.com", title: "Example", isFavorite: false)

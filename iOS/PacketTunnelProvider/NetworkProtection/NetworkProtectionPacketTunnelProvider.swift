@@ -532,7 +532,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         let errorStore = NetworkProtectionTunnelErrorStore()
         let notificationsPresenter = NetworkProtectionUNNotificationPresenter()
 
-        let notificationsPresenterDecorator = NetworkProtectionNotificationsPresenterTogglableDecorator(
+        let notificationsPresenterDecorator = VPNNotificationsPresenterTogglableDecorator(
             settings: settings,
             defaults: .networkProtectionGroupDefaults,
             wrappee: notificationsPresenter

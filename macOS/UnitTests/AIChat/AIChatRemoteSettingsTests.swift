@@ -40,6 +40,11 @@ class AIChatRemoteSettingsTests: XCTestCase {
                                                   internalUserDecider: MockInternalUserDecider())
         return AIChatRemoteSettings(privacyConfigurationManager: manager, debugURLSettings: debugURLProvider)
     }
+    override func tearDown() {
+        mockPrivacyConfigurationManager = nil
+        aiChatRemoteSettings = nil
+        debugURLProvider = nil
+    }
 
     func testValidRemoteURL_ThenConfigUsesRemoteURL() {
         var config = MockConfig()

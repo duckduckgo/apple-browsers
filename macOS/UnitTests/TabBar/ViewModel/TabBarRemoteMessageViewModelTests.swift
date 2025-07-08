@@ -24,6 +24,10 @@ import RemoteMessaging
 class TabBarRemoteMessageViewModelTests: XCTestCase {
     private var cancellables: Set<AnyCancellable> = []
 
+    override func tearDown() {
+        cancellables = []
+    }
+
     func testWhenModelIsNotForTabBar_thenIsNotSetAsRemoteMessage() {
         let mock = MockTabBarRemoteMessageProvider()
         let viewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: mock, isFireWindow: false)

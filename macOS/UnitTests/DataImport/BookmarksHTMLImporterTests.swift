@@ -24,10 +24,15 @@ final class BookmarksHTMLImporterTests: XCTestCase {
     var dataImporter: BookmarkHTMLImporter!
     var underlyingBookmarkImporter: MockBookmarkImporter!
 
-    override func setUpWithError() throws {
+    override func setUp() {
         underlyingBookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _ in
             .init(successful: 0, duplicates: 0, failed: 0)
         })
+    }
+
+    override func tearDown() {
+        dataImporter = nil
+        underlyingBookmarkImporter = nil
     }
 
     func bookmarksFileURL(_ name: String) -> URL {

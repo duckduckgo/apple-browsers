@@ -26,13 +26,11 @@ final class DownloadsTabExtensionTests: XCTestCase {
     private var testData: Data!
     private var testOriginatingURL: URL!
     private let filename = "Document.pdf"
-    private let fileManager = FileManager.default
+    private var fileManager: FileManager! = FileManager.default
     private var testDirectory: URL!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUpWithError() throws {
-        try super.setUpWithError()
-
         testData = try XCTUnwrap("test".data(using: .utf8))
         testDirectory = fileManager.temporaryDirectory
         testOriginatingURL = testDirectory.appendingPathComponent(UUID().uuidString + ".pdf")
@@ -45,7 +43,7 @@ final class DownloadsTabExtensionTests: XCTestCase {
         testData = nil
         testDirectory = nil
         cancellables = nil
-        try super.tearDownWithError()
+        fileManager = nil
     }
 
     func testWhenAlwaysRequestDownloadLocationIsTrueThenShouldAskDownloadsTabExtensionToSaveData() async throws {

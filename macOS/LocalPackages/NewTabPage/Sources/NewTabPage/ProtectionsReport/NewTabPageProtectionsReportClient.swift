@@ -42,7 +42,7 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
         Publishers.CombineLatest(model.$isViewExpanded.dropFirst(), model.$activeFeed.dropFirst())
             .map { isExpanded, activeFeed in
                 let expansion: NewTabPageUserScript.WidgetConfig.Expansion = isExpanded ? .expanded : .collapsed
-                return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: activeFeed)
+                return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: activeFeed, showBurnAnimation: model.shouldShowBurnAnimation)
             }
             .removeDuplicates()
             .sink { [weak self] config in
@@ -59,6 +59,20 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
                 }
             }
             .store(in: &cancellables)
+
+        /// This is not part of the combined publisher above given that sometimes those publishes do not emit
+        /// which will that changes to the burn animation to never trigger.
+        model.$shouldShowBurnAnimation
+            .sink { [weak self] shouldShowBurnAnimation in
+                Task { @MainActor in
+                    let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
+                    let config = NewTabPageDataModel.ProtectionsConfig(expansion: expansion,
+                                                                       feed: model.activeFeed,
+                                                                       showBurnAnimation: shouldShowBurnAnimation)
+                    self?.notifyConfigUpdated(config)
+                }
+            }
+            .store(in: &cancellables)
     }
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
@@ -71,7 +85,7 @@ public final class NewTabPageProtectionsReportClient: NewTabPageUserScriptClient
 
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
-        return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: model.activeFeed)
+        return NewTabPageDataModel.ProtectionsConfig(expansion: expansion, feed: model.activeFeed, showBurnAnimation: model.shouldShowBurnAnimation)
     }
 
     @MainActor

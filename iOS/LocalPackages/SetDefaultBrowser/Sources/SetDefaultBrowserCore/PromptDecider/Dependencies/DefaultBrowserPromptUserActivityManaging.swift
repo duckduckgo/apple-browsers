@@ -21,7 +21,7 @@ import Foundation
 
 /// A type that provides the user activity information for SAD prompt decisions.
 @MainActor
-package protocol DefaultBrowserPromptUserActivityProvider {
+public protocol DefaultBrowserPromptUserActivityProvider {
     /// Returns the number of days the user has been active in the app.
     ///
     /// An "active day" means a day when the user either opened the app (cold start), or when they brought the app to the foreground.
@@ -35,7 +35,7 @@ package protocol DefaultBrowserPromptUserActivityProvider {
 
 /// A type that manages the user activity information for SAD prompt decisions.
 @MainActor
-package protocol DefaultBrowserPromptUserActivityManaging: DefaultBrowserPromptUserActivityProvider {
+public protocol DefaultBrowserPromptUserActivityManaging: DefaultBrowserPromptUserActivityProvider {
 
     /// Reset the number of days the user was active.
     func resetNumberOfActiveDays()

@@ -35,6 +35,7 @@ import History
 import HistoryView
 import Lottie
 import MetricKit
+import Network
 import Networking
 import VPN
 import NetworkProtectionIPC
@@ -94,6 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
     let featureFlagger: FeatureFlagger
+    let visualizeFireAnimationDecider: VisualizeFireAnimationDecider
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
@@ -144,6 +146,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tld: tld,
         fireCoordinator: fireCoordinator,
         keyValueStore: keyValueStore,
+        visualizeFireAnimationDecider: visualizeFireAnimationDecider,
         featureFlagger: featureFlagger
     )
 
@@ -165,10 +168,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let visualStyle: VisualStyleProviding
     private let visualStyleDecider: VisualStyleDecider
 
-    let isAuthV2Enabled: Bool
+    let isUsingAuthV2: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     let subscriptionManagerV1: (any SubscriptionManager)?
     let subscriptionManagerV2: (any SubscriptionManagerV2)?
+    let subscriptionAuthMigrator: AuthMigrator
 
     public let subscriptionUIHandler: SubscriptionUIHandling
     private let subscriptionCookieManager: any SubscriptionCookieManaging
@@ -191,7 +195,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         featureFlagOverridesPublisher: featureFlagOverridesPublishingHandler.flagDidChangePublisher,
         loginItemsManager: LoginItemsManager(),
         defaults: .netP)
-    private var networkProtectionSubscriptionEventHandler: NetworkProtectionSubscriptionEventHandler?
+    private var vpnSubscriptionEventHandler: VPNSubscriptionEventsHandler?
 
     private var vpnXPCClient: VPNControllerXPCClient {
         VPNControllerXPCClient.shared
@@ -345,10 +349,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 #endif
 
+        let featureFlagger: FeatureFlagger
+        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType)  {
+            featureFlagger = MockFeatureFlagger()
+            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
+
+        } else {
+            let featureFlagOverrides = FeatureFlagLocalOverrides(
+                keyValueStore: UserDefaults.appConfiguration,
+                actionHandler: featureFlagOverridesPublishingHandler
+            )
+            let defaultFeatureFlagger = DefaultFeatureFlagger(
+                internalUserDecider: internalUserDecider,
+                privacyConfigManager: privacyConfigurationManager,
+                localOverrides: featureFlagOverrides,
+                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
+                    internalUserDecider.isInternalUser || isRunningUITests
+                },
+                experimentManager: ExperimentCohortsManager(
+                    store: ExperimentsDataStore(),
+                    fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
+                ),
+                for: FeatureFlag.self
+            )
+            featureFlagger = defaultFeatureFlagger
+            self.contentScopeExperimentsManager = defaultFeatureFlagger
+
+            featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
+        }
+        self.featureFlagger = featureFlagger
+
         appearancePreferences = AppearancePreferences(
             keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyConfigurationManager,
-            pixelFiring: PixelKit.shared
+            pixelFiring: PixelKit.shared,
+            featureFlagger: featureFlagger
         )
 
 #if DEBUG
@@ -385,35 +420,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        let featureFlagger: FeatureFlagger
-        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType)  {
-            featureFlagger = MockFeatureFlagger()
-            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
-
-        } else {
-            let featureFlagOverrides = FeatureFlagLocalOverrides(
-                keyValueStore: UserDefaults.appConfiguration,
-                actionHandler: featureFlagOverridesPublishingHandler
-            )
-            let defaultFeatureFlagger = DefaultFeatureFlagger(
-                internalUserDecider: internalUserDecider,
-                privacyConfigManager: privacyConfigurationManager,
-                localOverrides: featureFlagOverrides,
-                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
-                    internalUserDecider.isInternalUser || isRunningUITests
-                },
-                experimentManager: ExperimentCohortsManager(
-                    store: ExperimentsDataStore(),
-                    fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
-                ),
-                for: FeatureFlag.self
-            )
-            featureFlagger = defaultFeatureFlagger
-            self.contentScopeExperimentsManager = defaultFeatureFlagger
-
-            featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
-        }
-        self.featureFlagger = featureFlagger
         pinnedTabsManagerProvider = PinnedTabsManagerProvider()
 
 #if DEBUG || REVIEW
@@ -429,29 +435,88 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return Application.appDelegate.windowControllersManager
         })
 
-        self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
-        if !isAuthV2Enabled {
-            // MARK: V1
-            Logger.general.log("Using Auth V1")
-            let subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger)
-            subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: subscriptionManager, currentCookieStore: {
-                WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
-            }, eventMapping: SubscriptionCookieManageEventPixelMapping())
-            subscriptionManagerV1 = subscriptionManager
-            subscriptionManagerV2 = nil
-            subscriptionAuthV1toV2Bridge = subscriptionManager
-        } else {
+        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+        let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+
+        // Configuring V2 for migration
+        let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
+        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
+                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
+        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { accessType, error in
+            PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
+                                                                             accessError: error,
+                                                                             source: KeychainErrorSource.shared,
+                                                                             authVersion: KeychainErrorAuthVersion.v2),
+                          frequency: .legacyDailyAndCount)
+        }
+        let legacyTokenStorage = SubscriptionTokenKeychainStorage(keychainType: keychainType)
+        let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                            legacyTokenStorage: legacyTokenStorage,
+                                            authService: authService)
+        let pixelHandler: SubscriptionPixelHandler = AuthV2PixelHandler(source: .mainApp)
+        let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
+        subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
+                                                    pixelHandler: pixelHandler,
+                                                    isAuthV2Enabled: isAuthV2Enabled)
+        self.isUsingAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
+
+        if self.isUsingAuthV2 {
             // MARK: V2
-            Logger.general.log("Using Auth V2")
-            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-            let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
-            let subscriptionManager = DefaultSubscriptionManagerV2(keychainType: KeychainType.dataProtection(.named(subscriptionAppGroup)),
-                                                                   environment: subscriptionEnvironment,
-                                                                   featureFlagger: featureFlagger,
-                                                                   userDefaults: subscriptionUserDefaults,
-                                                                   canPerformAuthMigration: true,
-                                                                   pixelHandlingSource: .mainApp)
+            Logger.general.log("Configuring Subscription V2")
+            var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
+            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
+                                                                                   baseURL: subscriptionEnvironment.serviceEnvironment.url)
+            apiServiceForSubscription.authorizationRefresherCallback = { _ in
+
+                guard let tokenContainer = try? tokenStorage.getTokenContainer() else {
+                    throw OAuthClientError.internalError("Missing refresh token")
+                }
+
+                if tokenContainer.decodedAccessToken.isExpired() {
+                    Logger.OAuth.debug("Refreshing tokens")
+                    let tokens = try await authClient.getTokens(policy: .localForceRefresh)
+                    return tokens.accessToken
+                } else {
+                    Logger.general.debug("Trying to refresh valid token, using the old one")
+                    return tokenContainer.accessToken
+                }
+            }
+            let subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags> = FeatureFlaggerMapping { feature in
+                switch feature {
+                case .usePrivacyProUSARegionOverride:
+                    return (featureFlagger.internalUserDecider.isInternalUser &&
+                            subscriptionEnvironment.serviceEnvironment == .staging &&
+                            subscriptionUserDefaults.storefrontRegionOverride == .usa)
+                case .usePrivacyProROWRegionOverride:
+                    return (featureFlagger.internalUserDecider.isInternalUser &&
+                            subscriptionEnvironment.serviceEnvironment == .staging &&
+                            subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
+                }
+            }
+
+            let isInternalUserEnabled = { featureFlagger.internalUserDecider.isInternalUser }
+            let legacyAccountStorage = AccountKeychainStorage()
+            let subscriptionManager: DefaultSubscriptionManagerV2
+            if #available(macOS 12.0, *) {
+                subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
+                                                                              subscriptionFeatureFlagger: subscriptionFeatureFlagger),
+                          oAuthClient: authClient,
+                          userDefaults: subscriptionUserDefaults,
+                          subscriptionEndpointService: subscriptionEndpointService,
+                          subscriptionEnvironment: subscriptionEnvironment,
+                          pixelHandler: pixelHandler,
+                          legacyAccountStorage: legacyAccountStorage,
+                          isInternalUserEnabled: isInternalUserEnabled)
+            } else {
+                subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
+                          userDefaults: subscriptionUserDefaults,
+                          subscriptionEndpointService: subscriptionEndpointService,
+                          subscriptionEnvironment: subscriptionEnvironment,
+                          pixelHandler: pixelHandler,
+                          legacyAccountStorage: legacyAccountStorage,
+                          isInternalUserEnabled: isInternalUserEnabled)
+            }
 
             // Expired refresh token recovery
             if #available(iOS 15.0, macOS 12.0, *) {
@@ -471,8 +536,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManagerV2 = subscriptionManager
             subscriptionManagerV1 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
+        } else {
+            Logger.general.log("Configuring Subscription V1")
+            let subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger)
+            subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: subscriptionManager, currentCookieStore: {
+                WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
+            }, eventMapping: SubscriptionCookieManageEventPixelMapping())
+            subscriptionManagerV1 = subscriptionManager
+            subscriptionManagerV2 = nil
+            subscriptionAuthV1toV2Bridge = subscriptionManager
         }
-        VPNAppState(defaults: .netP).isAuthV2Enabled = isAuthV2Enabled
+
+        VPNAppState(defaults: .netP).isAuthV2Enabled = isUsingAuthV2
 
         let windowControllersManager = WindowControllersManager(
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
@@ -516,8 +591,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fireproofDomains: fireproofDomains,
             faviconManager: faviconManager,
             windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared
         )
+        visualizeFireAnimationDecider = DefaultVisualizeFireAnimationDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
@@ -647,7 +724,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Update DBP environment and match the Subscription environment
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
         dbpSettings.alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
-        dbpSettings.isAuthV2Enabled = isAuthV2Enabled
+        dbpSettings.isAuthV2Enabled = isUsingAuthV2
 
         // Also update the stored run type so the login item knows if tests are running
         dbpSettings.updateStoredRunType()
@@ -684,6 +761,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // swiftlint:enable cyclomatic_complexity
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+#if DEBUG
+        // Workaround for Xcode 26 crash: https://developer.apple.com/forums/thread/787365?answerId=846043022#846043022
+        // This is a known issue in Xcode 26 betas 1 and 2, if the issue is fixed in beta 3 onward then this can be removed
+        nw_tls_create_options()
+#endif
+
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
         Configuration.setURLProvider(AppConfigurationURLProvider(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
@@ -705,7 +788,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let tunnelController = NetworkProtectionIPCTunnelController(ipcClient: vpnXPCClient)
         let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
 
-        networkProtectionSubscriptionEventHandler = NetworkProtectionSubscriptionEventHandler(subscriptionManager: subscriptionAuthV1toV2Bridge,
+        vpnSubscriptionEventHandler = VPNSubscriptionEventsHandler(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                                               tunnelController: tunnelController,
                                                                                               vpnUninstaller: vpnUninstaller)
 
@@ -840,7 +923,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         UserDefaultsWrapper<Any>.clearRemovedKeys()
 
-        networkProtectionSubscriptionEventHandler?.registerForSubscriptionAccountManagerEvents()
+        vpnSubscriptionEventHandler?.registerForSubscriptionAccountManagerEvents()
 
         UNUserNotificationCenter.current().delegate = self
 
@@ -910,8 +993,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        Task {
+            await subscriptionAuthMigrator.migrateAuthV1toAuthV2IfNeeded()
+        }
+
         Task { @MainActor in
-            await vpnAppEventsHandler.applicationDidBecomeActive()
+            vpnAppEventsHandler.applicationDidBecomeActive()
             await subscriptionCookieManager.refreshSubscriptionCookie()
         }
     }

@@ -38,7 +38,7 @@ final class DBPService: NSObject {
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
             subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
             runTypeProvider: appDependencies.dbpSettings,
-            isAuthV2Enabled: appDependencies.isAuthV2Enabled)
+            isAuthV2Enabled: appDependencies.isUsingAuthV2)
         let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
         let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
 

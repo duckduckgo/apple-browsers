@@ -95,16 +95,20 @@ public enum DuckPlayerContainer {
         @ObservedObject var viewModel: ViewModel
         @State private var sheetHeight = 0.0
         let hasBackground: Bool
+        let showDragHandle: Bool
+        let allowDragGesture: Bool
         let content: (PresentationMetrics) -> Content
         let onDismiss: (Bool) -> Void
         let onPresentDuckPlayer: () -> Void
 
         public init(
-            viewModel: ViewModel, hasBackground: Bool = true, onDismiss: @escaping (Bool) -> Void, onPresentDuckPlayer: @escaping () -> Void,
+            viewModel: ViewModel, hasBackground: Bool = true, showDragHandle: Bool = true, allowDragGesture: Bool = true, onDismiss: @escaping (Bool) -> Void, onPresentDuckPlayer: @escaping () -> Void,
             @ViewBuilder content: @escaping (PresentationMetrics) -> Content
         ) {
             self.viewModel = viewModel
             self.hasBackground = hasBackground
+            self.showDragHandle = showDragHandle
+            self.allowDragGesture = allowDragGesture
             self.content = content
             self.onDismiss = onDismiss
             self.onPresentDuckPlayer = onPresentDuckPlayer
@@ -114,6 +118,8 @@ public enum DuckPlayerContainer {
             SheetView(
                 viewModel: viewModel,
                 containerHeight: containerHeight,
+                showDragHandle: showDragHandle,
+                allowDragGesture: allowDragGesture,
                 content: content,
                 onHeightChange: { sheetHeight = $0 },
                 onDismiss: onDismiss,
@@ -166,6 +172,8 @@ private struct GrabHandle: View {
 private struct SheetView<Content: View>: View {
     @ObservedObject var viewModel: DuckPlayerContainer.ViewModel
     let containerHeight: Double
+    let showDragHandle: Bool
+    let allowDragGesture: Bool
     let content: (DuckPlayerContainer.PresentationMetrics) -> Content
     let onHeightChange: (Double) -> Void
     let onDismiss: (Bool) -> Void
@@ -206,56 +214,60 @@ private struct SheetView<Content: View>: View {
             if let sheetWidth {
                 VStack(spacing: 0) {
                     ZStack(alignment: .top) {
-                        GrabHandle()
+                        if showDragHandle {
+                            GrabHandle()
+                        }
 
                         content(DuckPlayerContainer.PresentationMetrics(contentWidth: sheetWidth))
-                            .padding(.top, DuckPlayerContainer.Constants.contentTopPadding)
+                            .padding(.top, showDragHandle ? DuckPlayerContainer.Constants.contentTopPadding : 12)
 
-                        Rectangle()
-                            .fill(Color.clear)
-                            .frame(height: DuckPlayerContainer.Constants.dragAreaHeight)
-                            .contentShape(Rectangle())
-                            .gesture(
-                                DragGesture()
-                                    .updating($dragStartOffset) { _, state, _ in
-                                        if state == nil {
-                                            state = sheetOffset
-                                            viewModel.setDragging(true)
-                                        }
-                                    }
-                                    .onChanged { value in
-                                        guard let dragStartOffset else { return }
-
-                                        let offsetY = value.translation.height
-                                        if offsetY > 0 {
-                                            withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
-                                                sheetOffset = dragStartOffset + offsetY
-                                            }
-                                        } else if offsetY < 0 {
-                                            // Add some resistance for upward drag
-                                            let y = 1.0 / (1.0 + exp(-1 * (abs(offsetY) / 50.0))) - 0.5
-                                            withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
-                                                sheetOffset = dragStartOffset + y * max(offsetY, -20)
+                        if allowDragGesture {
+                            Rectangle()
+                                .fill(Color.clear)
+                                .frame(height: DuckPlayerContainer.Constants.dragAreaHeight)
+                                .contentShape(Rectangle())
+                                .gesture(
+                                    DragGesture()
+                                        .updating($dragStartOffset) { _, state, _ in
+                                            if state == nil {
+                                                state = sheetOffset
+                                                viewModel.setDragging(true)
                                             }
                                         }
-                                    }
-                                    .onEnded { value in
-                                        viewModel.setDragging(false)
-                                        let offsetY = value.translation.height
+                                        .onChanged { value in
+                                            guard let dragStartOffset else { return }
 
-                                        if offsetY > DuckPlayerContainer.Constants.dragThreshold || value.velocity.height > 50 {
-                                            onDismiss(false) // User dismissed the pill
-                                        } else if offsetY < -DuckPlayerContainer.Constants.dragThreshold || value.velocity.height < -50 {
-                                            // Start presenting DuckPlayer immediately
-                                            onPresentDuckPlayer()
-
-                                        } else {
-                                            withAnimation(.spring(duration: 0.2, bounce: 0.4)) {
-                                                sheetOffset = calculateSheetOffset(for: viewModel.sheetVisible, containerHeight: containerHeight)
+                                            let offsetY = value.translation.height
+                                            if offsetY > 0 {
+                                                withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
+                                                    sheetOffset = dragStartOffset + offsetY
+                                                }
+                                            } else if offsetY < 0 {
+                                                // Add some resistance for upward drag
+                                                let y = 1.0 / (1.0 + exp(-1 * (abs(offsetY) / 50.0))) - 0.5
+                                                withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
+                                                    sheetOffset = dragStartOffset + y * max(offsetY, -20)
+                                                }
                                             }
                                         }
-                                    }
-                            )
+                                        .onEnded { value in
+                                            viewModel.setDragging(false)
+                                            let offsetY = value.translation.height
+
+                                            if offsetY > DuckPlayerContainer.Constants.dragThreshold || value.velocity.height > 50 {
+                                                onDismiss(false) // User dismissed the pill
+                                            } else if offsetY < -DuckPlayerContainer.Constants.dragThreshold || value.velocity.height < -50 {
+                                                // Start presenting DuckPlayer immediately
+                                                onPresentDuckPlayer()
+
+                                            } else {
+                                                withAnimation(.spring(duration: 0.2, bounce: 0.4)) {
+                                                    sheetOffset = calculateSheetOffset(for: viewModel.sheetVisible, containerHeight: containerHeight)
+                                                }
+                                            }
+                                        }
+                                )
+                        }
                     }
                 }
                 .padding(.horizontal, 10)

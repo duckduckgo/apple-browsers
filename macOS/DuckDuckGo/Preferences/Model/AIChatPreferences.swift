@@ -27,20 +27,21 @@ final class AIChatPreferences: ObservableObject {
     static let shared = AIChatPreferences()
     private var storage: AIChatPreferencesStorage
     private var cancellables = Set<AnyCancellable>()
-    private let configuration: AIChatMenuVisibilityConfigurable
     private let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/aichat/")!
     private let searchAssistSettingsURL = URL(string: "https://duckduckgo.com/settings#aifeatures")!
     private var windowControllersManager: WindowControllersManager
+    private let featureFlagger: FeatureFlagger
 
     init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-         configuration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
-         windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager) {
+         windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager,
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.storage = storage
-        self.configuration = configuration
         self.windowControllersManager = windowControllersManager
+        self.featureFlagger = featureFlagger
 
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
         showShortcutInAddressBar = storage.showShortcutInAddressBar
+        openAIChatInSidebar = storage.openAIChatInSidebar
 
         subscribeToShowInApplicationMenuSettingsChanges()
     }
@@ -57,6 +58,16 @@ final class AIChatPreferences: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: \.showShortcutInAddressBar, onWeaklyHeld: self)
             .store(in: &cancellables)
+
+        storage.openAIChatInSidebarPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.openAIChatInSidebar, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    var shouldShowOpenAIChatInSidebarToggle: Bool {
+        featureFlagger.isFeatureOn(.aiChatSidebar)
     }
 
     @Published var showShortcutInApplicationMenu: Bool {
@@ -65,6 +76,10 @@ final class AIChatPreferences: ObservableObject {
 
     @Published var showShortcutInAddressBar: Bool {
         didSet { storage.showShortcutInAddressBar = showShortcutInAddressBar }
+    }
+
+    @Published var openAIChatInSidebar: Bool {
+        didSet { storage.openAIChatInSidebar = openAIChatInSidebar }
     }
 
     @MainActor func openLearnMoreLink() {

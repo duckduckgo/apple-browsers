@@ -59,10 +59,7 @@
 "action.title.downloads" = "Prenosi";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "Klepet z umetno inteligenco";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Novi klepet z umetno inteligenco";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Uredi zaznamek";
@@ -159,6 +156,9 @@
 
 /* No comment provided by engineer. */
 "addWidget.title" = "En dotik do vaših priljubljenih spletnih mest.";
+
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "Lastnosti UI";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Obstoječi zaznamki ne bodo podvojeni.";
@@ -267,15 +267,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Odkleni DuckDuckGo.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Ali ste prepričani, da želite izbrisati vse zaznamke? Tega dejanja ni mogoče razveljaviti.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete this chat? This cannot be undone." = "Ste prepričani, da želite izbrisati ta klepet? Tega ni mogoče razveljaviti.";
-
-/* No comment provided by engineer. */
-"Ask anything..." = "Vprašajte kar koli …";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Prijavite se";
@@ -1210,9 +1201,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Odpravljanje napak";
 
-/* No comment provided by engineer. */
-"Delete All" = "Izbriši vse";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "naprava";
 
@@ -1297,8 +1285,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Nedavne spremembe v YouTubu so vplivale na delovanje predvajalnika Duck Player. Prizadevamo si za odpravljanje teh težav in cenimo vaše razumevanje.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai je izbirna funkcija, ki vam omogoča anonimen klepet s priljubljenimi modeli za klepet z umetno inteligenco drugih ponudnikov. Vaši klepeti se ne uporabljajo za usposabljanje umetne inteligence.\n[Več o tem] (ddgquicklink: //duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "Funkcije umetne inteligence DuckDuckGo so zasebne in neobvezne. Vaši podatki se ne uporabljajo za usposabljanje umetne inteligence.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Naslovna vrstica";
@@ -1312,7 +1300,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Glasovno iskanje";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Več";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -2258,7 +2249,7 @@
 "new.tab.page.settings.title" = "Prilagoditev strani z novim zavihkom";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Klepet z umetno inteligenco";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Zaznamki";
@@ -2657,7 +2648,16 @@
 "settings.address.full.url" = "Prikaži polni naslov spletnega mesta";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Bližnjice";
+"settings.aichat.shortcuts" = "Bližnjice do Duck.ai";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Iskalni vnos";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Išči po spletu ali vprašaj Duck.ai neposredno iz naslovne vrstice";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Nastavitve modula Search Assist";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vedno vklopljeno";
@@ -2735,13 +2735,19 @@
 "settings.emailProtection.description" = "Blokirajte sledilnike e-pošte in skrijte svoj naslov";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Omogoči Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Klepetajte zasebno s priljubljenimi modeli umetne inteligence tretjih oseb";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Omogočite zaščito e-pošte Email Protection";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Omogočanje glasovnega iskanja";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Izberite, kako pogosto želite, da se odgovori s pomočjo umetne inteligence prikazujejo v vaših iskanjih";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Deli povratne informacije";
@@ -2806,6 +2812,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Pravilnik o zasebnosti in pogoji storitve";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Vključuje naš VPN in Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Vključuje naše storitve VPN, Personal Information Removal in Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Pregledi z dolgim pritiskom";
 
@@ -2866,17 +2878,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Nastavitve naročnine";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Vključuje naš VPN in Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Zaščite svojo povezavo in identiteto s Privacy Pro";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free" = "Preizkusite Privacy Pro brezplačno";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Vključuje naše storitve VPN, Personal Information Removal in Identity Theft Restoration.";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2943,9 +2949,6 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Katera spletna stran je poškodovana?";
-
-/* No comment provided by engineer. */
-"Stop generating..." = "Ustavi ustvarjanje …";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Shranjeno ime gostitelja: %@";

@@ -32,14 +32,22 @@ class MainMenuTests: XCTestCase {
     var manager: ReopenMenuItemKeyEquivalentManager!
     var appearancePreferences: AppearancePreferences!
 
-    override func setUpWithError() throws {
+    override func setUp() {
         isInInitialState = true
         lastSessionMenuItem = NSMenuItem()
         lastTabMenuItem = NSMenuItem()
         appearancePreferences = AppearancePreferences(
             persistor: MockAppearancePreferencesPersistor(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
+    }
+
+    override func tearDown() {
+        appearancePreferences = nil
+        lastSessionMenuItem = nil
+        lastTabMenuItem = nil
+        manager = nil
     }
 
     func testWhenIsInInitialState_AndCanRestoreState_ThenLastSessionMenuItemHasShortcut() {
@@ -319,6 +327,7 @@ private class DummyFeatureFlagger: FeatureFlagger {
 private class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayApplicationMenuShortcut = false
     var shouldDisplayAddressBarShortcut = false
+    var openAIChatInSidebar = false
 
     var valuesChangedPublisher: PassthroughSubject<Void, Never> {
         return PassthroughSubject<Void, Never>()

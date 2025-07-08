@@ -59,10 +59,7 @@
 "action.title.downloads" = "Nerladdningar";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "AI-chatt";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Ny AI-chatt";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Redigera bokmärke";
@@ -159,6 +156,9 @@
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Besök dina favoritwebbplatser med ett enda tryck.";
+
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "AI-funktioner";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Befintliga bokmärken kommer inte att kopieras.";
@@ -267,15 +267,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Lås upp DuckDuckGo.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Är du säker på att du vill ta bort alla bokmärken? Åtgärden kan inte ångras.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete this chat? This cannot be undone." = "Är du säker på att du vill ta bort den här chatten? Detta kan inte ångras.";
-
-/* No comment provided by engineer. */
-"Ask anything..." = "Fråga vad som helst ...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Logga in";
@@ -1210,9 +1201,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Felsökning";
 
-/* No comment provided by engineer. */
-"Delete All" = "Radera allt";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "enhet";
 
@@ -1297,8 +1285,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "De senaste ändringarna på YouTube har påverkat funktionaliteten hos Duck Player. Vi arbetar för att åtgärda problemen och tackar för din förståelse.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai är en valfri funktion som låter dig chatta anonymt med populära AI-chattmodeller från tredje part. Dina chattar används inte för att träna AI.\n[Mer information](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "DuckDuckGos AI-funktioner är privata och valfria. Dina data används inte för att träna AI.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adressfält";
@@ -1312,7 +1300,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Röstsökning";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Läs mer";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -2258,7 +2249,7 @@
 "new.tab.page.settings.title" = "Anpassa sidan Ny flik";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "AI-chatt";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Bokmärken";
@@ -2657,7 +2648,16 @@
 "settings.address.full.url" = "Visa hela webbplatsadressen";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Genvägar";
+"settings.aichat.shortcuts" = "Duck.ai-genvägar";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Sökning";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Sök på webben eller fråga Duck.ai direkt i adressfältet";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Inställningar för Search Assist";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alltid på";
@@ -2735,13 +2735,19 @@
 "settings.emailProtection.description" = "Blockera e-postspårare och dölj din adress";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Aktivera Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Chatta privat med populära AI-modeller från tredje part";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Aktivera Email Protection";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Aktivera röstsökning";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Välj hur ofta du vill att AI-assisterade svar ska visas i dina sökningar";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Berätta vad du tycker";
@@ -2806,6 +2812,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Integritetspolicy och användarvillkor";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Inkluderar vårt VPN och Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Det inkluderar vårt VPN, Personal Information Removal och Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Förhandsvisning vid nedhållning";
 
@@ -2866,17 +2878,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonnemangsinställningar";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Inkluderar vårt VPN och Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Skydda din anslutning och identitet med Privacy Pro";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free" = "Prova Privacy Pro gratis";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Det inkluderar vårt VPN, Personal Information Removal och Identity Theft Restoration.";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2943,9 +2949,6 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Vilken webbplats är skadad?";
-
-/* No comment provided by engineer. */
-"Stop generating..." = "Sluta generera ...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagrade värdnamn: %@";

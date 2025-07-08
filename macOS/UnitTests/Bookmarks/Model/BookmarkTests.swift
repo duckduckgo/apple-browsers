@@ -26,13 +26,16 @@ class BookmarkTests: XCTestCase {
     var context: NSManagedObjectContext!
 
     override func setUp() {
-        super.setUp()
-
         let container = CoreData.bookmarkContainer()
         context = container.viewContext
 
         BookmarkUtils.prepareFoldersStructure(in: context)
         rootFolder = BookmarkUtils.fetchRootFolder(context)
+    }
+
+    override func tearDown() {
+        rootFolder = nil
+        context = nil
     }
 
     func testWhenInitializingBaseBookmarkEntityFromBookmarkManagedObject_ThenBookmarkIsCreated() {

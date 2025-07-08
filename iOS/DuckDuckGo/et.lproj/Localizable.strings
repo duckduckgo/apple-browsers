@@ -59,10 +59,7 @@
 "action.title.downloads" = "Allalaadimised";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "AI vestlus";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Uus AI vestlus";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Redigeeri järjehoidjat";
@@ -159,6 +156,9 @@
 
 /* No comment provided by engineer. */
 "addWidget.title" = "Ühe puudutusega oma lemmiksaitidele.";
+
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "AI funktsioonid";
 
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Olemasolevaid järjehoidjaid ei dubleerita.";
@@ -267,15 +267,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Vabasta DuckDuckGo.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Kas soovite kindlasti kõik järjehoidjad kustutada? Seda toimingut ei saa tagasi võtta.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete this chat? This cannot be undone." = "Kas oled kindel, et soovid selle vestluse kustutada? Seda ei saa tagasi võtta.";
-
-/* No comment provided by engineer. */
-"Ask anything..." = "Küsi ükskõik mida...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Sisselogimine";
@@ -1210,9 +1201,6 @@
 /* No comment provided by engineer. */
 "Debug" = "Silumine";
 
-/* No comment provided by engineer. */
-"Delete All" = "Kustuta kõik";
-
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "seade";
 
@@ -1297,8 +1285,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Playeri funktsionaalsust on mõjutanud hiljutised YouTube'i muudatused. Töötame nende probleemide lahendamise nimel ja täname sind mõistva suhtumise eest.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai on valikuline funktsioon, mis võimaldab anonüümselt vestelda populaarsete kolmanda poole AI vestlusmudelitega. Teie vestlusi ei kasutata tehisintellekti treenimiseks.\n[Lisateave](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "DuckDuckGo tehisintellekti funktsioonid on privaatsed ja valikulised. Sinu andmeid ei kasutata tehisintellekti treenimiseks.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Aadressiriba";
@@ -1312,7 +1300,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Häälotsing";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Loe edasi";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -2258,7 +2249,7 @@
 "new.tab.page.settings.title" = "Uue vahekaardilehe kohandamine";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "AI vestlus";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Järjehoidjad";
@@ -2657,7 +2648,16 @@
 "settings.address.full.url" = "Näita kogu saidi aadressi";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Otseteed";
+"settings.aichat.shortcuts" = "Duck.ai otseteed";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Otsingusisend";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Otsi veebist või küsi Duck.ai-lt otse aadressiribal";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Otsingu Assist seaded";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alati sisse lülitatud";
@@ -2735,13 +2735,19 @@
 "settings.emailProtection.description" = "Blokeeri meilijälgurid ja peida oma aadress";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Luba Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Vestle privaatselt populaarsete kolmanda osapoole tehisintellekti mudelitega";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Luba Email Protection";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Luba häälotsing";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Vali, kui tihti soovid, et AI-toega vastused ilmuksid sinu otsingutesse";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Jaga tagasisidet";
@@ -2806,6 +2812,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Privaatsuspoliitika ja teenuse tingimused";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Sisaldab meie VPN-i ja teenust Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Sisaldab meie VPN-i, rakendusi Personal Information Removal ja Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Pika vajutusega eelvaated";
 
@@ -2866,17 +2878,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Tellimuse seaded";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Sisaldab meie VPN-i ja teenust Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Kaitse oma ühendust ja identiteeti rakendusega Privacy Pro";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free" = "Proovi Privacy Pro'd tasuta";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Sisaldab meie VPN-i, rakendusi Personal Information Removal ja Identity Theft Restoration.";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2943,9 +2949,6 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Milline veebisait on katki?";
-
-/* No comment provided by engineer. */
-"Stop generating..." = "Lõpeta genereerimine...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Salvestatud hostinimi: %@";

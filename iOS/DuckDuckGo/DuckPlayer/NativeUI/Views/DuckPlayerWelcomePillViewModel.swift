@@ -24,12 +24,14 @@ import SwiftUI
 @MainActor
 final class DuckPlayerWelcomePillViewModel: ObservableObject {
     var onOpen: () -> Void
+    var onClose: (() -> Void)?
 
     @Published var isVisible: Bool = false
     private(set) var shouldAnimate: Bool = true
 
-    init(onOpen: @escaping () -> Void) {
+    init(onOpen: @escaping () -> Void, onClose: (() -> Void)? = nil) {
         self.onOpen = onOpen
+        self.onClose = onClose
     }
 
     func updateOnOpen(_ onOpen: @escaping () -> Void) {
@@ -47,5 +49,9 @@ final class DuckPlayerWelcomePillViewModel: ObservableObject {
 
     func hide() {
         isVisible = false
+    }
+    
+    func close() {
+        onClose?()
     }
 }

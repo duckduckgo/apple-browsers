@@ -246,7 +246,7 @@ private enum Const {
         static let closeButtonSize: CGFloat = 24.0
         static let closeButtonTappableArea: CGFloat = 44.0
         static let logoImage: CGFloat = 20.0
-        static let buttonCornerRadius: CGFloat = 8.0
+        static let buttonCornerRadius: CGFloat = 12.0
         static let buttonBorderWidth: CGFloat = 1.0
         static let smallDevice: CGFloat = 320.0
         static let maxWidth: CGFloat = 480.0

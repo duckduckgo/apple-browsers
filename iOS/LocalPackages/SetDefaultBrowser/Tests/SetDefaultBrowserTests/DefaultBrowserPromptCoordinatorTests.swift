@@ -27,7 +27,7 @@ import SetDefaultBrowserTestSupport
 @Suite("Set Default Browser - Prompt Coordinator")
 final class DefaultBrowserPromptCoordinatorTests {
     private var isOnboardingCompleted: Bool = true
-    private var dateProvideMock: MockDateProvider
+    private var dateProviderMock: MockDateProvider
     private var promptStoreMock: MockDefaultBrowserPromptStore
     private var userActivityManagerMock: MockDefaultBrowserPromptUserActivityManager
     private var promptTypeDeciderMock: MockDefaultBrowserPromptTypeDecider
@@ -36,7 +36,7 @@ final class DefaultBrowserPromptCoordinatorTests {
     private var sut: DefaultBrowserPromptCoordinator!
 
     init() {
-        dateProvideMock = MockDateProvider()
+        dateProviderMock = MockDateProvider()
         promptStoreMock = MockDefaultBrowserPromptStore()
         userActivityManagerMock = MockDefaultBrowserPromptUserActivityManager()
         promptTypeDeciderMock = MockDefaultBrowserPromptTypeDecider()
@@ -50,7 +50,7 @@ final class DefaultBrowserPromptCoordinatorTests {
             promptTypeDecider: promptTypeDeciderMock,
             urlOpener: urlOpenerMock,
             eventMapper: eventMapperMock,
-            dateProvider: dateProvideMock.getDate
+            dateProvider: dateProviderMock.getDate
         )
     }
 
@@ -114,7 +114,7 @@ final class DefaultBrowserPromptCoordinatorTests {
     func whenPromptIsNotNilThenPromptIsSetSeen(promptType: DefaultBrowserPromptType) {
         // GIVEN
         let now = Date(timeIntervalSince1970: 1750896000) // 26 June 2025 12:00:00 AM GMT
-        dateProvideMock.setNowDate(now)
+        dateProviderMock.setNowDate(now)
         promptTypeDeciderMock.promptToReturn = promptType
         #expect(promptStoreMock.lastModalShownDate == nil)
 
@@ -139,7 +139,7 @@ final class DefaultBrowserPromptCoordinatorTests {
     func whenPromptIsNotNilThenI(promptType: DefaultBrowserPromptType, numberOfModalShown: Int) {
         // GIVEN
         let now = Date(timeIntervalSince1970: 1750896000) // 26 June 2025 12:00:00 AM GMT
-        dateProvideMock.setNowDate(now)
+        dateProviderMock.setNowDate(now)
         promptTypeDeciderMock.promptToReturn = promptType
         promptStoreMock.modalShownOccurrences = numberOfModalShown
 

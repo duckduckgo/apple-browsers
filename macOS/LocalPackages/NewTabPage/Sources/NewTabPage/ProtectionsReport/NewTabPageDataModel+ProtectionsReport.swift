@@ -27,6 +27,7 @@ extension NewTabPageDataModel {
     struct ProtectionsConfig: Codable, Equatable {
         let expansion: NewTabPageUserScript.WidgetConfig.Expansion
         let feed: Feed
+        let showBurnAnimation: Bool
     }
 
     public enum Feed: String, Codable {

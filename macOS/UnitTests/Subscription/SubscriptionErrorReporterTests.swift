@@ -60,6 +60,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         pixelsFired.removeAll()
 
         reporter = nil
+        pixelKit = nil
     }
 
     // MARK: - Tests for various subscription errors

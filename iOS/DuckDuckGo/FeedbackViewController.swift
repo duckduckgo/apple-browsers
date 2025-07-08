@@ -50,7 +50,7 @@ class FeedbackViewController: UIViewController {
     }
     
     private func applyShadow(to button: UIButton) {
-        button.layer.cornerRadius = 8
+        button.layer.cornerRadius = 12
         button.layer.shadowOffset = CGSize(width: 0, height: 3)
         button.layer.shadowColor = UIColor.black.cgColor
         button.layer.shadowOpacity = 0.12

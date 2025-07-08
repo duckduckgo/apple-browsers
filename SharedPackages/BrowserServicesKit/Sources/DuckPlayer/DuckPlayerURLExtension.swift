@@ -121,7 +121,7 @@ extension URL {
 
     /// Returns true if the URL represents a YouTube video, but not the playlist (playlists are not supported by Private Player)
     public var isYoutubeVideo: Bool {
-        isYoutubeWatch && !isYoutubePlaylist
+        isYoutubeWatch
     }
 
     /// Attempts extracting video ID and timestamp from the URL. Works with all types of YouTube URLs.

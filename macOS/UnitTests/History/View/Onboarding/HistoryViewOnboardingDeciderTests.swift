@@ -39,6 +39,12 @@ final class HistoryViewOnboardingDeciderTests: XCTestCase {
         featureFlagger.enabledFeatureFlags = [.historyView]
     }
 
+    override func tearDown() {
+        decider = nil
+        featureFlagger = nil
+        settingsPersistor = nil
+    }
+
     func testWhenFeatureFlagIsDisabledThenOnboardingShouldNotBePresented() {
         featureFlagger.enabledFeatureFlags = []
         XCTAssertFalse(decider.shouldPresentOnboarding)

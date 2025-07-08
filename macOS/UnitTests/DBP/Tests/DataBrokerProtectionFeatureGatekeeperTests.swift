@@ -35,12 +35,19 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
         UserDefaults(suiteName: "testing_\(UUID().uuidString)")!
     }
 
-    override func setUpWithError() throws {
+    override func setUp() {
         mockFeatureDisabler = MockFeatureDisabler()
         mockFeatureAvailability = MockFeatureAvailability()
         mockSubscriptionBridge = SubscriptionAuthV1toV2BridgeMock()
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
         mockFreemiumDBPUserStateManager.didActivate = false
+    }
+
+    override func tearDown() {
+        mockFeatureAvailability = nil
+        mockFeatureDisabler = nil
+        mockFreemiumDBPUserStateManager = nil
+        mockSubscriptionBridge = nil
     }
 
     func testWhenNoAccessTokenIsFound_butEntitlementIs_andIsNotActiveFreemiumUser_thenFeatureIsDisabled() async {

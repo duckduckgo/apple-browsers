@@ -53,11 +53,13 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         notificationCenter = NotificationCenter()
         keyValueStore = try MockKeyValueFileStore()
         firePixelCalls.removeAll()
+        featureFlagger = MockFeatureFlagger()
 
         let appearancePreferencesPersistor = AppearancePreferencesPersistorMock()
         appearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: featureFlagger
         )
 
         customizationModel = NewTabPageCustomizationModel(
@@ -101,6 +103,16 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             featureFlagger: featureFlagger,
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
+    }
+
+    override func tearDown() {
+        appearancePreferences = nil
+        coordinator = nil
+        customizationModel = nil
+        featureFlagger = nil
+        firePixelCalls = []
+        keyValueStore = nil
+        notificationCenter = nil
     }
 
     func testWhenNewTabPageAppearsThenPixelIsSent() {

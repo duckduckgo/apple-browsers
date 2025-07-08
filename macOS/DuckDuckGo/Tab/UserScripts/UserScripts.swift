@@ -16,14 +16,14 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AIChat
 import BrowserServicesKit
+import Foundation
 import HistoryView
+import SpecialErrorPages
+import Subscription
 import UserScript
 import WebKit
-import Subscription
-import SpecialErrorPages
-import AIChat
 
 @MainActor
 final class UserScripts: UserScriptsProvider {

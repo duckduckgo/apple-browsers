@@ -27,14 +27,16 @@ final class CSVImporterIntegrationTests: XCTestCase {
     private let tld: TLD = TLD()
 
     override func setUp() {
-        super.setUp()
         try? clearDB()
         executionTimeAllowance = 10
     }
 
+    override var allowedNonNilVariables: Set<String> {
+        ["tld"]
+    }
+
     override func tearDown() {
         try? clearDB()
-        super.tearDown()
     }
 
     func clearDB() throws {
@@ -48,8 +50,7 @@ final class CSVImporterIntegrationTests: XCTestCase {
         }
     }
 
-// Flakiness needs addressing
-    func _testImportPasswordsPerformance() async throws {
+    func testImportPasswordsPerformance() async throws {
         let csvURL = Bundle(for: Self.self).url(forResource: "mock_login_data_large", withExtension: "csv")!
         let csvImporter = CSVImporter(
             fileURL: csvURL,
@@ -73,9 +74,8 @@ final class CSVImporterIntegrationTests: XCTestCase {
         }
     }
 
-    // Flakiness needs addressing
     // Deduplication rules: https://app.asana.com/0/0/1207598052765977/f
-    func _testImportingPasswords_deduplicatesAccordingToDefinedRules() async throws {
+    func testImportingPasswords_deduplicatesAccordingToDefinedRules() async throws {
         let startingDataURL = Bundle(for: Self.self).url(forResource: "login_deduplication_starting_data", withExtension: "csv")!
         let startingDataImporter = CSVImporter(
             fileURL: startingDataURL,

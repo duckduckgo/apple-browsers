@@ -45,7 +45,8 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         let appearancePreferencesPersistor = AppearancePreferencesPersistorMock()
         appearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         visibleFeedProvider = MockNewTabPageProtectionsReportVisibleFeedProvider()
@@ -65,6 +66,14 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
             customizationModel: customizationModel,
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
+    }
+
+    override func tearDown() {
+        appearancePreferences = nil
+        customizationModel = nil
+        firePixelCalls = []
+        handler = nil
+        visibleFeedProvider = nil
     }
 
     func testWhenFirePixelIsCalledThenPixelIsSent() {

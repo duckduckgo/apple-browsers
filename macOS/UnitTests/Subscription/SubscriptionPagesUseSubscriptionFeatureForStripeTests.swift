@@ -81,7 +81,7 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
     }
 
     var userDefaults: UserDefaults!
-    var broker: UserScriptMessageBroker = UserScriptMessageBroker(context: "testBroker")
+    var broker: UserScriptMessageBroker! = UserScriptMessageBroker(context: "testBroker")
     var uiHandler: SubscriptionUIHandlerMock!
     var pixelKit: PixelKit!
 
@@ -222,6 +222,12 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
         subscriptionManager = nil
 
         feature = nil
+
+        broker = nil
+        pixelKit = nil
+        subscriptionFeatureFlagger = nil
+        subscriptionFeatureMappingCache = nil
+        uiHandler = nil
     }
 
     // MARK: - Tests for getSubscriptionOptions

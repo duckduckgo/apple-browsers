@@ -35,7 +35,7 @@ final class LocalBookmarkStoreTests: XCTestCase {
 
     // MARK: Save/Delete
 
-    let container = CoreData.bookmarkContainer()
+    var container: NSPersistentContainer! = CoreData.bookmarkContainer()
 
     @MainActor
     override func setUp() {
@@ -47,6 +47,10 @@ final class LocalBookmarkStoreTests: XCTestCase {
         } catch {
             XCTFail("Could not prepare Bookmarks Structure")
         }
+    }
+
+    override func tearDown() {
+        container = nil
     }
 
     @MainActor

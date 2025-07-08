@@ -1996,7 +1996,9 @@ extension TabViewController: WKNavigationDelegate {
                     let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
                                                                         application: UIApplication.shared)
                     StatisticsLoader.shared.refreshSearchRetentionAtb {
-                        backgroundAssertion.release()
+                        DispatchQueue.main.async {
+                            backgroundAssertion.release()
+                        }
                     }
                     privacyProDataReporter.saveSearchCount()
                 }

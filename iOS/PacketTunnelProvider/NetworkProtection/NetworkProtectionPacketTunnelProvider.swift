@@ -444,6 +444,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         var tokenHandler: any SubscriptionTokenHandling
         var entitlementsCheck: (() async -> Result<Bool, Error>)
+        Self.isUsingAuthV2 = settings.isAuthV2Enabled
         if Self.isUsingAuthV2 {
             Logger.networkProtection.log("Configure Subscription V2")
             let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging

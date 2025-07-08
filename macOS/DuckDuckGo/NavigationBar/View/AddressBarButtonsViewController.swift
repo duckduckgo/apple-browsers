@@ -565,6 +565,7 @@ final class AddressBarButtonsViewController: NSViewController {
               aiChatMenuConfig.shouldDisplayAddressBarShortcut,
               !(tabViewModel?.tab.url?.isDuckAIURL ?? false) else {
             askAIChatButton.isHidden = true
+            updateAIChatDividerVisibility()
             return
         }
 
@@ -594,6 +595,8 @@ final class AddressBarButtonsViewController: NSViewController {
             // aiChatButton visibility managed in updateAIChatButtonVisibility
             askAIChatButton.isHidden = true
         }
+
+        updateAIChatDividerVisibility()
 
         if shouldExpandButton() {
             guard !isAskAIChatButtonExpanded else {
@@ -692,7 +695,7 @@ final class AddressBarButtonsViewController: NSViewController {
         leadingAIChatDivider.isHidden = aiChatButton.isHidden || bookmarkButton.isHidden
 
         if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            trailingAIChatDivider.isHidden = cancelButton.isHidden
+            trailingAIChatDivider.isHidden = askAIChatButton.isHidden || cancelButton.isHidden
         } else {
             trailingAIChatDivider.isHidden = aiChatButton.isHidden || cancelButton.isHidden
         }

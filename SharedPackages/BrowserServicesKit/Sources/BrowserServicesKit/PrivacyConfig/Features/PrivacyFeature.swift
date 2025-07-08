@@ -242,6 +242,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProOnboardingPromotion
     case privacyProFreeTrial
     case paidAIChat
+    case subscriptionRebranding
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

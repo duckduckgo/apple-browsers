@@ -198,7 +198,7 @@ final class OmniBarEditingStateAnimator {
             static let collapseDuration: TimeInterval = 0.4
             static let collapseDampingRatio: CGFloat = 0.7
             static let fadeOutDuration: TimeInterval = 0.15
-            static let fadeOutDelay: TimeInterval = collapseDuration * 0.65
+            static let fadeOutDelay: TimeInterval = collapseDuration * 0.35
         }
     }
 }

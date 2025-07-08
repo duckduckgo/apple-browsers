@@ -38,7 +38,8 @@ class MainMenuTests: XCTestCase {
         lastTabMenuItem = NSMenuItem()
         appearancePreferences = AppearancePreferences(
             persistor: MockAppearancePreferencesPersistor(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
     }
 

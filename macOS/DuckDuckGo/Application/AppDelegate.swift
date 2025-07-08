@@ -348,10 +348,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 #endif
 
+        let featureFlagger: FeatureFlagger
+        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType)  {
+            featureFlagger = MockFeatureFlagger()
+            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
+
+        } else {
+            let featureFlagOverrides = FeatureFlagLocalOverrides(
+                keyValueStore: UserDefaults.appConfiguration,
+                actionHandler: featureFlagOverridesPublishingHandler
+            )
+            let defaultFeatureFlagger = DefaultFeatureFlagger(
+                internalUserDecider: internalUserDecider,
+                privacyConfigManager: privacyConfigurationManager,
+                localOverrides: featureFlagOverrides,
+                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
+                    internalUserDecider.isInternalUser || isRunningUITests
+                },
+                experimentManager: ExperimentCohortsManager(
+                    store: ExperimentsDataStore(),
+                    fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
+                ),
+                for: FeatureFlag.self
+            )
+            featureFlagger = defaultFeatureFlagger
+            self.contentScopeExperimentsManager = defaultFeatureFlagger
+
+            featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
+        }
+        self.featureFlagger = featureFlagger
+
         appearancePreferences = AppearancePreferences(
             keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyConfigurationManager,
-            pixelFiring: PixelKit.shared
+            pixelFiring: PixelKit.shared,
+            featureFlagger: featureFlagger
         )
 
 #if DEBUG
@@ -388,35 +419,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        let featureFlagger: FeatureFlagger
-        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType)  {
-            featureFlagger = MockFeatureFlagger()
-            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
-
-        } else {
-            let featureFlagOverrides = FeatureFlagLocalOverrides(
-                keyValueStore: UserDefaults.appConfiguration,
-                actionHandler: featureFlagOverridesPublishingHandler
-            )
-            let defaultFeatureFlagger = DefaultFeatureFlagger(
-                internalUserDecider: internalUserDecider,
-                privacyConfigManager: privacyConfigurationManager,
-                localOverrides: featureFlagOverrides,
-                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
-                    internalUserDecider.isInternalUser || isRunningUITests
-                },
-                experimentManager: ExperimentCohortsManager(
-                    store: ExperimentsDataStore(),
-                    fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
-                ),
-                for: FeatureFlag.self
-            )
-            featureFlagger = defaultFeatureFlagger
-            self.contentScopeExperimentsManager = defaultFeatureFlagger
-
-            featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
-        }
-        self.featureFlagger = featureFlagger
         pinnedTabsManagerProvider = PinnedTabsManagerProvider()
 
 #if DEBUG || REVIEW

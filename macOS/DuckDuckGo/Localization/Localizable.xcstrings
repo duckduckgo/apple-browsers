@@ -40905,6 +40905,18 @@
         }
       }
     },
+    "newTab.favorites.section.omnibar" : {
+      "comment" : "Title of the Search section in the home page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search"
+          }
+        }
+      }
+    },
     "newTab.favorites.section.title" : {
       "comment" : "Title of the Favorites section in the home page",
       "extractionState" : "extracted_with_value",

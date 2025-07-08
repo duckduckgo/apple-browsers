@@ -45,7 +45,8 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
             continueSetUpModel: continueSetUpModel,
             appearancePreferences: AppearancePreferences(
                 persistor: MockAppearancePreferencesPersistor(),
-                privacyConfigurationManager: MockPrivacyConfigurationManager()
+                privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                featureFlagger: MockFeatureFlagger()
             )
         )
     }

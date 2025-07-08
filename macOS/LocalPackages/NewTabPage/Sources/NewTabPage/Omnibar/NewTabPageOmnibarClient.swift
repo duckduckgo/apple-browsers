@@ -17,11 +17,13 @@
 //
 
 import WebKit
+import Common
 
 public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     enum MessageName: String, CaseIterable {
         case getConfig = "omnibar_getConfig"
+        case getSuggestions = "omnibar_getSuggestions"
     }
 
     private let model: NewTabPageOmnibarModel
@@ -33,7 +35,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
         userScript.registerMessageHandlers([
-            MessageName.getConfig.rawValue: { [weak self] in try await self?.getConfig(params: $0, original: $1) }
+            MessageName.getConfig.rawValue: { [weak self] in try await self?.getConfig(params: $0, original: $1) },
+            MessageName.getSuggestions.rawValue: { [weak self] in try await self?.getSuggestions(params: $0, original: $1) }
         ])
     }
 
@@ -41,5 +44,12 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         // In future, the mode will be stored locally and provided in initial configuration below
         let mode = NewTabPageDataModel.OmnibarMode.search
         return NewTabPageDataModel.OmnibarConfig(mode: mode)
+    }
+
+    private func getSuggestions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let request: NewTabPageDataModel.OmnibarGetSuggestionsRequest = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        return NewTabPageDataModel.SuggestionsData(suggestions: NewTabPageDataModel.Suggestions(topHits: [], duckduckgoSuggestions: [], localSuggestions: []))// await model.searchSuggestionsProvider.suggestions(for: request.term))
     }
 }

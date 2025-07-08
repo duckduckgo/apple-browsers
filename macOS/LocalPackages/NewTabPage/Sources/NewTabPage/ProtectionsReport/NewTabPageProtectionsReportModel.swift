@@ -76,6 +76,8 @@ public final class NewTabPageProtectionsReportModel {
     let privacyStats: PrivacyStatsCollecting
     let statsUpdatePublisher: AnyPublisher<Void, Never>
 
+    @Published var shouldShowBurnAnimation: Bool
+
     @Published var isViewExpanded: Bool {
         didSet {
             settingsPersistor.isViewExpanded = self.isViewExpanded
@@ -101,24 +103,34 @@ public final class NewTabPageProtectionsReportModel {
     public convenience init(
         privacyStats: PrivacyStatsCollecting,
         keyValueStore: ThrowingKeyValueStoring,
+        burnAnimationSettingChanges: AnyPublisher<Bool, Never>,
+        showBurnAnimation: Bool,
         getLegacyIsViewExpandedSetting: @autoclosure () -> Bool?,
-        getLegacyActiveFeedSetting: @autoclosure () -> NewTabPageDataModel.Feed?
+        getLegacyActiveFeedSetting: @autoclosure () -> NewTabPageDataModel.Feed?,
     ) {
         let settingsPersistor = UserDefaultsNewTabPageProtectionsReportSettingsPersistor(
             keyValueStore,
             getLegacyIsViewExpanded: getLegacyIsViewExpandedSetting(),
             getLegacyActiveFeed: getLegacyActiveFeedSetting()
         )
-        self.init(privacyStats: privacyStats, settingsPersistor: settingsPersistor)
+        self.init(privacyStats: privacyStats,
+                  settingsPersistor: settingsPersistor,
+                  burnAnimationSettingChanges: burnAnimationSettingChanges,
+                  showBurnAnimation: showBurnAnimation)
     }
 
-    init(privacyStats: PrivacyStatsCollecting, settingsPersistor: NewTabPageProtectionsReportSettingsPersisting) {
+    init(privacyStats: PrivacyStatsCollecting,
+         settingsPersistor: NewTabPageProtectionsReportSettingsPersisting,
+         burnAnimationSettingChanges: AnyPublisher<Bool, Never>,
+         showBurnAnimation: Bool
+    ) {
         self.privacyStats = privacyStats
         self.settingsPersistor = settingsPersistor
 
         isViewExpanded = settingsPersistor.isViewExpanded
         activeFeed = settingsPersistor.activeFeed
         statsUpdatePublisher = statsUpdateSubject.eraseToAnyPublisher()
+        shouldShowBurnAnimation = showBurnAnimation
         visibleFeed = isViewExpanded ? activeFeed : nil
 
         Publishers.CombineLatest($isViewExpanded, $activeFeed)
@@ -131,6 +143,13 @@ public final class NewTabPageProtectionsReportModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.statsUpdateSubject.send()
+            }
+            .store(in: &cancellables)
+
+        burnAnimationSettingChanges
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] shouldShowBurnAnimation in
+                self?.shouldShowBurnAnimation = shouldShowBurnAnimation
             }
             .store(in: &cancellables)
     }

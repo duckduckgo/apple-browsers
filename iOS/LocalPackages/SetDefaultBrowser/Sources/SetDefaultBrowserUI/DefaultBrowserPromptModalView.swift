@@ -67,11 +67,15 @@ private extension DefaultBrowserPromptModalView {
         var body: some View {
             HStack {
                 Spacer()
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: Metrics.Header.closeButtonSize, height: Metrics.Header.closeButtonSize)
-                    .foregroundStyle(Color.primary)
+                Button {
+                    action()
+                } label: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: Metrics.Header.closeButtonSize, height: Metrics.Header.closeButtonSize)
+                        .foregroundStyle(Color.primary)
+                }
             }
         }
     }

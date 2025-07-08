@@ -625,13 +625,6 @@ final class AddressBarButtonsViewController: NSViewController {
                 askAIChatButtonWidthConstraint.animator().constant = targetWidth
             }
         } else {
-            guard isAskAIChatButtonExpanded else {
-                // Ignore any subsequent calls
-                return
-            }
-
-            isAskAIChatButtonExpanded = false
-
             askAIChatButton.backgroundColor = .clear
             askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
 
@@ -640,10 +633,19 @@ final class AddressBarButtonsViewController: NSViewController {
                 askAIChatButton.isEnabled = false
                 askAIChatButton.state = .on
 
+                isAskAIChatButtonExpanded = false
+
                 askAIChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
             } else {
                 askAIChatButton.isEnabled = true
                 askAIChatButton.state = .off
+
+                guard isAskAIChatButtonExpanded else {
+                    // Ignore any subsequent calls
+                    return
+                }
+
+                isAskAIChatButtonExpanded = false
 
                 // Animate button shrinking
                 NSAnimationContext.runAnimationGroup { context in

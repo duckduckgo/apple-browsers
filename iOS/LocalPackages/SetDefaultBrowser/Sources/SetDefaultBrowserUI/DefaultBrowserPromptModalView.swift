@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
 
@@ -35,9 +36,8 @@ struct DefaultBrowserPromptModalView: View {
 
         VStack(spacing: Metrics.Container.itemsVerticalSpacing) {
             Header(action: closeAction)
-                .padding(.top, Metrics.Header.verticalPadding.build(v: verticalSizeClass, h: horizontalSizeClass))
-                .padding(.horizontal, Metrics.Header.horizontalPadding.build(v: verticalSizeClass, h: horizontalSizeClass))
-                .ignoresSafeArea(edges: .horizontal)
+                .padding(.top, Metrics.Header.verticalPadding)
+                .padding(.horizontal, Metrics.Header.horizontalPadding)
 
             Spacer(minLength: Metrics.Container.topSpacerMinLength)
 
@@ -49,7 +49,6 @@ struct DefaultBrowserPromptModalView: View {
             Footer(setDefaultBrowserAction: setAsDefaultAction, doNotAskAgainAction: doNotAskAgainAction)
                 .padding(.horizontal, horizontalPadding)
         }
-        .padding(.top, Metrics.Container.topPadding)
         .padding(.bottom)
         .background(Color(designSystemColor: .surface))
     }
@@ -67,11 +66,16 @@ private extension DefaultBrowserPromptModalView {
 
         var body: some View {
             HStack {
-                Button(UserText.closeCTA, action: action)
-                    .font(.system(size: Metrics.Header.cancelButtonFontSize))
-                    .foregroundStyle(Color.primary)
-                    .opacity(0.84)
                 Spacer()
+                Button {
+                    action()
+                } label: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: Metrics.Header.closeButtonSize, height: Metrics.Header.closeButtonSize)
+                        .foregroundStyle(Color.primary)
+                }
             }
         }
     }
@@ -137,14 +141,13 @@ private enum Metrics {
         static let itemsVerticalSpacing: CGFloat = 0
         static let topSpacerMinLength: CGFloat = 0
         static let bottomSpacerMinLength: CGFloat = 10
-        static let topPadding: CGFloat = 16
         static let horizontalPadding = MetricBuilder<CGFloat>(iPhone: 24, iPad: 92).iPhone(landscape: 10)
     }
 
     enum Header {
-        static let cancelButtonFontSize: CGFloat = 17
-        static let verticalPadding = MetricBuilder<CGFloat>(default: 0).landscape(10)
-        static let horizontalPadding = MetricBuilder<CGFloat>(default: 16).iPad(portrait: 20).landscape(iPhone: 40)
+        static let closeButtonSize: CGFloat = 24
+        static let verticalPadding: CGFloat = 16
+        static let horizontalPadding: CGFloat = 14
     }
 
     enum Content {

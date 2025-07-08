@@ -109,7 +109,11 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
     private let mismatchCalculator: MismatchCalculator
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
-    private var mode = BrokerProfileJobQueueMode.idle
+    private var mode = BrokerProfileJobQueueMode.idle {
+        didSet {
+            Logger.dataBrokerProtection.log("📋 QueueManager: Mode changed from \(String(describing: oldValue), privacy: .public) to \(String(describing: self.mode), privacy: .public)")
+        }
+    }
     private var operationErrors: [Error] = []
 
     public var debugRunningStatusString: String {
@@ -138,14 +142,17 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
                                                         errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
 
+        Logger.dataBrokerProtection.log("📋 QueueManager: startImmediateScanOperationsIfPermitted called")
         let newMode = BrokerProfileJobQueueMode.immediate(errorHandler: errorHandler, completion: completion)
         startJobsIfPermitted(forNewMode: newMode,
                              type: .manualScan,
                              showWebView: showWebView,
                              jobDependencies: jobDependencies) { [weak self] errors in
+            Logger.dataBrokerProtection.log("📋 QueueManager: Immediate scan error handler called")
             self?.mismatchCalculator.calculateMismatches()
             errorHandler?(errors)
         } completion: {
+            Logger.dataBrokerProtection.log("📋 QueueManager: Immediate scan completion handler called")
             completion?()
         }
     }
@@ -200,6 +207,7 @@ private extension BrokerProfileJobQueueManager {
                                        jobDependencies: BrokerProfileJobDependencyProviding,
                                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                        completion: (() -> Void)?) {
+        Logger.dataBrokerProtection.log("📋 QueueManager: startScheduledJobsIfPermitted - jobType: \(String(describing: jobType), privacy: .public)")
         let newMode = BrokerProfileJobQueueMode.scheduled(errorHandler: errorHandler, completion: completion)
         startJobsIfPermitted(forNewMode: newMode,
                              type: jobType,
@@ -216,7 +224,10 @@ private extension BrokerProfileJobQueueManager {
                               errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                               completion: (() -> Void)?) {
 
+        Logger.dataBrokerProtection.log("📋 QueueManager: startJobsIfPermitted - currentMode: \(String(describing: self.mode), privacy: .public), newMode: \(String(describing: newMode), privacy: .public)")
+
         guard mode.canBeInterruptedBy(newMode: newMode) else {
+            Logger.dataBrokerProtection.log("📋 QueueManager: BLOCKED - Cannot interrupt current mode")
             let error = BrokerProfileJobQueueError.cannotInterrupt
             let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: error)
             errorHandler?(errorCollection)
@@ -225,14 +236,18 @@ private extension BrokerProfileJobQueueManager {
         }
 
         if delegate != nil {
+            Logger.dataBrokerProtection.log("📋 QueueManager: Adding barrier block for delegate")
             jobQueue.addBarrierBlock1 { [weak self] in
                 guard let self, let delegate = self.delegate else { return }
                 delegate.queueManagerWillEnqueueOperations(self)
             }
         }
 
+        Logger.dataBrokerProtection.log("📋 QueueManager: Canceling current mode and resetting")
         cancelCurrentModeAndResetIfNeeded()
         mode = newMode
+
+        Logger.dataBrokerProtection.log("📋 QueueManager: Calling addJobs")
         addJobs(for: type,
                 priorityDate: mode.priorityDate,
                 showWebView: showWebView,
@@ -242,16 +257,18 @@ private extension BrokerProfileJobQueueManager {
     }
 
     func cancelCurrentModeAndResetIfNeeded() {
+        Logger.dataBrokerProtection.log("📋 QueueManager: cancelCurrentModeAndResetIfNeeded - current mode: \(String(describing: self.mode), privacy: .public)")
         switch mode {
         case .immediate(let errorHandler, let completion), .scheduled(let errorHandler, let completion):
+            Logger.dataBrokerProtection.log("📋 QueueManager: Canceling all operations and calling handlers")
             jobQueue.cancelAllOperations()
             let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: BrokerProfileJobQueueError.interrupted, operationErrors: operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
             resetMode(clearErrors: true)
             completion?()
             resetMode()
-        default:
-            break
+            default:
+            Logger.dataBrokerProtection.log("📋 QueueManager: No mode to cancel (idle)")
         }
     }
 
@@ -270,7 +287,7 @@ private extension BrokerProfileJobQueueManager {
                  completion: (() -> Void)?) {
 
         Logger.dataBrokerProtection.log("📋 QueueManager.addJobs - jobType: \(String(describing: jobType), privacy: .public), priorityDate: \(String(describing: priorityDate), privacy: .public)")
-        
+
         jobQueue.maxConcurrentOperationCount = jobDependencies.executionConfig.concurrentJobsFor(jobType)
 
         let jobs: [BrokerProfileJob]
@@ -282,10 +299,12 @@ private extension BrokerProfileJobQueueManager {
                                                     jobDependencies: jobDependencies)
 
             Logger.dataBrokerProtection.log("📋 QueueManager.addJobs - created \(jobs.count, privacy: .public) jobs")
-            
-            for job in jobs {
+
+            for (index, job) in jobs.enumerated() {
+                Logger.dataBrokerProtection.log("📋 QueueManager.addJobs - Adding job \(index + 1, privacy: .public) of \(jobs.count, privacy: .public) to queue")
                 jobQueue.addOperation(job)
             }
+            Logger.dataBrokerProtection.log("📋 QueueManager.addJobs - All jobs added to queue")
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerProtectionProcessor error: addOperations, error: \(error.localizedDescription, privacy: .public)")
             errorHandler?(DataBrokerProtectionJobsErrorCollection(oneTimeError: error))
@@ -293,12 +312,15 @@ private extension BrokerProfileJobQueueManager {
             return
         }
 
+        Logger.dataBrokerProtection.log("📋 QueueManager.addJobs - adding barrier block")
         jobQueue.addBarrierBlock1 { [weak self] in
+            Logger.dataBrokerProtection.log("📋 QueueManager: Barrier block executing")
             let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: nil, operationErrors: self?.operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
             self?.resetMode(clearErrors: true)
             completion?()
             self?.resetMode()
+            Logger.dataBrokerProtection.log("📋 QueueManager: Barrier block completed")
         }
     }
 

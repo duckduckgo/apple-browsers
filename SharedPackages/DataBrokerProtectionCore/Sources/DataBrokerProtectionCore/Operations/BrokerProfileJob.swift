@@ -91,8 +91,10 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     }
 
     public override func main() {
+        Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.main() - Starting job for broker: \(self.dataBrokerID, privacy: .public)")
         Task {
             await runJob()
+            Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.main() - runJob completed for broker: \(self.dataBrokerID, privacy: .public)")
             finish()
         }
     }
@@ -146,7 +148,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
         // Log filtered results
         Logger.dataBrokerProtection.log("🔍 Final filtered job count: \(filteredAndSortedJobData.count, privacy: .public)")
-        
+
         // Need to map back to broker names for filtered results
         for job in filteredAndSortedJobData {
             if let optOut = job as? OptOutJobData {
@@ -168,17 +170,19 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     private func runJob() async {
         let allBrokerProfileQueryData: [BrokerProfileQueryData]
 
+        Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.runJob() - Fetching all broker profile data")
         do {
             allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData()
+            Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.runJob() - Fetched \(allBrokerProfileQueryData.count, privacy: .public) broker profiles")
         } catch {
-            Logger.dataBrokerProtection.error("DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
+            Logger.dataBrokerProtection.error("🎯 DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
             return
         }
 
         let brokerProfileQueriesData = allBrokerProfileQueryData.filter { $0.dataBroker.id == dataBrokerID }
-        
+
         let brokerName = brokerProfileQueriesData.first?.dataBroker.name ?? "Unknown"
-        Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.runJob() - Processing broker: \(brokerName, privacy: .public) (id:\(self.dataBrokerID, privacy: .public))")
+        Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.runJob() - Processing broker: \(brokerName, privacy: .public) (id:\(self.dataBrokerID, privacy: .public)), jobType: \(String(describing: self.jobType), privacy: .public)")
 
         let filteredAndSortedJobData = Self.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: brokerProfileQueriesData,
                                                                                   jobType: jobType,
@@ -201,9 +205,10 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
             }
 
             do {
-                Logger.dataBrokerProtection.log("Running operation: \(String(describing: jobData), privacy: .public)")
+                Logger.dataBrokerProtection.log("🎯 Running operation: \(String(describing: jobData), privacy: .public) for broker: \(brokerName, privacy: .public)")
 
                 if jobData is ScanJobData {
+                    Logger.dataBrokerProtection.log("🎯 Starting SCAN job for broker: \(brokerName, privacy: .public)")
                     try await withTimeout(jobDependencies.executionConfig.scanJobTimeout) { [self] in
                         try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScan(
                             brokerProfileQueryData: brokerProfileData,
@@ -215,6 +220,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                             })
                     }
                 } else if let optOutJobData = jobData as? OptOutJobData {
+                    Logger.dataBrokerProtection.log("🎯 Starting OPT-OUT job for broker: \(brokerName, privacy: .public), profile: \(String(describing: optOutJobData.extractedProfile.name), privacy: .public)")
                     try await withTimeout(jobDependencies.executionConfig.optOutJobTimeout) { [self] in
                         try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOut(
                             for: optOutJobData.extractedProfile,
@@ -245,6 +251,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     }
 
     private func finish() {
+        Logger.dataBrokerProtection.log("🎯 BrokerProfileJob.finish() - Finishing job for broker: \(self.dataBrokerID, privacy: .public)")
         willChangeValue(forKey: #keyPath(isExecuting))
         willChangeValue(forKey: #keyPath(isFinished))
 
@@ -254,7 +261,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         didChangeValue(forKey: #keyPath(isExecuting))
         didChangeValue(forKey: #keyPath(isFinished))
 
-        Logger.dataBrokerProtection.log("Finished operation: \(self.id.uuidString, privacy: .public)")
+        Logger.dataBrokerProtection.log("🎯 Finished operation: \(self.id.uuidString, privacy: .public) for broker: \(self.dataBrokerID, privacy: .public)")
     }
 }
 

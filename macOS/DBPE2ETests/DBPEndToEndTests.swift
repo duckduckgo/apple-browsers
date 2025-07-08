@@ -217,6 +217,12 @@ final class DBPEndToEndTests: XCTestCase {
             autoreleasepool {
                 let queries = try! database.fetchAllBrokerProfileQueryData()
                 let optOutJobs = queries.flatMap { $0.optOutJobData }
+                if optOutJobs.count > 0 {
+                    print("🧪 E2E Test: Found \(optOutJobs.count) opt-out jobs at \(Date())")
+                    for optOut in optOutJobs {
+                        print("🧪 E2E Test: Opt-out job - preferredRunDate: \(String(describing: optOut.preferredRunDate)), broker: \(optOut.brokerId)")
+                    }
+                }
                 return optOutJobs.count > 0
             }
         })

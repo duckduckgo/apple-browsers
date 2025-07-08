@@ -82,6 +82,7 @@ private extension DataBrokerJobTests {
                                          captchaService: CaptchaServiceMock(),
                                          stageDurationCalculator: MockStageDurationCalculator(),
                                          pixelHandler: MockPixelHandler(),
+                                         executionConfig: BrokerJobExecutionConfig(),
                                          shouldRunNextStep: { true })
     }
 
@@ -93,6 +94,7 @@ private extension DataBrokerJobTests {
                                            captchaService: CaptchaServiceMock(),
                                            stageCalculator: MockStageDurationCalculator(),
                                            pixelHandler: MockPixelHandler(),
+                                           executionConfig: BrokerJobExecutionConfig(),
                                            shouldRunNextStep: { true })
     }
 

@@ -1305,6 +1305,9 @@ public final class MockBrokerProfileJobQueueManager: BrokerProfileJobQueueManagi
 
     public func execute(_ command: DataBrokerProtectionQueueManagerDebugCommand) {
     }
+
+    public func stop() {
+    }
 }
 
 public final class MockBrokerProfileJobQueue: BrokerProfileJobQueue {

@@ -63,12 +63,6 @@ SYSEX_MACH_SERVICE_NAME[config=Review][sdk=*] = $(NETP_APP_GROUP).ipc
 SYSEX_MACH_SERVICE_NAME[config=Debug][sdk=*] = $(NETP_APP_GROUP).ipc
 SYSEX_MACH_SERVICE_NAME[config=Release][sdk=*] = $(NETP_APP_GROUP).ipc
 
-NOTIFICATIONS_AGENT_BUNDLE_ID[sdk=*] = $(DEVELOPMENT_TEAM).com.duckduckgo.macos.browser.network-protection.notifications
-NOTIFICATIONS_AGENT_BUNDLE_ID[config=Debug][sdk=*] = $(DEVELOPMENT_TEAM).com.duckduckgo.macos.browser.network-protection.notifications.debug
-NOTIFICATIONS_AGENT_BUNDLE_ID[config=CI][sdk=*] = $(DEVELOPMENT_TEAM).com.duckduckgo.macos.browser.network-protection.notifications.debug
-NOTIFICATIONS_AGENT_BUNDLE_ID[config=Review][sdk=*] = $(DEVELOPMENT_TEAM).com.duckduckgo.macos.browser.network-protection.notifications.review
-NOTIFICATIONS_AGENT_PRODUCT_NAME = DuckDuckGo Notifications
-
 AGENT_BUNDLE_ID_BASE[sdk=*] = com.duckduckgo.macos.vpn
 
 AGENT_BUNDLE_ID[sdk=*] = $(AGENT_BUNDLE_ID_BASE)

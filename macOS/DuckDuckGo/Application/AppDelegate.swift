@@ -95,6 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
     let featureFlagger: FeatureFlagger
+    let visualizeFireAnimationDecider: VisualizeFireAnimationDecider
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
@@ -145,6 +146,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tld: tld,
         fireCoordinator: fireCoordinator,
         keyValueStore: keyValueStore,
+        visualizeFireAnimationDecider: visualizeFireAnimationDecider,
         featureFlagger: featureFlagger
     )
 
@@ -192,7 +194,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         featureFlagOverridesPublisher: featureFlagOverridesPublishingHandler.flagDidChangePublisher,
         loginItemsManager: LoginItemsManager(),
         defaults: .netP)
-    private var networkProtectionSubscriptionEventHandler: NetworkProtectionSubscriptionEventHandler?
+    private var vpnSubscriptionEventHandler: VPNSubscriptionEventsHandler?
 
     private var vpnXPCClient: VPNControllerXPCClient {
         VPNControllerXPCClient.shared
@@ -346,10 +348,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 #endif
 
+        let featureFlagger: FeatureFlagger
+        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType)  {
+            featureFlagger = MockFeatureFlagger()
+            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
+
+        } else {
+            let featureFlagOverrides = FeatureFlagLocalOverrides(
+                keyValueStore: UserDefaults.appConfiguration,
+                actionHandler: featureFlagOverridesPublishingHandler
+            )
+            let defaultFeatureFlagger = DefaultFeatureFlagger(
+                internalUserDecider: internalUserDecider,
+                privacyConfigManager: privacyConfigurationManager,
+                localOverrides: featureFlagOverrides,
+                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
+                    internalUserDecider.isInternalUser || isRunningUITests
+                },
+                experimentManager: ExperimentCohortsManager(
+                    store: ExperimentsDataStore(),
+                    fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
+                ),
+                for: FeatureFlag.self
+            )
+            featureFlagger = defaultFeatureFlagger
+            self.contentScopeExperimentsManager = defaultFeatureFlagger
+
+            featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
+        }
+        self.featureFlagger = featureFlagger
+
         appearancePreferences = AppearancePreferences(
             keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyConfigurationManager,
-            pixelFiring: PixelKit.shared
+            pixelFiring: PixelKit.shared,
+            featureFlagger: featureFlagger
         )
 
 #if DEBUG
@@ -386,35 +419,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        let featureFlagger: FeatureFlagger
-        if [.unitTests, .integrationTests, .xcPreviews].contains(AppVersion.runType)  {
-            featureFlagger = MockFeatureFlagger()
-            self.contentScopeExperimentsManager = MockContentScopeExperimentManager()
-
-        } else {
-            let featureFlagOverrides = FeatureFlagLocalOverrides(
-                keyValueStore: UserDefaults.appConfiguration,
-                actionHandler: featureFlagOverridesPublishingHandler
-            )
-            let defaultFeatureFlagger = DefaultFeatureFlagger(
-                internalUserDecider: internalUserDecider,
-                privacyConfigManager: privacyConfigurationManager,
-                localOverrides: featureFlagOverrides,
-                allowOverrides: { [internalUserDecider, isRunningUITests=(AppVersion.runType == .uiTests)] in
-                    internalUserDecider.isInternalUser || isRunningUITests
-                },
-                experimentManager: ExperimentCohortsManager(
-                    store: ExperimentsDataStore(),
-                    fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)
-                ),
-                for: FeatureFlag.self
-            )
-            featureFlagger = defaultFeatureFlagger
-            self.contentScopeExperimentsManager = defaultFeatureFlagger
-
-            featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
-        }
-        self.featureFlagger = featureFlagger
         pinnedTabsManagerProvider = PinnedTabsManagerProvider()
 
 #if DEBUG || REVIEW
@@ -517,8 +521,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fireproofDomains: fireproofDomains,
             faviconManager: faviconManager,
             windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared
         )
+        visualizeFireAnimationDecider = DefaultVisualizeFireAnimationDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
@@ -712,7 +718,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let tunnelController = NetworkProtectionIPCTunnelController(ipcClient: vpnXPCClient)
         let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
 
-        networkProtectionSubscriptionEventHandler = NetworkProtectionSubscriptionEventHandler(subscriptionManager: subscriptionAuthV1toV2Bridge,
+        vpnSubscriptionEventHandler = VPNSubscriptionEventsHandler(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                                               tunnelController: tunnelController,
                                                                                               vpnUninstaller: vpnUninstaller)
 
@@ -847,7 +853,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         UserDefaultsWrapper<Any>.clearRemovedKeys()
 
-        networkProtectionSubscriptionEventHandler?.registerForSubscriptionAccountManagerEvents()
+        vpnSubscriptionEventHandler?.registerForSubscriptionAccountManagerEvents()
 
         UNUserNotificationCenter.current().delegate = self
 

@@ -30,7 +30,7 @@ final class LocalBookmarkStoreSavingTests: XCTestCase {
 
     // MARK: Save/Delete
 
-    let container = CoreData.bookmarkContainer()
+    var container: NSPersistentContainer! = CoreData.bookmarkContainer()
     var store: LocalBookmarkStore!
 
     override func setUp() {
@@ -47,6 +47,11 @@ final class LocalBookmarkStoreSavingTests: XCTestCase {
         store = LocalBookmarkStore {
             self.container.newBackgroundContext()
         }
+    }
+
+    override func tearDown() {
+        container = nil
+        store = nil
     }
 
     func testWhenThereIsNoErrorThenDataIsSaved() throws {

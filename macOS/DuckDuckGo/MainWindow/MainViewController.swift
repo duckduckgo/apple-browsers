@@ -96,7 +96,8 @@ final class MainViewController: NSViewController {
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
          fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
-         pixelFiring: PixelFiring? = PixelKit.shared
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         visualizeFireAnimationDecider: VisualizeFireAnimationDecider = NSApp.delegateTyped.visualizeFireAnimationDecider
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -184,7 +185,7 @@ final class MainViewController: NSViewController {
                                                                          aiChatSidebarPresenter: aiChatSidebarPresenter)
 
         findInPageViewController = FindInPageViewController.create()
-        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel)
+        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
         bookmarksBarViewController = BookmarksBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,

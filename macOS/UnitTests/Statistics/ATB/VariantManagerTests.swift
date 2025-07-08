@@ -30,6 +30,10 @@ class VariantManagerTests: XCTestCase {
         Variant(name: "excluded", weight: 1000, isIncluded: { return false }, features: [.dummy])
     ]
 
+    override var allowedNonNilVariables: Set<String> {
+        ["testVariants"]
+    }
+
     func testWhenVariantIsExcludedThenItIsNotInVariantList() {
 
         let subject = DefaultVariantManager(variants: testVariants, storage: MockStatisticsStore(), rng: MockVariantRNG(returnValue: 500), campaignVariant: CampaignVariant(statisticsStore: MockStatisticsStore()))

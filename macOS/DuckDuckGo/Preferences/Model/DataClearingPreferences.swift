@@ -18,6 +18,8 @@
 
 import Foundation
 import PixelKit
+import BrowserServicesKit
+import FeatureFlags
 
 final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
 
@@ -40,10 +42,22 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     @Published
+    var isFireAnimationEnabled: Bool {
+        didSet {
+            pixelFiring?.fire(GeneralPixel.fireAnimationSetting(enabled: isFireAnimationEnabled))
+            persistor.isFireAnimationEnabled = isFireAnimationEnabled
+        }
+    }
+
+    @Published
     var isWarnBeforeClearingEnabled: Bool {
         didSet {
             persistor.warnBeforeClearingEnabled = isWarnBeforeClearingEnabled
         }
+    }
+
+    var shouldShowDisableFireAnimationSection: Bool {
+        featureFlagger.isFeatureOn(.disableFireAnimation)
     }
 
     @objc func toggleWarnBeforeClearing() {
@@ -69,6 +83,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         fireproofDomains: FireproofDomains,
         faviconManager: FaviconManagement,
         windowControllersManager: WindowControllersManagerProtocol,
+        featureFlagger: FeatureFlagger,
         pixelFiring: PixelFiring? = nil
     ) {
         self.persistor = persistor
@@ -76,9 +91,11 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         self.faviconManager = faviconManager
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
+        self.featureFlagger = featureFlagger
         isLoginDetectionEnabled = persistor.loginDetectionEnabled
         isAutoClearEnabled = persistor.autoClearEnabled
         isWarnBeforeClearingEnabled = persistor.warnBeforeClearingEnabled
+        isFireAnimationEnabled = persistor.isFireAnimationEnabled
     }
 
     private var persistor: FireButtonPreferencesPersistor
@@ -86,12 +103,14 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
     private let faviconManager: FaviconManagement
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pixelFiring: PixelFiring?
+    private let featureFlagger: FeatureFlagger
 }
 
 protocol FireButtonPreferencesPersistor {
     var loginDetectionEnabled: Bool { get set }
     var autoClearEnabled: Bool { get set }
     var warnBeforeClearingEnabled: Bool { get set }
+    var isFireAnimationEnabled: Bool { get set }
 }
 
 struct FireButtonPreferencesUserDefaultsPersistor: FireButtonPreferencesPersistor {
@@ -104,6 +123,9 @@ struct FireButtonPreferencesUserDefaultsPersistor: FireButtonPreferencesPersisto
 
     @UserDefaultsWrapper(key: .warnBeforeClearingEnabled, defaultValue: false)
     var warnBeforeClearingEnabled: Bool
+
+    @UserDefaultsWrapper(key: .fireAnimationEnabled, defaultValue: true)
+    var isFireAnimationEnabled: Bool
 
 }
 

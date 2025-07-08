@@ -20,10 +20,13 @@ import Combine
 import NewTabPage
 
 final class MockNewTabPageSectionsVisibilityProvider: NewTabPageSectionsVisibilityProviding {
-
+    @Published var isOmnibarVisible: Bool = true
     @Published var isFavoritesVisible: Bool = true
     @Published var isProtectionsReportVisible: Bool = true
 
+    var isOmnibarVisiblePublisher: AnyPublisher<Bool, Never> {
+        $isOmnibarVisible.dropFirst().removeDuplicates().eraseToAnyPublisher()
+    }
     var isFavoritesVisiblePublisher: AnyPublisher<Bool, Never> {
         $isFavoritesVisible.dropFirst().removeDuplicates().eraseToAnyPublisher()
     }

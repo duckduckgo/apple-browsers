@@ -18,12 +18,14 @@
 
 #if DEBUG
 import PersistenceTestingUtils
+import BrowserServicesKit
 
 extension AppearancePreferences {
     static let mock = AppearancePreferences(
         // swiftlint:disable:next force_try
         persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: try! MockKeyValueFileStore()),
-        privacyConfigurationManager: MockPrivacyConfigurationManager()
+        privacyConfigurationManager: MockPrivacyConfigurationManager(),
+        featureFlagger: MockFeatureFlagger()
     )
 }
 #endif

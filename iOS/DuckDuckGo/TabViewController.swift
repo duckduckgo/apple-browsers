@@ -1993,7 +1993,13 @@ extension TabViewController: WKNavigationDelegate {
                decision != .cancel,
                navigationAction.isTargetingMainFrame() {
                 if url.isDuckDuckGoSearch {
-                    StatisticsLoader.shared.refreshSearchRetentionAtb()
+                    let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
+                                                                        application: UIApplication.shared)
+                    StatisticsLoader.shared.refreshSearchRetentionAtb {
+                        DispatchQueue.main.async {
+                            backgroundAssertion.release()
+                        }
+                    }
                     privacyProDataReporter.saveSearchCount()
                 }
 

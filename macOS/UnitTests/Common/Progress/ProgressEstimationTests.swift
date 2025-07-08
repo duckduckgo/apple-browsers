@@ -31,6 +31,10 @@ final class ProgressEstimationTests: XCTestCase {
         Event(progress: 1.00, interval: 20.0)
     ]
 
+    override var allowedNonNilVariables: Set<String> {
+        ["milestones"]
+    }
+
     func testWhenProgressIsStartedEstimationIsInitial() {
         let event = Event.nextStep(for: 0.0, lastProgressEvent: nil, milestones: milestones)
 

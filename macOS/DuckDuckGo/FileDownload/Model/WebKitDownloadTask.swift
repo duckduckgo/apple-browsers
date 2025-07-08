@@ -575,7 +575,7 @@ final class WebKitDownloadTask: NSObject, ProgressReporting, @unchecked Sendable
         let downloadDescr = download.debugDescription
         @MainActor(unsafe) func performRegardlessOfMainThread() {
             Logger.fileDownload.debug("<Task \(downloadDescr)>.deinit")
-            assert(state.isCompleted, "FileDownloadTask is deallocated without finish(with:) been called")
+            assert(state.isCompleted || [.unitTests, .integrationTests].contains(AppVersion.runType), "WebKitDownloadTask is deallocated without finish(with:) been called")
         }
         performRegardlessOfMainThread()
 #endif

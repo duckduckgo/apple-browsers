@@ -181,6 +181,7 @@ struct BrokerProfileScanSubJob {
                     try database.add(reAppearanceEvent)
                     try database.updateRemovedDate(nil, on: id)
                 }
+                Logger.dataBrokerProtection.log("Extracted profile already exists in database: \(id.description)")
             } else {
                 try scheduleNewOptOutJob(from: extractedProfile,
                                          brokerProfileQueryData: brokerProfileQueryData,
@@ -366,6 +367,7 @@ struct BrokerProfileScanSubJob {
                 database: database
             )
         } catch {
+            Logger.dataBrokerProtection.log("Can't update operation date after error")
         }
 
         Logger.dataBrokerProtection.error("Error on operation: \(error.localizedDescription, privacy: .public)")

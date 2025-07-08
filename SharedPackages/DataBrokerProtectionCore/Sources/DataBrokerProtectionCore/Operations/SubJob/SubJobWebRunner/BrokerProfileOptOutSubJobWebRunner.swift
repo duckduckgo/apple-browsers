@@ -87,6 +87,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         try await run(inputValue: extractedProfile, showWebView: showWebView)
     }
 
+    @MainActor
     public func run(inputValue: ExtractedProfile,
                     webViewHandler: WebViewHandler? = nil,
                     actionsHandler: ActionsHandler? = nil,
@@ -123,7 +124,9 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 }
             }
         } onCancel: {
-            task?.cancel()
+            DispatchQueue.main.async {
+                task?.cancel()
+            }
         }
     }
 

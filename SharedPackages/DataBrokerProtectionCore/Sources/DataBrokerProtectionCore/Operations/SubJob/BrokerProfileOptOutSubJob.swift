@@ -52,17 +52,20 @@ struct BrokerProfileOptOutSubJob {
 
         // 2. Validate that profile hasn't already been opted-out:
         guard extractedProfile.removedDate == nil else {
+            Logger.dataBrokerProtection.log("Profile already removed, skipping...")
             return
         }
 
         // 3. Validate that profile is eligible to be opted-out now:
         guard !brokerProfileQueryData.dataBroker.performsOptOutWithinParent() else {
+            Logger.dataBrokerProtection.log("Broker opts out in parent, skipping...")
             return
         }
 
         // 4. Validate that profile isn't manually removed by user (using "This isn't me")
         guard let events = try? dependencies.database.fetchOptOutHistoryEvents(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId),
               !events.doesBelongToUserRemovedRecord else {
+            Logger.dataBrokerProtection.log("Manually removed by user, skipping...")
             return
         }
 
@@ -250,6 +253,7 @@ struct BrokerProfileOptOutSubJob {
                 database: database
             )
         } catch {
+            Logger.dataBrokerProtection.log("Can't update operation date after error")
         }
 
         Logger.dataBrokerProtection.error("Error on operation : \(error.localizedDescription, privacy: .public)")

@@ -94,7 +94,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         )
         endpointService.updateCache(with: cachedSubscription)
 
-        let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheOnly)
+        let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
         XCTAssertEqual(subscription, cachedSubscription)
     }
 
@@ -119,7 +119,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
     func testGetSubscriptionThrowsNoDataWhenNoCacheAndFetchFails() async {
         do {
-            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheOnly)
+            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
             XCTFail("Expected noData error")
         } catch SubscriptionEndpointServiceError.noData {
             // Success
@@ -229,7 +229,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         )
         endpointService.updateCache(with: subscription)
 
-        let cachedSubscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheOnly)
+        let cachedSubscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
         XCTAssertEqual(cachedSubscription, subscription)
     }
 
@@ -249,7 +249,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
         endpointService.clearSubscription()
         do {
-            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheOnly)
+            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
         } catch SubscriptionEndpointServiceError.noData {
             // Success
         } catch {

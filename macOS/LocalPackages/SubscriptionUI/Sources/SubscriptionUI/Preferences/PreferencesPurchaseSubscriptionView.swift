@@ -107,26 +107,26 @@ public struct PreferencesPurchaseSubscriptionView: View {
     
     private var availableFeatures: [SectionView] {
         var features: [SectionView] = []
-        
+
         switch model.subscriptionStorefrontRegion {
         case .usa:
             // VPN
             features.append(SectionView(iconName: "VPN-Icon",
                                       title: UserText.vpnServiceTitle,
                                       description: UserText.vpnServiceDescription))
-            
+
             // Personal Information Removal
             features.append(SectionView(iconName: "PIR-Icon",
                                       title: UserText.personalInformationRemovalServiceTitle,
                                       description: UserText.personalInformationRemovalServiceDescription))
-            
+
             // AI Chat (Duck.ai) - Only add if enabled
             if model.isPaidAIChatEnabled {
                 features.append(SectionView(iconName: "Ai-Chat-icon",
                                           title: UserText.paidAIChatTitle,
                                           description: UserText.paidAIChatServiceDescription))
             }
-            
+
             // Identity Theft Restoration
             features.append(SectionView(iconName: "ITR-Icon",
                                       title: UserText.identityTheftRestorationServiceTitle,
@@ -137,20 +137,20 @@ public struct PreferencesPurchaseSubscriptionView: View {
             features.append(SectionView(iconName: "VPN-Icon",
                                       title: UserText.vpnServiceTitle,
                                       description: UserText.vpnServiceDescription))
-            
+
             // AI Chat (Duck.ai) - Only add if enabled
             if model.isPaidAIChatEnabled {
                 features.append(SectionView(iconName: "Ai-Chat-icon",
                                           title: UserText.paidAIChatTitle,
                                           description: UserText.paidAIChatServiceDescription))
             }
-            
+
             // Identity Theft Restoration
             features.append(SectionView(iconName: "ITR-Icon",
                                       title: UserText.identityTheftRestorationServiceTitle,
                                       description: UserText.identityTheftRestorationServiceDescription))
         }
-        
+
         return features
     }
 

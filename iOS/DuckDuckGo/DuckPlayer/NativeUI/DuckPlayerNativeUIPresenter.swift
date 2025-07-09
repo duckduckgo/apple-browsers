@@ -393,7 +393,7 @@ final class DuckPlayerNativeUIPresenter {
         
         // Clean up block-based notification observers to prevent memory leaks
         notificationObservers.forEach { observer in
-            NotificationCenter.default.removeObserver(observer)
+            notificationCenter.removeObserver(observer)
         }
         notificationObservers.removeAll()
         

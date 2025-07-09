@@ -761,12 +761,6 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         aiChatSettings.showShortcutInAddressBar = false
     }
 
-    func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool) {
-        let trailingConstant: CGFloat = isVisible ? 80 : 45
-        addressBarTextTrailingConstraint.constant = trailingConstant
-        passiveTextFieldTrailingConstraint.constant = trailingConstant
-    }
-
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         _ = escapeKeyDown()
     }

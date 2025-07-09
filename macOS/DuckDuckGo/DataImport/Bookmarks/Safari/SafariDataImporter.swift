@@ -44,7 +44,7 @@ final class SafariDataImporter: DataImporter {
     }
     private let featureFlagger: FeatureFlagger
 
-    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager, featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
+    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager, featureFlagger: FeatureFlagger) {
         self.profile = profile
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager

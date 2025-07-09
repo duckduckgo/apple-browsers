@@ -65,7 +65,7 @@ final class SafariBookmarksReader {
 
     init(safariBookmarksFileURL: URL, otherBookmarksFolderTitle: String = UserText.otherBookmarksImportedFolderTitle, featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.safariBookmarksFileURL = safariBookmarksFileURL
-        // Replace "Bookmarks" with localized string after copy review
+        // Replace "Bookmarks" with localized string after copy review: https://app.asana.com/1/137249556945/project/1201048563534612/task/1210728265847799?focus=true
         self.otherBookmarksFolderTitle = featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport) ? "Bookmarks" : otherBookmarksFolderTitle
     }
 

@@ -1,5 +1,5 @@
 //
-//  NewTabPageOmnibarModel.swift
+//  NewTabPageOmnibarSuggestionsProviding.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-public final class NewTabPageOmnibarModel {
+public protocol NewTabPageOmnibarSuggestionsProviding: AnyObject {
 
-    public init() {}
+    @MainActor
+    func suggestions(for term: String) async -> NewTabPageDataModel.Suggestions
 
 }

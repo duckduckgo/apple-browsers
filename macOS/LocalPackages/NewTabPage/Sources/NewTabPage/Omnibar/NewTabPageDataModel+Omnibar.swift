@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-extension NewTabPageDataModel {
+public extension NewTabPageDataModel {
 
     // MARK: - omnibar_getConfig
     // https://github.com/duckduckgo/content-scope-scripts/blob/cb36865bf4087456dd3da282bf49ccb59cbfcc47/special-pages/pages/new-tab/app/omnibar/omnibar.md?plain=1#L27
 
-    public enum OmnibarMode: String, Codable {
+    enum OmnibarMode: String, Codable {
         case search, ai
     }
 
@@ -44,6 +44,14 @@ extension NewTabPageDataModel {
         let topHits: [Suggestion]
         let duckduckgoSuggestions: [Suggestion]
         let localSuggestions: [Suggestion]
+
+        public init(topHits: [Suggestion], duckduckgoSuggestions: [Suggestion], localSuggestions: [Suggestion]) {
+            self.topHits = topHits
+            self.duckduckgoSuggestions = duckduckgoSuggestions
+            self.localSuggestions = localSuggestions
+        }
+
+        public static let empty = Self(topHits: [], duckduckgoSuggestions: [], localSuggestions: [])
     }
 
     enum Suggestion: Codable, Equatable {

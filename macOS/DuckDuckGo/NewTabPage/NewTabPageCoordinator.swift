@@ -25,6 +25,9 @@ import NewTabPage
 import Persistence
 import PixelKit
 import PrivacyStats
+import Suggestions
+
+typealias HistoryProviderCoordinating = HistoryCoordinating & SuggestionContainer.HistoryProvider
 
 final class NewTabPageCoordinator {
     let actionsManager: NewTabPageActionsManager
@@ -35,7 +38,7 @@ final class NewTabPageCoordinator {
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
         faviconManager: FaviconManagement,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
-        historyCoordinator: HistoryCoordinating,
+        historyCoordinator: HistoryProviderCoordinating,
         contentBlocking: ContentBlockingProtocol,
         fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,

@@ -21,7 +21,7 @@ import XCTest
 
 final class NewTabPageOmnibarClientTests: XCTestCase {
 
-    private var model: NewTabPageOmnibarModel!
+    private var suggestionsProvider: MockNewTabPageOmnibarSuggestionsProvider!
     private var client: NewTabPageOmnibarClient!
     private var userScript: NewTabPageUserScript!
     private var messageHelper: MessageHelper<NewTabPageOmnibarClient.MessageName>!
@@ -29,8 +29,8 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
 
-        model = NewTabPageOmnibarModel()
-        client = NewTabPageOmnibarClient(model: model)
+        suggestionsProvider = MockNewTabPageOmnibarSuggestionsProvider()
+        client = NewTabPageOmnibarClient(suggestionsProvider: suggestionsProvider)
 
         userScript = NewTabPageUserScript()
         messageHelper = .init(userScript: userScript)

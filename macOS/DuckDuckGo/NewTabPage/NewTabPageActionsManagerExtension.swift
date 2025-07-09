@@ -34,7 +34,7 @@ extension NewTabPageActionsManager {
         duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
         contentBlocking: ContentBlockingProtocol,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
-        historyCoordinator: HistoryCoordinating,
+        historyCoordinator: HistoryProviderCoordinating,
         fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
         protectionsReportModel: NewTabPageProtectionsReportModel,
@@ -77,6 +77,13 @@ extension NewTabPageActionsManager {
                 burner: RecentActivityItemBurner(fireproofStatusProvider: fireproofDomains, tld: tld, fire: fire)
             )
         )
+        let suggestionContainer = SuggestionContainer(
+            historyProvider: historyCoordinator,
+            bookmarkProvider: SuggestionsBookmarkProvider(bookmarkManager: bookmarkManager),
+            burnerMode: .regular,
+            isUrlIgnored: { _ in false }
+        )
+        let suggestionsProvider = NewTabPageOmnibarSuggestionsProvider(suggestionContainer: suggestionContainer)
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
@@ -103,7 +110,7 @@ extension NewTabPageActionsManager {
             NewTabPageProtectionsReportClient(model: protectionsReportModel),
             NewTabPagePrivacyStatsClient(model: privacyStatsModel),
             NewTabPageRecentActivityClient(model: recentActivityModel),
-            NewTabPageOmnibarClient(model: NewTabPageOmnibarModel())
+            NewTabPageOmnibarClient(suggestionsProvider: suggestionsProvider)
         ])
     }
 }

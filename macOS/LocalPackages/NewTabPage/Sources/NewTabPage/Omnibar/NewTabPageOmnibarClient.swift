@@ -26,10 +26,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case getSuggestions = "omnibar_getSuggestions"
     }
 
-    private let model: NewTabPageOmnibarModel
+    private let suggestionsProvider: NewTabPageOmnibarSuggestionsProviding
 
-    public init(model: NewTabPageOmnibarModel) {
-        self.model = model
+    public init(suggestionsProvider: NewTabPageOmnibarSuggestionsProviding) {
+        self.suggestionsProvider = suggestionsProvider
         super.init()
     }
 
@@ -50,6 +50,6 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         guard let request: NewTabPageDataModel.OmnibarGetSuggestionsRequest = DecodableHelper.decode(from: params) else {
             return nil
         }
-        return NewTabPageDataModel.SuggestionsData(suggestions: NewTabPageDataModel.Suggestions(topHits: [], duckduckgoSuggestions: [], localSuggestions: []))// await model.searchSuggestionsProvider.suggestions(for: request.term))
+        return NewTabPageDataModel.SuggestionsData(suggestions: await suggestionsProvider.suggestions(for: request.term))
     }
 }

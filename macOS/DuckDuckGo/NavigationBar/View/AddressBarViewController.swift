@@ -390,6 +390,12 @@ final class AddressBarViewController: NSViewController {
                 self?.layoutTextFields(withMinX: value)
             }
             .store(in: &cancellables)
+
+        addressBarButtonsViewController!.$trailingButtonsWidth
+            .sink { [weak self] value in
+                self?.layoutTextFields(trailingWidth: value)
+            }
+            .store(in: &cancellables)
     }
 
     private func subscribeForShadowViewUpdates() {
@@ -625,6 +631,11 @@ final class AddressBarViewController: NSViewController {
         } else {
             self.activeTextFieldMinXConstraint.constant = adjustedMinX
         }
+    }
+
+    private func layoutTextFields(trailingWidth width: CGFloat) {
+        addressBarTextTrailingConstraint.constant = width
+        passiveTextFieldTrailingConstraint.constant = width
     }
 
     private func firstResponderDidChange(_ notification: Notification) {

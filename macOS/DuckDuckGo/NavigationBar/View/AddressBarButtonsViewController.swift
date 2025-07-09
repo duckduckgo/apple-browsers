@@ -80,6 +80,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var imageButton: NSButton!
     @IBOutlet weak var cancelButton: AddressBarButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
+    @IBOutlet private weak var trailingButtonsContainer: NSStackView!
     @IBOutlet weak var aiChatButton: AddressBarMenuButton!
     @IBOutlet weak var askAIChatButton: AddressBarMenuButton!
 
@@ -151,6 +152,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @Published private(set) var buttonsWidth: CGFloat = 0
+    @Published private(set) var trailingButtonsWidth: CGFloat = 0
 
     private let onboardingPixelReporter: OnboardingAddressBarReporting
 
@@ -355,6 +357,7 @@ final class AddressBarButtonsViewController: NSViewController {
             updateTrackingAreaForHover()
         }
         self.buttonsWidth = buttonsContainer.frame.size.width + 10.0
+        self.trailingButtonsWidth = trailingButtonsContainer.frame.size.width + 14.0
     }
 
     func updateTrackingAreaForHover() {

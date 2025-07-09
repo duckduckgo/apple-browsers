@@ -47,9 +47,7 @@ vendor/
 
 # Release
 node_modules/
-iOS/node_modules/
-!iOS/node_modules/@duckduckgo/
-!iOS/node_modules/@duckduckgo/content-scope-scripts/
+!node_modules/@duckduckgo/content-scope-scripts/build/apple
 .build/
 release/
 

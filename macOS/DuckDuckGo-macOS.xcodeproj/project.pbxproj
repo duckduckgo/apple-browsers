@@ -5476,6 +5476,9 @@
 		F4A6198B283CFFBB007F2080 /* ContentScopeFeatureFlagging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentScopeFeatureFlagging.swift; sourceTree = "<group>"; };
 		FD23FD2A28816606007F6985 /* AutoconsentMessageProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AutoconsentMessageProtocolTests.swift; path = UnitTests/Autoconsent/AutoconsentMessageProtocolTests.swift; sourceTree = SOURCE_ROOT; };
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
+		7B68782D2DE50BD200ACF0F9 /* contentScope.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = contentScope.js; path = ../node_modules/@duckduckgo/content-scope-scripts/build/apple/contentScope.js; sourceTree = SOURCE_ROOT; };
+		7B68782E2DE50BD300ACF0FA /* contentScopeIsolated.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = contentScopeIsolated.js; path = ../node_modules/@duckduckgo/content-scope-scripts/build/apple/contentScopeIsolated.js; sourceTree = SOURCE_ROOT; };
+		7B68782F2DE50BD400ACF0FB /* pages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = pages; path = ../node_modules/@duckduckgo/content-scope-scripts/build/apple/pages; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */

@@ -23,6 +23,8 @@ import Core
 
 class AutofillNeverPromptWebsitesManager {
 
+    static let shared = AutofillNeverPromptWebsitesManager()
+
     public private(set) var neverPromptWebsites: [SecureVaultModels.NeverPromptWebsites] = []
 
     private let secureVault: (any AutofillSecureVault)?

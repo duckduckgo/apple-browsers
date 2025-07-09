@@ -166,12 +166,9 @@ final class DuckPlayerNativeUIPresenter {
     }
     
 
-    /// Sets up notification observers for address bar position changes
-    /// This replaces the previous omnibar layout notification approach for better performance
+    /// Sets up notification observers for address bar position changes    
     private func setupNotificationObservers(notificationCenter: NotificationCenter) {
-        // Listen for address bar position changes to update pill positioning
-        // This is more efficient than listening to layout changes
-        // Using block-based observer to prevent memory leaks
+        // Listen for address bar position changes to update pill positioning        
         let observer = notificationCenter.addObserver(
             forName: AppUserDefaults.Notifications.addressBarPositionChanged,
             object: nil,
@@ -202,7 +199,6 @@ final class DuckPlayerNativeUIPresenter {
 
     
     /// Updates the pill's bottom constraint based on the current address bar position
-    /// This ensures the pill is positioned correctly above the address bar when it's at the bottom
     private func updatePillBottomConstraint() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self,

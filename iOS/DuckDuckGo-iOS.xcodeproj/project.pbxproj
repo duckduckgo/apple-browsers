@@ -2144,9 +2144,9 @@
 		7B4F87EB2D07396A0010B18F /* SiriEducation.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SiriEducation.xcassets; sourceTree = "<group>"; };
 		7B4F87ED2D0739E80010B18F /* SiriBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriBubbleView.swift; sourceTree = "<group>"; };
 		7B6586392DB7F5AC00D12BE3 /* SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests.swift; sourceTree = "<group>"; };
-		7B68782D2DE50BD200ACF0F9 /* contentScope.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = contentScope.js; path = node_modules/@duckduckgo/content-scope-scripts/build/contentScope.js; sourceTree = SOURCE_ROOT; };
-		7B68782E2DE50BD300ACF0FA /* contentScopeIsolated.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = contentScopeIsolated.js; path = node_modules/@duckduckgo/content-scope-scripts/build/contentScopeIsolated.js; sourceTree = SOURCE_ROOT; };
-		7B68782F2DE50BD400ACF0FB /* pages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = pages; path = node_modules/@duckduckgo/content-scope-scripts/build/pages; sourceTree = SOURCE_ROOT; };
+		7B68782D2DE50BD200ACF0F9 /* contentScope.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = contentScope.js; path = node_modules/@duckduckgo/content-scope-scripts/build/apple/contentScope.js; sourceTree = SOURCE_ROOT; };
+		7B68782E2DE50BD300ACF0FA /* contentScopeIsolated.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = contentScopeIsolated.js; path = node_modules/@duckduckgo/content-scope-scripts/build/apple/contentScopeIsolated.js; sourceTree = SOURCE_ROOT; };
+		7B68782F2DE50BD400ACF0FB /* pages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = pages; path = node_modules/@duckduckgo/content-scope-scripts/build/apple/pages; sourceTree = SOURCE_ROOT; };
 
 		7B8E0EC52CC81B4800B2B722 /* TipKitController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipKitController.swift; sourceTree = "<group>"; };
 		7BBE25A02D71ECFD003131FA /* AutomationServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationServer.swift; sourceTree = "<group>"; };

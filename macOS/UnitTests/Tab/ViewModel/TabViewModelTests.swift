@@ -255,7 +255,7 @@ final class TabViewModelTests: XCTestCase {
     }
 
     // MARK: - TabContent+DisplayedFavicon Tests
-    
+
     @MainActor
     func testDisplayedFaviconWithSSLError() {
         let sslError = WKError(_nsError: NSError(
@@ -265,62 +265,62 @@ final class TabViewModelTests: XCTestCase {
         ))
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = sslError
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .redAlertCircle16)
     }
-    
+
     @MainActor
     func testDisplayedFaviconWithMaliciousErrorPhishing() {
         let maliciousError = WKError(_nsError: MaliciousSiteError(code: .phishing, failingUrl: maliciousSite) as NSError)
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = maliciousError
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .redAlertCircle16)
     }
-    
+
     @MainActor
     func testDisplayedFaviconWithMaliciousErrorMalware() {
         let maliciousError = WKError(_nsError: MaliciousSiteError(code: .malware, failingUrl: maliciousSite) as NSError)
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = maliciousError
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .redAlertCircle16)
     }
-    
+
     @MainActor
     func testDisplayedFaviconWithMaliciousErrorScam() {
         let maliciousError = WKError(_nsError: MaliciousSiteError(code: .scam, failingUrl: maliciousSite) as NSError)
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = maliciousError
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .redAlertCircle16)
     }
-    
+
     @MainActor
     func testDisplayedFaviconWithWebContentProcessTermination() {
         let wkError = WKError(.webContentProcessTerminated)
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = wkError
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .alertCircleColor16)
     }
-    
+
     @MainActor
     func testDisplayedFaviconWithGenericError() {
         let genericError = WKError(_nsError: NSError(domain: "TestDomain", code: 500, userInfo: nil))
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = genericError
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .alertCircleColor16)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForDataBrokerProtection() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.dataBrokerProtection)
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .personalInformationRemovalMulticolor16)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForNewTabWithBurnerNewStyle() {
         let mockVisualStyle = MockVisualStyle(isNewStyle: true)
@@ -329,10 +329,10 @@ final class TabViewModelTests: XCTestCase {
             visualStyle: mockVisualStyle,
             burnerMode: BurnerMode(isBurner: true)
         )
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Glyphs.Size16.fireTab)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForNewTabWithBurnerOldStyle() {
         let mockVisualStyle = MockVisualStyle(isNewStyle: false)
@@ -341,17 +341,17 @@ final class TabViewModelTests: XCTestCase {
             visualStyle: mockVisualStyle,
             burnerMode: BurnerMode(isBurner: true)
         )
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .burnerTabFavicon)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForNewTabNonBurner() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.newtab)
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .homeFavicon)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForSettings() {
         for pane in PreferencePaneIdentifier.allCases {
@@ -364,74 +364,74 @@ final class TabViewModelTests: XCTestCase {
             }
         }
     }
-    
+
     @MainActor
     func testDisplayedFaviconForBookmarks() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.bookmarks)
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .bookmarksFolder)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForHistoryWithFeatureEnabled() {
         let mockFeatureFlagger = MockFeatureFlagger()
         mockFeatureFlagger.enabledFeatureFlags = [.historyView]
 
         let tabViewModel = TabViewModel.forTabWithURL(URL.history, featureFlagger: mockFeatureFlagger)
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .historyFavicon)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForHistoryWithFeatureDisabled() {
         let mockFeatureFlagger = MockFeatureFlagger() // .historyView defaults to nil/false
 
         let tabViewModel = TabViewModel.forTabWithURL(URL.history, featureFlagger: mockFeatureFlagger)
-        
+
         XCTAssertNil(tabViewModel.favicon)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForSubscription() {
         let tabViewModel = TabViewModel.forTabWithURL(SubscriptionURL.baseURL.subscriptionURL(environment: .production))
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .privacyPro)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForIdentityTheftRestoration() {
         let tabViewModel = TabViewModel.forTabWithURL(SubscriptionURL.identityTheftRestoration.subscriptionURL(environment: .production))
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .identityTheftRestorationMulticolor16)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForReleaseNotes() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.releaseNotes)
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .homeFavicon)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForAIChat() {
         let mockFeatureFlagger = MockFeatureFlagger()
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatSidebar]
         let aiChatURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=2")!
         let tabViewModel = TabViewModel.forTabWithURL(aiChatURL, featureFlagger: mockFeatureFlagger)
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .aiChatPreferences)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForDuckAIURL() {
         let mockFeatureFlagger = MockFeatureFlagger()
         mockFeatureFlagger.enabledFeatureFlags = [.aiChatSidebar]
         let duckAIURL = URL(string: "https://duck.ai/chat")!
         let tabViewModel = TabViewModel.forTabWithURL(duckAIURL, featureFlagger: mockFeatureFlagger)
-        
+
         XCTAssertNil(tabViewModel.favicon) // not an actual ai chat url: loaded by the Tab
     }
-    
+
     @MainActor
     func testDisplayedFaviconForDuckPlayerURL() {
         let duckPlayerURL = URL.duckPlayer("test")
@@ -439,85 +439,85 @@ final class TabViewModelTests: XCTestCase {
 
         XCTAssertImagesEqual(tabViewModel.favicon, .duckPlayerSettings)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForHistoryURLWithFeatureEnabled() {
         let mockFeatureFlagger = MockFeatureFlagger()
         mockFeatureFlagger.enabledFeatureFlags = [.historyView]
 
         let tabViewModel = TabViewModel.forTabWithURL(URL.history, featureFlagger: mockFeatureFlagger)
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .historyFavicon)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForHistoryURLWithFeatureDisabled() {
         let mockFeatureFlagger = MockFeatureFlagger() // .historyView defaults to nil/false
 
         let tabViewModel = TabViewModel.forTabWithURL(URL.history, featureFlagger: mockFeatureFlagger)
-        
+
         XCTAssertNil(tabViewModel.favicon)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForEmailProtectionURL() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGoEmail)
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, .emailProtectionIcon)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForRegularURLWithActualFavicon() {
         let regularURL = URL(string: "https://example.com")!
         let actualFavicon = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)!
-        
+
         let tabViewModel = TabViewModel.forTabWithURL(regularURL)
         tabViewModel.tab.favicon = actualFavicon
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, actualFavicon)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForRegularURLWithoutActualFavicon() {
         let regularURL = URL(string: "https://example.com")!
-        
+
         let tabViewModel = TabViewModel.forTabWithURL(regularURL)
         tabViewModel.tab.favicon = nil
-        
+
         XCTAssertNil(tabViewModel.favicon)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForOnboardingWithActualFavicon() {
         let actualFavicon = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)!
-        
+
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.setContent(.onboarding)
         tabViewModel.tab.favicon = actualFavicon
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, actualFavicon)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForWebExtensionWithActualFavicon() {
         let extensionURL = URL(string: "webkit-extension://test")!
         let actualFavicon = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)!
-        
+
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.setContent(.webExtensionUrl(extensionURL))
         tabViewModel.tab.favicon = actualFavicon
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, actualFavicon)
     }
-    
+
     @MainActor
     func testDisplayedFaviconForNoneWithActualFavicon() {
         let actualFavicon = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)!
-        
+
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.setContent(.none)
         tabViewModel.tab.favicon = actualFavicon
-        
+
         XCTAssertImagesEqual(tabViewModel.favicon, actualFavicon)
     }
 
@@ -843,7 +843,7 @@ extension TabViewModel {
             content: .contentFromURL(url, source: .link),
             burnerMode: burnerMode
         )
-        
+
         if let featureFlagger = featureFlagger {
             let appearancePreferences = AppearancePreferences(
                 keyValueStore: try! MockKeyValueFileStore(),
@@ -895,11 +895,11 @@ final class MockVisualStyle: VisualStyleProviding {
     var addToolbarShadow: Bool = false
 
     let isNewStyle: Bool
-    
+
     init(isNewStyle: Bool) {
         self.isNewStyle = isNewStyle
     }
-    
+
     var addressBarStyleProvider: DuckDuckGo_Privacy_Browser.AddressBarStyleProviding {
         fatalError("Not implemented for test")
     }
@@ -907,7 +907,7 @@ final class MockVisualStyle: VisualStyleProviding {
     var colorsProvider: DuckDuckGo_Privacy_Browser.ColorsProviding {
         fatalError("Not implemented for test")
     }
-    
+
     var iconsProvider: DuckDuckGo_Privacy_Browser.IconsProviding {
         fatalError("Not implemented for test")
     }

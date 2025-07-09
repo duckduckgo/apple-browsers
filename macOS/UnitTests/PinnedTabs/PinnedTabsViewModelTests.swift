@@ -201,47 +201,47 @@ class PinnedTabsViewModelTests: XCTestCase {
     }
 
     // MARK: - Pinned Tab Management Tests
-    
+
     @MainActor
     func testPinnedTabsViewModelManagesTabsCorrectly() {
         let duckPlayerURL = URL.duckPlayer("test")
         let tab = Tab(content: .contentFromURL(duckPlayerURL, source: .link))
-        
+
         // Test that PinnedTabsViewModel correctly manages tabs
         XCTAssertFalse(model.items.contains(tab))
         model.items.append(tab)
         XCTAssertTrue(model.items.contains(tab))
-        
+
         // Test selection behavior
         model.selectedItem = tab
         XCTAssertEqual(model.selectedItem, tab)
         XCTAssertEqual(model.selectedItemIndex, model.items.count - 1)
-        
+
         // Test hovering behavior
         model.hoveredItem = tab
         XCTAssertEqual(model.hoveredItem, tab)
         XCTAssertEqual(model.hoveredItemIndex, model.items.count - 1)
     }
-    
+
     @MainActor
     func testPinnedTabsViewModelSeparatorBehavior() {
         let tab1 = Tab(content: .contentFromURL(URL(string: "https://example1.com")!, source: .link))
         let tab2 = Tab(content: .contentFromURL(URL(string: "https://example2.com")!, source: .link))
         let tab3 = Tab(content: .contentFromURL(URL(string: "https://example3.com")!, source: .link))
-        
+
         model.items = [tab1, tab2, tab3]
-        
+
         // Test separator behavior when no item is selected
         XCTAssertTrue(model.itemsWithoutSeparator.isEmpty)
-        
+
         // Test separator behavior when middle item is selected
         model.selectedItem = tab2
         XCTAssertEqual(model.itemsWithoutSeparator, [tab1, tab2])
-        
+
         // Test separator behavior when last item is selected
         model.selectedItem = tab3
         XCTAssertEqual(model.itemsWithoutSeparator, [tab2, tab3])
-        
+
         // Test last item separator behavior
         model.shouldDrawLastItemSeparator = false
         XCTAssertEqual(model.itemsWithoutSeparator, [tab2, tab3])

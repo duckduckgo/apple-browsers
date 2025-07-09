@@ -2,9 +2,9 @@
 // In your pixel definitions, you can reference these suffixes by their key
 // See TEMPLATE.json for an example
 {
-    "first_daily_count": {
-        "type": "string",
-        "description": "Pixel schedule type",
-        "enum": ["first", "daily", "count"]
-    }
+    first_daily_count: {
+        type: 'string',
+        description: 'Pixel schedule type',
+        enum: ['first', 'daily', 'count'],
+    },
 }

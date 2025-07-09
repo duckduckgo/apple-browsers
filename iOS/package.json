@@ -17,5 +17,19 @@
   },
   "dependencies": {
     "@duckduckgo/autoconsent": "^14.3.0"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "printWidth": 140,
+    "tabWidth": 4,
+    "overrides": [
+      {
+        "files": "*.json5",
+        "options": {
+          "parser": "json5",
+          "tabWidth": 4
+        }
+      }
+    ]
   }
 }

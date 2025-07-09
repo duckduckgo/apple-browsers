@@ -43,8 +43,6 @@ protocol VisualStyleProviding {
 
 protocol VisualStyleDecider {
     var style: any VisualStyleProviding { get }
-
-    func shouldFirePixel(style: VisualStyleProviding) -> Bool
 }
 
 enum AddressBarSizeClass {
@@ -131,33 +129,5 @@ final class DefaultVisualStyleDecider: VisualStyleDecider {
         }
 
         return isVisualRefreshEnabled ? VisualStyle.current : VisualStyle.legacy
-    }
-
-    func shouldFirePixel(style: any VisualStyleProviding) -> Bool {
-        return !internalUserDecider.isInternalUser && style.isNewStyle
-    }
-}
-
-/// This enum keeps pixels related to the Visual Refresh
-/// > Related links:
-/// [Pixel Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210516955340232)
-enum VisualStylePixel: PixelKitEventV2 {
-
-    /// This pixel will be fired once time per user. The logic will be fired at app launch if the user has the new UI enabled and it is not an internal user.
-    case visualUpdatesEnabled
-
-    var name: String {
-        switch self {
-        case .visualUpdatesEnabled:
-            return "visual_update_enabled_u"
-        }
-    }
-
-    var parameters: [String: String]? {
-        nil
-    }
-
-    var error: (any Error)? {
-        nil
     }
 }

@@ -24,6 +24,9 @@ public protocol AIChatPreferencesStorage {
     var showShortcutInApplicationMenu: Bool { get set }
     var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> { get }
 
+    var isSummarizationEnabled: Bool { get set }
+    var isSummarizationEnabledPublisher: AnyPublisher<Bool, Never> { get }
+
     var showShortcutInAddressBar: Bool { get set }
     var showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> { get }
 
@@ -36,6 +39,10 @@ public protocol AIChatPreferencesStorage {
 public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
     private let userDefaults: UserDefaults
     private let notificationCenter: NotificationCenter
+
+    public var isSummarizationEnabledPublisher: AnyPublisher<Bool, Never> {
+        userDefaults.isSummarizationEnabledPublisher
+    }
 
     public var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> {
         userDefaults.showAIChatShortcutInApplicationMenuPublisher
@@ -55,6 +62,11 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         self.notificationCenter = notificationCenter
     }
 
+    public var isSummarizationEnabled: Bool {
+        get { userDefaults.isSummarizationEnabled }
+        set { userDefaults.isSummarizationEnabled = newValue }
+    }
+
     public var showShortcutInApplicationMenu: Bool {
         get { userDefaults.showAIChatShortcutInApplicationMenu }
         set { userDefaults.showAIChatShortcutInApplicationMenu = newValue }
@@ -71,6 +83,7 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
     }
 
     public func reset() {
+        userDefaults.isSummarizationEnabled = UserDefaults.isSummarizationEnabledDefaultValue
         userDefaults.showAIChatShortcutInApplicationMenu = UserDefaults.showAIChatShortcutInApplicationMenuDefaultValue
         userDefaults.showAIChatShortcutInAddressBar = UserDefaults.showAIChatShortcutInAddressBarDefaultValue
         userDefaults.openAIChatInSidebar = UserDefaults.openAIChatInSidebarDefaultValue
@@ -79,14 +92,27 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
 
 private extension UserDefaults {
     enum Keys {
+        static let summarization = "aichat.summarization"
         static let showAIChatShortcutInApplicationMenuKey = "aichat.showAIChatShortcutInApplicationMenu"
         static let showAIChatShortcutInAddressBarKey = "aichat.showAIChatShortcutInAddressBar"
         static let openAIChatInSidebarKey = "aichat.openAIChatInSidebar"
     }
 
     static let showAIChatShortcutInApplicationMenuDefaultValue = true
+    static let isSummarizationEnabledDefaultValue = true
     static let showAIChatShortcutInAddressBarDefaultValue = true
     static let openAIChatInSidebarDefaultValue = true
+
+    @objc dynamic var isSummarizationEnabled: Bool {
+        get {
+            value(forKey: Keys.summarization) as? Bool ?? Self.isSummarizationEnabledDefaultValue
+        }
+
+        set {
+            guard newValue != isSummarizationEnabled else { return }
+            set(newValue, forKey: Keys.summarization)
+        }
+    }
 
     @objc dynamic var showAIChatShortcutInApplicationMenu: Bool {
         get {
@@ -119,6 +145,10 @@ private extension UserDefaults {
             guard newValue != openAIChatInSidebar else { return }
             set(newValue, forKey: Keys.openAIChatInSidebarKey)
         }
+    }
+
+    var isSummarizationEnabledPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.isSummarizationEnabled).eraseToAnyPublisher()
     }
 
     var showAIChatShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> {

@@ -318,6 +318,7 @@ private class DummyFeatureFlagger: FeatureFlagger {
 }
 
 private class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
+    var shouldDisplaySummarizationMenuItem = false
     var shouldDisplayApplicationMenuShortcut = false
     var shouldDisplayAddressBarShortcut = false
     var openAIChatInSidebar = false

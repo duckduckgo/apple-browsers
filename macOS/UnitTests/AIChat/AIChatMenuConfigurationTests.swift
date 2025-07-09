@@ -39,6 +39,13 @@ class AIChatMenuConfigurationTests: XCTestCase {
         super.tearDown()
     }
 
+    func testIsSummarizationEnabled() {
+        mockStorage.isSummarizationEnabled = true
+        let result = configuration.shouldDisplaySummarizationMenuItem
+
+        XCTAssertTrue(result, "Text Summarization menu action should be displayed when enabled.")
+    }
+
     func testShouldDisplayApplicationMenuShortcut() {
         mockStorage.showShortcutInApplicationMenu = true
         let result = configuration.shouldDisplayApplicationMenuShortcut
@@ -106,6 +113,7 @@ class AIChatMenuConfigurationTests: XCTestCase {
     }
 
     func testReset() {
+        mockStorage.isSummarizationEnabled = true
         mockStorage.showShortcutInApplicationMenu = true
         mockStorage.showShortcutInAddressBar = true
         mockStorage.openAIChatInSidebar = true
@@ -113,6 +121,7 @@ class AIChatMenuConfigurationTests: XCTestCase {
 
         mockStorage.reset()
 
+        XCTAssertFalse(mockStorage.isSummarizationEnabled, "Summarization menu option should be reset to false.")
         XCTAssertFalse(mockStorage.showShortcutInApplicationMenu, "Application menu shortcut should be reset to false.")
         XCTAssertFalse(mockStorage.showShortcutInAddressBar, "Address bar shortcut should be reset to false.")
         XCTAssertFalse(mockStorage.openAIChatInSidebar, "Open AI Chat in sidebar should be reset to false.")
@@ -149,6 +158,12 @@ class AIChatMenuConfigurationTests: XCTestCase {
 class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     var didDisplayAIChatAddressBarOnboarding: Bool = false
 
+    var isSummarizationEnabled: Bool = false {
+        didSet {
+            isSummarizationEnabledSubject.send(isSummarizationEnabled)
+        }
+    }
+
     var showShortcutInApplicationMenu: Bool = false {
         didSet {
             showShortcutInApplicationMenuSubject.send(showShortcutInApplicationMenu)
@@ -167,9 +182,14 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         }
     }
 
+    private var isSummarizationEnabledSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInApplicationMenuSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInAddressBarSubject = PassthroughSubject<Bool, Never>()
     private var openAIChatInSidebarSubject = PassthroughSubject<Bool, Never>()
+
+    var isSummarizationEnabledPublisher: AnyPublisher<Bool, Never> {
+        isSummarizationEnabledSubject.eraseToAnyPublisher()
+    }
 
     var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> {
         showShortcutInApplicationMenuSubject.eraseToAnyPublisher()
@@ -184,10 +204,15 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     }
 
     func reset() {
+        isSummarizationEnabled = false
         showShortcutInApplicationMenu = false
         showShortcutInAddressBar = false
         didDisplayAIChatAddressBarOnboarding = false
         openAIChatInSidebar = false
+    }
+
+    func updateIsSummarizationEnabled(to value: Bool) {
+        isSummarizationEnabled = value
     }
 
     func updateApplicationMenuShortcutDisplay(to value: Bool) {

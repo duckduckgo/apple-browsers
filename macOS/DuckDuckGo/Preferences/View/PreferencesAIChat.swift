@@ -85,6 +85,11 @@ extension Preferences {
                             }
                         }
                     }
+
+                    ToggleMenuItem("Show “Summarize with Duck.ai” in context menu on websites",
+                                   isOn: $model.isSummarizationEnabled)
+                    .accessibilityIdentifier("Preferences.AIChat.showTextSummarizationMenuAction")
+                    .visibility(model.isSummarizationAvailable ? .visible : .gone)
                 }
 
                 PreferencePaneSection(UserText.searchAssistSettings) {

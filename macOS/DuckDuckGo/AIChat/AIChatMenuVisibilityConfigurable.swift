@@ -35,6 +35,12 @@ protocol AIChatMenuVisibilityConfigurable {
     /// - Returns: `true` if the application menu shortcut should be displayed; otherwise, `false`.
     var shouldDisplayApplicationMenuShortcut: Bool { get }
 
+    /// This property validates user settings to determine if the text summarization
+    /// feature should be presented to the user.
+    ///
+    /// - Returns: `true` if the text summarization menu action should be displayed; otherwise, `false`.
+    var shouldDisplaySummarizationMenuItem: Bool { get }
+
     /// This property determines whether AI Chat should open in the sidebar.
     ///
     /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
@@ -62,6 +68,10 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     private let remoteSettings: AIChatRemoteSettingsProvider
 
     var valuesChangedPublisher = PassthroughSubject<Void, Never>()
+
+    var shouldDisplaySummarizationMenuItem: Bool {
+        storage.isSummarizationEnabled
+    }
 
     var shouldDisplayApplicationMenuShortcut: Bool {
         return storage.showShortcutInApplicationMenu

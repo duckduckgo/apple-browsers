@@ -42,6 +42,7 @@ final class AIChatPreferences: ObservableObject {
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
         showShortcutInAddressBar = storage.showShortcutInAddressBar
         openAIChatInSidebar = storage.openAIChatInSidebar
+        isSummarizationEnabled = storage.isSummarizationEnabled
 
         subscribeToShowInApplicationMenuSettingsChanges()
     }
@@ -64,6 +65,12 @@ final class AIChatPreferences: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: \.openAIChatInSidebar, onWeaklyHeld: self)
             .store(in: &cancellables)
+
+        storage.isSummarizationEnabledPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.isSummarizationEnabled, onWeaklyHeld: self)
+            .store(in: &cancellables)
     }
 
     var shouldShowOpenAIChatInSidebarToggle: Bool {
@@ -80,6 +87,14 @@ final class AIChatPreferences: ObservableObject {
 
     @Published var openAIChatInSidebar: Bool {
         didSet { storage.openAIChatInSidebar = openAIChatInSidebar }
+    }
+
+    var isSummarizationAvailable: Bool {
+        featureFlagger.isFeatureOn(.aiChatTextSummarization)
+    }
+
+    @Published var isSummarizationEnabled: Bool {
+        didSet { storage.isSummarizationEnabled = isSummarizationEnabled }
     }
 
     @MainActor func openLearnMoreLink() {

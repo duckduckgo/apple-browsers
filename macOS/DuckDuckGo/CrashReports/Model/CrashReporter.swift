@@ -49,16 +49,14 @@ final class CrashReporter {
             return
         }
 
-        PixelKit.fire(GeneralPixel.crashDaily, frequency: .legacyDailyNoSuffix)
         crashReports.forEach { crashReport in
             if let appVersion = crashReport.appVersion {
-                PixelKit.fire(
-                    GeneralPixel.crash,
-                    withAdditionalParameters: [PixelKit.Parameters.appVersion: appVersion],
-                    includeAppVersionParameter: false
-                )
+                let parameters = [PixelKit.Parameters.appVersion: appVersion]
+                PixelKit.fire(GeneralPixel.crash, withAdditionalParameters: parameters, includeAppVersionParameter: false)
+                PixelKit.fire(GeneralPixel.crashDaily, frequency: .legacyDailyNoSuffix, withAdditionalParameters: parameters, includeAppVersionParameter: false)
             } else {
                 PixelKit.fire(GeneralPixel.crash)
+                PixelKit.fire(GeneralPixel.crashDaily, frequency: .legacyDailyNoSuffix)
             }
         }
 

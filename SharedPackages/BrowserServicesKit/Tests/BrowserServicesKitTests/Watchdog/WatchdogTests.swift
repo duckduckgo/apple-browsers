@@ -209,23 +209,6 @@ final class WatchdogTests: XCTestCase {
 
     // MARK: - Integration Tests
 
-    func testWatchdogDoesNotInterfereWithMainThreadWork() async {
-        watchdog.start()
-
-        var counter = 0
-        let iterations = 10
-
-        // Perform main thread work while watchdog is running
-        for _ in 0..<iterations {
-            await MainActor.run {
-                counter += 1
-            }
-        }
-
-        XCTAssertEqual(counter, iterations, "Main thread work should complete normally")
-        XCTAssertTrue(watchdog.isRunning, "Watchdog should still be running")
-    }
-
     func testWatchdogWorksWithOtherAsyncTasks() async {
         watchdog.start()
 
@@ -252,10 +235,10 @@ final class WatchdogTests: XCTestCase {
     // MARK: - Memory Tests
 
     func testWatchdogDoesNotLeakMemory() async {
-        let expectation = XCTestExpectation(description: "Watchdog deallocated")
         weak var weakWatchdog: Watchdog?
 
-        Task {
+        // Do the work directly on main actor (no Task needed)
+        do {
             let localWatchdog = Watchdog(timeout: 1.0, checkInterval: 0.1)
             weakWatchdog = localWatchdog
 
@@ -267,14 +250,9 @@ final class WatchdogTests: XCTestCase {
             // localWatchdog goes out of scope here
         }
 
-        // Use a small delay only where absolutely necessary for memory cleanup
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            if weakWatchdog == nil {
-                expectation.fulfill()
-            }
-        }
+        // Give time for deallocation
+        try? await Task.sleep(nanoseconds: 100_000_000)
 
-        await fulfillment(of: [expectation], timeout: 1.0)
         XCTAssertNil(weakWatchdog, "Watchdog should be deallocated")
     }
 

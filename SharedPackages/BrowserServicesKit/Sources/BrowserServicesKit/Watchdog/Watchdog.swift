@@ -70,8 +70,8 @@ public final class Watchdog {
 
         while !Task.isCancelled {
             // Schedule heartbeat update on main thread (key: this might not execute if main thread is hung)
-            Task { @MainActor in
-                await self.monitor.updateHeartbeat()
+            Task { @MainActor [weak self] in
+                await self?.monitor.updateHeartbeat()
             }
 
             // Sleep for check interval

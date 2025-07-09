@@ -658,9 +658,10 @@ extension UpdatedOmniBarView {
     }
 
     func hideButtons() {
-        privacyInfoContainer.transform = CGAffineTransform(translationX: -privacyInfoContainer.frame.maxX * 0.1, y: 0)
+        let moveFactor = 0.1
+        privacyInfoContainer.transform = CGAffineTransform(translationX: -privacyInfoContainer.frame.maxX * moveFactor, y: 0)
         privacyInfoContainer.alpha = 0
-        searchAreaView.hideButtons()
+        searchAreaView.hideButtons(moveFactor: moveFactor)
     }
 
     func revealButtons() {

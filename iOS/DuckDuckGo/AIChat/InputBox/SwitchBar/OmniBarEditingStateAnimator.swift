@@ -194,7 +194,6 @@ final class OmniBarEditingStateAnimator {
             static let finalYOffset: CGFloat = 16
             static let dismissDuration: TimeInterval = 0.25
             static let appearanceDuration: TimeInterval = 0.25
-            static let appearanceDampingRatio: CGFloat = 0.7
         }
 
         struct TopTransition {

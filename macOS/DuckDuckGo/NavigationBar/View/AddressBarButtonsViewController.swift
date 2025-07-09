@@ -385,63 +385,64 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBAction func aiChatButtonAction(_ sender: Any) {
         PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
-        let shouldSelectNewTab: Bool = {
-            guard let tabContent = tabViewModel?.tab.content, let url = tabViewModel?.tab.url else {
-                return false
-            }
-            return !url.isDuckAIURL && tabContent != .newtab
-        }()
-
-        let behavior = LinkOpenBehavior(
-            event: NSApp.currentEvent,
-            switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
-            shouldSelectNewTab: shouldSelectNewTab
-        )
+        guard let tab = tabViewModel?.tab else { return }
 
         // Close the sidebar if it's currently open and the user preference is set to open AI chat in new tabs
         // This ensures consistent behavior when the sidebar is unexpectedly open but shouldn't be the default action
-        if !aiChatMenuConfig.openAIChatInSidebar,
-           let tabID = tabViewModel?.tab.uuid, aiChatSidebarPresenter.isSidebarOpen(for: tabID) {
+        if !aiChatMenuConfig.openAIChatInSidebar && aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) {
             aiChatSidebarPresenter.toggleSidebar()
         }
 
+        let behavior = createAIChatLinkOpenBehavior(for: tab)
+
         if featureFlagger.isFeatureOn(.aiChatSidebar),
-           aiChatMenuConfig.openAIChatInSidebar,
-           let tab = tabViewModel?.tab,
-           !aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid),
-           case .url = tab.content,
-           behavior == .currentTab {
+            aiChatMenuConfig.openAIChatInSidebar,
+            !aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid),
+            case .url = tab.content,
+            behavior == .currentTab {
 
-            if let value = textFieldValue,
-               let query = AIChatAddressBarPromptExtractor().queryForValue(value) {
-                let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: true)
-                aiChatSidebarPresenter.presentSidebar(for: prompt)
-            } else {
-                aiChatSidebarPresenter.toggleSidebar()
-            }
+            openAIChatSidebar()
         } else {
-
-            if let tab = tabViewModel?.tab,
-               aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid),
-               behavior == .currentTab {
-
-                if let value = textFieldValue {
-                    aiChatTabOpener.openAIChatTab(value, with: .newTab(selected: behavior.shouldSelectNewTab))
-                } else {
-                    aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: behavior.shouldSelectNewTab))
-                }
-
-            } else {
-                if let value = textFieldValue {
-                    aiChatTabOpener.openAIChatTab(value, with: behavior)
-                } else {
-                    aiChatTabOpener.openAIChatTab(nil, with: behavior)
-                }
-            }
+            openAIChatTab(with: behavior)
         }
 
         delegate?.addressBarButtonsViewControllerAIChatButtonClicked(self)
         updateAskAIChatButtonVisibility()
+    }
+
+    // MARK: - AI Chat Action Helpers
+
+    private func createAIChatLinkOpenBehavior(for tab: Tab) -> LinkOpenBehavior {
+        let shouldSelectNewTab: Bool = {
+            guard let url = tab.url else { return false }
+            return !url.isDuckAIURL && tab.content != .newtab
+        }()
+
+        let defaultBehaviour = LinkOpenBehavior(event: NSApp.currentEvent,
+                                                switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
+                                                shouldSelectNewTab: shouldSelectNewTab)
+
+        // Force new tab when sidebar is open and we're in current tab mode
+        let shouldOverrideToNewTab = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) && defaultBehaviour == .currentTab
+        return shouldOverrideToNewTab ? .newTab(selected: defaultBehaviour.shouldSelectNewTab) : defaultBehaviour
+    }
+
+    private func openAIChatSidebar() {
+        if let value = textFieldValue,
+           let query = AIChatAddressBarPromptExtractor().queryForValue(value) {
+            let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: true)
+            aiChatSidebarPresenter.presentSidebar(for: prompt)
+        } else {
+            aiChatSidebarPresenter.toggleSidebar()
+        }
+    }
+
+    private func openAIChatTab(with behavior: LinkOpenBehavior) {
+        if let value = textFieldValue {
+            aiChatTabOpener.openAIChatTab(value, with: behavior)
+        } else {
+            aiChatTabOpener.openAIChatTab(nil, with: behavior)
+        }
     }
 
     func openPrivacyDashboardPopover(entryPoint: PrivacyDashboardEntryPoint = .dashboard) {

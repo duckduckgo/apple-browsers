@@ -106,6 +106,9 @@ final class TabViewCell: UICollectionViewCell {
 
     /// Note that `backgroundView` and `selectedBackgroundView` are provided by UICollectionViewCell and we don't use them for legacy and design reasons, so ignore them.
     func setupSubviews() {
+        layer.masksToBounds = false
+
+        applyShadows()
 
         preview?.layer.cornerRadius = Constants.previewCornerRadius
         preview?.layer.masksToBounds = true
@@ -122,6 +125,13 @@ final class TabViewCell: UICollectionViewCell {
         unread.tintColor = UIColor(designSystemColor: .accent)
 
         removeButton.additionalHitTestSize = 4
+    }
+
+    private func applyShadows() {
+        layer.shadowColor = UIColor(designSystemColor: .shadowTertiary).cgColor
+        layer.shadowOpacity = 1.0
+        layer.shadowRadius = 12.0
+        layer.shadowOffset = CGSize(width: 0, height: 4)
     }
 
     private func updatePreviewToDisplay(image: UIImage) {

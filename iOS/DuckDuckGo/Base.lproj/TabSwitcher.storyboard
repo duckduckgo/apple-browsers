@@ -42,7 +42,7 @@
                                             <rect key="frame" x="0.0" y="0.0" width="327" height="206"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="puo-AS-QV7" customClass="RoundedRectangleView" customModule="DuckDuckGo" customModuleProvider="target">
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="puo-AS-QV7" customClass="RoundedRectangleView" customModule="DuckDuckGo" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="0.0" width="327" height="206"/>
                                                     <subviews>
                                                         <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="8Og-aa-efh" customClass="HitTestStackView" customModule="DuckDuckGo" customModuleProvider="target">
@@ -184,14 +184,14 @@
                                             <outlet property="unread" destination="Gyy-py-IOg" id="9Ow-2Z-BPg"/>
                                         </connections>
                                     </collectionViewCell>
-                                    <collectionViewCell clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="TabViewListCell" id="Ml9-Ia-4eU" customClass="TabViewCell" customModule="DuckDuckGo" customModuleProvider="target">
+                                    <collectionViewCell multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="TabViewListCell" id="Ml9-Ia-4eU" customClass="TabViewCell" customModule="DuckDuckGo" customModuleProvider="target">
                                         <rect key="frame" x="24" y="234" width="327" height="70"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center">
                                             <rect key="frame" x="0.0" y="0.0" width="327" height="70"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <view clipsSubviews="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="PJG-u5-taI" customClass="RoundedRectangleView" customModule="DuckDuckGo" customModuleProvider="target">
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="PJG-u5-taI" customClass="RoundedRectangleView" customModule="DuckDuckGo" customModuleProvider="target">
                                                     <rect key="frame" x="0.0" y="0.0" width="327" height="70"/>
                                                     <subviews>
                                                         <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="lk6-g3-EJO" customClass="HitTestStackView" customModule="DuckDuckGo" customModuleProvider="target">

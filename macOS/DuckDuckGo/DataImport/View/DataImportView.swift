@@ -346,12 +346,14 @@ struct DataImportView: ModalView {
                     .padding(.top, 10)
                     .padding(.leading, 20)
 
-                ForEach(model.errors.indices, id: \.self) { idx in
-                    if let (key, value) = model.errors[idx].first {
-                        if #available(macOS 12.0, *) {
-                            Text(verbatim: "\(key.rawValue.uppercased()): \(value)").textSelection(.enabled)
-                        } else {
-                            Text(verbatim: "\(key.rawValue.uppercased()): \(value)")
+                ForEach(model.errors.indices, id: \.self) { i in
+                    ForEach(Array(model.errors[i].keys), id: \.self) { key in
+                        if let value = model.errors[i][key] {
+                            if #available(macOS 12.0, *) {
+                                Text(verbatim: "\(key.rawValue.uppercased()): \(value)").textSelection(.enabled)
+                            } else {
+                                Text(verbatim: "\(key.rawValue.uppercased()): \(value)")
+                            }
                         }
                     }
                 }

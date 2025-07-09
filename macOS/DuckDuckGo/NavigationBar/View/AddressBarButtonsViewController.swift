@@ -640,8 +640,8 @@ final class AddressBarButtonsViewController: NSViewController {
             let fittingSize = askAIChatButton.sizeThatFits(CGSize(width: 1000, height: visualStyle.addressBarStyleProvider.addressBarButtonSize))
             targetWidth = max(fittingSize.width, visualStyle.addressBarStyleProvider.addressBarButtonSize)
 
-            askAIChatButton.backgroundColor = visualStyle.colorsProvider.buttonMouseOverColor
-            askAIChatButton.mouseOverColor = .buttonMouseDown
+            askAIChatButton.backgroundColor = visualStyle.colorsProvider.fillButtonBackgroundColor
+            askAIChatButton.mouseOverColor = visualStyle.colorsProvider.fillButtonMouseOverColor
 
             // Animate button expanding
             NSAnimationContext.runAnimationGroup { context in

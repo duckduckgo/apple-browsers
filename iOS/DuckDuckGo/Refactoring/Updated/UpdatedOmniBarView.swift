@@ -657,6 +657,19 @@ extension UpdatedOmniBarView {
         // no-op
     }
 
+    func hideButtons() {
+        privacyInfoContainer.transform = CGAffineTransform(translationX: -privacyInfoContainer.frame.maxX * 0.1, y: 0)
+        privacyInfoContainer.alpha = 0
+        searchAreaView.hideButtons()
+    }
+
+    func revealButtons() {
+        privacyInfoContainer.transform = .identity
+        privacyInfoContainer.alpha = 1
+        searchAreaView.transform = .identity
+        searchAreaView.revealButtons()
+    }
+
     // Used to mask shadows going outside of bounds to prevent them covering other content
     func updateMaskLayer(maskTop: Bool) {
         self.masksTop = maskTop

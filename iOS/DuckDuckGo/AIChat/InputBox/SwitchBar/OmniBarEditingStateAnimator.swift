@@ -25,6 +25,9 @@ protocol OmniBarEditingStateTransitionDelegate: AnyObject {
     var isTopBarPosition: Bool { get }
     var switchBarVC: SwitchBarViewController { get }
     var logoView: UIView? { get }
+
+    func adjustForAppearance()
+    func adjustForDismissal()
 }
 
 final class OmniBarEditingStateAnimator {
@@ -87,6 +90,7 @@ final class OmniBarEditingStateAnimator {
             transitionDelegate.switchBarVC.view.alpha = 1.0
             transitionDelegate.rootView.alpha = 1.0
             transitionDelegate.rootView.backgroundColor = UIColor(designSystemColor: .background)
+            transitionDelegate.adjustForAppearance()
         }
 
         let expandAnimator = UIViewPropertyAnimator(duration: Constants.TopTransition.expandDuration,
@@ -122,9 +126,10 @@ final class OmniBarEditingStateAnimator {
             transitionDelegate.rootView.layoutIfNeeded()
         }
 
-        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: Constants.TopTransition.fadeOutDuration, curve: .easeIn) {
+        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: Constants.TopTransition.fadeOutDuration, curve: .easeInOut) {
             transitionDelegate.rootView.alpha = 0.0
             transitionDelegate.switchBarVC.view.alpha = 0.0
+            transitionDelegate.adjustForDismissal()
         }
 
         backgroundFadeAnimator.addCompletion { _ in
@@ -154,6 +159,8 @@ final class OmniBarEditingStateAnimator {
             transitionDelegate.rootView.alpha = 1.0
             self.topSwitchBarConstraint?.constant = Constants.BottomTransition.finalYOffset
 
+            transitionDelegate.adjustForAppearance()
+
             transitionDelegate.rootView.layoutIfNeeded()
         }
 
@@ -167,7 +174,7 @@ final class OmniBarEditingStateAnimator {
 
         let animator = UIViewPropertyAnimator(duration: Constants.BottomTransition.dismissDuration, curve: .easeInOut) {
             self.topSwitchBarConstraint?.constant = Constants.BottomTransition.yOffset
-
+            transitionDelegate.adjustForDismissal()
             transitionDelegate.rootView.layoutIfNeeded()
         }
 

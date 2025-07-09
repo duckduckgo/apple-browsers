@@ -44,6 +44,9 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onSelectFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
+
+    func onAppear()
+    func onDismiss()
 }
 
 /// Later: Inject auto suggestions here.
@@ -138,6 +141,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 completion?()
             }
         }
+    }
+
+    func adjustForAppearance() {
+        delegate?.onAppear()
+    }
+
+    func adjustForDismissal() {
+        delegate?.onDismiss()
     }
 
     private func installSwitchBarVC() {

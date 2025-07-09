@@ -532,7 +532,6 @@ final class AddressBarButtonsViewController: NSViewController {
     func updateAIChatButtonVisibility(isHidden: Bool) {
         aiChatButton.isHidden = isHidden
         updateAIChatDividerVisibility()
-        delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
     }
 
     private func updateAIChatButtonState() {
@@ -563,7 +562,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
         aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut || isPopUpWindow || isDuckAIURL
         updateAIChatDividerVisibility()
-        delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
 
         // Check if the current tab is in the onboarding state and disable the AI chat button if it is
         guard let tabViewModel else { return }
@@ -628,7 +626,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
             askAIChatButton.backgroundColor = visualStyle.colorsProvider.buttonMouseOverColor
             askAIChatButton.mouseOverColor = .buttonMouseDown
-            askAIChatButton.mouseDownColor = 
 
             // Animate button expanding
             NSAnimationContext.runAnimationGroup { context in

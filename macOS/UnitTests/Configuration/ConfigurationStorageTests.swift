@@ -23,14 +23,14 @@ import Configuration
 
 final class ConfigurationStorageTests: XCTestCase {
 
-    var configurationStore: ConfigurationStore = ConfigurationStore()
+    var configurationStore: ConfigurationStore! = ConfigurationStore()
 
     override func tearDown() {
-        super.tearDown()
         for config in Configuration.allCases {
             let url = configurationStore.fileUrl(for: config)
             try? FileManager.default.removeItem(at: url)
         }
+        configurationStore = nil
     }
 
     func test_when_data_is_saved_for_config_then_it_can_be_loaded_correctly() {

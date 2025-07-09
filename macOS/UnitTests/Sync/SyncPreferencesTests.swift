@@ -65,12 +65,12 @@ class MockSyncFeatureFlagger: FeatureFlagger {
 
 final class SyncPreferencesTests: XCTestCase {
 
-    let scheduler = CapturingScheduler()
-    let managementDialogModel = ManagementDialogModel()
+    var scheduler: CapturingScheduler! = CapturingScheduler()
+    var managementDialogModel: ManagementDialogModel! = ManagementDialogModel()
     var ddgSyncing: MockDDGSyncing!
     var syncBookmarksAdapter: SyncBookmarksAdapter!
     var syncCredentialsAdapter: SyncCredentialsAdapter!
-    var appearancePersistor = MockAppearancePreferencesPersistor()
+    var appearancePersistor: MockAppearancePreferencesPersistor! = MockAppearancePreferencesPersistor()
     var appearancePreferences: AppearancePreferences!
     var syncPreferences: SyncPreferences!
     var pausedStateManager: MockSyncPausedStateManaging!
@@ -86,7 +86,7 @@ final class SyncPreferencesTests: XCTestCase {
     override func setUp() {
         cancellables = []
         setUpDatabase()
-        appearancePreferences = AppearancePreferences(persistor: appearancePersistor, privacyConfigurationManager: MockPrivacyConfigurationManager())
+        appearancePreferences = AppearancePreferences(persistor: appearancePersistor, privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
         ddgSyncing = MockDDGSyncing(authState: .inactive, scheduler: scheduler, isSyncInProgress: false)
         pausedStateManager = MockSyncPausedStateManaging()
 
@@ -118,6 +118,14 @@ final class SyncPreferencesTests: XCTestCase {
         pausedStateManager = nil
         cancellables = nil
         tearDownDatabase()
+        appearancePersistor = nil
+        appearancePreferences = nil
+        connectionController = nil
+        featureFlagger = nil
+        managementDialogModel = nil
+        scheduler = nil
+        syncBookmarksAdapter = nil
+        syncCredentialsAdapter = nil
     }
 
     private func setUpDatabase() {

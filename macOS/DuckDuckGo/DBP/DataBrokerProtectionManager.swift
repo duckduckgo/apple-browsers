@@ -157,4 +157,10 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
     public func isAuthenticatedUser() -> Bool {
         isUserAuthenticated()
     }
+
+    /// Returns whether the current user is eligible for a free trial of Data Broker Protection
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise
+    public func isUserEligibleForFreeTrial() -> Bool {
+        authenticationManager.isUserEligibleForFreeTrial
+    }
 }

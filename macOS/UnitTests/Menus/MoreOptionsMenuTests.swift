@@ -43,7 +43,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     var subscriptionManager: SubscriptionManagerMock!
 
-    private var mockFreemiumDBPPresenter = MockFreemiumDBPPresenter()
+    private var mockFreemiumDBPPresenter: MockFreemiumDBPPresenter! = .init()
     private var mockFreemiumDBPFeature: MockFreemiumDBPFeature!
     private var mockNotificationCenter: MockNotificationCenter!
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
@@ -92,7 +92,18 @@ final class MoreOptionsMenuTests: XCTestCase {
         capturingActionDelegate = nil
         subscriptionManager = nil
         moreOptionsMenu = nil
-        super.tearDown()
+        defaultBrowserProvider = nil
+        dockCustomizer = nil
+        fireproofDomains = nil
+        internalUserDecider = nil
+        mockFeatureFlagger = nil
+        mockFreemiumDBPFeature = nil
+        mockFreemiumDBPPresenter = nil
+        mockFreemiumDBPUserStateManager = nil
+        mockNotificationCenter = nil
+        mockPixelHandler = nil
+        networkProtectionVisibilityMock = nil
+        storePurchaseManager = nil
     }
 
     @MainActor
@@ -249,18 +260,17 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertTrue(moreOptionsMenu.items[15].isSeparatorItem)
         XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.subscriptionOptionsMenuItem)
         XCTAssertFalse(moreOptionsMenu.items[16].hasSubmenu)
-        XCTAssertTrue(moreOptionsMenu.items[17].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[18].title, UserText.freemiumDBPOptionsMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[19].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[20].title, UserText.fireproofSite)
-        XCTAssertEqual(moreOptionsMenu.items[21].title, UserText.deleteBrowsingDataMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[22].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[23].title, UserText.findInPageMenuItem)
-        XCTAssertEqual(moreOptionsMenu.items[24].title, UserText.shareMenuItem)
-        XCTAssertEqual(moreOptionsMenu.items[25].title, UserText.printMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[26].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.mainMenuHelp)
-        XCTAssertEqual(moreOptionsMenu.items[28].title, UserText.settings)
+        XCTAssertEqual(moreOptionsMenu.items[17].title, UserText.freemiumDBPOptionsMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[18].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[19].title, UserText.fireproofSite)
+        XCTAssertEqual(moreOptionsMenu.items[20].title, UserText.deleteBrowsingDataMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[21].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[22].title, UserText.findInPageMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[23].title, UserText.shareMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[24].title, UserText.printMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[25].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[26].title, UserText.mainMenuHelp)
+        XCTAssertEqual(moreOptionsMenu.items[27].title, UserText.settings)
     }
 
     @MainActor

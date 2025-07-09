@@ -26,7 +26,7 @@ import CoreData
 
 class CoreDataEncryptionTests: XCTestCase {
 
-    private lazy var mockValueTransformer: MockValueTransformer = {
+    private lazy var mockValueTransformer: MockValueTransformer! = {
         let name = NSValueTransformerName("MockValueTransformer")
         let transformer = MockValueTransformer()
         ValueTransformer.setValueTransformer(transformer, forName: name)
@@ -35,9 +35,11 @@ class CoreDataEncryptionTests: XCTestCase {
     }()
 
     override func setUp() {
-        super.setUp()
-
         mockValueTransformer.numberOfTransformations = 0
+    }
+
+    override func tearDown() {
+        mockValueTransformer = nil
     }
 
     func testSavingIncorrectValueTypes() {

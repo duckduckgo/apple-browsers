@@ -7593,49 +7593,49 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Automatically clear tabs and browsing data when DuckDuckGo quits"
+            "value" : "Automatically delete tabs and browsing data when DuckDuckGo quits"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Borra automáticamente las pestañas y los datos de navegación cuando se cierra DuckDuckGo"
+            "value" : "Elimina automáticamente las pestañas y los datos de navegación cuando se cierra DuckDuckGo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Effacer automatiquement les onglets et les données de navigation lorsque DuckDuckGo se ferme"
+            "value" : "Supprimer automatiquement les onglets et les données de navigation lorsque DuckDuckGo se ferme"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cancella automaticamente schede e dati di navigazione quando chiudi DuckDuckGo"
+            "value" : "Elimina automaticamente schede e dati di navigazione quando chiudi DuckDuckGo"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tabbladen en browsegegevens automatisch wissen wanneer DuckDuckGo stopt"
+            "value" : "Tabbladen en browsegegevens automatisch verwijderen wanneer DuckDuckGo wordt afgesloten"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Automatycznie czyść karty i dane przeglądania przy wychodzeniu z DuckDuckGo"
+            "value" : "Automatycznie usuwaj karty i dane przeglądania przy wychodzeniu z DuckDuckGo"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Limpar automaticamente os separadores e os dados de navegação quando o DuckDuckGo fecha"
+            "value" : "Eliminar automaticamente os separadores e os dados de navegação quando o DuckDuckGo fecha"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Автоматически закрывать вкладки и стирать данные о посещении сайтов при завершении работы DuckDuckGo."
+            "value" : "Автоматически удалять вкладки и данные о посещении сайтов при завершении работы DuckDuckGo"
           }
         }
       }
@@ -18165,7 +18165,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserdaten löschen …"
+            "value" : "Browserdaten löschen…"
           }
         },
         "en" : {
@@ -25171,6 +25171,126 @@
         }
       }
     },
+    "fire.animation.section.setting" : {
+      "comment" : "Section header in Data Clearing related to the Fire Animation.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animation"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Animation"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animazione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animatie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animacja"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Animação"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Анимация"
+          }
+        }
+      }
+    },
+    "fire.animation.toggle.value" : {
+      "comment" : "Checkbox to toggle the fire animation to be on or off",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beim Löschen von Daten eine Inferno-Animation anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show inferno animation when deleting data"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar la animación Inferno al eliminar datos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher une animation inferno lors de la suppression de données"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra un’animazione inferno durante l’eliminazione dei dati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toon een inferno-animatie bij het verwijderen van gegevens"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż animację inferno podczas usuwania danych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar animação inferno ao excluir dados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать анимацию инферно при удалении данных"
+          }
+        }
+      }
+    },
     "fire.current-window.description" : {
       "comment" : "Description of the 'Current Window' configuration option for the fire button",
       "extractionState" : "extracted_with_value",
@@ -27031,6 +27151,66 @@
         }
       }
     },
+    "freemium.dbp.menu.item" : {
+      "comment" : "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenloser Scan auf personenbezogene Daten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Free Personal Information Scan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escaneo gratuito de información personal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analyse gratuite des informations personnelles"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scansione gratuita delle informazioni personali"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratis scan van persoonlijke gegevens"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie danych osobowych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Análise grátis de informações pessoais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатный сканер личной информации"
+          }
+        }
+      }
+    },
     "general.feedback-form.category.ai-chat" : {
       "comment" : "Description for the feedback form when the issue is related to Duck.ai",
       "extractionState" : "extracted_with_value",
@@ -27043,18 +27223,6 @@
         }
       },
       "shouldTranslate" : false
-    },
-    "freemium.dbp.menu.item" : {
-      "comment" : "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Personal Information Scan"
-          }
-        }
-      }
     },
     "general.feedback-form.category.itr" : {
       "comment" : "Description for the feedback form when the issue is related to Identity Theft Restoration (ITR)",
@@ -29852,10 +30020,58 @@
       "comment" : "Title for the Freemium DBP Home Page Promotion Button",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenloser Scan"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Free Scan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escaneo gratuito"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analyse gratuite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scansione gratuita"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratis scan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verificação gratuita"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатная проверка"
           }
         }
       }
@@ -29864,10 +30080,58 @@
       "comment" : "Description for the Freemium DBP Home Page Promotion",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde heraus, welche Websites deine Daten verkaufen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Find out which sites are selling your info."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descubre qué sitios están vendiendo tu información."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Découvrez quels sites vendent vos informations."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopri quali siti vendono le tue informazioni."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontdek welke sites jouw gegevens verkopen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dowiedz się, które strony sprzedają Twoje dane."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descobre quais são os sites que estão a vender as tuas informações."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Узнайте, какие сайты продают ваши данные."
           }
         }
       }
@@ -29876,10 +30140,58 @@
       "comment" : "Markdown Description for the Freemium DBP Home Page Promotion. Please make sure to keep **STRING** intact.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde heraus, welche Websites **deine Daten** verkaufen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Find out which sites are selling **your info.**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descubre qué sitios están vendiendo **tu información.**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Découvrez quels sites vendent **vos informations**."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopri quali siti stanno vendendo **le tue informazioni.**"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontdek welke sites **jouw gegevens** verkopen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dowiedz się, które strony sprzedają **Twoje dane.**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descobre quais são os sites que estão a vender **as tuas informações**."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Узнайте, какие сайты продают **ваши данные**."
           }
         }
       }
@@ -29888,10 +30200,58 @@
       "comment" : "Title for the Freemium DBP Home Page Post Scan Engagement Promotion Button",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ergebnisse anzeigen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "View Results"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver resultados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher les résultats"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visualizza risultati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resultaten weergeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobacz wyniki"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver resultados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просмотреть результаты"
           }
         }
       }
@@ -29900,10 +30260,58 @@
       "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When There Are No Results",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gute Nachrichten: Dein kostenloser persönlicher Info-Scan hat keine Aufzeichnungen über dich gefunden. Wir werden das regelmäßig überprüfen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Good news, your free personal info scan didn't find any records about you. We'll keep checking periodically."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buenas noticias: tu escaneo gratuito de información personal no ha encontrado ningún dato sobre ti. Seguiremos comprobándolo periódicamente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bonne nouvelle, votre analyse gratuite d'informations personnelles n’a trouvé aucun enregistrement vous concernant. Nous continuerons de vérifier périodiquement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buone notizie, la tua scansione gratuita delle informazioni personali non ha trovato alcun dato su di te. Continueremo a controllare periodicamente."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goed nieuws, je gratis persoonlijke gegevensscan heeft geen gegevens over jou gevonden. We blijven regelmatig controleren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dobra wiadomość: bezpłatne skanowanie danych osobowych nie wykazało żadnych danych na Twój temat. Będziemy to sprawdzać okresowo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boas notícias, a tua análise de informações pessoais gratuita não encontrou nenhum registo sobre ti. Vamos continuar a analisar periodicamente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хорошая новость! В результате бесплатной проверки ваших личных данных не обнаружено. Время от времени мы будем повторять проверку."
           }
         }
       }
@@ -29912,10 +30320,58 @@
       "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on multiple broker sites",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein kostenloser Scan personenbezogener Daten hat %1$d Datensätze über dich auf %2$d verschiedenen Websites gefunden."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your free personal info scan found %1$d records about you on %2$d different sites."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu escaneo gratuito de información personal ha encontrado %1$d registros sobre ti en %2$d sitios diferentes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre analyse gratuite d'informations personnelles a trouvé %1$d enregistrements vous concernant sur %2$d sites différents."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La scansione gratuita delle informazioni personali ha trovato %1$d record su di te su %2$d siti diversi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis persoonlijke infoscan vond %1$d gegevens over jou op %2$d verschillende sites."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie danych osobowych wykazało %1$d rekordów na Twój temat na %2$d różnych stronach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua análise de informações pessoais gratuita encontrou %1$d registos sobre ti em %2$d sites diferentes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По результатам бесплатной поверки обнаружено записей: %1$d, на разных сайтах (%2$d)."
           }
         }
       }
@@ -29924,10 +30380,58 @@
       "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on a single broker site",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein kostenloser Scan personenbezogener Daten hat %d Datensätze über dich auf 1 Website gefunden."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your free personal info scan found %d records about you on 1 site."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu escaneo gratuito de información personal ha encontrado %d registros sobre ti en 1 sitio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre analyse gratuite d'informations personnelles a trouvé %d enregistrements vous concernant sur 1 site."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La scansione gratuita delle informazioni personali ha trovato %d record su 1 sito."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis persoonlijke informatiescan heeft %d records over jou gevonden op één site."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie danych osobowych wykazało %d rekordów na Twój temat na 1 stronie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua análise de informações pessoais gratuita encontrou %d registo sobre ti num site."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По результатам бесплатной поверки обнаружено записей: %1$d (на одном сайте)."
           }
         }
       }
@@ -29936,10 +30440,58 @@
       "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When Only One Record is Found",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein kostenloser Scan personenbezogener Daten hat 1 Datensatz über dich auf 1 Website gefunden."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your free personal info scan found 1 record about you on 1 site."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu escaneo gratuito de información personal ha encontrado 1 registro sobre ti en 1 sitio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre analyse gratuite d'informations personnelles a trouvé 1 enregistrement vous concernant sur 1 site."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La scansione gratuita delle informazioni personali ha trovato 1 record su 1 sito."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis persoonlijke informatiescan heeft 1 record over jou op 1 site gevonden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie danych osobowych wykazało 1 rekord na Twój temat na 1 stronie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua análise de informações pessoais gratuita encontrou 1 registo sobre ti num site."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По результатам бесплатной поверки обнаружена одна запись на одном сайте."
           }
         }
       }
@@ -29948,9 +30500,57 @@
       "comment" : "Title for the Freemium DBP Home Page Promotion",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Personal Information Removal"
           }
         }
@@ -40781,6 +41381,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Страница новой вкладки"
+          }
+        }
+      }
+    },
+    "newTab.favorites.section.omnibar" : {
+      "comment" : "Title of the Search section in the home page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search"
           }
         }
       }
@@ -77839,55 +78451,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Warne mich, dass Tabs und Daten beim Beenden gelöscht werden"
+            "value" : "Darauf hinweisen, dass Tabs und Daten beim Beenden gelöscht werden"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Warn me that tabs and data will be cleared when quitting"
+            "value" : "Warn me that tabs and data will be deleted when quitting"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Advertirme de que las pestañas y los datos se borrarán al salir"
+            "value" : "Avisarme de que las pestañas y los datos se eliminarán al salir"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "M'avertir que les onglets et les données seront effacés à la fermeture"
+            "value" : "M'avertir que les onglets et les données seront supprimés à la fermeture"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avvisa prima di cancellare schede e dati all'uscita"
+            "value" : "Avvisa prima di eliminare schede e dati all'uscita"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Waarschuwen dat tabbladen en gegevens worden gewist bij het afsluiten"
+            "value" : "Waarschuwen dat tabbladen en gegevens worden verwijderd bij het afsluiten"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ostrzegaj, że karty i dane zostaną wyczyszczone przy wychodzeniu"
+            "value" : "Ostrzegaj, że karty i dane zostaną usunięte przy wychodzeniu"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avisar-me que os separadores e os dados serão limpos ao sair"
+            "value" : "Avisar-me que os separadores e os dados serão eliminados ao sair"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Показывать предупреждение о сбросе вкладок и данных при выходе"
+            "value" : "Предупреждать о закрытии вкладок и удалении данных при выходе"
           }
         }
       }

@@ -46,6 +46,12 @@ class PinnedTabsViewModelTests: XCTestCase {
         model = PinnedTabsViewModel(collection: collection, fireproofDomains: MockFireproofDomains(domains: []), bookmarkManager: bookmarkManagerMock)
     }
 
+    override func tearDown() {
+        bookmarkManagerMock = nil
+        collection = nil
+        model = nil
+    }
+
     func testInitialState() throws {
         XCTAssertNil(model.selectedItem)
         XCTAssertNil(model.hoveredItem)

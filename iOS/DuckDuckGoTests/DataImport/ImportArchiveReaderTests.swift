@@ -113,6 +113,8 @@ final class ImportArchiveReaderTests: XCTestCase {
     }
 
     func testWhenArchiveContainsValidPaymentCardsJsonAndFeatureEnabledThenCreditCardsRead() throws {
+        mockFeatureFlagger.enabledFeatureFlags.append(.autofillCreditCards)
+
         let paymentCardsJson = """
         {
             "payment_cards": [
@@ -140,8 +142,6 @@ final class ImportArchiveReaderTests: XCTestCase {
     }
 
     func testWhenArchiveContainsValidPaymentCardsJsonButFeatureDisabledThenCreditCardsNotRead() throws {
-        mockFeatureFlagger.enabledFeatureFlags.append(.autofillCreditCards)
-
         let paymentCardsJson = """
         {
             "payment_cards": [
@@ -188,6 +188,8 @@ final class ImportArchiveReaderTests: XCTestCase {
     }
 
     func testWhenArchiveContainsCsvAndHtmlAndCreditCardsThenAllThreeTypesRead() throws {
+        mockFeatureFlagger.enabledFeatureFlags.append(.autofillCreditCards)
+
         let paymentCardsJson = """
         {
             "payment_cards": []
@@ -269,6 +271,8 @@ final class ImportArchiveReaderTests: XCTestCase {
     }
 
     func testWhenArchiveContainsMultiplePaymentCardsJsonFilesThenAllRead() throws {
+        mockFeatureFlagger.enabledFeatureFlags.append(.autofillCreditCards)
+
         let paymentCardsJson1 = """
         { "payment_cards": [{"number": "1234"}] }
         """

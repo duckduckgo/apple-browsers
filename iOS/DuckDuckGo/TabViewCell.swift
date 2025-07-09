@@ -36,10 +36,10 @@ final class TabViewCell: UICollectionViewCell {
 
         static let swipeToDeleteAlpha: CGFloat = 0.5
 
-        static let borderRadius: CGFloat = 12.0
+        static let borderRadius: CGFloat = 14.0
 
-        static let cellCornerRadius: CGFloat = 12.0 // does ios support this when long pressing?
-        static let cellHeaderHeight: CGFloat = 32.0
+        static let cellCornerRadius: CGFloat = 12.0
+        static let cellHeaderHeight: CGFloat = 36.0 + 4.0 // height + top padding
         static let cellLogoSize: CGFloat = 68.0
 
         static let previewCornerRadius: CGFloat = 8.0
@@ -104,7 +104,7 @@ final class TabViewCell: UICollectionViewCell {
     @IBOutlet var previewBottomConstraint: NSLayoutConstraint?
     @IBOutlet var previewTrailingConstraint: NSLayoutConstraint?
 
-    /// Note that backgroundView and selectedBackgroundView are provided by UICollectionViewCell and we don't use them for legacy and design reasons, so ignore them.
+    /// Note that `backgroundView` and `selectedBackgroundView` are provided by UICollectionViewCell and we don't use them for legacy and design reasons, so ignore them.
     func setupSubviews() {
 
         preview?.layer.cornerRadius = Constants.previewCornerRadius
@@ -112,16 +112,16 @@ final class TabViewCell: UICollectionViewCell {
 
         backgroundColor = .clear
         
-        background?.layer.cornerRadius = Constants.borderRadius
+        background?.layer.cornerRadius = Constants.cellCornerRadius
         background?.backgroundColor = .clear
 
         border.layer.cornerRadius = Constants.borderRadius
 
         layer.cornerRadius = Constants.cellCornerRadius
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOffset = CGSize(width: 0, height: 1)
-        layer.shadowRadius = 3.0
-        layer.shadowOpacity = 0.15
+        layer.shadowColor = UIColor(designSystemColor: .shadowPrimary).cgColor
+        layer.shadowOffset = CGSize(width: 0, height: 4)
+        layer.shadowRadius = 6.0
+        layer.shadowOpacity = 1.0
         layer.masksToBounds = false
         layer.shouldRasterize = true
         layer.rasterizationScale = UIScreen.main.scale

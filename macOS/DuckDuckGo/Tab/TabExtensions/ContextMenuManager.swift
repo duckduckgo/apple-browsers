@@ -210,7 +210,7 @@ extension ContextMenuManager {
     }
 
     private func handleSearchWebItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
-        let isSummarizationAvailable = featureFlagger.isFeatureOn(.aiChatTextSummarization)
+        let isSummarizationAvailable = featureFlagger.isFeatureOn(.aiChatTextSummarization) && AIChatMenuConfiguration().shouldDisplayApplicationMenuShortcut
         var currentIndex = index
         if isSummarizationAvailable {
             menu.insertItem(.separator(), at: currentIndex)

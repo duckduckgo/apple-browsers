@@ -98,7 +98,6 @@ internal class ChromiumDataImporter: DataImporter {
         if types.contains(.bookmarks)
             // don‘t proceed with bookmarks import on Keychain prompt denial
             && (summary[.passwords]?.error as? ChromiumLoginReader.ImportError)?.type != .userDeniedKeychainPrompt {
-            let importNewTabShortcuts = featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport)
 
             try updateProgress(.importingBookmarks(numberOfBookmarks: nil, fraction: passwordsFraction + 0.0))
 

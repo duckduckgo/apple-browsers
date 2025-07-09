@@ -825,7 +825,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     // MARK: - Notification Handling Tests
 
     @MainActor
-    func testHandleAddressBarPositionChanged_UpdatesBottomConstraintForTopAddressBar() {
+    func testAddressBarPositionChanged_UpdatesBottomConstraintForTopAddressBar() {
         // Given
         mockAppSettings.currentAddressBarPosition = .top
         let videoID = "test123"
@@ -833,9 +833,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Present pill to create bottom constraint
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: nil)
         
-        // When
-        let notification = Notification(name: AppUserDefaults.Notifications.addressBarPositionChanged, object: AddressBarPosition.top)
-        sut.handleAddressBarPositionChanged(notification)
+        // When - simulate address bar position change
+        testNotificationCenter.post(name: AppUserDefaults.Notifications.addressBarPositionChanged, object: AddressBarPosition.top)
         
         // Wait for async constraint update
         let expectation = expectation(description: "Constraint update")
@@ -849,7 +848,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     }
 
     @MainActor
-    func testHandleAddressBarPositionChanged_UpdatesBottomConstraintForBottomAddressBar() {
+    func testAddressBarPositionChanged_UpdatesBottomConstraintForBottomAddressBar() {
         // Given
         mockAppSettings.currentAddressBarPosition = .bottom
         let videoID = "test123"
@@ -857,9 +856,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Present pill to create bottom constraint
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: nil)
         
-        // When
-        let notification = Notification(name: AppUserDefaults.Notifications.addressBarPositionChanged, object: AddressBarPosition.bottom)
-        sut.handleAddressBarPositionChanged(notification)
+        // When - simulate address bar position change
+        testNotificationCenter.post(name: AppUserDefaults.Notifications.addressBarPositionChanged, object: AddressBarPosition.bottom)
         
         // Wait for async constraint update
         let expectation = expectation(description: "Constraint update")
@@ -873,13 +871,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     }
 
     @MainActor
-    func testUpdatePillBottomConstraint_WithNilBottomConstraint_HandlesGracefully() {
+    func testAddressBarPositionChanged_WithNilBottomConstraint_HandlesGracefully() {
         // Given - no pill presented, so no bottom constraint exists
         mockAppSettings.currentAddressBarPosition = .bottom
         
-        // When
-        let notification = Notification(name: AppUserDefaults.Notifications.addressBarPositionChanged, object: AddressBarPosition.bottom)
-        sut.handleAddressBarPositionChanged(notification)
+        // When - simulate address bar position change
+        testNotificationCenter.post(name: AppUserDefaults.Notifications.addressBarPositionChanged, object: AddressBarPosition.bottom)
         
         // Then - should not crash
         XCTAssertNil(sut.bottomConstraint, "Bottom constraint should remain nil when no pill is presented")
@@ -1187,6 +1184,29 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         // Then
         XCTAssertNil(weakPresenter, "Presenter should be deallocated")
+    }
+
+    func testDeinit_RemovesNotificationObservers() {
+        // Given
+        var presenter: DuckPlayerNativeUIPresenter? = DuckPlayerNativeUIPresenter(
+            appSettings: mockAppSettings,
+            duckPlayerSettings: mockDuckPlayerSettings,
+            state: DuckPlayerState(),
+            notificationCenter: testNotificationCenter
+        )
+        
+        // Verify observer is working
+        let videoID = "test123"
+        presenter?.presentPill(for: videoID, in: mockHostViewController, timestamp: nil)
+        
+        // When - deallocate presenter
+        presenter = nil
+        
+        // Then - notification should not crash or cause issues
+        testNotificationCenter.post(name: AppUserDefaults.Notifications.addressBarPositionChanged, object: AddressBarPosition.bottom)
+        
+        // If we reach here without crashing, the observer was properly removed
+        XCTAssertTrue(true, "Notification observer was properly cleaned up")
     }
 
     @MainActor

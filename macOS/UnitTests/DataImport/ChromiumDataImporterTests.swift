@@ -73,7 +73,7 @@ class ChromiumDataImporterTests {
             return .init(successful: 1, duplicates: 2, failed: 3)
         })
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags.append(.updatedBookmarksFavoritesImport)
+        featureFlagger.enabledFeatureFlags.append(.importChromeShortcuts)
         let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore.customShortcuts.resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
 
         _ = await importer.importData(types: [.bookmarks])
@@ -95,7 +95,7 @@ class ChromiumDataImporterTests {
             return .init(successful: 1, duplicates: 2, failed: 3)
         })
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags.append(.updatedBookmarksFavoritesImport)
+        featureFlagger.enabledFeatureFlags.append(.importChromeShortcuts)
         let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore.topSitesShortcuts.resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
 
         _ = await importer.importData(types: [.bookmarks])

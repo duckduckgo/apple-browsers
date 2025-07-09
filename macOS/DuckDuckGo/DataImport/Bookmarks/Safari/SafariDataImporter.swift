@@ -86,7 +86,7 @@ final class SafariDataImporter: DataImporter {
         let bookmarkResult = bookmarkReader.readBookmarks()
 
         let summary = bookmarkResult.map { bookmarks in
-            let maxFavoritesCount = featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport) ? 12 : nil
+            let maxFavoritesCount = featureFlagger.isFeatureOn(.updateSafariBookmarksImport) ? 12 : nil
             return bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: maxFavoritesCount)
         }
 

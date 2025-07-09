@@ -110,7 +110,7 @@ internal class ChromiumDataImporter: DataImporter {
             }
 
             var markRootBookmarksAsFavoritesByDefault = true
-            if featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport) {
+            if featureFlagger.isFeatureOn(.importChromeShortcuts) {
                 markRootBookmarksAsFavoritesByDefault = false
                 let newTabShortcuts = fetchShortcutsAsFavorites()
                 FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &importedBookmarks, favorites: newTabShortcuts)

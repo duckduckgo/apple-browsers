@@ -42,29 +42,21 @@ final class PullToRefreshViewAdapter: NSObject {
     private enum Constant {
 
         // Base values for portrait orientation on standard devices
-        static let pullLimitRatio: CGFloat = 0.25 // 25% of container height
-        static let refreshTriggerRatio: CGFloat = 0.2 // 20% of container height
+        static let refreshTriggerRatio: CGFloat = 0.3 // % of container height as float
 
         // Minimum values to ensure usability on very small screens
         static let minimumPullLimit: CGFloat = 120
         static let minimumTriggerThreshold: CGFloat = 80
 
         // Maximum values to prevent excessive pulling on large screens
-        static let maximumPullLimit: CGFloat = 250
-        static let maximumTriggerThreshold: CGFloat = 200
-
-    }
-
-    private var pullLimit: CGFloat {
-        let containerHeight = pullableView?.bounds.height ?? UIScreen.main.bounds.height
-        let calculatedLimit = containerHeight * Constant.pullLimitRatio
-        return min(max(calculatedLimit, Constant.minimumPullLimit), Constant.maximumPullLimit)
+        // static let maximumTriggerThreshold: CGFloat = 200
     }
 
     private var refreshTriggerThreshold: CGFloat {
         let containerHeight = pullableView?.bounds.height ?? UIScreen.main.bounds.height
         let calculatedThreshold = containerHeight * Constant.refreshTriggerRatio
-        return min(max(calculatedThreshold, Constant.minimumTriggerThreshold), Constant.maximumTriggerThreshold)
+        // return min(max(calculatedThreshold, Constant.minimumTriggerThreshold), Constant.maximumTriggerThreshold)
+        return max(calculatedThreshold, Constant.minimumTriggerThreshold)
     }
 
     private let fakeScrollView = UIScrollView()

@@ -1155,10 +1155,6 @@ extension MainViewController {
         }
     }
 
-    @objc func crashOnCxxException(_ sender: Any?) {
-        throwTestCppExteption()
-    }
-
     @objc func toggleWatchdog(_ sender: Any?) {
         if Self.watchdog.isRunning {
             Self.watchdog.stop()

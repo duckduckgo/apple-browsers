@@ -125,7 +125,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         /// To minimize the impact of this change, we set the number of retries to 1 for now.
         ///
         /// https://app.asana.com/1/137249556945/project/481882893211075/task/1210079565270206?focus=true
-        if action is ExpectationAction {
+        if action is ExpectationAction, !stageCalculator.isRetrying {
             retriesCountOnError = 1
         }
 

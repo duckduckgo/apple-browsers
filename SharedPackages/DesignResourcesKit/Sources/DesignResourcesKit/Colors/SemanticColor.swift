@@ -72,6 +72,7 @@ public enum DesignSystemColor {
 
     // Brand
     case accent
+    case accentContentPrimary
 
     // System
     case lines

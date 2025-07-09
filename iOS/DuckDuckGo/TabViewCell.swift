@@ -294,7 +294,10 @@ final class TabViewCell: UICollectionViewCell {
         if !isSelected {
             image.image = DesignSystemImages.Glyphs.Size24.shapeCircle
         } else {
-            image.image = DesignSystemImages.Recolorable.Size24.check.applyPalleteColorsToSymbol(foreground: UIColor(designSystemColor: .accent))
+            image.image = DesignSystemImages.Recolorable.Size24.check.applyPalleteColorsToSymbol(
+                foreground: UIColor(designSystemColor: .accentContentPrimary),
+                background: UIColor(designSystemColor: .accent),
+            )
         }
     }
 

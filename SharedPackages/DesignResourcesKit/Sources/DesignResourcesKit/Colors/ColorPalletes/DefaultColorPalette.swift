@@ -43,6 +43,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Brand
     private static let accent = DynamicColor(lightColor: .blue50, darkColor: .blue30)
+    private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
 
     // System
     private static let lines = DynamicColor(lightColor: .shade(0.09), darkColor: .tint(0.09))
@@ -98,6 +99,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         switch designSystemColor {
         case .urlBar: return urlBar
         case .accent: return accent
+        case .accentContentPrimary: return accentContentPrimary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .background: return background

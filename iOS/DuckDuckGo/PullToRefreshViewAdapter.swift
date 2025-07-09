@@ -216,7 +216,7 @@ final class PullToRefreshViewAdapter: NSObject {
         // Update the background scroll view's content offset to match the pull
         // We only adjust the content offset if not refreshing to avoid hiding the refresh spinner
         if !refreshControl.isRefreshing {
-            fakeScrollView.contentOffset.y = -pullDistance
+            fakeScrollView.contentOffset.y = -pullDistance * 0.5
         }
     }
 

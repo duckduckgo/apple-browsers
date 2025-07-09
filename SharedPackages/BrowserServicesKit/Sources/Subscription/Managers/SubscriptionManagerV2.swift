@@ -322,13 +322,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 throw SubscriptionEndpointServiceError.noData
             } catch {
                 // Failed to get a valid token, fall back on cache
-                subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: .cacheOnly)
+                subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: .cacheFirst)
                 break
             }
             subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken, cachePolicy: cachePolicy)
-
-        case .cacheOnly:
-            subscription = try await subscriptionEndpointService.getSubscription(accessToken: nil, cachePolicy: cachePolicy)
         }
 
         if subscription.isActive {

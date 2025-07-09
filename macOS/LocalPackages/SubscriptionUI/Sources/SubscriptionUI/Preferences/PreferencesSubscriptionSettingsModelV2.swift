@@ -80,7 +80,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
                 }
 
                 await self?.fetchEmail()
-                await self?.updateSubscription(cachePolicy: .cacheOnly)
+                await self?.updateSubscription(cachePolicy: .cacheFirst)
             }
         }
 

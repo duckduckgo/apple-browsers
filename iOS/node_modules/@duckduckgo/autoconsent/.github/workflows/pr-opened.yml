@@ -1,0 +1,40 @@
+name: 'PR Opened Actions'
+
+on:
+    pull_request_target:
+        types:
+            - opened
+            - reopened
+
+jobs:
+    process-asana-tasks:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Find Asana task ID(s)
+              id: find-tasks
+              uses: duckduckgo/native-github-asana-sync@main
+              continue-on-error: true
+              with:
+                  action: 'find-asana-task-ids'
+                  asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+                  trigger-phrase: 'Task/Issue URL:'
+                  asana-project: '1203268166580279' # CPM (Cookie Pop-up Management) Triage project
+
+            - name: Add comment to Asana task(s)
+              if: steps.find-tasks.outputs.asanaTaskIds
+              uses: duckduckgo/native-github-asana-sync@main
+              with:
+                  action: 'add-asana-comment'
+                  asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+                  trigger-phrase: 'Task/Issue URL:'
+                  asana-project: '1203268166580279' # CPM (Cookie Pop-up Management) Triage project
+
+            - name: Move task(s) to "Awaiting review" section
+              if: steps.find-tasks.outputs.asanaTaskIds
+              uses: duckduckgo/native-github-asana-sync@main
+              with:
+                  action: 'add-task-asana-project'
+                  asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+                  asana-project: '1203268166580279' # CPM (Cookie Pop-up Management) Triage project
+                  asana-section: '1209767000096488' # "Awaiting review" section ID
+                  asana-task-id: ${{ steps.find-tasks.outputs.asanaTaskIds }}

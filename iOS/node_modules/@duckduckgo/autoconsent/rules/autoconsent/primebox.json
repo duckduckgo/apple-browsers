@@ -1,0 +1,14 @@
+{
+    "name": "PrimeBox CookieBar",
+    "prehideSelectors": ["#cookie-bar"],
+    "detectCmp": [{ "exists": "#cookie-bar .cb-enable,#cookie-bar .cb-disable,#cookie-bar .cb-policy" }],
+    "detectPopup": [
+        {
+            "visible": "#cookie-bar .cb-enable,#cookie-bar .cb-disable,#cookie-bar .cb-policy",
+            "check": "any"
+        }
+    ],
+    "optIn": [{ "waitForThenClick": "#cookie-bar .cb-enable" }],
+    "optOut": [{ "click": "#cookie-bar .cb-disable", "optional": true }, { "hide": "#cookie-bar" }],
+    "test": [{ "cookieContains": "cb-enabled=accepted", "negated": true }]
+}

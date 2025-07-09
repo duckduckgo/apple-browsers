@@ -1,0 +1,26 @@
+{
+    "name": "pornhat",
+    "vendorUrl": "https://unknown",
+    "cosmetic": true,
+    "prehideSelectors": [".cookiesBanner"],
+    "detectCmp": [
+        {
+            "visible": ".cookiesBanner .wrapper-cookies"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookiesBanner .wrapper-cookies"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cookiesBanner .wrapper-cookies button"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": ".cookiesBanner"
+        }
+    ]
+}

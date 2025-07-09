@@ -1,0 +1,37 @@
+{
+    "name": "stripchat.com",
+    "vendorUrl": "https://unknown",
+    "cosmetic": false,
+    "prehideSelectors": [".cookies-reminder"],
+    "detectCmp": [
+        {
+            "exists": ".cookies-reminder .cookies-reminder__content"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookies-reminder .cookies-reminder__content"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cookies-reminder .cookies-reminder__accept-all-button"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".cookies-reminder .cookies-reminder__manage-button"
+        },
+        {
+            "waitForThenClick": "dialog[open] .cookies-select-modal .cookies-select-modal__buttons .ds-btn-apply-2-ds"
+        }
+    ],
+    "test": [
+        {
+            "wait": 500
+        },
+        {
+            "cookieContains": " c=%7B%22essential"
+        }
+    ]
+}

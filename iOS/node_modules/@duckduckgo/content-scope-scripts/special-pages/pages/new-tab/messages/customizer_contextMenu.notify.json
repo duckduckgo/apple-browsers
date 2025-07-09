@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "oneOf": [
+    {
+      "type": "object",
+      "title": "UserImageContextMenu",
+      "required": ["id", "target"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string",
+          "const": "userImage"
+        }
+      }
+    }
+  ]
+}

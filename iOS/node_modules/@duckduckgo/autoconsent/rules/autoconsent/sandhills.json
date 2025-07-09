@@ -1,0 +1,26 @@
+{
+    "name": "sandhills",
+    "vendorUrl": "https://unknown",
+    "cosmetic": true,
+    "prehideSelectors": [".cookies-consent"],
+    "detectCmp": [
+        {
+            "exists": ".cookies-consent .cookies-inner"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookies-consent .cookies-inner"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cookies-consent .cookies-inner button.close"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": ".cookies-consent"
+        }
+    ]
+}

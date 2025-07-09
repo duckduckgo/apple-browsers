@@ -1,0 +1,45 @@
+{
+    "name": "synology",
+    "vendorUrl": "https://synology.com",
+    "cosmetic": false,
+    "prehideSelectors": [".syno_cookie_element"],
+    "detectCmp": [
+        {
+            "exists": ".syno_cookie_element"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".syno_cookie_element"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".syno_cookie_element .btn_accept"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".syno_cookie_element .btn_option"
+        },
+        {
+            "waitForVisible": ".syno_cookie_element .scb_dialog_body"
+        },
+        {
+            "click": ".syno_cookie_element.scb_dialog input[type=checkbox]:checked:not(:disabled):not([readonly])",
+            "all": true,
+            "optional": true
+        },
+        {
+            "waitForThenClick": ".syno_cookie_element.scb_dialog .scb_btn_save"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "syno_confirm_v5_answer"
+        },
+        {
+            "cookieContains": "\"targeting\":false"
+        }
+    ]
+}

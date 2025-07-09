@@ -1,0 +1,31 @@
+{
+    "name": "womenshealthmag-us",
+    "vendorUrl": "https://womenshealthmag.com",
+    "cosmetic": true,
+    "runContext": {
+        "main": true,
+        "frame": false,
+        "urlPattern": "^https://(www\\.)?womenshealthmag\\.com/"
+    },
+    "prehideSelectors": ["[status=open]:has([aria-label=\"Privacy Disclosure\"])"],
+    "detectCmp": [
+        {
+            "exists": "[status=open]:has([aria-label=\"Privacy Disclosure\"])"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[status=open]:has([aria-label=\"Privacy Disclosure\"])"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[status=open]:has([aria-label=\"Privacy Disclosure\"]) button"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "[status=open]:has([aria-label=\"Privacy Disclosure\"])"
+        }
+    ]
+}

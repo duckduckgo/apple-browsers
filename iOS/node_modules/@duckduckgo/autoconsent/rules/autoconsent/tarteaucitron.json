@@ -1,0 +1,19 @@
+{
+    "name": "tarteaucitron.js",
+    "prehideSelectors": ["#tarteaucitronRoot"],
+    "detectCmp": [{ "exists": "#tarteaucitronRoot" }],
+    "detectPopup": [
+        {
+            "visible": "#tarteaucitronRoot #tarteaucitronAlertBig",
+            "check": "any"
+        }
+    ],
+    "optIn": [{ "eval": "EVAL_TARTEAUCITRON_1" }],
+    "optOut": [{ "eval": "EVAL_TARTEAUCITRON_0" }],
+    "test": [
+        {
+            "eval": "EVAL_TARTEAUCITRON_2",
+            "comment": "sometimes there are required categories, so we check that at least something is false"
+        }
+    ]
+}

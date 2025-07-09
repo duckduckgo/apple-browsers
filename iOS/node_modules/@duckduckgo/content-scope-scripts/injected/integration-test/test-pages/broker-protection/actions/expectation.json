@@ -1,0 +1,15 @@
+{
+  "state": {
+    "action": {
+      "actionType": "expectation",
+      "id": "2",
+      "expectations": [
+        {
+          "type": "text",
+          "selector": ".message",
+          "expect": "Please complete the form"
+        }
+      ]
+    }
+  }
+}

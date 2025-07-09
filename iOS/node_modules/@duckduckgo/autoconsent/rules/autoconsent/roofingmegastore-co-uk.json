@@ -1,0 +1,11 @@
+{
+    "name": "roofingmegastore.co.uk",
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?roofingmegastore\\.co\\.uk"
+    },
+    "prehideSelectors": ["#m-cookienotice"],
+    "detectCmp": [{ "exists": "#m-cookienotice" }],
+    "detectPopup": [{ "visible": "#m-cookienotice" }],
+    "optIn": [{ "click": "#accept-cookies" }],
+    "optOut": [{ "click": "#manage-cookies" }, { "waitForThenClick": "#accept-selected" }]
+}

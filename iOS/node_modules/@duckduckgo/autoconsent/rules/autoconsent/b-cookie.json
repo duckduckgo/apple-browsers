@@ -1,0 +1,26 @@
+{
+    "name": "b-cookie",
+    "vendorUrl": "https://unknown",
+    "cosmetic": true,
+    "prehideSelectors": [".b-cookie.is-open"],
+    "detectCmp": [
+        {
+            "exists": ".b-cookie.is-open"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".b-cookie.is-open"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".b-cookie.is-open a"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": ".b-cookie.is-open"
+        }
+    ]
+}

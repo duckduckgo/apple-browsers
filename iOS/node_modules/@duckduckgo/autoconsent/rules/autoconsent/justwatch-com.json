@@ -1,0 +1,15 @@
+{
+    "name": "justwatch.com",
+    "prehideSelectors": [".consent-banner"],
+    "detectCmp": [{ "exists": ".consent-banner .consent-banner__actions" }],
+    "detectPopup": [{ "visible": ".consent-banner .consent-banner__actions" }],
+    "optIn": [{ "click": ".consent-banner__actions button.basic-button.primary" }],
+    "optOut": [
+        { "click": ".consent-banner__actions button.basic-button.secondary" },
+        { "waitForThenClick": ".consent-modal__footer button.basic-button.secondary" },
+        { "waitForThenClick": ".consent-modal ion-content > div > a:nth-child(9)" },
+        { "click": "label.consent-switch input[type=checkbox]:checked", "all": true, "optional": true },
+        { "waitForVisible": ".consent-modal__footer button.basic-button.primary" },
+        { "click": ".consent-modal__footer button.basic-button.primary" }
+    ]
+}

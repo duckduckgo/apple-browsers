@@ -1,0 +1,29 @@
+{
+    "name": "nutritionix.com",
+    "vendorUrl": "https://www.nutritionix.com/",
+    "cosmetic": false,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?nutritionix\\.com/"
+    },
+    "prehideSelectors": ["gdpr-banner"],
+    "detectCmp": [
+        {
+            "exists": "gdpr-banner"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "gdpr-banner"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ["gdpr-banner", "xpath///button[contains(., 'Accept')]"]
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ["gdpr-banner", "xpath///button[contains(., 'Refuse')]"]
+        }
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "name": "trader-joes-com",
+    "cosmetic": true,
+    "prehideSelectors": ["div.aem-page > div[class^=\"CookiesAlert_cookiesAlert__\"]"],
+    "detectCmp": [{ "exists": "div.aem-page > div[class^=\"CookiesAlert_cookiesAlert__\"]" }],
+    "detectPopup": [{ "visible": "div.aem-page > div[class^=\"CookiesAlert_cookiesAlert__\"]" }],
+    "optIn": [{ "click": "div[class^=\"CookiesAlert_cookiesAlert__container__\"] button" }],
+    "optOut": [{ "hide": "div.aem-page > div[class^=\"CookiesAlert_cookiesAlert__\"]" }]
+}

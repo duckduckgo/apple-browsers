@@ -1,0 +1,12 @@
+<html>
+    <body>
+        <script type="module">
+            import { runTests } from '@web/test-runner-mocha';
+
+            runTests(async () => {
+                await import('./dom-actions.prehide.empty-selector');
+            });
+        </script>
+        <div id="visible">Here is some visible content!</div>
+    </body>
+</html>

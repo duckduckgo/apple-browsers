@@ -1,0 +1,34 @@
+{
+    "name": "dji",
+    "vendorUrl": "https://www.dji.com/",
+    "cosmetic": false,
+    "runContext": {
+        "urlPattern": "^https://(\\w+\\.)+dji\\.com/"
+    },
+    "prehideSelectors": [".cc-window.cc-visible"],
+    "detectCmp": [
+        {
+            "exists": ".cc-window .cc-dialog"
+        }
+    ],
+    "detectPopup": [
+        {
+            "exists": ".cc-window.cc-visible"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cc-window.cc-visible .cc-consent-accept"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".cc-window.cc-visible .cc-consent-require-only"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "dji_consentmanager"
+        }
+    ]
+}

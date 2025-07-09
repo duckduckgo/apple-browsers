@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "title": "Widgets",
+  "description": "An ordered list of supported Widgets. Use this to communicate what's supported",
+  "items": {
+    "type": "object",
+    "required": ["id"],
+    "title": "Widget List Item",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "A unique identifier for the widget."
+      }
+    }
+  }
+}

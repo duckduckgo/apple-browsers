@@ -1,0 +1,30 @@
+{
+    "name": "ckies",
+    "vendorUrl": "https://unknown",
+    "prehideSelectors": [".cc-individual-cookie-settings"],
+    "detectCmp": [
+        {
+            "exists": ".cc-individual-cookie-settings"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cc-individual-cookie-settings"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cc-individual-cookie-settings #cookie-settings-all"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".cc-individual-cookie-settings #cookie-settings-reject-all"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "ckies_cookielaw"
+        }
+    ]
+}

@@ -1,0 +1,25 @@
+{
+    "name": "u12-data-protection-notice",
+    "vendorUrl": "https://unknown",
+    "prehideSelectors": [".u12-data-protection-notice"],
+    "detectCmp": [
+        {
+            "exists": ".u12-data-protection-notice"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".u12-data-protection-notice button"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".u12-data-protection-notice button.js-accept"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".u12-data-protection-notice button.js-decline"
+        }
+    ]
+}

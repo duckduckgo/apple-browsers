@@ -1,0 +1,12 @@
+{
+    "name": "thefreedictionary.com",
+    "prehideSelectors": ["#cmpBanner"],
+    "detectCmp": [{ "exists": "#cmpBanner" }],
+    "detectPopup": [{ "visible": "#cmpBanner" }],
+    "optIn": [{ "eval": "EVAL_THEFREEDICTIONARY_1" }],
+    "optOut": [
+        {
+            "eval": "EVAL_THEFREEDICTIONARY_0"
+        }
+    ]
+}

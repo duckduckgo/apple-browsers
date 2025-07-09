@@ -1,0 +1,18 @@
+{
+    "name": "ciaopeople.it",
+    "prehideSelectors": ["#cp-gdpr-choices"],
+    "detectCmp": [{ "exists": "#cp-gdpr-choices" }],
+    "detectPopup": [{ "visible": "#cp-gdpr-choices" }],
+    "optIn": [{ "waitForThenClick": ".gdpr-btm__right > button:nth-child(2)" }],
+    "optOut": [
+        { "waitForThenClick": ".gdpr-top-content > button" },
+        { "waitFor": ".gdpr-top-back" },
+        { "waitForThenClick": ".gdpr-btm__right > button:nth-child(1)" }
+    ],
+    "test": [
+        {
+            "visible": "#cp-gdpr-choices",
+            "check": "none"
+        }
+    ]
+}

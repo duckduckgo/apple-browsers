@@ -1,0 +1,28 @@
+{
+    "name": "cc-banner-springer",
+    "prehideSelectors": [".cc-banner[data-cc-banner]"],
+    "detectCmp": [{ "exists": ".cc-banner[data-cc-banner]" }],
+    "detectPopup": [{ "visible": ".cc-banner[data-cc-banner]" }],
+    "optIn": [{ "waitForThenClick": ".cc-banner[data-cc-banner] button[data-cc-action=accept]" }],
+    "optOut": [
+        {
+            "if": { "exists": ".cc-banner[data-cc-banner] button[data-cc-action=reject]" },
+            "then": [{ "click": ".cc-banner[data-cc-banner] button[data-cc-action=reject]" }],
+            "else": [
+                { "waitForThenClick": ".cc-banner[data-cc-banner] button[data-cc-action=preferences]" },
+                { "waitFor": ".cc-preferences[data-cc-preferences]" },
+                {
+                    "click": ".cc-preferences[data-cc-preferences] input[type=radio][data-cc-action=toggle-category][value=off]",
+                    "all": true,
+                    "optional": true
+                },
+                {
+                    "if": { "exists": ".cc-preferences[data-cc-preferences] button[data-cc-action=reject]" },
+                    "then": [{ "click": ".cc-preferences[data-cc-preferences] button[data-cc-action=reject]" }],
+                    "else": [{ "click": ".cc-preferences[data-cc-preferences] button[data-cc-action=save]" }]
+                }
+            ]
+        }
+    ],
+    "test": [{ "eval": "EVAL_CC_BANNER2_0" }]
+}

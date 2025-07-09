@@ -1,0 +1,26 @@
+{
+    "name": "lineagrafica",
+    "vendorUrl": "https://addons.prestashop.com/en/legal/8734-eu-cookie-law-gdpr-banner-blocker.html",
+    "cosmetic": true,
+    "prehideSelectors": ["#lgcookieslaw_banner,#lgcookieslaw_modal,.lgcookieslaw-overlay"],
+    "detectCmp": [
+        {
+            "exists": "#lgcookieslaw_banner,#lgcookieslaw_modal,.lgcookieslaw-overlay"
+        }
+    ],
+    "detectPopup": [
+        {
+            "exists": "#lgcookieslaw_banner,#lgcookieslaw_modal,.lgcookieslaw-overlay"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#lgcookieslaw_accept"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "#lgcookieslaw_banner,#lgcookieslaw_modal,.lgcookieslaw-overlay"
+        }
+    ]
+}

@@ -1,0 +1,296 @@
+.root {
+    display: grid;
+}
+
+.activity {
+    --favicon-width: 32px;
+    --heading-gap: 8px;
+
+
+    overflow: hidden;
+    width: calc(100% + 12px);
+    margin-left: -6px;
+
+    &:not(:empty) {
+        margin-top: 24px;
+    }
+}
+
+.block {
+    margin-top: 24px;
+}
+
+.loader {
+    height: 10px;
+    border: 1px dotted black;
+    border-radius: 5px;
+    opacity: 0;
+}
+
+.anim {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--border-radius-lg);
+
+    [data-lottie-player] {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        position: absolute;
+        bottom: -50%;
+        left: 0;
+    }
+}
+
+.item {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+.burning {
+    > *:not([data-lottie-player]) {
+        transition: opacity .2s;
+        transition-delay: .3s;
+        opacity: 0;
+    }
+}
+
+.heading {
+    display: flex;
+    gap: var(--heading-gap);
+    width: 100%;
+}
+
+.favicon {
+    width: 32px;
+    height: 32px;
+    /* adding a margin to prevent needing an extra dom node for spacing */
+    margin: 3px;
+    display: block;
+    backdrop-filter: blur(24px);
+    border-radius: var(--border-radius-sm);
+    flex-shrink: 0;
+    text-decoration: none;
+    position: relative;
+    background: var(--color-black-at-12);
+    transition: transform .2s;
+
+    border: 0.5px solid rgba(0, 0, 0, 0.09);
+    background: rgba(255, 255, 255, 0.30);
+    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.12), 0px 0px 1.5px 0px rgba(0, 0, 0, 0.16);
+
+    [data-theme="dark"] & {
+        border: 0.5px solid rgba(255, 255, 255, 0.09);
+        background: rgba(0, 0, 0, 0.18);
+        box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.12), 0px 0px 1.5px 0px rgba(0, 0, 0, 0.16);
+        backdrop-filter: blur(24px);
+    }
+
+    > *:first-child {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-50%);
+    }
+}
+
+.title {
+    font-size: var(--title-3-em-font-size);
+    font-weight: var(--title-3-em-font-weight);
+    text-decoration: none;
+    color: var(--ntp-text-normal);
+    height: 35px;
+    display: flex;
+    align-items: center;
+    line-height: 1;
+
+    /* Note: This is not a 1:1 value from figma, I reduced it for perfect visual alignment */
+    gap: 4px;
+    min-width: 0;
+
+    &:hover, &:focus-visible {
+        color: var(--ntp-color-primary);
+        .favicon {
+            transform: scale(1.08)
+        }
+    }
+}
+
+.controls {
+    display: flex;
+    margin-left: auto;
+    flex-shrink: 0;
+    position: relative;
+    gap: 4px;
+    top: 4px;
+}
+
+.icon {
+    width: 24px;
+    height: 24px;
+    position: relative;
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    color: var(--ntp-text-normal);
+    svg {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-50%);
+    }
+}
+
+.controlIcon {
+    border-radius: 50%;
+    background-color: var(--color-black-at-3);
+    &:hover {
+        background-color: var(--color-black-at-6);
+    }
+
+    [data-theme="dark"] & {
+        background-color: var(--color-white-at-6);
+    }
+    [data-theme="dark"] &:hover {
+        background-color: var(--color-white-at-9);
+    }
+    svg {
+        fill-opacity: 0.6;
+    }
+}
+
+.disableWhenBusy {
+    [data-busy="true"] & {
+        cursor: not-allowed;
+    }
+}
+
+.body {
+    padding-left: calc(var(--favicon-width) + var(--heading-gap));
+    padding-right: calc(var(--favicon-width) + var(--heading-gap) * 2);
+    position: relative;
+}
+
+.otherIcon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 0.5rem;
+    line-height: 16px;
+    color: var(--color-black-at-60);
+    background: var(--color-black-at-6);
+    text-align: center;
+
+    [data-theme="dark"] & {
+        color: var(--color-white-at-50);
+        background: var(--color-white-at-9);
+    }
+}
+
+.companiesIconRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 1px; /* visual alignment */
+}
+
+.companiesIcons {
+    display: flex;
+    gap: 3px;
+    > * {
+        flex-shrink: 0;
+        min-width: 0;
+    }
+}
+.companiesText {}
+
+.history {
+    margin-top: 10px;
+}
+.historyItem {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 16px;
+    + .historyItem {
+        margin-top: 5px;
+    }
+}
+.historyLink {
+    font-size: var(--small-label-font-size);
+    font-weight: var(--small-label-font-weight);
+    line-height: var(--small-label-line-height);
+    color: var(--ntp-text-normal);
+    text-decoration: none;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &:hover, &:focus-visible {
+        color: var(--ntp-color-primary)
+    }
+
+    &:hover .time {
+        text-decoration: none;
+        display: inline-block;
+    }
+}
+
+.time {
+    flex-shrink: 0;
+    margin-left: 8px;
+    color: var(--ntp-text-muted);
+    opacity: 0.6;
+    font-size: var(--small-label-font-size);
+    font-weight: var(--small-label-font-weight);
+    line-height: var(--small-label-line-height);
+}
+
+.historyBtn {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    border: 0;
+    border-radius: 4px;
+    position: relative;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+    margin-left: 8px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-black-at-60);
+
+    &:hover {
+        background-color: var(--color-black-at-6);
+    }
+
+    [data-theme="dark"] & {
+        color: var(--color-white-at-60);
+        &:hover {
+            background-color: var(--color-white-at-6);
+        }
+    }
+
+    svg {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        position: relative;
+        top: 1px;
+        transform: rotate(0);
+    }
+
+    &[data-action="hide"] {
+        svg {
+            transform: rotate(180deg)
+        }
+    }
+}

@@ -1,0 +1,32 @@
+{
+    "name": "pandectes",
+    "vendorUrl": "https://pandectes.io/",
+    "prehideSelectors": ["#pandectes-banner"],
+    "detectCmp": [
+        {
+            "exists": "#pandectes-banner"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#pandectes-banner"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#pandectes-banner .cc-allow"
+        }
+    ],
+    "optOut": [
+        {
+            "if": { "visible": "#pandectes-banner .cc-deny" },
+            "then": [{ "click": "#pandectes-banner .cc-deny" }],
+            "else": [
+                { "click": "#pandectes-banner .cc-settings" },
+                { "waitForThenClick": ".pd-cp-ui-rejectAll" },
+                { "click": ".pd-cp-ui-save" }
+            ]
+        }
+    ],
+    "test": [{ "wait": 500 }, { "eval": "EVAL_PANDECTES_TEST" }]
+}

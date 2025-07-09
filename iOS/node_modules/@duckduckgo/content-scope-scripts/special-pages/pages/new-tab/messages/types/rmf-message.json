@@ -1,0 +1,146 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "RMF Data",
+    "description": "The 'content' field is optional. Use that fact to show/hide messages",
+    "properties": {
+        "content": {
+            "title": "RMF Message",
+            "oneOf": [
+                {
+                    "title": "Small Message",
+                    "type": "object",
+                    "properties": {
+                        "messageType": {
+                            "const": "small"
+                        },
+                        "id": {
+                            "type": "string"
+                        },
+                        "titleText": {
+                            "type": "string"
+                        },
+                        "descriptionText": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "messageType",
+                        "id",
+                        "titleText",
+                        "descriptionText"
+                    ]
+                },
+                {
+                    "title": "Medium Message",
+                    "type": "object",
+                    "properties": {
+                        "messageType": {
+                            "const": "medium"
+                        },
+                        "id": {
+                            "type": "string"
+                        },
+                        "titleText": {
+                            "type": "string"
+                        },
+                        "descriptionText": {
+                            "type": "string"
+                        },
+                        "icon": {
+                            "$ref": "#/definitions/rmf-icon"
+                        }
+                    },
+                    "required": [
+                        "messageType",
+                        "id",
+                        "titleText",
+                        "descriptionText",
+                        "icon"
+                    ]
+                },
+                {
+                    "title": "Big Single Action Message",
+                    "type": "object",
+                    "properties": {
+                        "messageType": {
+                            "const": "big_single_action"
+                        },
+                        "id": {
+                            "type": "string"
+                        },
+                        "titleText": {
+                            "type": "string"
+                        },
+                        "descriptionText": {
+                            "type": "string"
+                        },
+                        "icon": {
+                            "$ref": "#/definitions/rmf-icon"
+                        },
+                        "primaryActionText": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "messageType",
+                        "id",
+                        "titleText",
+                        "descriptionText",
+                        "icon",
+                        "primaryActionText"
+                    ]
+                },
+                {
+                    "title": "Big Two Action Message",
+                    "type": "object",
+                    "properties": {
+                        "messageType": {
+                            "const": "big_two_action"
+                        },
+                        "id": {
+                            "type": "string"
+                        },
+                        "titleText": {
+                            "type": "string"
+                        },
+                        "descriptionText": {
+                            "type": "string"
+                        },
+                        "icon": {
+                            "$ref": "#/definitions/rmf-icon"
+                        },
+                        "primaryActionText": {
+                            "type": "string"
+                        },
+                        "secondaryActionText": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "messageType",
+                        "id",
+                        "titleText",
+                        "descriptionText",
+                        "icon",
+                        "primaryActionText",
+                        "secondaryActionText"
+                    ]
+                }
+            ]
+        }
+    },
+    "definitions": {
+        "rmf-icon": {
+            "title": "RMF Icon",
+            "type": "string",
+            "enum": [
+                "Announce",
+                "DDGAnnounce",
+                "CriticalUpdate",
+                "AppUpdate",
+                "PrivacyPro"
+            ]
+        }
+    }
+}

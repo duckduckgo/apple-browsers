@@ -1,0 +1,26 @@
+{
+    "name": "openli",
+    "vendorUrl": "https://openli.com",
+    "prehideSelectors": [".legalmonster-cleanslate"],
+    "detectCmp": [
+        {
+            "exists": ".legalmonster-cleanslate"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".legalmonster-cleanslate #lm-cookie-wall-container",
+            "check": "any"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#lm-accept-all"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "#lm-accept-necessary"
+        }
+    ]
+}

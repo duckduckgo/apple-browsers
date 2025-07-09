@@ -1,0 +1,42 @@
+{
+    "name": "bswhealth",
+    "vendorUrl": "https://www.bswhealth.com/",
+    "cosmetic": false,
+    "prehideSelectors": ["#bsw-consentCookie"],
+    "detectCmp": [
+        {
+            "exists": "#bsw-consentCookie"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#bsw-consentCookie .accept-btn"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#bsw-consentCookie .accept-btn"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "#bsw-consentCookie .manage-cookies-btn"
+        },
+        {
+            "waitForVisible": "#bsw-consentCookie .config-banner_section"
+        },
+        {
+            "waitForThenClick": "#bsw-consentCookie input[type=checkbox]:checked:not(:disabled)",
+            "all": true,
+            "optional": true
+        },
+        {
+            "waitForThenClick": "#bsw-consentCookie .accept-btn"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "x-bsw-consentCookie"
+        }
+    ]
+}

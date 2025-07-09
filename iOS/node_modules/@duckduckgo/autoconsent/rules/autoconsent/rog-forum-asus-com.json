@@ -1,0 +1,14 @@
+{
+    "name": "rog-forum.asus.com",
+    "runContext": {
+        "urlPattern": "^https://rog-forum\\.asus\\.com/"
+    },
+    "prehideSelectors": ["#cookie-policy-info"],
+    "detectCmp": [{ "exists": "#cookie-policy-info" }],
+    "detectPopup": [{ "visible": "#cookie-policy-info" }],
+    "optIn": [{ "click": "div.cookie-btn-box > div[aria-label=\"Accept\"]" }],
+    "optOut": [
+        { "click": "div.cookie-btn-box > div[aria-label=\"Reject\"]" },
+        { "waitForThenClick": ".cookie-policy-lightbox-bottom > div[aria-label=\"Save Settings\"]" }
+    ]
+}

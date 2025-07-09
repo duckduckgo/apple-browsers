@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Default Styles",
+  "properties": {
+    "darkBackgroundColor": {
+      "description": "Optional default dark background color. Any HEX value is permitted",
+      "type": "string",
+      "examples": [
+        "#000000",
+        "#333333"
+      ]
+    },
+    "lightBackgroundColor": {
+      "description": "Optional default light background color. Any HEX value is permitted",
+      "type": "string",
+      "examples": [
+        "#FFFFFF",
+        "#CCCCCC"
+      ]
+    }
+  }
+}

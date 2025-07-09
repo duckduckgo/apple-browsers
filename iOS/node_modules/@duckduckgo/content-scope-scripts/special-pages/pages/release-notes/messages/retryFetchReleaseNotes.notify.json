@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "RetryFetchReleaseNotes",
+  "additionalProperties": false,
+  "description": "Notifies browser that user has requested to retry fetching release notes after failed attempt."
+}

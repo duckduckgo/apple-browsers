@@ -1,0 +1,18 @@
+{
+  "protections_menuTitle": {
+    "title": "Protections Report",
+    "note": "Used as a label in the main navigation menu. 'Protections' refers to the privacy features that block trackers."
+  },
+  "protections_statsSwitchTitle": {
+    "title": "Summary",
+    "note": "Used as a label in a toggle switch that shows aggregated privacy statistics. This is one of two options in a view selector (the other is 'Details')."
+  },
+  "protections_activitySwitchTitle": {
+    "title": "Details",
+    "note": "Used as a label in a toggle switch that shows recent browsing activity with tracking information. This is one of two options in a view selector (the other is 'Summary')."
+  },
+  "protections_noRecent": {
+    "title": "No recent tracking activity",
+    "note": "Placeholder text shown in the Details view when no tracking activity was blocked in the last 7 days. Keep concise if possible."
+  }
+}

@@ -1,0 +1,9 @@
+{
+    "name": "holidaymedia",
+    "vendorUrl": "https://holidaymedia.nl/",
+    "prehideSelectors": ["dialog[data-cookie-consent]"],
+    "detectCmp": [{ "exists": "dialog[data-cookie-consent]" }],
+    "detectPopup": [{ "visible": "dialog[data-cookie-consent]" }],
+    "optIn": [{ "waitForThenClick": "button.cookie-consent__button--accept-all" }],
+    "optOut": [{ "waitForThenClick": "a[data-cookie-accept=\"functional\"]", "timeout": 2000 }]
+}

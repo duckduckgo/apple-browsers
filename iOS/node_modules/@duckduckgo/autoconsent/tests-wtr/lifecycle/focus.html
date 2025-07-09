@@ -1,0 +1,18 @@
+<html>
+    <body>
+        <script type="module">
+            import { runTests } from '@web/test-runner-mocha';
+
+            runTests(async () => {
+                await import('./focus');
+            });
+        </script>
+        <input type="text" id="pre-focused-input" />
+        <p id="privacy-test-page-cmp-test">
+            This is a fake consent popup:
+            <input type="text" id="popup-input" />
+            <button id="reject-all">Reject all</button>
+            <button id="accept-all">Accept all</button>
+        </p>
+    </body>
+</html>

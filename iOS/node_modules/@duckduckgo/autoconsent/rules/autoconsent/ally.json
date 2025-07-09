@@ -1,0 +1,29 @@
+{
+    "name": "ally",
+    "vendorUrl": "https://www.ally.com/",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?ally\\.com/"
+    },
+    "prehideSelectors": ["div:has(> div > button[allytmln=ally-cookie-consent])"],
+    "detectCmp": [
+        {
+            "exists": "button[allytmln=ally-cookie-consent]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "button[allytmln=ally-cookie-consent]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "button[allytmln=ally-cookie-consent]"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "div:has(> div > button[allytmln=ally-cookie-consent])"
+        }
+    ]
+}

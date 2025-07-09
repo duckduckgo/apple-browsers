@@ -1,0 +1,26 @@
+{
+    "name": "cookieacceptbar",
+    "vendorUrl": "https://unknown",
+    "cosmetic": true,
+    "prehideSelectors": ["#cookieAcceptBar.cookieAcceptBar"],
+    "detectCmp": [
+        {
+            "exists": "#cookieAcceptBar.cookieAcceptBar"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#cookieAcceptBar.cookieAcceptBar"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#cookieAcceptBarConfirm"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "#cookieAcceptBar.cookieAcceptBar"
+        }
+    ]
+}

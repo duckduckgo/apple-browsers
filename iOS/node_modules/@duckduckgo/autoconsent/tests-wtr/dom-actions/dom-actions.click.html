@@ -1,0 +1,19 @@
+<html>
+    <body>
+        <script type="module">
+            import { runTests } from '@web/test-runner-mocha';
+
+            runTests(async () => {
+                await import('./dom-actions.click');
+            });
+        </script>
+
+        <h1>Hello test</h1>
+        <div id="first">
+            <button id="test">0</button>
+        </div>
+        <div id="second">
+            <button>0</button>
+        </div>
+    </body>
+</html>

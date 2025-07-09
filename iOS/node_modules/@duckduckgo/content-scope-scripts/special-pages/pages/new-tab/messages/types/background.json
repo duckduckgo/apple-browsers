@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "background-variant": {
+      "title": "Background Variant",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/default"
+        },
+        {
+          "$ref": "#/definitions/solid"
+        },
+        {
+          "$ref": "#/definitions/hex"
+        },
+        {
+          "$ref": "#/definitions/gradient"
+        },
+        {
+          "$ref": "#/definitions/image"
+        }
+      ]
+    },
+    "default": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "title": "Default Background",
+      "properties": {
+        "kind": {
+          "const": "default"
+        }
+      }
+    },
+    "solid": {
+      "type": "object",
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "Solid Color Background",
+      "properties": {
+        "kind": {
+          "const": "color"
+        },
+        "value": {
+          "$ref": "./colors.json#/definitions/colors"
+        }
+      }
+    },
+    "hex": {
+      "type": "object",
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "Hex Value Background",
+      "properties": {
+        "kind": {
+          "const": "hex"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "gradient":     {
+      "type": "object",
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "Gradient Background",
+      "properties": {
+        "kind": {
+          "const": "gradient"
+        },
+        "value": {
+          "$ref": "./colors.json#/definitions/gradients"
+        }
+      }
+    },
+    "image":     {
+      "type": "object",
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "User Image Background",
+      "properties": {
+        "kind": {
+          "const": "userImage"
+        },
+        "value": {
+          "$ref": "./user-image.json"
+        }
+      }
+    }
+  }
+}

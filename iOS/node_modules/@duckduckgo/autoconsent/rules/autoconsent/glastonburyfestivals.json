@@ -1,0 +1,29 @@
+{
+    "name": "glastonburyfestivals",
+    "vendorUrl": "https://www.glastonburyfestivals.co.uk/",
+    "cosmetic": false,
+    "runContext": {
+        "urlPattern": "^https://(\\w+\\.)?glastonburyfestivals\\.co\\.uk/"
+    },
+    "prehideSelectors": [".cookies-modal"],
+    "detectCmp": [
+        {
+            "exists": ".show-cookies-modal .cookies-modal #cookies-accept"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".show-cookies-modal .cookies-modal #cookies-accept"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".show-cookies-modal .cookies-modal #cookies-accept"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".show-cookies-modal .cookies-modal #cookies-reject"
+        }
+    ]
+}

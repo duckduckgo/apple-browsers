@@ -1,0 +1,13 @@
+{
+    "name": "dmgmedia",
+    "prehideSelectors": ["[data-project=\"mol-fe-cmp\"]"],
+    "detectCmp": [{ "exists": "[data-project=\"mol-fe-cmp\"] [class*=footer]" }],
+    "detectPopup": [{ "visible": "[data-project=\"mol-fe-cmp\"] [class*=footer]" }],
+    "optIn": [{ "waitForThenClick": "[data-project=\"mol-fe-cmp\"] button[class*=primary]" }],
+    "optOut": [
+        { "waitForThenClick": "[data-project=\"mol-fe-cmp\"] button[class*=basic]" },
+        { "waitForVisible": "[data-project=\"mol-fe-cmp\"] div[class*=\"tabContent\"]" },
+        { "waitForThenClick": "[data-project=\"mol-fe-cmp\"] div[class*=\"toggle\"][class*=\"enabled\"]", "all": true },
+        { "waitForThenClick": ["[data-project=\"mol-fe-cmp\"] [class*=footer]", "xpath///button[contains(., 'Save & Exit')]"] }
+    ]
+}

@@ -1,0 +1,38 @@
+{
+    "name": "cookiefirst.com",
+    "prehideSelectors": ["#cookiefirst-root,.cookiefirst-root,[aria-labelledby=cookie-preference-panel-title]"],
+    "detectCmp": [{ "exists": "#cookiefirst-root,.cookiefirst-root" }],
+    "detectPopup": [{ "visible": "#cookiefirst-root,.cookiefirst-root" }],
+    "optIn": [{ "click": "button[data-cookiefirst-action=accept]" }],
+    "optOut": [
+        {
+            "if": {
+                "exists": "button[data-cookiefirst-action=adjust]"
+            },
+            "then": [
+                {
+                    "click": "button[data-cookiefirst-action=adjust]"
+                },
+                {
+                    "waitForVisible": "[data-cookiefirst-widget=modal]",
+                    "timeout": 1000
+                },
+                {
+                    "eval": "EVAL_COOKIEFIRST_1"
+                },
+                {
+                    "wait": 1000
+                },
+                {
+                    "click": "button[data-cookiefirst-action=save]"
+                }
+            ],
+            "else": [{ "click": "button[data-cookiefirst-action=reject]" }]
+        }
+    ],
+    "test": [
+        {
+            "eval": "EVAL_COOKIEFIRST_0"
+        }
+    ]
+}

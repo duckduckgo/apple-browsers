@@ -1,0 +1,11 @@
+{
+    "name": "hetzner.com",
+    "runContext": {
+        "urlPattern": "^https://www\\.hetzner\\.com/"
+    },
+    "prehideSelectors": ["#CookieConsent"],
+    "detectCmp": [{ "exists": "#CookieConsent" }],
+    "detectPopup": [{ "visible": "#CookieConsent" }],
+    "optIn": [{ "click": "#CookieConsentGiven" }],
+    "optOut": [{ "click": "#CookieConsentDeclined" }]
+}

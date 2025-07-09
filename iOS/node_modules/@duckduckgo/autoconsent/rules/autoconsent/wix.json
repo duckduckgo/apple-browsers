@@ -1,0 +1,30 @@
+{
+    "name": "wix",
+    "vendorUrl": "https://www.wix.com/",
+    "cosmetic": false,
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": "[data-comp-type=cookie-banner-root-wix],[data-hook=ccsu-banner-wrapper]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[data-comp-type=cookie-banner-root-wix],[data-hook=ccsu-banner-wrapper]"
+        }
+    ],
+    "optIn": [
+        {
+            "if": { "exists": "[data-hook=ccsu-banner-accept]" },
+            "then": [{ "click": "[data-hook=ccsu-banner-accept]" }],
+            "else": [{ "click": "[data-hook=ccsu-banner-decline]" }]
+        }
+    ],
+    "optOut": [
+        {
+            "if": { "exists": "[data-hook=ccsu-banner-decline-all]" },
+            "then": [{ "click": "[data-hook=ccsu-banner-decline-all]" }],
+            "else": [{ "hide": "[data-hook=ccsu-banner-wrapper]" }]
+        }
+    ]
+}

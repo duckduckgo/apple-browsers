@@ -1,0 +1,36 @@
+{
+    "name": "tplink",
+    "vendorUrl": "https://www.tp-link.com",
+    "cosmetic": false,
+    "prehideSelectors": [".tp-dialog.cookie-dialog"],
+    "detectCmp": [
+        {
+            "exists": ".tp-dialog.cookie-dialog"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".tp-dialog.cookie-dialog button"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".tp-dialog-box .tp-cookie-accept-all"
+        }
+    ],
+    "optOut": [
+        {
+            "click": ".tp-dialog-box .checkbox.clickable:not(.checked)",
+            "all": true,
+            "optional": true
+        },
+        {
+            "waitForThenClick": ".tp-dialog-box .tp-cookie-save"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "tp_privacy_base"
+        }
+    ]
+}

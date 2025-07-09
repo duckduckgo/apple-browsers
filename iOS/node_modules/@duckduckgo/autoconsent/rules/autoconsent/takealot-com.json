@@ -1,0 +1,16 @@
+{
+    "name": "takealot.com",
+    "cosmetic": true,
+    "prehideSelectors": ["div[class^=\"cookies-banner-module_\"]"],
+    "detectCmp": [{ "exists": "div[class^=\"cookies-banner-module_cookie-banner_\"]" }],
+    "detectPopup": [{ "exists": "div[class^=\"cookies-banner-module_cookie-banner_\"]" }],
+    "optIn": [{ "click": "button[class*=\"cookies-banner-module_dismiss-button_\"]" }],
+    "optOut": [
+        { "hide": "div[class^=\"cookies-banner-module_\"]" },
+        {
+            "if": { "exists": "div[class^=\"cookies-banner-module_small-cookie-banner_\"]" },
+            "then": [{ "eval": "EVAL_TAKEALOT_0" }],
+            "else": []
+        }
+    ]
+}

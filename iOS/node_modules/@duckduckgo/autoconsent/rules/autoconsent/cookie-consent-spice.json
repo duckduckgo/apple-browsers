@@ -1,0 +1,29 @@
+{
+    "name": "cookie-consent-spice",
+    "cosmetic": false,
+    "runContext": {
+        "main": true,
+        "frame": false
+    },
+    "prehideSelectors": [".spicy-consent-wrapper", ".spicy-consent-bar"],
+    "detectCmp": [
+        {
+            "exists": ".spicy-consent-bar"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".spicy-consent-bar"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".spicy-consent-bar__action-accept"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".js-decline-all-cookies"
+        }
+    ]
+}

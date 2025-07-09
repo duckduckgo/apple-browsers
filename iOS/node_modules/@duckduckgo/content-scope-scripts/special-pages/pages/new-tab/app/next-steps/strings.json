@@ -1,0 +1,98 @@
+{
+  "nextSteps_sectionTitle": {
+    "title": "Next Steps",
+    "note": "Text that goes in the Next Steps bubble above the first card"
+  },
+  "nextSteps_bringStuff_title": {
+    "title": "Bring Your Stuff",
+    "note": "Title of the Next Steps card for importing bookmarks and favorites"
+  },
+  "nextSteps_bringStuff_summary": {
+    "title": "Import bookmarks, favorites, and passwords for a smooth transition from your old browser.",
+    "note": "Summary of the Next Steps card for importing bookmarks and favorites"
+  },
+  "nextSteps_bringStuff_actionText": {
+    "title": "Import Now",
+    "note": "Button text of the Next Steps card for importing bookmarks and favorites"
+  },
+  "nextSteps_defaultApp_title": {
+    "title": "Set as Default Browser",
+    "note": "Title of the Next Steps card for making DDG the user's default browser"
+  },
+  "nextSteps_defaultApp_summary": {
+    "title": "We automatically block trackers as you browse. It’s privacy, simplified.",
+    "note": "Summary of the Next Steps card for making DDG the user's default browser"
+  },
+  "nextSteps_defaultApp_actionText": {
+    "title": "Make Default Browser",
+    "note": "Button text of the Next Steps card for making DDG the user's default browser"
+  },
+  "nextSteps_blockCookies_title": {
+    "title": "Block Cookie Pop-ups",
+    "note": "Title of the Next Steps card for blocking cookie pop-ups"
+  },
+  "nextSteps_blockCookies_summary": {
+    "title": "We need your permission to say no to cookies on your behalf. Easy choice.",
+    "note": "Summary of the Next Steps card for blocking cookie pop-ups"
+  },
+  "nextSteps_blockCookies_actionText": {
+    "title": "Block Cookie Pop-ups",
+    "note": "Button text of the Next Steps card for blocking cookie pop-ups"
+  },
+  "nextSteps_emailProtection_title": {
+    "title": "Protect Your Inbox",
+    "note": "Title of the Next Steps card for email protection"
+  },
+  "nextSteps_emailProtection_summary": {
+    "title": "Generate @duck.com addresses that remove trackers from email and forwards to your inbox.",
+    "note": "Summary of the Next Steps card for email protection"
+  },
+  "nextSteps_emailProtection_actionText": {
+    "title": "Get Email Protection",
+    "note": "Button text of the Next Steps card for email protection"
+  },
+  "nextSteps_duckPlayer_title": {
+    "title": "YouTube Without Creepy Ads",
+    "note": "Title of the Next Steps card for adopting DuckPlayer"
+  },
+  "nextSteps_duckPlayer_summary": {
+    "title": "Enjoy a clean viewing experience without personalized ads.",
+    "note": "Summary of the Next Steps card for adopting DuckPlayer"
+  },
+  "nextSteps_duckPlayer_actionText": {
+    "title": "Try DuckPlayer",
+    "note": "Button text of the Next Steps card for adopting DuckPlayer"
+  },
+  "nextSteps_addAppDockMac_title": {
+    "title": "Add App to the Dock",
+    "note": "Title of the Next Steps card for adding DDG app to OS dock"
+  },
+  "nextSteps_addAppDockMac_summary": {
+    "title": "Access DuckDuckGo faster by adding it to the Dock.",
+    "note": "Summary of the Next Steps card for adding DDG app to OS dock"
+  },
+  "nextSteps_addAppDockMac_actionText": {
+    "title": "Add to Dock",
+    "note": "Initial button text of the Next Steps card for adding DDG app to OS dock"
+  },
+  "nextSteps_addAppDockMac_confirmationText": {
+    "title": "Added to Dock!",
+    "note": "Button text after clicking on the Next Steps card for adding DDG app to OS dock"
+  },
+  "nextSteps_pinAppToTaskbarWindows_title": {
+    "title": "Pin App to the Taskbar",
+    "note": "Title of the Next Steps card for adding DDG app to OS dock"
+  },
+  "nextSteps_pinAppToTaskbarWindows_summary": {
+    "title": "Access DuckDuckGo faster by pinning it to the Taskbar.",
+    "note": "Summary of the Next Steps card for adding DDG app to OS dock"
+  },
+  "nextSteps_pinAppToTaskbarWindows_actionText": {
+    "title": "Pin to Taskbar",
+    "note": "Initial button text of the Next Steps card for adding DDG app to OS dock"
+  },
+  "nextSteps_pinAppToTaskbarWindows_confirmationText": {
+    "title": "Pinned to Taskbar!",
+    "note": "Button text after clicking on the Next Steps card for adding DDG app to OS dock"
+  }
+}

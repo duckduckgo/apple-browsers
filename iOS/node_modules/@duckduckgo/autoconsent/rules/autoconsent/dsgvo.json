@@ -1,0 +1,11 @@
+{
+    "name": "WP DSGVO Tools",
+    "vendorUrl": "https://wordpress.org/plugins/shapepress-dsgvo/",
+    "prehideSelectors": [".sp-dsgvo"],
+    "cosmetic": true,
+    "detectCmp": [{ "exists": ".sp-dsgvo.sp-dsgvo-popup-overlay" }],
+    "detectPopup": [{ "visible": ".sp-dsgvo.sp-dsgvo-popup-overlay", "check": "any" }],
+    "optIn": [{ "click": ".sp-dsgvo-privacy-btn-accept-all", "all": true }],
+    "optOut": [{ "hide": ".sp-dsgvo.sp-dsgvo-popup-overlay" }],
+    "test": [{ "cookieContains": "sp_dsgvo_cookie_settings", "negated": true }]
+}

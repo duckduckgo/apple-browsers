@@ -1,0 +1,59 @@
+{
+    "state": {
+      "action": {
+        "actionType": "fillForm",
+        "id": "3",
+        "selector": ".ahm",
+        "dataSource": "userProfile",
+        "elements": [
+          {
+            "type": "firstName",
+            "selector": "#user_first_name"
+          },
+          {
+            "type": "lastName",
+            "selector": "#user_last_name"
+          },
+          {
+            "type": "$generated_phone_number$",
+            "selector": "#user_phone"
+          },
+          {
+            "type": "$generated_street_address$",
+            "selector": "#user_street_address"
+          },
+          {
+            "type": "state",
+            "selector": "#state"
+          },
+          {
+            "type": "$generated_zip_code$",
+            "selector": "#user_zip_code"
+          },
+          {
+            "type": "$generated_random_number$",
+            "selector": "#random_number",
+            "min": "5",
+            "max": "15"
+          },
+          {
+            "type": "cityState",
+            "selector": "#city_state"
+          },
+          {
+            "type": "middleName",
+            "selector": "#user_middle_name"
+          }
+        ]
+      },
+      "data": {
+        "userProfile": {
+          "firstName": "John",
+          "lastName": "Smith",
+          "city": "Chicago",
+          "state": "IL"
+        }
+      }
+    }
+  }
+  

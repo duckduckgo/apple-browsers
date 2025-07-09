@@ -1,0 +1,27 @@
+{
+    "name": "csu-landtag-de",
+    "runContext": {
+        "urlPattern": "^https://(www\\.|)?csu-landtag\\.de"
+    },
+    "prehideSelectors": ["#cookie-disclaimer"],
+    "detectCmp": [
+        {
+            "exists": "#cookie-disclaimer"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#cookie-disclaimer"
+        }
+    ],
+    "optIn": [
+        {
+            "click": "#cookieall"
+        }
+    ],
+    "optOut": [
+        {
+            "click": "#cookiesel"
+        }
+    ]
+}

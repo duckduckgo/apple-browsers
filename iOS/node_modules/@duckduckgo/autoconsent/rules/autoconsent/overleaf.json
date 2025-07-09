@@ -1,0 +1,30 @@
+{
+    "name": "overleaf",
+    "vendorUrl": "https://unknown",
+    "prehideSelectors": [".cookie-banner:has([data-ol-cookie-banner-set-consent])"],
+    "detectCmp": [
+        {
+            "exists": "[data-ol-cookie-banner-set-consent]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[data-ol-cookie-banner-set-consent]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-ol-cookie-banner-set-consent=all]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "[data-ol-cookie-banner-set-consent=essential]"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "oa"
+        }
+    ]
+}

@@ -1,0 +1,26 @@
+{
+    "name": "xgroovy",
+    "vendorUrl": "https://unknown",
+    "cosmetic": true,
+    "prehideSelectors": [".cookie_warn"],
+    "detectCmp": [
+        {
+            "exists": ".cookie_warn .cookie_warn_inner"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookie_warn .cookie_warn_inner"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cookie_warn .cookie_warn_inner button.ok"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": ".cookie_warn"
+        }
+    ]
+}

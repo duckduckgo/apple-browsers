@@ -1,0 +1,41 @@
+{
+    "name": "pubtech",
+    "prehideSelectors": ["#pubtech-cmp"],
+    "detectCmp": [
+        {
+            "exists": "#pubtech-cmp"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#pubtech-cmp #pt-actions"
+        }
+    ],
+    "optIn": [
+        {
+            "if": {
+                "exists": "#pt-accept-all"
+            },
+            "then": [
+                {
+                    "click": "#pubtech-cmp #pt-actions #pt-accept-all"
+                }
+            ],
+            "else": [
+                {
+                    "click": "#pubtech-cmp #pt-actions button:nth-of-type(2)"
+                }
+            ]
+        }
+    ],
+    "optOut": [
+        {
+            "click": "#pubtech-cmp #pt-close"
+        }
+    ],
+    "test": [
+        {
+            "eval": "EVAL_PUBTECH_0"
+        }
+    ]
+}

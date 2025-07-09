@@ -1,0 +1,29 @@
+.icon {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    img, svg {
+        display: block;
+        font-size: 0;
+        width: 1rem;
+        height: 1rem;
+    }
+
+    &:has([data-errored=true]) {
+        outline: 1px solid var(--ntp-surface-border-color);
+        [data-theme=dark] & {
+            outline-color: var(--color-white-at-9);
+        }
+    }
+}
+
+.companyImgIcon {
+    opacity: 0;
+}
+
+.companyImgIcon[data-loaded=true] {
+    opacity: 1;
+}

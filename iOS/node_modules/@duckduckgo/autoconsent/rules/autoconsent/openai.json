@@ -1,0 +1,30 @@
+{
+    "name": "openai",
+    "vendorUrl": "https://platform.openai.com/",
+    "cosmetic": false,
+    "runContext": {
+        "urlPattern": "^https://([a-z0-9-]+\\.)?openai\\.com/"
+    },
+    "prehideSelectors": ["[aria-labelledby=cookieConsentTitle]"],
+    "detectCmp": [
+        {
+            "exists": "[aria-labelledby=cookieConsentTitle]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[aria-labelledby=cookieConsentTitle]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "xpath///button[contains(., 'Accept all')]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "xpath///button[contains(., 'Reject non-essential')]"
+        }
+    ],
+    "test": [{ "wait": 500 }, { "cookieContains": "consent=rejected" }]
+}

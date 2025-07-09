@@ -1,0 +1,14 @@
+{
+  "state": {
+    "action": {
+      "actionType": "click",
+      "id": "1",
+      "elements": [
+        {
+          "type": "button",
+          "selector": ".btn-sbmt"
+        }
+      ]
+    }
+  }
+}

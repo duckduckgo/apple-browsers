@@ -1,0 +1,44 @@
+{
+    "name": "gravito",
+    "vendorUrl": "https://www.gravito.net/cmp/",
+    "prehideSelectors": [".gravitoCMP-background-overlay"],
+    "detectCmp": [
+        {
+            "exists": ".gravitoCMP-background-overlay"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".gravitoCMP-background-overlay"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#modalConfirmBtn.gravitoCMP-button"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "#modalSettingBtn.gravitoCMP-button"
+        },
+        {
+            "waitFor": "#allRejectBtn"
+        },
+        {
+            "waitFor": ".gravitoCMP-content-section"
+        },
+        {
+            "click": ".gravitoCMP-content input[type=checkbox]:checked",
+            "all": true,
+            "optional": true
+        },
+        {
+            "waitForThenClick": "#allRejectBtn"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "gravitoData"
+        }
+    ]
+}

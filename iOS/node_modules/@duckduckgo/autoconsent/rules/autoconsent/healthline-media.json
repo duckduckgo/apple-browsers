@@ -1,0 +1,14 @@
+{
+    "name": "healthline-media",
+    "prehideSelectors": ["#modal-host > div.no-hash > div.window-wrapper"],
+    "detectCmp": [{ "exists": "#modal-host > div.no-hash > div.window-wrapper, div[data-testid=qualtrics-container]" }],
+    "detectPopup": [{ "exists": "#modal-host > div.no-hash > div.window-wrapper, div[data-testid=qualtrics-container]" }],
+    "optIn": [{ "click": "#modal-host > div.no-hash > div.window-wrapper > div:last-child button" }],
+    "optOut": [
+        {
+            "if": { "exists": "#modal-host > div.no-hash > div.window-wrapper > div:last-child a[href=\"/privacy-settings\"]" },
+            "then": [{ "click": "#modal-host > div.no-hash > div.window-wrapper > div:last-child a[href=\"/privacy-settings\"]" }],
+            "else": [{ "waitForVisible": "div#__next" }, { "click": "#__next div:nth-child(1) > button:first-child" }]
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+{
+    "name": "macaron",
+    "vendorUrl": "https://unknown",
+    "prehideSelectors": ["#macaron_cookie_box"],
+    "detectCmp": [
+        {
+            "exists": "#macaron_cookie_box"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#macaron_cookie_box .macaronbtn"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".macaronbtn.all"
+        }
+    ],
+    "optOut": [
+        {
+            "if": { "exists": ".macaronbtn.refuse" },
+            "then": [{ "click": ".macaronbtn.refuse" }],
+            "else": [
+                { "waitForThenClick": ".macaronbtn.letmechoose" },
+                { "waitFor": ".macaronbtn.letmechoose.open" },
+                { "waitForVisible": "#cookie_description .paragraph" },
+                { "waitForThenClick": "#cookie_description input[type=checkbox]:checked:not(:disabled)", "all": true, "optional": true },
+                { "waitForThenClick": ".macaronbtn.confirmselection" }
+            ]
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "_deCookiesConsent"
+        }
+    ]
+}

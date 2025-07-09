@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "FaviconFound",
+  "required": ["favicons", "documentUrl"],
+  "properties": {
+    "favicons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rel", "href"],
+        "title": "Favicon Attrs",
+        "properties": {
+          "href": {
+            "type": "string"
+          },
+          "rel": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "documentUrl": {
+      "type": "string"
+    }
+  }
+}

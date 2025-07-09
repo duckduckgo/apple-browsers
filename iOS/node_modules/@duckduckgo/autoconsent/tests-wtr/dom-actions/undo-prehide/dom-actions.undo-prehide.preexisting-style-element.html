@@ -1,0 +1,16 @@
+<html>
+    <body>
+        <script type="module">
+            import { runTests } from '@web/test-runner-mocha';
+
+            runTests(async () => {
+                await import('./dom-actions.undo-prehide.preexisting-style-element');
+            });
+        </script>
+        <!--
+The element is hardcoded here to prevent coupling to prehide() implementation,
+however we might want to opt for the coupling as prehide() and undoPrehide() are logical counterparts.
+-->
+        <style id="autoconsent-prehide"></style>
+    </body>
+</html>

@@ -1,0 +1,37 @@
+{
+    "name": "kleinanzeigen-de",
+    "runContext": {
+        "urlPattern": "^https?://(www\\.)?kleinanzeigen\\.de"
+    },
+    "prehideSelectors": ["#gdpr-banner-container"],
+    "detectCmp": [
+        {
+            "any": [
+                { "exists": "#gdpr-banner-container #gdpr-banner [data-testid=gdpr-banner-cmp-button]" },
+                { "exists": "#ConsentManagementPage" }
+            ]
+        }
+    ],
+    "detectPopup": [
+        {
+            "any": [
+                { "visible": "#gdpr-banner-container #gdpr-banner [data-testid=gdpr-banner-cmp-button]" },
+                { "visible": "#ConsentManagementPage" }
+            ]
+        }
+    ],
+    "optIn": [
+        {
+            "if": { "exists": "#gdpr-banner-container #gdpr-banner" },
+            "then": [{ "click": "#gdpr-banner-container #gdpr-banner [data-testid=gdpr-banner-accept]" }],
+            "else": [{ "click": "#ConsentManagementPage .Button-primary" }]
+        }
+    ],
+    "optOut": [
+        {
+            "if": { "exists": "#gdpr-banner-container #gdpr-banner" },
+            "then": [{ "click": "#gdpr-banner-container #gdpr-banner [data-testid=gdpr-banner-cmp-button]" }],
+            "else": [{ "click": "#ConsentManagementPage .Button-secondary" }]
+        }
+    ]
+}

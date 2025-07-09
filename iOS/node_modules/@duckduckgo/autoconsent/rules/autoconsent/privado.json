@@ -1,0 +1,48 @@
+{
+    "name": "privado",
+    "vendorUrl": "https://www.privado.ai/cookie-consent",
+    "cosmetic": false,
+    "runContext": {
+        "main": true,
+        "frame": false
+    },
+    "prehideSelectors": ["#cookie-consent-banner"],
+    "detectCmp": [
+        {
+            "exists": "#cookie-consent-banner #accept-button"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#cookie-consent-banner #accept-button"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#cookie-consent-banner #accept-button"
+        }
+    ],
+    "optOut": [
+        {
+            "if": {
+                "exists": "#cookie-consent-banner #deny-button"
+            },
+            "then": [
+                {
+                    "waitForThenClick": "#cookie-consent-banner #deny-button"
+                }
+            ],
+            "else": [
+                {
+                    "waitForThenClick": "#cookie-consent-banner #manage-settings-button"
+                },
+                {
+                    "waitForVisible": "#manage-cookies #save-button"
+                },
+                {
+                    "waitForThenClick": "#manage-cookies #save-button"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,40 @@
+{
+    "name": "readly",
+    "runContext": {
+        "urlPattern": "^https://([a-z0-9-]+\\.)?readly\\.com/"
+    },
+    "prehideSelectors": [".DialogHandlerContainer.visible:has(.cookie-dialog)"],
+    "detectCmp": [
+        {
+            "exists": ".DialogHandlerContainer.visible:has(.cookie-dialog)"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".DialogHandlerContainer.visible:has(.cookie-dialog)"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "span.cookie-option-large+div+div>button.gui-button"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "span.cookie-option-large>div>span.link-no-decoration.gui-text"
+        },
+        {
+            "if": { "exists": ".cookie-dialog form .CookieConsentOption input[type='checkbox']:not([name='permanent']):checked" },
+            "then": [
+                {
+                    "waitForThenClick": ".cookie-dialog form .CookieConsentOption input[type='checkbox']:not([name='permanent']):checked",
+                    "all": true
+                }
+            ],
+            "else": []
+        },
+        {
+            "waitForThenClick": ".cookie-dialog button[type='submit']"
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+{
+    "name": "dan-com",
+    "vendorUrl": "https://unknown",
+    "runContext": {
+        "main": true,
+        "frame": false
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": ".cookie-banner.show .cookie-banner__content-all-btn"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookie-banner.show .cookie-banner__content-all-btn"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cookie-banner__content-all-btn"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".cookie-banner__content-essential-btn"
+        }
+    ]
+}

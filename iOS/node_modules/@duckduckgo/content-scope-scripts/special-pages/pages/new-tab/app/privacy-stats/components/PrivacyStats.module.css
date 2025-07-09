@@ -1,0 +1,168 @@
+.control {
+    display: flex;
+    align-items: center;
+    height: 24px;
+    margin-bottom: 16px;
+    position: relative;
+    gap: 8px;
+}
+
+.headingIcon {
+    width: 24px;
+    height: 24px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 0.5px;
+
+    img {
+        max-width: 1rem;
+        max-height: 1rem;
+    }
+}
+
+.caption {
+    font-size: var(--title-3-em-font-size);
+    font-weight: var(--title-3-em-font-weight);
+    line-height: var(--title-3-em-line-height);
+    flex: 1;
+}
+
+.widgetExpander {
+    position: relative;
+
+    & [aria-controls] {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 1;
+        /**
+         * NOTE: This is just for visual alignment. The grid in which this sits is correct,
+         * but to preserve the larger tap-area for the button, we're opting to shift this over
+         * manually to solve this specific layout case.
+         */
+        right: -4px
+    }
+}
+
+.counter {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.title {
+    grid-area: title;
+    font-size: var(--title-2-font-size);
+    font-weight: var(--title-2-font-weight);
+    line-height: var(--title-2-line-height);
+}
+
+.subtitle {
+    grid-area: label;
+    color: var(--ntp-text-muted);
+    line-height: var(--body-line-height);
+    text-transform: uppercase;
+
+    &.indented {
+        padding-left: 2px;
+    }
+}
+
+.body {
+    display: grid;
+    grid-row-gap:  var(--sp-3);
+
+}
+
+.list {
+    display: grid;
+    grid-template-columns: auto;
+    grid-row-gap: calc(6 * var(--px-in-rem));
+    transition: opacity ease-in-out 0.3s, visibility ease-in-out 0.3s;
+
+    &:not(:empty) {
+        margin-top: 24px;
+    }
+}
+
+.row {
+    min-height: 2rem;
+    display: grid;
+    grid-gap: var(--sp-2);
+    grid-template-columns: auto auto 40%;
+    grid-template-areas: 'company count bar';
+    align-items: center;
+
+    @media screen and (min-width: 500px) {
+        grid-template-columns: 35% 10% calc(55% - 1rem); /* - 1rem accounts for the grid gaps */
+    }
+}
+
+.listFooter {
+    display: flex;
+    .otherTrackersRow + .listExpander {
+        margin-left: auto;
+    }
+}
+
+.otherTrackersRow {
+    padding-left: var(--sp-1);
+    color: var(--ntp-text-muted);
+    display: flex;
+    align-items: center;
+
+}
+
+.company {
+    grid-area: company;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding-left: var(--sp-1);
+    overflow: hidden;
+}
+
+.name {
+    font-size: var(--title-3-em-font-size);
+    font-weight: var(--title-3-em-font-weight);
+    line-height: var(--title-3-em-line-height);
+    text-overflow: ellipsis;
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    top: -1px;
+}
+
+.count {
+    grid-area: count;
+    text-align: right;
+    color: var(--ntp-text-normal);
+    line-height: 1;
+}
+
+.bar {
+    grid-area: bar;
+    width: 100%;
+    height: 1rem;
+    border-radius: calc(20 * var(--px-in-rem));
+
+    background: var(--color-black-at-3);
+
+    [data-theme=dark] & {
+        background: var(--color-white-at-6);
+    }
+}
+
+.fill {
+    grid-area: bar;
+    height: 1rem;
+    border-radius: calc(20 * var(--px-in-rem));
+    background: var(--color-black-at-6);
+
+    [data-theme=dark] & {
+        background: var(--color-white-at-9);
+    }
+}

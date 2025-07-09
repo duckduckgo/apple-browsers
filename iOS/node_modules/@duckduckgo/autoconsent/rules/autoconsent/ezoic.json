@@ -1,0 +1,18 @@
+{
+    "name": "EZoic",
+    "prehideSelectors": ["#ez-cookie-dialog-wrapper"],
+    "detectCmp": [{ "exists": "#ez-cookie-dialog-wrapper" }],
+    "detectPopup": [{ "visible": "#ez-cookie-dialog-wrapper" }],
+    "optIn": [
+        { "click": "#ez-accept-all", "optional": true },
+        { "eval": "EVAL_EZOIC_0", "optional": true }
+    ],
+    "optOut": [
+        { "wait": 500 },
+        { "click": "#ez-manage-settings" },
+        { "waitFor": "#ez-cookie-dialog input[type=checkbox]" },
+        { "click": "#ez-cookie-dialog input[type=checkbox]:checked", "all": true },
+        { "click": "#ez-save-settings" }
+    ],
+    "test": [{ "cookieContains": "ez-consent-tcf" }]
+}

@@ -1,0 +1,29 @@
+{
+    "name": "alaskaair",
+    "vendorUrl": "https://www.alaskaair.com/",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?alaskaair\\.com/"
+    },
+    "prehideSelectors": ["#aag-cookie-consent"],
+    "detectCmp": [
+        {
+            "exists": "#aag-cookie-consent"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#aag-cookie-consent"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#aag-cookie-consent .aag-consent-cta"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "#aag-cookie-consent"
+        }
+    ]
+}

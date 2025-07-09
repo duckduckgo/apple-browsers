@@ -1,0 +1,42 @@
+{
+    "name": "om",
+    "vendorUrl": "https://olli-machts.de/en/extension/cookie-manager",
+    "prehideSelectors": [".tx-om-cookie-consent"],
+    "detectCmp": [
+        {
+            "exists": ".tx-om-cookie-consent .active[data-omcookie-panel]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "exists": ".tx-om-cookie-consent .active[data-omcookie-panel]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-omcookie-panel-save=all]"
+        }
+    ],
+    "optOut": [
+        {
+            "if": {
+                "exists": "[data-omcookie-panel-save=min]"
+            },
+            "then": [
+                {
+                    "waitForThenClick": "[data-omcookie-panel-save=min]"
+                }
+            ],
+            "else": [
+                {
+                    "click": "input[data-omcookie-panel-grp]:checked:not(:disabled)",
+                    "all": true,
+                    "optional": true
+                },
+                {
+                    "waitForThenClick": "[data-omcookie-panel-save=save]"
+                }
+            ]
+        }
+    ]
+}

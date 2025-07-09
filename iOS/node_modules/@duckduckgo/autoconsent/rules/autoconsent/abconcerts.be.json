@@ -1,0 +1,41 @@
+{
+    "name": "abconcerts.be",
+    "vendorUrl": "https://unknown",
+    "intermediate": false,
+    "prehideSelectors": ["dialog.cookie-consent"],
+    "detectCmp": [
+        {
+            "exists": "dialog.cookie-consent form.cookie-consent__form"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "dialog.cookie-consent form.cookie-consent__form"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "dialog.cookie-consent form.cookie-consent__form button[value=yes]"
+        }
+    ],
+    "optOut": [
+        {
+            "if": {
+                "exists": "dialog.cookie-consent form.cookie-consent__form button[value=no]"
+            },
+            "then": [
+                {
+                    "click": "dialog.cookie-consent form.cookie-consent__form button[value=no]"
+                }
+            ],
+            "else": [
+                {
+                    "click": "dialog.cookie-consent form.cookie-consent__form button.cookie-consent__options-toggle"
+                },
+                {
+                    "waitForThenClick": "dialog.cookie-consent form.cookie-consent__form button[value=\"save_options\"]"
+                }
+            ]
+        }
+    ]
+}

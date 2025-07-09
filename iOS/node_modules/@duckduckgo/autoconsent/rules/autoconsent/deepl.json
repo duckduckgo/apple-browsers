@@ -1,0 +1,14 @@
+{
+    "name": "deepl.com",
+    "prehideSelectors": ["*[data-testid='dl-cookieBanner']"],
+    "detectCmp": [{ "exists": "[data-testid='dl-cookieBanner']" }],
+    "detectPopup": [{ "visible": "[data-testid='dl-cookieBanner']" }],
+    "optOut": [
+        {
+            "if": { "exists": "button[data-testid='cookie-banner-strict-accept-selected']" },
+            "then": [{ "click": "button[data-testid='cookie-banner-strict-accept-selected']" }],
+            "else": [{ "hide": "[data-testid='dl-cookieBanner']" }]
+        }
+    ],
+    "optIn": [{ "click": "button[data-testid='cookie-banner-strict-accept-all'],button[data-testid='cookie-banner-lax-close-button']" }]
+}

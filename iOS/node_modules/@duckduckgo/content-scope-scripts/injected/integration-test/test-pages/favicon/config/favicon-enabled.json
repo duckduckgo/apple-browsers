@@ -1,0 +1,12 @@
+{
+  "features": {
+    "favicon": {
+      "state": "enabled",
+      "exceptions": [],
+      "settings": {
+        "monitor": true
+      }
+    }
+  },
+  "unprotectedTemporary": []
+}

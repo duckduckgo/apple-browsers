@@ -1,0 +1,52 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Freemium PIR Banner Data",
+    "type": "object",
+    "required": [
+        "content"
+    ],
+    "properties": {
+        "content": {
+            "oneOf": [
+                {
+                    "type": "null"
+                },
+                {
+                    "type": "object",
+                    "title": "Freemium PIR Banner Message",
+                    "required": [
+                        "messageType",
+                        "id",
+                        "descriptionText",
+                        "titleText",
+                        "actionText"
+                    ],
+                    "properties": {
+                        "messageType": {
+                            "const": "big_single_action"
+                        },
+                        "id": {
+                            "type": "string",
+                            "enum": [
+                                "onboarding",
+                                "scan_results"
+                            ]
+                        },
+                        "titleText": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "descriptionText": {
+                            "type": "string"
+                        },
+                        "actionText": {
+                            "type": "string"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}

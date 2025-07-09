@@ -1,0 +1,6 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Open Target",
+  "type": "string",
+  "enum": ["same-tab", "new-tab", "new-window"]
+}

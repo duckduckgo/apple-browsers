@@ -1,0 +1,12 @@
+{
+    "name": "amazon.com",
+    "vendorUrl": "https://track.amazon.co.uk/",
+    "runContext": {
+        "urlPattern": "\\.amazon\\."
+    },
+    "prehideSelectors": ["div:has(> button#accept-button):has(> button#decline-button)"],
+    "detectCmp": [{ "exists": "button#accept-button,button#decline-button" }],
+    "detectPopup": [{ "visible": "button#accept-button,button#decline-button" }],
+    "optIn": [{ "click": "button#accept-button" }],
+    "optOut": [{ "click": "button#decline-button" }]
+}

@@ -1,0 +1,12 @@
+{
+    "name": "dailymotion.com",
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?dailymotion\\.com/"
+    },
+    "prehideSelectors": ["div[class*=\"Overlay__container\"]:has(div[class*=\"TCF2Popup\"])"],
+    "detectCmp": [{ "exists": "div[class*=\"TCF2Popup\"]" }],
+    "detectPopup": [{ "visible": "[class*=\"TCF2Popup\"] a[href^=\"https://www.dailymotion.com/legal/cookiemanagement\"]" }],
+    "optIn": [{ "waitForThenClick": "button[class*=\"TCF2Popup__button\"]:not([class*=\"TCF2Popup__personalize\"])" }],
+    "optOut": [{ "waitForThenClick": "button[class*=\"TCF2ContinueWithoutAcceptingButton\"]" }],
+    "test": [{ "cookieContains": "dm-euconsent-v2" }]
+}

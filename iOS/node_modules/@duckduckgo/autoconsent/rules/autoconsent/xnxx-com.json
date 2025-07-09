@@ -1,0 +1,9 @@
+{
+    "name": "xnxx-com",
+    "cosmetic": true,
+    "prehideSelectors": ["#cookies-use-alert"],
+    "detectCmp": [{ "exists": "#cookies-use-alert" }],
+    "detectPopup": [{ "visible": "#cookies-use-alert" }],
+    "optIn": [{ "click": "#cookies-use-alert .close" }],
+    "optOut": [{ "hide": "#cookies-use-alert" }]
+}

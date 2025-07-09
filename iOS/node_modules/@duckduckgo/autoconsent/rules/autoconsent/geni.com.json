@@ -1,0 +1,26 @@
+{
+    "name": "geni.com",
+    "vendorUrl": "https://www.geni.com/",
+    "cosmetic": true,
+    "prehideSelectors": [".cookie-notify-anchor"],
+    "detectCmp": [
+        {
+            "exists": ".cookie-notify-anchor .cookie-notify"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookie-notify-anchor .cookie-notify"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cookie-notify-anchor .cookie-notify button"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": ".cookie-notify-anchor"
+        }
+    ]
+}

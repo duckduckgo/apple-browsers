@@ -1,0 +1,39 @@
+{
+    "name": "xe.com",
+    "vendorUrl": "https://www.xe.com/",
+    "runContext": {
+        "urlPattern": "^https://www\\.xe\\.com/"
+    },
+    "prehideSelectors": ["[class*=ConsentBanner]"],
+    "detectCmp": [
+        {
+            "exists": "[class*=ConsentBanner]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[class*=ConsentBanner]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[class*=ConsentBanner] .egnScw"
+        }
+    ],
+    "optOut": [
+        {
+            "wait": 1000
+        },
+        {
+            "waitForThenClick": "[class*=ConsentBanner] .frDWEu"
+        },
+        {
+            "waitForThenClick": "[class*=ConsentBanner] .hXIpFU"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "xeConsentState={%22performance%22:false%2C%22marketing%22:false%2C%22compliance%22:false}"
+        }
+    ]
+}

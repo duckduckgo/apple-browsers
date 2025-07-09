@@ -1,0 +1,29 @@
+{
+    "name": "wikiwand",
+    "vendorUrl": "https://www.wikiwand.com/",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?wikiwand\\.com/"
+    },
+    "prehideSelectors": ["[class^=cookie_wrapper]"],
+    "detectCmp": [
+        {
+            "exists": "[class^=cookie_wrapper]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[class^=cookie_wrapper]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[class^=cookie_wrapper] button"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "[class^=cookie_wrapper]"
+        }
+    ]
+}

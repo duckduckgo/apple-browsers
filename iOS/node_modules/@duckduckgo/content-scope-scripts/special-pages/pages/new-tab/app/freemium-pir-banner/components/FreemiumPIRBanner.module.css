@@ -1,0 +1,75 @@
+.root {
+    background-color: var(--ntp-surface-background-color);
+    backdrop-filter: blur(48px);
+    border: 1px solid var(--ntp-surface-border-color);
+    padding: calc(14 * var(--px-in-rem)) var(--sp-8) calc(14 * var(--px-in-rem)) var(--sp-4);
+    border-radius: var(--border-radius-lg);
+    position: relative;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    font-family: system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto;
+    color: var(--ntp-text-normal);
+    width: 100%;
+    animation: animate-fade .2s cubic-bezier(0.55, 0.055, 0.666, 0.19);
+    margin-bottom: var(--ntp-gap);
+
+    &.icon {
+        padding-left: var(--sp-2);
+    }
+}
+
+.iconBlock {
+    margin-right: var(--sp-2);
+    width: 3rem;
+    min-width: 3rem;
+}
+
+.content {
+    flex-grow: 1;
+    height: 100%;
+    align-self: center;
+}
+
+.title {
+    font-size: var(--body-font-size);
+    font-weight: var(--title-2-font-weight);
+    line-height: normal;
+    margin-bottom: var(--sp-1);
+}
+
+.description {
+    font-size: var(--body-font-size);
+    line-height: var(--body-line-height);
+}
+
+.btnBlock {
+    margin-left: var(--sp-3);
+    align-self: center;
+}
+
+.btnRow {
+    margin-top: var(--sp-3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(10 * var(--px-in-rem));
+}
+
+.dismissBtn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+}
+
+
+@keyframes animate-fade {
+    0% {
+        opacity: 0;
+        scale: 0.98;
+    }
+
+    100% {
+        opacity: 1;
+        scale: 1;
+    }
+}

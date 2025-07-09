@@ -1,0 +1,16 @@
+{
+  "smartling": {
+    "string_format": "icu",
+    "translate_paths": [
+      {
+        "path": "*/title",
+        "key": "{*}/title",
+        "instruction": "*/note"
+      }
+    ]
+  },
+  "helloWorld": {
+    "title": "Hello World",
+    "note": "Note for translators"
+  }
+}

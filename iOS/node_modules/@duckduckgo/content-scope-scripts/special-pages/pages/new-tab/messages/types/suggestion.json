@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Suggestion",
+  "type": "object",
+  "required": ["kind"],
+  "discriminator": {
+    "propertyName": "kind"
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "title": "Bookmark Suggestion",
+      "required": ["kind", "title", "url", "isFavorite", "score"],
+      "properties": {
+        "kind": {
+          "const": "bookmark"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "isFavorite": {
+          "type": "boolean"
+        },
+        "score": {
+          "type": "number"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "title": "Open Tab Suggestion",
+      "required": ["kind", "title", "tabId", "score"],
+      "properties": {
+        "kind": {
+          "const": "openTab"
+        },
+        "title": {
+          "type": "string"
+        },
+        "tabId": {
+          "type": "string"
+        },
+        "score": {
+          "type": "number"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "title": "Phrase Suggestion",
+      "required": ["kind", "phrase"],
+      "properties": {
+        "kind": {
+          "const": "phrase"
+        },
+        "phrase": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "title": "Website Suggestion",
+      "required": ["kind", "url"],
+      "properties": {
+        "kind": {
+          "const": "website"
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "title": "History Entry Suggestion",
+      "required": ["kind", "title", "url", "score"],
+      "properties": {
+        "kind": {
+          "const": "historyEntry"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "score": {
+          "type": "number"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "title": "Internal Page Suggestion",
+      "required": ["kind", "title", "url", "score"],
+      "properties": {
+        "kind": {
+          "const": "internalPage"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "score": {
+          "type": "number"
+        }
+      }
+    }
+  ]
+}

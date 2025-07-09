@@ -1,0 +1,31 @@
+{
+    "name": "fastcmp",
+    "vendorUrl": "https://corporate.fastcmp.com/",
+    "cosmetic": false,
+    "prehideSelectors": ["#fast-cmp-root"],
+    "detectCmp": [
+        {
+            "exists": "iframe#fast-cmp-iframe"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "iframe#fast-cmp-iframe"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ["iframe#fast-cmp-iframe", ".fast-cmp-home-accept button"]
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ["iframe#fast-cmp-iframe", ".fast-cmp-home-refuse button"]
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "fastCMP-"
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+{
+    "name": "tinyurl",
+    "vendorUrl": "https://tinyurl.com/",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://tinyurl\\.com/"
+    },
+    "prehideSelectors": ["[data-test-id=cookies_section]"],
+    "detectCmp": [
+        {
+            "exists": "[data-test-id=cookies_section]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[data-test-id=cookies_section]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-test-id=cookies_section_got_it_btn]"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "[data-test-id=cookies_section]"
+        }
+    ]
+}

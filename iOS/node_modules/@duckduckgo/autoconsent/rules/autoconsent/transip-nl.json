@@ -1,0 +1,53 @@
+{
+    "name": "transip-nl",
+    "runContext": {
+        "urlPattern": "^https://www\\.transip\\.nl/"
+    },
+    "prehideSelectors": ["#consent-modal"],
+    "detectCmp": [
+        {
+            "any": [
+                {
+                    "exists": "#consent-modal"
+                },
+                {
+                    "exists": "#privacy-settings-content"
+                }
+            ]
+        }
+    ],
+    "detectPopup": [
+        {
+            "any": [
+                {
+                    "visible": "#consent-modal"
+                },
+                {
+                    "visible": "#privacy-settings-content"
+                }
+            ]
+        }
+    ],
+    "optIn": [
+        {
+            "click": "button[type=\"submit\"]"
+        }
+    ],
+    "optOut": [
+        {
+            "if": {
+                "exists": "#privacy-settings-content"
+            },
+            "then": [
+                {
+                    "click": "button[type=\"submit\"]"
+                }
+            ],
+            "else": [
+                {
+                    "click": "div.one-modal__action-footer-column--secondary > a"
+                }
+            ]
+        }
+    ]
+}

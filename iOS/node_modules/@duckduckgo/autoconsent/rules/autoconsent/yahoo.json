@@ -1,0 +1,11 @@
+{
+    "name": "Yahoo",
+    "runContext": {
+        "urlPattern": "^https://consent\\.yahoo\\.com/v2/"
+    },
+    "prehideSelectors": ["#reject-all"],
+    "detectCmp": [{ "exists": "#consent-page" }],
+    "detectPopup": [{ "visible": "#consent-page" }],
+    "optIn": [{ "waitForThenClick": "#consent-page button[value=agree]" }],
+    "optOut": [{ "waitForThenClick": "#consent-page button[value=reject]" }]
+}

@@ -1,0 +1,33 @@
+{
+    "name": "web.de",
+    "vendorUrl": "https://web.de",
+    "runContext": {
+        "main": false,
+        "frame": true,
+        "urlPattern": "^https://(.*\\.)?web\\.de/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": "#save-all-pur"
+        },
+        {
+            "exists": "#reminder"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#reminder"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#save-all-pur"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "#reminder"
+        }
+    ]
+}

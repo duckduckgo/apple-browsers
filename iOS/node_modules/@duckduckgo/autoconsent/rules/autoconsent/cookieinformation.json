@@ -1,0 +1,12 @@
+{
+    "name": "Cookie Information Banner",
+    "prehideSelectors": ["#cookie-information-template-wrapper"],
+    "detectCmp": [{ "exists": "#cookie-information-template-wrapper" }],
+    "detectPopup": [{ "visible": "#cookie-information-template-wrapper" }],
+    "optIn": [{ "eval": "EVAL_COOKIEINFORMATION_1" }],
+    "optOut": [
+        { "hide": "#cookie-information-template-wrapper", "comment": "some templates don't hide the banner automatically" },
+        { "eval": "EVAL_COOKIEINFORMATION_0" }
+    ],
+    "test": [{ "cookieContains": "CookieInformationConsent=" }]
+}

@@ -1,0 +1,38 @@
+{
+    "name": "taunton",
+    "vendorUrl": "https://www.taunton.com/",
+    "prehideSelectors": ["#taunton-user-consent__overlay"],
+    "detectCmp": [
+        {
+            "exists": "#taunton-user-consent__overlay"
+        }
+    ],
+    "detectPopup": [
+        {
+            "exists": "#taunton-user-consent__overlay:not([aria-hidden=true])"
+        }
+    ],
+    "optIn": [
+        {
+            "click": "#taunton-user-consent__toolbar input[type=checkbox]:not(:checked)"
+        },
+        {
+            "click": "#taunton-user-consent__toolbar button[type=submit]"
+        }
+    ],
+    "optOut": [
+        {
+            "click": "#taunton-user-consent__toolbar input[type=checkbox]:checked",
+            "optional": true,
+            "all": true
+        },
+        {
+            "click": "#taunton-user-consent__toolbar button[type=submit]"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "taunton_user_consent_submitted=true"
+        }
+    ]
+}

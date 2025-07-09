@@ -1,0 +1,20 @@
+{
+    "name": "twitch.tv",
+    "runContext": {
+        "urlPattern": "^https?://(www\\.)?twitch\\.tv"
+    },
+    "prehideSelectors": [
+        "div:has(> .consent-banner .consent-banner__content--gdpr-v2),.ReactModalPortal:has([data-a-target=consent-modal-save])"
+    ],
+    "detectCmp": [{ "exists": ".consent-banner .consent-banner__content--gdpr-v2" }],
+    "detectPopup": [{ "visible": ".consent-banner .consent-banner__content--gdpr-v2" }],
+    "optIn": [{ "click": "button[data-a-target=\"consent-banner-accept\"]" }],
+    "optOut": [
+        { "hide": "div:has(> .consent-banner .consent-banner__content--gdpr-v2)" },
+        { "click": "button[data-a-target=\"consent-banner-manage-preferences\"]" },
+        { "waitFor": "input[type=checkbox][data-a-target=tw-checkbox]" },
+        { "click": "input[type=checkbox][data-a-target=tw-checkbox][checked]:not([disabled])", "all": true, "optional": true },
+        { "waitForThenClick": "[data-a-target=consent-modal-save]" },
+        { "waitForVisible": ".ReactModalPortal:has([data-a-target=consent-modal-save])", "check": "none" }
+    ]
+}

@@ -1,0 +1,29 @@
+import { h } from 'preact';
+import { ErrorBoundary } from './ErrorBoundary.js';
+
+export const INLINE_ERROR = 'A problem occurred with this feature. DuckDuckGo was notified';
+
+/**
+ * @param {object} props
+ * @param {import("preact").ComponentChild} props.children
+ * @param {(message: string) => string} [props.format] - This gives you access to the error message, so you can append relevant context
+ * @param {string} [props.context] - Passed to `ErrorBoundary`, if you provide this, it will be prepended to messages. Favor this before
+ * using `format`
+ * @param {(message: string) => import("preact").ComponentChild} [props.fallback]
+ * @param {{reportPageException: (arg: {message:string}) => void}} props.messaging
+ */
+export function InlineErrorBoundary({ children, format, context, fallback, messaging }) {
+    /**
+     * @param {string} message
+     */
+    const didCatch = (message) => {
+        const formatted = format?.(message) || message;
+        messaging.reportPageException({ message: formatted });
+    };
+    const fallbackElement = fallback?.(INLINE_ERROR) || <p>{INLINE_ERROR}</p>;
+    return (
+        <ErrorBoundary context={context} didCatch={({ message }) => didCatch(message)} fallback={fallbackElement}>
+            {children}
+        </ErrorBoundary>
+    );
+}

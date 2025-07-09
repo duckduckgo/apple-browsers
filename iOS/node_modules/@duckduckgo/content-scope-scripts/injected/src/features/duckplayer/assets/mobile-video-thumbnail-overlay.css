@@ -1,0 +1,96 @@
+/* -- VIDEO PLAYER OVERLAY */
+:host {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 10000;
+    --title-size: 16px;
+    --title-line-height: 20px;
+    --title-gap: 16px;
+    --button-gap: 6px;
+    --logo-size: 32px;
+    --logo-gap: 8px;
+    --gutter: 16px;
+}
+/* iphone 15 */
+@media screen and (min-width: 390px) {
+    :host {
+        --title-size: 20px;
+        --title-line-height: 25px;
+        --button-gap: 16px;
+        --logo-size: 40px;
+        --logo-gap: 12px;
+        --title-gap: 16px;
+    }
+}
+/* iphone 15 Pro Max */
+@media screen and (min-width: 430px) {
+    :host {
+        --title-size: 22px;
+        --title-gap: 24px;
+        --button-gap: 20px;
+        --logo-gap: 16px;
+    }
+}
+/* small landscape */
+@media screen and (min-width: 568px) {
+}
+/* large landscape */
+@media screen and (min-width: 844px) {
+    :host {
+        --title-gap: 30px;
+        --button-gap: 24px;
+        --logo-size: 48px;
+    }
+}
+
+
+:host * {
+    font-family: system, -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+:root *, :root *:after, :root *:before {
+    box-sizing: border-box;
+}
+
+.ddg-video-player-overlay {
+    width: 100%;
+    height: 100%;
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+
+    @media screen and (min-width: 568px) {
+        padding: 0;
+    }
+}
+
+.bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    color: white;
+    background: rgba(0, 0, 0, 0.6);
+    background-position: center;
+    text-align: center;
+}
+
+.logo {
+    content: " ";
+    position: absolute;
+    display: block;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: transparent;
+    background-image: url('data:image/svg+xml,<svg width="90" height="64" viewBox="0 0 90 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M88.119 9.88293C87.0841 6.01134 84.0348 2.96133 80.1625 1.92639C73.1438 0.0461578 44.9996 0.0461578 44.9996 0.0461578C44.9996 0.0461578 16.8562 0.0461578 9.83751 1.92639C5.96518 2.96133 2.91592 6.01134 1.88097 9.88293C0 16.9023 0 31.5456 0 31.5456C0 31.5456 0 46.1896 1.88097 53.2083C2.91592 57.0799 5.96518 60.1306 9.83751 61.1648C16.8562 63.0458 44.9996 63.0458 44.9996 63.0458C44.9996 63.0458 73.1438 63.0458 80.1625 61.1648C84.0348 60.1306 87.0841 57.0799 88.119 53.2083C90 46.1896 90 31.5456 90 31.5456C90 31.5456 90 16.9023 88.119 9.88293Z" fill="%23FF0000"/><path fill-rule="evenodd" clip-rule="evenodd" d="M36.8184 45.3313L60.2688 31.792L36.8184 18.2512V45.3313Z" fill="%23FFFFFE"/></svg>');
+    background-size: 90px 64px;
+    background-position: center center;
+    background-repeat: no-repeat;
+}

@@ -1,0 +1,25 @@
+name: 'Asana Sync'
+on:
+    pull_request_review:
+    pull_request_target:
+        types:
+            - opened
+            - edited
+            - closed
+            - reopened
+            - synchronize
+            - review_requested
+
+jobs:
+    sync:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - uses: duckduckgo/action-asana-sync@v11
+              with:
+                  ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+                  ASANA_WORKSPACE_ID: ${{ secrets.ASANA_WORKSPACE_ID }}
+                  ASANA_PROJECT_ID: '1203409672862476'
+                  move_to_section_id: '1203409672862480'
+                  GITHUB_PAT: ${{ secrets.GH_RO_PAT }}
+                  ASSIGN_PR_AUTHOR: 'true'

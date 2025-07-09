@@ -1,0 +1,12 @@
+{
+    "name": "lightbox",
+    "prehideSelectors": [".darken-layer.open,.lightbox.lightbox--cookie-consent"],
+    "detectCmp": [
+        { "exists": "body.cookie-consent-is-active div.lightbox--cookie-consent > div.lightbox__content > div.cookie-consent[data-jsb]" }
+    ],
+    "detectPopup": [
+        { "visible": "body.cookie-consent-is-active div.lightbox--cookie-consent > div.lightbox__content > div.cookie-consent[data-jsb]" }
+    ],
+    "optOut": [{ "click": ".cookie-consent__footer > button[type='submit']:not([data-button='selectAll'])" }],
+    "optIn": [{ "click": ".cookie-consent__footer > button[type='submit'][data-button='selectAll']" }]
+}

@@ -1,0 +1,28 @@
+{
+    "name": "hu-manity",
+    "vendorUrl": "https://hu-manity.co/",
+    "prehideSelectors": ["#hu.hu-wrapper"],
+    "detectCmp": [
+        {
+            "exists": "#hu.hu-visible"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#hu.hu-visible"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-hu-action=cookies-notice-consent-choices-3]"
+        },
+        {
+            "waitForThenClick": "#hu-cookies-save"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "#hu-cookies-save"
+        }
+    ]
+}

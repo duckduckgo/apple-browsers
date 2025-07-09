@@ -1,0 +1,29 @@
+{
+    "name": "inmobi",
+    "prehideSelectors": [".accept-cookie"],
+    "detectCmp": [
+        {
+            "exists": ".accept-cookie > .accept-cookie-inner"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".accept-cookie > .accept-cookie-inner"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "xpath///*[contains(@class, 'accept-cookie')]//*[contains(text(), 'Accept')]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "xpath///*[contains(@class, 'accept-cookie')]//*[contains(text(), 'Decline')]"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "cookie-pref=rejected"
+        }
+    ]
+}

@@ -1,0 +1,30 @@
+{
+    "state": {
+      "action": {
+        "actionType": "condition",
+        "retry": {
+            "environment": "web",
+            "interval": { "ms": 1000 },
+            "maxAttempts": 1
+        },
+        "expectations": [
+          {
+            "type": "element",
+            "selector": "form.fakeForm",
+            "failSilently": true
+          }
+        ],
+        "actions": [
+          {
+            "actionType": "click",
+            "elements": [
+              {
+                "type": "button",
+                "selector": ".btn-sbmt"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }

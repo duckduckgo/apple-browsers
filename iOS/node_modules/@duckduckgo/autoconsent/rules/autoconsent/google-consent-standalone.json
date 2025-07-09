@@ -1,0 +1,15 @@
+{
+    "name": "google-consent-standalone",
+    "prehideSelectors": [],
+    "detectCmp": [
+        { "exists": "a[href^=\"https://policies.google.com/technologies/cookies\"" },
+        { "exists": "form[action^=\"https://consent.google.\"][action$=\"/save\"]" }
+    ],
+    "detectPopup": [{ "visible": "a[href^=\"https://policies.google.com/technologies/cookies\"" }],
+    "optIn": [
+        { "waitForThenClick": "form[action^=\"https://consent.google.\"][action$=\"/save\"]:has(input[name=set_eom][value=false]) button" }
+    ],
+    "optOut": [
+        { "waitForThenClick": "form[action^=\"https://consent.google.\"][action$=\"/save\"]:has(input[name=set_eom][value=true]) button" }
+    ]
+}

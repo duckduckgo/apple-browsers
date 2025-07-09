@@ -1,0 +1,29 @@
+{
+    "name": "microcenter.com",
+    "vendorUrl": "https://www.microcenter.com/",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://(www.)?microcenter.com/"
+    },
+    "prehideSelectors": ["#PnlPrivacyAlert"],
+    "detectCmp": [
+        {
+            "exists": "#privacyAlertDiv"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#privacyAlertDiv"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#privacyAlertDiv button"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "#PnlPrivacyAlert"
+        }
+    ]
+}

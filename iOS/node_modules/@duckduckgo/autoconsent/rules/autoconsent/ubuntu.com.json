@@ -1,0 +1,73 @@
+{
+    "name": "ubuntu.com",
+    "prehideSelectors": ["dialog.cookie-policy"],
+    "detectCmp": [
+        {
+            "any": [
+                {
+                    "exists": "dialog.cookie-policy header"
+                },
+                {
+                    "exists": "xpath///*[@id=\"modal\"]/div/header"
+                }
+            ]
+        }
+    ],
+    "detectPopup": [
+        {
+            "any": [
+                {
+                    "visible": "dialog header"
+                },
+                {
+                    "visible": "xpath///*[@id=\"modal\"]/div/header"
+                }
+            ]
+        }
+    ],
+    "optIn": [
+        {
+            "any": [
+                {
+                    "waitForThenClick": "#cookie-policy-button-accept"
+                },
+                {
+                    "waitForThenClick": "xpath///*[@id=\"cookie-policy-button-accept\"]"
+                }
+            ]
+        }
+    ],
+    "optOut": [
+        {
+            "any": [
+                {
+                    "waitForThenClick": "button.js-manage"
+                },
+                {
+                    "waitForThenClick": "xpath///*[@id=\"cookie-policy-content\"]/p[4]/button[2]"
+                }
+            ]
+        },
+        {
+            "waitForThenClick": "dialog.cookie-policy .p-switch__input:checked",
+            "optional": true,
+            "all": true,
+            "timeout": 500
+        },
+        {
+            "any": [
+                {
+                    "waitForThenClick": "dialog.cookie-policy .js-save-preferences"
+                },
+                {
+                    "waitForThenClick": "xpath///*[@id=\"modal\"]/div/button"
+                }
+            ]
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "_cookies_accepted=essential"
+        }
+    ]
+}

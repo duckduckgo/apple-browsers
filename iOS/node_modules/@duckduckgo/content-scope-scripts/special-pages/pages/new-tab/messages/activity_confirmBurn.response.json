@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["action"],
+  "title": "Confirm Burn Response",
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["burn", "none"]
+    }
+  }
+}

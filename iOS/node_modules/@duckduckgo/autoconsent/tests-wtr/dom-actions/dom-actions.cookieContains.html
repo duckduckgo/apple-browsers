@@ -1,0 +1,13 @@
+<html>
+    <body>
+        <script type="module">
+            import { runTests } from '@web/test-runner-mocha';
+
+            runTests(async () => {
+                await import('./dom-actions.cookieContains');
+            });
+        </script>
+
+        <h1>Hello test</h1>
+    </body>
+</html>

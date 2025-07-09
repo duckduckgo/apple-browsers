@@ -1,0 +1,27 @@
+{
+    "name": "dpgmedia-nl",
+    "prehideSelectors": ["#pg-root-shadow-host"],
+    "detectCmp": [
+        {
+            "exists": "#pg-root-shadow-host"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ["#pg-root-shadow-host", "#pg-modal"]
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ["#pg-root-shadow-host", "#pg-accept-btn"]
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ["#pg-root-shadow-host", "#pg-configure-btn"]
+        },
+        {
+            "waitForThenClick": ["#pg-root-shadow-host", "#pg-reject-btn"]
+        }
+    ]
+}

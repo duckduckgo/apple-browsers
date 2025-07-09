@@ -1,0 +1,31 @@
+{
+    "name": "fedex",
+    "vendorUrl": "https://www.fedex.com/en-us/home.html",
+    "cosmetic": false,
+    "prehideSelectors": ["fedex-gdpr"],
+    "detectCmp": [
+        {
+            "exists": "fedex-gdpr"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "fedex-gdpr div"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "fedex-gdpr .fxg-gdpr__accept-all-btn"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "fedex-gdpr .fxg-gdpr__reject-all-btn"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "_svs="
+        }
+    ]
+}

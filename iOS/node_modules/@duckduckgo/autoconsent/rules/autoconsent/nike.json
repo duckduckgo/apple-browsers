@@ -1,0 +1,32 @@
+{
+    "name": "nike",
+    "vendorUrl": "https://nike.com",
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?nike\\.com/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": "[data-testid=cookie-dialog-root]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[data-testid=cookie-dialog-root]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-testid=dialog-accept-button]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "input[type=radio][id$=-declineLabel]",
+            "all": true
+        },
+        {
+            "waitForThenClick": "[data-testid=confirm-choice-button]"
+        }
+    ]
+}

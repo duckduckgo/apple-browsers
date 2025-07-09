@@ -1,0 +1,13 @@
+{
+    "name": "uswitch.com",
+    "runContext": {
+        "main": true,
+        "frame": false,
+        "urlPattern": "^https://(www\\.)?uswitch\\.com/"
+    },
+    "prehideSelectors": [".ucb"],
+    "detectCmp": [{ "exists": ".ucb-banner" }],
+    "detectPopup": [{ "visible": ".ucb-banner" }],
+    "optIn": [{ "waitForThenClick": ".ucb-banner .ucb-btn-accept" }],
+    "optOut": [{ "waitForThenClick": ".ucb-banner .ucb-btn-save" }]
+}

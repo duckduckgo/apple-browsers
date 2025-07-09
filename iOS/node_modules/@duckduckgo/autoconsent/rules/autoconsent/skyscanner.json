@@ -1,0 +1,40 @@
+{
+    "name": "skyscanner",
+    "vendorUrl": "https://skyscanner.com",
+    "cosmetic": false,
+    "runContext": {
+        "main": true,
+        "frame": false,
+        "urlPattern": "^https://(www\\.)?skyscanner[\\.a-z]+/"
+    },
+    "prehideSelectors": [".cookie-banner-wrapper"],
+    "detectCmp": [
+        {
+            "exists": "#cookieBannerContent"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#cookieBannerContent"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-tracking-element-id=cookie_banner_accept_all]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "[data-tracking-element-id=cookie_banner_essential_only]"
+        },
+        {
+            "waitForVisible": "#cookieBannerContent",
+            "check": "none"
+        }
+    ],
+    "test": [
+        {
+            "eval": "EVAL_SKYSCANNER_TEST"
+        }
+    ]
+}

@@ -1,0 +1,42 @@
+{
+    "name": "depop",
+    "vendorUrl": "https://www.depop.com/",
+    "cosmetic": false,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?depop\\.com/"
+    },
+    "prehideSelectors": ["[data-testid=cookieBanner]"],
+    "detectCmp": [
+        {
+            "exists": "[data-testid=cookieBanner] button"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[data-testid=cookieBanner] button"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-testid=cookieBanner__acceptAllButton]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "[data-testid=cookieBanner__manageCookiesButton]"
+        },
+        {
+            "click": "[data-testid=cookieModal] input[type=radio][value=false]:not(:checked):not(:disabled)",
+            "all": true,
+            "optional": true
+        },
+        {
+            "waitForThenClick": "[data-testid=cookieModal__acceptButton]"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "gdpr__"
+        }
+    ]
+}

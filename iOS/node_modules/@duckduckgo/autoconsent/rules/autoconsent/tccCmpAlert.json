@@ -1,0 +1,25 @@
+{
+    "name": "tccCmpAlert",
+    "vendorUrl": "https://unknown",
+    "prehideSelectors": ["#tccCmpAlert"],
+    "detectCmp": [
+        {
+            "exists": "#tccCmpAlert"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#tccCmpAlert"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "xpath///span[contains(.,'Accetta tutto')]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "xpath///span[contains(.,'Accetta solo cookie necessari')]"
+        }
+    ]
+}

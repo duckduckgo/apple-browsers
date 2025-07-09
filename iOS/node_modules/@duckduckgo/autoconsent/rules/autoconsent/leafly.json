@@ -1,0 +1,29 @@
+{
+    "name": "leafly",
+    "vendorUrl": "https://www.leafly.com/",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?leafly\\.com/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": "div:has(> div > a[href*='/privacy-policy'])"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "div:has(> div > a[href*='/privacy-policy'])"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "div:has(> div > a[href*='/privacy-policy']) button"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "div:has(> div > a[href*='/privacy-policy'])"
+        }
+    ]
+}

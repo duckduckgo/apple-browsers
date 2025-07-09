@@ -1,0 +1,33 @@
+{
+    "name": "bahn-de",
+    "vendorUrl": "https://www.bahn.de/",
+    "cosmetic": false,
+    "runContext": {
+        "main": true,
+        "frame": false,
+        "urlPattern": "^https://(www\\.)?bahn\\.de/"
+    },
+    "intermediate": false,
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": ["body > div:first-child", "#consent-layer"]
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ["body > div:first-child", "#consent-layer"]
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ["body > div:first-child", "#consent-layer .js-accept-all-cookies"]
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ["body > div:first-child", "#consent-layer .js-accept-essential-cookies"]
+        }
+    ],
+    "test": [{ "eval": "EVAL_BAHN_TEST" }]
+}

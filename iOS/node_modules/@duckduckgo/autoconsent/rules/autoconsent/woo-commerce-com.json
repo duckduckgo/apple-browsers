@@ -1,0 +1,19 @@
+{
+    "name": "woo-commerce-com",
+    "prehideSelectors": [".wccom-comp-privacy-banner .wccom-privacy-banner"],
+    "detectCmp": [{ "exists": ".wccom-comp-privacy-banner .wccom-privacy-banner" }],
+    "detectPopup": [{ "exists": ".wccom-comp-privacy-banner .wccom-privacy-banner" }],
+    "optIn": [{ "click": ".wccom-privacy-banner__content-buttons button.is-primary" }],
+    "optOut": [
+        {
+            "click": ".wccom-privacy-banner__content-buttons button.is-secondary"
+        },
+        {
+            "waitForThenClick": "input[type=checkbox][checked]:not([disabled])",
+            "all": true
+        },
+        {
+            "click": "div.wccom-modal__footer > button"
+        }
+    ]
+}

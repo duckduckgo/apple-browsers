@@ -1,0 +1,194 @@
+/* @todo: use proper vars */
+
+.root {
+     margin-bottom: var(--ntp-gap);
+     position: relative;
+ }
+
+ .logoWrap {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+ }
+
+ .tabListWrap {
+     display: flex;
+     justify-content: center;
+     margin-top: 24px;
+ }
+
+ .formWrap {
+     height: 48px;
+     margin-top: 16px;
+     position: relative;
+     z-index: 1;
+
+     [data-mode="ai"] & {
+         height: 96px;
+     }
+ }
+
+ .form {
+     border-radius: 16px;
+     background-color: #fff;
+     box-shadow: var(--ntp-surface-shadow);
+ }
+
+ .tabList {
+     display: flex;
+     background: var(--color-black-at-6);
+     padding: 4px;
+     border-radius: 999px;
+     gap: 4px;
+     width: auto;
+ }
+
+ .tab {
+     padding: 8px 16px;
+     border: none;
+     background: transparent;
+     cursor: pointer;
+     border-radius: 99px;
+     white-space: nowrap;
+     display: flex;
+     align-items: center;
+     gap: 6px;
+     font-weight: 600;
+     transition: background .2s;
+
+     svg {
+         width: 16px;
+         height: 16px;
+     }
+
+     &:hover {
+         background: var(--color-black-at-9);
+     }
+
+     &[aria-selected="true"] {
+         background: var(--color-white);
+         box-shadow: 0px 0px 3px 0px rgba(0, 0, 0, 0.08), 0px 2px 4px 0px rgba(0, 0, 0, 0.10);
+
+         .searchIcon {
+             color: blue;
+         }
+
+         .aiChatIcon {
+             color: var(--duckai-purple);
+         }
+     }
+ }
+
+ .inputRoot {
+     position: relative;
+     width: 100%;
+     margin: 0 auto;
+     padding: 8px 8px;
+     display: flex;
+     flex-direction: column;
+     gap: 8px;
+ }
+
+ ::view-transition-new(omnibar-input-transition) {
+     animation: 0.25s grow-y;
+ }
+
+ .inputContainer {
+     position: relative;
+     display: flex;
+     align-items: center;
+     height: 32px;
+ }
+
+.input {
+     flex: 1;
+     height: 32px;
+     padding: 0;
+     padding: 0 8px;
+     border: none;
+     font-size: 16px;
+     outline: none;
+     color: #202124;
+     background-color: transparent;
+ }
+
+ .input::placeholder {
+     color: #9aa0a6;
+ }
+
+ .inputActions {
+     display: flex;
+     align-items: center;
+ }
+
+ .inputAction {
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     width: 40px;
+     height: 32px;
+     border: none;
+     background-color: transparent;
+     cursor: pointer;
+     transition: background-color 0.2s;
+     padding: 0;
+
+     svg {
+         width: 16px;
+         height: 16px;
+     }
+
+     .aiChatIcon {
+         color: var(--color-black-at-84);
+     }
+ }
+
+ .inputAction:hover {
+     background-color: rgba(60, 64, 67, 0.08);
+ }
+
+ .inputAction.active {
+     color: #1a73e8;
+ }
+
+ .separator {
+     height: 24px;
+     width: 1px;
+     background-color: #dadce0;
+     margin: 0 8px;
+ }
+
+ .squareButton {
+     width: 40px;
+     height: 40px;
+     border: none;
+     background-color: transparent;
+     cursor: pointer;
+     transition: background-color 0.2s;
+     padding: 0;
+     border-radius: 8px;
+     position: relative;
+
+     svg {
+         position: absolute;
+         left: 50%;
+         top: 50%;
+         transform: translate(-50%, -50%);
+     }
+ }
+
+ .aiSubmitButton {
+     background-color: var(--duckai-purple);
+     color: #fff;
+     position: relative;
+     width: 32px;
+     height: 32px;
+
+     &:hover {
+         background-color: var(--duckai-purple-hover);
+     }
+
+     &:active {
+         background-color: var(--duckai-purple-active);
+     }
+ }

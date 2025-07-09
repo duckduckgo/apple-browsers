@@ -1,0 +1,14 @@
+{
+    "name": "EU Cookie Law",
+    "prehideSelectors": [".pea_cook_wrapper,.pea_cook_more_info_popover"],
+    "cosmetic": true,
+    "detectCmp": [{ "exists": ".pea_cook_wrapper" }],
+    "detectPopup": [{ "wait": 500 }, { "visible": ".pea_cook_wrapper" }],
+    "optIn": [
+        {
+            "click": "#pea_cook_btn"
+        }
+    ],
+    "optOut": [{ "hide": ".pea_cook_wrapper" }],
+    "test": [{ "cookieContains": "euCookie", "negated": true }]
+}

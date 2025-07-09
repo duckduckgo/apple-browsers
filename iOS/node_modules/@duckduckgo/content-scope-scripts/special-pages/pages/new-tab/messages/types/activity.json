@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Activity Data",
+  "properties": {
+    "activity": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/DomainActivity"
+      }
+    }
+  },
+  "required": ["activity"],
+  "definitions": {
+    "DomainActivity": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Current page title"
+        },
+        "url": {
+          "type": "string",
+          "description": "The full URL to be used for the favicon + title link. This is normally just the domain, but a fully qualified URL."
+        },
+        "etldPlusOne": {
+          "type": "string",
+          "description": "Effective top-level domain plus one (eTLD+1) of the URL. Used to infer colors/fallbacks"
+        },
+        "favicon": {
+          "$ref": "./favicon.json"
+        },
+        "trackingStatus": {
+          "$ref": "#/definitions/TrackingStatus"
+        },
+        "trackersFound": {
+          "type": "boolean",
+          "description": "Indicates whether trackers were found"
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HistoryEntry"
+          }
+        },
+        "favorite": {
+          "type": "boolean"
+        }
+      },
+      "required": ["etldPlusOne", "title", "url", "trackingStatus", "trackersFound", "history", "favorite", "favicon"]
+    },
+    "TrackingStatus": {
+      "type": "object",
+      "required": ["trackerCompanies", "totalCount"],
+      "properties": {
+        "trackerCompanies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["displayName"],
+            "properties": {
+              "displayName": {
+                "type": "string",
+                "description": "Name of the tracking company (e.g., 'Google', 'Microsoft')"
+              }
+            }
+          }
+        },
+        "totalCount": {
+          "type": "number"
+        }
+      }
+    },
+    "HistoryEntry": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Platform-dependent page identifier - could be HTML title, URL pathname, or other identifier. Examples: 'YouTube - Homepage', '/users/settings', 'Netflix', '/v2/api/analytics'"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Full page URL"
+        },
+        "relativeTime": {
+          "type": "string",
+          "description": "Human readable relative time"
+        }
+      },
+      "required": ["title", "url", "relativeTime"]
+    }
+  }
+}

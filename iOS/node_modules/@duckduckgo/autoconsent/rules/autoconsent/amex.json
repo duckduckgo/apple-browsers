@@ -1,0 +1,26 @@
+{
+    "name": "amex",
+    "vendorUrl": "https://www.americanexpress.com/",
+    "cosmetic": false,
+    "prehideSelectors": ["#user-consent-management-granular-banner-overlay"],
+    "detectCmp": [
+        {
+            "exists": "#user-consent-management-granular-banner-overlay"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#user-consent-management-granular-banner-overlay"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-testid=granular-banner-button-accept-all]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "[data-testid=granular-banner-button-decline-all]"
+        }
+    ]
+}

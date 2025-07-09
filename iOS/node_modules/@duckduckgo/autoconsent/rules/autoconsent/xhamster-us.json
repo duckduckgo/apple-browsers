@@ -1,0 +1,12 @@
+{
+    "name": "xhamster-us",
+    "runContext": {
+        "urlPattern": "^https://(\\w+\\.)?xhamster\\d?\\.com"
+    },
+    "cosmetic": true,
+    "prehideSelectors": ["[class*=cookiesAnnounce]"],
+    "detectCmp": [{ "exists": "[class*=cookiesAnnounce]" }],
+    "detectPopup": [{ "visible": "[class*=cookiesAnnounce] [class*=announceText]" }],
+    "optIn": [{ "click": "[class*=cookiesAnnounce] button[class*=closeButton]" }],
+    "optOut": [{ "hide": "[class*=cookiesAnnounce]" }]
+}

@@ -1,0 +1,29 @@
+<html>
+    <body>
+        <script type="module">
+            import { runTests } from '@web/test-runner-mocha';
+
+            runTests(async () => {
+                await import('./dom-actions.element-selector');
+            });
+        </script>
+
+        <div class="outer">
+            <div class="inner">
+                <p id="innermost">Innermost</p>
+            </div>
+        </div>
+        <div class="inner">
+            <p id="not-innermost">This should not be matched if searching by .outer first</p>
+        </div>
+
+        <div>
+            <button id="button1">Accept all</button>
+            <button id="button2">Reject all</button>
+        </div>
+
+        <div>
+            <button id="button3">Accept all</button>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,19 @@
+{
+    "name": "youtube-mobile",
+    "prehideSelectors": [".consent-bump-v2-lightbox"],
+    "detectCmp": [{ "exists": "ytm-consent-bump-v2-renderer" }],
+    "detectPopup": [{ "visible": "ytm-consent-bump-v2-renderer" }],
+    "optIn": [
+        {
+            "waitForThenClick": "ytm-consent-bump-v2-renderer .privacy-terms + .one-col-dialog-buttons c3-material-button:first-child button, ytm-consent-bump-v2-renderer .privacy-terms + .one-col-dialog-buttons ytm-button-renderer:first-child button"
+        },
+        { "wait": 500 }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "ytm-consent-bump-v2-renderer .privacy-terms + .one-col-dialog-buttons c3-material-button:nth-child(2) button, ytm-consent-bump-v2-renderer .privacy-terms + .one-col-dialog-buttons ytm-button-renderer:nth-child(2) button"
+        },
+        { "wait": 500 }
+    ],
+    "test": [{ "wait": 500 }, { "cookieContains": "SOCS=CAE" }]
+}

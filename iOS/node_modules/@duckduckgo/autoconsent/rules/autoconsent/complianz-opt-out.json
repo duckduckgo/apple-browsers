@@ -1,0 +1,56 @@
+{
+    "name": "Complianz opt-out",
+    "prehideSelectors": ["[aria-describedby=\"cookieconsent:desc\"].cc-type-opt-out"],
+    "detectCmp": [
+        {
+            "exists": "[aria-describedby=\"cookieconsent:desc\"].cc-type-opt-out"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[aria-describedby=\"cookieconsent:desc\"].cc-type-opt-out"
+        }
+    ],
+    "optIn": [
+        {
+            "click": ".cc-accept-all",
+            "optional": true
+        },
+        {
+            "click": ".cc-allow",
+            "optional": true
+        },
+        {
+            "click": ".cc-dismiss",
+            "optional": true
+        }
+    ],
+    "optOut": [
+        {
+            "if": {
+                "exists": ".cc-deny"
+            },
+            "then": [
+                {
+                    "click": ".cc-deny"
+                }
+            ],
+            "else": [
+                {
+                    "if": { "exists": ".cmp-pref-link" },
+                    "then": [
+                        {
+                            "click": ".cmp-pref-link"
+                        },
+                        {
+                            "waitForThenClick": ".cmp-body [id*=rejectAll]"
+                        },
+                        {
+                            "waitForThenClick": ".cmp-body .cmp-save-btn"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

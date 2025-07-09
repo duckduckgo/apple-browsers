@@ -1,0 +1,48 @@
+{
+    "name": "cookiealert",
+    "intermediate": false,
+    "prehideSelectors": [],
+    "runContext": {
+        "frame": true,
+        "main": true
+    },
+    "detectCmp": [
+        {
+            "exists": ".cookie-alert-extended"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookie-alert-extended-modal"
+        }
+    ],
+    "optIn": [
+        {
+            "click": "button[data-controller='cookie-alert/extended/button/accept']"
+        },
+        {
+            "eval": "EVAL_COOKIEALERT_0"
+        }
+    ],
+    "optOut": [
+        {
+            "click": "a[data-controller='cookie-alert/extended/detail-link']"
+        },
+        {
+            "click": ".cookie-alert-configuration-input:checked",
+            "all": true,
+            "optional": true
+        },
+        {
+            "click": "button[data-controller='cookie-alert/extended/button/configuration']"
+        },
+        {
+            "eval": "EVAL_COOKIEALERT_0"
+        }
+    ],
+    "test": [
+        {
+            "eval": "EVAL_COOKIEALERT_2"
+        }
+    ]
+}

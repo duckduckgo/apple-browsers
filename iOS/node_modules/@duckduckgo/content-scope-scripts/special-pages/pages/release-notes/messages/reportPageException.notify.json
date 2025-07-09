@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "ReportPageException",
+  "additionalProperties": false,
+  "description": "Notifies browser of an in-page exception",
+  "properties": {
+    "message": {
+      "description": "Exception description",
+      "type": "string"
+    }
+  },
+  "required": ["message"]
+}

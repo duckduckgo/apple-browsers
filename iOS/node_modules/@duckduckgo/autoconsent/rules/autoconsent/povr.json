@@ -1,0 +1,49 @@
+{
+    "name": "povr",
+    "vendorUrl": "https://povr.com/",
+    "cosmetic": false,
+    "runContext": {
+        "urlPattern": "^https://povr\\.com/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": ".alert .accept-cookies,form.js-cookies"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".alert .accept-cookies,form.js-cookies"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".alert .accept-cookies,form.js-cookies button[type=submit]"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": ".alert:has(.accept-cookies)"
+        },
+        {
+            "if": { "exists": "form.js-cookies button" },
+            "then": [
+                {
+                    "waitFor": "form.js-cookies input[type=checkbox]"
+                },
+                {
+                    "click": "form.js-cookies input[type=checkbox]:checked:not(:disabled)",
+                    "all": true,
+                    "optional": true
+                },
+                {
+                    "waitForThenClick": "form.js-cookies button[type=submit]"
+                },
+                {
+                    "eval": "EVAL_POVR_GOBACK"
+                }
+            ],
+            "else": [{ "waitForThenClick": ".alert:has(.accept-cookies) a[href='/account/cookies']" }]
+        }
+    ]
+}

@@ -1,0 +1,40 @@
+{
+    "name": "gov.uk",
+    "detectCmp": [{ "exists": ".govuk-cookie-banner__message" }],
+    "detectPopup": [{ "exists": ".govuk-cookie-banner__message .govuk-button" }],
+    "optIn": [{ "click": [".govuk-cookie-banner__message", "xpath///button[contains(., 'Accept')] | //a[contains(., 'Accept')]"] }],
+    "optOut": [
+        {
+            "if": {
+                "exists": [
+                    ".govuk-cookie-banner__message",
+                    "xpath///button[contains(., 'Reject')] | //a[contains(., 'Reject')] | //input[contains(@value, 'Reject')]"
+                ]
+            },
+            "then": [
+                {
+                    "click": [
+                        ".govuk-cookie-banner__message",
+                        "xpath///button[contains(., 'Reject')] | //a[contains(., 'Reject')] | //input[contains(@value, 'Reject')]"
+                    ]
+                }
+            ]
+        },
+        {
+            "if": {
+                "exists": [
+                    ".govuk-cookie-banner__message",
+                    "xpath///button[contains(., 'Hide')] | //a[contains(., 'Hide')] | //input[contains(@value, 'Hide')]"
+                ]
+            },
+            "then": [
+                {
+                    "click": [
+                        ".govuk-cookie-banner__message",
+                        "xpath///button[contains(., 'Hide')] | //a[contains(., 'Hide')] | //input[contains(@value, 'Hide')]"
+                    ]
+                }
+            ]
+        }
+    ]
+}

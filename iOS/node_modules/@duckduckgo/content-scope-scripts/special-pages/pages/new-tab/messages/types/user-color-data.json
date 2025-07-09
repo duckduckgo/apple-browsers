@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "User Color Data",
+  "type": "object",
+  "required": [
+    "userColor"
+  ],
+  "properties": {
+    "userColor": {"$ref": "#/definitions/userColor"}
+  },
+  "definitions": {
+    "userColor": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "./background.json#/definitions/hex"}
+      ]
+    }
+  }
+}

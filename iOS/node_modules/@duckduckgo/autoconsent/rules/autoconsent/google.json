@@ -1,0 +1,16 @@
+{
+    "name": "google.com",
+    "prehideSelectors": [".HTjtHe#xe7COe"],
+    "detectCmp": [
+        { "exists": ".HTjtHe#xe7COe" },
+        { "exists": ".HTjtHe#xe7COe a[href^=\"https://policies.google.com/technologies/cookies\"]" }
+    ],
+    "detectPopup": [{ "visible": ".HTjtHe#xe7COe button#W0wltc" }],
+    "optIn": [{ "waitForThenClick": ".HTjtHe#xe7COe button#L2AGLb" }],
+    "optOut": [
+        {
+            "waitForThenClick": ".HTjtHe#xe7COe button#W0wltc"
+        }
+    ],
+    "test": [{ "cookieContains": "SOCS=CAE" }]
+}

@@ -1,0 +1,29 @@
+{
+    "name": "financestrategists.com",
+    "vendorUrl": "https://www.financestrategists.com/",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?financestrategists\\.com/"
+    },
+    "prehideSelectors": ["#gdrp"],
+    "detectCmp": [
+        {
+            "exists": "#gdrp"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#gdrp"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#gdrp-button"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "#gdrp"
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+{
+  "favorites_show_less": {
+    "title": "Show less",
+    "note": "Button label to display fewer items"
+  },
+  "favorites_show_more": {
+    "title": "Show more ({count} remaining)",
+    "note": "Button text to show hidden items. {count} will be replaced with the number of remaining favorite items to show, including the parentheses. Example: 'Show more (18 remaining)'"
+  },
+  "favorites_menu_title": {
+    "title": "Favorites",
+    "note": "Used as a label in a customization menu"
+  },
+  "favorites_add": {
+    "title": "Add Favorite",
+    "note": "A button that allows a user to add a new 'favorite' bookmark to their existing list"
+  }
+}

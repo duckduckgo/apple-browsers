@@ -1,0 +1,19 @@
+{
+    "name": "tropicfeel-com",
+    "prehideSelectors": ["#shopify-section-cookies-controller"],
+    "detectCmp": [{ "exists": "#shopify-section-cookies-controller" }],
+    "detectPopup": [
+        {
+            "visible": "#shopify-section-cookies-controller #cookies-controller-main-pane",
+            "check": "any"
+        }
+    ],
+    "optIn": [{ "waitForThenClick": "#cookies-controller-main-pane form[data-form-allow-all] button" }],
+    "optOut": [
+        { "click": "#cookies-controller-main-pane a[data-tab-target=manage-cookies]" },
+        { "waitFor": "#manage-cookies-pane.active" },
+        { "click": "#manage-cookies-pane.active input[type=checkbox][checked]:not([disabled])", "all": true },
+        { "click": "#manage-cookies-pane.active button[type=submit]" }
+    ],
+    "test": []
+}

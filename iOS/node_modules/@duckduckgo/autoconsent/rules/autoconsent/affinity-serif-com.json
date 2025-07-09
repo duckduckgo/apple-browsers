@@ -1,0 +1,23 @@
+{
+    "name": "affinity.serif.com",
+    "detectCmp": [
+        {
+            "exists": ".c-cookie-notice button[data-qa='allow-all-cookies']"
+        }
+    ],
+    "detectPopup": [{ "visible": ".c-cookie-notice" }],
+    "optIn": [{ "click": "button[data-qa=\"allow-all-cookies\"]" }],
+    "optOut": [{ "click": "button[data-qa=\"reject-non-essentials\"]" }],
+    "test": [
+        {
+            "wait": 500
+        },
+        {
+            "cookieContains": "serif_manage_cookies_viewed"
+        },
+        {
+            "cookieContains": "serif_allow_analytics",
+            "negated": true
+        }
+    ]
+}

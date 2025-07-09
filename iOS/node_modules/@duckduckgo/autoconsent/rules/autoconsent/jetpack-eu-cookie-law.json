@@ -1,0 +1,10 @@
+{
+    "name": "jetpack-eu-cookie-law",
+    "vendorUrl": "https://jetpack.com/support/extra-sidebar-widgets/cookies-consent-banner/",
+    "cosmetic": true,
+    "prehideSelectors": [".widget_eu_cookie_law_widget"],
+    "detectCmp": [{ "exists": ".widget_eu_cookie_law_widget" }],
+    "detectPopup": [{ "visible": ".widget_eu_cookie_law_widget" }],
+    "optIn": [{ "click": "#jetpack-eu-cookie-law-form > input.accept" }],
+    "optOut": [{ "hide": ".widget_eu_cookie_law_widget" }]
+}

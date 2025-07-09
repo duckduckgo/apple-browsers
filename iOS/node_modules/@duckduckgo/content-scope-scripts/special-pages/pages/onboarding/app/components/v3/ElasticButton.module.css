@@ -1,0 +1,155 @@
+.button {
+    --btn-line-height: 1;
+    --btn-font-size: calc(14 * var(--px-in-rem));
+    --btn-height: var(--sp-9);
+    --scale-size: var(--sp-2); /* Amount of pixels by which to scale up the button in every direction when hovering */
+
+    background: none;
+    border: none;
+    outline: none;
+
+    box-sizing: border-box;
+    justify-self: start;
+
+    cursor: pointer;
+    position: relative;
+
+    /* identical to box height, or 100% */
+    font-family: system, -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: var(--btn-font-size);
+    font-style: normal;
+    font-weight: 600;
+
+    letter-spacing: 0.06px;
+    line-height: var(--btn-line-height);
+
+    height: 100%;
+    min-height: var(--btn-height);
+    padding: calc(10 * var(--px-in-rem)) var(--sp-6);
+
+    color: white;
+
+    &[disabled] {
+        opacity: 0.6;
+    }
+}
+
+.background {
+    border-radius: calc(6 * var(--px-in-rem));
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    transition: all 150ms ease-in-out;
+    width: 100%;
+    z-index: 1000;
+}
+
+.content {
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    gap: var(--sp-2);
+    justify-content: center;
+    position: relative;
+
+    z-index: 10000;
+}
+
+/*
+ We want the button background to scale up by a fixed pixel size (not a percentage) in every direction. Scaling by a percentage would result in narrow buttons being less elastic than wider ones.
+*/
+.elastic:hover {
+    & .background {
+        top: calc(-0.5 * var(--scale-size));
+        left: calc(-0.5 * var(--scale-size));
+        height: calc(100% + var(--scale-size));
+        width: calc(100% + var(--scale-size));
+    }
+}
+
+.secondary {
+    color: var(--ddg-color-primary);
+    min-width: 80px;
+
+    @media (prefers-color-scheme: dark) {
+        color: #7295F6
+    }
+
+    & .background {
+        background: rgba(0, 0, 0, 0.01);
+        border: 1px solid rgba(0, 0, 0, 0.09);
+
+        @media (prefers-color-scheme: dark) {
+            border-color: var(--color-white-at-12);
+            background: var(--color-white-at-3);
+        }
+    }
+}
+
+.secondary:hover {
+    & .background {
+        background: rgba(0, 0, 0, 0.03);
+    }
+}
+
+.secondary:active {
+    & .background {
+        background: rgba(0, 0, 0, 0.06);
+    }
+}
+
+.primary {
+    font-weight: 700;
+    min-width: 116px;
+
+    & .background {
+        background:
+            radial-gradient(70.96% 100% at 49.83% 0%, rgba(107, 78, 186, 0) 39.72%, rgba(107, 78, 186, 0.24) 100%),
+            var(--ddg-color-primary);
+        box-shadow:
+            0px 4px 6px rgba(64, 38, 115, 0.16),
+            0px 6px 16px rgba(38, 64, 115, 0.16),
+            inset 0px 1px 0px rgba(255, 255, 255, 0.32);
+    }
+}
+
+.primary:hover {
+    & .background {
+        background: radial-gradient(
+                70.96% 100% at 49.83% 0%,
+                rgba(107, 78, 186, 0) 39.72%,
+                rgba(107, 78, 186, 0.4) 100%
+            ),
+            #2b55ca;
+    }
+}
+
+.primary:active {
+    & .background {
+        background: radial-gradient(
+                70.96% 100% at 49.83% 0%,
+                rgba(107, 78, 186, 0) 39.72%,
+                rgba(107, 78, 186, 0.24) 100%
+            ),
+            #1e42a4;
+    }
+}
+
+.fixedWidthContainer {
+    display: inline-block;
+    position: relative;
+}
+
+.hiddenContent {
+    display: inline-block;
+    visibility: hidden;
+}
+
+.visibleContent {
+    display: inline-block;
+    position: absolute;
+    left: 0;
+    width: 100%;
+    text-align: center;
+}

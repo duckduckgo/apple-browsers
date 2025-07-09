@@ -1,0 +1,22 @@
+{
+    "name": "youtube-desktop",
+    "prehideSelectors": ["tp-yt-iron-overlay-backdrop.opened", "ytd-consent-bump-v2-lightbox"],
+    "detectCmp": [
+        { "exists": "ytd-consent-bump-v2-lightbox tp-yt-paper-dialog" },
+        { "exists": "ytd-consent-bump-v2-lightbox tp-yt-paper-dialog a[href^=\"https://consent.youtube.com/\"]" }
+    ],
+    "detectPopup": [{ "visible": "ytd-consent-bump-v2-lightbox tp-yt-paper-dialog" }],
+    "optIn": [
+        {
+            "waitForThenClick": "ytd-consent-bump-v2-lightbox .eom-buttons .eom-button-row:first-child ytd-button-renderer:last-child #button,ytd-consent-bump-v2-lightbox .eom-buttons .eom-button-row:first-child ytd-button-renderer:last-child button"
+        },
+        { "wait": 500 }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "ytd-consent-bump-v2-lightbox .eom-buttons .eom-button-row:first-child ytd-button-renderer:first-child #button,ytd-consent-bump-v2-lightbox .eom-buttons .eom-button-row:first-child ytd-button-renderer:first-child button"
+        },
+        { "wait": 500 }
+    ],
+    "test": [{ "wait": 500 }, { "cookieContains": "SOCS=CAE" }]
+}

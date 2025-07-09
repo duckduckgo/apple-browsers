@@ -1,0 +1,134 @@
+"use strict";
+/*!
+ * Copyright (c) 2017-present Ghostery GmbH. All rights reserved.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SelectorType = exports.PSEUDO_ELEMENTS = exports.PSEUDO_CLASSES = exports.EXTENDED_PSEUDO_CLASSES = void 0;
+exports.classifySelector = classifySelector;
+const parse_js_1 = require("./parse.js");
+exports.EXTENDED_PSEUDO_CLASSES = new Set([
+    // '-abp-contains',
+    // '-abp-has',
+    // '-abp-properties',
+    'has',
+    'has-text',
+    'if',
+    // 'if-not',
+    // 'matches-css',
+    // 'matches-css-after',
+    // 'matches-css-before',
+    // 'min-text-length',
+    // 'nth-ancestor',
+    // 'upward',
+    // 'watch-attr',
+    // 'watch-attrs',
+    // 'xpath',
+]);
+exports.PSEUDO_CLASSES = new Set([
+    'active',
+    'any',
+    'any-link',
+    'blank',
+    'checked',
+    'default',
+    'defined',
+    'dir',
+    'disabled',
+    'empty',
+    'enabled',
+    'first',
+    'first-child',
+    'first-of-type',
+    'focus',
+    'focus-visible',
+    'focus-within',
+    'fullscreen',
+    'host',
+    'host-context',
+    'hover',
+    'in-range',
+    'indeterminate',
+    'invalid',
+    'is',
+    'lang',
+    'last-child',
+    'last-of-type',
+    'left',
+    'link',
+    'matches',
+    // NOTE: by default we consider `:not(...)` to be a normal CSS selector since,
+    // we are only interested in cases where the argument is an extended selector.
+    // If that is the case, it will still be detected as such.
+    'not',
+    'nth-child',
+    'nth-last-child',
+    'nth-last-of-type',
+    'nth-of-type',
+    'only-child',
+    'only-of-type',
+    'optional',
+    'out-of-range',
+    'placeholder-shown',
+    'read-only',
+    'read-write',
+    'required',
+    'right',
+    'root',
+    'scope',
+    'target',
+    'valid',
+    'visited',
+    'where',
+]);
+// NOTE: here we only need to list the pseudo-elements which can appear with a
+// single colon (e.g. :after or ::after are valid for backward compatibility
+// reasons). They can be misinterpreted as pseudo-classes by the tokenizer for
+// this reason.
+exports.PSEUDO_ELEMENTS = new Set(['after', 'before', 'first-letter', 'first-line']);
+var SelectorType;
+(function (SelectorType) {
+    SelectorType[SelectorType["Normal"] = 0] = "Normal";
+    SelectorType[SelectorType["Extended"] = 1] = "Extended";
+    SelectorType[SelectorType["Invalid"] = 2] = "Invalid";
+})(SelectorType || (exports.SelectorType = SelectorType = {}));
+function classifySelector(selector) {
+    // In most cases there is no pseudo-anything so we can quickly exit.
+    if (selector.indexOf(':') === -1) {
+        return SelectorType.Normal;
+    }
+    const tokens = (0, parse_js_1.tokenize)(selector);
+    // Detect pseudo-classes
+    let foundSupportedExtendedSelector = false;
+    for (const token of tokens) {
+        if (token.type === 'pseudo-class') {
+            const { name } = token;
+            if (exports.EXTENDED_PSEUDO_CLASSES.has(name) === true) {
+                foundSupportedExtendedSelector = true;
+            }
+            else if (exports.PSEUDO_CLASSES.has(name) === false && exports.PSEUDO_ELEMENTS.has(name) === false) {
+                return SelectorType.Invalid;
+            }
+            // Recursively
+            if (foundSupportedExtendedSelector === false &&
+                token.argument !== undefined &&
+                parse_js_1.RECURSIVE_PSEUDO_CLASSES.has(name) === true) {
+                const argumentType = classifySelector(token.argument);
+                if (argumentType === SelectorType.Invalid) {
+                    return argumentType;
+                }
+                else if (argumentType === SelectorType.Extended) {
+                    foundSupportedExtendedSelector = true;
+                }
+            }
+        }
+    }
+    if (foundSupportedExtendedSelector === true) {
+        return SelectorType.Extended;
+    }
+    return SelectorType.Normal;
+}
+//# sourceMappingURL=extended.js.map

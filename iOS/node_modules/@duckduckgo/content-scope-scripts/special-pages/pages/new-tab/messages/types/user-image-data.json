@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "User Image Data",
+  "type": "object",
+  "required": [
+    "userImages"
+  ],
+  "properties": {
+    "userImages": {
+      "type": "array",
+      "items": {
+        "$ref": "./user-image.json"
+      }
+    }
+  }
+}

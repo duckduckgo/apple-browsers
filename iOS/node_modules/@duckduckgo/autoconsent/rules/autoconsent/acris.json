@@ -1,0 +1,38 @@
+{
+    "name": "acris",
+    "prehideSelectors": ["div.acris-cookie-consent"],
+    "detectCmp": [
+        {
+            "exists": "[data-acris-cookie-consent]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".acris-cookie-consent.is--modal"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForVisible": "#ccConsentAcceptAllButton",
+            "check": "any"
+        },
+        {
+            "wait": 500
+        },
+        {
+            "waitForThenClick": "#ccConsentAcceptAllButton"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForVisible": "#ccAcceptOnlyFunctional",
+            "check": "any"
+        },
+        {
+            "wait": 500
+        },
+        {
+            "waitForThenClick": "#ccAcceptOnlyFunctional"
+        }
+    ]
+}

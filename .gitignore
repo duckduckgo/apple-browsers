@@ -47,6 +47,8 @@ vendor/
 
 # Release
 node_modules/
+# Allow content-scope-scripts package for direct Xcode integration
+!node_modules/@duckduckgo/content-scope-scripts/
 .build/
 release/
 

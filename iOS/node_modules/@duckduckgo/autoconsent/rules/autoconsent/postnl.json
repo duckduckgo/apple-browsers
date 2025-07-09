@@ -1,0 +1,34 @@
+{
+    "name": "postnl",
+    "vendorUrl": "https://postnl.nl",
+    "cosmetic": false,
+    "runContext": {
+        "urlPattern": "^https://([^.]+\\.)?postnl\\.nl/"
+    },
+    "prehideSelectors": ["pnl-cookie-wall-widget"],
+    "detectCmp": [
+        {
+            "exists": "pnl-cookie-wall-widget"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "pnl-cookie-wall-widget"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ["pnl-cookie-wall-widget", "button.pci-button--primary"]
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ["pnl-cookie-wall-widget", "button.pci-button--secondary"]
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "CookiePermissionInfo"
+        }
+    ]
+}

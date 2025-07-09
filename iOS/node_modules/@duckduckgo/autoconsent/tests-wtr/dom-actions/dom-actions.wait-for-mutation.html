@@ -1,0 +1,15 @@
+<html>
+    <body>
+        <script type="module">
+            import { runTests } from '@web/test-runner-mocha';
+
+            runTests(async () => {
+                await import('./dom-actions.wait-for-mutation');
+            });
+        </script>
+
+        <h1>Hello test</h1>
+        <p id="already-present">This element is present from the start</p>
+        <div id="target-for-delayed-element"></div>
+    </body>
+</html>

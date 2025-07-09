@@ -1,0 +1,54 @@
+{
+    "name": "clinch",
+    "intermediate": false,
+    "runContext": {
+        "frame": false,
+        "main": true
+    },
+    "prehideSelectors": [".consent-modal[role=dialog]"],
+    "detectCmp": [
+        {
+            "exists": ".consent-modal[role=dialog]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".consent-modal[role=dialog]"
+        }
+    ],
+    "optIn": [
+        {
+            "click": "#consent_agree"
+        }
+    ],
+    "optOut": [
+        {
+            "if": {
+                "exists": "#consent_reject"
+            },
+            "then": [
+                {
+                    "click": "#consent_reject"
+                }
+            ],
+            "else": [
+                {
+                    "click": "#manage_cookie_preferences"
+                },
+                {
+                    "click": "#cookie_consent_preferences input:checked",
+                    "all": true,
+                    "optional": true
+                },
+                {
+                    "click": "#consent_save"
+                }
+            ]
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "ctc_rejected=1"
+        }
+    ]
+}

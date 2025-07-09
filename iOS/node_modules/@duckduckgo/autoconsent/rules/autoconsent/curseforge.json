@@ -1,0 +1,26 @@
+{
+    "name": "curseforge",
+    "vendorUrl": "https://legal.overwolf.com/",
+    "cosmetic": true,
+    "prehideSelectors": ["#cookiebar"],
+    "detectCmp": [
+        {
+            "exists": "#cookiebar .cookiebar-content"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#cookiebar .cookiebar-content"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#cookiebar #cookiebar-ok"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "#cookiebar"
+        }
+    ]
+}

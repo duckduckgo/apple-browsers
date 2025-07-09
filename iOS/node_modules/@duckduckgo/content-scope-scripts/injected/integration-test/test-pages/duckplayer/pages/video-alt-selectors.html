@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Duck Player - Player Overlay with Alternative CSS selectors</title>
+    <link rel="stylesheet" href="../../shared/style.css">
+    <style>
+        *, *:before, *:after {
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 800px;
+            aspect-ratio: 16/9;
+            background: blue;
+        }
+        #player {
+            height: 100%;
+        }
+        .html5-video-player {
+            position: relative;
+            height: 100%;
+            border: 2px dotted red;
+        }
+        body {
+            max-width: 100%;
+        }
+        .tools {
+            margin-bottom: 1rem;
+        }
+        video {
+            display: block;
+            height: 100%;
+            width: 100%;
+        }
+        .thumbnails {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+        .thumbnail {
+            margin: 5px;
+            background: lightblue;
+            border: 1px solid black;
+            aspect-ratio: 16/9;
+            display: block;
+        }
+
+        .thumbnail img, .short img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<script src="../../shared/utils.js"></script>
+<p><a href="../index.html">[Duck Player Alt Selectors]</a></p>
+
+<div id="initial"></div>
+<div id="loaded"></div>
+
+<main></main>
+<template id="inner-template">
+    <div class="container">
+        <div id="TEST_CUSTOM_ID">
+            <div class="TEST_CUSTOM_HTML_5_WRAPPER_DIV">
+                <video width="800px" height="600px"></video>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script type="module">
+    const variant = new URLSearchParams(window.location.search).get('variant') || 'default';
+    const main = document.querySelector('main');
+    const html = (selector) => document.querySelector(selector).innerHTML
+
+    const knownVariants = {
+        "default": () => {
+            main.innerHTML += html('template[id="inner-template"]');
+        }
+    }
+
+    if (variant in knownVariants) {
+        console.log('executing page variant', variant)
+        knownVariants[variant]();
+    } else {
+        console.warn('variant not found', variant)
+    }
+
+</script>
+</body>
+</html>

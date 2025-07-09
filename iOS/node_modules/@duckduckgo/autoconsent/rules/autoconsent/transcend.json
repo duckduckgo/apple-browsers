@@ -1,0 +1,26 @@
+{
+    "name": "transcend",
+    "vendorUrl": "https://unknown",
+    "cosmetic": true,
+    "prehideSelectors": ["#transcend-consent-manager"],
+    "detectCmp": [
+        {
+            "exists": "#transcend-consent-manager"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#transcend-consent-manager"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ["#transcend-consent-manager", "#consentManagerMainDialog .inner-container button"]
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "#transcend-consent-manager"
+        }
+    ]
+}

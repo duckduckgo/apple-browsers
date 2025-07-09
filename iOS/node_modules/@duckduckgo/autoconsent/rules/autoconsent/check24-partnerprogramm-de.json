@@ -1,0 +1,25 @@
+{
+    "name": "check24-partnerprogramm-de",
+    "prehideSelectors": ["[data-modal-content]:has([data-toggle-target^='cookie'])"],
+    "detectCmp": [
+        {
+            "exists": "[data-toggle-target^='cookie']"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[data-toggle-target^='cookie']",
+            "check": "any"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-cookie-accept-all]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "[data-cookie-dismiss-all]"
+        }
+    ]
+}

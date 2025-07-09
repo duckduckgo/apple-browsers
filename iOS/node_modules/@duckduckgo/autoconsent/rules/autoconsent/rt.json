@@ -1,0 +1,29 @@
+{
+    "name": "rt",
+    "vendorUrl": "https://www.rt.com/",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?rt\\.com/"
+    },
+    "prehideSelectors": [".cookies-banner-shown"],
+    "detectCmp": [
+        {
+            "exists": ".cookies-banner-shown"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookies-banner-shown"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cookies-banner-shown .js-cookies-button"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": ".cookies-banner-shown"
+        }
+    ]
+}

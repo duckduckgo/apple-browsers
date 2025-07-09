@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Modify Cookies</title>
+    <link rel="stylesheet" href="../../shared/style.css">
+    <script>
+        // Current file path
+        let path = '/webcompat/pages/'
+        document.cookie = 'keyToBeDeleted="valueToBeDeleted"'
+        document.cookie = 'pathCookie="valueToBeDeleted"; path=' + path
+        document.cookie = 'pathCookieWithPath="valueToBeDeleted"; path=' + path
+        document.cookie = 'otherKey="valueToRemain"'
+    </script>
+</head>
+<body>
+    <script src="../../shared/utils.js"></script>
+    <p><a href="../index.html">[WebCompat]</a></p>
+
+    <p>This page verifies that cookie modifications work properly given the <a href="../config/modify-cookies.json">config</a>. At this time, only deletion is supported.</p>
+
+    <script>
+        // Copy from: https://stackoverflow.com/a/2144404
+        function hasCookie(name){
+            return document.cookie.split(';').some(c => {
+                return c.trim().startsWith(name + '=');
+            });
+        }
+
+        // eslint-disable-next-line no-undef
+        test('Only specified cookies should be removed', async () => {
+            const specifiedKey = hasCookie('keyToBeDeleted')
+            const pathKey = hasCookie('pathCookie')
+            const pathKey2 = hasCookie('pathCookie2')
+            const pathKey3 = hasCookie('pathCookieWithPath')
+            const nonexistentKey = hasCookie('nonexistentKey')
+            const otherKey = hasCookie('otherKey')
+
+            return [
+                { name: 'specified cookie entry deleted', result: specifiedKey, expected: false },
+                { name: 'specified cookie entry with path not deleted', result: pathKey, expected: true },
+                { name: `specified cookie entry with correct path (${path}) deleted`, result: pathKey3, expected: false },
+                { name: 'specified cookie entry that is not present on page load', result: nonexistentKey, expected: false },
+                { name: 'other cookie entry untouched', result: otherKey, expected: true }
+            ];
+        });
+
+        // eslint-disable-next-line no-undef
+        renderResults();
+    </script>
+</body>
+</html>

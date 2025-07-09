@@ -1,0 +1,9 @@
+{
+    "name": "Complianz banner",
+    "prehideSelectors": ["#cmplz-cookiebanner-container"],
+    "detectCmp": [{ "exists": "#cmplz-cookiebanner-container .cmplz-cookiebanner" }],
+    "detectPopup": [{ "visible": "#cmplz-cookiebanner-container .cmplz-cookiebanner", "check": "any" }],
+    "optIn": [{ "waitForThenClick": ".cmplz-cookiebanner .cmplz-accept" }],
+    "optOut": [{ "waitForThenClick": ".cmplz-cookiebanner .cmplz-deny" }],
+    "test": [{ "cookieContains": "cmplz_banner-status=dismissed" }]
+}

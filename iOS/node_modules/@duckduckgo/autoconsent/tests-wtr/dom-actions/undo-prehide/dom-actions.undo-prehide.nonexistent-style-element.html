@@ -1,0 +1,11 @@
+<html>
+    <body>
+        <script type="module">
+            import { runTests } from '@web/test-runner-mocha';
+
+            runTests(async () => {
+                await import('./dom-actions.undo-prehide.nonexistent-style-element');
+            });
+        </script>
+    </body>
+</html>

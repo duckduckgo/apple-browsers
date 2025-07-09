@@ -1,0 +1,68 @@
+.panel {
+    display: grid;
+    padding: var(--sp-6);
+    row-gap: var(--sp-6);
+}
+
+.heading {
+    margin-top: calc(-1 * var(--sp-10));
+    margin-left: calc(-1 * var(--sp-10));
+    margin-right: calc(-1 * var(--sp-30));
+}
+
+.boxed {
+    backdrop-filter: blur(var(--sp-16));
+    background: var(--color-white-at-24);
+    border-radius: var(--sp-8);
+    box-shadow: 0px 8px 24px 0px rgba(62, 34, 140, 0.16), 0px 32px 128px 0px rgba(30, 66, 164, 0.16);
+
+    @media (prefers-color-scheme: dark) {
+        background: var(--color-black-at-48);
+        box-shadow: 0px 8px 24px 0px rgba(7, 0, 25, 0.06), 0px 32px 128px 0px rgba(5, 17, 51, 0.09);
+    }
+}
+
+.container {
+    display: grid;
+    gap: var(--sp-8) var(--sp-2);
+    grid-template-rows: auto var(--sp-9);
+    grid-template-columns: var(--sp-20) 1fr;
+    grid-template-areas:
+        "content content"
+        "progress buttons";
+    align-items: center;
+}
+
+.content {
+    grid-area: content;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress {
+    grid-area: progress;
+}
+
+.buttonBar {
+    grid-area: buttons;
+}
+
+.buttonBarContents {
+    display: grid;
+    gap: var(--sp-2);
+    grid-template-columns: 1fr auto auto;
+    grid-template-areas: ". dismiss accept";
+
+    [data-platform-name="windows"] & {
+        grid-template-areas: ". accept dismiss";
+    }
+}
+
+.dismiss {
+    grid-area: dismiss;
+}
+
+.accept {
+    grid-area: accept;
+}

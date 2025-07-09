@@ -1,0 +1,3 @@
+# .git-blame-ignore-revs
+# Switched to a shared DDG ESLint config and introduced Prettier: https://github.com/duckduckgo/autoconsent/pull/513
+d8824762f87165d54797b0df740957d0f41c49ca

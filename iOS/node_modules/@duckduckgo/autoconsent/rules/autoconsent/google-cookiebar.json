@@ -1,0 +1,29 @@
+{
+    "name": "google-cookiebar",
+    "vendorUrl": "https://www.android.com/better-together/quick-share-app/",
+    "cosmetic": false,
+    "prehideSelectors": [".glue-cookie-notification-bar"],
+    "detectCmp": [
+        {
+            "exists": ".glue-cookie-notification-bar"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".glue-cookie-notification-bar"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".glue-cookie-notification-bar__accept"
+        }
+    ],
+    "optOut": [
+        {
+            "if": { "exists": ".glue-cookie-notification-bar__reject" },
+            "then": [{ "click": ".glue-cookie-notification-bar__reject" }],
+            "else": [{ "hide": ".glue-cookie-notification-bar" }]
+        }
+    ],
+    "test": []
+}

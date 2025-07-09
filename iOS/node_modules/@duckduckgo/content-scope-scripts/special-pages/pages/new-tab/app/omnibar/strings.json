@@ -1,0 +1,42 @@
+{
+  "omnibar_menuTitle": {
+    "title": "Search",
+    "description": "Title of the omnibar widget in the customizer panel."
+  },
+  "aiChatForm_placeholder": {
+    "title": "Chat privately with Duck.ai",
+    "description": "Placeholder text for the AI chat input field."
+  },
+  "aiChatForm_submitButtonLabel": {
+    "title": "Duck.ai chat",
+    "description": "Accesible label for the AI chat submit button."
+  },
+  "omnibar_logoAlt": {
+    "title": "DuckDuckGo",
+    "description": "Alt text for the DuckDuckGo logo."
+  },
+  "omnibar_tabSwitcherLabel": {
+    "title": "Search & Duck.ai tab switcher",
+    "description": "Accessible label for the tab switcher between search and AI modes."
+  },
+  "omnibar_searchTabLabel": {
+    "title": "Search",
+    "description": "Label for the search tab."
+  },
+  "omnibar_aiTabLabel": {
+    "title": "Duck.ai",
+    "description": "Label for the AI chat tab."
+  },
+  "searchForm_placeholder": {
+    "title": "Search or enter address",
+    "description": "Placeholder text for the search input field."
+  },
+  "searchForm_searchButtonLabel": {
+    "title": "Web search",
+    "description": "Accessible label for the web search submit button."
+  },
+  "searchForm_aiButtonLabel": {
+    "title": "Duck.ai",
+    "description": "Accessible label for the AI chat button in search form."
+  }
+}

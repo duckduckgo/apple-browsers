@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Autoconsent Dev Panel</title>
+        <link rel="stylesheet" href="./bulma.min.css" />
+        <style>
+            .url {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 300px;
+            }
+
+            .dead {
+                text-decoration: line-through;
+            }
+
+            td {
+                max-height: 30px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <button class="button" id="clear">Clear</button>
+                </div>
+                <div class="level-item">
+                    <button class="button" id="reload">Reload</button>
+                </div>
+                <div class="level-item">
+                    <label class="checkbox">
+                        <input type="checkbox" id="clear-storage" />
+                        Clear site storage on reload
+                    </label>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <label for="mode">Execution mode:</label>
+                    <div class="select">
+                        <select id="mode">
+                            <option data-autoaction="null">Detection only</option>
+                            <option data-autoaction="optIn">Auto opt-in</option>
+                            <option data-autoaction="optOut">Auto opt-out</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="level-item">
+                    <button class="button" id="optin">Run Opt-in</button>
+                    <button class="button" id="optout">Run Opt-out</button>
+                </div>
+            </div>
+        </div>
+        <table class="table is-fullwidth">
+            <thead>
+                <tr>
+                    <th>Frame Id</th>
+                    <th>URL</th>
+                    <th>State</th>
+                    <th>Prehide on?</th>
+                    <th>Detection attempts</th>
+                    <th>CMP Detected</th>
+                    <th>Popup open</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <template id="row">
+            <tr>
+                <td></td>
+                <td class="url"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </template>
+        <script src="./panel.js"></script>
+    </body>
+</html>

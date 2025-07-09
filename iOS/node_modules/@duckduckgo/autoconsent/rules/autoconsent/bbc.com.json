@@ -1,0 +1,32 @@
+{
+    "name": "bbc.com",
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?bbc\\.com"
+    },
+    "prehideSelectors": ["*[aria-labelledby=\"consent-banner-title\"]"],
+    "detectCmp": [
+        {
+            "exists": "#consent-banner-title"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#consent-banner-title"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "button[data-testid=\"accept-button\"]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "button[data-testid=\"reject-button\"]"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "ckns_explicit=1"
+        }
+    ]
+}

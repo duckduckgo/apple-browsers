@@ -1,0 +1,186 @@
+.label {
+    --switch-width: 40px;
+    --switch-height: 20px;
+    --switch-handle-size: 12px;
+    --switch-handle-color-checked: white;
+    --switch-handle-offset: 4px;
+    --switch-handle-color: var(--color-black-at-60);
+    --switch-checked-offset: translateX(calc(100% + 8px));
+
+    --track-bg-color: var(--color-black-at-3);
+    --track-border: 1px solid var(--track-border-color);
+    --track-border-color: var(--color-black-at-60);
+    --track-border-radius: 11px;
+    --track-bg-color-active: var(--color-black-at-9);
+
+    --track-bg-color-checked: var(--ddg-color-primary);
+    --track-border-color-checked: var(--ddg-color-primary);
+
+    /* todo(Shane): naming/vars/design tokens */
+    --track-bg-color-checked-active: #2B55CA;
+    --track-border-color-checked-active: #2B55CA;
+
+    &[data-theme="dark"] {
+        --track-border-color: var(--color-white-at-60);
+        --track-bg-color: var(--color-black-at-9);
+        --track-bg-color-active: var(--color-white-at-9);
+
+        --switch-handle-color: var(--color-white-at-84);
+        --switch-handle-color-checked: black;
+
+        --track-bg-color-checked: var(--ddg-color-primary-dark);
+        --track-border-color-checked: var(--ddg-color-primary-dark);
+
+        --track-bg-color-checked-active: var(--ddg-color-primary);
+        --track-border-color-checked-active: var(--ddg-color-primary);
+    }
+
+    &[data-platform-name="macos"] {
+        --switch-width: 26px;
+        --switch-height: 15px;
+        --switch-handle-size: 13px;
+        --switch-handle-offset: 1px;
+        --switch-handle-color: var(--color-white-at-84);
+        --switch-checked-offset: translateX(calc(100% - 2px));
+        --track-bg-color: var(--color-black-at-9);
+        --track-border: 0;
+        --track-border-radius: 10px;
+    }
+
+    &[data-platform-name="macos"][data-size="medium"] {
+        --switch-width: 32px;
+        --switch-height: 18px;
+        --switch-handle-size: 16px;
+    }
+    &[data-platform-name="macos"][data-theme="dark"] {
+        --track-bg-color: var(--color-white-at-9);
+        --switch-handle-color-checked: #CECECE;
+    }
+
+    vertical-align: top;
+    isolation: isolate;
+    align-items: flex-start;
+    max-inline-size: 100%;
+    display: inline-flex;
+    position: relative;
+}
+
+.input {
+    box-sizing: border-box;
+    opacity: .0001;
+    z-index: 1;
+    cursor: default;
+    block-size: 100%;
+    inline-size: 100%;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: initial;
+    appearance: auto;
+    background-color: initial;
+
+    &:active + .switch:after {
+        background-color: var(--track-bg-color-active);
+    }
+
+    &:checked + .switch:before {
+        transform: var(--switch-checked-offset);
+        background-color: var(--switch-handle-color-checked);
+    }
+
+    [data-theme="dark"][data-platform-name="macos"] &:checked + .switch:before {
+        box-shadow: 0px 1px 1px 0px rgba(255, 255, 255, 0.10) inset, 0px 1px 0px 0px rgba(255, 255, 255, 0.10) inset;
+        filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.10)) drop-shadow(0px 0px 1px rgba(0, 0, 0, 0.05));
+    }
+
+    &:checked + .switch:after {
+        background: var(--track-bg-color-checked);
+        border-color: var(--track-border-color-checked);
+    }
+
+    [data-theme="dark"][data-platform-name="macos"] &:checked + .switch:after {
+        background: linear-gradient(180deg, #3969EF 0%, #2C4AAC 0.01%, #3152BF 100%);
+        box-shadow: 0px 0px 1px 1px rgba(255, 255, 255, 0.10) inset, 0px 0px 0px 0.5px rgba(255, 255, 255, 0.06) inset;
+    }
+
+    &:checked:active + .switch:after {
+        background-color: var(--track-bg-color-checked-active);
+        border-color: var(--track-border-color-checked-active);
+    }
+}
+
+
+.switch {
+    box-sizing: border-box;
+    inline-size: var(--switch-width);
+    margin: 0;
+
+    vertical-align: middle;
+    will-change: transform;
+
+    transition-delay: 0s;
+    transition-duration: 0.13s;
+    transition-property: background, border;
+    transition-timing-function: ease-in-out, ease-in-out;
+
+    block-size: var(--switch-height);
+    border-radius: 10px;
+
+    flex-grow: 0;
+    flex-shrink: 0;
+    display: inline-block;
+    position: relative;
+    left: 0;
+    right: 0;
+
+    &:before {
+        content: "";
+        box-sizing: border-box;
+        inline-size: var(--switch-handle-size);
+        block-size: var(--switch-handle-size);
+        border-radius: 10px;
+        display: block;
+        position: absolute;
+        top: var(--switch-handle-offset);
+        left: var(--switch-handle-offset);
+        z-index: 1;
+        transition: all .3s;
+        background: var(--switch-handle-color);
+    }
+
+    [data-platform-name="macos"] &:before {
+        box-shadow: 0px 1px 1px 0px rgba(255, 255, 255, 0.10) inset, 0px 1px 0px 0px rgba(255, 255, 255, 0.10) inset;
+        filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.10)) drop-shadow(0px 0px 1px rgba(0, 0, 0, 0.05));
+
+    }
+    [data-platform-name="macos"][data-theme="dark"] &:before {
+        box-shadow: 0px 1px 1px 0px rgba(255, 255, 255, 0.10) inset, 0px 1px 0px 0px rgba(255, 255, 255, 0.10) inset;
+        filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.10)) drop-shadow(0px 0px 1px rgba(0, 0, 0, 0.05));
+    }
+
+    &:after {
+        border-radius: var(--track-border-radius);
+        content: "";
+        margin: 0;
+        display: block;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        transform: translateX(0);
+        transition: all .3s;
+
+        border: var(--track-border);
+        background-color: var(--track-bg-color);
+    }
+
+    [data-platform-name="macos"] &:after {
+        box-shadow: 0px 0.5px 1px 1px rgba(10, 15, 20, 0.04) inset, 0px 0px 0px 0.5px rgba(10, 15, 20, 0.12) inset;
+    }
+    [data-platform-name="macos"][data-theme="dark"] &:after {
+        box-shadow: 0px 0px 1px 1px rgba(255, 255, 255, 0.10) inset, 0px 0px 0px 0.5px rgba(255, 255, 255, 0.06) inset;
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "name": "delta.com",
+    "runContext": {
+        "urlPattern": "^https://www\\.delta\\.com/"
+    },
+    "cosmetic": true,
+    "prehideSelectors": ["ngc-cookie-banner"],
+    "detectCmp": [{ "exists": "div.cookie-footer-container" }],
+    "detectPopup": [{ "visible": "div.cookie-footer-container" }],
+    "optIn": [{ "click": " button.cookie-close-icon" }],
+    "optOut": [{ "hide": "div.cookie-footer-container" }]
+}

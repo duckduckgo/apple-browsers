@@ -1,0 +1,34 @@
+<html>
+
+<head>
+    <title>Beenverified</title>
+</head>
+
+<body>
+    <div id="root">
+        <div class="MuiBox-root css-0"><input type="hidden" name="captchaResponse">
+            <div id="captcha-widget" data-sitekey="0x4AAAAAAA34NY6rivjWMWoq"
+                data-callback="handleCaptchaCallback" style="margin-top: 20px; outline: currentcolor;">
+                <div><input type="hidden" name="cf-turnstile-response"
+                        id="cf-chl-widget-tzmlk_response"></div>
+            </div>
+        </div>
+        <div class="MuiBox-root css-0"><input type="hidden" name="captchaResponse">
+            <div id="missing-sitekey" data-callback="handleCaptchaCallback"
+                style="margin-top: 20px; outline: currentcolor;">
+                <div><input type="hidden" name="cf-turnstile-response-error"
+                        id="cf-chl-widget-tzmlk_response"></div>
+            </div>
+        </div>
+        <div class="MuiBox-root css-0"><input type="hidden" name="captchaResponse">
+            <div id="missing-callback" data-sitekey="0x4AAAAAAA34NY6rivjWMWoq"
+                style="margin-top: 20px; outline: currentcolor;">
+                <div><input type="hidden" name="cf-turnstile-response-error"
+                        id="cf-chl-widget-tzmlk_response"></div>
+            </div>
+        </div>
+    </div>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async="" data-testid="hcaptcha-script"></script>
+</body>
+
+</html>

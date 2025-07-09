@@ -1,0 +1,41 @@
+{
+    "name": "jdsports",
+    "vendorUrl": "https://www.jdsports.co.uk/",
+    "runContext": {
+        "urlPattern": "^https://(www|m)\\.jdsports\\."
+    },
+    "prehideSelectors": [".miniConsent,#PrivacyPolicyBanner"],
+    "detectCmp": [
+        {
+            "exists": ".miniConsent,#PrivacyPolicyBanner"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".miniConsent,#PrivacyPolicyBanner"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".miniConsent .accept-all-cookies"
+        }
+    ],
+    "optOut": [
+        {
+            "if": { "exists": "#PrivacyPolicyBanner" },
+            "then": [
+                {
+                    "hide": "#PrivacyPolicyBanner"
+                }
+            ],
+            "else": [
+                {
+                    "waitForThenClick": "#cookie-settings"
+                },
+                {
+                    "waitForThenClick": "#reject-all-cookies"
+                }
+            ]
+        }
+    ]
+}

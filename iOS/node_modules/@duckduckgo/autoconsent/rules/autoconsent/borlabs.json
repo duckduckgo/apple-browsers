@@ -1,0 +1,49 @@
+{
+    "name": "borlabs",
+    "prehideSelectors": ["#BorlabsCookieBox"],
+    "detectCmp": [
+        {
+            "exists": "._brlbs-block-content,.brlbs-cmpnt-dialog"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "._brlbs-bar-wrap,._brlbs-box-wrap,.brlbs-cmpnt-dialog"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "a[data-cookie-accept-all],.brlbs-btn-accept-all"
+        }
+    ],
+    "optOut": [
+        {
+            "if": { "exists": ".brlbs-btn-accept-only-essential,a[data-cookie-refuse]" },
+            "then": [{ "click": ".brlbs-btn-accept-only-essential,a[data-cookie-refuse]" }],
+            "else": [
+                {
+                    "click": "a[data-cookie-individual]"
+                },
+                {
+                    "waitForVisible": ".cookie-preference"
+                },
+                {
+                    "click": "input[data-borlabs-cookie-checkbox]:checked",
+                    "all": true,
+                    "optional": true
+                },
+                {
+                    "click": "#CookiePrefSave"
+                },
+                {
+                    "wait": 500
+                }
+            ]
+        }
+    ],
+    "test": [
+        {
+            "eval": "EVAL_BORLABS_0"
+        }
+    ]
+}

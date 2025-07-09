@@ -1,0 +1,30 @@
+{
+    "name": "adopt",
+    "vendorUrl": "https://goadopt.io/",
+    "prehideSelectors": ["#cookie-banner"],
+    "detectCmp": [
+        {
+            "exists": "#adopt-controller-button"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#cookie-banner"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#adopt-accept-all-button"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "#adopt-reject-all-button"
+        }
+    ],
+    "test": [
+        {
+            "eval": "EVAL_ADOPT_TEST"
+        }
+    ]
+}

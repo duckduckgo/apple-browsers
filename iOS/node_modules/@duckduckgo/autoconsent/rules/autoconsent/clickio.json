@@ -1,0 +1,16 @@
+{
+    "name": "click.io",
+    "prehideSelectors": ["#cl-consent"],
+    "detectCmp": [{ "exists": "#cl-consent" }],
+    "detectPopup": [{ "visible": "#cl-consent" }],
+    "optIn": [{ "waitForThenClick": "#cl-consent [data-role=\"b_agree\"]" }],
+    "optOut": [
+        { "waitFor": "#cl-consent [data-role=\"b_options\"]" },
+        { "wait": 500 },
+        { "click": "#cl-consent [data-role=\"b_options\"]" },
+        { "waitFor": ".cl-consent-popup.cl-consent-visible [data-role=\"alloff\"]" },
+        { "click": ".cl-consent-popup.cl-consent-visible [data-role=\"alloff\"]", "all": true },
+        { "click": "[data-role=\"b_save\"]" }
+    ],
+    "test": [{ "cookieContains": "__lxG__consent__v2_daisybit=", "comment": "TODO: this only checks if we interacted at all" }]
+}

@@ -1,0 +1,11 @@
+{
+    "name": "activobank.pt",
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?activobank\\.pt"
+    },
+    "prehideSelectors": ["aside#cookies,.overlay-cookies"],
+    "detectCmp": [{ "exists": "#cookies .cookies-btn" }],
+    "detectPopup": [{ "visible": "#cookies #submitCookies" }],
+    "optIn": [{ "waitForThenClick": "#cookies #submitCookies" }],
+    "optOut": [{ "waitForThenClick": "#cookies #rejectCookies" }]
+}

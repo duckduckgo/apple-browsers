@@ -1,0 +1,29 @@
+{
+    "name": "paychex",
+    "vendorUrl": "https://www.paychex.com/",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?paychex\\.com/"
+    },
+    "prehideSelectors": ["footer .ccpabanner"],
+    "detectCmp": [
+        {
+            "exists": "footer .ccpabanner"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "footer .ccpabanner"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "footer .ccpabanner button"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "footer .ccpabanner"
+        }
+    ]
+}

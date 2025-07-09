@@ -1,0 +1,29 @@
+{
+    "name": "kconsent",
+    "cosmetic": false,
+    "runContext": {
+        "main": true,
+        "frame": false
+    },
+    "prehideSelectors": [".kc-overlay"],
+    "detectCmp": [
+        {
+            "exists": "#kconsent"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".kc-dialog"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#kc-acceptAndHide"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "#kc-denyAndHide"
+        }
+    ]
+}

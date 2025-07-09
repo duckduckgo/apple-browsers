@@ -1,0 +1,28 @@
+{
+    "name": "ourworldindata",
+    "vendorUrl": "https://ourworldindata.org/",
+    "runContext": {
+        "urlPattern": "^https://ourworldindata\\.org/"
+    },
+    "prehideSelectors": [".cookie-manager"],
+    "detectCmp": [
+        {
+            "exists": ".cookie-manager"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookie-manager .cookie-notice.open"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cookie-notice [data-test=accept]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".cookie-notice [data-test=reject]"
+        }
+    ]
+}

@@ -1,0 +1,28 @@
+{
+    "name": "pinterest-business",
+    "vendorUrl": "https://business.pinterest.com/",
+    "runContext": {
+        "urlPattern": "^https://.*\\.pinterest\\.com/"
+    },
+    "prehideSelectors": [".BusinessCookieConsent"],
+    "detectCmp": [
+        {
+            "exists": ".BusinessCookieConsent"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".BusinessCookieConsent [data-id=cookie-consent-banner-buttons]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-id=cookie-consent-banner-buttons] > div:nth-child(1) button"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "[data-id=cookie-consent-banner-buttons] > div:nth-child(2) button"
+        }
+    ]
+}

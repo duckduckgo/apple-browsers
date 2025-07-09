@@ -1,0 +1,31 @@
+{
+    "name": "hashicorp",
+    "vendorUrl": "https://hashicorp.com/",
+    "runContext": {
+        "urlPattern": "^https://[^.]*\\.hashicorp\\.com/"
+    },
+    "prehideSelectors": ["[data-testid=consent-banner]"],
+    "detectCmp": [
+        {
+            "exists": "[data-testid=consent-banner]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[data-testid=consent-banner]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-testid=accept]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "[data-testid=manage-preferences]"
+        },
+        {
+            "waitForThenClick": "[data-testid=consent-mgr-dialog] [data-ga-button=save-preferences]"
+        }
+    ]
+}

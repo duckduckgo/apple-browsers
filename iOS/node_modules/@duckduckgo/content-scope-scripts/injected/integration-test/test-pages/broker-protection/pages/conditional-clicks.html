@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Broker Protection</title>
+</head>
+<body>
+    <div class="result">
+        <h3>Is John Doe over the age of 45?</h3>
+        <a href="#" class="answer" data-id="yes">Yes</a>
+        <a href="#" class="answer" data-id="no">No</a>
+    </div>
+    <script>
+        document.querySelectorAll('.answer').forEach(answer => 
+            answer.addEventListener('click', function(e) {
+                e.preventDefault();
+                const id = this.getAttribute('data-id');
+
+                window.location.hash = id;
+                this.removeEventListener('click', arguments.callee);
+            })
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+    "name": "xhamster-eu",
+    "runContext": {
+        "urlPattern": "^https://(\\w+\\.)?xhamster\\d?\\.com"
+    },
+    "prehideSelectors": ["[class*=modal]"],
+    "detectCmp": [{ "exists": "[class*=modal] a[href*='/cookie-policy']" }],
+    "detectPopup": [{ "visible": "[class*=modal] a[href*='/cookie-policy']" }],
+    "optIn": [{ "waitForThenClick": "[class*=modal]:has(a[href*='/cookie-policy']) button:nth-child(3)" }],
+    "optOut": [{ "waitForThenClick": "[class*=modal]:has(a[href*='/cookie-policy']) button:nth-child(2)" }]
+}

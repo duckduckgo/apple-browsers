@@ -1,0 +1,21 @@
+{
+    "name": "Complianz categories",
+    "prehideSelectors": [".cc-type-categories[aria-describedby=\"cookieconsent:desc\"]"],
+    "detectCmp": [{ "exists": ".cc-type-categories[aria-describedby=\"cookieconsent:desc\"]" }],
+    "detectPopup": [{ "visible": ".cc-type-categories[aria-describedby=\"cookieconsent:desc\"]" }],
+    "optIn": [
+        {
+            "any": [{ "click": ".cc-accept-all" }, { "click": ".cc-allow-all" }, { "click": ".cc-allow" }, { "click": ".cc-dismiss" }]
+        }
+    ],
+    "optOut": [
+        {
+            "if": { "exists": ".cc-type-categories[aria-describedby=\"cookieconsent:desc\"] .cc-dismiss" },
+            "then": [{ "click": ".cc-dismiss" }],
+            "else": [
+                { "click": ".cc-type-categories input[type=checkbox]:not([disabled]):checked", "all": true, "optional": true },
+                { "click": ".cc-save" }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,25 @@
+{
+    "name": "pabcogypsum",
+    "vendorUrl": "https://unknown",
+    "prehideSelectors": [".js-cookie-notice:has(#cookie_settings-form)"],
+    "detectCmp": [
+        {
+            "exists": ".js-cookie-notice #cookie_settings-form"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".js-cookie-notice #cookie_settings-form"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".js-cookie-notice button[value=allow]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".js-cookie-notice button[value=disable]"
+        }
+    ]
+}

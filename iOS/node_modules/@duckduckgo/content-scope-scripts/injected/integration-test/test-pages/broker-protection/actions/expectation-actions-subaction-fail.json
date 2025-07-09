@@ -1,0 +1,31 @@
+{
+    "state": {
+      "action": {
+        "actionType": "expectation",
+        "id": "2",
+        "retry": {
+            "environment": "web",
+            "interval": { "ms": 1000 },
+            "maxAttempts": 1
+        },
+        "expectations": [
+          {
+            "type": "text",
+            "selector": "body",
+            "expect": "How old is John Doe?"
+          }
+        ],
+        "actions": [
+            {
+                "actionType": "click",
+                "elements": [
+                    {
+                        "type": "button",
+                        "selector": ".view-less"
+                    }
+                ]
+            }
+        ]
+      }
+    }
+  }

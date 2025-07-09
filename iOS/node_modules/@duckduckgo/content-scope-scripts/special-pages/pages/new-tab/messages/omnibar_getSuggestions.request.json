@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Get Suggestions Request",
+  "type": "object",
+  "required": ["term"],
+  "properties": {
+    "term": {
+      "description": "The search term to get suggestions for",
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+    "name": "tesla",
+    "vendorUrl": "https://tesla.com/",
+    "runContext": {
+        "main": true,
+        "frame": false,
+        "urlPattern": "^https://(www\\.)?tesla\\.com/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": "#cookie_banner"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#cookie_banner"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#tsla-accept-cookie"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "#tsla-reject-cookie"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "tsla-cookie-consent=rejected"
+        }
+    ]
+}

@@ -1,0 +1,109 @@
+.root {
+    background: var(--ntp-surface-background-color);
+    backdrop-filter: blur(48px);
+    border: 1px solid var(--ntp-surface-border-color);
+    padding: var(--sp-6);
+    border-radius: var(--border-radius-lg);
+    display: grid;
+    align-items: start;
+    grid-template-columns: auto;
+    width: 100%;
+    margin-bottom: var(--ntp-gap);
+
+    &:hover {
+        .listExpander * {
+            opacity: 1;
+        }
+    }
+
+    [data-theme=dark] & {
+        border-color: var(--color-white-at-9);
+    }
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+}
+
+.switcher {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-radius: 6px;
+
+    --border-color: rgba(0, 0, 0, 0.09);
+    --background: rgba(0, 0, 0, 0.06);
+
+    border: 1px solid var(--border-color);
+    background: var(--background);
+
+    [data-theme="dark"] & {
+        --border-color: var(--color-white-at-12);
+        --background: rgba(255, 255, 255, 0.09);
+    }
+}
+
+.block {
+    margin-top: 24px;
+}
+.empty {
+    color: var(--ntp-text-muted);
+}
+
+.feed {}
+
+.button {
+    color: var(--ntp-text-normal);
+    border-radius: 5px;
+    background: transparent;
+}
+
+[data-platform-name="windows"] {
+    .button {
+        background: transparent;
+        border: 0;
+        height: 26px;
+    }
+    .active {
+        position: relative;
+        background: white;
+
+        [data-theme="dark"] & {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        &:after {
+            content: "";
+            width: 16px;
+            height: 2px;
+            position: absolute;
+            display: block;
+            bottom: 0;
+            transform: translateX(-50%);
+            left: 50%;
+            border-radius: 16px;
+            background: var(--ntp-color-primary);
+        }
+    }
+}
+
+[data-platform-name="macos"] {
+    .switcher {}
+    .button {
+        background: transparent;
+        border: 0.5px solid transparent;
+        height: 22px;
+    }
+    .active {
+        border: 0.5px solid rgba(0, 0, 0, 0.10);
+        background: #FFF;
+
+        /* Mac/Control/Standard */
+        box-shadow: 0px 0.5px 0px 0px rgba(255, 255, 255, 0.20) inset, 0px 1px 0px 0px rgba(255, 255, 255, 0.05) inset, 0px 0px 0px 0.5px rgba(0, 0, 0, 0.10), 0px 0px 1px 0px rgba(0, 0, 0, 0.05), 0px 1px 1px 0px rgba(0, 0, 0, 0.20);
+
+        [data-theme="dark"] & {
+            background: rgba(255, 255, 255, 0.25);
+        }
+    }
+}
+

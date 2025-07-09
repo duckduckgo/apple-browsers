@@ -1,0 +1,9 @@
+{
+    "name": "bing.com",
+    "prehideSelectors": ["#bnp_container"],
+    "detectCmp": [{ "exists": "#bnp_cookie_banner" }],
+    "detectPopup": [{ "visible": "#bnp_cookie_banner" }, { "visible": "#bnp_btn_accept,#bnp_btn_reject" }],
+    "optIn": [{ "waitForThenClick": "#bnp_btn_accept" }],
+    "optOut": [{ "wait": 500 }, { "waitForThenClick": "#bnp_btn_reject" }],
+    "test": [{ "cookieContains": "AD=0" }]
+}

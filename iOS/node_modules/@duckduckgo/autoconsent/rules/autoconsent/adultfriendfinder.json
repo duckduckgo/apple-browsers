@@ -1,0 +1,33 @@
+{
+    "name": "adultfriendfinder",
+    "vendorUrl": "https://adultfriendfinder.com/www/guest/#/",
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?adultfriendfinder\\.com/"
+    },
+    "prehideSelectors": [".fullpageCover"],
+    "detectCmp": [
+        {
+            "exists": ".fullpageCover a[href*='/go/page/privacy.html']"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".fullpageCover a[href*='/go/page/privacy.html']"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".fullpageCover div.rounded-full:nth-child(1)"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".fullpageCover div.rounded-full:nth-child(2)"
+        }
+    ],
+    "test": [
+        {
+            "eval": "EVAL_ADULTFRIENDFINDER_TEST"
+        }
+    ]
+}

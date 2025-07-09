@@ -1,0 +1,35 @@
+{
+    "name": "tesco",
+    "vendorUrl": "https://www.tesco.com",
+    "cosmetic": false,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?tesco\\.com/"
+    },
+    "prehideSelectors": ["[class*=CookieBanner__Sizer]"],
+    "detectCmp": [
+        {
+            "exists": "[aria-label=consent-banner]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[aria-label=consent-banner]"
+        }
+    ],
+    "optIn": [
+        {
+            "wait": 1000
+        },
+        {
+            "waitForThenClick": "xpath///button[contains(., 'Accept all')]"
+        }
+    ],
+    "optOut": [
+        {
+            "wait": 1000
+        },
+        {
+            "waitForThenClick": "xpath///button[contains(., 'Reject all')]"
+        }
+    ]
+}

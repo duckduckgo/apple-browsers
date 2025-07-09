@@ -1,0 +1,30 @@
+{
+    "name": "anthropic",
+    "vendorUrl": "https://claude.ai/",
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": "div:has(> p > a[href='https://www.anthropic.com/legal/cookies'])"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "div:has(> p > a[href='https://www.anthropic.com/legal/cookies'])"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "div:has(> p > a[href='https://www.anthropic.com/legal/cookies']) button:nth-child(3)"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "div:has(> p > a[href='https://www.anthropic.com/legal/cookies']) button:nth-child(2)"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "anthropic-consent-preferences"
+        }
+    ]
+}

@@ -1,0 +1,15 @@
+{
+    "name": "zentralruf-de",
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?zentralruf\\.de"
+    },
+    "prehideSelectors": ["#cookie_modal_wrapper"],
+    "detectCmp": [{ "exists": "#cookie_modal_wrapper" }],
+    "detectPopup": [{ "visible": "#cookie_modal_wrapper" }],
+    "optIn": [
+        {
+            "waitForThenClick": "#cookie_modal_wrapper #cookie_modal_button_consent_all"
+        }
+    ],
+    "optOut": [{ "waitForThenClick": "#cookie_modal_wrapper #cookie_modal_button_choose" }]
+}

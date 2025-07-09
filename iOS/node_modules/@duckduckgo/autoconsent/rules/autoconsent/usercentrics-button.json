@@ -1,0 +1,8 @@
+{
+    "name": "usercentrics-button",
+    "detectCmp": [{ "exists": "#usercentrics-button" }],
+    "detectPopup": [{ "visible": "#usercentrics-button #uc-btn-accept-banner" }],
+    "optIn": [{ "click": "#usercentrics-button #uc-btn-accept-banner" }],
+    "optOut": [{ "click": "#usercentrics-button #uc-btn-deny-banner" }],
+    "test": [{ "eval": "EVAL_USERCENTRICS_BUTTON_0" }]
+}

@@ -1,0 +1,26 @@
+{
+    "state": {
+      "action": {
+        "actionType": "expectation",
+        "id": "2",
+        "expectations": [
+          {
+            "type": "text",
+            "selector": "body",
+            "expect": "How old is John Doe?"
+          }
+        ],
+        "actions": [
+            {
+                "actionType": "click",
+                "elements": [
+                    {
+                        "type": "button",
+                        "selector": ".view-more"
+                    }
+                ]
+            }
+        ]
+      }
+    }
+  }

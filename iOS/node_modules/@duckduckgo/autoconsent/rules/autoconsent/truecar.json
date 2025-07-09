@@ -1,0 +1,29 @@
+{
+    "name": "truecar",
+    "vendorUrl": "https://www.truecar.com/",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?truecar\\.com/"
+    },
+    "prehideSelectors": [".fixed.bottom-0:has([data-test=cookieBannerButton])"],
+    "detectCmp": [
+        {
+            "exists": ".fixed.bottom-0 [data-test=cookieBannerButton]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".fixed.bottom-0 [data-test=cookieBannerButton]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-test=cookieBannerButton]"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": ".fixed.bottom-0:has([data-test=cookieBannerButton])"
+        }
+    ]
+}

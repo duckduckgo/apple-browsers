@@ -1,0 +1,68 @@
+body {
+    font-family:'-apple-system-font';
+    background: rgb(255, 255, 255);
+
+    display: flex;
+    height: 100vh;
+    margin: 0 auto;
+
+    text-align: center;
+    align-items: center;
+
+    cursor: default;
+}
+
+.content-container {
+    min-width: 320px;
+    max-width: 580px;
+    margin: 0 auto;
+}
+
+.error-header {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 18px;
+    margin: 0 auto;
+    padding: 0px;
+}
+
+.error-description {
+    font-size: 13px;
+    line-height: 16px;
+    margin: 0 auto;
+    padding: 8px;
+}
+
+.header-container .description-container {
+    color: rgb(44, 44, 44);
+    position: relative;
+    width: 100%;
+    word-wrap: break-word;
+}
+
+.watermark-container {
+    display: inline-block;
+    position: fixed;
+    width: 100px;
+    height: 100px;
+    bottom: 20px;
+    right: 20px;
+    opacity: 0.5;
+    filter: grayscale(100%);
+    pointer-events: none;
+}
+
+.watermark {
+    max-width: 100px;
+    max-height: 100px;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background: rgb(51, 51, 51);
+    }
+
+    .error-description, .error-header {
+        color: rgb(210, 210, 210);
+    }
+}

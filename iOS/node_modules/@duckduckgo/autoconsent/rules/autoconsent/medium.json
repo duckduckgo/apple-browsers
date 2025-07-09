@@ -1,0 +1,31 @@
+{
+    "name": "medium",
+    "vendorUrl": "https://medium.com",
+    "cosmetic": true,
+    "runContext": {
+        "main": true,
+        "frame": false,
+        "urlPattern": "^https://([a-z0-9-]+\\.)?medium\\.com/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": "div:has(> div > div > div[role=alert] > a[href^=\"https://policy.medium.com/medium-privacy-policy-\"])"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "div:has(> div > div > div[role=alert] > a[href^=\"https://policy.medium.com/medium-privacy-policy-\"])"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-testid=close-button]"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "div:has(> div > div > div[role=alert] > a[href^=\"https://policy.medium.com/medium-privacy-policy-\"])"
+        }
+    ]
+}

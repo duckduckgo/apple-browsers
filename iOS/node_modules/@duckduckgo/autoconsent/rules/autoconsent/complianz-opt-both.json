@@ -1,0 +1,12 @@
+{
+    "name": "Complianz opt-both",
+    "prehideSelectors": ["[aria-describedby=\"cookieconsent:desc\"] .cc-type-opt-both"],
+    "detectCmp": [{ "exists": "[aria-describedby=\"cookieconsent:desc\"] .cc-type-opt-both" }],
+    "detectPopup": [{ "visible": "[aria-describedby=\"cookieconsent:desc\"] .cc-type-opt-both" }],
+    "optIn": [
+        { "click": ".cc-accept-all", "optional": true },
+        { "click": ".cc-allow", "optional": true },
+        { "click": ".cc-dismiss", "optional": true }
+    ],
+    "optOut": [{ "waitForThenClick": ".cc-deny" }]
+}

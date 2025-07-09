@@ -1,0 +1,12 @@
+{
+    "name": "geeks-for-geeks",
+    "runContext": {
+        "urlPattern": "^https://www\\.geeksforgeeks\\.org/"
+    },
+    "cosmetic": true,
+    "prehideSelectors": [".cookie-consent"],
+    "detectCmp": [{ "exists": ".cookie-consent" }],
+    "detectPopup": [{ "visible": ".cookie-consent" }],
+    "optIn": [{ "click": ".cookie-consent button.consent-btn" }],
+    "optOut": [{ "hide": ".cookie-consent" }]
+}

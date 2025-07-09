@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Message Bridge</title>
+    <link rel="stylesheet" href="../../shared/style.css">
+</head>
+<body>
+
+<script src="../../shared/utils.js"></script>
+
+<p>Message Bridge (enabled)</p>
+
+<script>
+
+    test('Creating the bridge', async () => {
+        const bridge = navigator.duckduckgo?.createMessageBridge?.('exampleFeature')
+
+        if (!bridge) {
+            return [
+                { name: 'bridge.notify', result: "undefined", expected: 'function' },
+                { name: 'bridge.request', result: "undefined", expected: 'function' },
+                { name: 'bridge.subscribe', result: "undefined", expected: 'function' },
+                { name: 'data', result: "undefined", expected: [{ "abc": "def" },{ "ghi": "jkl" }] }
+            ];
+        }
+
+        bridge.notify('pixel');
+
+        const subscription = new Promise(resolve => {
+            bridge.subscribe('onUpdate', (data) => {
+                resolve(data)
+            })
+        });
+
+        const request = bridge.request('sampleData');
+        const data = await Promise.all([subscription, request]);
+
+        return [
+            { name: 'bridge.notify', result: typeof bridge.notify, expected: 'function' },
+            { name: 'bridge.request', result: typeof bridge.request, expected: 'function' },
+            { name: 'bridge.subscribe', result: typeof bridge.subscribe, expected: 'function' },
+            { name: 'data', result: data, expected: [{ "abc": "def" },{ "ghi": "jkl" }] }
+        ];
+    })
+
+    renderResults();
+</script>
+</body>
+</html>

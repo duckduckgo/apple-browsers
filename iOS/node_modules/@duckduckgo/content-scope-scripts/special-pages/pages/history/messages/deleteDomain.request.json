@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "required": ["domain"],
+  "title": "Delete Domain Params",
+  "properties": {
+    "domain": {
+      "type": "string"
+    }
+  }
+}
+

@@ -1,0 +1,9 @@
+{
+    "name": "zdf",
+    "prehideSelectors": ["#zdf-cmp-banner-sdk"],
+    "detectCmp": [{ "exists": "#zdf-cmp-banner-sdk" }],
+    "detectPopup": [{ "visible": "#zdf-cmp-main.zdf-cmp-show" }],
+    "optIn": [{ "waitForThenClick": "#zdf-cmp-main #zdf-cmp-accept-btn" }],
+    "optOut": [{ "waitForThenClick": "#zdf-cmp-main #zdf-cmp-deny-btn" }],
+    "test": []
+}

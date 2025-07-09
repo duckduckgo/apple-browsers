@@ -1,0 +1,30 @@
+{
+    "name": "sas",
+    "vendorUrl": "https://www.flysas.com/",
+    "prehideSelectors": ["s4s-privacy-module"],
+    "detectCmp": [
+        {
+            "exists": "s4s-privacy-module"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "s4s-privacy-module"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "s4s-privacy-module button.accept"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "s4s-privacy-module button.decline"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "_cookieanalytics"
+        }
+    ]
+}

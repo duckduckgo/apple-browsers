@@ -1,0 +1,33 @@
+{
+    "name": "abc",
+    "vendorUrl": "https://abc.net.au",
+    "runContext": {
+        "urlPattern": "^https://([a-z0-9-]+\\.)?abc\\.net\\.au/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": "[data-component=CookieBanner]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[data-component=CookieBanner] [data-component=CookieBanner_AcceptAll]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-component=CookieBanner] [data-component=CookieBanner_AcceptAll]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "[data-component=CookieBanner] [data-component=CookieBanner_AcceptABCRequired]"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "trackingconsent"
+        }
+    ]
+}

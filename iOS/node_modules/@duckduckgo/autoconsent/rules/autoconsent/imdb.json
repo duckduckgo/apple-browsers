@@ -1,0 +1,29 @@
+{
+    "name": "imdb",
+    "vendorUrl": "https://imdb.com/",
+    "cosmetic": false,
+    "runContext": {
+        "urlPattern": "^https://(www.)?imdb.com/"
+    },
+    "prehideSelectors": ["[data-testid=consent-banner]"],
+    "detectCmp": [
+        {
+            "exists": "[data-testid=consent-banner]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[data-testid=consent-banner]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-testid=consent-banner] [data-testid=accept-button]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "[data-testid=consent-banner] [data-testid=reject-button]"
+        }
+    ]
+}

@@ -1497,6 +1497,9 @@
 		F4F7F10A25813FE200045D62 /* 01_Fire_really_small.json in Resources */ = {isa = PBXBuildFile; fileRef = F4F7F10725813FE200045D62 /* 01_Fire_really_small.json */; };
 		F4F7F10B25813FE200045D62 /* 02_Water_swirl_really_small.json in Resources */ = {isa = PBXBuildFile; fileRef = F4F7F10825813FE200045D62 /* 02_Water_swirl_really_small.json */; };
 		F4F7F10C25813FE200045D62 /* 03_Airstream_divided_by_four.json in Resources */ = {isa = PBXBuildFile; fileRef = F4F7F10925813FE200045D62 /* 03_Airstream_divided_by_four.json */; };
+		7B6878312DE50BD600ACF0FD /* contentScope.js in Resources */ = {isa = PBXBuildFile; fileRef = 7B68782D2DE50BD200ACF0F9 /* contentScope.js */; };
+		7B6878322DE50BD700ACF0FE /* contentScopeIsolated.js in Resources */ = {isa = PBXBuildFile; fileRef = 7B68782E2DE50BD300ACF0FA /* contentScopeIsolated.js */; };
+		7B6878332DE50BD800ACF0FF /* pages in Resources */ = {isa = PBXBuildFile; fileRef = 7B68782F2DE50BD400ACF0FB /* pages */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -2141,6 +2144,10 @@
 		7B4F87EB2D07396A0010B18F /* SiriEducation.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SiriEducation.xcassets; sourceTree = "<group>"; };
 		7B4F87ED2D0739E80010B18F /* SiriBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriBubbleView.swift; sourceTree = "<group>"; };
 		7B6586392DB7F5AC00D12BE3 /* SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests.swift; sourceTree = "<group>"; };
+		7B68782D2DE50BD200ACF0F9 /* contentScope.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = contentScope.js; path = node_modules/@duckduckgo/content-scope-scripts/build/contentScope.js; sourceTree = SOURCE_ROOT; };
+		7B68782E2DE50BD300ACF0FA /* contentScopeIsolated.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = contentScopeIsolated.js; path = node_modules/@duckduckgo/content-scope-scripts/build/contentScopeIsolated.js; sourceTree = SOURCE_ROOT; };
+		7B68782F2DE50BD400ACF0FB /* pages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = pages; path = node_modules/@duckduckgo/content-scope-scripts/build/pages; sourceTree = SOURCE_ROOT; };
+
 		7B8E0EC52CC81B4800B2B722 /* TipKitController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipKitController.swift; sourceTree = "<group>"; };
 		7BBE25A02D71ECFD003131FA /* AutomationServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationServer.swift; sourceTree = "<group>"; };
 		7BBE25A22D71EE72003131FA /* MainViewController+Automation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+Automation.swift"; sourceTree = "<group>"; };
@@ -5291,9 +5298,20 @@
 				3151F0E827357F8F00226F58 /* VoiceSearch */,
 				4B6484F427FD1E390050A7A1 /* Waitlist */,
 				7B059F0E2D0387E900371ED0 /* Widgets */,
+				7B6878302DE50BD500ACF0FC /* ContentScopeScripts */,
 				7BBE25A02D71ECFD003131FA /* AutomationServer.swift */,
 			);
 			path = DuckDuckGo;
+			sourceTree = "<group>";
+		};
+		7B6878302DE50BD500ACF0FC /* ContentScopeScripts */ = {
+			isa = PBXGroup;
+			children = (
+				7B68782D2DE50BD200ACF0F9 /* contentScope.js */,
+				7B68782E2DE50BD300ACF0FA /* contentScopeIsolated.js */,
+				7B68782F2DE50BD400ACF0FB /* pages */,
+			);
+			name = ContentScopeScripts;
 			sourceTree = "<group>";
 		};
 		84E341A91E2F7EFB00BDBA6F /* UnitTests */ = {
@@ -8653,6 +8671,9 @@
 				85C2970A247EB7AA0063A335 /* Text.xcassets in Resources */,
 				98788E9A2521DA1E00D55218 /* Localizable.stringsdict in Resources */,
 				CB9B873E278C93C2001F4906 /* HomeMessage.xcassets in Resources */,
+				7B6878312DE50BD600ACF0FD /* contentScope.js in Resources */,
+				7B6878322DE50BD700ACF0FE /* contentScopeIsolated.js in Resources */,
+				7B6878332DE50BD800ACF0FF /* pages in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

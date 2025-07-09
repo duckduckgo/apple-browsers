@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Protections Data",
+  "description": "",
+  "type": "object",
+  "required": [
+    "totalCount"
+  ],
+  "properties": {
+    "totalCount": {
+      "description": "Total number of trackers or ads blocked since install",
+      "type": "number"
+    }
+  }
+}

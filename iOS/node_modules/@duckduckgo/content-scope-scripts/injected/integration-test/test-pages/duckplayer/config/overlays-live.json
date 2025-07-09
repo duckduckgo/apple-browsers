@@ -1,0 +1,71 @@
+{
+  "unprotectedTemporary": [],
+  "features": {
+    "duckPlayer": {
+      "state": "enabled",
+      "exceptions": [],
+      "settings": {
+        "overlays": {
+          "youtube": {
+            "state": "disabled",
+            "selectors": {
+              "thumbLink": "a[href^='/watch']",
+              "excludedRegions": [
+                "#playlist",
+                "ytd-movie-renderer",
+                "ytd-grid-movie-renderer"
+              ],
+              "videoElement": "#player video",
+              "videoElementContainer": "#player .html5-video-player",
+              "hoverExcluded": [],
+              "clickExcluded": [
+                "ytd-thumbnail-overlay-toggle-button-renderer"
+              ],
+              "allowedEventTargets": [
+                ".ytp-inline-preview-scrim",
+                ".ytd-video-preview",
+                "#thumbnail-container",
+                "#video-title-link",
+                "#video-title"
+              ]
+            },
+            "thumbnailOverlays": {
+              "state": "enabled"
+            },
+            "clickInterception": {
+              "state": "enabled"
+            },
+            "videoOverlays": {
+              "state": "enabled"
+            }
+          },
+          "serpProxy": {
+            "state": "disabled"
+          }
+        },
+        "domains": [
+          {
+            "domain": "youtube.com",
+            "patchSettings": [
+              {
+                "op": "replace",
+                "path": "/overlays/youtube/state",
+                "value": "enabled"
+              }
+            ]
+          },
+          {
+            "domain": "duckduckgo.com",
+            "patchSettings": [
+              {
+                "op": "replace",
+                "path": "/overlays/serpProxy/state",
+                "value": "enabled"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+    "name": "youporn.com",
+    "cosmetic": true,
+    "prehideSelectors": [".euCookieModal, #js_euCookieModal"],
+    "detectCmp": [{ "exists": ".euCookieModal" }],
+    "detectPopup": [{ "exists": ".euCookieModal, #js_euCookieModal" }],
+    "optIn": [{ "click": "button[name=\"user_acceptCookie\"]" }],
+    "optOut": [{ "hide": ".euCookieModal" }]
+}

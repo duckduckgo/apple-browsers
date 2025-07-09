@@ -1,0 +1,16 @@
+{
+    "name": "dunelm.com",
+    "prehideSelectors": ["div[data-testid=cookie-consent-modal-backdrop]"],
+    "detectCmp": [{ "exists": "div[data-testid=cookie-consent-message-contents]" }],
+    "detectPopup": [{ "visible": "div[data-testid=cookie-consent-message-contents]" }],
+    "optIn": [{ "click": "[data-testid=\"cookie-consent-allow-all\"]" }],
+    "optOut": [
+        {
+            "click": "button[data-testid=cookie-consent-adjust-settings]"
+        },
+        {
+            "click": "button[data-testid=cookie-consent-preferences-save]"
+        }
+    ],
+    "test": [{ "cookieContains": "cc_functional=0" }, { "cookieContains": "cc_targeting=0" }]
+}

@@ -1,0 +1,17 @@
+{
+    "name": "linkedin.com",
+    "prehideSelectors": [".artdeco-global-alert[type=COOKIE_CONSENT]"],
+    "detectCmp": [{ "exists": ".artdeco-global-alert[type=COOKIE_CONSENT]" }],
+    "detectPopup": [{ "visible": ".artdeco-global-alert[type=COOKIE_CONSENT]" }],
+    "optIn": [
+        { "waitForVisible": ".artdeco-global-alert[type=COOKIE_CONSENT] button[action-type=ACCEPT]" },
+        { "wait": 500 },
+        { "waitForThenClick": ".artdeco-global-alert[type=COOKIE_CONSENT] button[action-type=ACCEPT]" }
+    ],
+    "optOut": [
+        { "waitForVisible": ".artdeco-global-alert[type=COOKIE_CONSENT] button[action-type=DENY]" },
+        { "wait": 500 },
+        { "waitForThenClick": ".artdeco-global-alert[type=COOKIE_CONSENT] button[action-type=DENY]" }
+    ],
+    "test": [{ "waitForVisible": ".artdeco-global-alert[type=COOKIE_CONSENT]", "check": "none" }]
+}

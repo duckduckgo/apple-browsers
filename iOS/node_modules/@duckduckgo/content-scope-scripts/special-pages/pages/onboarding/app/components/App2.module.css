@@ -1,0 +1,37 @@
+/* stylelint-disable-next-line selector-pseudo-class-no-unknown */
+:global #app {
+    height: 100%;
+}
+
+[data-app-version="2"] {
+    .main {
+        font-family: system, -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+        height: 100%;
+        position: relative;
+    }
+
+    .container {
+        margin-left: auto;
+        margin-right: auto;
+        max-width:  640px;
+        padding-bottom: 80px;
+        padding-top: 80px;
+        position: relative;
+        width: calc(100% - 64px);
+        z-index: 1;
+
+        transition: transform 0.3s ease-in-out;
+        transform: translateY(0);
+
+        &[data-current="welcome"],
+        &[data-current="getStarted"] {
+            /* max() is not supported by stylelint's CSS parser: https://github.com/csstree/csstree/issues/164 */
+            /* stylelint-disable-next-line csstree/validator */
+            transform: translateY(max(50vh - 288px, 0px));
+        }
+    }
+
+    [data-exiting="true"] {
+        animation-name: none;
+    }
+}

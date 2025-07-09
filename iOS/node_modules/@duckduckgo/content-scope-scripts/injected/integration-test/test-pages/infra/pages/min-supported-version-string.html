@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width" />
+        <title>Min Supported Version (String)</title>
+        <link rel="stylesheet" href="../../shared/style.css" />
+    </head>
+    <body>
+        <script src="../../shared/utils.js"></script>
+        <p><a href="../index.html">[Infra]</a></p>
+        <p>This page verifies minSupportedVersion (string) conditional patching. Load with 1.5.0 as the version number.</p>
+        <script>
+            test('minSupportedVersion (string)', async () => {
+                const results = [];
+                results.push({
+                    name: 'versionStringTestBelow should always be true',
+                    result: window.versionStringTestBelow,
+                    expected: true,
+                });
+                results.push({
+                    name: 'versionStringTestSame should always be true',
+                    result: window.versionStringTestSame,
+                    expected: true,
+                });
+                results.push({
+                    name: 'versionStringTestAbove should be undefined',
+                    result: window.versionStringTestAbove,
+                    expected: undefined,
+                });
+                return results;
+            });
+            renderResults();
+        </script>
+    </body>
+</html>

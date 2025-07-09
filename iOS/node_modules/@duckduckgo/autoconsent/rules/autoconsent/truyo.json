@@ -1,0 +1,8 @@
+{
+    "name": "truyo",
+    "prehideSelectors": ["#truyo-consent-module"],
+    "detectCmp": [{ "exists": "#truyo-cookieBarContent" }],
+    "detectPopup": [{ "visible": "#truyo-consent-module" }],
+    "optIn": [{ "click": "button#acceptAllCookieButton" }],
+    "optOut": [{ "click": "button#declineAllCookieButton" }]
+}

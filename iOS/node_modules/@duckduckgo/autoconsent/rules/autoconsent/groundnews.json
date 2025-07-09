@@ -1,0 +1,40 @@
+{
+    "name": "groundnews",
+    "vendorUrl": "https://ground.news/",
+    "cosmetic": false,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?ground\\.news/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": ".fixed [data-testid=closeCookieBanner]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".fixed [data-testid=closeCookieBanner]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".fixed [data-testid=acceptCookies]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": [".fixed:has([data-testid=closeCookieBanner])", "xpath///button[contains(., 'Manage cookies')]"]
+        },
+        {
+            "waitFor": ["[data-testid=modal]", "xpath///span[contains(., 'Essential cookies')]"]
+        },
+        {
+            "click": ["[data-testid=modal]", "xpath///button[contains(., 'On')]"],
+            "all": true,
+            "optional": true
+        },
+        {
+            "waitForThenClick": ["[data-testid=modal]", "xpath///button[contains(., 'Save & reload')]"]
+        }
+    ]
+}

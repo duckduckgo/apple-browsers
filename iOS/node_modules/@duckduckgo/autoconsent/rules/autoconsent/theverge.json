@@ -1,0 +1,36 @@
+{
+    "name": "theverge",
+    "runContext": {
+        "frame": false,
+        "main": true,
+        "urlPattern": "^https://(www)?\\.theverge\\.com"
+    },
+    "intermediate": false,
+    "prehideSelectors": [".duet--cta--cookie-banner"],
+    "detectCmp": [
+        {
+            "exists": ".duet--cta--cookie-banner"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".duet--cta--cookie-banner"
+        }
+    ],
+    "optIn": [
+        {
+            "click": ".duet--cta--cookie-banner button.tracking-12",
+            "all": false
+        }
+    ],
+    "optOut": [
+        {
+            "click": ".duet--cta--cookie-banner button.tracking-12 > span"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "_duet_gdpr_acknowledged=1"
+        }
+    ]
+}

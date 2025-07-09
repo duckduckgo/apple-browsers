@@ -1,0 +1,28 @@
+{
+    "name": "productz.com",
+    "vendorUrl": "https://productz.com/",
+    "runContext": {
+        "urlPattern": "^https://productz\\.com/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": ".c-modal.is-active"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".c-modal.is-active"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".c-modal.is-active .is-accept"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".c-modal.is-active .is-dismiss"
+        }
+    ]
+}

@@ -1,0 +1,30 @@
+{
+    "name": "finsweet",
+    "vendorUrl": "https://finsweet.com/components/cookie-consent",
+    "cosmetic": false,
+    "prehideSelectors": ["[fs-consent-element=banner]"],
+    "detectCmp": [
+        {
+            "exists": "[fs-consent-element=banner]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[fs-consent-element=banner] [fs-consent-element=allow]"
+        }
+    ],
+    "optIn": [
+        { "wait": 500 },
+        {
+            "waitForThenClick": "[fs-consent-element=banner] [fs-consent-element=allow]"
+        }
+    ],
+    "optOut": [
+        { "wait": 500 },
+        {
+            "if": { "exists": "[fs-consent-element=banner] [fs-consent-element=deny]" },
+            "then": [{ "click": "[fs-consent-element=banner] [fs-consent-element=deny]" }],
+            "else": [{ "hide": "[fs-consent-element=banner]" }]
+        }
+    ]
+}

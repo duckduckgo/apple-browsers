@@ -1,0 +1,12 @@
+{
+    "name": "caranddriver.com",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?caranddriver.com"
+    },
+    "prehideSelectors": ["*[aria-label='Privacy Disclosure']"],
+    "detectCmp": [{ "exists": "*[aria-label='Privacy Disclosure']" }],
+    "detectPopup": [{ "visible": "*[aria-label='Privacy Disclosure']" }],
+    "optIn": [{ "hide": "*[aria-label='Privacy Disclosure']" }],
+    "optOut": [{ "hide": "*[aria-label='Privacy Disclosure']" }]
+}

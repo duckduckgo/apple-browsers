@@ -1,0 +1,74 @@
+{
+    "readme": "Test minSupportedVersion (int) with apiManipulation and conditionalPatching.",
+    "version": 1,
+    "features": {
+        "apiManipulation": {
+            "state": "enabled",
+            "exceptions": [],
+            "settings": {
+                "apiChanges": {
+                },
+                "conditionalChanges": [
+                    {
+                        "condition": {
+                            "minSupportedVersion": 98
+                        },
+                        "patchSettings": [
+                            {
+                                "op": "add",
+                                "path": "/apiChanges/versionIntTestBelow",
+                                "value": {
+                                    "type": "descriptor",
+                                    "getterValue": {
+                                        "type": "boolean",
+                                        "value": true
+                                    },
+                                    "define": true
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "condition": {
+                            "minSupportedVersion": 99
+                        },
+                        "patchSettings": [
+                            {
+                                "op": "add",
+                                "path": "/apiChanges/versionIntTestSame",
+                                "value": {
+                                    "type": "descriptor",
+                                    "getterValue": {
+                                        "type": "boolean",
+                                        "value": true
+                                    },
+                                    "define": true
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "condition": {
+                            "minSupportedVersion": 100
+                        },
+                        "patchSettings": [
+                            {
+                                "op": "add",
+                                "path": "/apiChanges/versionIntTestAbove",
+                                "value": {
+                                    "type": "descriptor",
+                                    "getterValue": {
+                                        "type": "boolean",
+                                        "value": true
+                                    },
+                                    "define": true
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "unprotectedTemporary": []
+} 

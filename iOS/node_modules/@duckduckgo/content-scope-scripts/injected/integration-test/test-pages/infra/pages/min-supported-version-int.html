@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width" />
+        <title>Min Supported Version (Int)</title>
+        <link rel="stylesheet" href="../../shared/style.css" />
+    </head>
+    <body>
+        <script src="../../shared/utils.js"></script>
+        <p><a href="../index.html">[Infra]</a></p>
+        <p>This page verifies minSupportedVersion (int) conditional patching. Load with 99 as the version number.</p>
+        <script>
+            test('minSupportedVersion (int)', async () => {
+                const results = [];
+                results.push({
+                    name: 'versionIntTestBelow should always be true',
+                    result: window.versionIntTestBelow,
+                    expected: true,
+                });
+                results.push({
+                    name: 'versionIntTestSame should always be true',
+                    result: window.versionIntTestSame,
+                    expected: true,
+                });
+                results.push({
+                    name: 'versionIntTestAbove should be undefined',
+                    result: window.versionIntTestAbove,
+                    expected: undefined,
+                });
+                return results;
+            });
+            renderResults();
+        </script>
+    </body>
+</html>

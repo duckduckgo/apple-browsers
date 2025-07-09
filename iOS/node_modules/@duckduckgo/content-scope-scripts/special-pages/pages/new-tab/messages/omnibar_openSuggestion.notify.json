@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Open Suggestion Action",
+  "type": "object",
+  "required": [
+    "suggestion",
+    "target"
+  ],
+  "properties": {
+    "suggestion": {
+      "$ref": "./types/suggestion.json"
+    },
+    "target": {
+      "$ref": "./types/open-target.json"
+    }
+  }
+}

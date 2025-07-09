@@ -1,0 +1,13 @@
+{
+    "name": "hema",
+    "prehideSelectors": [".cookie-modal"],
+    "detectCmp": [{ "visible": ".cookie-modal .cookie-accept-btn" }],
+    "detectPopup": [{ "visible": ".cookie-modal .cookie-accept-btn" }],
+    "optIn": [{ "waitForThenClick": ".cookie-modal .cookie-accept-btn" }],
+    "optOut": [{ "waitForThenClick": ".cookie-modal .js-cookie-reject-btn" }],
+    "test": [
+        {
+            "cookieContains": "cookies_rejected=1"
+        }
+    ]
+}

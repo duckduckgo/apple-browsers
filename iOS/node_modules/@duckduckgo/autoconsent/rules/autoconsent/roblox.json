@@ -1,0 +1,36 @@
+{
+    "name": "roblox",
+    "vendorUrl": "https://roblox.com",
+    "cosmetic": false,
+    "runContext": {
+        "main": true,
+        "frame": false,
+        "urlPattern": "^https://(www\\.)?roblox\\.com/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": ".cookie-banner-wrapper"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookie-banner-wrapper .cookie-banner"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cookie-banner-wrapper button.btn-cta-lg"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".cookie-banner-wrapper button.btn-secondary-lg"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "RBXcb"
+        }
+    ]
+}

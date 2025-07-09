@@ -1,0 +1,28 @@
+{
+    "name": "nos.nl",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://nos\\.nl/"
+    },
+    "prehideSelectors": ["#ccm_notification_host"],
+    "detectCmp": [
+        {
+            "exists": "#ccm_notification_host"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ["#ccm_notification_host", "#ccm_notification"]
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ["#ccm_notification_host", "#ccm_close"]
+        }
+    ],
+    "optOut": [
+        {
+            "hide": "#ccm_notification_host"
+        }
+    ]
+}

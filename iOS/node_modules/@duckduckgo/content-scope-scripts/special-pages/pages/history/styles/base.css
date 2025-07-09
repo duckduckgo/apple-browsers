@@ -1,0 +1,82 @@
+*, *:after, *:before {
+    box-sizing: border-box
+}
+html[data-reduced-motion=true] * {
+    animation: none!important;
+    transition: none!important;
+}
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+* {
+    margin: 0;
+}
+body {
+    -webkit-font-smoothing: antialiased;
+
+    font-family: system-ui;
+    margin: 0;
+
+    height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
+
+    /* Make it feel more like something native */
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+}
+/** Allow debugging error messages to be selected for debugging **/
+:root[data-fatal-error] body {
+    user-select: auto;
+    -webkit-user-select: auto;
+}
+img, picture, video, canvas, svg {
+    display: block;
+    max-width: 100%;
+}
+input, button, textarea, select {
+    font: inherit;
+}
+p, h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
+}
+#app, #__next {
+    isolation: isolate;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    margin: 0;
+}
+button {
+    font-family: system-ui, sans-serif;
+}
+ul {
+    margin: 0;
+    padding: 0;
+}
+
+li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+button {
+    text-wrap: nowrap;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}

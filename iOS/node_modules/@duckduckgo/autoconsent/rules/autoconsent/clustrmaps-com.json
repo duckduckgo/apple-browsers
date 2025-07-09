@@ -1,0 +1,12 @@
+{
+    "name": "clustrmaps.com",
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?clustrmaps\\.com/"
+    },
+    "cosmetic": true,
+    "prehideSelectors": ["#gdpr-cookie-message"],
+    "detectCmp": [{ "exists": "#gdpr-cookie-message" }],
+    "detectPopup": [{ "visible": "#gdpr-cookie-message" }],
+    "optIn": [{ "click": "button#gdpr-cookie-accept" }],
+    "optOut": [{ "hide": "#gdpr-cookie-message" }]
+}

@@ -1,0 +1,9 @@
+{
+    "name": "iWink",
+    "prehideSelectors": ["body.cookies-request #cookie-bar"],
+    "detectCmp": [{ "exists": "body.cookies-request #cookie-bar" }],
+    "detectPopup": [{ "visible": "body.cookies-request #cookie-bar" }],
+    "optIn": [{ "waitForThenClick": "body.cookies-request #cookie-bar .allow-cookies" }],
+    "optOut": [{ "waitForThenClick": "body.cookies-request #cookie-bar .disallow-cookies" }],
+    "test": [{ "cookieContains": "cookie_permission_granted=no" }]
+}

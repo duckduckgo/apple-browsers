@@ -1,0 +1,34 @@
+{
+    "name": "bigcommerce-consent-manager",
+    "vendorUrl": "https://github.com/bigcommerce/consent-manager",
+    "cosmetic": false,
+    "prehideSelectors": ["#consent-manager"],
+    "detectCmp": [
+        {
+            "exists": "#consent-manager"
+        },
+        {
+            "eval": "EVAL_BIGCOMMERCE_CONSENT_MANAGER_DETECT"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#consent-manager button"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#consent-manager button:nth-child(3)"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "#consent-manager button:nth-child(2)"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "tracking-preferences"
+        }
+    ]
+}

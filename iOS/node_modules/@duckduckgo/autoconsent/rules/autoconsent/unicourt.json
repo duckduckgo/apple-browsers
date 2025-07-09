@@ -1,0 +1,29 @@
+{
+    "name": "unicourt",
+    "vendorUrl": "https://unicourt.com/",
+    "cosmetic": true,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?unicourt\\.com/"
+    },
+    "prehideSelectors": [".cookie-notification"],
+    "detectCmp": [
+        {
+            "exists": ".cookie-notification"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookie-notification"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cookie-notification button"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": ".cookie-notification"
+        }
+    ]
+}

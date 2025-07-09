@@ -1,0 +1,27 @@
+<html>
+    <body>
+        <script type="module">
+            import { runTests } from '@web/test-runner-mocha';
+
+            runTests(async () => {
+                await import('./dom-actions.element-visible');
+            });
+        </script>
+        <div id="none-visible">
+            <button style="display: none">This one is invisible</button>
+            <button style="display: none">This one too</button>
+            <div style="display: none">
+                <button>I am hidden too</button>
+            </div>
+        </div>
+        <div id="some-visible">
+            <button style="display: none">This one is invisible</button>
+            <button style="display: none">This one too</button>
+            <button>This one is visible</button>
+        </div>
+        <div id="all-visible">
+            <button>This one is visible</button>
+            <button>This one too</button>
+        </div>
+    </body>
+</html>

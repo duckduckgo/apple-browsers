@@ -1,0 +1,44 @@
+{
+    "name": "cookie-manager-popup",
+    "cosmetic": false,
+    "runContext": {
+        "main": true,
+        "frame": false
+    },
+    "intermediate": false,
+    "detectCmp": [
+        {
+            "exists": "#notice-cookie-block #allow-functional-cookies, #notice-cookie-block #btn-cookie-settings"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#notice-cookie-block"
+        }
+    ],
+    "optIn": [
+        {
+            "click": "#btn-cookie-allow"
+        }
+    ],
+    "optOut": [
+        {
+            "if": {
+                "exists": "#allow-functional-cookies"
+            },
+            "then": [{ "click": "#allow-functional-cookies" }],
+            "else": [
+                { "waitForThenClick": "#btn-cookie-settings" },
+                { "waitForVisible": ".modal-body" },
+                { "click": ".modal-body input:checked, .switch[data-switch=\"on\"]", "all": true, "optional": true },
+                { "click": "[role=\"dialog\"] .modal-footer button" }
+            ]
+        }
+    ],
+    "prehideSelectors": ["#btn-cookie-settings"],
+    "test": [
+        {
+            "eval": "EVAL_COOKIE_MANAGER_POPUP_0"
+        }
+    ]
+}

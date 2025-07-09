@@ -1,0 +1,42 @@
+.favicon {
+    --border-radius: 8px;
+
+    display: block;
+    background-repeat: no-repeat;
+    background-size: contain;
+    pointer-events: none;
+    border-radius: var(--border-radius);
+}
+
+.faviconLarge {
+    max-height: calc(32 * var(--px-in-rem));
+    max-width: calc(32 * var(--px-in-rem));
+}
+
+.faviconSmall {
+    max-height: calc(16 * var(--px-in-rem));
+    max-width: calc(16 * var(--px-in-rem));
+    --border-radius: 4px;
+}
+
+.faviconText {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: lowercase;
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    height: calc(32 * var(--px-in-rem));
+    width: calc(32 * var(--px-in-rem));
+
+    span:first-child {
+        text-transform: uppercase;
+    }
+
+    &.faviconSmall {
+        font-size: 0.5rem;
+        height: calc(16 * var(--px-in-rem));
+        width: calc(16 * var(--px-in-rem));
+    }
+}

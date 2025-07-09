@@ -1,0 +1,11 @@
+{
+    "name": "vodafone.de",
+    "runContext": {
+        "urlPattern": "^https://www\\.vodafone\\.de/"
+    },
+    "prehideSelectors": [".dip-consent,.dip-consent-container"],
+    "detectCmp": [{ "exists": ".dip-consent-container" }],
+    "detectPopup": [{ "visible": ".dip-consent-content" }],
+    "optOut": [{ "click": ".dip-consent-btn[tabindex=\"2\"]" }],
+    "optIn": [{ "click": ".dip-consent-btn[tabindex=\"1\"]" }]
+}

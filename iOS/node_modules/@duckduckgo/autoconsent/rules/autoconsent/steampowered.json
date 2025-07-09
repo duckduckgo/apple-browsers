@@ -1,0 +1,15 @@
+{
+    "name": "steampowered.com",
+    "detectCmp": [{ "exists": ".cookiepreferences_popup" }, { "visible": ".cookiepreferences_popup" }],
+    "detectPopup": [{ "visible": ".cookiepreferences_popup" }],
+    "optOut": [{ "click": "#rejectAllButton" }],
+    "optIn": [{ "click": "#acceptAllButton" }],
+    "test": [
+        {
+            "wait": 1000
+        },
+        {
+            "eval": "EVAL_STEAMPOWERED_0"
+        }
+    ]
+}

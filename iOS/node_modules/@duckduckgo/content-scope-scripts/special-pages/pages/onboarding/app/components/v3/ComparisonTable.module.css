@@ -1,0 +1,82 @@
+.table {
+    border-spacing: 0;
+    padding: 0 var(--sp-14);
+    width: 100%;
+}
+
+.rowHeading {
+    font-size: calc(15 * var(--px-in-rem));
+    font-weight: 500;
+    line-height: normal;
+    padding: var(--sp-3) var(--sp-3) var(--sp-3) 0;
+}
+
+.rowCell {
+    text-align: center;
+}
+
+.row:not(:last-child) {
+    & .rowHeading,
+    & .rowCell {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.09);
+
+        @media (prefers-color-scheme: dark) {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+    }
+}
+
+.rowHeadingContents {
+    align-items: center;
+    display: flex;
+    gap: var(--sp-4);
+    text-align: left;
+}
+
+.rowIcon {
+    height: var(--sp-6);
+    width: var(--sp-6);
+}
+
+.status {
+    display: inline-block;
+    height: var(--sp-5);
+    width: var(--sp-5);
+}
+
+.notSupported {
+    background-image: url('../../../public/assets/img/icons/cross-24.svg');
+}
+
+.partialSupport {
+    background-image: url('../../../public/assets/img/icons/stop-24.svg');
+}
+
+.fullSupport {
+    background-image: url('../../../public/assets/img/icons/check-24.svg');
+}
+
+.browserIcon {
+    background-color: #fff;
+    background-position: center center;
+    background-repeat: no-repeat;
+    border-radius: var(--sp-2);
+    box-shadow: 0px 1.25px 3.75px 0px rgba(0, 0, 0, 0.10), 0px 5px 10px 0px rgba(0, 0, 0, 0.08);
+    display: inline-block;
+    margin: 0 var(--sp-3);
+    height: var(--sp-10);
+    width: var(--sp-10);
+}
+
+.browserIconChrome {
+    background-image: url('../../../public/assets/img/icons/chrome.svg');
+}
+
+.browserIconSafari {
+    background-image: url('../../../public/assets/img/icons/safari.svg');
+}
+
+.browserIconDuckDuckGo {
+    background-color: #de5833;
+    background-image: url('../../../public/assets/img/icons/ddg.svg');
+}

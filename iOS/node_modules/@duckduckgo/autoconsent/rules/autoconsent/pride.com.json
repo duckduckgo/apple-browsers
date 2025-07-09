@@ -1,0 +1,26 @@
+{
+    "name": "pride.com",
+    "vendorUrl": "https://unknown",
+    "cosmetic": true,
+    "prehideSelectors": [".gdpr-wrapper"],
+    "detectCmp": [
+        {
+            "exists": ".gdpr-wrapper .gdpr-cookie-wrapper"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".gdpr-wrapper .gdpr-cookie-wrapper"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".gdpr-wrapper button.gdpr-cookie-accept"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": ".gdpr-wrapper"
+        }
+    ]
+}

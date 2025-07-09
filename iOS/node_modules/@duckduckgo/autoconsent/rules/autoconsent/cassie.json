@@ -1,0 +1,30 @@
+{
+    "name": "cassie",
+    "vendorUrl": "https://trustcassie.com",
+    "cosmetic": false,
+    "runContext": {
+        "main": true,
+        "frame": false
+    },
+    "prehideSelectors": [".cassie-cookie-module"],
+    "detectCmp": [
+        {
+            "exists": ".cassie-pre-banner"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#cassie_pre_banner_text"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cassie-accept-all"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".cassie-reject-all"
+        }
+    ]
+}

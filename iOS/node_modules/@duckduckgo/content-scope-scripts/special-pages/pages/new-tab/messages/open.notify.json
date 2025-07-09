@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Open Action",
+  "type": "object",
+  "required": ["target"],
+  "properties": {
+    "target": {
+      "enum": [
+         "settings"
+      ]
+    }
+  }
+}

@@ -1,0 +1,35 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EXTENSIONS = void 0;
+exports.EXTENSIONS = new Set([
+    'apng',
+    'bmp',
+    'cur',
+    'dib',
+    'eps',
+    'gif',
+    'heic',
+    'heif',
+    'ico',
+    'j2k',
+    'jfi',
+    'jfif',
+    'jif',
+    'jp2',
+    'jpe',
+    'jpeg',
+    'jpf',
+    'jpg',
+    'jpm',
+    'jpx',
+    'mj2',
+    'pjp',
+    'pjpeg',
+    'png',
+    'svg',
+    'svgz',
+    'tif',
+    'tiff',
+    'webp',
+]);
+//# sourceMappingURL=images.js.map

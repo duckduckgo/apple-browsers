@@ -1,0 +1,22 @@
+{
+    "name": "strato.de",
+    "prehideSelectors": [".consent__wrapper"],
+    "runContext": {
+        "urlPattern": "^https://www\\.strato\\.de/"
+    },
+    "detectCmp": [{ "exists": ".consent" }],
+    "detectPopup": [{ "visible": ".consent" }],
+    "optIn": [
+        {
+            "click": "button.consentAgree"
+        }
+    ],
+    "optOut": [
+        {
+            "click": "button.consentSettings"
+        },
+        {
+            "waitForThenClick": "button#consentSubmit"
+        }
+    ]
+}

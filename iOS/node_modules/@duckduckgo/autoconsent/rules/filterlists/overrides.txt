@@ -1,0 +1,4 @@
+@@||duckduckgo.com^$document
+@@||duckduckgo.com^$elemhide
+! domain-level exceptions above are not working with the adblocker library
+privacy-test-pages.site,first-party.example###privacy-test-page-cmp-test-banner-filterlist

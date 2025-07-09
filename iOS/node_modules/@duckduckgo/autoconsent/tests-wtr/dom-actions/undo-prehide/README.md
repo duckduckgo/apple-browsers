@@ -1,0 +1,1 @@
+Note: The test cases for `undoPrehide()` have to be separated into dedicated files, as the generated HTML element `style#autoconsent-prehide` always has the same id and thus the test cases would interfere with one another.

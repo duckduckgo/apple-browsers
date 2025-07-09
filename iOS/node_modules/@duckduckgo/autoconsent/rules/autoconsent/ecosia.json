@@ -1,0 +1,28 @@
+{
+    "name": "ecosia",
+    "vendorUrl": "https://www.ecosia.org/",
+    "runContext": {
+        "urlPattern": "^https://www\\.ecosia\\.org/"
+    },
+    "prehideSelectors": [".cookie-wrapper"],
+    "detectCmp": [
+        {
+            "exists": ".cookie-wrapper > .cookie-notice"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookie-wrapper > .cookie-notice"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-test-id=cookie-notice-accept]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "[data-test-id=cookie-notice-reject]"
+        }
+    ]
+}

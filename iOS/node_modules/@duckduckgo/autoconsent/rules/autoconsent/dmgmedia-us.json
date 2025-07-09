@@ -1,0 +1,13 @@
+{
+    "name": "dmgmedia-us",
+    "prehideSelectors": ["#mol-ads-cmp-iframe, div.mol-ads-cmp > form > div"],
+    "detectCmp": [{ "exists": "div.mol-ads-cmp > form > div" }],
+    "detectPopup": [{ "waitForVisible": "div.mol-ads-cmp > form > div" }],
+    "optIn": [{ "waitForThenClick": "button.mol-ads-cmp--btn-primary" }],
+    "optOut": [
+        { "waitForThenClick": "div.mol-ads-ccpa--message > u > a" },
+        { "waitForVisible": ".mol-ads-cmp--modal-dialog" },
+        { "waitForThenClick": "a.mol-ads-cmp-footer-privacy" },
+        { "waitForThenClick": "button.mol-ads-cmp--btn-secondary" }
+    ]
+}

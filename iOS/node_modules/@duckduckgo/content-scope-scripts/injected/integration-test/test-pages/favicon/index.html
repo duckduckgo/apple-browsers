@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Document</title>
+    <link rel="shortcut icon" href="./favicon.png">
+</head>
+<body>
+<button onclick="setOverride()">Set override</button>
+<button onclick="setManyOverrides()">Set many overrides</button>
+<button onclick="addNew()">Add new</button>
+<script>
+    function setOverride() {
+        document.querySelector("link[rel='shortcut icon']").href = "./new_favicon.png";
+    }
+    async function setManyOverrides() {
+        const elem = document.querySelector("link[rel='shortcut icon']");
+        for (let i = 0; i < 100; i++) {
+            await new Promise(resolve => {
+                setTimeout(resolve, 40);
+            })
+            const path = `./new_favicon.png?count=${i}`
+            elem.href = path
+        }
+    }
+    function addNew() {
+        const next = document.createElement('link');
+        next.rel = 'shortcut icon'
+        next.href = './new_favicon.png'
+        document.head.appendChild(next)
+    }
+</script>
+</body>
+</html>

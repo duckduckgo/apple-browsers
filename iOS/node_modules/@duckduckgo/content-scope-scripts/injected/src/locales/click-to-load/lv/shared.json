@@ -1,0 +1,23 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "learnMore" : {
+    "title" : "Uzzināt vairāk",
+    "note" : "Link to learn more about a given topic"
+  },
+  "readAbout" : {
+    "title" : "Lasi par šo privātuma aizsardzību",
+    "note" : "Alt text for learnMore link"
+  },
+  "shareFeedback" : {
+    "title" : "Kopīgot atsauksmi",
+    "note" : "Link to open Share Feedback form"
+  }
+}

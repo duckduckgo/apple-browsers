@@ -1,0 +1,22 @@
+{
+  "ntp_show_less": {
+    "title": "Show Less",
+    "note": "Button that reduces the number of items or content displayed."
+  },
+  "ntp_show_more": {
+    "title": "Show More",
+    "note": "Button that increases the number of items or content displayed."
+  },
+  "ntp_dismiss": {
+    "title": "Dismiss",
+    "note": "Button that closes or hides the current popup or notification."
+  },
+  "ntp_customizer_button": {
+    "title": "Customize",
+    "note": "Button opens a menu. The menu allows the user to customize the page, such as showing/hiding sections."
+  },
+  "widgets_visibility_menu_title": {
+    "title": "Customize New Tab Page",
+    "note": "Heading text describing that there's a list of toggles for customizing the page layout."
+  }
+}

@@ -1,0 +1,36 @@
+{
+    "name": "ryanair",
+    "vendorUrl": "https://www.ryanair.com/",
+    "cosmetic": false,
+    "runContext": {
+        "main": true,
+        "frame": false,
+        "urlPattern": "^https://(www\\.)?ryanair\\.com/"
+    },
+    "prehideSelectors": ["#cookie-popup-with-overlay"],
+    "detectCmp": [
+        {
+            "exists": "#cookie-popup-with-overlay"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#cookie-popup-with-overlay"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#cookie-popup-with-overlay [data-ref='cookie.accept-all']"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "#cookie-popup-with-overlay [data-ref='cookie.no-thanks']"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "RY_COOKIE_CONSENT"
+        }
+    ]
+}

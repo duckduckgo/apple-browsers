@@ -1,0 +1,19 @@
+.hiker {
+    bottom: 0;
+    position: fixed;
+    right: var(--sp-35);
+
+    animation-name: hiker-appear;
+    animation-duration: 500ms;
+    animation-fill-mode: both;
+}
+
+@keyframes hiker-appear {
+    from {
+        transform: translateX(-300px) translateY(400px);
+    }
+
+    to {
+        transform: translateX(0) translateY(0);
+    }
+}

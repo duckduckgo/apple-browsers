@@ -1,0 +1,26 @@
+{
+    "name": "wiki.gg",
+    "vendorUrl": "https://wiki.gg",
+    "cosmetic": true,
+    "prehideSelectors": [".mw-cookiewarning-container"],
+    "detectCmp": [
+        {
+            "exists": ".mw-cookiewarning-container"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".mw-cookiewarning-container"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".mw-cookiewarning-container button[name=disablecookiewarning]"
+        }
+    ],
+    "optOut": [
+        {
+            "hide": ".mw-cookiewarning-container"
+        }
+    ]
+}

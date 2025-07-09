@@ -1,0 +1,28 @@
+{
+    "name": "lia",
+    "vendorUrl": "https://unknown",
+    "prehideSelectors": [".lia-cookie-banner-alert"],
+    "detectCmp": [
+        {
+            "exists": ".lia-cookie-banner-alert"
+        }
+    ],
+    "detectPopup": [
+        {
+            "exists": ".lia-cookie-banner-alert .AjaxFeedback"
+        },
+        {
+            "visible": ".lia-cookie-banner-alert"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".lia-cookie-banner-alert a.lia-cookie-banner-alert-accept"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".lia-cookie-banner-alert a.lia-cookie-banner-alert-reject"
+        }
+    ]
+}

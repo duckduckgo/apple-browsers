@@ -1,0 +1,37 @@
+{
+    "name": "zinio",
+    "vendorUrl": "https://www.zinio.com/",
+    "cosmetic": false,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?zinio\\.com/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": "#consent-init"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#consent-init"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#consent-init #consent-accept-all"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "#consent-init #consent-configure"
+        },
+        {
+            "waitForThenClick": "#consent-update #consent-configuration-save"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "zinio-cookie-consent"
+        }
+    ]
+}

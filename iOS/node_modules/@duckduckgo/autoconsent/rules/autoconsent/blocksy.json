@@ -1,0 +1,36 @@
+{
+    "name": "blocksy",
+    "vendorUrl": "https://creativethemes.com/blocksy/docs/extensions/cookies-consent/",
+    "cosmetic": false,
+    "runContext": {
+        "main": true,
+        "frame": false
+    },
+    "intermediate": false,
+    "prehideSelectors": [".cookie-notification"],
+    "detectCmp": [
+        {
+            "exists": "#blocksy-ext-cookies-consent-styles-css"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookie-notification"
+        }
+    ],
+    "optIn": [
+        {
+            "click": ".cookie-notification .ct-cookies-decline-button"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".cookie-notification .ct-cookies-decline-button"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "blocksy_cookies_consent_accepted=no"
+        }
+    ]
+}

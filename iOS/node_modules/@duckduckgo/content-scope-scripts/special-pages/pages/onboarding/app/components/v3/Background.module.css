@@ -1,0 +1,101 @@
+.background {
+    position: fixed;
+    z-index: 0;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+
+    /* Modern browsers support multiple `background-size` so add grain */
+    background-color: #FDEDE5;
+    background-image: url("../../../public/assets/img/grain.png"), url("../../../public/assets/img/background-v3.jpg");
+    background-blend-mode: overlay, normal;
+    background-repeat: repeat, no-repeat;
+    background-size: 50px, cover;
+
+    @media only screen and (min-width: 481px) {
+        background-size: 100px, 200% 100%;
+    }
+    @media only screen and (min-width: 801px) {
+        background-size: 100px, 100% 100%;
+    }
+    @media (prefers-color-scheme: dark) {
+        background-color: #37214F;
+        background-image: url("../../../public/assets/img/grain-dark.png"), url("../../../public/assets/img/background-dark-v3.jpg");
+        background-blend-mode: overlay, normal;
+        background-repeat: repeat, no-repeat;
+        background-size: 50px, cover;
+    }
+}
+
+.foreground {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-repeat: no-repeat;
+}
+
+.animated {
+    animation-duration: 30s;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+}
+
+.clouds {
+    background-image: url("../../../public/assets/img/clouds.svg");
+    background-position: top right;
+    animation-name: offscreen-clouds;
+    animation-duration: 50s;
+
+    @media (prefers-color-scheme: dark) {
+        opacity: .1;
+    }
+}
+
+.mountains {
+    background-image: url("../../../public/assets/img/mountains.svg");
+    background-position: bottom right;
+
+    @media (prefers-color-scheme: dark) {
+        opacity: .15;
+    }
+}
+
+.stars {
+    background-image: url("../../../public/assets/img/stars.svg");
+    background-position: top right;
+    display: none;
+
+    @media screen and (prefers-color-scheme: dark) {
+        display: block;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    .foreground {
+        display: none
+    }
+}
+
+@keyframes offscreen {
+    from {
+        transform: translateX(100vw);
+    }
+
+    to {
+        transform: translateX(0vw);
+    }
+}
+
+@keyframes offscreen-clouds {
+    from {
+        /* this accounts for clouds SVG having some 'whitespace' + being pinned to the top right  */
+        transform: translateX(830px);
+    }
+
+    to {
+        transform: translateX(0vw);
+    }
+}

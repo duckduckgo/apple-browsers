@@ -1,0 +1,16 @@
+{
+    "name": "sibbo",
+    "prehideSelectors": ["sibbo-cmp-layout"],
+    "detectCmp": [{ "exists": "sibbo-cmp-layout" }],
+    "detectPopup": [{ "visible": "#rejectAllMain" }],
+    "optIn": [
+        {
+            "click": "#acceptAllMain"
+        }
+    ],
+    "optOut": [
+        {
+            "click": "#rejectAllMain"
+        }
+    ]
+}

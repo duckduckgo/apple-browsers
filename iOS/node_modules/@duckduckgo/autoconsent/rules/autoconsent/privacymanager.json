@@ -1,0 +1,29 @@
+{
+    "name": "privacymanager.io",
+    "prehideSelectors": ["#gdpr-consent-tool-wrapper", "iframe[src^=\"https://cmp-consent-tool.privacymanager.io\"]"],
+    "runContext": {
+        "urlPattern": "^https://cmp-consent-tool\\.privacymanager\\.io/",
+        "main": false,
+        "frame": true
+    },
+    "detectCmp": [{ "exists": "button#save" }],
+    "detectPopup": [{ "visible": "button#save" }],
+    "optIn": [
+        {
+            "click": "button#save"
+        }
+    ],
+    "optOut": [
+        {
+            "if": { "exists": "#denyAll" },
+            "then": [{ "click": "#denyAll" }, { "waitForThenClick": ".okButton" }],
+            "else": [
+                { "waitForThenClick": "#manageSettings" },
+                { "waitFor": ".purposes-overview-list" },
+                { "waitFor": "button#saveAndExit" },
+                { "click": "span[role=checkbox][aria-checked=true]", "all": true, "optional": true },
+                { "click": "button#saveAndExit" }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,25 @@
+{
+    "name": "bbb.org",
+    "cosmetic": false,
+    "prehideSelectors": [".cookies-message"],
+    "detectCmp": [{ "exists": ".cookies-message" }],
+    "detectPopup": [{ "visible": ".cookies-message [name='allow-all']" }],
+    "optIn": [{ "click": ".cookies-message [name='allow-all']" }],
+    "optOut": [
+        { "waitForVisible": ".cookies-message button.bds-button-unstyled" },
+        { "wait": 500 },
+        { "click": ".cookies-message button.bds-button-unstyled" },
+        { "waitFor": ".cookies-policy-dialog[open]" },
+        {
+            "click": ".cookies-policy-dialog fieldset input[type=radio][value=false]:not(:checked)",
+            "all": true,
+            "optional": true
+        },
+        {
+            "click": ".cookies-policy-dialog button.bds-button"
+        },
+        {
+            "waitForThenClick": ".cookies-message button.bds-button:not([name])"
+        }
+    ]
+}

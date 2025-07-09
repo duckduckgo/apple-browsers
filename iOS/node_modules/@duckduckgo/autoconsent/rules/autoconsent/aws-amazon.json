@@ -1,0 +1,23 @@
+{
+    "name": "aws.amazon.com",
+    "prehideSelectors": ["#awsccc-cb-content", "#awsccc-cs-container", "#awsccc-cs-modalOverlay", "#awsccc-cs-container-inner"],
+    "detectCmp": [{ "exists": "#awsccc-cb-content" }],
+    "detectPopup": [{ "visible": "#awsccc-cb-content" }],
+    "optIn": [{ "click": "button[data-id=awsccc-cb-btn-accept" }],
+    "optOut": [
+        {
+            "click": "button[data-id=awsccc-cb-btn-customize]"
+        },
+        {
+            "waitFor": "input[aria-checked]"
+        },
+        {
+            "click": "input[aria-checked=true]",
+            "all": true,
+            "optional": true
+        },
+        {
+            "click": "button[data-id=awsccc-cs-btn-save]"
+        }
+    ]
+}

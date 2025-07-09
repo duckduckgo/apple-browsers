@@ -1,0 +1,27 @@
+{
+    "name": "netbeat.de",
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?netbeat\\.de/"
+    },
+    "prehideSelectors": ["div#cookieWarning"],
+    "detectCmp": [
+        {
+            "exists": "div#cookieWarning"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "div#cookieWarning"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "a#btnCookiesAcceptAll"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "a#btnCookiesDenyAll"
+        }
+    ]
+}

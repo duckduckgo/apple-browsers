@@ -1,0 +1,18 @@
+{
+    "name": "canyon.com",
+    "runContext": {
+        "urlPattern": "^https://www\\.canyon\\.com/"
+    },
+    "prehideSelectors": ["div.modal.cookiesModal.is-open"],
+    "detectCmp": [{ "exists": "div.modal.cookiesModal.is-open" }],
+    "detectPopup": [{ "visible": "div.modal.cookiesModal.is-open" }],
+    "optIn": [{ "click": "div.cookiesModal__buttonWrapper > button[data-closecause=\"close-by-submit\"]" }],
+    "optOut": [
+        {
+            "click": "div.cookiesModal__buttonWrapper > button[data-closecause=\"close-by-manage-cookies\"]"
+        },
+        {
+            "waitForThenClick": "button#js-manage-data-privacy-save-button"
+        }
+    ]
+}

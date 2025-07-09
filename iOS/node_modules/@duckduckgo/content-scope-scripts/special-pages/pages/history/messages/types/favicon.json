@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Favicon",
+  "oneOf": [
+    {
+      "type": "null"
+    },
+    {
+      "type": "object",
+      "required": ["src"],
+      "properties": {
+        "src": {
+          "type": "string"
+        },
+        "maxAvailableSize": {
+          "type": "number"
+        }
+      }
+    }
+  ]
+}

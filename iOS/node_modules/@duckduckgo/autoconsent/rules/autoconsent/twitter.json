@@ -1,0 +1,19 @@
+{
+    "name": "twitter",
+    "runContext": {
+        "urlPattern": "^https://([a-z0-9-]+\\.)?(twitter|x)\\.com/"
+    },
+    "prehideSelectors": ["[data-testid=\"BottomBar\"]"],
+    "detectCmp": [{ "exists": "[data-testid=\"BottomBar\"] div" }],
+    "detectPopup": [{ "visible": "[data-testid=\"BottomBar\"] div" }],
+    "optIn": [
+        {
+            "waitForThenClick": "[data-testid=\"BottomBar\"] > div:has(>div:first-child>div:last-child>button[role=button]>span) > div:last-child > button[role=button]:first-child"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "[data-testid=\"BottomBar\"] > div:has(>div:first-child>div:last-child>button[role=button]>span) > div:last-child > button[role=button]:last-child"
+        }
+    ]
+}

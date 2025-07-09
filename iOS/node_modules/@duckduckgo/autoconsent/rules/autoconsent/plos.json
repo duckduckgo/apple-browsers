@@ -1,0 +1,39 @@
+{
+    "name": "plos",
+    "vendorUrl": "https://plos.org/",
+    "cosmetic": false,
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?plos\\.org/"
+    },
+    "prehideSelectors": ["#cookie-consent"],
+    "detectCmp": [
+        {
+            "exists": "#cookie-consent button"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "#cookie-consent button"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ["#cookie-consent", "xpath///button[contains(., 'Accept')"]
+        }
+    ],
+    "optOut": [
+        {
+            "click": "#cookie-consent input[type=checkbox]:checked:not(:disabled)",
+            "all": true,
+            "optional": true
+        },
+        {
+            "waitForThenClick": ["#cookie-consent", "xpath///button[contains(., 'Save Selected')]"]
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "plosCookieConsentStatus=false"
+        }
+    ]
+}

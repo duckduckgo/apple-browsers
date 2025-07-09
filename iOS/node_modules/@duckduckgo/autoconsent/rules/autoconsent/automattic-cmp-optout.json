@@ -1,0 +1,19 @@
+{
+    "name": "automattic-cmp-optout",
+    "prehideSelectors": ["form[class*=\"cookie-banner\"][method=\"post\"]"],
+    "detectCmp": [{ "exists": "form[class*=\"cookie-banner\"][method=\"post\"]" }],
+    "detectPopup": [{ "visible": "form[class*=\"cookie-banner\"][method=\"post\"]" }],
+    "optIn": [{ "click": "a[class*=\"accept-all-button\"]" }],
+    "optOut": [
+        {
+            "click": "form[class*=\"cookie-banner\"] div[class*=\"simple-options\"] a[class*=\"customize-button\"]"
+        },
+        {
+            "waitForThenClick": "input[type=checkbox][checked]:not([disabled])",
+            "all": true
+        },
+        {
+            "click": "a[class*=\"accept-selection-button\"]"
+        }
+    ]
+}

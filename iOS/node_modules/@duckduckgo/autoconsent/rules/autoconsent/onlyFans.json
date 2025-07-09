@@ -1,0 +1,25 @@
+{
+    "name": "onlyFans.com",
+    "runContext": {
+        "urlPattern": "^https://onlyfans\\.com/"
+    },
+    "prehideSelectors": ["div.b-cookies-informer"],
+    "detectCmp": [{ "exists": "div.b-cookies-informer" }],
+    "detectPopup": [{ "exists": "div.b-cookies-informer" }],
+    "optIn": [{ "click": "div.b-cookies-informer__nav > button:nth-child(2)" }],
+    "optOut": [
+        {
+            "click": "div.b-cookies-informer__nav > button:nth-child(1)"
+        },
+        {
+            "if": { "exists": "div.b-cookies-informer__switchers" },
+            "then": [
+                {
+                    "click": "div.b-cookies-informer__switchers input:not([disabled])",
+                    "all": true
+                },
+                { "click": "div.b-cookies-informer__nav > button" }
+            ]
+        }
+    ]
+}

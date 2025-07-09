@@ -1,0 +1,24 @@
+{
+    "state": {
+      "action": {
+        "actionType": "condition",
+        "expectations": [
+          {
+            "type": "element",
+            "selector": "form.ahm"
+          }
+        ],
+        "actions": [
+          {
+            "actionType": "click",
+            "elements": [
+              {
+                "type": "button",
+                "selector": ".btn-sbmt"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }

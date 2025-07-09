@@ -1,0 +1,26 @@
+{
+    "state": {
+      "action": {
+        "actionType": "click",
+        "id": "1",
+        "choices": [
+            { 
+                "condition": {
+                    "left": "40",
+                    "operation": ">=",
+                    "right": "45"
+                },
+                "elements": [
+                    { "type": "button", "selector": ".//a[text()='Yes']" }
+                ]
+            }
+        ],
+        "default": {
+            "elements": [
+                { "type": "button", "selector": ".//a[text()='No']" }
+            ]
+        }
+      }
+    }
+  }
+  

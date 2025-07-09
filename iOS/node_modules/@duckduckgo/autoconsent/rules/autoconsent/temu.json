@@ -1,0 +1,40 @@
+{
+    "name": "temu",
+    "vendorUrl": "https://temu.com",
+    "runContext": {
+        "urlPattern": "^https://([a-z0-9-]+\\.)?temu\\.com/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": "div > div > div > div > span[href*=\"/cookie-and-similar-technologies-policy.html\"]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "div > div > div > div > span[href*=\"/cookie-and-similar-technologies-policy.html\"]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "div > div > div:has(> div > span[href*=\"/cookie-and-similar-technologies-policy.html\"]) > [role=button]:nth-child(3)"
+        }
+    ],
+    "optOut": [
+        {
+            "if": {
+                "exists": "xpath///span[contains(., 'Alle afwijzen') or contains(., 'Reject all') or contains(., 'Tümünü reddet') or contains(., 'Odrzuć wszystko')]"
+            },
+            "then": [
+                {
+                    "waitForThenClick": "xpath///span[contains(., 'Alle afwijzen') or contains(., 'Reject all') or contains(., 'Tümünü reddet') or contains(., 'Odrzuć wszystko')]"
+                }
+            ],
+            "else": [
+                {
+                    "waitForThenClick": "div > div > div:has(> div > span[href*=\"/cookie-and-similar-technologies-policy.html\"]) > [role=button]:nth-child(2)"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,340 @@
+name: Propagate Autoconsent To DDG Apps
+
+on:
+    workflow_dispatch:
+        inputs:
+            tag_name:
+                description: 'The tag of the release to propagate'
+                required: true
+            android:
+                description: 'Propagate to Android'
+                type: boolean
+                required: true
+                default: true
+            apple:
+                description: 'Propagate to iOS & macOS'
+                type: boolean
+                required: true
+                default: true
+            windows:
+                description: 'Propagate to Windows'
+                type: boolean
+                required: true
+                default: true
+
+    workflow_call:
+        inputs:
+            tag_name:
+                type: string
+                description: 'The tag of the release to propagate'
+                required: true
+            android:
+                description: 'Propagate to Android'
+                type: boolean
+                default: true
+            apple:
+                description: 'Propagate to iOS & macOS'
+                type: boolean
+                default: true
+            windows:
+                description: 'Propagate to Windows'
+                type: boolean
+                default: true
+
+env:
+    TAG: ${{ inputs.tag_name }}
+    RELEASE_NOTES: See release notes [here](https://github.com/duckduckgo/autoconsent/blob/${{ inputs.tag_name }}/CHANGELOG.md)
+
+jobs:
+    # ------------------------------------------------------------------------------
+    # Retrieve the corresponding Release data from the GitHub API
+    # ------------------------------------------------------------------------------
+    get_release_info:
+        runs-on: ubuntu-latest
+        outputs:
+            release-url: ${{ steps.get-release-url.outputs.result }}
+            release-notes: ${{ steps.get-release-notes.outputs.result }}
+        steps:
+            - name: Get Release URL
+              id: get-release-url
+              uses: actions/github-script@v4
+              with:
+                  result-encoding: string
+                  script: |
+                      const { data } = await github.repos.getReleaseByTag({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        tag: process.env.TAG
+                      });
+                      return data.html_url;
+
+            - name: Get Release Notes
+              id: get-release-notes
+              uses: actions/github-script@v4
+              with:
+                  result-encoding: string
+                  script: |
+                      const { data } = await github.repos.getReleaseByTag({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        tag: process.env.TAG
+                      });
+                      return data.body;
+
+    # ------------------------------------------------------------------------------
+    # Create initial Asana subtasks
+    # ------------------------------------------------------------------------------
+    create_asana_tasks:
+        needs: get_release_info
+        runs-on: ubuntu-latest
+        outputs:
+            asana-output: ${{ steps.create-asana-tasks.outputs.ASANA_OUTPUT }}
+        env:
+            RELEASE_URL: ${{ needs.get_release_info.outputs.release-url }}
+        steps:
+            # --- Setup ---
+            - uses: actions/checkout@v3
+              with:
+                  path: autoconsent/
+            - uses: ./autoconsent/.github/actions/setup-release-scripts
+            # --- Effect ---
+            - name: Create Asana Tasks
+              id: create-asana-tasks
+              env:
+                  ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+              run: |
+                  JSON_STRING="$(node ./autoconsent/ci/asana-create-tasks.js)"
+                  echo "ASANA_OUTPUT=$JSON_STRING" >> $GITHUB_OUTPUT
+
+    # ------------------------------------------------------------------------------
+    # Create PR with updated autoconsent on Android
+    # ------------------------------------------------------------------------------
+
+    update_android:
+        if: ${{ inputs.android }}
+        runs-on: ubuntu-latest
+        outputs:
+            pull-request-url: ${{ steps.create-pr.outputs.pull-request-url }}
+        needs:
+            - create_asana_tasks
+            - get_release_info
+        env:
+            RELEASE_URL: ${{ needs.get_release_info.outputs.release-url }}
+        steps:
+            # --- Setup ---
+            - uses: actions/checkout@v3
+              with:
+                  path: autoconsent/
+            - uses: ./autoconsent/.github/actions/setup-release-scripts
+            # --- Action ---
+            - name: Checkout Android
+              uses: actions/checkout@v3
+              with:
+                  repository: duckduckgo/android
+                  path: android/
+                  token: ${{ secrets.DAX_WEB_AUTOFILL_AUTOMATION }}
+            - uses: actions/setup-node@v3
+              with:
+                  node-version: current
+            - name: Update Android autoconsent reference
+              run: |
+                  cd android
+                  npm install @duckduckgo/autoconsent@${{ env.TAG }}
+                  npm run rebuild-autoconsent
+                  cd ..
+            - name: Create Android PR Body
+              env:
+                  ASANA_OUTPUT: ${{ needs.create_asana_tasks.outputs.asana-output }}
+              run: |
+                  TEMPLATE="$(node ./autoconsent/ci/create-pr-template.js android)"
+                  # Creates a randomised delimiter. See https://app.asana.com/0/1199892415909552/1203243297643584/f
+                  DELIMITER=$(echo $RANDOM | md5sum | head -c 20;)
+                  echo "PR_BODY_ANDROID<<$DELIMITER" >> $GITHUB_ENV
+                  echo "$TEMPLATE" >> $GITHUB_ENV
+                  echo "$DELIMITER" >> $GITHUB_ENV
+            # --- Effect ---
+            - name: Create PR for Android
+              uses: peter-evans/create-pull-request@v7
+              id: create-pr
+              with:
+                  path: android/
+                  add-paths: |
+                      package.json
+                      package-lock.json
+                      autoconsent/
+                  commit-message: Update autoconsent to ${{ env.TAG }}
+                  branch: update-autoconsent
+                  title: Update autoconsent to ${{ env.TAG }}
+                  body: '${{ env.PR_BODY_ANDROID }}'
+                  token: ${{ secrets.DAX_WEB_AUTOFILL_AUTOMATION }}
+
+    # ------------------------------------------------------------------------------
+    # Create PR with updated autoconsent on iOS & macOS
+    # ------------------------------------------------------------------------------
+
+    update_apple:
+        if: ${{ inputs.apple }}
+        runs-on: ubuntu-latest
+        outputs:
+            pull-request-url: ${{ steps.create-pr.outputs.pull-request-url }}
+        needs:
+            - create_asana_tasks
+            - get_release_info
+        env:
+            RELEASE_URL: ${{ needs.get_release_info.outputs.release-url }}
+        steps:
+            # --- Setup ---
+            - uses: actions/checkout@v3
+              with:
+                  path: autoconsent/
+            - uses: ./autoconsent/.github/actions/setup-release-scripts
+            # --- Action ---
+            - name: Checkout Apple monorepo
+              uses: actions/checkout@v3
+              with:
+                  repository: duckduckgo/apple-browsers
+                  path: apple-monorepo/
+                  token: ${{ secrets.DAX_WEB_AUTOFILL_AUTOMATION }}
+            - uses: actions/setup-node@v3
+              with:
+                  node-version: current
+            - name: Update iOS autoconsent reference
+              run: |
+                  cd apple-monorepo/iOS
+                  npm install @duckduckgo/autoconsent@${{ env.TAG }}
+                  npm run rebuild-autoconsent
+                  cd ..
+            - name: Update macOS autoconsent reference
+              run: |
+                  cd apple-monorepo/macOS
+                  npm install @duckduckgo/autoconsent@${{ env.TAG }}
+                  npm run rebuild-autoconsent
+                  cd ..
+            - name: Create Apple PR Body
+              env:
+                  ASANA_OUTPUT: ${{ needs.create_asana_tasks.outputs.asana-output }}
+              run: |
+                  TEMPLATE="$(node ./autoconsent/ci/create-pr-template.js apple)"
+                  # Creates a randomised delimiter. See https://app.asana.com/0/1199892415909552/1203243297643584/f
+                  DELIMITER=$(echo $RANDOM | md5sum | head -c 20;)
+                  echo "PR_BODY_APPLE<<$DELIMITER" >> $GITHUB_ENV
+                  echo "$TEMPLATE" >> $GITHUB_ENV
+                  echo "$DELIMITER" >> $GITHUB_ENV
+            # --- Effect ---
+            - name: Create PR for Apple platforms
+              uses: peter-evans/create-pull-request@v7
+              id: create-pr
+              with:
+                  path: apple-monorepo/
+                  add-paths: |
+                      iOS/package.json
+                      iOS/package-lock.json
+                      iOS/DuckDuckGo/Autoconsent/
+                      macOS/package.json
+                      macOS/package-lock.json
+                      macOS/DuckDuckGo/Autoconsent/
+                  commit-message: Update autoconsent to ${{ env.TAG }}
+                  branch: update-autoconsent
+                  title: Update autoconsent to ${{ env.TAG }}
+                  body: '${{ env.PR_BODY_APPLE }}'
+                  token: ${{ secrets.DAX_WEB_AUTOFILL_AUTOMATION }}
+
+    # ------------------------------------------------------------------------------
+    # Create PR with updated autofill on Windows
+    # ------------------------------------------------------------------------------
+
+    update_windows:
+        if: ${{ inputs.windows }}
+        runs-on: ubuntu-latest
+        outputs:
+            pull-request-url: ${{ steps.create-pr.outputs.pull-request-url }}
+        needs:
+            - create_asana_tasks
+            - get_release_info
+        env:
+            RELEASE_URL: ${{ needs.get_release_info.outputs.release-url }}
+        steps:
+            # --- Setup ---
+            - uses: actions/checkout@v3
+              with:
+                  path: autoconsent/
+            - uses: ./autoconsent/.github/actions/setup-release-scripts
+            # --- Action ---
+            - name: Checkout Windows
+              uses: actions/checkout@v3
+              with:
+                  repository: duckduckgo/windows-browser
+                  path: windows/
+                  token: ${{ secrets.DAX_WEB_AUTOFILL_AUTOMATION }}
+            - uses: actions/setup-node@v3
+              with:
+                  node-version: current
+            - name: Update Windows autoconsent reference
+              run: |
+                  cd windows/WindowsBrowser/Application/Autoconsent/External
+                  npm install @duckduckgo/autoconsent@${{ env.TAG }}
+                  npm run rebuild-autoconsent
+                  cd ../../../../../
+            - name: Create Windows PR Body
+              env:
+                  ASANA_OUTPUT: ${{ needs.create_asana_tasks.outputs.asana-output }}
+              run: |
+                  TEMPLATE="$(node ./autoconsent/ci/create-pr-template.js windows)"
+                  # Creates a randomised delimiter. See https://app.asana.com/0/1199892415909552/1203243297643584/f
+                  DELIMITER=$(echo $RANDOM | md5sum | head -c 20;)
+                  echo "PR_BODY_WINDOWS<<$DELIMITER" >> $GITHUB_ENV
+                  echo "$TEMPLATE" >> $GITHUB_ENV
+                  echo "$DELIMITER" >> $GITHUB_ENV
+            # --- Effect ---
+            - name: Create PR for Windows
+              uses: peter-evans/create-pull-request@v7
+              id: create-pr
+              with:
+                  path: windows/
+                  add-paths: |
+                      WindowsBrowser/Application/Autoconsent/
+                  commit-message: Update autoconsent to ${{ env.TAG }}
+                  branch: update-autoconsent
+                  title: Update autoconsent to ${{ env.TAG }}
+                  body: '${{ env.PR_BODY_WINDOWS }}'
+                  token: ${{ secrets.DAX_WEB_AUTOFILL_AUTOMATION }}
+
+    # ------------------------------------------------------------------------------
+    # Update Asana subtasks with PR URLs
+    # ------------------------------------------------------------------------------
+
+    update_asana_tasks:
+        runs-on: ubuntu-latest
+        # Always run this final step, even if any of the updates have failed
+        # unless the previous jobs were cancelled
+        if: ${{ always() && !contains(needs.*.result, 'cancelled') }}
+        needs: [create_asana_tasks, update_android, update_apple, update_windows]
+        steps:
+            # --- Setup ---
+            - uses: actions/checkout@v3
+              with:
+                  path: autoconsent/
+            - uses: ./autoconsent/.github/actions/setup-release-scripts
+            # --- Effect ---
+            - name: Update Asana tasks
+              env:
+                  ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+                  ASANA_OUTPUT: ${{ needs.create_asana_tasks.outputs.asana-output }}
+                  APPLE_PR_URL: ${{ needs.update_apple.outputs.pull-request-url }}
+                  WINDOWS_PR_URL: ${{ needs.update_windows.outputs.pull-request-url }}
+                  ANDROID_PR_URL: ${{ needs.update_android.outputs.pull-request-url }}
+              run: |
+                  node ./autoconsent/ci/asana-update-tasks.js
+
+            - name: Output workflow summary
+              # Show failure message if any of the jobs report failed
+              if: ${{ contains(needs.*.result, 'failure') }}
+              run: |
+                  echo "Release process completed but with failures reported." >> $GITHUB_STEP_SUMMARY
+                  echo "Please review the job output to see which steps require manual intervention." >> $GITHUB_STEP_SUMMARY
+            - name: Output workflow summary
+              # Show success message as long as none of the jobs report failed
+              if: ${{ !contains(needs.*.result, 'failure') }}
+              run: |
+                  echo "Release process completed successfully." >> $GITHUB_STEP_SUMMARY
+                  echo "All PRs and Asana tasks created! :rocket:" >> $GITHUB_STEP_SUMMARY

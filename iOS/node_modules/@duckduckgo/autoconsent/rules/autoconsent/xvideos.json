@@ -1,0 +1,28 @@
+{
+    "name": "xvideos",
+    "vendorUrl": "https://xvideos.com",
+    "runContext": {
+        "urlPattern": "^https://[^/]*xvideos\\.com/"
+    },
+    "prehideSelectors": [],
+    "detectCmp": [
+        {
+            "exists": ".disclaimer-opened #disclaimer-cookies"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".disclaimer-opened #disclaimer-cookies"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "#disclaimer-accept_cookies"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "#disclaimer-reject_cookies"
+        }
+    ]
+}

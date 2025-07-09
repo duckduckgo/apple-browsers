@@ -1,0 +1,19 @@
+{
+    "name": "Complianz notice",
+    "prehideSelectors": [".cc-type-info[aria-describedby=\"cookieconsent:desc\"]"],
+    "cosmetic": true,
+    "detectCmp": [{ "exists": ".cc-type-info[aria-describedby=\"cookieconsent:desc\"] .cc-compliance .cc-btn" }],
+    "detectPopup": [{ "visible": ".cc-type-info[aria-describedby=\"cookieconsent:desc\"] .cc-compliance .cc-btn" }],
+    "optIn": [
+        { "click": ".cc-accept-all", "optional": true },
+        { "click": ".cc-allow", "optional": true },
+        { "click": ".cc-dismiss", "optional": true }
+    ],
+    "optOut": [
+        {
+            "if": { "exists": ".cc-deny" },
+            "then": [{ "click": ".cc-deny" }],
+            "else": [{ "hide": "[aria-describedby=\"cookieconsent:desc\"]" }]
+        }
+    ]
+}

@@ -1,0 +1,99 @@
+{
+  "readme": "This config is used to test the harmful APIs feature.",
+  "version": 1,
+  "unprotectedTemporary": [],
+  "features": {
+    "windowsPermissionUsage": {
+      "state": "disabled",
+      "exceptions": []
+    },
+    "harmfulApis": {
+      "state": "enabled",
+      "settings": {
+        "deviceOrientation": {
+          "state": "enabled",
+          "filterEvents": ["deviceorientation", "devicemotion"]
+        },
+        "GenericSensor": {
+          "state": "enabled",
+          "filterPermissions": [
+            "accelerometer",
+            "ambient-light-sensor",
+            "gyroscope",
+            "magnetometer"
+          ],
+          "blockSensorStart": true
+        },
+        "UaClientHints": {
+          "state": "enabled",
+          "highEntropyValues": {
+            "trimBrands": true,
+            "trimPlatformVersion": 2,
+            "trimUaFullVersion": 1,
+            "trimFullVersionList": 1,
+            "model": "overridden-model",
+            "architecture": "overridden-architecture",
+            "bitness": "overridden-bitness",
+            "platform": "overridden-platform",
+            "mobile": "overridden-mobile"
+          }
+        },
+        "NetworkInformation": {
+          "state": "enabled"
+        },
+        "getInstalledRelatedApps": {
+          "state": "enabled",
+          "returnValue": ["overridden-return-value"]
+        },
+        "FileSystemAccess": {
+          "state": "enabled",
+          "disableOpenFilePicker": true,
+          "disableSaveFilePicker": true,
+          "disableDirectoryPicker": true,
+          "disableGetAsFileSystemHandle": true
+        },
+        "WindowPlacement": {
+          "state": "enabled",
+          "filterPermissions": ["window-placement", "window-management"],
+          "screenIsExtended": true
+        },
+        "WebBluetooth": {
+          "state": "enabled",
+          "filterPermissions": ["bluetooth"],
+          "filterEvents": ["availabilitychanged"],
+          "blockGetAvailability": true,
+          "blockRequestDevice": true
+        },
+        "WebUsb": {
+          "state": "enabled"
+        },
+        "WebSerial": {
+          "state": "enabled"
+        },
+        "WebHid": {
+          "state": "enabled"
+        },
+        "WebMidi": {
+          "state": "enabled",
+          "filterPermissions": ["midi"]
+        },
+        "IdleDetection": {
+          "state": "enabled",
+          "filterPermissions": ["idle-detection"]
+        },
+        "WebNfc": {
+          "state": "enabled",
+          "disableNdefReader": true,
+          "disableNdefMessage": true,
+          "disableNdefRecord": true
+        },
+        "StorageManager": {
+          "state": "enabled",
+          "allowedQuotaValues": [1337]
+        },
+        "domains": []
+      },
+      "exceptions": []
+    }
+  }
+}

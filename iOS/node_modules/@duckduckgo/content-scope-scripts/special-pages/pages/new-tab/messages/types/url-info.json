@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["urls", "totalTrackersBlocked"],
+  "properties": {
+    "urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "totalTrackersBlocked": {
+      "type": "number"
+    }
+  }
+}

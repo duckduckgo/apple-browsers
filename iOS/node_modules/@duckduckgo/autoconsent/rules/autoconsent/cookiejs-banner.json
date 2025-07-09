@@ -1,0 +1,30 @@
+{
+    "name": "cookiejs-banner",
+    "vendorUrl": "https://unknown",
+    "prehideSelectors": [".cookiejs-banner-wrapper"],
+    "detectCmp": [
+        {
+            "exists": ".cookiejs-banner-wrapper:not(.modal)"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".cookiejs-banner-wrapper button.cookiejs-button"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".cookiejs-banner-wrapper #accept-cookies-btn"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".cookiejs-banner-wrapper #reject-cookies-btn"
+        }
+    ],
+    "test": [
+        {
+            "cookieContains": "analytics_cookies=false"
+        }
+    ]
+}

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Duck Player Native - Player Overlay</title>
+    <link rel="stylesheet" href="../../shared/style.css">
+    <style>
+        *, *:before, *:after {
+            box-sizing: border-box;
+        }
+        body {
+            max-width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+        }
+        .controls {
+            padding: 1em 0;
+        }
+        [data-layout=mobile] body {
+            padding: 0;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            aspect-ratio: 16/9;
+            background: blue;
+        }
+        [data-layout=mobile] .container {
+            max-width: none;
+        }
+        #player {
+            height: 100%;
+        }
+        .html5-video-player {
+            position: relative;
+            height: 100%;
+            background: black;
+            background-size: contain;
+        }
+        .tools {
+            margin-bottom: 1rem;
+        }
+        video {
+            display: block;
+            height: 100%;
+            width: 100%;
+        }
+        .thumbnails {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+        .thumbnail {
+            margin: 5px;
+            background: lightblue;
+            border: 1px solid black;
+            aspect-ratio: 16/9;
+            display: block;
+        }
+
+        .thumbnail img, .short img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .ytp-error {
+            color: white;
+            position: fixed;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            line-height: 220%;
+            background-color: rgb(40, 40, 40);
+        }
+
+        .ytp-error .ytp-error-content {
+            position: relative;
+            max-width: 85%;
+            align-items: center;
+            justify-content: center;
+            display: flex;
+            margin: 0 auto;
+        }
+
+        .ytp-error .ytp-error-content .ytp-error-icon-container {
+            height: 96px;
+            width: 96px;
+            min-width: 96px;
+            min-height: 96px;
+            float: left
+        }
+
+        .ytp-error .ytp-error-content .ytp-error-content-wrap {
+            margin-top: auto;
+            margin-bottom: auto;
+            margin-left: 16px;
+            height: 100%;
+        }
+
+    </style>
+</head>
+<body>
+<p><a href="../index.html">[Duck Player]</a></p>
+
+<div class="controls">
+    <div>
+        <label for="locale-select">Choose locale:</label>
+        <select id="locale-select"></select>
+    </div>
+    <div>
+        <a href="?preview&wait-for-init-args&platform=ios">Preview iOS</a>
+        <a href="?preview&wait-for-init-args&platform=macos">Preview macOS</a>
+    </div>
+</div>
+
+<script>
+    const locales = ['bg', 'cs', 'da', 'de', 'el', 'en', 'es', 'et', 'fi', 'fr', 'hr', 'hu', 'it', 'lt', 'lv', 'nb', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sv', 'tr'];
+    const localeSelect = document.getElementById('locale-select');
+
+    // Populate the select element with options
+    locales.forEach(locale => {
+        const option = document.createElement('option');
+        option.value = locale;
+        option.textContent = locale;
+        localeSelect.appendChild(option);
+    });
+
+    // Update the URL with the selected locale value
+    localeSelect.addEventListener('change', (event) => {
+        const selectedLocale = event.target.value;
+        const url = new URL(window.location);
+        url.searchParams.set('locale', selectedLocale);
+        window.location.href = url
+    });
+
+    // Reflect the selected value from the URL param on page load
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const localeFromUrl = urlParams.get('locale');
+        if (localeFromUrl) {
+            localeSelect.value = localeFromUrl;
+        }
+    });
+</script>
+
+<div id="initial"></div>
+<div id="loaded"></div>
+
+<main></main>
+<template id="inner-template">
+    <div class="container">
+        <div id="player">
+            <div class="html5-video-player">
+                <video width="800px" height="600px"></video>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="related-template">
+    <div class="related"><h2>Up next</h2>
+        <div class="related-items">
+            <div class="thumbnails">
+                <a class="thumbnail" title="video 1" href="/watch?v=abc1"><img src="thumbnail-dark.jpg"></a>
+                <a class="thumbnail" title="video 2" href="/watch?v=abc2"><img src="thumbnail-dark.jpg"></a>
+                <a class="thumbnail" title="video 3" href="/watch?v=abc2"><img src="thumbnail-dark.jpg"></a>
+                <a class="thumbnail" title="video 4" href="/watch?v=abc3"><img src="thumbnail-dark.jpg"></a>
+                <a class="thumbnail" title="video 5" href="/watch?v=abc4"><img src="thumbnail-dark.jpg"></a>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="playlist-template">
+    <div class="playlist" id="playlist"><h2>Up next</h2>
+        <div class="playlist-items">
+            <div class="thumbnails">
+                <a class="thumbnail" title="video 1" href="/watch?v=xyz1"><img src="thumbnail-dark.jpg"></a>
+                <a class="thumbnail" title="video 2" href="/watch?v=xyz2"><img src="thumbnail-dark.jpg"></a>
+                <a class="thumbnail" title="video 3" href="/watch?v=xyz2"><img src="thumbnail-dark.jpg"></a>
+                <a class="thumbnail" title="video 4" href="/watch?v=xyz3"><img src="thumbnail-dark.jpg"></a>
+                <a class="thumbnail" title="video 5" href="/watch?v=xyz4"><img src="thumbnail-dark.jpg"></a>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="age-restricted-error-template">
+    <div class="ytp-error" role="alert" data-layer="4">
+        <div class="ytp-error-content" style="padding-top: 395.5px;">
+            <div class="ytp-error-icon-container"><svg fill="#fff" viewBox="0 0 48 48">
+                    <path d="M0 0h48v48H0V0z" fill="none"></path>
+                    <path
+                        d="M22 30h4v4h-4zm0-16h4v12h-4zm1.99-10C12.94 4 4 12.95 4 24s8.94 20 19.99 20S44 35.05 44 24 35.04 4 23.99 4zM24 40c-8.84 0-16-7.16-16-16S15.16 8 24 8s16 7.16 16 16-7.16 16-16 16z"
+                        fill-opacity="0.7"></path>
+                </svg></div>
+            <div class="ytp-error-content-wrap">
+                <div class="ytp-error-content-wrap-reason"><span><span>This video is age-restricted and only available on
+                            YouTube. </span><a href="//support.google.com/youtube/answer/2802167?hl=en"
+                            target="_blank">Learn more</a></span></div>
+                <div class="ytp-error-content-wrap-subreason">
+                    <div><a href="http://www.youtube.com/watch?v=PGaO6KUR9fk" target="TARGET_NEW_WINDOW">Watch on
+                            YouTube</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="no-embed-error-template">
+    <div class="ytp-error" role="alert" data-layer="4">
+        <div class="ytp-error-content" style="padding-top: 395.5px;">
+            <div class="ytp-error-icon-container"><svg fill="#fff" viewBox="0 0 48 48">
+                    <path d="M0 0h48v48H0V0z" fill="none"></path>
+                    <path
+                        d="M22 30h4v4h-4zm0-16h4v12h-4zm1.99-10C12.94 4 4 12.95 4 24s8.94 20 19.99 20S44 35.05 44 24 35.04 4 23.99 4zM24 40c-8.84 0-16-7.16-16-16S15.16 8 24 8s16 7.16 16 16-7.16 16-16 16z"
+                        fill-opacity="0.7"></path>
+                </svg></div>
+            <div class="ytp-error-content-wrap">
+                <div class="ytp-error-content-wrap-reason"><span><span>The uploader has not made this video available in your country
+                </span><a href="//support.google.com/youtube/answer/2802167?hl=en"
+                            target="_blank">Learn more</a></span></div>
+                <div class="ytp-error-content-wrap-subreason">
+                    <div><a href="http://www.youtube.com/watch?v=PGaO6KUR9fk" target="TARGET_NEW_WINDOW">Watch on
+                            YouTube</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="unknown-error-template">
+    <div class="ytp-error" role="alert" data-layer="4">
+        <div class="ytp-error-content" style="padding-top: 395.5px;">
+            <div class="ytp-error-icon-container"><svg fill="#fff" viewBox="0 0 48 48">
+                    <path d="M0 0h48v48H0V0z" fill="none"></path>
+                    <path
+                        d="M22 30h4v4h-4zm0-16h4v12h-4zm1.99-10C12.94 4 4 12.95 4 24s8.94 20 19.99 20S44 35.05 44 24 35.04 4 23.99 4zM24 40c-8.84 0-16-7.16-16-16S15.16 8 24 8s16 7.16 16 16-7.16 16-16 16z"
+                        fill-opacity="0.7"></path>
+                </svg></div>
+            <div class="ytp-error-content-wrap">
+                <div class="ytp-error-content-wrap-reason"><span><span>This video isn't available anymore
+                </span><a href="//support.google.com/youtube/answer/2802167?hl=en"
+                            target="_blank">Learn more</a></span></div>
+                <div class="ytp-error-content-wrap-subreason">
+                    <div><a href="http://www.youtube.com/watch?v=PGaO6KUR9fk" target="TARGET_NEW_WINDOW">Watch on
+                            YouTube</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<template id="sign-in-error-template">
+    <div class="ytp-error" role="alert" data-layer="4">
+        <div class="ytp-error-content" style="padding-top: 395.5px;">
+            <div class="ytp-error-icon-container"><svg fill="#fff" viewBox="0 0 48 48">
+                    <path d="M0 0h48v48H0V0z" fill="none"></path>
+                    <path
+                        d="M22 30h4v4h-4zm0-16h4v12h-4zm1.99-10C12.94 4 4 12.95 4 24s8.94 20 19.99 20S44 35.05 44 24 35.04 4 23.99 4zM24 40c-8.84 0-16-7.16-16-16S15.16 8 24 8s16 7.16 16 16-7.16 16-16 16z"
+                        fill-opacity="0.7"></path>
+                </svg></div>
+            <div class="ytp-error-content-wrap">
+                <div class="ytp-error-content-wrap-reason"><span><span>This video is age-restricted and only available on
+                            YouTube. </span><a href="//support.google.com/youtube/answer/2802167?hl=en"
+                            target="_blank">Learn more</a></span></div>
+                <div class="ytp-error-content-wrap-subreason">
+                    <div><a href="http://www.youtube.com/watch?v=PGaO6KUR9fk" target="TARGET_NEW_WINDOW">Watch on
+                            YouTube</a></div>
+                </div>
+            </div>
+            <a href="https://support.google.com/youtube/answer/3037019">Sign In</a>
+        </div>
+    </div>
+</template>
+<script>
+    (async () => {
+        if (!new URLSearchParams(location.search).has('preview')) {
+            return;
+        }
+        const platformName = new URLSearchParams(window.location.search).get('platform') || 'macos';
+        const locale = new URLSearchParams(window.location.search).get('locale') || 'en';
+
+        await import("/build/contentScope.js").catch(console.error)
+
+        const settingsFile = '/duckplayer-native/config/native.json';
+        const settings = await fetch(settingsFile).then(x => x.json())
+        console.log('Settings', settings.features['duckPlayerNative']);
+
+        document.dispatchEvent(new CustomEvent('content-scope-init-args', {
+            detail: {
+                debug: true,
+                locale: locale,
+                platform: {
+                    name: platformName,
+                },
+                site: {
+                    domain: location.hostname,
+                    isBroken: false,
+                    allowlisted: false,
+                enabledFeatures: [
+                        'duckPlayerNative'
+                    ]
+                },
+                featureSettings: {
+                    duckPlayerNative: settings.features.duckPlayerNative.settings,
+                }
+            }
+        }))
+    })();
+</script>
+
+<script type="module">
+    const variant = new URLSearchParams(window.location.search).get('variant') || 'default';
+    const main = document.querySelector('main');
+    const html = (selector) => document.querySelector(selector).innerHTML
+
+    const insertHTMLVideoPlayer = () => {
+        const player = main.querySelector('#player');
+        player.innerHTML = `
+        <div class="html5-video-player">
+            <video width="800px" height="600px"></video>
+        </div>
+        `
+    }
+
+    const insertTemplateInMain = (templateId) => {
+        main.innerHTML += html(`template[id="${templateId}"]`);
+    }
+
+    const insertTemplateInVideo = (templateId) => {
+        document.querySelector('.html5-video-player').innerHTML += html(`template[id="${templateId}"]`);
+    }
+
+    const knownVariants = {
+        "default": () => {
+            insertTemplateInMain('inner-template');
+            insertTemplateInMain('related-template');
+            insertTemplateInMain('playlist-template');
+        },
+        "mobile": () => {
+            insertTemplateInMain('inner-template');
+            document.documentElement.dataset.layout="mobile";
+        },
+        "incremental-dom": () => {
+            main.innerHTML += `<div class="container"><div id="player"></div></div>`
+            setTimeout(() => {
+                insertHTMLVideoPlayer();
+                insertTemplateInMain('related-template');
+                insertTemplateInMain('playlist-template');
+            }, 200);
+        },
+        "age-restricted-error": () => {
+            main.innerHTML += `<div class="container"><div id="player"></div></div>`
+            setTimeout(() => {
+                insertHTMLVideoPlayer();
+                insertTemplateInMain('related-template');
+                insertTemplateInMain('playlist-template');
+            }, 200);
+            setTimeout(() => {
+                // Simulate conditions for this error in YouTube config object
+                window.ytcfg = {
+                    get: () => ({
+                        embedded_player_response: JSON.stringify({
+                            previewPlayabilityStatus: { desktopLegacyAgeGateReason: 1, status: 'UNPLAYABLE' }
+                        })
+                    })
+                };
+                insertTemplateInVideo('age-restricted-error-template');
+            }, 300);
+        },
+        "no-embed-error": () => {
+            main.innerHTML += `<div class="container"><div id="player"></div></div>`
+            setTimeout(() => {
+                insertHTMLVideoPlayer();
+                insertTemplateInMain('related-template');
+                insertTemplateInMain('playlist-template');
+            }, 200);
+            setTimeout(() => {
+                // Simulate conditions for this error in YouTube config object
+                window.ytcfg = {
+                    get: () => ({
+                        embedded_player_response: JSON.stringify({
+                            previewPlayabilityStatus: { status: 'UNPLAYABLE' }
+                        })
+                    })
+                };
+                insertTemplateInVideo('no-embed-error-template');
+            }, 300);
+        },
+        "unknown-error": () => {
+            main.innerHTML += `<div class="container"><div id="player"></div></div>`
+            setTimeout(() => {
+                insertHTMLVideoPlayer();
+                insertTemplateInMain('related-template');
+                insertTemplateInMain('playlist-template');
+            }, 200);
+            setTimeout(() => {
+                insertTemplateInVideo('unknown-error-template');
+            }, 300);
+        },
+        "sign-in-error": () => {
+            main.innerHTML += `<div class="container"><div id="player"></div></div>`
+            setTimeout(() => {
+                insertHTMLVideoPlayer();
+                insertTemplateInMain('related-template');
+                insertTemplateInMain('playlist-template');
+            }, 200);
+            setTimeout(() => {
+                insertTemplateInVideo('sign-in-error-template');
+            }, 300);
+        },
+    }
+
+    if (variant in knownVariants) {
+        console.log('executing page variant', variant)
+        knownVariants[variant]();
+    } else {
+        console.warn('variant not found', variant)
+    }
+
+    document.addEventListener('click', (e) => {
+        if (e.target) {
+            const a = e.target.closest('a');
+            if (a && a.href.includes('/watch')) {
+                e.preventDefault();
+                const params = new URLSearchParams(a.search);
+                const current = new URL(window.location.href);
+                current.searchParams.set('v', params.get('v'));
+                history.pushState('', '', current.toString());
+                document.title = a.title;
+                return;
+            }
+        }
+    })
+
+</script>
+</body>
+</html>

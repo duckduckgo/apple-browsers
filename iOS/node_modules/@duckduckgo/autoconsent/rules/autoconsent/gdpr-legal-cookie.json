@@ -1,0 +1,38 @@
+{
+    "name": "gdpr-legal-cookie",
+    "vendorUrl": "https://apps.shopify.com/gdpr-legal-cookie",
+    "prehideSelectors": [".overlay_bc_banner"],
+    "detectCmp": [
+        {
+            "any": [
+                {
+                    "eval": "EVAL_GDPR_LEGAL_COOKIE_DETECT_CMP"
+                },
+                {
+                    "exists": "a[href=\"https://gdpr-legal-cookie.myshopify.com/\"]"
+                }
+            ]
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": ".overlay_bc_banner .banner-body",
+            "check": "any"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": ".overlay_bc_banner *[data-cookie-accept-all]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": ".overlay_bc_banner *[data-cookie-save]"
+        }
+    ],
+    "test": [
+        {
+            "eval": "EVAL_GDPR_LEGAL_COOKIE_TEST"
+        }
+    ]
+}

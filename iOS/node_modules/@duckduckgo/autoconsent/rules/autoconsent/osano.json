@@ -1,0 +1,20 @@
+{
+    "name": "osano",
+    "vendorUrl": "https://developers.osano.com/cmp/",
+    "prehideSelectors": [".osano-cm-window,.osano-cm-dialog"],
+    "detectCmp": [{ "exists": ".osano-cm-window" }],
+    "detectPopup": [{ "eval": "EVAL_OSANO_DETECT" }, { "visible": ".osano-cm-dialog:not(.osano-cm-dialog--hidden)" }],
+    "optIn": [
+        {
+            "waitForThenClick": ".osano-cm-accept-all,.osano-cm-accept",
+            "optional": true
+        }
+    ],
+    "optOut": [
+        {
+            "if": { "exists": ".osano-cm-denyAll,.osano-cm-deny" },
+            "then": [{ "click": ".osano-cm-denyAll,.osano-cm-deny" }],
+            "else": [{ "hide": ".osano-cm-window,.osano-cm-dialog" }]
+        }
+    ]
+}

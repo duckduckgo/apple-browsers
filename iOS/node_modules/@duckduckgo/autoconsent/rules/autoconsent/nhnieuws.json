@@ -1,0 +1,37 @@
+{
+    "name": "nhnieuws",
+    "vendorUrl": "https://www.nhnieuws.nl/",
+    "runContext": {
+        "urlPattern": "^https://(www\\.)?nhnieuws\\.nl/"
+    },
+    "prehideSelectors": ["[class*=ConsentManager]"],
+    "detectCmp": [
+        {
+            "exists": "[class*=ConsentManager]"
+        }
+    ],
+    "detectPopup": [
+        {
+            "visible": "[class*=ConsentManager]"
+        }
+    ],
+    "optIn": [
+        {
+            "waitForThenClick": "[class*=ConsentManager_continue]"
+        }
+    ],
+    "optOut": [
+        {
+            "waitForThenClick": "[class*=ConsentManager_row] input[type=radio][id$=no]",
+            "all": true
+        },
+        {
+            "waitForThenClick": "[class*=ConsentManager_continue]"
+        }
+    ],
+    "test": [
+        {
+            "eval": "EVAL_NHNIEUWS_TEST"
+        }
+    ]
+}

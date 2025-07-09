@@ -90,7 +90,6 @@ public class ImageSegmentedPickerViewModel: ObservableObject {
     /// - Parameter item: The item to select.
     public func selectItem(_ item: ImageSegmentedPickerItem) {
         selectedItem = item
-        print("SELECTED ITEM \(item.text)")
     }
 
     /// Updates the scroll progress.
@@ -149,35 +148,21 @@ public struct ImageSegmentedPickerView: View {
     }
 
     public var body: some View {
-        GeometryReader { geometry in
+        GeometryReader { geo in
             ZStack {
                 RoundedRectangle(cornerRadius: Constants.outerHeight / 2)
                     .fill(viewModel.configuration.backgroundColor)
 
                 RoundedRectangle(cornerRadius: Constants.innerHeight / 2)
                     .fill(viewModel.configuration.selectedBackgroundColor)
-                    .frame(width: geometry.size.width / CGFloat(viewModel.items.count), height: Constants.innerHeight)
+                    .frame(width: geo.size.width / CGFloat(viewModel.items.count), height: Constants.innerHeight)
                     .offset(x: currentOffset)
                     .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 0.5, x: 0, y: 0.5)
-                    .onAppear {
-                        currentOffset = calculateCurrentOffset(geometry: geometry)
-                    }
-                    .onChange(of: viewModel.selectedItem) { _ in
-                        if viewModel.scrollProgress == nil {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                currentOffset = calculateCurrentOffset(geometry: geometry)
-                            }
-                        } else {
-                            currentOffset = calculateCurrentOffset(geometry: geometry)
-                        }
-                    }
-                    .onChange(of: viewModel.scrollProgress) { _ in
-                        currentOffset = calculateCurrentOffset(geometry: geometry)
-                    }
+                    .animation(.easeInOut(duration: 0.2), value: currentOffset)
 
                 HStack(spacing: 0) {
                     ForEach(Array(viewModel.items.enumerated()), id: \.element.id) { index, item in
-                        let isInSelectedArea = isItemInSelectedArea(itemIndex: index, geometry: geometry, currentOffset: currentOffset)
+                        let isInSelectedArea = isItemInSelectedArea(itemIndex: index, geometry: geo, currentOffset: currentOffset)
 
                         CustomPickerButton(
                             item: item,
@@ -185,8 +170,21 @@ public struct ImageSegmentedPickerView: View {
                             configuration: viewModel.configuration) {
                             viewModel.selectItem(item)
                         }
-                        .frame(width: geometry.size.width / CGFloat(viewModel.items.count))
+                        .frame(width: geo.size.width / CGFloat(viewModel.items.count))
                     }
+                }
+            }
+            .onAppear {
+                currentOffset = calculateCurrentOffset(geometry: geo)
+            }
+            .onChange(of: viewModel.selectedItem.id) { _ in
+                if viewModel.scrollProgress == nil {
+                    currentOffset = calculateCurrentOffset(geometry: geo)
+                }
+            }
+            .onChange(of: viewModel.scrollProgress) { _ in
+                if viewModel.scrollProgress != nil {
+                    currentOffset = calculateCurrentOffset(geometry: geo)
                 }
             }
         }
@@ -312,7 +310,7 @@ public struct ImageSegmentedPickerItem: Identifiable, Hashable {
     }
 
     public static func == (lhs: ImageSegmentedPickerItem, rhs: ImageSegmentedPickerItem) -> Bool {
-        lhs.id == rhs.id && lhs.text == rhs.text
+        lhs.id == rhs.id
     }
 }
 

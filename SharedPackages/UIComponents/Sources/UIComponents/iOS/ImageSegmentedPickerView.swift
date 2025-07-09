@@ -162,19 +162,15 @@ public struct ImageSegmentedPickerView: View {
                         currentOffset = calculateCurrentOffset(geometry: geometry)
                     }
                     .onChange(of: viewModel.selectedItem.id) { _ in
-                        // Only animate on selection change if not controlled by scroll progress
                         if viewModel.scrollProgress == nil {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 currentOffset = calculateCurrentOffset(geometry: geometry)
                             }
                         } else {
-                            // Update immediately without animation when controlled by scroll
                             currentOffset = calculateCurrentOffset(geometry: geometry)
                         }
                     }
                     .onChange(of: viewModel.scrollProgress) { _ in
-                        // Update offset based on scroll progress without animation
-                        // (the scroll animation provides the smooth transition)
                         currentOffset = calculateCurrentOffset(geometry: geometry)
                     }
 

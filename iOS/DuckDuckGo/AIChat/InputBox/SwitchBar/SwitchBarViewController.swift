@@ -56,13 +56,29 @@ class SwitchBarViewController: UIViewController {
             unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size16.aiChat)
         )
     ]
-    private var pickerState: PickerState?
+    
+    private var pickerViewModel: ImageSegmentedPickerViewModel!
+    private var onSelectionChanged: ((ImageSegmentedPickerItem) -> Void)?
 
     // MARK: - Initialization
     init(switchBarHandler: SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
         self.textEntryViewController = SwitchBarTextEntryViewController(handler: switchBarHandler)
         super.init(nibName: nil, bundle: nil)
+        
+        let currentToggleState = switchBarHandler.currentToggleState
+        let initialSelection = currentToggleState == .search ? pickerItems[0] : pickerItems[1]
+        
+        self.pickerViewModel = ImageSegmentedPickerViewModel(
+            items: pickerItems,
+            selectedItem: initialSelection,
+            configuration: ImageSegmentedPickerConfiguration(),
+            scrollProgress: nil
+        )
+        
+        self.onSelectionChanged = { [weak self] selectedItem in
+            self?.segmentedPickerSelectionChanged(selectedItem)
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -87,13 +103,8 @@ class SwitchBarViewController: UIViewController {
                 guard let self = self else { return }
                 
                 let targetItem = newState == .search ? self.pickerItems[0] : self.pickerItems[1]
-                if self.pickerState?.selectedItem.text != targetItem.text {
-                    // Disable animations when updating picker state
-                    var transaction = Transaction()
-                    transaction.disablesAnimations = true
-                    withTransaction(transaction) {
-                        self.pickerState?.selectedItem = targetItem
-                    }
+                if self.pickerViewModel.selectedItem.text != targetItem.text {
+                    self.pickerViewModel.selectItem(targetItem)
                 }
                 
                 self.updateLayouts()
@@ -115,20 +126,11 @@ class SwitchBarViewController: UIViewController {
 
     private func setupViews() {
         view.backgroundColor = UIColor.systemBackground
-
-        let currentToggleState = switchBarHandler.currentToggleState
-        let initialSelection = currentToggleState == .search ? pickerItems[0] : pickerItems[1]
         
-        let state = PickerState(
-            items: pickerItems,
-            initialSelection: initialSelection,
-            onSelectionChanged: { [weak self] selectedItem in
-                self?.segmentedPickerSelectionChanged(selectedItem)
-            }
+        let pickerWrapper = PickerWrapper(
+            viewModel: pickerViewModel,
+            onSelectionChanged: onSelectionChanged
         )
-        pickerState = state
-        
-        let pickerWrapper = PickerWrapper(state: state)
         let hostingController = UIHostingController(rootView: pickerWrapper)
         segmentedPickerHostingController = hostingController
         hostingController.view.backgroundColor = UIColor.clear
@@ -190,56 +192,24 @@ class SwitchBarViewController: UIViewController {
     
     // MARK: - Scroll Progress
     func updateScrollProgress(_ progress: CGFloat) {
-        pickerState?.updateScrollProgress(progress)
-    }
-}
-
-private class PickerState: ObservableObject {
-    @Published var selectedItem: ImageSegmentedPickerItem
-    @Published var scrollProgress: CGFloat?
-    let items: [ImageSegmentedPickerItem]
-    let onSelectionChanged: (ImageSegmentedPickerItem) -> Void
-
-    init(items: [ImageSegmentedPickerItem], initialSelection: ImageSegmentedPickerItem, onSelectionChanged: @escaping (ImageSegmentedPickerItem) -> Void) {
-        self.items = items
-        self.selectedItem = initialSelection
-        self.scrollProgress = nil
-        self.onSelectionChanged = onSelectionChanged
-    }
-    
-    func updateScrollProgress(_ progress: CGFloat) {
-        scrollProgress = progress
+        pickerViewModel.updateScrollProgress(progress)
     }
 }
 
 private struct PickerWrapper: View {
-    @ObservedObject var state: PickerState
-    @StateObject private var viewModel: ImageSegmentedPickerViewModel
+    @ObservedObject var viewModel: ImageSegmentedPickerViewModel
+    let onSelectionChanged: ((ImageSegmentedPickerItem) -> Void)?
 
-    init(state: PickerState) {
-        self.state = state
-        self._viewModel = StateObject(wrappedValue: ImageSegmentedPickerViewModel(
-            items: state.items,
-            selectedItem: state.selectedItem,
-            configuration: ImageSegmentedPickerConfiguration(),
-            scrollProgress: state.scrollProgress
-        ))
+    init(viewModel: ImageSegmentedPickerViewModel, onSelectionChanged: ((ImageSegmentedPickerItem) -> Void)?) {
+        self.viewModel = viewModel
+        self.onSelectionChanged = onSelectionChanged
     }
 
     var body: some View {
         ImageSegmentedPickerView(viewModel: viewModel)
             .frame(width: 230)
-            .onChange(of: state.selectedItem) { newItem in
-                viewModel.selectItem(newItem)
-                state.onSelectionChanged(newItem)
-            }
-            .onChange(of: state.scrollProgress) { progress in
-                viewModel.updateScrollProgress(progress)
-            }
             .onChange(of: viewModel.selectedItem) { newItem in
-                if state.selectedItem.id != newItem.id {
-                    state.selectedItem = newItem
-                }
+                onSelectionChanged?(newItem)
             }
     }
 }

@@ -63,7 +63,6 @@ public protocol SubscriptionAPIService {
 public enum APICachePolicy {
     case reloadIgnoringLocalCacheData
     case returnCacheDataElseLoad
-    case returnCacheDataDontLoad
 
     public var subscriptionCachePolicy: SubscriptionCachePolicy {
         switch self {
@@ -71,8 +70,6 @@ public enum APICachePolicy {
             return .remoteFirst
         case .returnCacheDataElseLoad:
             return .cacheFirst
-        case .returnCacheDataDontLoad:
-            return .cacheOnly
         }
     }
 }

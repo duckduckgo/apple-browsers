@@ -256,13 +256,6 @@ public final class DefaultAccountManager: AccountManager {
             } else {
                 return await fetchRemoteEntitlements()
             }
-
-        case .returnCacheDataDontLoad:
-            if let cachedEntitlements: [Entitlement] = entitlementsCache.get() {
-                return .success(cachedEntitlements)
-            } else {
-                return .failure(EntitlementsError.noCachedData)
-            }
         }
 
     }

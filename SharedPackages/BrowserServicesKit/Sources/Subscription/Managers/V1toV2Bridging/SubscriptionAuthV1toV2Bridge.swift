@@ -63,7 +63,7 @@ extension SubscriptionAuthV1toV2Bridge {
 extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
     public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async throws -> Bool {
-        let result = await accountManager.hasEntitlement(forProductName: feature, cachePolicy: .returnCacheDataDontLoad)
+        let result = await accountManager.hasEntitlement(forProductName: feature, cachePolicy: .returnCacheDataElseLoad)
         switch result {
         case .success(let hasEntitlements):
             return hasEntitlements

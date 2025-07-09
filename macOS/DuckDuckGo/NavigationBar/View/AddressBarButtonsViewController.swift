@@ -428,7 +428,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func openAIChatSidebar() {
-        if let value = textFieldValue,
+        if isTextFieldEditorFirstResponder,
+           let value = textFieldValue,
            let query = AIChatAddressBarPromptExtractor().queryForValue(value) {
             let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: true)
             aiChatSidebarPresenter.presentSidebar(for: prompt)

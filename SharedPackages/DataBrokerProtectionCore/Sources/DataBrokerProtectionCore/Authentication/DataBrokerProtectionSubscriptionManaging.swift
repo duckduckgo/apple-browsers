@@ -61,7 +61,7 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
         if runTypeProvider.runType == .integrationTests {
             return true // real entitlements check are not possible here in AuthV2 because the SubscriptionManager has no token
         } else {
-            return await subscriptionManager.isFeatureEnabledForUser(feature: .dataBrokerProtection)
+            return try await subscriptionManager.isFeatureEnabledForUser(feature: .dataBrokerProtection)
         }
     }
 }

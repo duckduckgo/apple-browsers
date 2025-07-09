@@ -1810,9 +1810,11 @@ class MainViewController: UIViewController {
                 Task {
                     guard let self else { return }
 
-                    let hasEntitlement = await self.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
+                    guard let hasEntitlement = try? await self.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection) else {
+                        return
+                    }
                     let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
-                    let isSubscriptionActive = try? await self.subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+                    let isSubscriptionActive = try? await self.subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
                     if hasEntitlement && self.lastKnownEntitlementsExpired {
                         PixelKit.fire(
@@ -1939,7 +1941,7 @@ class MainViewController: UIViewController {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
             let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedIn(
@@ -1964,8 +1966,10 @@ class MainViewController: UIViewController {
     func checkSubscriptionEntitlements() {
         Task {
             let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
-            let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
+            guard let hasEntitlement = try? await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection) else {
+                return
+            }
 
             if hasEntitlement && lastKnownEntitlementsExpired {
                 PixelKit.fire(
@@ -2000,7 +2004,7 @@ class MainViewController: UIViewController {
             }
             let hasEntitlements = payload.entitlements.contains(.networkProtection)
             let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             if hasEntitlements {
                 PixelKit.fire(
@@ -2042,7 +2046,7 @@ class MainViewController: UIViewController {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
             let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedOut(

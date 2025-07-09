@@ -179,6 +179,8 @@ final class DataImportViewModel: ObservableObject {
             switch importScreen {
             case .passwords, .settings:
                 return UserText.dataImportPasswordsFileButton
+            case .promo:
+                return "Select File..."
             case .bookmarks:
                 return UserText.dataImportBookmarksFileButton
             }

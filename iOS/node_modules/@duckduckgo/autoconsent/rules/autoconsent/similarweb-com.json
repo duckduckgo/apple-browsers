@@ -1,9 +1,0 @@
-{
-    "name": "similarweb.com",
-    "cosmetic": true,
-    "prehideSelectors": [".app-cookies-notification"],
-    "detectCmp": [{ "exists": ".app-cookies-notification" }],
-    "detectPopup": [{ "exists": ".app-layout .app-cookies-notification" }],
-    "optIn": [{ "click": "button.app-cookies-notification__dismiss" }],
-    "optOut": [{ "hide": ".app-layout .app-cookies-notification" }]
-}

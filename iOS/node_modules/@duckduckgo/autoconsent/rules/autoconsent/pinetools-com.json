@@ -1,9 +1,0 @@
-{
-    "name": "pinetools.com",
-    "cosmetic": true,
-    "prehideSelectors": ["#aviso_cookies"],
-    "detectCmp": [{ "exists": "#aviso_cookies" }],
-    "detectPopup": [{ "exists": ".lang_en #aviso_cookies" }],
-    "optIn": [{ "click": "#aviso_cookies .a_boton_cerrar" }],
-    "optOut": [{ "hide": "#aviso_cookies" }]
-}

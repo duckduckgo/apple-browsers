@@ -1,9 +1,0 @@
-{
-    "name": "crossfit-com",
-    "cosmetic": true,
-    "prehideSelectors": ["body #modal > div > div[class^=\"_wrapper_\"]"],
-    "detectCmp": [{ "exists": "body #modal > div > div[class^=\"_wrapper_\"]" }],
-    "detectPopup": [{ "visible": "body #modal > div > div[class^=\"_wrapper_\"]" }],
-    "optIn": [{ "click": "button[aria-label=\"accept cookie policy\"]" }],
-    "optOut": [{ "hide": "body #modal > div > div[class^=\"_wrapper_\"]" }]
-}

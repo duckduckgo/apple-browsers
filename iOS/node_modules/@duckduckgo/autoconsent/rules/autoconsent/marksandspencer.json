@@ -1,8 +1,0 @@
-{
-    "name": "marksandspencer.com",
-    "cosmetic": true,
-    "detectCmp": [{ "exists": ".navigation-cookiebbanner" }],
-    "detectPopup": [{ "visible": ".navigation-cookiebbanner" }],
-    "optOut": [{ "hide": ".navigation-cookiebbanner" }],
-    "optIn": [{ "click": ".navigation-cookiebbanner__submit" }]
-}

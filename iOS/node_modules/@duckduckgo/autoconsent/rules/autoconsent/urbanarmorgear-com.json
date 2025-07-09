@@ -1,9 +1,0 @@
-{
-    "name": "urbanarmorgear-com",
-    "cosmetic": true,
-    "prehideSelectors": ["div[class^=\"Layout__CookieBannerContainer-\"]"],
-    "detectCmp": [{ "exists": "div[class^=\"Layout__CookieBannerContainer-\"]" }],
-    "detectPopup": [{ "visible": "div[class^=\"Layout__CookieBannerContainer-\"]" }],
-    "optIn": [{ "click": "button[class^=\"CookieBanner__AcceptButton\"]" }],
-    "optOut": [{ "hide": "div[class^=\"Layout__CookieBannerContainer-\"]" }]
-}

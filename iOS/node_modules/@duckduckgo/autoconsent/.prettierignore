@@ -1,8 +1,0 @@
-lib/consentomatic
-dist
-data
-package.json
-package-lock.json
-addon/manifest.*.json
-**/*.md
-**/*.har

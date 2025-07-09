@@ -1,9 +1,0 @@
-{
-    "name": "cookie-notice",
-    "prehideSelectors": ["#cookie-notice"],
-    "cosmetic": true,
-    "detectCmp": [{ "visible": "#cookie-notice .cookie-notice-container" }],
-    "detectPopup": [{ "visible": "#cookie-notice" }],
-    "optIn": [{ "click": "#cn-accept-cookie" }],
-    "optOut": [{ "hide": "#cookie-notice" }]
-}

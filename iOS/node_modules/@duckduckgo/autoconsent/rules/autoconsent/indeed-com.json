@@ -1,9 +1,0 @@
-{
-    "name": "indeed.com",
-    "cosmetic": true,
-    "prehideSelectors": ["#CookiePrivacyNotice"],
-    "detectCmp": [{ "exists": "#CookiePrivacyNotice" }],
-    "detectPopup": [{ "visible": "#CookiePrivacyNotice" }],
-    "optIn": [{ "click": "#CookiePrivacyNotice button[data-gnav-element-name=CookiePrivacyNoticeOk]" }],
-    "optOut": [{ "hide": "#CookiePrivacyNotice" }]
-}

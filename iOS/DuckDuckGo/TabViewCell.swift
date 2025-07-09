@@ -128,7 +128,7 @@ final class TabViewCell: UICollectionViewCell {
     }
 
     private func applyShadows() {
-        layer.shadowColor = UIColor(designSystemColor: .shadowTertiary).cgColor
+        layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
         layer.shadowOpacity = 1.0
         layer.shadowRadius = 12.0
         layer.shadowOffset = CGSize(width: 0, height: 4)

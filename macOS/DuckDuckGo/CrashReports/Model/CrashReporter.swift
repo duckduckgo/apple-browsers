@@ -33,7 +33,7 @@ final class CrashReporter {
 
     func checkForNewReports() {
 
-// #if !DEBUG
+ #if !DEBUG
 
         guard let lastCheckDate = lastCheckDate else {
             // Initial run
@@ -52,10 +52,12 @@ final class CrashReporter {
         for crash in crashReports {
             var appIdentifier: String?
             if let bundleID = crash.bundleID {
-                if bundleID.hasSuffix("vpn") || bundleID.hasSuffix("vpn.network-extension") {
-                    appIdentifier = "networkextension"
+                if bundleID.hasSuffix("vpn") {
+                    appIdentifier = "vpnagent"
+                } else if bundleID.hasSuffix("vpn.network-extension") {
+                    appIdentifier = "vpnextension"
                 } else if bundleID.hasSuffix("DBP.backgroundAgent") {
-                    appIdentifier = "privateinforemoval"
+                    appIdentifier = "dbp"
                 }
             }
             if let appVersion = crash.appVersion {
@@ -78,7 +80,7 @@ final class CrashReporter {
             }
         }
 
-// #endif
+ #endif
 
     }
 }

@@ -894,14 +894,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         crashCollection.startAttachingCrashLogMessages { pixelParameters, payloads, completion in
             
             pixelParameters.forEach { parameters in
-
                 // Calculate appIdentifier for what crashed - nil for main bundle, otherwise the app identifier is the bundle identifier minus the main bundle identifier.
                 var params = parameters
                 var appIdentifier: String?
                 if let bundle = params.removeValue(forKey: "bundle"),
                    let mainBundle = Bundle.main.bundleIdentifier {
                     if bundle != mainBundle {
-                        appIdentifier = bundle.dropping(prefix: mainBundle).removingCharacters(in: .punctuationCharacters).lowercased()
+                        if bundle.hasSuffix("vpn") {
+                            appIdentifier = "vpnagent"
+                        } else if bundle.hasSuffix("vpn.network-extension") {
+                            appIdentifier = "vpnextension"
+                        } else if bundle.hasSuffix("DBP.backgroundAgent") {
+                            appIdentifier = "dbp"
+                        }
                     }
                 }
 

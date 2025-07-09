@@ -218,15 +218,16 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
     }
 
     func backgroundRefreshTaskHandler(backgroundTask: BGTaskInterface, datasetType: DataManager.StoredDataType.Kind) {
-        let fetchAndProcessDatasetTask = Task { @MainActor in
+        let fetchAndProcessDatasetTask = Task { [weak self] in
+            guard let self else { return }
+
             defer {
                 backgroundTask.setTaskCompleted(success: true)
                 scheduleBackgroundRefreshTask(datasetType: datasetType)
             }
 
-            guard canFetchDatasets && !isDatasetsFetchInProgress else { return }
-
-            await updateManager.updateData(datasetType: datasetType).value
+            guard canFetchDatasets else { return }
+            await startFetching().value
         }
 
         backgroundTask.expirationHandler = {

@@ -71,7 +71,7 @@ final class SafariDataImporter: DataImporter {
     func validateAccess(for types: Set<DataImport.DataType>) -> [DataImport.DataType: any DataImportError]? {
         guard types.contains(.bookmarks) else { return nil }
 
-        if case .failure(let error) = SafariBookmarksReader(safariBookmarksFileURL: fileUrl).validateFileReadAccess() {
+        if case .failure(let error) = SafariBookmarksReader(safariBookmarksFileURL: fileUrl, featureFlagger: featureFlagger).validateFileReadAccess() {
             return [.bookmarks: error]
         }
         return nil
@@ -82,7 +82,7 @@ final class SafariDataImporter: DataImporter {
         // logins will be imported from CSV
         guard types.contains(.bookmarks) else { return [:] }
 
-        let bookmarkReader = SafariBookmarksReader(safariBookmarksFileURL: fileUrl)
+        let bookmarkReader = SafariBookmarksReader(safariBookmarksFileURL: fileUrl, featureFlagger: featureFlagger)
         let bookmarkResult = bookmarkReader.readBookmarks()
 
         let summary = bookmarkResult.map { bookmarks in

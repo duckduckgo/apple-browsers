@@ -401,7 +401,7 @@ final class AutofillLoginListViewController: UIViewController {
     }
 
     private func importFileAction() -> UIAction {
-        return UIAction(title: UserText.autofillEmptyViewImportButtonTitle, image: DesignSystemImages.Glyphs.Size16.import) { [weak self] _ in
+        return UIAction(title: UserText.autofillEmptyViewImportButtonTitle, image: DesignSystemImages.Glyphs.Size16.importLeft) { [weak self] _ in
             self?.segueToFileImport()
             Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
         }

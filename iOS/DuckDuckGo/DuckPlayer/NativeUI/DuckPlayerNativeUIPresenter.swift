@@ -121,8 +121,6 @@ final class DuckPlayerNativeUIPresenter {
     /// Bottom constraint for the container view
     private(set) var bottomConstraint: NSLayoutConstraint?
     
-    /// Array to store notification observer tokens for cleanup
-    private var notificationObservers: [NSObjectProtocol] = []
 
     /// Height of the current pill view
     private(set) var pillHeight: CGFloat = 0
@@ -169,16 +167,12 @@ final class DuckPlayerNativeUIPresenter {
     /// Sets up notification observers for address bar position changes    
     private func setupNotificationObservers(notificationCenter: NotificationCenter) {
         // Listen for address bar position changes to update pill positioning        
-        let observer = notificationCenter.addObserver(
-            forName: AppUserDefaults.Notifications.addressBarPositionChanged,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.updatePillBottomConstraint()
-        }
-        
-        // Store the observer token for cleanup
-        notificationObservers.append(observer)
+        notificationCenter.publisher(for: AppUserDefaults.Notifications.addressBarPositionChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updatePillBottomConstraint()
+            }
+            .store(in: &cancellables)
 
         // Add observers for app settings changes
         notificationCenter.addObserver(
@@ -384,11 +378,6 @@ final class DuckPlayerNativeUIPresenter {
         // Remove notification observers
         NotificationCenter.default.removeObserver(self)
         
-        // Clean up block-based notification observers to prevent memory leaks
-        notificationObservers.forEach { observer in
-            notificationCenter.removeObserver(observer)
-        }
-        notificationObservers.removeAll()
         
         // Clean up any remaining UI elements
         bottomConstraint?.isActive = false

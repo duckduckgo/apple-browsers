@@ -214,16 +214,32 @@ private class PickerState: ObservableObject {
 
 private struct PickerWrapper: View {
     @ObservedObject var state: PickerState
+    @StateObject private var viewModel: ImageSegmentedPickerViewModel
+
+    init(state: PickerState) {
+        self.state = state
+        self._viewModel = StateObject(wrappedValue: ImageSegmentedPickerViewModel(
+            items: state.items,
+            selectedItem: state.selectedItem,
+            configuration: ImageSegmentedPickerConfiguration(),
+            scrollProgress: state.scrollProgress
+        ))
+    }
 
     var body: some View {
-        ImageSegmentedPickerView(
-            items: state.items,
-            selectedItem: $state.selectedItem,
-            scrollProgress: state.scrollProgress
-        )
-        .frame(width: 230)
-        .onChange(of: state.selectedItem) { newItem in
-            state.onSelectionChanged(newItem)
-        }
+        ImageSegmentedPickerView(viewModel: viewModel)
+            .frame(width: 230)
+            .onChange(of: state.selectedItem) { newItem in
+                viewModel.selectItem(newItem)
+                state.onSelectionChanged(newItem)
+            }
+            .onChange(of: state.scrollProgress) { progress in
+                viewModel.updateScrollProgress(progress)
+            }
+            .onChange(of: viewModel.selectedItem) { newItem in
+                if state.selectedItem.id != newItem.id {
+                    state.selectedItem = newItem
+                }
+            }
     }
 }

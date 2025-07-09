@@ -96,12 +96,15 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     static func save(subscriptionEnvironment: SubscriptionEnvironment, userDefaults: UserDefaults)
     var currentEnvironment: SubscriptionEnvironment { get }
 
-    /// Tries to get an authentication token and request the subscription
+    /// Tries to get an authentication token and the subscription
     func loadInitialData() async
 
-    // Subscription
+    /// Get the user subscription
+    /// - Parameter cachePolicy: The cache policy, `remoteFirst` or `cacheFirst`
+    /// - Returns: A `PrivacyProSubscription` if available, throws `SubscriptionEndpointServiceError.noData` if the subscription is not available or any other errors if the process failed at any point.
     @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
 
+    /// - Returns: true is a subscription (expired or not) is present, false otherwise.
     func isSubscriptionPresent() -> Bool
 
     /// Tries to activate a subscription using a platform signature
@@ -111,6 +114,7 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription?
 
     var canPurchase: Bool { get }
+
     /// Publisher that emits a boolean value indicating whether the user can purchase.
     var canPurchasePublisher: AnyPublisher<Bool, Never> { get }
     func getProducts() async throws -> [GetProductsItem]

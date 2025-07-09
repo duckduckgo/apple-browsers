@@ -2650,6 +2650,12 @@
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai Kısayolları";
 
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Arama Girdisi";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Web'de arama yapın veya doğrudan Adres Çubuğundan Duck.ai'a sorun";
+
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Ayarları";
 

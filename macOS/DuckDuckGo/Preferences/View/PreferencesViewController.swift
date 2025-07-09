@@ -72,7 +72,7 @@ final class PreferencesViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        if !Application.appDelegate.isAuthV2Enabled {
+        if !Application.appDelegate.isUsingAuthV2 {
             let prefRootView = Preferences.RootView(model: model,
                                                     subscriptionManager: Application.appDelegate.subscriptionManagerV1!,
                                                     subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)

@@ -35,6 +35,7 @@ final class MainViewController: NSViewController {
     let navigationBarViewController: NavigationBarViewController
     let browserTabViewController: BrowserTabViewController
     let aiChatSidebarPresenter: AIChatSidebarPresenting
+    let aiChatSummarizer: AIChatSummarizer
     let findInPageViewController: FindInPageViewController
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
@@ -168,6 +169,13 @@ final class MainViewController: NSViewController {
             aiChatTabOpener: aiChatTabOpener,
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring
+        )
+        aiChatSummarizer = AIChatSummarizer(
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatSidebarPresenter: aiChatSidebarPresenter,
+            aiChatTabOpener: aiChatTabOpener,
+            featureFlagger: featureFlagger,
             pixelFiring: pixelFiring
         )
 

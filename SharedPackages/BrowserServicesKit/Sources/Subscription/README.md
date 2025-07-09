@@ -2,12 +2,12 @@
 
 ## Overview
 
-The `Subscription` module in BrowserServicesKit provides the core subscription infrastructure shared between iOS and macOS DuckDuckGo applications. It handles authentication, purchase flows, entitlement management, and API communication for premium features.
+The `Subscription` module in `BrowserServicesKit` provides the core subscription infrastructure shared between iOS and macOS DuckDuckGo applications. It handles authentication, purchase flows, entitlement management, and API communication for premium features.
 
 Its main responsibilities are:
 - Purchase, restore and remove the Subscription
 - Provide the subscription and user entitlements
-- Manage the subscription authentication tokens, including creating and refreshing the `TokenContainer`.
+- Managing and providing valid the subscription authentication tokens, including creating and refreshing the `TokenContainer`.
 - Provide the `TokenContainer` to the main app when needed from other
 
 

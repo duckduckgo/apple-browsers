@@ -166,15 +166,6 @@
             </BuildableReference>
             <SkippedTests>
                <Test
-                  Identifier = "AutoconsentIntegrationTests/testFilterlistRule_whenFakeCookieBannerIsDisplayed_bannerIsHidden()">
-               </Test>
-               <Test
-                  Identifier = "AutoconsentIntegrationTests/testWhenAutoconsentDisabled_promptIsDisplayed()">
-               </Test>
-               <Test
-                  Identifier = "BrowserTabViewControllerOnboardingTests/testWhenDialogIsDismissedViewHighlightsAreDismissed()">
-               </Test>
-               <Test
                   Identifier = "ConfigurationManagerIntegrationTests/testTdsAreFetchedFromURLBasedOnPrivacyConfigExperiment()">
                </Test>
                <Test
@@ -182,21 +173,6 @@
                </Test>
                <Test
                   Identifier = "EncryptionKeyStoreTests">
-               </Test>
-               <Test
-                  Identifier = "HTTPSUpgradeIntegrationTests">
-               </Test>
-               <Test
-                  Identifier = "NavigationProtectionIntegrationTests/testAMPLinks()">
-               </Test>
-               <Test
-                  Identifier = "NavigationProtectionIntegrationTests/testReferrerTrimming()">
-               </Test>
-               <Test
-                  Identifier = "PinnedTabsManagerProviderTests/test_WhenMigratingFromSharedToPerWindow_ThenTabsAreMigratedToFirstNewPerWindowManager()">
-               </Test>
-               <Test
-                  Identifier = "PinnedTabsManagerProviderTests/test_WhenNoTabsExist_ThenArePinnedTabsEmptyReturnsTrueForShared()">
                </Test>
             </SkippedTests>
          </TestableReference>

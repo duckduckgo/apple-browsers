@@ -45,9 +45,14 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
             continueSetUpModel: continueSetUpModel,
             appearancePreferences: AppearancePreferences(
                 persistor: MockAppearancePreferencesPersistor(),
-                privacyConfigurationManager: MockPrivacyConfigurationManager()
+                privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                featureFlagger: MockFeatureFlagger()
             )
         )
+    }
+
+    override func tearDown() {
+        provider = nil
     }
 
     func testWhenCardsViewIsNotOutdatedThenCardsAreReportedByModel() {

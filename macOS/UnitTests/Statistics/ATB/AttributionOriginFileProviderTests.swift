@@ -22,6 +22,10 @@ import XCTest
 final class AttributionOriginFileProviderTests: XCTestCase {
     private var sut: AttributionOriginFileProvider!
 
+    override func tearDown() {
+        sut = nil
+    }
+
     func testWhenFileAndValueExistThenReturnOriginValue() {
         // GIVEN
         sut = AttributionOriginFileProvider(bundle: .test)

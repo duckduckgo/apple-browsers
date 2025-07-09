@@ -26,16 +26,20 @@ final class DeallocationTests: XCTestCase {
 
     @MainActor
     override func setUp() {
-        assert(Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty)
-        animationDuration = NSAnimationContext.current.duration
+        autoreleasepool {
+            assert(Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty)
+            animationDuration = NSAnimationContext.current.duration
+        }
         NSAnimationContext.current.duration = 0
     }
 
     @MainActor
     override func tearDown() {
-        WindowsManager.closeWindows()
-        for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
-            Application.appDelegate.windowControllersManager.unregister(controller)
+        autoreleasepool {
+            WindowsManager.closeWindows()
+            for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
+                Application.appDelegate.windowControllersManager.unregister(controller)
+            }
         }
         NSAnimationContext.current.duration = animationDuration
     }

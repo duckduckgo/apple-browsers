@@ -30,6 +30,10 @@ final class EncryptionKeyStoreTests: XCTestCase {
         UserDefaultsWrapper<Any>.clearAll()
     }
 
+    override var allowedNonNilVariables: Set<String> {
+        ["generator"]
+    }
+
     override func tearDown() {
         super.tearDown()
         removeTestKeys()

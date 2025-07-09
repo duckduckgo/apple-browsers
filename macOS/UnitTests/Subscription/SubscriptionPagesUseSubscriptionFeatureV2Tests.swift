@@ -22,6 +22,7 @@ import NetworkingTestingUtils
 import SubscriptionTestingUtilities
 import WebKit
 import XCTest
+import UserScript
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
@@ -31,7 +32,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     private var sut: SubscriptionPagesUseSubscriptionFeatureV2!
 
     private var mockStorePurchaseManager: StorePurchaseManagerMockV2!
-    private var subscriptionManagerV2: SubscriptionManagerV2!
+    private var subscriptionManagerV2: SubscriptionManagerMockV2!
     private var subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandler!
     private var mockUIHandler: SubscriptionUIHandlerMock!
     private var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
@@ -39,6 +40,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockNotificationCenter: NotificationCenter!
+    private var broker: UserScriptMessageBroker!
 
     private struct Constants {
         static let subscriptionOptions = SubscriptionOptionsV2(platform: SubscriptionPlatformName.macos,
@@ -55,29 +57,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     @MainActor
     override func setUpWithError() throws {
-        let apiService = MockAPIService()
-        apiService.authorizationRefresherCallback = { _ in
-            return OAuthTokensFactory.makeValidTokenContainer().accessToken
-        }
-        let subscriptionEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
-        let authService = DefaultOAuthService(baseURL: OAuthEnvironment.staging.url, apiService: apiService)
-        // keychain storage
-        let tokenStorage = MockTokenStorage()
-        let legacyAccountStorage = MockLegacyTokenStorage()
-
-        let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
-                                            legacyTokenStorage: legacyAccountStorage,
-                                            authService: authService)
+        broker = UserScriptMessageBroker(context: "testBroker")
         mockStorePurchaseManager = StorePurchaseManagerMockV2()
-        let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
-                                                                               baseURL: subscriptionEnvironment.serviceEnvironment.url)
-        let userDefaults = UserDefaults(suiteName: "com.duckduckgo.\(#function)")!
-        subscriptionManagerV2 = DefaultSubscriptionManagerV2(storePurchaseManager: mockStorePurchaseManager,
-                                                             oAuthClient: authClient,
-                                                             userDefaults: userDefaults,
-                                                             subscriptionEndpointService: subscriptionEndpointService,
-                                                             subscriptionEnvironment: subscriptionEnvironment,
-                                                             pixelHandler: MockPixelHandler())
+        subscriptionManagerV2 = SubscriptionManagerMockV2()
+        subscriptionManagerV2.resultStorePurchaseManager = mockStorePurchaseManager
+        subscriptionManagerV2.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!
         subscriptionSuccessPixelHandler = PrivacyProSubscriptionAttributionPixelHandler()
         let mockStripePurchaseFlowV2 = StripePurchaseFlowMockV2(subscriptionOptionsResult: .failure(.noProductsFound), prepareSubscriptionPurchaseResult: .failure(.noProductsFound))
         mockUIHandler = SubscriptionUIHandlerMock { _ in }
@@ -98,6 +82,20 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                         dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
                                                         featureFlagger: mockFeatureFlagger,
                                                         aiChatURL: URL.duckDuckGo)
+        sut.with(broker: broker)
+    }
+
+    override func tearDown() {
+        mockFeatureFlagger = nil
+        mockFreemiumDBPUserStateManager = nil
+        mockNotificationCenter = nil
+        mockPixelHandler = nil
+        mockStorePurchaseManager = nil
+        mockSubscriptionFeatureAvailability = nil
+        mockUIHandler = nil
+        subscriptionManagerV2 = nil
+        subscriptionSuccessPixelHandler = nil
+        sut = nil
     }
 
     // MARK: - Free Trials
@@ -329,5 +327,51 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         // Then
         XCTAssertNil(result)
         await fulfillment(of: [uiHandlerExpectation], timeout: 0.1)
+    }
+
+    @MainActor
+    func testFreemiumPixelOriginSetWhenSubscriptionSelectedSuccessFromFreemium() async throws {
+        // Given
+        mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = true
+        mockStorePurchaseManager.hasActiveSubscriptionResult = false
+        mockStorePurchaseManager.purchaseSubscriptionResult = .success("mock-transaction-jws")
+        let validTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        subscriptionManagerV2.resultTokenContainer = validTokenContainer
+        subscriptionManagerV2.resultCreateAccountTokenContainer = validTokenContainer
+        subscriptionManagerV2.confirmPurchaseResponse = .success(SubscriptionMockFactory.appleSubscription)
+        subscriptionManagerV2.resultSubscription = SubscriptionMockFactory.appleSubscription
+
+        let freemiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
+
+        // When
+        let subscriptionSelectedParams = ["id": "some-subscription-id"]
+        let result = try await sut.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
+
+        // Then
+        XCTAssertNil(result)
+        XCTAssertEqual(subscriptionSuccessPixelHandler.origin, freemiumOrigin)
+    }
+
+    @MainActor
+    func testFreemiumPixelOriginNotSetWhenSubscriptionSelectedSuccessNotFromFreemium() async throws {
+        // Given
+        mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = false
+        mockStorePurchaseManager.hasActiveSubscriptionResult = false
+        mockStorePurchaseManager.purchaseSubscriptionResult = .success("mock-transaction-jws")
+        let validTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        subscriptionManagerV2.resultTokenContainer = validTokenContainer
+        subscriptionManagerV2.resultCreateAccountTokenContainer = validTokenContainer
+        subscriptionManagerV2.confirmPurchaseResponse = .success(SubscriptionMockFactory.appleSubscription)
+        subscriptionManagerV2.resultSubscription = SubscriptionMockFactory.appleSubscription
+
+        let freemiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
+
+        // When
+        let subscriptionSelectedParams = ["id": "some-subscription-id"]
+        let result = try await sut.subscriptionSelected(params: subscriptionSelectedParams, original: Constants.mockScriptMessage)
+
+        // Then
+        XCTAssertNil(result)
+        XCTAssertNotEqual(subscriptionSuccessPixelHandler.origin, freemiumOrigin)
     }
 }

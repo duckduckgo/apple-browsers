@@ -43,7 +43,8 @@ class AutoClearHandlerTests: XCTestCase {
         let persistor2 = StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: "duckduckgo.com")
         let appearancePreferences = AppearancePreferences(
             persistor: MockAppearancePreferencesPersistor(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
         startupPreferences = StartupPreferences(persistor: persistor2,
                                                 appearancePreferences: appearancePreferences)

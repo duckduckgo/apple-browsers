@@ -1186,6 +1186,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertNil(weakPresenter, "Presenter should be deallocated")
     }
 
+    @MainActor
     func testDeinit_RemovesNotificationObservers() {
         // Given
         var presenter: DuckPlayerNativeUIPresenter? = DuckPlayerNativeUIPresenter(

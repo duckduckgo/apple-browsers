@@ -768,6 +768,11 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: .aiChat))
     }
+
+    func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        addressBarTextField.hideSuggestionWindow()
+        addressBarTextField.escapeKeyDown()
+    }
 }
 
 // MARK: - NSDraggingSource

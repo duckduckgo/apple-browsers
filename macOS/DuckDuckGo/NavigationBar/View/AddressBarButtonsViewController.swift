@@ -26,12 +26,14 @@ import os.log
 import PrivacyDashboard
 import PixelKit
 import AppKitExtensions
+import AIChat
 
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
+    func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
 }
 
 final class AddressBarButtonsViewController: NSViewController {
@@ -406,15 +408,24 @@ final class AddressBarButtonsViewController: NSViewController {
         if featureFlagger.isFeatureOn(.aiChatSidebar),
            aiChatMenuConfig.openAIChatInSidebar,
            let tab = tabViewModel?.tab,
+           !aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid),
            case .url = tab.content,
            behavior == .currentTab {
-            aiChatSidebarPresenter.toggleSidebar()
+
+            if let value = textFieldValue,
+               let query = AIChatAddressBarPromptExtractor().queryForValue(value) {
+                let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: true)
+                aiChatSidebarPresenter.presentSidebar(for: prompt)
+            } else {
+                aiChatSidebarPresenter.toggleSidebar()
+            }
         } else if let value = textFieldValue {
             aiChatTabOpener.openAIChatTab(value, with: behavior)
         } else {
             aiChatTabOpener.openAIChatTab(nil, with: behavior)
         }
 
+        delegate?.addressBarButtonsViewControllerAIChatButtonClicked(self)
         updateAskAIChatButtonVisibility()
     }
 
@@ -617,6 +628,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
             askAIChatButton.backgroundColor = visualStyle.colorsProvider.buttonMouseOverColor
             askAIChatButton.mouseOverColor = .buttonMouseDown
+            askAIChatButton.mouseDownColor = 
 
             // Animate button expanding
             NSAnimationContext.runAnimationGroup { context in

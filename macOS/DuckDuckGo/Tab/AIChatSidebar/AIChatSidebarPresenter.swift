@@ -219,6 +219,7 @@ extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
     }
 
     func didClickCloseButton() {
+        windowControllersManager.lastKeyMainWindowController?.window?.makeFirstResponder(nil)
         toggleSidebar()
     }
 

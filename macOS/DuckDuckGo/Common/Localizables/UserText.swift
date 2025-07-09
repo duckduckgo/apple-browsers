@@ -443,6 +443,8 @@ struct UserText {
 
     static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show “New Duck.ai Chat” in File and application menus", comment: "Show Duck.ai in application menus")
 
+    static let aiChatOpenInSidebarToggle = NSLocalizedString("duckai.open-in-sidebar.toggle-setting", value: "Open Duck.ai in the sidebar", comment: "Settings option to open Duck.ai in the sidebar")
+
     static let aiChatPreferencesCaption = NSLocalizedString("ai-features.preferences.caption", value: "DuckDuckGo AI features are private and optional. Your data is not used to train AI.", comment: "Ai Chat preferences explanation")
 
     static let aiChatPreferencesLearnMoreButton = NSLocalizedString("ai-chat.preferences.learn-more", value: "Learn More", comment: "AI Chat preferences button to learn more about it")
@@ -453,7 +455,15 @@ struct UserText {
 
     static let aiChatAddressBarTooltip = NSLocalizedString("tooltip.aichat.address-bar", value: "Duck.ai", comment: "Tooltip for the AI Chat address bar button")
 
+    static let aiChatAddressBarTrustedIndicator = NSLocalizedString("aichat.address-bar.trusted-indicator", value: "Duck.ai", comment: "Label for the AI Chat displayed in the address bar")
+
+    static let aiChatOpenNewTabButton = NSLocalizedString("aichat.address-bar.open-new-tab-button", value: "Open New Duck.ai Tab", comment: "Button to open Duck.ai in a new tab")
+    static let aiChatToggleSidebarButton = NSLocalizedString("aichat.address-bar.toggle-sidebar-button", value: "Toggle Duck.ai Sidebar", comment: "Button to toggle Duck.ai sidebar")
+    static let aiChatOpenSidebarButton = NSLocalizedString("aichat.address-bar.open-sidebar-button", value: "Open Duck.ai Sidebar", comment: "Button to open Duck.ai sidebar")
+    static let aiChatCloseSidebarButton = NSLocalizedString("aichat.address-bar.close-sidebar-button", value: "Close Duck.ai Sidebar", comment: "Button to close Duck.ai sidebar")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
+    static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open Duck.ai Settings", comment: "Button to open Duck.ai settings")
+    static let askAIChatButtonTitle = NSLocalizedString("aichat.address-bar.ask-button.title", value: "Ask Duck.ai", comment: "Title for button to ask Duck.ai")
 
     static let searchAssistSettings = NSLocalizedString("duckai.search-assist-settings", value: "Search Assist Settings", comment: "The section name in preferences for Search Assist Settings")
     static let searchAssistSettingsDescription = NSLocalizedString("duckai.search-assist-settings.description", value: "Choose how often you want AI-Assisted answers to appear in your searches", comment: "Description of the section in Settings")
@@ -1280,6 +1290,7 @@ struct UserText {
 
     // Favorites
     static let newTabFavoriteSectionTitle = NSLocalizedString("newTab.favorites.section.title", value: "Favorites", comment: "Title of the Favorites section in the home page")
+    static let newTabOmnibarSectionTitle = NSLocalizedString("newTab.favorites.section.omnibar", value: "Search", comment: "Title of the Search section in the home page")
 
     // Set Up
     static let newTabSetUpDefaultBrowserCardTitle = NSLocalizedString("newTab.setup.default.browser.title", value: "Default to Privacy", comment: "Title of the Default Browser card of the Set Up section in the home page")
@@ -1353,8 +1364,8 @@ struct UserText {
     static let fireproofExplanation = NSLocalizedString("fireproof.explanation", value: "When you Fireproof a site, cookies won't be erased and you'll stay signed in, even after using the Fire Button.", comment: "Fireproofing mechanism explanation")
     static let manageFireproofSites = NSLocalizedString("fireproof.manage-sites", value: "Manage Fireproof Sites…", comment: "Fireproof settings button caption")
     static let autoClear = NSLocalizedString("auto.clear", value: "Auto-Clear", comment: "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.")
-    static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically clear tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
-    static let warnBeforeQuit = NSLocalizedString("warn.before.quit", value: "Warn me that tabs and data will be cleared when quitting", comment: "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.")
+    static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically delete tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
+    static let warnBeforeQuit = NSLocalizedString("warn.before.quit", value: "Warn me that tabs and data will be deleted when quitting", comment: "Label after the checkbox in Settings which configures a warning before clearing data on the application termination.")
     static let warnBeforeQuitDialogHeader = NSLocalizedString("warn.before.quit.dialog.header", value: "Clear tabs and browsing data and quit DuckDuckGo?", comment: "A header of warning before clearing data on the application termination.")
     static let warnBeforeQuitDialogCheckboxMessage = NSLocalizedString("warn.before.quit.dialog.checkbox.message", value: "Warn me every time", comment: "A label after checkbox to configure the warning before clearing data on the application termination.")
     static let disableAutoClearToEnableSessionRestore = NSLocalizedString("disable.auto.clear.to.enable.session.restore",
@@ -1363,6 +1374,8 @@ struct UserText {
     static let showDataClearingSettings = NSLocalizedString("show.data.clearing.settings",
                                                             value: "Open Data Clearing Settings",
                                                             comment: "Button in Settings. It navigates user to Data Clearing Settings. The Data Clearing string should match the string with the preferences.data-clearing key")
+    static let fireAnimationSectionHeader = NSLocalizedString("fire.animation.section.setting", value: "Animation", comment: "Section header in Data Clearing related to the Fire Animation.")
+    static let showFireAnimationToggleText = NSLocalizedString("fire.animation.toggle.value", value: "Show inferno animation when deleting data", comment: "Checkbox to toggle the fire animation to be on or off")
 
     // MARK: Crash Report
     static let crashReportTitle = NSLocalizedString("crash-report.title", value: "DuckDuckGo Privacy Browser quit unexpectedly.", comment: "Title of the dialog where the user can send a crash report")

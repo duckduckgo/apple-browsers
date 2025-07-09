@@ -34,7 +34,7 @@ let package = Package(
     dependencies: [
         .package(path: "../DuckUI"),
         .package(path: "../../../SharedPackages/DesignResourcesKitIcons"),
-        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "5.1.0"),
+        .package(path: "../../../SharedPackages/DesignResourcesKit"),
         .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.2.1"),
     ],
     targets: [

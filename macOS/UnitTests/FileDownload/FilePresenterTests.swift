@@ -59,6 +59,10 @@ final class FilePresenterTests: XCTestCase {
         }.store(in: &cancellables)
     }
 
+    override var allowedNonNilVariables: Set<String> {
+        ["fm"]
+    }
+
     override func tearDown() async throws {
         await terminateApp()
         cancellables.removeAll()

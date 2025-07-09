@@ -58,17 +58,12 @@ public enum SubscriptionCachePolicy {
     /// Returns the cached subscription if it exists; otherwise, attempts to fetch from the remote source.
     case cacheFirst
 
-    /// Returns only the cached subscription. No remote fetch is attempted.
-    case cacheOnly
-
     public var apiCachePolicy: APICachePolicy {
         switch self {
         case .remoteFirst:
             return .reloadIgnoringLocalCacheData
         case .cacheFirst:
             return .returnCacheDataElseLoad
-        case .cacheOnly:
-            return .returnCacheDataDontLoad
         }
     }
 }
@@ -211,7 +206,11 @@ New: \(subscription.debugDescription, privacy: .public)
             } catch SubscriptionEndpointServiceError.noData {
                 throw SubscriptionEndpointServiceError.noData
             } catch {
-                return try await getSubscription(accessToken: accessToken, cachePolicy: .cacheOnly)
+                if let cachedSubscription = getCachedSubscription() {
+                    return cachedSubscription
+                } else {
+                    throw SubscriptionEndpointServiceError.noData
+                }
             }
 
         case .cacheFirst:
@@ -219,13 +218,6 @@ New: \(subscription.debugDescription, privacy: .public)
                 return cachedSubscription
             } else {
                 return try await getRemoteSubscription(accessToken: accessToken)
-            }
-
-        case .cacheOnly:
-            if let cachedSubscription = getCachedSubscription() {
-                return cachedSubscription
-            } else {
-                throw SubscriptionEndpointServiceError.noData
             }
         }
     }
@@ -242,7 +234,6 @@ New: \(subscription.debugDescription, privacy: .public)
         cacheSerialQueue.sync {
             subscriptionCache.reset()
         }
-// TBD check if needed: NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: nil)
     }
 
     // MARK: -

@@ -49,11 +49,21 @@ final class BrowserTabViewController: NSViewController {
 
     private let activeRemoteMessageModel: ActiveRemoteMessageModel
     private let newTabPageActionsManager: NewTabPageActionsManager
-    private(set) lazy var newTabPageWebViewModel: NewTabPageWebViewModel = NewTabPageWebViewModel(
-        featureFlagger: featureFlagger,
-        actionsManager: newTabPageActionsManager,
-        activeRemoteMessageModel: activeRemoteMessageModel
-    )
+
+    private var _newTabPageWebViewModel: NewTabPageWebViewModel?
+    var newTabPageWebViewModel: NewTabPageWebViewModel {
+        if let newTabPageWebViewModel = _newTabPageWebViewModel {
+            return newTabPageWebViewModel
+        }
+
+        let newTabPageWebViewModel = NewTabPageWebViewModel(
+            featureFlagger: featureFlagger,
+            actionsManager: newTabPageActionsManager,
+            activeRemoteMessageModel: activeRemoteMessageModel
+        )
+        _newTabPageWebViewModel = newTabPageWebViewModel
+        return newTabPageWebViewModel
+    }
 
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
@@ -217,7 +227,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func windowWillClose(_ notification: NSNotification) {
         self.removeWebViewFromHierarchy()
-        self.newTabPageWebViewModel.removeUserScripts()
+        _newTabPageWebViewModel?.removeUserScripts()
     }
 
     @objc

@@ -23,9 +23,15 @@ import Combine
 @testable import DuckDuckGo_Privacy_Browser
 
 class SortBookmarksViewModelTests: XCTestCase {
-    let testUserDefault = UserDefaults(suiteName: #function)!
-    let manager = MockBookmarkManager()
-    let metrics = BookmarksSearchAndSortMetrics()
+    var testUserDefault: UserDefaults! = UserDefaults(suiteName: #function)!
+    var manager: MockBookmarkManager! = MockBookmarkManager()
+    var metrics: BookmarksSearchAndSortMetrics! = BookmarksSearchAndSortMetrics()
+
+    override func tearDown() {
+        manager = nil
+        testUserDefault = nil
+        metrics = nil
+    }
 
     func testWhenSortingIsNameAscending_thenSortByNameMetricIsFired() async throws {
         let sut = SortBookmarksViewModel(manager: manager, metrics: metrics, origin: .panel)

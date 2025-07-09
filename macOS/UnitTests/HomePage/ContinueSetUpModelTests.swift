@@ -33,7 +33,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     var coookiePopupProtectionPreferences: MockCookiePopupProtectionPreferencesPersistor!
     var privacyConfigManager: MockPrivacyConfigurationManager!
     var dockCustomizer: DockCustomization!
-    let userDefaults = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
+    var userDefaults: UserDefaults! = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
 
     @MainActor override func setUp() {
         UserDefaultsWrapper<Any>.clearAll()
@@ -68,6 +68,10 @@ final class ContinueSetUpModelTests: XCTestCase {
         emailManager = nil
         emailStorage = nil
         vm = nil
+        dockCustomizer = nil
+        duckPlayerPreferences = nil
+        privacyConfigManager = nil
+        userDefaults = nil
     }
 
     func testModelReturnsCorrectStrings() {

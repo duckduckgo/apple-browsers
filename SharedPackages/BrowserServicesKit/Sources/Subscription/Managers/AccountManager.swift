@@ -209,7 +209,7 @@ public final class DefaultAccountManager: AccountManager {
     private func fetchRemoteEntitlements() async -> Result<[Entitlement], Error> {
         guard let accessToken else {
             entitlementsCache.reset()
-            return .failure(EntitlementsError.noAccessToken)
+            return .success([])
         }
 
         switch await authEndpointService.validateToken(accessToken: accessToken) {
@@ -233,8 +233,7 @@ public final class DefaultAccountManager: AccountManager {
             } else {
                 entitlementsCache.set(entitlements)
             }
-            let payload = EntitlementsDidChangePayload(entitlements: EntitlementsBridging.v2EntitlementsFrom(v1Entitlements: entitlements),
-                                                       previousEntitlements: EntitlementsBridging.v2EntitlementsFrom(v1Entitlements: cachedEntitlements))
+            let payload = EntitlementsDidChangePayload(entitlements: EntitlementsBridging.v2EntitlementsFrom(v1Entitlements: entitlements))
             NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: payload.notificationUserInfo)
         }
     }
@@ -256,13 +255,6 @@ public final class DefaultAccountManager: AccountManager {
                 return .success(cachedEntitlements)
             } else {
                 return await fetchRemoteEntitlements()
-            }
-
-        case .returnCacheDataDontLoad:
-            if let cachedEntitlements: [Entitlement] = entitlementsCache.get() {
-                return .success(cachedEntitlements)
-            } else {
-                return .failure(EntitlementsError.noCachedData)
             }
         }
 

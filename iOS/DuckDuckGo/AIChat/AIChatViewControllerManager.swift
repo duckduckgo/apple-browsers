@@ -41,11 +41,12 @@ final class AIChatViewControllerManager {
 
     // MARK: - Private Properties
 
-    private var chatViewController: AIChatViewController?
+    private(set) var chatViewController: AIChatViewController?
     private weak var userContentController: UserContentController?
 
     private var aiChatUserScript: AIChatUserScript?
     private var payloadHandler = AIChatPayloadHandler()
+    private let subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
@@ -64,7 +65,8 @@ final class AIChatViewControllerManager {
          userAgentManager: UserAgentManager = DefaultUserAgentManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,
          featureFlagger: FeatureFlagger,
-         aiChatSettings: AIChatSettingsProvider) {
+         aiChatSettings: AIChatSettingsProvider,
+         subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler()) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
@@ -72,6 +74,7 @@ final class AIChatViewControllerManager {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
+        self.subscriptionAIChatStateHandler = subscriptionAIChatStateHandler
     }
 
     // MARK: - Public Methods
@@ -83,11 +86,17 @@ final class AIChatViewControllerManager {
                     on viewController: UIViewController) {
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
 
+        /// Reset the session timer if the subscription state has changed, as we will force a refresh on AI Chat
+        if subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
+            stopSessionTimer()
+        }
+
         pixelMetricHandler = AIChatPixelMetricHandler(timeElapsedInMinutes: sessionTimer?.timeElapsedInMinutes())
         pixelMetricHandler?.fireOpenAIChat()
 
         /// If we have a query or payload, let's clean the previous session and start fresh
-        if query != nil || payload != nil {
+        if query != nil || payload != nil || subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
+            subscriptionAIChatStateHandler.reset()
             Task {
                 await cleanUpSession()
                 setupAndPresentAIChat(query, payload: payload, autoSend: autoSend, on: viewController)
@@ -138,6 +147,7 @@ final class AIChatViewControllerManager {
 
     private func stopSessionTimer() {
         sessionTimer?.cancel()
+        sessionTimer = nil
     }
 
     private var isKeepSessionEnabled: Bool {

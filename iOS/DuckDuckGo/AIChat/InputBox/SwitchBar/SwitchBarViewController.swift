@@ -38,9 +38,7 @@ class SwitchBarViewController: UIViewController {
 
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
-
-    private var collapsedStateConstraint: NSLayoutConstraint?
-    private var expandedStateConstraint: NSLayoutConstraint?
+    
     private var segmentedControlTopConstraint: NSLayoutConstraint?
 
     private var isExpanded = false
@@ -80,15 +78,6 @@ class SwitchBarViewController: UIViewController {
         view.backgroundColor = .clear
 
         setExpanded(isExpanded)
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-
-        UIView.animate(withDuration: 0.25, delay: 0.0, options: [.curveEaseInOut]) {
-            self.setExpanded(false)
-            self.view.layoutIfNeeded()
-        }
     }
 
     private func setupSubscriptions() {
@@ -164,16 +153,9 @@ class SwitchBarViewController: UIViewController {
     func setExpanded(_ isExpanded: Bool) {
         self.isExpanded = isExpanded
 
-        if isExpanded {
-            collapsedStateConstraint?.isActive = false
-            segmentedControlTopConstraint?.isActive = true
-            expandedStateConstraint?.isActive = true
-        } else {
-            expandedStateConstraint?.isActive = false
-            segmentedControlTopConstraint?.isActive = false
-            collapsedStateConstraint?.isActive = true
-        }
+        segmentedControlTopConstraint?.isActive = isExpanded
 
+        backButton.alpha = isExpanded ? 1 : 0
         segmentedPickerHostingController?.view.alpha = isExpanded ? 1 : 0
 
         textEntryViewController.setExpanded(isExpanded)
@@ -182,23 +164,18 @@ class SwitchBarViewController: UIViewController {
     private func setupConstraints() {
 
         guard let segmentedPickerView = segmentedPickerHostingController?.view else { return }
-        
-        collapsedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
-        expandedStateConstraint = textEntryViewController.view.topAnchor.constraint(equalTo: segmentedPickerView.bottomAnchor, constant: Constants.textEntryViewTopPadding)
-        
-        segmentedControlTopConstraint = segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
 
-        // Create bottom constraint with lower priority to avoid conflicts with parent constraints
-        let textEntryBottomConstraint = textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-        textEntryBottomConstraint.priority = UILayoutPriority(999) // High priority but not required
+        segmentedControlTopConstraint = segmentedPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
 
         NSLayoutConstraint.activate([
             segmentedPickerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             segmentedPickerView.heightAnchor.constraint(equalToConstant: Constants.segmentedControlHeight),
 
+            textEntryViewController.view.topAnchor.constraint(equalTo: segmentedPickerView.bottomAnchor, constant: Constants.textEntryViewTopPadding),
             textEntryViewController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.textEntryViewSidePadding),
             textEntryViewController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Constants.textEntryViewSidePadding),
-            textEntryBottomConstraint,
+            // Create bottom constraint with lower priority to avoid conflicts with parent constraints
+            textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).withPriority(.init(999)),
 
             backButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.backButtonHorizontalPadding),
             backButton.centerYAnchor.constraint(equalTo: segmentedPickerView.centerYAnchor)

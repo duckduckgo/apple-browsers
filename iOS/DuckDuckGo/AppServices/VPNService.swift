@@ -68,7 +68,7 @@ final class VPNService: NSObject {
     }
 
     private func presentExpiredEntitlementNotificationIfNeeded() {
-        let presenter = NetworkProtectionNotificationsPresenterTogglableDecorator(
+        let presenter = VPNNotificationsPresenterTogglableDecorator(
             settings: AppDependencyProvider.shared.vpnSettings,
             defaults: .networkProtectionGroupDefaults,
             wrappee: NetworkProtectionUNNotificationPresenter()
@@ -115,7 +115,7 @@ final class VPNService: NSObject {
     private func refreshVPNShortcuts() async {
         guard await vpnFeatureVisibility.shouldShowVPNShortcut(),
               let hasEntitlement = try? await subscriptionManager.isFeatureAvailableAndEnabled(feature: .networkProtection,
-                                                                            cachePolicy: .returnCacheDataDontLoad),
+                                                                            cachePolicy: .returnCacheDataElseLoad),
               hasEntitlement
         else {
             application.shortcutItems = nil

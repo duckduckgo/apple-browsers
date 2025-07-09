@@ -2650,6 +2650,12 @@
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai-Shortcuts";
 
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Sucheingabe";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Suche im Web oder frag Duck.ai direkt über die Adressleiste";
+
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Such-Assist-Einstellungen";
 

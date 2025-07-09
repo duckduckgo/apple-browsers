@@ -45,6 +45,9 @@ protocol AIChatSidebarPresenting {
 
     /// Emits events whenever sidebar is shown or hidden for a tab.
     var sidebarPresenceWillChangePublisher: AnyPublisher<AIChatSidebarPresenceChange, Never> { get }
+
+    /// Consumes `prompt` and presents it in the sidebar. Appends to existing conversation if that was present.
+    func presentSidebar(for prompt: AIChatNativePrompt)
 }
 
 final class AIChatSidebarPresenter: AIChatSidebarPresenting {
@@ -59,6 +62,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     private let pixelFiring: PixelFiring?
     private let sidebarPresenceWillChangeSubject = PassthroughSubject<AIChatSidebarPresenceChange, Never>()
 
+    private var isAnimatingSidebarTransition: Bool = false
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -89,22 +93,12 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
                 self?.handleAIChatHandoff(with: payload)
             }
             .store(in: &cancellables)
-
-        NotificationCenter.default.publisher(for: .aiChatSummarizationRequest)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                guard sidebarHost.isInKeyWindow,
-                      let request = notification.object as? AIChatSummarizationRequest
-                else { return }
-
-                self?.handleAIChatSummarizationRequest(request)
-            }
-            .store(in: &cancellables)
     }
 
     func toggleSidebar() {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
-        guard let currentTabID = sidebarHost.currentTabID else { return }
+        guard !isAnimatingSidebarTransition,
+              let currentTabID = sidebarHost.currentTabID else { return }
 
         let willShowSidebar = !sidebarProvider.isShowingSidebar(for: currentTabID)
 
@@ -117,6 +111,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     }
 
     private func updateSidebarConstraints(for tabID: TabIdentifier, isShowingSidebar: Bool, withAnimation: Bool) {
+        isAnimatingSidebarTransition = true
         sidebarPresenceWillChangeSubject.send(.init(tabID: tabID, isShown: isShowingSidebar))
 
         if isShowingSidebar {
@@ -138,7 +133,10 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
                 context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
                 sidebarHost.sidebarContainerLeadingConstraint?.animator().constant = newConstraintValue
             } completionHandler: { [weak self, tabID = sidebarHost.currentTabID] in
-                guard let self, let tabID, !isShowingSidebar else { return }
+                guard let self else { return }
+                self.isAnimatingSidebarTransition = false
+
+                guard let tabID, !isShowingSidebar else { return }
                 self.sidebarProvider.handleSidebarDidClose(for: tabID)
             }
         } else {
@@ -147,6 +145,24 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
             if let tabID = sidebarHost.currentTabID, !isShowingSidebar {
                 sidebarProvider.handleSidebarDidClose(for: tabID)
             }
+            self.isAnimatingSidebarTransition = false
+        }
+    }
+
+    func presentSidebar(for prompt: AIChatNativePrompt) {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+        guard let currentTabID = sidebarHost.currentTabID else { return }
+
+        let isShowingSidebar = sidebarProvider.isShowingSidebar(for: currentTabID)
+
+        if !isShowingSidebar {
+            AIChatPromptHandler.shared.setData(prompt)
+
+            // If not showing the sidebar, open it with the prompt
+            updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
+        } else {
+            let sidebarViewController = sidebarProvider.sidebar(for: currentTabID).sidebarViewController
+            sidebarViewController.setAIChatPrompt(prompt)
         }
     }
 
@@ -164,33 +180,6 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         } else {
             // If sidebar is open then pass the payload to a new AIChat tab
             aiChatTabOpener.openNewAIChatTab(withPayload: payload)
-        }
-    }
-
-    private func handleAIChatSummarizationRequest(_ request: AIChatSummarizationRequest) {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
-        guard let currentTabID = sidebarHost.currentTabID else { return }
-
-        let isShowingSidebar = sidebarProvider.isShowingSidebar(for: currentTabID)
-
-        let promptText = """
-            You are an expert summarizer AI. Your purpose is to read the provided text and generate a concise, accurate, and easy-to-understand summary. Summarize the following text in a neutral, encyclopedic tone. The summary should be a single paragraph and should not exceed 50 words. Use the same language as the original text.
-            <text>
-            \(request.text)
-            </text>
-            """
-
-        let prompt = AIChatNativePrompt.queryPrompt(promptText, autoSubmit: true)
-        pixelFiring?.fire(AIChatPixel.aiChatSummarizeText(source: request.source), frequency: .dailyAndStandard)
-
-        if !isShowingSidebar {
-            AIChatPromptHandler.shared.setData(prompt)
-
-            // If not showing the sidebar open it with the summarization prompt
-            updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
-        } else {
-            let sidebarViewController = sidebarProvider.sidebar(for: currentTabID).sidebarViewController
-            sidebarViewController.setAIChatPrompt(prompt)
         }
     }
 }
@@ -211,6 +200,8 @@ extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
 extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
 
     func didClickOpenInNewTabButton(currentAIChatURL: URL, aiChatRestorationData: AIChatRestorationData?) {
+        self.toggleSidebar()
+
         Task { @MainActor in
             if let data = aiChatRestorationData {
                 aiChatTabOpener.openNewAIChatTab(withChatRestorationData: data)

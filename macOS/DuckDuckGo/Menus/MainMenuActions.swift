@@ -796,9 +796,13 @@ extension MainViewController {
                 guard let selectedText, !selectedText.isEmpty else {
                     return
                 }
-                NotificationCenter.default.post(name: .aiChatSummarizationRequest,
-                                                object: AIChatSummarizationRequest(text: selectedText, source: .keyboardShortcut),
-                                                userInfo: nil)
+                let request = AIChatTextSummarizationRequest(
+                    text: selectedText,
+                    websiteURL: browserTabViewController.webView?.url,
+                    websiteTitle: browserTabViewController.webView?.title,
+                    source: .keyboardShortcut
+                )
+                aiChatSummarizer.summarize(request)
             } catch {
                 Logger.aiChat.error("Failed to get selected text from the webView")
             }
@@ -1331,7 +1335,7 @@ extension MainViewController: NSMenuItemValidation {
              #selector(MainViewController.showPageSource(_:)),
              #selector(MainViewController.showPageResources(_:)):
             let canReload = activeTabViewModel?.canReload == true
-            let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab
+            let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab && !isBurner
             let isHistoryView = featureFlagger.isFeatureOn(.historyView) && activeTabViewModel?.tab.content == .history
             return canReload || isHTMLNewTabPage || isHistoryView
 

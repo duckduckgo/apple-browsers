@@ -32,7 +32,7 @@ let package = Package(
             targets: ["UIComponents"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "5.1.0")
+        .package(path: "../DesignResourcesKit")
     ],
     targets: [
         .target(

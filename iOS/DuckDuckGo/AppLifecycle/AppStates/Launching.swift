@@ -20,6 +20,8 @@
 import Core
 import UIKit
 
+import BrowserServicesKit
+
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
 ///   - This state is typically associated with the `application(_:didFinishLaunchingWithOptions:)` method.
@@ -88,6 +90,12 @@ struct Launching: LaunchingHandling {
                                                             privacyConfigurationManager: privacyConfigurationManager)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
+        // Service to display the Default Browser prompt.
+        let defaultBrowserPromptService = DefaultBrowserPromptService(
+            featureFlagger: featureFlagger,
+            privacyConfigManager: privacyConfigurationManager,
+            keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -107,10 +115,14 @@ struct Launching: LaunchingHandling {
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
                                               didFinishLaunchingStartTime: didFinishLaunchingStartTime,
-                                              keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+                                              keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+                                              defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter
+        )
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
+
+        let mainController = mainCoordinator.controller
 
         syncService.presenter = mainCoordinator.controller
         let vpnService = VPNService(mainCoordinator: mainCoordinator)
@@ -143,7 +155,9 @@ struct Launching: LaunchingHandling {
                                crashCollectionService: crashCollectionService,
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
                                statisticsService: statisticsService,
-                               keyValueFileStoreService: appKeyValueFileStoreService)
+                               keyValueFileStoreService: appKeyValueFileStoreService,
+                               defaultBrowserPromptService: defaultBrowserPromptService
+        )
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window

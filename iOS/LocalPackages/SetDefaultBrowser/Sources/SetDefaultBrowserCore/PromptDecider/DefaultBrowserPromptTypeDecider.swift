@@ -96,7 +96,7 @@ package final class DefaultBrowserPromptTypeDecider: DefaultBrowserPromptTypeDec
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Modal To Show Before Assessing Default Browser \(modalToShow.debugDescription).")
 
         // If browser is not the default one show the modal otherwise do not show it again.
-        return !defaultBrowserManager.defaultBrowserInfo().isDefaultBrowser() ? modalToShow : nil
+        return defaultBrowserManager.defaultBrowserInfo().isEligibleToShowDefaultBrowserPrompt() ? modalToShow : nil
     }
 
 }
@@ -130,7 +130,7 @@ private extension DefaultBrowserPromptTypeDecider {
         userActivityProvider.numberOfActiveDays() == featureFlagger.secondModalDelayDays
     }
 
-    // If the user has seen the last modal and they have been active for `secondModalDelayDays`, show the second modal.
+    // If the user has seen the last modal and they have been active for `subsequentModalRepeatIntervalDays`, show the subsequentModalRepeatIntervalDays modal.
     func shouldShowSubsequentModal(for user: DefaultBrowserPromptUserType) -> Bool {
         let modalSeenCondition = user.isNewOrReturningUser ? store.hasSeenSecondModal : store.hasSeenFirstModal
 
@@ -151,6 +151,17 @@ private extension DefaultBrowserPromptTypeDecider {
         }
 
         return numberOfDays
+    }
+
+}
+
+// MARK: - Private
+
+private extension DefaultBrowserInfoResult {
+
+    func isEligibleToShowDefaultBrowserPrompt() -> Bool {
+        guard case let .success(newInfo) = self else { return false }
+        return !newInfo.isDefaultBrowser
     }
 
 }

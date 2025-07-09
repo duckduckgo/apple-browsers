@@ -27,11 +27,11 @@ public protocol DefaultBrowserPromptFeatureFlagProvider {
 
 public protocol DefaultBrowserPromptFeatureFlagSettingsProvider {
     // A dictionary representing the settings for the feature.
-    var featureSettings: [String: Any] { get }
+    var defaultBrowserPromptFeatureSettings: [String: Any] { get }
 }
 
 /// An enum representing the different settings for Set Default Browser Prompts feature flag.
-enum DefaultBrowserPromptFeatureSettings: String {
+public enum DefaultBrowserPromptFeatureSettings: String {
     /// The setting for the number of days to wait after app installation before showing the first modal. Default to 1 day.
     case firstModalDelayDays
     /// The setting for the number of days to wait after the first modal has been shown before displaying the second modal. Default to 4 days.
@@ -39,7 +39,7 @@ enum DefaultBrowserPromptFeatureSettings: String {
     /// The settings for the number of days between subsequent displays of the modal. Default to 14 days.
     case subsequentModalRepeatIntervalDays
 
-    var defaultValue: Int {
+    public var defaultValue: Int {
         switch self {
         case .firstModalDelayDays: return 1
         case .secondModalDelayDays: return 4
@@ -88,7 +88,7 @@ extension DefaultBrowserPromptFeatureFlag: DefaultBrowserPromptFeatureFlagger {
     }
 
     private func getSettings(_ value: DefaultBrowserPromptFeatureSettings) -> Int {
-        settingsProvider.featureSettings[value.rawValue] as? Int ?? value.defaultValue
+        settingsProvider.defaultBrowserPromptFeatureSettings[value.rawValue] as? Int ?? value.defaultValue
     }
 
 }

@@ -27,6 +27,10 @@ final class RecentlyClosedCoordinatorTests: XCTestCase {
     let tab3 = RecentlyClosedTab("https://site2.com")
     let tab4 = RecentlyClosedTab("https://site3.com")
 
+    override var allowedNonNilVariables: Set<String> {
+        ["tab1", "tab2", "tab3", "tab4"]
+    }
+
     func testWhenDomainsAreBurnedThenCachedTabsOpenToThemAreRemoved() throws {
         var cache: [RecentlyClosedCacheItem] = [
             tab1,

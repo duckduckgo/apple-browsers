@@ -73,6 +73,8 @@ final class PermissionModelTests: XCTestCase {
         permissionManagerMock = nil
         geolocationServiceMock = nil
         pixelKit = nil
+        geolocationProviderMock = nil
+        model = nil
     }
 
     func testWhenCameraIsActivatedThenCameraPermissionChangesToActive() {

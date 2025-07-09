@@ -234,30 +234,8 @@ public final class DataBrokerProtectionIOSManager {
         registerBackgroundTaskHandler()
     }
 
-    func calculateEarliestBeginDate(from date: Date = .init()) async throws -> Date {
-        let allBrokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()
-
-        let overdueJobs = BrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(
-            brokerProfileQueriesData: allBrokerProfileQueryData,
-            jobType: .all,
-            priorityDate: date
-        ).sortedByEarliestPreferredRunDateFirst()
-
-        if overdueJobs.count >= minOverdueJobsForBackgroundTask {
-            return date
-        }
-
-        let mostRecentScanDate = allBrokerProfileQueryData.compactMap(\.scanJobData.lastRunDate).max()
-        let mostRecentOptOutDate = allBrokerProfileQueryData.flatMap(\.optOutJobData).compactMap(\.lastRunDate).max()
-        let mostRecentRunDate = max(mostRecentScanDate ?? .distantPast, mostRecentOptOutDate ?? .distantPast)
-
-        return min(date, mostRecentRunDate.addingTimeInterval(maxSchedulingInterval))
-    }
-
-    private func registerBackgroundTaskHandler() {
-        BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundJobIdentifier, using: nil) { task in
-            self.handleBGProcessingTask(task: task)
-        }
+    public func registerBGProcessingTask() {
+        backgroundTaskScheduler.registerBackgroundTaskHandler()
     }
 
     public func scheduleBGProcessingTask() {
@@ -445,5 +423,4 @@ extension DataBrokerProtectionIOSManager: DBPUIViewModelDelegate {
     public func matchRemovedByUser(with id: Int64) throws {
         try database.matchRemovedByUser(id)
     }
-
 }

@@ -23,45 +23,45 @@ struct FavoritesImportProcessorTests {
 
     @Test("Check if mergeBookmarksAndFavorites returns the provided bookmarks when no favorites are provided")
     func mergeBookmarksAndFavorites_ReturnsBookmarks_WhenFavoritesEmpty() {
-        let bookmarks = createMockImportedBookmarks()
-        let favorites: [ImportedBookmarks.BookmarkOrFolder] = []
+        let initialBookmarks = createMockImportedBookmarks()
+        var bookmarks = initialBookmarks
 
-        let result = FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: favorites)
+        FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &bookmarks, favorites: [])
 
-        #expect(result == bookmarks)
+        #expect(initialBookmarks == bookmarks)
     }
 
     @Test("Check if mergeBookmarksAndFavorites marks the expected bookmarks as favorites")
     func mergeBookmarksAndFavorites_MarksExpectedBookmarksAsFavorites() throws {
-        let bookmarks = createMockImportedBookmarks()
-        let favorite = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
+        var bookmarks = createMockImportedBookmarks()
+        let favorite = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil, isDDGFavorite: true, favoritesIndex: 0)
 
         // Check initial state
         try #require(bookmarks.numberOfBookmarks == 2)
         let bookmarkBarBookmark = try #require(bookmarks.topLevelFolders.bookmarkBar?.children?.first)
         try #require(bookmarkBarBookmark.isDDGFavorite == false)
 
-        let result = FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: [favorite])
+        FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &bookmarks, favorites: [favorite])
 
-        #expect(result.numberOfBookmarks == 2)
-        let bookmarkBarBookmarkResult = try #require(result.topLevelFolders.bookmarkBar?.children?.first)
-        #expect(bookmarkBarBookmarkResult.isDDGFavorite == true)
+        #expect(bookmarks.numberOfBookmarks == 2)
+        let mergedBookmarkBarBookmark = try #require(bookmarks.topLevelFolders.bookmarkBar?.children?.first)
+        #expect(mergedBookmarkBarBookmark.isDDGFavorite == true)
     }
 
     @Test("Check if mergeBookmarksAndFavorites adds unique favorites to the bookmark bar")
     func mergeBookmarksAndFavorites_AddsUniqueFavoritesToBookmarkBar() throws {
-        let bookmarks = createMockImportedBookmarks()
-        let favorite1 = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
-        let favorite2 = ImportedBookmarks.BookmarkOrFolder(name: "Duck.ai", type: .bookmark, urlString: "https://duck.ai", children: nil)
+        var bookmarks = createMockImportedBookmarks()
+        let favorite1 = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil, isDDGFavorite: true, favoritesIndex: 0)
+        let favorite2 = ImportedBookmarks.BookmarkOrFolder(name: "Duck.ai", type: .bookmark, urlString: "https://duck.ai", children: nil, isDDGFavorite: true, favoritesIndex: 1)
 
         // Check initial state
         try #require(bookmarks.numberOfBookmarks == 2)
         try #require(bookmarks.topLevelFolders.bookmarkBar?.children?.count == 2)
 
-        let result = FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: [favorite1, favorite2])
+        FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &bookmarks, favorites: [favorite1, favorite2])
 
-        #expect(result.numberOfBookmarks == 3)
-        #expect(result.topLevelFolders.bookmarkBar?.children?.count == 3)
+        #expect(bookmarks.numberOfBookmarks == 3)
+        #expect(bookmarks.topLevelFolders.bookmarkBar?.children?.count == 3)
     }
 
     private func createMockImportedBookmarks() -> ImportedBookmarks {

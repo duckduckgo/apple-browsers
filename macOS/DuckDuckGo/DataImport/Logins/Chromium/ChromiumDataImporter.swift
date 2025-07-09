@@ -103,28 +103,30 @@ internal class ChromiumDataImporter: DataImporter {
             try updateProgress(.importingBookmarks(numberOfBookmarks: nil, fraction: passwordsFraction + 0.0))
 
             let bookmarkReader = ChromiumBookmarksReader(chromiumDataDirectoryURL: profile.profileURL)
-            var bookmarkResult = bookmarkReader.readBookmarks()
-            if importNewTabShortcuts {
-                bookmarkResult = bookmarkResult.map { bookmarks in
-                    let newTabShortcuts = fetchShortcutsAsFavorites()
-                    return FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: newTabShortcuts)
-                }
+            let bookmarkResult = bookmarkReader.readBookmarks()
+
+            guard case .success(var importedBookmarks) = bookmarkResult else {
+                summary[.bookmarks] = .failure(bookmarkResult.error!)
+                return summary
             }
 
-            try updateProgress(.importingBookmarks(numberOfBookmarks: try? bookmarkResult.get().numberOfBookmarks,
+            var markRootBookmarksAsFavoritesByDefault = true
+            if featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport) {
+                markRootBookmarksAsFavoritesByDefault = false
+                let newTabShortcuts = fetchShortcutsAsFavorites()
+                FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &importedBookmarks, favorites: newTabShortcuts)
+            }
+
+            try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 0.5))
 
-            let bookmarksSummary = bookmarkResult.map { bookmarks in
-                bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: !importNewTabShortcuts)
-            }
+            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault)
 
-            if case .success = bookmarksSummary {
-                await importFavicons()
-            }
+            await importFavicons()
 
-            summary[.bookmarks] = bookmarksSummary.map { .init($0) }
+            summary[.bookmarks] = .success(.init(bookmarksSummary))
 
-            try updateProgress(.importingBookmarks(numberOfBookmarks: try? bookmarkResult.get().numberOfBookmarks,
+            try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 1.0))
         }
 

@@ -35,7 +35,7 @@ struct ImportedBookmarks: Codable, Equatable {
         var isDDGFavorite: Bool = false
         var favoritesIndex: Int?
 
-        let children: [BookmarkOrFolder]?
+        var children: [BookmarkOrFolder]?
 
         static func bookmark(name: String, urlString: String?, isDDGFavorite: Bool, favoritesIndex: Int? = nil) -> BookmarkOrFolder {
             .init(name: name, type: .bookmark, urlString: urlString, children: nil, isDDGFavorite: isDDGFavorite, favoritesIndex: favoritesIndex)
@@ -82,9 +82,9 @@ struct ImportedBookmarks: Codable, Equatable {
     }
 
     struct TopLevelFolders: Codable, Equatable {
-        let bookmarkBar: BookmarkOrFolder?
-        let otherBookmarks: BookmarkOrFolder?
-        let syncedBookmarks: BookmarkOrFolder?
+        var bookmarkBar: BookmarkOrFolder?
+        var otherBookmarks: BookmarkOrFolder?
+        var syncedBookmarks: BookmarkOrFolder?
 
         enum CodingKeys: String, CodingKey {
             case bookmarkBar = "bookmark_bar"
@@ -93,7 +93,7 @@ struct ImportedBookmarks: Codable, Equatable {
         }
     }
 
-    let topLevelFolders: TopLevelFolders
+    var topLevelFolders: TopLevelFolders
 
     var numberOfBookmarks: Int {
         [topLevelFolders.bookmarkBar, topLevelFolders.otherBookmarks, topLevelFolders.syncedBookmarks]

@@ -28,11 +28,13 @@ public final class Watchdog {
 
     private var monitoringTask: Task<Void, Never>?
 
+    @MainActor
     public var isRunning: Bool {
         guard let task = monitoringTask else { return false }
         return !task.isCancelled
     }
 
+    @MainActor
     public init(timeout: TimeInterval = 10.0, checkInterval: TimeInterval = 2.0) {
         self.timeout = timeout
         self.checkInterval = checkInterval
@@ -40,11 +42,13 @@ public final class Watchdog {
     }
 
     deinit {
-        stop()
+        monitoringTask?.cancel()
     }
 
+    @MainActor
     public func start() {
-        stop() // Cancel any existing task
+        // Cancel any existing task
+        monitoringTask?.cancel()
 
         logger.info("Watchdog started monitoring main thread with timeout: \(self.timeout)s")
 
@@ -53,6 +57,7 @@ public final class Watchdog {
         }
     }
 
+    @MainActor
     public func stop() {
         monitoringTask?.cancel()
         monitoringTask = nil

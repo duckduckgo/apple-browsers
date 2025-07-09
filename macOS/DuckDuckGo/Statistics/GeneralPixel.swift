@@ -25,7 +25,6 @@ import Configuration
 enum GeneralPixel: PixelKitEventV2 {
 
     case crash
-    case crashDaily
     case crashOnCrashHandlersSetUp
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
@@ -519,9 +518,6 @@ enum GeneralPixel: PixelKitEventV2 {
         switch self {
         case .crash:
             return "m_mac_crash"
-
-        case .crashDaily:
-            return "m_mac_crash_daily"
 
         case .crashOnCrashHandlersSetUp:
             return "m_mac_crash_on_handlers_setup"

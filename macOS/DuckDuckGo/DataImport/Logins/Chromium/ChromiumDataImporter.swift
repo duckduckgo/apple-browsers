@@ -32,7 +32,7 @@ internal class ChromiumDataImporter: DataImporter {
     }
     private let featureFlagger: FeatureFlagger
 
-    init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement, featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
+    init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement, featureFlagger: FeatureFlagger) {
         self.profile = profile
         self.loginImporter = loginImporter
         self.bookmarkImporter = bookmarkImporter
@@ -40,11 +40,12 @@ internal class ChromiumDataImporter: DataImporter {
         self.featureFlagger = featureFlagger
     }
 
-    convenience init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter) {
+    convenience init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter, featureFlagger: FeatureFlagger) {
         self.init(profile: profile,
                   loginImporter: loginImporter,
                   bookmarkImporter: bookmarkImporter,
-                  faviconManager: NSApp.delegateTyped.faviconManager)
+                  faviconManager: NSApp.delegateTyped.faviconManager,
+                  featureFlagger: featureFlagger)
     }
 
     var importableTypes: [DataImport.DataType] {
@@ -181,6 +182,7 @@ internal class ChromiumDataImporter: DataImporter {
                 }
             }
         } catch {
+            // Send pixel for error: https://app.asana.com/1/137249556945/task/1210674932129670
             return []
         }
     }

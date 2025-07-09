@@ -27,7 +27,8 @@ class ChromiumDataImporterTests {
         let loginImporter = MockLoginImporter()
         let faviconManager = FaviconManagerMock()
         let bookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _ in .init(successful: 1, duplicates: 2, failed: 3) })
-        let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore().resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager)
+        let featureFlagger = MockFeatureFlagger()
+        let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore().resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
 
         let result = await importer.importData(types: [.bookmarks])
 

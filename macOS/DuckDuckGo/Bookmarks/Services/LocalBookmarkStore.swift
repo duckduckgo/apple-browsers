@@ -804,8 +804,8 @@ final class LocalBookmarkStore: BookmarkStore {
                                                          context: context)
             }
             let (result, favorites) = recursivelyCreateEntitiesAndCollectFavorites(from: children,
-                                                                                    parent: folderParent,
-                                                                                    in: context)
+                                                                                   parent: folderParent,
+                                                                                   in: context)
             total += result
             allFavorites.append(contentsOf: favorites)
         }
@@ -881,6 +881,8 @@ final class LocalBookmarkStore: BookmarkStore {
             guard let url = bookmarkManagedObject.url, !existingFavoriteURLs.contains(url) else { continue }
             bookmarkManagedObject.addToFavorites(folders: favoritesFolders)
         }
+
+        // Send pixel for success: https://app.asana.com/1/137249556945/task/1210674932129670
     }
 
     /// There is a rare issue where bookmark managed objects can end up in the database with an invalid state, that is that they are missing their title value despite being non-optional.

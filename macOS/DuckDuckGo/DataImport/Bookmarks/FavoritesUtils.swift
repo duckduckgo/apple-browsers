@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-final class FavoritesUtils {
+enum FavoritesUtils {
 
     /// Merges imported bookmarks with the provided array of favorites, marking bookmarks with matching URLs as favorites.
     /// Any favorites not matching existing bookmarks will be added to the bookmark bar.

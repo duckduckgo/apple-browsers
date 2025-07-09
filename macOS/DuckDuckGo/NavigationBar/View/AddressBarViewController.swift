@@ -385,13 +385,18 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func subscribeToButtonsWidth() {
-        addressBarButtonsViewController!.$buttonsWidth
+        guard let addressBarButtonsViewController else {
+            assertionFailure("AddressBarViewController.subscribeToButtonsWidth: addressBarButtonsViewController is nil")
+            return
+        }
+
+        addressBarButtonsViewController.$buttonsWidth
             .sink { [weak self] value in
                 self?.layoutTextFields(withMinX: value)
             }
             .store(in: &cancellables)
 
-        addressBarButtonsViewController!.$trailingButtonsWidth
+        addressBarButtonsViewController.$trailingButtonsWidth
             .sink { [weak self] value in
                 self?.layoutTextFields(trailingWidth: value)
             }

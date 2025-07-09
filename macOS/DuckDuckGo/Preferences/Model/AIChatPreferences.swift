@@ -29,16 +29,20 @@ final class AIChatPreferences: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/duckai/approach-to-ai")!
     private let searchAssistSettingsURL = URL(string: "https://duckduckgo.com/settings#aifeatures")!
+    private let remoteSettings: AIChatRemoteSettingsProvider
     private var windowControllersManager: WindowControllersManager
     private let featureFlagger: FeatureFlagger
 
     init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+         remoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings(),
          windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager,
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.storage = storage
+        self.remoteSettings = remoteSettings
         self.windowControllersManager = windowControllersManager
         self.featureFlagger = featureFlagger
 
+        isAIFeaturesEnabled = storage.isAIFeaturesEnabled
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
         showShortcutInAddressBar = storage.showShortcutInAddressBar
         openAIChatInSidebar = storage.openAIChatInSidebar
@@ -47,6 +51,12 @@ final class AIChatPreferences: ObservableObject {
     }
 
     func subscribeToShowInApplicationMenuSettingsChanges() {
+        storage.isAIFeaturesEnabledPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.isAIFeaturesEnabled, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
         storage.showShortcutInApplicationMenuPublisher
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
@@ -68,6 +78,10 @@ final class AIChatPreferences: ObservableObject {
 
     var shouldShowOpenAIChatInSidebarToggle: Bool {
         featureFlagger.isFeatureOn(.aiChatSidebar)
+    }
+
+    @Published var isAIFeaturesEnabled: Bool {
+        didSet { storage.isAIFeaturesEnabled = isAIFeaturesEnabled }
     }
 
     @Published var showShortcutInApplicationMenu: Bool {

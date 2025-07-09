@@ -43,6 +43,7 @@ final class MainViewController: NSViewController {
     let bookmarksBarViewController: BookmarksBarViewController
     let featureFlagger: FeatureFlagger
     let fireCoordinator: FireCoordinator
+    let contentBlocking: ContentBlockingProtocol
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
     private let visualStyle: VisualStyleProviding
@@ -108,6 +109,7 @@ final class MainViewController: NSViewController {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.historyCoordinator = historyCoordinator
+        self.contentBlocking = contentBlocking
         self.fireproofDomains = fireproofDomains
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger

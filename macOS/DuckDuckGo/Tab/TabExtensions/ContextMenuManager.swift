@@ -40,8 +40,7 @@ final class ContextMenuManager: NSObject {
 
     private var tabsPreferences: TabsPreferences
     private let isLoadedInSidebar: Bool
-    private let featureFlagger: FeatureFlagger
-    private let aiChatPromptHandler: AIChatPromptHandler
+    private let internalUserDecider: InternalUserDecider
 
     private var isEmailAddress: Bool {
         guard let linkURL, let url = URL(string: linkURL) else {
@@ -64,12 +63,10 @@ final class ContextMenuManager: NSObject {
          contentPublisher: some Publisher<Tab.TabContent, Never>,
          tabsPreferences: TabsPreferences = TabsPreferences.shared,
          isLoadedInSidebar: Bool = false,
-         featureFlagger: FeatureFlagger,
-         aiChatPromptHandler: AIChatPromptHandler = .shared) {
+         internalUserDecider: InternalUserDecider) {
         self.tabsPreferences = tabsPreferences
         self.isLoadedInSidebar = isLoadedInSidebar
-        self.featureFlagger = featureFlagger
-        self.aiChatPromptHandler = aiChatPromptHandler
+        self.internalUserDecider = internalUserDecider
         super.init()
 
         contextMenuScriptPublisher
@@ -238,7 +235,7 @@ extension ContextMenuManager {
     }
 
     private func handleInspectElementItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
-        guard isLoadedInSidebar, !featureFlagger.internalUserDecider.isInternalUser else { return }
+        guard isLoadedInSidebar, !internalUserDecider.isInternalUser else { return }
         menu.removeItem(at: index)
     }
 
@@ -247,7 +244,7 @@ extension ContextMenuManager {
         case .aiChat:
             return false
         default:
-            return featureFlagger.isFeatureOn(.aiChatTextSummarization) && AIChatMenuConfiguration().shouldDisplayApplicationMenuShortcut
+            return AIChatMenuConfiguration().shouldDisplaySummarizationMenuItem
         }
     }
 }

@@ -38,6 +38,12 @@ extension Preferences {
                     }
                 }
 
+                PreferencePaneSubSection {
+                    ToggleMenuItem("Enable Duck.ai",
+                                   isOn: $model.isAIFeaturesEnabled)
+                    .accessibilityIdentifier("Preferences.AIChat.aiFeaturesToggle")
+                }
+
                 PreferencePaneSection(UserText.duckAIShortcuts) {
                     ToggleMenuItem(UserText.aiChatShowInAddressBarToggle,
                                    isOn: $model.showShortcutInAddressBar)
@@ -80,6 +86,7 @@ extension Preferences {
                         }
                     }
                 }
+                .visibility(model.isAIFeaturesEnabled ? .visible : .gone)
 
                 PreferencePaneSection(UserText.searchAssistSettings) {
                     TextMenuItemCaption(UserText.searchAssistSettingsDescription)

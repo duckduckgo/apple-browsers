@@ -42,14 +42,19 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
         }
     }
 
+    private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let debugURLSettings: AIChatDebugURLSettingsRepresentable
     private var settings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigurationManager.privacyConfig.settings(for: .aiChat)
     }
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-         debugURLSettings: AIChatDebugURLSettingsRepresentable = AIChatDebugURLSettings()) {
+    init(
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+        privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+        debugURLSettings: AIChatDebugURLSettingsRepresentable = AIChatDebugURLSettings()
+    ) {
+        self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
         self.debugURLSettings = debugURLSettings
     }
@@ -76,7 +81,11 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
     }
 
     var isAIChatEnabled: Bool {
-        privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .aiChat)
+        featureFlagger.isFeatureOn(.aiFeatures)
+    }
+
+    var isTextSummarizationEnabled: Bool {
+        isAIChatEnabled && featureFlagger.isFeatureOn(.aiChatTextSummarization)
     }
 
     // MARK: - Private

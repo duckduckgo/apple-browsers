@@ -40,6 +40,12 @@ protocol AIChatMenuVisibilityConfigurable {
     /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
     var openAIChatInSidebar: Bool { get }
 
+    /// This property validates user settings to determine if the text summarization
+    /// feature should be presented to the user.
+    ///
+    /// - Returns: `true` if the text summarization menu action should be displayed; otherwise, `false`.
+    var shouldDisplaySummarizationMenuItem: Bool { get }
+
     /// A publisher that emits a value when either the `shouldDisplayApplicationMenuShortcut`  settings, backed by storage, are changed.
     ///
     /// This allows subscribers to react to changes in the visibility settings of the application menu
@@ -58,50 +64,43 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
 
     private var cancellables = Set<AnyCancellable>()
     private var storage: AIChatPreferencesStorage
-    private let notificationCenter: NotificationCenter
     private let remoteSettings: AIChatRemoteSettingsProvider
 
     var valuesChangedPublisher = PassthroughSubject<Void, Never>()
 
+    var shouldDisplaySummarizationMenuItem: Bool {
+        remoteSettings.isTextSummarizationEnabled && storage.isAIFeaturesEnabled && shouldDisplayApplicationMenuShortcut
+    }
+
     var shouldDisplayApplicationMenuShortcut: Bool {
-        return storage.showShortcutInApplicationMenu
+        remoteSettings.isAIChatEnabled && storage.isAIFeaturesEnabled && storage.showShortcutInApplicationMenu
     }
 
     var shouldDisplayAddressBarShortcut: Bool {
-        storage.showShortcutInAddressBar
+        remoteSettings.isAIChatEnabled && storage.isAIFeaturesEnabled && storage.showShortcutInAddressBar
     }
 
     var openAIChatInSidebar: Bool {
-        storage.openAIChatInSidebar
+        remoteSettings.isAIChatEnabled && storage.isAIFeaturesEnabled && storage.openAIChatInSidebar
     }
 
     init(storage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-         notificationCenter: NotificationCenter = .default,
          remoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings()) {
         self.storage = storage
-        self.notificationCenter = notificationCenter
         self.remoteSettings = remoteSettings
 
         self.subscribeToValuesChanged()
     }
 
     private func subscribeToValuesChanged() {
-        storage.showShortcutInApplicationMenuPublisher
-            .removeDuplicates()
-            .sink { [weak self] _ in
-                self?.valuesChangedPublisher.send()
-            }.store(in: &cancellables)
-
-        storage.showShortcutInAddressBarPublisher
-            .removeDuplicates()
-            .sink { [weak self] _ in
-                self?.valuesChangedPublisher.send()
-            }.store(in: &cancellables)
-
-        storage.openAIChatInSidebarPublisher
-            .removeDuplicates()
-            .sink { [weak self] _ in
-                self?.valuesChangedPublisher.send()
-            }.store(in: &cancellables)
+        Publishers.Merge4(
+            storage.isAIFeaturesEnabledPublisher.removeDuplicates(),
+            storage.showShortcutInApplicationMenuPublisher.removeDuplicates(),
+            storage.showShortcutInAddressBarPublisher.removeDuplicates(),
+            storage.openAIChatInSidebarPublisher.removeDuplicates()
+        )
+        .sink { [weak self] _ in
+            self?.valuesChangedPublisher.send()
+        }.store(in: &cancellables)
     }
 }

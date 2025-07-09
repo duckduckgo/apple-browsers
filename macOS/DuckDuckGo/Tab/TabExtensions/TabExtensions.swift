@@ -177,7 +177,7 @@ extension TabExtensionsBuilder {
             ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
                                contentPublisher: args.contentPublisher,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
-                               featureFlagger: dependencies.featureFlagger)
+                               internalUserDecider: dependencies.featureFlagger.internalUserDecider)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))

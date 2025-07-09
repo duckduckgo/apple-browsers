@@ -137,7 +137,7 @@ class AIChatMenuConfigurationTests: XCTestCase {
         XCTAssertTrue(result, "Application menu shortcut should be displayed when both remote flag and storage are true.")
     }
 
-    func testOpenAIChatInSidebarPublisherWhenStorageAreTrue() {
+    func testShouldOpenAIChatInSidebarPublisherWhenStorageAreTrue() {
         mockStorage.openAIChatInSidebar = true
 
         let result = configuration.openAIChatInSidebar
@@ -147,6 +147,12 @@ class AIChatMenuConfigurationTests: XCTestCase {
 }
 
 class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
+    var isAIFeaturesEnabled: Bool = true {
+        didSet {
+            isAIFeaturesEnabledSubject.send(isAIFeaturesEnabled)
+        }
+    }
+
     var didDisplayAIChatAddressBarOnboarding: Bool = false
 
     var showShortcutInApplicationMenu: Bool = false {
@@ -167,9 +173,14 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
         }
     }
 
+    private var isAIFeaturesEnabledSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInApplicationMenuSubject = PassthroughSubject<Bool, Never>()
     private var showShortcutInAddressBarSubject = PassthroughSubject<Bool, Never>()
     private var openAIChatInSidebarSubject = PassthroughSubject<Bool, Never>()
+
+    var isAIFeaturesEnabledPublisher: AnyPublisher<Bool, Never> {
+        isAIFeaturesEnabledSubject.eraseToAnyPublisher()
+    }
 
     var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> {
         showShortcutInApplicationMenuSubject.eraseToAnyPublisher()
@@ -184,6 +195,7 @@ class MockAIChatPreferencesStorage: AIChatPreferencesStorage {
     }
 
     func reset() {
+        isAIFeaturesEnabled = true
         showShortcutInApplicationMenu = false
         showShortcutInAddressBar = false
         didDisplayAIChatAddressBarOnboarding = false
@@ -212,6 +224,7 @@ final class MockRemoteAISettings: AIChatRemoteSettingsProvider {
     var isAIChatEnabled: Bool
     var isAddressBarShortcutEnabled: Bool
     var isApplicationMenuShortcutEnabled: Bool
+    var isTextSummarizationEnabled: Bool
 
     init(onboardingCookieName: String = "defaultCookie",
          onboardingCookieDomain: String = "defaultdomain.com",
@@ -220,7 +233,8 @@ final class MockRemoteAISettings: AIChatRemoteSettingsProvider {
          aiChatURL: URL = URL(string: "https://duck.com/chat")!,
          isAIChatEnabled: Bool = true,
          isAddressBarShortcutEnabled: Bool = true,
-         isApplicationMenuShortcutEnabled: Bool = true) {
+         isApplicationMenuShortcutEnabled: Bool = true,
+         isTextSummarizationEnabled: Bool = true) {
         self.onboardingCookieName = onboardingCookieName
         self.onboardingCookieDomain = onboardingCookieDomain
         self.aiChatURLIdentifiableQuery = aiChatURLIdentifiableQuery
@@ -229,5 +243,6 @@ final class MockRemoteAISettings: AIChatRemoteSettingsProvider {
         self.isAIChatEnabled = isAIChatEnabled
         self.isAddressBarShortcutEnabled = isAddressBarShortcutEnabled
         self.isApplicationMenuShortcutEnabled = isApplicationMenuShortcutEnabled
+        self.isTextSummarizationEnabled = isTextSummarizationEnabled
     }
 }

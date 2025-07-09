@@ -180,7 +180,7 @@ final class DataImportViewModel: ObservableObject {
             case .passwords, .settings:
                 return UserText.dataImportPasswordsFileButton
             case .promo:
-                return "Select File..."
+                return UserText.dataImportPasswordsSelectFileButton
             case .bookmarks:
                 return UserText.dataImportBookmarksFileButton
             }

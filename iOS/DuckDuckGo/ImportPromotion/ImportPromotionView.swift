@@ -35,13 +35,13 @@ struct ImportPromotionView: View {
                 Group {
                     AnimationView(isAnimating: $isAnimating)
                     
-                    Text("Import your passwords to DuckDuckGo")
+                    Text(UserText.importPasswordsPromoTitle)
                         .daxTitle3()
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .padding(.top, 2)
                         .frame(maxWidth: .infinity)
 
-                    (Text(Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)).baselineOffset(-1.0) + Text(verbatim: " ") + Text("Quickly and securely transfer your passwords from another browser."))
+                    (Text(Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)).baselineOffset(-1.0) + Text(verbatim: " ") + Text(UserText.importPasswordsPromoMessage))
                         .daxSubheadRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .padding(.top, 4)
@@ -52,7 +52,7 @@ struct ImportPromotionView: View {
                     primaryButtonAction?()
                 } label: {
                     HStack {
-                        Text("Import Passwords")
+                        Text(UserText.importPasswordsPromoButtonTitle)
                             .daxButton()
                     }
                 }

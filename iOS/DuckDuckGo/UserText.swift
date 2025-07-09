@@ -1410,7 +1410,13 @@ Take back control of your personal information with the browser designed for dat
     static let subscriptionCompletingPurchaseTitle = NSLocalizedString("subscription.progress.view.completing.purchase", value: "Completing purchase...", comment: "Progress view title when completing the purchase")
         
     // Subscription Settings
-    public static let subscriptionTitle = NSLocalizedString("subscription.title", value: "Privacy Pro", comment: "Navigation bar Title for subscriptions")
+    public static var subscriptionTitle: String {
+        // Temporary until rebranding launch
+        if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.subscriptionRebranding) {
+            return NSLocalizedString("subscription.title", value: "DuckDuckGo Subscription", comment: "Navigation bar Title for subscriptions")
+        }
+        return NSLocalizedString("subscription.title", value: "Privacy Pro", comment: "Navigation bar Title for subscriptions")
+    }
     public static let subscriptionSubscribed = NSLocalizedString("subscription.subscribed", value: "Subscribed", comment: "Subtitle in header when subscribed")
     public static let subscriptionCloseButton = NSLocalizedString("subscription.close", value: "Close", comment: "Navigation Button for closing subscription view")
     public static let trialSubscription = NSLocalizedString("subscription.trial", value: "Free Trial Active", comment: "Subtitle in header when on a free trial subscription")

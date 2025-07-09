@@ -1,0 +1,95 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "advancedButton" : {
+    "title" : "Napredno",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click."
+  },
+  "advancedEllipsisButton" : {
+    "title" : "Napredno ...",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click. This button contains a trailing ellipsis."
+  },
+  "leaveSiteButton" : {
+    "title" : "Zapustite to spletno mesto",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to leave the website and navigate to previous page."
+  },
+  "visitSiteButton" : {
+    "title" : "Sprejmite tveganje in obiščite spletno mesto",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to visit the website anyway despite the risks."
+  },
+  "maliciousSiteTabTitle" : {
+    "title" : "Opozorilo: Varnostno tveganje",
+    "note" : "Title shown in the browser window or tab when the current page may be a security risk due to phishing"
+  },
+  "malwarePageHeading" : {
+    "title" : "Opozorilo: To spletno mesto je lahko{newline}varnostno tveganje",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "malwareWarningText" : {
+    "title" : "Funkcija DuckDuckGo Scam Blocker je preprečila nalaganje te strani, ker morda distribuira zlonamerno programsko opremo, namenjeno ogrožanju vaše naprave ali kraji vaših osebnih podatkov.{newline}<a>Preberite več</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "malwareAdvancedInfoHeading" : {
+    "title" : "Če menite, da je to spletno mesto varno, lahko <a>prijavite napako</a>. Spletno mesto lahko še vedno obiščete na lastno odgovornost.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "phishingPageHeading" : {
+    "title" : "Opozorilo: To spletno mesto je lahko{newline}varnostno tveganje",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "phishingWarningText" : {
+    "title" : "Funkcija DuckDuckGo Scam Blocker je preprečila nalaganje te strani, ker se morda predstavlja kot zakonito spletno mesto, da bi vas z zvijačo prepričala, da posredujete osebne podatke, kot so gesla ali številke kreditnih kartic.{newline}<a>Več o tem</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "phishingAdvancedInfoHeading" : {
+    "title" : "Če menite, da je to spletno mesto varno, lahko <a>prijavite napako</a>. Spletno mesto lahko še vedno obiščete na lastno odgovornost.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "scamPageHeading" : {
+    "title" : "Opozorilo: To spletno mesto je lahko{newline}varnostno tveganje",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "scamWarningText" : {
+    "title" : "Funkcija Preprečevanje prevar DuckDuckGo je preprečila nalaganje te strani, ker vas morda poskuša z lažnimi obljubami preslepiti ali zavesti k prenosu denarja, nakupu ponarejenega blaga ali namestitvi zlonamerne programske opreme.{newline}<a>Več o tem</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "scamAdvancedInfoHeading" : {
+    "title" : "Če menite, da je to spletno mesto varno, lahko <a>prijavite napako</a>. Spletno mesto lahko še vedno obiščete na lastno odgovornost.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to suspected scam attempts."
+  },
+  "sslPageHeading" : {
+    "title" : "Opozorilo: To spletno mesto je morda nevarno",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to SSL issues"
+  },
+  "sslWarningText" : {
+    "title" : "Certifikat za to stran ni veljaven. Morda se povezujete s strežnikom, ki se pretvarja, da je <b>{domain}</b>, kar bi lahko ogrozilo vaše zaupne podatke.",
+    "note" : "Describes an SSL error where a website’s security certificate is invalid. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslAdvancedInfoHeading" : {
+    "title" : "DuckDuckGo vas opozori, ko ima spletno mesto neveljavno potrdilo.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslExpiredAdvancedInfoText" : {
+    "title" : "Varnostno potrdilo za domeno <b>{domain}</b> je poteklo. Morda je spletno mesto napačno konfigurirano, napadalec je morda ogrozil vašo povezavo ali pa je vaša sistemska ura napačna.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslInvalidAdvancedInfoText" : {
+    "title" : "Varnostnemu potrdilu za domeno <b>{domain}</b> operacijski sistem vaše naprave ne zaupa. Morda je spletno mesto napačno konfigurirano ali pa je napadalec ogrozil vašo povezavo.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslSelfSignedAdvancedInfoText" : {
+    "title" : "Varnostnemu potrdilu za domeno <b>{domain}</b> operacijski sistem vaše naprave ne zaupa. Morda je spletno mesto napačno konfigurirano ali pa je napadalec ogrozil vašo povezavo.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslWrongHostAdvancedInfoText" : {
+    "title" : "Varnostno potrdilo za domeno <b>{domain}</b> se ne ujema z domeno <b>*.{eTldPlus1}</b>. Morda je spletno mesto napačno konfigurirano ali pa je napadalec ogrozil vašo povezavo.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The two placeholders are website domain names (example: duckduckgo.com)."
+  }
+}

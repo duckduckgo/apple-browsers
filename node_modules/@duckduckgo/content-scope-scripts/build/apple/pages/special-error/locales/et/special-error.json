@@ -1,0 +1,95 @@
+{
+  "smartling" : {
+    "string_format" : "icu",
+    "translate_paths" : [
+    {
+      "path" : "*/title",
+      "key" : "{*}/title",
+      "instruction" : "*/note"
+    }]
+  },
+  "advancedButton" : {
+    "title" : "Täiustatud",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click."
+  },
+  "advancedEllipsisButton" : {
+    "title" : "Täpsemad...",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to see advanced options on click. This button contains a trailing ellipsis."
+  },
+  "leaveSiteButton" : {
+    "title" : "Lahku sellelt saidilt",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to leave the website and navigate to previous page."
+  },
+  "visitSiteButton" : {
+    "title" : "Nõustu riskiga ja külasta saiti",
+    "note" : "Button shown in an error page that warns users of security risks on a website due to Phishing or Malware issues. The buttons allows the user to visit the website anyway despite the risks."
+  },
+  "maliciousSiteTabTitle" : {
+    "title" : "Hoiatus: turvaoht",
+    "note" : "Title shown in the browser window or tab when the current page may be a security risk due to phishing"
+  },
+  "malwarePageHeading" : {
+    "title" : "Hoiatus: see sait võib olla{newline}turvaoht",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "malwareWarningText" : {
+    "title" : "DuckDuckGo pettuste blokeerija takistas selle lehe laadimise, kuna see võib levitada pahavara, mis on loodud sinu seadme kahjustamiseks või sinu isikuandmete varastamiseks.{newline}<a>Vaata lähemalt</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to malware distribution. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "malwareAdvancedInfoHeading" : {
+    "title" : "Kui arvate, et see veebisait on turvaline, võite <a>teatada veast</a>. Võite siiski külastada veebisaiti omal vastutusel.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "phishingPageHeading" : {
+    "title" : "Hoiatus: see sait võib olla{newline}turvaoht",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "phishingWarningText" : {
+    "title" : "DuckDuckGo pettuste blokeerija takistas selle lehe laadimise, kuna see võib imiteerida seaduslikku veebisaiti, et sinult isiklikke andmeid välja petta, näiteks paroole või krediitkaardi numbreid.{newline}<a>Vaata lähemalt</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to Phishing issues. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "phishingAdvancedInfoHeading" : {
+    "title" : "Kui arvate, et see veebisait on turvaline, võite <a>teatada veast</a>. Võite siiski külastada veebisaiti omal vastutusel.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to malware distribution."
+  },
+  "scamPageHeading" : {
+    "title" : "Hoiatus: see sait võib olla{newline}turvaoht",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed within the sentence to avoid having a single word hanging on the last line"
+  },
+  "scamWarningText" : {
+    "title" : "DuckDuckGo pettuste blokeerija takistas selle lehe laadimise, kuna see võib püüda teid petta või manipuleerida tegema rahaülekandeid, ostma võltsitud kaupu või installima pahavara valel ettekäändel.{newline}<a>Vaata lähemalt</a>",
+    "note" : "Error description shown in an error page that warns users of security risks on a website due to suspected scam attempts. The {newline} tag should not be translated. It should be placed before the translated <a>Learn More</a> text."
+  },
+  "scamAdvancedInfoHeading" : {
+    "title" : "Kui arvate, et see veebisait on turvaline, võite <a>teatada veast</a>. Võite siiski külastada veebisaiti omal vastutusel.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to suspected scam attempts."
+  },
+  "sslPageHeading" : {
+    "title" : "Hoiatus: see sait võib olla ebaturvaline",
+    "note" : "Title shown in an error page that warn users of security risks on a website due to SSL issues"
+  },
+  "sslWarningText" : {
+    "title" : "Selle saidi sertifikaat on vale. Võimalik, et lood ühenduse serveriga, mis teeskleb olevat <b>{domain}</b> ja see võib sinu konfidentsiaalse teabe ohtu seada.",
+    "note" : "Describes an SSL error where a website’s security certificate is invalid. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslAdvancedInfoHeading" : {
+    "title" : "DuckDuckGo hoiatab sind, kui veebisaidil on vale sertifikaat.",
+    "note" : "Title of the Advanced info section shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslExpiredAdvancedInfoText" : {
+    "title" : "<b>{domain}</b> turvasertifikaat on aegunud. Võimalik, et veebisait on valesti konfigureeritud, ründaja on sinu ühenduse ohtu seadnud või sinu süsteemi kell on vale.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues."
+  },
+  "sslInvalidAdvancedInfoText" : {
+    "title" : "Sinu seadme operatsioonisüsteem ei usalda <b>{domain}</b> turvasertifikaati. Võimalik, et veebisait on valesti konfigureeritud või ründaja on sinu ühenduse ohtu seadnud.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslSelfSignedAdvancedInfoText" : {
+    "title" : "Sinu seadme operatsioonisüsteem ei usalda <b>{domain}</b> turvasertifikaati. Võimalik, et veebisait on valesti konfigureeritud või ründaja on sinu ühenduse ohtu seadnud.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The placeholder is the site’s domain (example: duckduckgo.com)."
+  },
+  "sslWrongHostAdvancedInfoText" : {
+    "title" : "<b>{domain}</b> turvasertifikaat ei ühti <b>*.{eTldPlus1}</b>. Võimalik, et veebisait on valesti konfigureeritud või ründaja on sinu ühenduse ohtu seadnud.",
+    "note" : "Body of the text of the Advanced info shown in an error page that warns users of security risks on a website due to SSL issues. The two placeholders are website domain names (example: duckduckgo.com)."
+  }
+}

@@ -132,7 +132,7 @@ private extension AddExcludedDomainButtonsView.ViewState {
         defaultButtonAction: .init(
             title: "Right",
             isDisabled: true,
-            action: {_ in }
+            action: { _ in }
         )
     )
     .frame(width: 320, height: 50)
@@ -148,7 +148,7 @@ private extension AddExcludedDomainButtonsView.ViewState {
         defaultButtonAction: .init(
             title: "Right",
             isDisabled: false,
-            action: {_ in }
+            action: { _ in }
         )
     )
     .frame(width: 320, height: 50)
@@ -164,7 +164,7 @@ private extension AddExcludedDomainButtonsView.ViewState {
         defaultButtonAction: .init(
             title: "Right",
             isDisabled: true,
-            action: {_ in }
+            action: { _ in }
         )
     )
     .frame(width: 320, height: 50)
@@ -180,7 +180,7 @@ private extension AddExcludedDomainButtonsView.ViewState {
         defaultButtonAction: .init(
             title: "Right",
             isDisabled: false,
-            action: {_ in }
+            action: { _ in }
         )
     )
     .frame(width: 320, height: 50)

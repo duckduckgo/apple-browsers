@@ -30,6 +30,7 @@ extension NewTabPageActionsManager {
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
+        faviconManager: FaviconManagement,
         duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
         contentBlocking: ContentBlockingProtocol,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
@@ -40,12 +41,15 @@ extension NewTabPageActionsManager {
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
         tld: TLD,
         fire: @escaping () async -> Fire,
-        keyValueStore: KeyValueStoring = UserDefaults.standard
+        keyValueStore: KeyValueStoring = UserDefaults.standard,
+        featureFlagger: FeatureFlagger
     ) {
+        let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
         let favoritesModel = NewTabPageFavoritesModel(
             actionsHandler: DefaultFavoritesActionsHandler(bookmarkManager: bookmarkManager),
             favoritesPublisher: favoritesPublisher,
+            faviconsDidLoadPublisher: faviconManager.faviconsLoadedPublisher.filter({ $0 }).asVoid().eraseToAnyPublisher(),
             getLegacyIsViewExpandedSetting: UserDefaultsWrapper<Bool>(key: .homePageShowAllFavorites, defaultValue: true).wrappedValue
         )
 
@@ -76,6 +80,7 @@ extension NewTabPageActionsManager {
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
+                sectionsAvailabilityProvider: availabilityProvider,
                 sectionsVisibilityProvider: appearancePreferences,
                 customBackgroundProvider: customizationProvider,
                 linkOpener: NewTabPageLinkOpener(),
@@ -97,7 +102,8 @@ extension NewTabPageActionsManager {
             NewTabPageFavoritesClient(favoritesModel: favoritesModel, preferredFaviconSize: Int(Favicon.SizeCategory.medium.rawValue)),
             NewTabPageProtectionsReportClient(model: protectionsReportModel),
             NewTabPagePrivacyStatsClient(model: privacyStatsModel),
-            NewTabPageRecentActivityClient(model: recentActivityModel)
+            NewTabPageRecentActivityClient(model: recentActivityModel),
+            NewTabPageOmnibarClient(model: NewTabPageOmnibarModel())
         ])
     }
 }

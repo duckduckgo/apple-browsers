@@ -56,6 +56,7 @@ class AccessibilityPreferencesTests: XCTestCase {
         zoom3 = nil
         zoom4 = nil
         UserDefaultsWrapper<Any>.clearAll()
+        cancellables = []
     }
 
     func test_whenPreferencesInitialized_thenItLoadsPersistedDefaultPageZoom() {

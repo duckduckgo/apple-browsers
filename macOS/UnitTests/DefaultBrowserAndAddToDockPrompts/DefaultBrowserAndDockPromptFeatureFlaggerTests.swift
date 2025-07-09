@@ -27,7 +27,7 @@ struct DefaultBrowserAndDockPromptFeatureFlaggerTests {
     @Test("Check Feature Flag Returns The Correct Value", arguments: [true, false])
     func isDefaultBrowserAndDockPromptFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
         // GIVEN
-        featureFlaggerMock.isFeatureOn = { _ in isEnabled }
+        featureFlaggerMock.enabledFeatureFlags = isEnabled ? [.scheduledSetDefaultBrowserAndAddToDockPrompts] : []
         let sut = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManagerMock, featureFlagger: featureFlaggerMock)
 
         // WHEN

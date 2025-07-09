@@ -109,6 +109,6 @@ class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManaging {
 
     var updatesPublisher: AnyPublisher<Void, Never> = Just(()).eraseToAnyPublisher()
     var privacyConfig: PrivacyConfiguration = MockPrivacyConfiguration()
-    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider()
+    var internalUserDecider: InternalUserDecider = MockInternalUserDecider()
 
 }

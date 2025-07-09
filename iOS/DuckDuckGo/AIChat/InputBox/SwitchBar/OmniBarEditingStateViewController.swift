@@ -47,7 +47,7 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
 }
 
 /// Later: Inject auto suggestions here.
-final class OmniBarEditingStateViewController: UIViewController {
+final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingStateTransitionDelegate {
 
     private enum Constants {
         static let logoOffset: CGFloat = 18
@@ -61,9 +61,12 @@ final class OmniBarEditingStateViewController: UIViewController {
     var textAreaView: UIView {
         switchBarVC.textEntryViewController.textEntryView
     }
+
+    var rootView: UIView { view }
+    var logoView: UIView? { daxLogoHostingController?.view }
+
     private var cancellables = Set<AnyCancellable>()
     private let switchBarHandler: SwitchBarHandling
-    private lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
     weak var delegate: OmniBarEditingStateViewControllerDelegate?
     private var suggestionTrayViewController: SuggestionTrayViewController?
     private var daxLogoHostingController: UIHostingController<NewTabPageDaxLogoView>?
@@ -71,7 +74,14 @@ final class OmniBarEditingStateViewController: UIViewController {
     var expectedStartFrame: CGRect?
     var suggestionTrayDependencies: SuggestionTrayDependencies?
     lazy var isTopBarPosition = AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .top
-    private var topSwitchBarConstraint: NSLayoutConstraint?
+    lazy var switchBarVC = SwitchBarViewController(switchBarHandler: switchBarHandler)
+
+    // MARK: - Navigation Action Bar
+    private var navigationActionBarHostingController: UIHostingController<NavigationActionBarView>?
+    private var navigationActionBarViewModel: NavigationActionBarViewModel?
+    private var actionBarBottomConstraint: NSLayoutConstraint?
+
+    private let transitionAnimator = OmniBarEditingStateAnimator()
 
     internal init(switchBarHandler: any SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
@@ -92,107 +102,35 @@ final class OmniBarEditingStateViewController: UIViewController {
         installSwitchBarVC()
         installSuggestionsTray()
         installDaxLogoView()
+        installNavigationActionBar()
         setupKeyboardNotifications()
 
-        self.view.backgroundColor = .clear
+        transitionAnimator.transitionDelegate = self
+
+        self.view.backgroundColor = UIColor(designSystemColor: .background)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        transitionAnimator.animateAppearance()
+        switchBarVC.focusTextField()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        animateAppearance()
-    }
-
-    private func animateAppearance() {
-
-        guard let expectedStartFrame else {
-            self.switchBarVC.setExpanded(true)
-            return
-        }
-
-        // Prepare initial state
-        let heightConstraint = switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height)
-        if isTopBarPosition {
-            heightConstraint.isActive = true
-            topPositionAppearance(expectedStartFrame: expectedStartFrame, heightConstraint: heightConstraint)
-        } else {
-            bottomPositionAppearance()
-        }
-
-    }
-
-    private func topPositionAppearance(expectedStartFrame: CGRect, heightConstraint: NSLayoutConstraint) {
-        topSwitchBarConstraint = switchBarVC.view.topAnchor.constraint(equalTo: view.topAnchor, constant: expectedStartFrame.minY)
-        topSwitchBarConstraint?.isActive = true
-        self.switchBarVC.setExpanded(false)
-        self.switchBarVC.view.alpha = 0.0
-
-        self.view.layoutIfNeeded()
-
-        // Create animators
-        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: 0.15, curve: .easeIn) {
-            self.view.backgroundColor = UIColor(designSystemColor: .background)
-        }
-
-        let fadeInAnimator = UIViewPropertyAnimator(duration: 0.25, curve: .easeIn) {
-            self.switchBarVC.view.alpha = 1.0
-        }
-
-        let expandAnimator = UIViewPropertyAnimator(duration: 0.3, dampingRatio: 0.7) {
-            self.switchBarVC.setExpanded(true)
-            heightConstraint.isActive = false
-
-            self.switchBarVC.view.layoutIfNeeded()
-        }
-
-        // Schedule animations
-        backgroundFadeAnimator.addCompletion { _ in
-            expandAnimator.startAnimation()
-            self.switchBarVC.focusTextField()
-        }
-
-        // Start animations
-        backgroundFadeAnimator.startAnimation()
-        fadeInAnimator.startAnimation()
-    }
-
-    private func bottomPositionAppearance() {
-
-        topSwitchBarConstraint = switchBarVC.view.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 80)
-        topSwitchBarConstraint?.isActive = true
-        self.switchBarVC.setExpanded(true)
-        self.switchBarVC.view.alpha = 0.0
-
-        self.view.layoutIfNeeded()
-
-        // Create animators
-        let animator = UIViewPropertyAnimator(duration: 0.3, dampingRatio: 0.75) {
-            self.view.backgroundColor = UIColor(designSystemColor: .background)
-            self.switchBarVC.view.alpha = 1.0
-            self.topSwitchBarConstraint?.constant = 20
-
-            self.view.layoutIfNeeded()
-        }
-
-        // Schedule animations
-        animator.addCompletion { _ in
-            self.switchBarVC.focusTextField()
-        }
-
-        // Start animations
-        animator.startAnimation()
+        DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
     }
 
     @objc private func dismissButtonTapped(_ sender: UIButton) {
         switchBarVC.unfocusTextField()
-        setSuggestionTrayVisibility(.hidden)
-        setLogoVisibility(.hidden)
 
         dismissAnimated()
     }
 
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
-        animateDismissal {
+        transitionAnimator.animateDismissal {
             DispatchQueue.main.async {
                 if self.presentingViewController != nil {
                     self.dismiss(animated: false)
@@ -200,63 +138,6 @@ final class OmniBarEditingStateViewController: UIViewController {
                 completion?()
             }
         }
-    }
-
-    private func animateDismissal(_ completion: (() -> Void)? = nil) {
-
-        self.view.layoutIfNeeded()
-
-        if isTopBarPosition {
-            topPositionDismissal(completion)
-        } else {
-            bottomPositionDismissal(completion)
-        }
-    }
-
-    private func topPositionDismissal(_ completion: (() -> Void)?) {
-        // Create animators
-        let collapseAnimator = UIViewPropertyAnimator(duration: 0.2, dampingRatio: 0.7) {
-            self.switchBarVC.setExpanded(false)
-            if let expectedStartFrame = self.expectedStartFrame {
-                let heightConstraint = self.switchBarVC.view.heightAnchor.constraint(equalToConstant: expectedStartFrame.height)
-                heightConstraint.isActive = true
-            }
-
-            self.view.layoutIfNeeded()
-        }
-
-        let backgroundFadeAnimator = UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
-            self.view.backgroundColor = .clear
-        }
-
-        let fadeOutAnimator = UIViewPropertyAnimator(duration: 0.15, curve: .easeIn) {
-            self.switchBarVC.view.alpha = 0.0
-        }
-
-        fadeOutAnimator.addCompletion { _ in
-            completion?()
-        }
-
-        // Start animations
-        collapseAnimator.startAnimation()
-        backgroundFadeAnimator.startAnimation()
-        fadeOutAnimator.startAnimation()
-    }
-
-    private func bottomPositionDismissal(_ completion: (() -> Void)?) {
-        let animator = UIViewPropertyAnimator(duration: 0.25, curve: .easeInOut) {
-            self.view.backgroundColor = .clear
-            self.switchBarVC.view.alpha = 0.0
-            self.topSwitchBarConstraint?.constant = 80
-
-            self.view.layoutIfNeeded()
-        }
-
-        animator.addCompletion { _ in
-            completion?()
-        }
-
-        animator.startAnimation()
     }
 
     private func installSwitchBarVC() {
@@ -290,7 +171,6 @@ final class OmniBarEditingStateViewController: UIViewController {
 
         switchBarHandler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
-            .dropFirst()
             .sink { [weak self] newState in
                 guard let self = self else { return }
                 switch newState {
@@ -327,7 +207,6 @@ final class OmniBarEditingStateViewController: UIViewController {
                 self?.handleMicrophoneButtonTapped()
             }
             .store(in: &cancellables)
-
     }
 
     private func handleMicrophoneButtonTapped() {
@@ -336,8 +215,6 @@ final class OmniBarEditingStateViewController: UIViewController {
 
     func setUpForInitialSelectedState() {
         switchBarVC.textEntryViewController.selectAllText()
-        // Enable the initial selected state where both mic and clear buttons are visible
-        switchBarVC.textEntryViewController.textEntryView.setInitialSelectedState(true)
         showSuggestionTray(.favorites)
     }
 
@@ -364,6 +241,61 @@ final class OmniBarEditingStateViewController: UIViewController {
         
         view.sendSubviewToBack(hostingController.view)
     }
+    
+    private func installNavigationActionBar() {
+        let viewModel = NavigationActionBarViewModel(
+            switchBarHandler: switchBarHandler,
+            onMicrophoneTapped: { [weak self] in
+                self?.handleMicrophoneButtonTapped()
+            },
+            onNewLineTapped: { [weak self] in
+                self?.handleNewLineButtonTapped()
+            },
+            onSearchTapped: { [weak self] in
+                self?.handleSearchButtonTapped()
+            }
+        )
+        navigationActionBarViewModel = viewModel
+        
+        let actionBarView = NavigationActionBarView(viewModel: viewModel)
+        
+        let hostingController = UIHostingController(rootView: actionBarView)
+        navigationActionBarHostingController = hostingController
+        
+        hostingController.view.backgroundColor = .clear
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        
+        actionBarBottomConstraint = hostingController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
+        
+        NSLayoutConstraint.activate([
+            hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            actionBarBottomConstraint!
+        ])
+        
+        hostingController.didMove(toParent: self)
+        
+        // The action bar state is now automatically managed by the ViewModel
+    }
+    
+    // MARK: - Navigation Action Bar Handlers
+    
+    private func handleNewLineButtonTapped() {
+        let currentText = switchBarHandler.currentText
+        let newText = currentText + "\n"
+        switchBarHandler.updateCurrentText(newText)
+    }
+    
+    private func handleSearchButtonTapped() {
+        let currentText = switchBarHandler.currentText
+        if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            switchBarHandler.submitText(currentText)
+        }
+    }
+    
+
 }
 
 extension OmniBarEditingStateViewController: AutocompleteViewControllerDelegate {
@@ -380,7 +312,8 @@ extension OmniBarEditingStateViewController: AutocompleteViewControllerDelegate 
     }
 
     func autocomplete(pressedPlusButtonForSuggestion suggestion: Suggestion) {
-
+        guard let textToUpdate = extractText(from: suggestion) else { return }
+        switchBarHandler.updateCurrentText(textToUpdate)
     }
 
     func autocompleteWasDismissed() {
@@ -416,6 +349,7 @@ extension OmniBarEditingStateViewController {
         daxLogoHostingController?.view.isHidden = canShowSuggestion
 
         if canShowSuggestion {
+            suggestionTrayViewController?.fill()
             suggestionTrayViewController?.show(for: type)
         }
     }
@@ -451,9 +385,9 @@ extension OmniBarEditingStateViewController {
         controller.view.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            controller.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            controller.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            controller.view.topAnchor.constraint(equalTo: switchBarVC.view.bottomAnchor),
+            controller.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 6),
+            controller.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -6),
+            controller.view.topAnchor.constraint(equalTo: switchBarVC.view.bottomAnchor, constant: 4),
         ])
 
         controller.autocompleteDelegate = self
@@ -498,6 +432,9 @@ extension OmniBarEditingStateViewController {
 
         let keyboardAdjustment = adjustedKeyboardHeight / 2
         logoCenterYConstraint?.constant = Constants.logoOffset - keyboardAdjustment
+        
+        // Adjust action bar position above keyboard
+        actionBarBottomConstraint?.constant = -(keyboardHeight - safeAreaInsets.bottom + 16)
 
         UIView.animate(
             withDuration: duration,
@@ -517,6 +454,9 @@ extension OmniBarEditingStateViewController {
 
         let animationCurve = UIView.AnimationOptions(rawValue: animationCurveRawNSN.uintValue)
         logoCenterYConstraint?.constant = Constants.logoOffset
+        
+        // Reset action bar position to bottom
+        actionBarBottomConstraint?.constant = -16
 
         UIView.animate(
             withDuration: duration,
@@ -526,5 +466,39 @@ extension OmniBarEditingStateViewController {
                 self.view.layoutIfNeeded()
             }
         )
+    }
+}
+
+// MARK: - Extract Suggestions
+extension OmniBarEditingStateViewController {
+    private func extractText(from suggestion: Suggestion) -> String? {
+        switch suggestion {
+        case .phrase(let phrase):
+            return phrase
+        case .website(let url):
+            return extractTextFromURL(url)
+        case .bookmark(let title, _, _, _):
+            return title
+        case .historyEntry(let title, _, _):
+            return title
+        case .openTab:
+            return nil
+
+        case .unknown(let value),
+                .internalPage(let value, _, _):
+            assertionFailure("Unexpected suggestion type: \(value)")
+            return nil
+        }
+    }
+
+    private func extractTextFromURL(_ url: URL) -> String? {
+        if url.isDuckDuckGoSearch, let query = url.searchQuery {
+            return query
+        }
+
+        if url.isBookmarklet() {
+            return nil
+        }
+        return url.absoluteString
     }
 }

@@ -19,10 +19,11 @@ disabled_rules:
   - static_over_final_class
   - non_optional_string_data_conversion
   - mark
+  - redundant_sendable
 
 opt_in_rules:
   - file_header
-  # - explicit_init
+  - closure_spacing
 
 custom_rules:
   explicit_non_final_class:

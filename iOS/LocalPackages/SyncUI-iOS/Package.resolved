@@ -5,17 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/apple-toolbox.git",
       "state" : {
-        "revision" : "ebdfb5f41a3cfe6d1570b42fbc6368da5be1f45e",
-        "version" : "3.1.4"
-      }
-    },
-    {
-      "identity" : "designresourceskit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/DesignResourcesKit",
-      "state" : {
-        "revision" : "a7673218e5b0ef999bb380bbe361bb94ebb46c57",
-        "version" : "4.4.1"
+        "revision" : "579eb1d65c7f221094856269fc0e457a1c2a6660",
+        "version" : "3.2.1"
       }
     },
     {
@@ -30,7 +21,7 @@
     {
       "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-syntax.git",
+      "location" : "https://github.com/swiftlang/swift-syntax",
       "state" : {
         "revision" : "64889f0c732f210a935a0ad7cda38f77f876262d",
         "version" : "509.1.1"

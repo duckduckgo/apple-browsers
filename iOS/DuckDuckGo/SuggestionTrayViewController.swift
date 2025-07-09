@@ -164,10 +164,10 @@ class SuggestionTrayViewController: UIViewController {
     
     func float(withWidth width: CGFloat, useActiveShadow: Bool) {
 
-        containerView.layer.cornerRadius = 16
+        containerView.layer.cornerRadius = 24
         containerView.layer.masksToBounds = true
  
-        backgroundView.layer.cornerRadius = 16
+        backgroundView.layer.cornerRadius = 24
         backgroundView.backgroundColor = UIColor(designSystemColor: .background)
         backgroundView.clipsToBounds = false
         if useActiveShadow {

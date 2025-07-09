@@ -66,10 +66,14 @@ class HistoryIntegrationTests: XCTestCase {
 
     @MainActor
     override func tearDown() async throws {
-        window?.close()
-        window = nil
-        WebTrackingProtectionPreferences.shared.isGPCEnabled = true
-        schemeHandler = nil
+        autoreleasepool {
+            window?.close()
+            window = nil
+            WebTrackingProtectionPreferences.shared.isGPCEnabled = true
+            schemeHandler = nil
+            contentBlockingMock = nil
+            privacyFeaturesMock = nil
+        }
     }
 
     // MARK: - Tests

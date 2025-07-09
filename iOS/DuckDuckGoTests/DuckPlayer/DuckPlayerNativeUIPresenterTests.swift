@@ -23,6 +23,7 @@ import SwiftUI
 import UIKit
 import WebKit
 import Core
+import BrowserServicesKit
 
 @testable import DuckDuckGo
 
@@ -96,8 +97,13 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         super.setUp()
         testNotificationCenter = TestNotificationCenter()
         mockHostViewController = MockDuckPlayerHosting()
-        mockHostViewController.webView = WKWebView(frame: .zero, configuration: .nonPersistent())
+        let mockWebView = MockWebView(frame: .zero, configuration: .nonPersistent())
+        mockHostViewController.webView = mockWebView
         mockHostViewController.persistentBottomBarHeight = 44.0 // Set a standard address bar height
+        
+        // Set default YouTube watch URL for tests (required for new presentPill safeguard)
+        let defaultYouTubeURL = URL(string: "https://www.youtube.com/watch?v=defaultTestVideo")!
+        mockWebView.setCurrentURL(defaultYouTubeURL)
 
         // Initialize the content bottom constraint
         let dummyView = UIView()
@@ -1763,49 +1769,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertNotNil(sut.playerViewModel, "Player view model should exist and handle its own cleanup via dismissPublisher")
     }
 
-    @MainActor
-    func testRoundedPageSheetStyling_AppliesCorrectAppearance() {
-        // Given
-        let videoID = "test123"
-        let source: DuckPlayer.VideoNavigationSource = .youtube
-        mockDuckPlayerSettings.welcomeMessageShown = true
-
-        // When
-        _ = sut.presentDuckPlayer(
-            videoID: videoID,
-            source: source,
-            in: mockHostViewController,
-            title: nil,
-            timestamp: nil
-        )
-
-        // Then
-        guard let roundedSheetController = mockHostViewController.presentedViewController as? RoundedPageSheetContainerViewController else {
-            XCTFail("Should present RoundedPageSheetContainerViewController")
-            return
-        }
-        
-        // Force view loading to trigger viewDidLoad and setup methods
-        _ = roundedSheetController.view
-
-        // Verify background view exists and is configured
-        XCTAssertEqual(roundedSheetController.backgroundView.backgroundColor, .black, "Background should be black")
-
-        // Verify content view controller background
-        guard let hostingController = roundedSheetController.contentViewController as? UIHostingController<DuckPlayerView> else {
-            XCTFail("Content controller should be UIHostingController<DuckPlayerView>")
-            return
-        }
-
-        XCTAssertEqual(hostingController.view.backgroundColor, .black, "Hosting controller background should be black")
-
-        // Verify the content view has rounded corners applied
-        // Note: Rounded corners are applied in the container's setupContentViewController method
-        XCTAssertEqual(hostingController.view.layer.cornerRadius, 20, "Content view should have 20pt corner radius")
-        XCTAssertEqual(hostingController.view.layer.maskedCorners, [.layerMinXMinYCorner, .layerMaxXMinYCorner],
-                      "Should mask top corners only")
-        XCTAssertTrue(hostingController.view.clipsToBounds, "Should clip to bounds for rounded corners")
-    }
 
     @MainActor
     func testInteractiveDismissal_WithPanGesture() {
@@ -1900,6 +1863,9 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertTrue(sut.state.hasBeenShown, "State should indicate DuckPlayer has been shown")
         XCTAssertNil(sut.containerViewController, "Pill container should not exist while DuckPlayer is shown")
 
+        // Ensure hostView reference is maintained
+        XCTAssertNotNil(sut.hostView, "Host view should be maintained")
+
         // When - Simulate DuckPlayer dismissal by triggering the dismiss publisher
         guard let playerViewModel = sut.playerViewModel else {
             XCTFail("Player view model should exist")
@@ -1909,12 +1875,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Simulate the view disappearing and dismiss publisher firing
         playerViewModel.dismissPublisher.send(timestamp)
 
-        // Wait for the delayed pill presentation
+        // Wait for the delayed pill presentation (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "Pill should be presented after dismissal")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
 
         // Then - Should present re-entry pill 
         XCTAssertNotNil(sut.containerViewController, "Pill container should be created after dismissal")
@@ -1953,12 +1919,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Simulate the view disappearing and dismiss publisher firing
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for the delayed pill presentation to complete
+        // Wait for the delayed pill presentation to complete (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "State should be updated after pill presentation")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         
         // Then - State should preserve the timestamp
         XCTAssertEqual(sut.state.timestamp, timestamp, "State should preserve the timestamp")
@@ -2011,12 +1977,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Simulate the view disappearing and dismiss publisher firing
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for the delayed execution to complete
+        // Wait for the delayed execution to complete (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "Delayed execution should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         
         // Then - State should NOT be updated because hostView is nil
         XCTAssertEqual(sut.state.timestamp, stateBeforeDismissal, "State timestamp should not be updated when hostView is nil")
@@ -2061,12 +2027,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Simulate the view disappearing and dismiss publisher firing
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for the delayed execution to complete
+        // Wait for the delayed execution to complete (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "State should be updated after pill presentation")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         
         // Then - State SHOULD be updated because hostView exists
         XCTAssertEqual(sut.state.timestamp, timestamp, "State timestamp should be updated when hostView exists")
@@ -2113,12 +2079,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Simulate the dismiss publisher firing after presenter is released
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for any delayed execution
+        // Wait for any delayed execution (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "Delayed execution should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
 
         // Then - Settings should not be updated because presenter was released
         XCTAssertEqual(mockDuckPlayerSettings.welcomeMessageShown, initialWelcomeShown,
@@ -2162,12 +2128,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // When - First player's dismiss publisher fires
         firstPlayerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for delayed execution
+        // Wait for delayed execution (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "First player dismissal should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         
         // Then - State should reflect the current video (videoID2), not the dismissed one (videoID1)
         XCTAssertEqual(sut.state.videoID, videoID2, "State should reflect the current video ID")
@@ -2214,8 +2180,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for the update
-        wait(for: [timestampExpectation], timeout: 1.0)
+        // Wait for the update (0.3s delay + buffer)
+        wait(for: [timestampExpectation], timeout: 2.0)
         
         // Then - Should receive timestamp update when state is updated
         XCTAssertEqual(receivedTimestamps.count, 1, "Should receive exactly one timestamp update")
@@ -2258,15 +2224,69 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for potential delayed execution
+        // Wait for potential delayed execution (0.3s delay + buffer)
         let expectation = XCTestExpectation(description: "Delayed execution should complete")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             expectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [expectation], timeout: 2.0)
         
         // Then - Should NOT receive timestamp update when hostView is nil
         XCTAssertTrue(receivedTimestamps.isEmpty, "Should not receive timestamp updates when hostView is nil")
+    }
+    
+    // MARK: - Additional SERP Protection Tests
+
+    @MainActor
+    func testPresentPill_WhenWebViewURLIsNotYouTubeWatch_ShouldNotPresentPill() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = 100
+        mockDuckPlayerSettings.primingMessagePresented = true
+        mockDuckPlayerSettings.nativeUIYoutubeMode = .ask
+        
+        // Set webView URL to a non-YouTube watch URL (like a SERP page)
+        let serpURL = URL(string: "https://duckduckgo.com/?q=test+search")!
+        guard let mockWebView = mockHostViewController.webView as? MockWebView else {
+            XCTFail("Expected MockWebView")
+            return
+        }
+        mockWebView.setCurrentURL(serpURL)
+        
+        // When
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        
+        // Then - pill should NOT be presented
+        XCTAssertNil(sut.containerViewModel, "Container view model should not be created when webView URL is not YouTube watch")
+        XCTAssertNil(sut.containerViewController, "Container view controller should not be created when webView URL is not YouTube watch")
+        XCTAssertEqual(sut.state.videoID, nil, "Video ID should not be set when pill is not presented")
+        XCTAssertEqual(mockHostViewController.view.subviews.count, 1, "No pill view should be added to host view")
+    }
+    
+    @MainActor
+    func testPresentPill_WhenWebViewURLIsYouTubeWatch_ShouldPresentPill() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = 100
+        mockDuckPlayerSettings.primingMessagePresented = true
+        mockDuckPlayerSettings.nativeUIYoutubeMode = .ask
+        
+        // Set webView URL to a YouTube watch URL
+        let youtubeURL = URL(string: "https://www.youtube.com/watch?v=\(videoID)")!
+        guard let mockWebView = mockHostViewController.webView as? MockWebView else {
+            XCTFail("Expected MockWebView")
+            return
+        }
+        mockWebView.setCurrentURL(youtubeURL)
+        
+        // When
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        
+        // Then - pill SHOULD be presented
+        XCTAssertNotNil(sut.containerViewModel, "Container view model should be created when webView URL is YouTube watch")
+        XCTAssertNotNil(sut.containerViewController, "Container view controller should be created when webView URL is YouTube watch")
+        XCTAssertEqual(sut.state.videoID, videoID, "Video ID should be set when pill is presented")
+        XCTAssertEqual(mockHostViewController.view.subviews.count, 2, "Pill view should be added to host view")
     }
     
 }

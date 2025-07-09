@@ -23,56 +23,28 @@ import DesignResourcesKitIcons
 
 enum SwitchBarButtonState {
     case noButtons
-    case micOnly
     case clearOnly
-    case initialSelected
-
-    var showsMicButton: Bool {
-        switch self {
-        case .noButtons, .clearOnly:
-            return false
-        case .micOnly, .initialSelected:
-            return true
-        }
-    }
 
     var showsClearButton: Bool {
         switch self {
-        case .noButtons, .micOnly:
+        case .noButtons:
             return false
-        case .clearOnly, .initialSelected:
+        case .clearOnly:
             return true
         }
-    }
-
-    var showsAnyButton: Bool {
-        return showsMicButton || showsClearButton
     }
 }
 
 struct SwitchBarButtonsView: View {
     let buttonState: SwitchBarButtonState
-    let onMicrophoneTapped: () -> Void
     let onClearTapped: () -> Void
 
     private enum Constants {
         static let buttonSize: CGFloat = 24
-        static let buttonSpacing: CGFloat = 6
     }
 
     var body: some View {
-        HStack(spacing: Constants.buttonSpacing) {
-            Spacer()
-
-            if buttonState.showsMicButton {
-                Button(action: onMicrophoneTapped) {
-                    Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
-                        .foregroundColor(Color(.systemGray))
-                        .frame(width: Constants.buttonSize, height: Constants.buttonSize)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-
+        HStack {
             if buttonState.showsClearButton {
                 Button(action: onClearTapped) {
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.clear)
@@ -83,6 +55,6 @@ struct SwitchBarButtonsView: View {
             }
         }
         .frame(height: Constants.buttonSize)
-        .opacity(buttonState.showsAnyButton ? 1 : 0)
+        .opacity(buttonState.showsClearButton ? 1 : 0)
     }
 }

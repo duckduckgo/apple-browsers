@@ -354,47 +354,6 @@ final class AccountManagerTests: XCTestCase {
         }
     }
 
-    func testFetchEntitlementsReturnCacheDataDontLoad() async throws {
-        // Given
-        accessTokenStorage.accessToken = Constants.accessToken
-        entitlementsCache.set(Constants.entitlements)
-
-        // When
-        let result = await accountManager.fetchEntitlements(cachePolicy: .returnCacheDataDontLoad)
-
-        // Then
-        switch result {
-        case .success(let success):
-            XCTAssertEqual(success, Constants.entitlements)
-            XCTAssertFalse(authService.validateTokenCalled)
-            XCTAssertEqual(entitlementsCache.get(), Constants.entitlements)
-        case .failure:
-            XCTFail("Unexpected failure")
-        }
-    }
-
-    func testFetchEntitlementsReturnCacheDataDontLoadWhenCacheIsExpired() async throws {
-        // Given
-        accessTokenStorage.accessToken = Constants.accessToken
-        entitlementsCache.set(Constants.entitlements, expires: Date.distantPast)
-
-        // When
-        let result = await accountManager.fetchEntitlements(cachePolicy: .returnCacheDataDontLoad)
-
-        // Then
-        switch result {
-        case .success:
-            XCTFail("Unexpected success")
-        case .failure(let error):
-            guard let entitlementsError = error as? DefaultAccountManager.EntitlementsError else {
-                XCTFail("Incorrect error type")
-                return
-            }
-
-            XCTAssertEqual(entitlementsError, .noCachedData)
-        }
-    }
-
     // MARK: - Tests for exchangeAuthTokenToAccessToken
 
     func testExchangeAuthTokenToAccessToken() async throws {

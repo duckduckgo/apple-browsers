@@ -16,14 +16,14 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AIChat
 import BrowserServicesKit
+import Foundation
 import HistoryView
+import SpecialErrorPages
+import Subscription
 import UserScript
 import WebKit
-import Subscription
-import SpecialErrorPages
-import AIChat
 
 @MainActor
 final class UserScripts: UserScriptsProvider {
@@ -61,11 +61,15 @@ final class UserScripts: UserScriptsProvider {
         clickToLoadScript = ClickToLoadUserScript()
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
+        let aiChatDebugURLSettings = AIChatDebugURLSettings()
         aiChatUserScript = AIChatUserScript(handler: AIChatUserScriptHandler(storage: DefaultAIChatPreferencesStorage()),
-                                            urlSettings: AIChatDebugURLSettings())
+                                            urlSettings: aiChatDebugURLSettings)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
-            subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge
+            subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
+            paidAIChatFlagStatusProvider: { NSApp.delegateTyped.featureFlagger.isFeatureOn(.paidAIChat) },
+            navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
+            debugHost: aiChatDebugURLSettings.customURLHostname
         )
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
@@ -154,7 +158,7 @@ final class UserScripts: UserScriptsProvider {
         }
 
         var delegate: Subfeature
-        if !Application.appDelegate.isAuthV2Enabled {
+        if !Application.appDelegate.isUsingAuthV2 {
             guard let subscriptionManager = Application.appDelegate.subscriptionManagerV1 else {
                 assertionFailure("SubscriptionManager is not available")
                 return
@@ -174,14 +178,15 @@ final class UserScripts: UserScriptsProvider {
             let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
             delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                                  stripePurchaseFlow: stripePurchaseFlow,
-                                                                 uiHandler: Application.appDelegate.subscriptionUIHandler)
+                                                                 uiHandler: Application.appDelegate.subscriptionUIHandler,
+                                                                 aiChatURL: AIChatRemoteSettings().aiChatURL)
         }
 
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
 
         let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                                                                        isAuthV2Enabled: Application.appDelegate.isAuthV2Enabled)
+                                                                                        isAuthV2Enabled: Application.appDelegate.isUsingAuthV2)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
     }

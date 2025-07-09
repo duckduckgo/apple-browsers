@@ -48,18 +48,19 @@ final class ScriptSourceProviderTests: XCTestCase {
 
         let appearancePreferences = AppearancePreferences(
             keyValueStore: try MockKeyValueFileStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
         let dataClearingPreferences = DataClearingPreferences(
             persistor: MockFireButtonPreferencesPersistor(),
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock()
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger()
         )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
-            appearancePreferences: appearancePreferences,
-            dataClearingPreferences: dataClearingPreferences
+            appearancePreferences: appearancePreferences
         )
 
         let sourceProvider = ScriptSourceProvider(

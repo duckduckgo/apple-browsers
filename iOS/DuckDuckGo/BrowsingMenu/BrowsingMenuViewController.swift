@@ -324,7 +324,7 @@ extension BrowsingMenuViewController {
     
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
-        
+        configureArrow(with: theme.browsingMenuBackgroundColor)
         configureShadow(for: theme)
         
         for headerButton in headerButtons {

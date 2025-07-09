@@ -26,6 +26,10 @@ final class TimeTraveller {
         self.date = date
     }
 
+    func setNowDate(_ date: Date) {
+        self.date = date
+    }
+
     func advanceBy(_ timeInterval: TimeInterval) {
         date.addTimeInterval(timeInterval)
     }

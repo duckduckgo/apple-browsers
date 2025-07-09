@@ -147,7 +147,7 @@ final class TabViewModel {
         if case .url(_, credential: _, source: .pendingStateRestoration) = tab.content {
             updateAddressBarStrings()
         }
-        
+
         // Set initial favicon based on current tab content
         updateFavicon()
     }
@@ -598,6 +598,6 @@ private extension NSAttributedString {
     static let releaseNotesTrustedIndicator = trustedIndicatorAttributedString(with: .releaseNotesIndicator,
                                                                                title: UserText.releaseNotesTitle)
     static let aiChatTrustedIndicator = trustedIndicatorAttributedString(with: .aiChatPreferences,
-                                                                         title: UserText.aiFeatures)
+                                                                         title: UserText.aiChatAddressBarTrustedIndicator)
 
 }

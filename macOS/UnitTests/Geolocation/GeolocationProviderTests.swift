@@ -25,8 +25,8 @@ import WebKit
 
 final class GeolocationProviderTests: XCTestCase {
 
-    let geolocationServiceMock = GeolocationServiceMock()
-    let appIsActive = CurrentValueSubject<Bool, Never>(true)
+    var geolocationServiceMock: GeolocationServiceMock! = GeolocationServiceMock()
+    var appIsActive: CurrentValueSubject<Bool, Never>! = .init(true)
     var windows = [MockWindow]()
     var webViews = [WKWebView]()
     var webView: WKWebView!
@@ -109,6 +109,8 @@ final class GeolocationProviderTests: XCTestCase {
         windows = []
         webView = nil
         webViews = []
+        geolocationServiceMock = nil
+        appIsActive = nil
     }
 
     func testWhenGeolocationRequestedThenGeolocationIsProvidedOnce() {
@@ -124,7 +126,7 @@ final class GeolocationProviderTests: XCTestCase {
             e2 = geolocationReceived
             e3 = cancelled
 
-            geolocationServiceMock.currentLocationPublished = .success(coordinate)
+            geolocationServiceMock!.currentLocationPublished = .success(coordinate)
         }
         geolocationHandler = { _, body in
             try XCTAssertEqual(Response(body), Response(coordinate.removingAltitude()))
@@ -186,13 +188,13 @@ final class GeolocationProviderTests: XCTestCase {
         let location2 = CLLocation(latitude: 10.1, longitude: -13.5)
 
         geolocationServiceMock.onSubscriptionReceived = { [geolocationServiceMock] _ in
-            geolocationServiceMock.currentLocationPublished = .success(location1)
+            geolocationServiceMock!.currentLocationPublished = .success(location1)
         }
         let e1 = expectation(description: "location1 received")
         let e2 = expectation(description: "location2 received")
         geolocationHandler = { [geolocationServiceMock, webView] _, body in
-            if geolocationServiceMock.history == [.subscribed, .locationPublished] {
-                geolocationServiceMock.currentLocationPublished = .success(location2)
+            if geolocationServiceMock!.history == [.subscribed, .locationPublished] {
+                geolocationServiceMock!.currentLocationPublished = .success(location2)
                 try XCTAssertEqual(Response(body), Response(location1.removingAltitude()))
                 e1.fulfill()
             } else {
@@ -257,9 +259,9 @@ final class GeolocationProviderTests: XCTestCase {
 
         geolocationServiceMock.currentLocationPublished = .success(location1)
         geolocationServiceMock.onSubscriptionReceived = { [geolocationServiceMock] _ in
-            if geolocationServiceMock.history == [.locationPublished, .subscribed, .subscribed] {
+            if geolocationServiceMock!.history == [.locationPublished, .subscribed, .subscribed] {
                 DispatchQueue.main.async {
-                    geolocationServiceMock.currentLocationPublished = .success(location2)
+                    geolocationServiceMock!.currentLocationPublished = .success(location2)
                 }
             }
         }
@@ -339,11 +341,11 @@ final class GeolocationProviderTests: XCTestCase {
         geolocationServiceMock.currentLocationPublished = .success(location1)
         let e = expectation(description: "re-subscribed")
         geolocationServiceMock.onSubscriptionReceived = { [geolocationServiceMock] _ in
-            if geolocationServiceMock.history == [.locationPublished, .subscribed] {
+            if geolocationServiceMock!.history == [.locationPublished, .subscribed] {
                 DispatchQueue.main.async {
                     self.appIsActive.send(false)
                 }
-            } else if geolocationServiceMock.history == [.locationPublished, .subscribed, .cancelled, .subscribed] {
+            } else if geolocationServiceMock!.history == [.locationPublished, .subscribed, .cancelled, .subscribed] {
                 e.fulfill()
             } else {
                 XCTFail("Unexpected call sequence")
@@ -373,10 +375,10 @@ final class GeolocationProviderTests: XCTestCase {
 
         geolocationServiceMock.currentLocationPublished = .success(location1)
         geolocationServiceMock.onSubscriptionReceived = { [geolocationServiceMock] _ in
-            if geolocationServiceMock.history == [.locationPublished, .subscribed, .subscribed] {
+            if geolocationServiceMock!.history == [.locationPublished, .subscribed, .subscribed] {
                 DispatchQueue.main.async {
                     webView2.configuration.processPool.geolocationProvider!.isPaused = true
-                    geolocationServiceMock.currentLocationPublished = .success(location2)
+                    geolocationServiceMock!.currentLocationPublished = .success(location2)
                 }
             }
         }
@@ -436,7 +438,7 @@ final class GeolocationProviderTests: XCTestCase {
             switch try Response(body) {
             case Response(location1.removingAltitude()):
                 webView.configuration.processPool.geolocationProvider!.isPaused = true
-                geolocationServiceMock.currentLocationPublished = .success(location2)
+                geolocationServiceMock!.currentLocationPublished = .success(location2)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     webView.configuration.processPool.geolocationProvider!.isPaused = false
                 }
@@ -474,7 +476,7 @@ final class GeolocationProviderTests: XCTestCase {
         }
         let e = expectation(description: "subscription cancelled")
         geolocationServiceMock.onSubscriptionCancelled = { [geolocationServiceMock] in
-            geolocationServiceMock.currentLocationPublished = .success(location2)
+            geolocationServiceMock!.currentLocationPublished = .success(location2)
             e.fulfill()
         }
 
@@ -535,7 +537,7 @@ final class GeolocationProviderTests: XCTestCase {
         }
         let e2 = expectation(description: "subscription cancelled")
         geolocationServiceMock.onSubscriptionCancelled = { [geolocationServiceMock] in
-            geolocationServiceMock.currentLocationPublished = .success(location2)
+            geolocationServiceMock!.currentLocationPublished = .success(location2)
             e2.fulfill()
         }
 

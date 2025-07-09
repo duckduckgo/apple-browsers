@@ -604,7 +604,9 @@ extension Pixel {
         case networkProtectionDisconnected
         
         case networkProtectionNoAccessTokenFoundError
-        
+        case networkProtectionVPNAccessRevoked
+        case networkProtectionUnmanagedSubscriptionError
+
         case networkProtectionMemoryWarning
         case networkProtectionMemoryCritical
         
@@ -924,6 +926,8 @@ extension Pixel {
         case siteNotWorkingShown
         case siteNotWorkingWebsiteIsBroken
 
+        // MARK: - Default Browser
+
         // Set As Default Browser Debug Pixels
         // Privacy Triage: https://app.asana.com/0/1206329551987282/1209505775591500
 
@@ -939,6 +943,39 @@ extension Pixel {
 
         /// Fired when a generic error is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
         case debugSetAsDefaultBrowserUnknownFailure
+
+        // Default Browser Prompt Pixels
+        // Privacy Triage: https://app.asana.com/1/137249556945/project/69071770703008/task/1210702713778212
+
+        /// Fired when it is not possible to retrieve from the persistence store the number of active days for a user.
+        case debugDefaultBrowserPromptFailedToRetrieveCurrentActivity
+        /// Fired when it is not possible to save in the persistence store the number of active days of users.
+        case debugDefaultBrowserPromptFailedToSaveCurrentActivity
+        /// Fired when it is not possible to retrieve from the persistence store the date when last modal was shown.
+        case debugDefaultBrowserPromptFailedToRetrieveLastModalShownDate
+        /// Fired when it is not possible to save  in the persistence store the date when last modal was shown.
+        case debugDefaultBrowserPromptFailedToSaveLastModalShownDate
+        /// Fired when it is not possible to retrieve from the persistence store the number of modal shown.
+        case debugDefaultBrowserPromptFailedToRetrieveModalShownOccurrences
+        /// Fired when it is not possible to save in the persistence store the number of modal shown.
+        case debugDefaultBrowserPromptFailedToSaveModalShownOccurrences
+        /// Fired when it is not possible to retrieve from the persistence store the flag indicating whether the modal was permanently dismissed.
+        case debugDefaultBrowserPromptFailedToRetrievePermanentlyDismissedPrompt
+        /// Fired when it is not possible to save in the persistence store the flag indicating whether the modal was permanently dismissed.
+        case debugDefaultBrowserPromptFailedToSavePermanentlyDismissedPrompt
+        /// Fired when it is not possible to retrieve from the persistence store the type of user.
+        case debugDefaultBrowserPromptFailedToRetrieveUserType
+        /// Fired when it is not possible to save from the persistence store the type of user.
+        case debugDefaultBrowserPromptFailedToSaveUserType
+
+        /// Fired when the SAD modal sheet appears on screen.
+        case defaultBrowserPromptModalShown
+        /// Fired when the “Close” button of the SAD modal sheet is tapped.
+        case defaultBrowserPromptModalClosedButtonTapped
+        /// Fired when the “Set As Default Browser" button of the SAD modal sheet is tapped.
+        case defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped
+        /// Fired when the “Don’t ask again” button of the SAD modal sheet is tapped.
+        case defaultBrowserPromptModalDoNotAskAgainButtonTapped
 
         // MARK: History
         case historyStoreLoadFailed
@@ -1070,6 +1107,9 @@ extension Pixel {
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
 
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
+        case settingsOpenAssistSettings
+
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
         case settingsPresentedFromMenu
 
@@ -1200,6 +1240,8 @@ extension Pixel {
         case aiChatSettingsVoiceTurnedOn
         case aiChatSettingsAddressBarTurnedOff
         case aiChatSettingsAddressBarTurnedOn
+        case aiChatSettingsSearchInputTurnedOff
+        case aiChatSettingsSearchInputTurnedOn
         case aiChatSettingsBrowserMenuTurnedOff
         case aiChatSettingsBrowserMenuTurnedOn
         case aiChatSettingsTabManagerTurnedOff
@@ -1214,6 +1256,7 @@ extension Pixel {
         case aiChatMetricOpenHistory
         case aiChatMetricOpenMostRecentHistoryChat
         case aiChatMetricSentPromptOngoingChat
+        case aiChatInternalSwitchBarDisplayed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1348,6 +1391,7 @@ extension Pixel.Event {
         case .settingsNextStepsAddAppToDock: return "m_settings_next_steps_add_app_to_dock"
         case .settingsNextStepsAddWidget: return "m_settings_next_steps_add_widget"
         case .settingsMoreSearchSettings: return "m_settings_more_search_settings"
+        case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
 
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
@@ -1788,6 +1832,8 @@ extension Pixel.Event {
         case .networkProtectionActivationRequestFailed: return "m_netp_network_extension_error_activation_request_failed"
         case .networkProtectionDisconnected: return "m_netp_vpn_disconnect"
         case .networkProtectionNoAccessTokenFoundError: return "m_netp_no_access_token_found_error"
+        case .networkProtectionVPNAccessRevoked: return "m_vpn_access_revoked"
+        case .networkProtectionUnmanagedSubscriptionError: return "m_vpn_access_unmanaged_error"
         case .networkProtectionMemoryWarning: return "m_netp_vpn_memory_warning"
         case .networkProtectionMemoryCritical: return "m_netp_vpn_memory_critical"
         case .networkProtectionUnhandledError: return "m_netp_unhandled_error"
@@ -1943,10 +1989,32 @@ extension Pixel.Event {
         case .tabInteractionStateRestorationTime(let aggregation):
             return "m_d_tab-interaction-state_restoration-time-\(aggregation)"
 
+            // MARK: Default Browser Pixels
+
         case .debugSetAsDefaultBrowserSuccessfulResult: return "m_debug_set-default-browser_successful-result"
         case .debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached"
         case .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached-no-persisted-result"
         case .debugSetAsDefaultBrowserUnknownFailure: return "m_debug_set-default-browser_failure-unknown-error"
+
+        case .debugDefaultBrowserPromptFailedToRetrieveCurrentActivity: return "m_debug_set-as-default-prompt_failed-to-retrieve-current-activity"
+        case .debugDefaultBrowserPromptFailedToSaveCurrentActivity: return "m_debug_set-as-default-prompt_failed-to-save-current-activity"
+
+        case .debugDefaultBrowserPromptFailedToRetrieveLastModalShownDate: return "m_debug_set-as-default-prompt_failed-to-retrieve-last-modal-shown-date"
+        case .debugDefaultBrowserPromptFailedToSaveLastModalShownDate: return "m_debug_set-as-default-prompt_failed-to-save-last-modal-shown-date"
+        case .debugDefaultBrowserPromptFailedToRetrieveModalShownOccurrences: return "m_debug_set-as-default-prompt_failed-to-retrieve-modal-shown-occurrences"
+        case .debugDefaultBrowserPromptFailedToSaveModalShownOccurrences: return "m_debug_set-as-default-prompt_failed-to-save-modal-shown-occurrences"
+        case .debugDefaultBrowserPromptFailedToRetrievePermanentlyDismissedPrompt: return "m_debug_set-as-default-prompt_failed-to-retrieve-permanently-dismissed-prompt"
+        case .debugDefaultBrowserPromptFailedToSavePermanentlyDismissedPrompt: return "m_debug_set-as-default-prompt_failed-to-save-permanently-dismissed-prompt"
+
+        case .debugDefaultBrowserPromptFailedToRetrieveUserType: return "m_debug_set-as-default-prompt_failed-to-retrieve-user-type"
+        case .debugDefaultBrowserPromptFailedToSaveUserType: return "m_debug_set-as-default-prompt_failed-to-save-user-type"
+
+        case .defaultBrowserPromptModalShown: return "m_set-as-default-prompt_modal-shown"
+        case .defaultBrowserPromptModalClosedButtonTapped: return "m_set-as-default-prompt_modal-closed-button-action"
+        case .defaultBrowserPromptModalSetAsDefaultBrowserButtonTapped: return "m_set-as-default-prompt_modal-set-as-default-browser-button-action"
+        case .defaultBrowserPromptModalDoNotAskAgainButtonTapped: return "m_set-as-default-prompt_modal-do-not-ask-again-button-action"
+
+            // MARK: Debug Web View
 
         case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
         case .debugWebViewNotInVisibleTabHierarchy: return "m_debug_webview_not_in_visible_tab_hierarchy"
@@ -2372,6 +2440,8 @@ extension Pixel.Event {
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
         case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
+        case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
+        case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
 
         case .aiChatOpen: return "m_aichat_open"
         case .aiChatMetricStartNewConversation: return "m_aichat_start_new_conversation"
@@ -2379,6 +2449,7 @@ extension Pixel.Event {
         case .aiChatMetricOpenHistory: return "m_aichat_open_history"
         case .aiChatMetricOpenMostRecentHistoryChat: return "m_aichat_open_most_recent_history_chat"
         case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
+        case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

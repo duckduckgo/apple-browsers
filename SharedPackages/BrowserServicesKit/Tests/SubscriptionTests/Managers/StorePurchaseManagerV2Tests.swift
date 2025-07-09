@@ -659,7 +659,7 @@ private class MockFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags
 
     init(enabledFeatures: Set<SubscriptionFeatureFlags> = []) {
         self.enabledFeatures = enabledFeatures
-        super.init(mapping: {_ in true})
+        super.init(mapping: { _ in true })
     }
 
     override func isFeatureOn(_ feature: SubscriptionFeatureFlags) -> Bool {

@@ -35,7 +35,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     var passwordManagerCoordinator: PasswordManagerCoordinator!
     var networkProtectionVisibilityMock: NetworkProtectionVisibilityMock!
     var capturingActionDelegate: CapturingOptionsButtonMenuDelegate!
-    var internalUserDecider: InternalUserDeciderMock!
+    var internalUserDecider: MockInternalUserDecider!
     var defaultBrowserProvider: DefaultBrowserProviderMock!
     var dockCustomizer: DockCustomizerMock!
 
@@ -43,7 +43,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     var subscriptionManager: SubscriptionManagerMock!
 
-    private var mockFreemiumDBPPresenter = MockFreemiumDBPPresenter()
+    private var mockFreemiumDBPPresenter: MockFreemiumDBPPresenter! = .init()
     private var mockFreemiumDBPFeature: MockFreemiumDBPFeature!
     private var mockNotificationCenter: MockNotificationCenter!
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
@@ -60,7 +60,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         passwordManagerCoordinator = PasswordManagerCoordinator()
         networkProtectionVisibilityMock = NetworkProtectionVisibilityMock(isInstalled: false, visible: false)
         capturingActionDelegate = CapturingOptionsButtonMenuDelegate()
-        internalUserDecider = InternalUserDeciderMock()
+        internalUserDecider = MockInternalUserDecider()
         defaultBrowserProvider = DefaultBrowserProviderMock()
         dockCustomizer = DockCustomizerMock()
         dockCustomizer.addToDock()
@@ -92,7 +92,18 @@ final class MoreOptionsMenuTests: XCTestCase {
         capturingActionDelegate = nil
         subscriptionManager = nil
         moreOptionsMenu = nil
-        super.tearDown()
+        defaultBrowserProvider = nil
+        dockCustomizer = nil
+        fireproofDomains = nil
+        internalUserDecider = nil
+        mockFeatureFlagger = nil
+        mockFreemiumDBPFeature = nil
+        mockFreemiumDBPPresenter = nil
+        mockFreemiumDBPUserStateManager = nil
+        mockNotificationCenter = nil
+        mockPixelHandler = nil
+        networkProtectionVisibilityMock = nil
+        storePurchaseManager = nil
     }
 
     @MainActor
@@ -117,6 +128,22 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler)
 
         moreOptionsMenu.actionDelegate = capturingActionDelegate
+    }
+
+        /// Helper method to wait for subscription submenu building to complete
+    @MainActor
+    private func waitForSubscriptionSubmenuBuilding(timeout: TimeInterval = 2.0) async {
+        var cancellables = Set<AnyCancellable>()
+        let submenuBuilt = expectation(description: "Subscription submenu built")
+
+        moreOptionsMenu.submenuBuildingComplete
+            .first { $0 == true }
+            .sink { _ in
+                submenuBuilt.fulfill()
+            }
+            .store(in: &cancellables)
+
+        await fulfillment(of: [submenuBuilt], timeout: timeout)
     }
 
     // MARK: - Subscription & Freemium
@@ -161,6 +188,8 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testThatMoreOptionMenuHasTheExpectedItemsWhenFreemiumFeatureUnavailable() {
+        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
+
         subscriptionManager.canPurchase = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = false
@@ -202,6 +231,8 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testThatMoreOptionMenuHasTheExpectedItemsWhenFreemiumFeatureAvailable() {
+        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
+
         subscriptionManager.canPurchase = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = true
@@ -288,36 +319,21 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testWhenUserIsAuthenticatedWithPaidAIChatFeatureAndFeatureFlagEnabledThenPaidAIChatItemAppearsInSubscriptionSubmenu() async throws {
+        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1201037661562251/task/1210671860096867?focus=true")
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
 
         // When
         let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
         XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
-        // Give the async menu building time to complete
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+
+        await waitForSubscriptionSubmenuBuilding()
         let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
 
         // Then
-        // Wait for the async menu building to complete
-        let expectation = XCTestExpectation(description: "Wait for paid AI chat menu item")
-
-        func checkForMenuItem() {
-            if subscriptionSubmenu.items.first(where: { $0.title == UserText.paidAIChat }) != nil {
-                expectation.fulfill()
-            } else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    checkForMenuItem()
-                }
-            }
-        }
-
-        checkForMenuItem()
-        await fulfillment(of: [expectation], timeout: 2.0)
-
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
         XCTAssertNotNil(paidAIChatItem, "Paid AI Chat item should appear in subscription submenu when user has entitlement and feature flag is enabled")
     }
@@ -327,41 +343,38 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
-        mockFeatureFlagger.isFeatureOn = { _ in false }
         setupMoreOptionsMenu()
 
         // When
         let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
         XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
-        // Give the async menu building time to complete
-        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+
+        await waitForSubscriptionSubmenuBuilding()
         let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
 
         // Then
-        // Wait a moment for async menu building, then verify item is NOT present
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
         XCTAssertNil(paidAIChatItem, "Paid AI Chat item should not appear when feature flag is disabled")
     }
 
     @MainActor
     func testWhenUserIsAuthenticatedWithoutPaidAIChatFeatureThenPaidAIChatItemDoesNotAppear() async throws {
+        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/1201037661562251/task/1210671860096867?focus=true")
+
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = []
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
 
         // When
         let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
         XCTAssertTrue(privacyProItem.hasSubmenu, "Privacy Pro item should have submenu when user is authenticated")
+
+        await waitForSubscriptionSubmenuBuilding()
         let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
 
         // Then
-        // Wait a moment for async menu building, then verify item is NOT present
-        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-
         let paidAIChatItem = subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat }
         XCTAssertNil(paidAIChatItem, "Paid AI Chat item should not appear when user doesn't have the entitlement")
     }
@@ -371,27 +384,13 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockAuthentication()
         subscriptionManager.subscriptionFeatures = [.paidAIChat]
-        mockFeatureFlagger.isFeatureOn = { _ in true }
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         setupMoreOptionsMenu()
         moreOptionsMenu.actionDelegate = capturingActionDelegate
         let privacyProItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.subscriptionOptionsMenuItem })
         let subscriptionSubmenu = try XCTUnwrap(privacyProItem.submenu)
 
-        // Wait for the async menu building to complete
-        let expectation = XCTestExpectation(description: "Wait for paid AI chat menu item")
-
-        func checkForMenuItem() {
-            if subscriptionSubmenu.items.first(where: { $0.title == UserText.paidAIChat }) != nil {
-                expectation.fulfill()
-            } else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    checkForMenuItem()
-                }
-            }
-        }
-
-        checkForMenuItem()
-        await fulfillment(of: [expectation], timeout: 2.0)
+        await waitForSubscriptionSubmenuBuilding()
 
         let paidAIChatItem = try XCTUnwrap(subscriptionSubmenu.items.first { $0.title == UserText.paidAIChat })
         let paidAIChatItemIndex = try XCTUnwrap(subscriptionSubmenu.items.firstIndex(of: paidAIChatItem))

@@ -27,7 +27,7 @@ final class PageRefreshMonitorTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        monitor = PageRefreshMonitor(onDidDetectRefreshPattern: { patternCount in self.detectionParameters.append(patternCount)})
+        monitor = PageRefreshMonitor(onDidDetectRefreshPattern: { patternCount in self.detectionParameters.append(patternCount) })
     }
 
     // MARK: - Pattern Detection Tests

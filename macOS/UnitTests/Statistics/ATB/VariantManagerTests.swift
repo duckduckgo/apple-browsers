@@ -30,6 +30,10 @@ class VariantManagerTests: XCTestCase {
         Variant(name: "excluded", weight: 1000, isIncluded: { return false }, features: [.dummy])
     ]
 
+    override var allowedNonNilVariables: Set<String> {
+        ["testVariants"]
+    }
+
     func testWhenVariantIsExcludedThenItIsNotInVariantList() {
 
         let subject = DefaultVariantManager(variants: testVariants, storage: MockStatisticsStore(), rng: MockVariantRNG(returnValue: 500), campaignVariant: CampaignVariant(statisticsStore: MockStatisticsStore()))
@@ -62,7 +66,7 @@ class VariantManagerTests: XCTestCase {
         for i in 0 ..< 100 {
 
             let subject = DefaultVariantManager(variants: testVariants, storage: mockStore, rng: MockVariantRNG(returnValue: i), campaignVariant: CampaignVariant(statisticsStore: mockStore))
-            subject.assignVariantIfNeeded { _ in  }
+            subject.assignVariantIfNeeded { _ in }
             XCTAssertNotEqual("mt", subject.currentVariant?.name)
 
         }
@@ -75,7 +79,7 @@ class VariantManagerTests: XCTestCase {
         mockStore.atb = "atb"
 
         let subject = DefaultVariantManager(variants: testVariants, storage: mockStore, rng: MockVariantRNG(returnValue: 0), campaignVariant: CampaignVariant(statisticsStore: mockStore))
-        subject.assignVariantIfNeeded {  _ in  }
+        subject.assignVariantIfNeeded { _ in }
         XCTAssertNil(subject.currentVariant)
 
     }
@@ -84,7 +88,7 @@ class VariantManagerTests: XCTestCase {
 
         let variant = Variant(name: "anything", weight: 100, isIncluded: Variant.When.always, features: [])
         let subject = DefaultVariantManager(variants: [variant], storage: MockStatisticsStore(), campaignVariant: CampaignVariant(statisticsStore: MockStatisticsStore()))
-        subject.assignVariantIfNeeded {  _ in }
+        subject.assignVariantIfNeeded { _ in }
         XCTAssertEqual(variant.name, subject.currentVariant?.name)
 
     }

@@ -20,9 +20,11 @@ import AppKit
 import Combine
 import XCTest
 @testable import NewTabPage
+import BrowserServicesKit
 
 final class NewTabPageConfigurationClientTests: XCTestCase {
     private var client: NewTabPageConfigurationClient!
+    private var sectionsAvailabilityProvider: MockNewTabPageSectionsAvailabilityProvider!
     private var sectionsVisibilityProvider: MockNewTabPageSectionsVisibilityProvider!
     private var contextMenuPresenter: CapturingNewTabPageContextMenuPresenter!
     private var userScript: NewTabPageUserScript!
@@ -32,9 +34,11 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         sectionsVisibilityProvider = MockNewTabPageSectionsVisibilityProvider()
+        sectionsAvailabilityProvider = MockNewTabPageSectionsAvailabilityProvider()
         contextMenuPresenter = CapturingNewTabPageContextMenuPresenter()
         eventMapper = CapturingNewTabPageConfigurationEventHandler()
         client = NewTabPageConfigurationClient(
+            sectionsAvailabilityProvider: sectionsAvailabilityProvider,
             sectionsVisibilityProvider: sectionsVisibilityProvider,
             customBackgroundProvider: CapturingNewTabPageCustomBackgroundProvider(),
             contextMenuPresenter: contextMenuPresenter,
@@ -79,17 +83,39 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     // MARK: - initialSetup
 
     func testThatInitialSetupReturnsConfiguration() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = true
+
         let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
         XCTAssertEqual(configuration.widgets, [
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
             .init(id: .nextSteps),
             .init(id: .favorites),
-            .init(id: .protections)
+            .init(id: .protections),
+            .init(id: .omnibar)
         ])
         XCTAssertEqual(configuration.widgetConfigs, [
             .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
-            .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible)
+            .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible),
+            .init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible)
+        ])
+        XCTAssertEqual(configuration.platform, .init(name: "macos"))
+    }
+
+    func testWhenOmnibarNotAvailable_ThenInitialSetupReturnsConfigurationWithoutOmnibar() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = false
+
+        let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
+        XCTAssertEqual(configuration.widgets, [
+            .init(id: .rmf),
+            .init(id: .freemiumPIRBanner),
+            .init(id: .nextSteps),
+            .init(id: .favorites),
+            .init(id: .protections),
+        ])
+        XCTAssertEqual(configuration.widgetConfigs, [
+            .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
+            .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible),
         ])
         XCTAssertEqual(configuration.platform, .init(name: "macos"))
     }

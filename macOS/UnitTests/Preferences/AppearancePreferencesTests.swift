@@ -38,7 +38,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 centerAlignedBookmarksBar: true,
                 showTabsAndBookmarksBarOnFullScreen: false
             ),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         XCTAssertEqual(model.showFullURL, false)
@@ -66,7 +67,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 centerAlignedBookmarksBar: false,
                 showTabsAndBookmarksBarOnFullScreen: true
             ),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
         XCTAssertEqual(model.showFullURL, true)
         XCTAssertEqual(model.currentThemeName, ThemeName.light)
@@ -85,7 +87,8 @@ final class AppearancePreferencesTests: XCTestCase {
             persistor: AppearancePreferencesPersistorMock(
                 currentThemeName: "garbage"
             ),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
 
         XCTAssertEqual(model.currentThemeName, ThemeName.systemDefault)
@@ -98,7 +101,7 @@ final class AppearancePreferencesTests: XCTestCase {
     }
 
     func testWhenThemeNameIsUpdatedThenApplicationAppearanceIsUpdated() throws {
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager())
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
 
         model.currentThemeName = ThemeName.systemDefault
         XCTAssertEqual(NSApp.appearance?.name, ThemeName.systemDefault.appearance?.name)
@@ -114,7 +117,7 @@ final class AppearancePreferencesTests: XCTestCase {
     }
 
     func testWhenNewTabPreferencesAreUpdatedThenPersistedValuesAreUpdated() throws {
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager())
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
 
         model.isFavoriteVisible = true
         XCTAssertEqual(model.isFavoriteVisible, true)
@@ -157,7 +160,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            dateTimeProvider: { now }
+            dateTimeProvider: { now },
+            featureFlagger: MockFeatureFlagger()
         )
         let c = model.objectWillChange.sink {
             XCTFail("Unexpected model.objectWillChange")
@@ -185,7 +189,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            dateTimeProvider: { now }
+            dateTimeProvider: { now },
+            featureFlagger: MockFeatureFlagger()
         )
         var eObjectWillChange: XCTestExpectation!
         let c = model.objectWillChange.sink {
@@ -229,7 +234,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            pixelFiring: pixelFiringMock
+            pixelFiring: pixelFiringMock,
+            featureFlagger: MockFeatureFlagger()
         )
 
         model.currentThemeName = ThemeName.systemDefault
@@ -252,7 +258,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            pixelFiring: pixelFiringMock
+            pixelFiring: pixelFiringMock,
+            featureFlagger: MockFeatureFlagger()
         )
 
         model.showFullURL = true
@@ -271,7 +278,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            pixelFiring: pixelFiringMock
+            pixelFiring: pixelFiringMock,
+            featureFlagger: MockFeatureFlagger()
         )
 
         model.isFavoriteVisible = false
@@ -300,7 +308,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            pixelFiring: pixelFiringMock
+            pixelFiring: pixelFiringMock,
+            featureFlagger: MockFeatureFlagger()
         )
 
         model.isProtectionsReportVisible = false
@@ -322,5 +331,45 @@ final class AppearancePreferencesTests: XCTestCase {
         ]
 
         pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenOmnibarFeatureFlagIsOnThenIsOmnibarAvailableIsTrue() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.newTabPageOmnibar]
+
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertTrue(model.isOmnibarAvailable, "Omnibar should be available when feature flag is ON")
+    }
+
+    func testWhenOmnibarFeatureFlagIsOffThenIsOmnibarAvailableIsFalse() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = []
+
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: featureFlagger
+        )
+
+        XCTAssertFalse(model.isOmnibarAvailable, "Omnibar should NOT be available when feature flag is OFF")
+    }
+
+    func testWhenIsOmnibarVisibleIsUpdatedThenValueChanges() {
+        let persistor = AppearancePreferencesPersistorMock(isOmnibarVisible: true)
+        let model = AppearancePreferences(
+            persistor: persistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+
+        XCTAssertTrue(model.isOmnibarVisible, "Initial value should be true")
+
+        model.isOmnibarVisible = false
+        XCTAssertFalse(model.isOmnibarVisible, "Value should change to false")
     }
 }

@@ -26,8 +26,8 @@ import XCTest
 
 final class ContentBlockingUpdatingTests: XCTestCase {
 
-    let preferences = WebTrackingProtectionPreferences.shared
-    let rulesManager = ContentBlockerRulesManagerMock()
+    var preferences: WebTrackingProtectionPreferences! = WebTrackingProtectionPreferences.shared
+    var rulesManager: ContentBlockerRulesManagerMock! = ContentBlockerRulesManagerMock()
     var updating: UserContentUpdating!
 
     @MainActor
@@ -36,18 +36,19 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
         let appearancePreferences = AppearancePreferences(
             keyValueStore: try MockKeyValueFileStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
         let dataClearingPreferences = DataClearingPreferences(
             persistor: MockFireButtonPreferencesPersistor(),
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock()
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger()
         )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
-            appearancePreferences: appearancePreferences,
-            dataClearingPreferences: dataClearingPreferences
+            appearancePreferences: appearancePreferences
         )
 
         updating = UserContentUpdating(contentBlockerRulesManager: rulesManager,
@@ -67,6 +68,12 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        historyCoordinator: CapturingHistoryDataSource(),
                                        fireproofDomains: MockFireproofDomains(domains: []),
                                        fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld))
+    }
+
+    override func tearDown() {
+        preferences = nil
+        rulesManager = nil
+        updating = nil
     }
 
     override static func setUp() {
@@ -208,7 +215,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 extension UserContentControllerNewContent {
 
     func rules(withName name: String) -> WKContentRuleList? {
-        rulesUpdate.rules.first(where: { $0.name == name})?.rulesList
+        rulesUpdate.rules.first(where: { $0.name == name })?.rulesList
     }
 
     var isValid: Bool {

@@ -16,16 +16,17 @@
 //  limitations under the License.
 //
 
+import BrokenSitePrompt
 import BrowserServicesKit
 import Cocoa
 import Carbon.HIToolbox
 import Combine
 import Common
 import History
-import VPN
 import NetworkProtectionIPC
 import os.log
-import BrokenSitePrompt
+import PixelKit
+import VPN
 
 final class MainViewController: NSViewController {
     private(set) lazy var mainView = MainView(frame: NSRect(x: 0, y: 0, width: 600, height: 660))
@@ -34,6 +35,7 @@ final class MainViewController: NSViewController {
     let navigationBarViewController: NavigationBarViewController
     let browserTabViewController: BrowserTabViewController
     let aiChatSidebarPresenter: AIChatSidebarPresenting
+    let aiChatSummarizer: AIChatSummarizer
     let findInPageViewController: FindInPageViewController
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
@@ -94,7 +96,9 @@ final class MainViewController: NSViewController {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
          visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle,
-         fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator
+         fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator,
+         pixelFiring: PixelFiring? = PixelKit.shared,
+         visualizeFireAnimationDecider: VisualizeFireAnimationDecider = NSApp.delegateTyped.visualizeFireAnimationDecider
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -164,7 +168,15 @@ final class MainViewController: NSViewController {
             sidebarProvider: aiChatSidebarProvider,
             aiChatTabOpener: aiChatTabOpener,
             featureFlagger: featureFlagger,
-            windowControllersManager: windowControllersManager
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring
+        )
+        aiChatSummarizer = AIChatSummarizer(
+            aiChatMenuConfig: aiChatMenuConfig,
+            aiChatSidebarPresenter: aiChatSidebarPresenter,
+            aiChatTabOpener: aiChatTabOpener,
+            featureFlagger: featureFlagger,
+            pixelFiring: pixelFiring
         )
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
@@ -181,7 +193,7 @@ final class MainViewController: NSViewController {
                                                                          aiChatSidebarPresenter: aiChatSidebarPresenter)
 
         findInPageViewController = FindInPageViewController.create()
-        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel)
+        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
         bookmarksBarViewController = BookmarksBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,

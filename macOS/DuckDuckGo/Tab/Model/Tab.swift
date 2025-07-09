@@ -41,6 +41,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func closeTab(_ tab: Tab)
 }
 
+@MainActor
 protocol NewWindowPolicyDecisionMaker {
     func decideNewWindowPolicy(for navigationAction: WKNavigationAction) -> NavigationDecision?
 }
@@ -65,7 +66,7 @@ protocol NewWindowPolicyDecisionMaker {
     fileprivate weak var delegate: TabDelegate?
     func setDelegate(_ delegate: TabDelegate) { self.delegate = delegate }
 
-    private let navigationDelegate = DistributedNavigationDelegate()
+    private let navigationDelegate = DistributedNavigationDelegate() // swiftlint:disable:this weak_delegate
     private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaker]?
     private var onNewWindow: ((WKNavigationAction?) -> NavigationDecision)?
 
@@ -270,6 +271,7 @@ protocol NewWindowPolicyDecisionMaker {
         webView = WebView(frame: CGRect(origin: .zero, size: webViewSize), configuration: configuration)
         webView.allowsLinkPreview = false
         webView.addsVisitedLinks = true
+        webView.setAccessibilityIdentifier("WebView")
 
         permissions = PermissionModel(permissionManager: permissionManager,
                                       geolocationService: geolocationService)
@@ -353,11 +355,6 @@ protocol NewWindowPolicyDecisionMaker {
 
 #if DEBUG
     func addDeallocationChecks(for webView: WKWebView) {
-        /// Deallocation checks cause random crashes in CI for integration tests.
-        /// https://app.asana.com/0/1201037661562251/1209884224558923/f
-        guard AppVersion.runType != .integrationTests else {
-            return
-        }
         let processPool = webView.configuration.processPool
         let webViewValue = NSValue(nonretainedObject: webView)
 

@@ -46,6 +46,7 @@ struct SettingsCompleteSetupView: View {
                                  action: { viewModel.setAsDefaultBrowser("complete-setup") },
                                  webLinkIndicator: true,
                                  isButton: true)
+                .accessibilityIdentifier("Settings.ListItem.Field_DefaultBrowser")
                 .swipeActions {
                     Button {
                         viewModel.dismissSetAsDefaultBrowser()

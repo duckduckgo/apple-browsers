@@ -44,7 +44,7 @@ class ClickToLoadTDSTests: XCTestCase {
         let ruleSets = cbrLists.contentBlockerRulesLists
         let tdsName = DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName
 
-        let ctlRules = ruleSets.first(where: { $0.name == tdsName})
+        let ctlRules = ruleSets.first(where: { $0.name == tdsName })
         let ctlTrackerData = ctlRules?.trackerData
         let ctlTds = ctlTrackerData?.tds
 

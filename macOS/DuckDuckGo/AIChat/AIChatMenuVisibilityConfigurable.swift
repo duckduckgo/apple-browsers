@@ -95,6 +95,10 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
         self.subscribeToValuesChanged()
     }
 
+    /// Changes to isSummarizationEnabled aren't causing `valuesChangedPublisher` to fire because nothing
+    /// should be interested in listening to these changes - summarization doesn't provide a persistent
+    /// view that need to have visibility adjusted when a setting changes. The context menu will always
+    /// read the current state of a setting at the time of creating its contents.
     private func subscribeToValuesChanged() {
         storage.showShortcutInApplicationMenuPublisher
             .removeDuplicates()

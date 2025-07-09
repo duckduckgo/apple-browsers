@@ -907,11 +907,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         crashReporter.checkForNewReports()
 #endif
-
-        if visualStyleDecider.shouldFirePixel(style: visualStyle) {
-            PixelKit.fire(VisualStylePixel.visualUpdatesEnabled, frequency: .uniqueByName)
-        }
-
         urlEventHandler.applicationDidFinishLaunching()
 
         subscribeToEmailProtectionStatusNotifications()

@@ -115,13 +115,23 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
     @MainActor
     func testCloseAction_dismissesPromotion_andFiresPixel() async throws {
+        // Given
+        try await waitForViewModelUpdate {
+            mockUserStateManager.didActivate = false
+            mockUserStateManager.firstScanResults = nil
+        }
+
+        let viewModel = try XCTUnwrap(sut.viewModel)
+
+        mockPixelHandler.resetCapturedData()
+
         // When
-        let viewModel = try await waitForViewModelUpdate(for: 3)
-        viewModel?.closeAction()
+        viewModel.closeAction()
 
         // Then
         XCTAssertTrue(mockUserStateManager.didDismissHomePagePromotion)
-        XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabScanDismiss)
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(DataBrokerProtectionFreemiumPixels.newTabScanDismiss),
+                      "Expected newTabScanDismiss to be fired. Actual events: \(mockPixelHandler.allFiredEvents)")
     }
 
     @MainActor
@@ -185,13 +195,17 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
             mockUserStateManager.firstScanResults = FreemiumDBPMatchResults(matchesCount: 0, brokerCount: 0)
         }
 
-        // When
         let viewModel = try XCTUnwrap(sut.viewModel)
+
+        mockPixelHandler.resetCapturedData()
+
+        // When
         viewModel.closeAction()
 
         // Then
         XCTAssertTrue(mockUserStateManager.didDismissHomePagePromotion)
-        XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabNoResultsDismiss)
+        XCTAssertTrue(mockPixelHandler.allFiredEvents.contains(DataBrokerProtectionFreemiumPixels.newTabNoResultsDismiss),
+                      "Expected newTabNoResultsDismiss to be fired. Actual events: \(mockPixelHandler.allFiredEvents)")
     }
 
     @MainActor
@@ -389,6 +403,7 @@ class MockDataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProte
 
     var lastFiredEvent: DataBrokerProtectionFreemiumPixels?
     var lastPassedParameters: [String: String]?
+    var allFiredEvents: [DataBrokerProtectionFreemiumPixels] = []
 
     init() {
         var mockMapping: Mapping! = nil
@@ -403,11 +418,13 @@ class MockDataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProte
             // Capture the inputs when fire is called
             self?.lastFiredEvent = event
             self?.lastPassedParameters = params
+            self?.allFiredEvents.append(event)
         }
     }
 
     func resetCapturedData() {
         lastFiredEvent = nil
         lastPassedParameters = nil
+        allFiredEvents.removeAll()
     }
 }

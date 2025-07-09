@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Subscription
 import Persistence
 import DDGSync
+import SetDefaultBrowserUI
 
 @MainActor
 protocol URLHandling {
@@ -45,6 +46,7 @@ final class MainCoordinator {
     let controller: MainViewController
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
+    private let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
 
     init(syncService: SyncService,
          bookmarksDatabase: CoreDataDatabase,
@@ -61,9 +63,13 @@ final class MainCoordinator {
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          didFinishLaunchingStartTime: CFAbsoluteTime,
-         keyValueStore: ThrowingKeyValueStoring) throws {
+         keyValueStore: ThrowingKeyValueStoring,
+         defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
+    ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
+        self.defaultBrowserPromptPresenter = defaultBrowserPromptPresenter
+
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           privacyProDataReporter: reportingService.privacyProDataReporter)
@@ -184,6 +190,9 @@ final class MainCoordinator {
     func onForeground() {
         controller.showBars()
         controller.onForeground()
+
+        // Present Default Browser Prompt if user is eligible.
+        defaultBrowserPromptPresenter.tryPresentDefaultModalPrompt(from: controller)
     }
 
     func onBackground() {

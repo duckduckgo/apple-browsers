@@ -118,13 +118,6 @@ final class TabViewCell: UICollectionViewCell {
         border.layer.cornerRadius = Constants.borderRadius
 
         layer.cornerRadius = Constants.cellCornerRadius
-        layer.shadowColor = UIColor(designSystemColor: .shadowPrimary).cgColor
-        layer.shadowOffset = CGSize(width: 0, height: 4)
-        layer.shadowRadius = 6.0
-        layer.shadowOpacity = 1.0
-        layer.masksToBounds = false
-        layer.shouldRasterize = true
-        layer.rasterizationScale = UIScreen.main.scale
 
         unread.tintColor = UIColor(designSystemColor: .accent)
 
@@ -393,13 +386,12 @@ final class TabViewCell: UICollectionViewCell {
     }
 
     private func decorate() {
-        let theme = ThemeManager.shared.currentTheme
         border.layer.borderColor = UIColor(designSystemColor: .textPrimary).cgColor
         unread.image = Self.unreadImageAsset.image(with: .current)
         removeButton.tintColor = UIColor(designSystemColor: .icons)
 
-        background.backgroundColor = theme.tabSwitcherCellBackgroundColor
-        title.textColor = theme.tabSwitcherCellTextColor
+        background.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
+        title.textColor = UIColor(designSystemColor: .textPrimary)
 
         background.superview?.backgroundColor = .clear
     }

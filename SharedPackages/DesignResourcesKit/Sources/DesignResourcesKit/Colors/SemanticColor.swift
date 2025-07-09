@@ -25,6 +25,7 @@ public enum DesignSystemColor {
     /// Using it with default palette fires assertion.
     case backgroundTertiary
     case surface
+    case surfaceTertiary
     case backgroundSheets
     case panel
 

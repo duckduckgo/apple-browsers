@@ -18,11 +18,16 @@
 
 import SwiftUI
 
+/// [Updated color palette:](https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/🎨-Global-Colors---Styles?node-id=11-1&p=f&vars=1&var-id=5476-10186&m=dev)
 struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Backgrounds
     private static let background = DynamicColor(lightColor: .gray10, darkColor: .gray90)
+
+    // Surfaces
     private static let surface = DynamicColor(lightColor: .white, darkColor: .x2F2F2F)
+    private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: .x474747)
+
     private static let backgroundSheets = DynamicColor(lightColor: .white, darkColor: .gray90)
     private static let panel = DynamicColor(lightColor: .gray0, darkColor: .gray85)
     private static let container = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
@@ -114,6 +119,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .border: return border
         case .panel: return panel
         case .surface: return surface
+        case .surfaceTertiary: return surfaceTertiary
         case .textLink: return textLink
         case .textPrimary: return textPrimary
         case .textPlaceholder: return textPlaceholder

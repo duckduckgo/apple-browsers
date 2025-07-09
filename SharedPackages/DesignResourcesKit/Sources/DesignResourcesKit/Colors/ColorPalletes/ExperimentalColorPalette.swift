@@ -18,6 +18,7 @@
 
 import SwiftUI
 
+/// When this is fully rolled out, all the values here need to be moved to the default color palette.
 struct ExperimentalColorPalette: ColorPaletteDefinition {
 
     private static let x1F1F1F = Color(0x1F1F1F)

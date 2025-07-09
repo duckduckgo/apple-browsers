@@ -153,9 +153,8 @@ final class OmniBarEditingStateAnimator {
 
         transitionDelegate.rootView.layoutIfNeeded()
 
-        // Create animators
         let animator = UIViewPropertyAnimator(duration: Constants.BottomTransition.appearanceDuration,
-                                              dampingRatio: Constants.BottomTransition.appearanceDampingRatio) {
+                                              curve: .easeInOut) {
             transitionDelegate.rootView.alpha = 1.0
             self.topSwitchBarConstraint?.constant = Constants.BottomTransition.finalYOffset
 
@@ -176,11 +175,8 @@ final class OmniBarEditingStateAnimator {
             self.topSwitchBarConstraint?.constant = Constants.BottomTransition.yOffset
             transitionDelegate.adjustForDismissal()
             transitionDelegate.rootView.layoutIfNeeded()
-        }
-
-        animator.addAnimations({
             transitionDelegate.rootView.alpha = 0.0
-        }, delayFactor: 0.5)
+        }
 
         animator.addCompletion { _ in
             completion?()
@@ -194,8 +190,8 @@ final class OmniBarEditingStateAnimator {
             static let yOffset: CGFloat = 150
             static let finalYOffset: CGFloat = 16
             static let dismissDuration: TimeInterval = 0.25
-            static let appearanceDuration: TimeInterval = 0.55
-            static let appearanceDampingRatio: CGFloat = 0.65
+            static let appearanceDuration: TimeInterval = 0.25
+            static let appearanceDampingRatio: CGFloat = 0.7
         }
 
         struct TopTransition {

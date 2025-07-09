@@ -165,13 +165,6 @@ final class DuckPlayerNativeUIPresenter {
         setupNotificationObservers(notificationCenter: notificationCenter)
     }
     
-    deinit {
-        // Clean up notification observers to prevent memory leaks
-        notificationObservers.forEach { observer in
-            NotificationCenter.default.removeObserver(observer)
-        }
-        notificationObservers.removeAll()
-    }
 
     /// Sets up notification observers for address bar position changes
     /// This replaces the previous omnibar layout notification approach for better performance
@@ -397,6 +390,12 @@ final class DuckPlayerNativeUIPresenter {
         
         // Remove notification observers
         NotificationCenter.default.removeObserver(self)
+        
+        // Clean up block-based notification observers to prevent memory leaks
+        notificationObservers.forEach { observer in
+            NotificationCenter.default.removeObserver(observer)
+        }
+        notificationObservers.removeAll()
         
         // Clean up any remaining UI elements
         bottomConstraint?.isActive = false

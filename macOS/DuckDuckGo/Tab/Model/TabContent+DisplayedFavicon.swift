@@ -18,7 +18,8 @@
 
 import AppKit
 import WebKit
-import MaliciousSiteProtection
+import DesignResourcesKitIcons
+import BrowserServicesKit
 
 extension TabContent {
 
@@ -27,11 +28,15 @@ extension TabContent {
     ///   - error: Optional error from the tab (for error state favicons)
     ///   - actualFavicon: The actual favicon loaded from the webpage (if any)
     ///   - isBurner: Whether this is a burner tab (affects newtab favicon)
+    ///   - featureFlagger: Feature flag provider for checking enabled features
+    ///   - visualStyle: Visual style provider for checking new/old style
     /// - Returns: The NSImage to display as the favicon, or nil if no favicon should be shown
     func displayedFavicon(
         error: Error? = nil,
         actualFavicon: NSImage? = nil,
-        isBurner: Bool = false
+        isBurner: Bool = false,
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
     ) -> NSImage? {
 
         // Handle error states first
@@ -45,7 +50,7 @@ extension TabContent {
             return .personalInformationRemovalMulticolor16
 
         case .newtab where isBurner:
-            return NSApp.delegateTyped.visualStyle.isNewStyle ?
+            return visualStyle.isNewStyle ?
                 DesignSystemImages.Glyphs.Size16.fireTab : .burnerTabFavicon
 
         case .newtab:
@@ -58,7 +63,7 @@ extension TabContent {
             return .bookmarksFolder
 
         case .history:
-            return NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? .historyFavicon : nil
+            return featureFlagger.isFeatureOn(.historyView) ? .historyFavicon : nil
 
         case .subscription:
             return .privacyPro
@@ -75,7 +80,7 @@ extension TabContent {
         case .url(let url, _, _):
             // Handle special URL types
             if url.isHistory {
-                return NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? .historyFavicon : nil
+                return featureFlagger.isFeatureOn(.historyView) ? .historyFavicon : nil
             } else if url.isDuckPlayer {
                 return .duckPlayerSettings
             } else if url.isDuckAIURL {

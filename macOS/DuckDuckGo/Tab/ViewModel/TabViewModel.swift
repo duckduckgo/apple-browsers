@@ -31,6 +31,8 @@ final class TabViewModel {
     private(set) var tab: Tab
     private let appearancePreferences: AppearancePreferences
     private let accessibilityPreferences: AccessibilityPreferences
+    private let featureFlagger: FeatureFlagger
+    private let visualStyle: VisualStyleProviding
     private var cancellables = Set<AnyCancellable>()
 
     @Published private(set) var canGoForward: Bool = false
@@ -125,10 +127,14 @@ final class TabViewModel {
 
     init(tab: Tab,
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
-         accessibilityPreferences: AccessibilityPreferences = .shared) {
+         accessibilityPreferences: AccessibilityPreferences = .shared,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.tab = tab
         self.appearancePreferences = appearancePreferences
         self.accessibilityPreferences = accessibilityPreferences
+        self.featureFlagger = featureFlagger
+        self.visualStyle = visualStyle
         zoomLevel = accessibilityPreferences.defaultPageZoom
         subscribeToUrl()
         subscribeToCanGoBackForwardAndReload()
@@ -379,9 +385,9 @@ final class TabViewModel {
         case .bookmarks:
                 .bookmarksTrustedIndicator
         case .history:
-            NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
+            featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
         case .url(let url, _, _) where url.isHistory:
-            NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
+            featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
         case .dataBrokerProtection:
                 .dbpTrustedIndicator
         case .subscription:
@@ -472,7 +478,9 @@ final class TabViewModel {
         favicon = tab.content.displayedFavicon(
             error: isShowingErrorPage ? tab.error : nil,
             actualFavicon: tabFavicon ?? tab.favicon,
-            isBurner: tab.burnerMode.isBurner
+            isBurner: tab.burnerMode.isBurner,
+            featureFlagger: featureFlagger,
+            visualStyle: visualStyle
         )
     }
 

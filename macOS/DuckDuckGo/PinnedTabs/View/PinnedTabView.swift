@@ -19,7 +19,6 @@
 import MaliciousSiteProtection
 import SwiftUI
 import SwiftUIExtensions
-import AIChat
 
 struct PinnedTabView: View, DropDelegate {
     enum Const {
@@ -407,7 +406,9 @@ struct PinnedTabInnerView: View {
         return model.content.displayedFavicon(
             error: model.error,
             actualFavicon: model.favicon,
-            isBurner: model.burnerMode.isBurner
+            isBurner: model.burnerMode.isBurner,
+            featureFlagger: NSApp.delegateTyped.featureFlagger,
+            visualStyle: NSApp.delegateTyped.visualStyle
         )
     }
 

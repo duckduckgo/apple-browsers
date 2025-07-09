@@ -20,7 +20,6 @@ import Combine
 import Foundation
 import Navigation
 import WebKit
-import AIChat
 
 protocol FaviconUserScriptProvider {
     var faviconScript: FaviconUserScript { get }
@@ -77,15 +76,6 @@ final class FaviconsTabExtension {
         } else if oldValue?.urlForWebView?.host != url.host {
             // If the domain matches the previous value, just keep the same favicon
             favicon = nil
-        }
-
-        // Special URL handling - this should override any cached favicons
-        if url.isDuckPlayer {
-            favicon = .duckPlayer
-            return
-        } else if url.isDuckAIURL {
-            favicon = .aiChat
-            return
         }
     }
 }

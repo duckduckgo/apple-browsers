@@ -25,6 +25,7 @@ import Combine
 import Core
 import DDGSync
 import PrivacyDashboard
+import Persistence
 import os.log
 
 class AutofillLoginListViewModel: ObservableObject {
@@ -67,6 +68,7 @@ class AutofillLoginListViewModel: ObservableObject {
     private let autofillDomainNameUrlMatcher = AutofillDomainNameUrlMatcher()
     private let autofillDomainNameUrlSort = AutofillDomainNameUrlSort()
     private let syncService: DDGSyncing
+    private let keyValueStore: ThrowingKeyValueStoring
     private let locale: Locale
     private var showBreakageReporter: Bool = false
 
@@ -86,6 +88,8 @@ class AutofillLoginListViewModel: ObservableObject {
                                                                                                                                       tld: tld)
 
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager(syncService: syncService)
+
+    private lazy var autofillCredentialsImportManager: AutofillCredentialsImportManager = AutofillCredentialsImportManager(loginImportStateProvider: AutofillLoginImportState(keyValueStore: keyValueStore))
 
     private lazy var autofillSurveyManager: AutofillSurveyManaging = AutofillSurveyManager()
 
@@ -119,6 +123,7 @@ class AutofillLoginListViewModel: ObservableObject {
          currentTabUid: String? = nil,
          privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig,
          syncService: DDGSyncing,
+         keyValueStore: ThrowingKeyValueStoring,
          locale: Locale = Locale.current) {
         self.appSettings = appSettings
         self.tld = tld
@@ -127,6 +132,7 @@ class AutofillLoginListViewModel: ObservableObject {
         self.currentTabUid = currentTabUid
         self.privacyConfig = privacyConfig
         self.syncService = syncService
+        self.keyValueStore = keyValueStore
         self.locale = locale
 
         if let count = getAccountsCount() {
@@ -256,7 +262,7 @@ class AutofillLoginListViewModel: ObservableObject {
             }
             self?.updateData()
             self?.showBreakageReporter = false
-        }, keyValueStoring: UserDefaults.standard, storageConfiguration: .autofillConfig)        
+        }, keyValueStoring: UserDefaults.standard, storageConfiguration: .autofillConfig)
     }
 
     func createBreakageReporterAlert() -> UIAlertController? {
@@ -312,6 +318,16 @@ class AutofillLoginListViewModel: ObservableObject {
 
     func dismissSurvey(id: String) {
         autofillSurveyManager.markSurveyAsCompleted(id: id)
+    }
+
+    func shouldShowImportPasswordsPromo() -> Bool {
+        return viewState == .showItems
+               && !isEditing
+               && autofillCredentialsImportManager.passwordsScreenShouldShowPasswordImportPromotion(totalCredentialsCount: accountsCount)
+    }
+
+    func dismissImportPromo() {
+        autofillCredentialsImportManager.passwordsScreenDidRequestPermanentCredentialsImportPromptDismissal()
     }
 
     // MARK: Private Methods

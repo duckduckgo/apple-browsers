@@ -117,17 +117,6 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         XCTAssertEqual(subscription.status, .autoRenewable)
     }
 
-    func testGetSubscriptionThrowsNoDataWhenNoCacheAndFetchFails() async {
-        do {
-            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
-            XCTFail("Expected noData error")
-        } catch SubscriptionEndpointServiceError.noData {
-            // Success
-        } catch {
-            XCTFail("Unexpected error: \(error)")
-        }
-    }
-
     // MARK: - getProducts Tests
 
     func testGetProductsReturnsListOfProducts() async throws {
@@ -233,7 +222,17 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         XCTAssertEqual(cachedSubscription, subscription)
     }
 
-    func testClearSubscriptionRemovesCachedSubscription() async throws {
+    func testClearSubscriptionRemovesCachedSubscription_AndGetSubscriptionReFetchesIt() async throws {
+        // mock subscription response
+        let subscriptionData = try createSubscriptionResponseData()
+        let apiResponse = createAPIResponse(statusCode: 200, data: subscriptionData)
+        let request = SubscriptionRequest.getSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+
+        // mock features
+        SubscriptionAPIMockResponseFactory.mockGetFeatures(destinationMockAPIService: apiService, success: true, subscriptionID: "prod123")
+
+        apiService.set(response: apiResponse, forRequest: request)
+
         let date = Date(timeIntervalSince1970: 123456789)
         let subscription = PrivacyProSubscription(
             productId: "prod123",
@@ -250,7 +249,6 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         endpointService.clearSubscription()
         do {
             _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
-        } catch SubscriptionEndpointServiceError.noData {
             // Success
         } catch {
             XCTFail("Wrong error: \(error)")

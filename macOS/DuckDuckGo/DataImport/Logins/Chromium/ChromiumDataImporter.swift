@@ -98,23 +98,24 @@ internal class ChromiumDataImporter: DataImporter {
         if types.contains(.bookmarks)
             // don‘t proceed with bookmarks import on Keychain prompt denial
             && (summary[.passwords]?.error as? ChromiumLoginReader.ImportError)?.type != .userDeniedKeychainPrompt {
+            let importNewTabShortcuts = featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport)
 
             try updateProgress(.importingBookmarks(numberOfBookmarks: nil, fraction: passwordsFraction + 0.0))
 
             let bookmarkReader = ChromiumBookmarksReader(chromiumDataDirectoryURL: profile.profileURL)
-            let bookmarkResult = bookmarkReader.readBookmarks()
+            var bookmarkResult = bookmarkReader.readBookmarks()
+            if importNewTabShortcuts {
+                bookmarkResult = bookmarkResult.map { bookmarks in
+                    let newTabShortcuts = fetchShortcutsAsFavorites()
+                    return FavoritesUtils.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: newTabShortcuts)
+                }
+            }
 
             try updateProgress(.importingBookmarks(numberOfBookmarks: try? bookmarkResult.get().numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 0.5))
 
             let bookmarksSummary = bookmarkResult.map { bookmarks in
-                if featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport) {
-                    let newTabShortcuts = fetchShortcutsAsFavorites()
-                    let mergedBookmarks = FavoritesUtils.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: newTabShortcuts)
-                    return bookmarkImporter.importBookmarks(mergedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: false)
-                } else {
-                    return bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true)
-                }
+                bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: !importNewTabShortcuts)
             }
 
             if case .success = bookmarksSummary {

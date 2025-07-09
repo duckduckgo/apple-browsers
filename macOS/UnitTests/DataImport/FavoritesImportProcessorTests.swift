@@ -1,5 +1,5 @@
 //
-//  FavoritesUtilsTests.swift
+//  FavoritesImportProcessorTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,14 +19,14 @@
 import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
-struct FavoritesUtilsTests {
+struct FavoritesImportProcessorTests {
 
     @Test("Check if mergeBookmarksAndFavorites returns the provided bookmarks when no favorites are provided")
     func mergeBookmarksAndFavorites_ReturnsBookmarks_WhenFavoritesEmpty() {
         let bookmarks = createMockImportedBookmarks()
         let favorites: [ImportedBookmarks.BookmarkOrFolder] = []
 
-        let result = FavoritesUtils.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: favorites)
+        let result = FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: favorites)
 
         #expect(result == bookmarks)
     }
@@ -41,7 +41,7 @@ struct FavoritesUtilsTests {
         let bookmarkBarBookmark = try #require(bookmarks.topLevelFolders.bookmarkBar?.children?.first)
         try #require(bookmarkBarBookmark.isDDGFavorite == false)
 
-        let result = FavoritesUtils.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: [favorite])
+        let result = FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: [favorite])
 
         #expect(result.numberOfBookmarks == 2)
         let bookmarkBarBookmarkResult = try #require(result.topLevelFolders.bookmarkBar?.children?.first)
@@ -58,7 +58,7 @@ struct FavoritesUtilsTests {
         try #require(bookmarks.numberOfBookmarks == 2)
         try #require(bookmarks.topLevelFolders.bookmarkBar?.children?.count == 2)
 
-        let result = FavoritesUtils.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: [favorite1, favorite2])
+        let result = FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: [favorite1, favorite2])
 
         #expect(result.numberOfBookmarks == 3)
         #expect(result.topLevelFolders.bookmarkBar?.children?.count == 3)

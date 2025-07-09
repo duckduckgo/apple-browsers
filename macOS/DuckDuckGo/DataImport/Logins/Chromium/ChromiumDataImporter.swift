@@ -107,7 +107,7 @@ internal class ChromiumDataImporter: DataImporter {
             if importNewTabShortcuts {
                 bookmarkResult = bookmarkResult.map { bookmarks in
                     let newTabShortcuts = fetchShortcutsAsFavorites()
-                    return FavoritesUtils.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: newTabShortcuts)
+                    return FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: bookmarks, favorites: newTabShortcuts)
                 }
             }
 

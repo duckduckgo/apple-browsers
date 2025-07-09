@@ -1,5 +1,5 @@
 //
-//  FavoritesUtils.swift
+//  FavoritesImportProcessor.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-enum FavoritesUtils {
+enum FavoritesImportProcessor {
 
     /// Merges imported bookmarks with the provided array of favorites, marking bookmarks with matching URLs as favorites.
     /// Any favorites not matching existing bookmarks will be added to the bookmark bar.

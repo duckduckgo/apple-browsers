@@ -414,13 +414,13 @@ final class AutofillLoginListViewController: UIViewController {
         }
     }
 
-    private func segueToFileImport() {
+    private func segueToFileImport(source: DataImportViewModel.ImportScreen = DataImportViewModel.ImportScreen.passwords) {
         let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: favoritesDisplayMode,
                                                   tld: tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
-                                                                importScreen: DataImportViewModel.ImportScreen.passwords,
+                                                                importScreen: source,
                                                                 syncService: syncService,
                                                                 keyValueStore: keyValueStore)
         dataImportViewController.delegate = self

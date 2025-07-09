@@ -35,7 +35,7 @@ struct DataImportView: View {
                 switch viewModel.state.importScreen {
                 case .bookmarks:
                     BookmarksInstructions(viewModel: viewModel)
-                case .passwords, .settings:
+                case .passwords, .settings, .promo:
                     PasswordFooterView()
                     PasswordsInstructions(viewModel: viewModel)
                 }

@@ -55,16 +55,14 @@ class BookmarksMigrationTests: XCTestCase {
     var sourceStack: NSPersistentContainer!
 
     override func setUp() async throws {
-        try await super.setUp()
-
         destinationStack = MockBookmarksDatabase.make(prepareFolderStructure: false)
         sourceStack = CoreData.legacyBookmarkContainer()
     }
 
     override func tearDown() async throws {
-        try await super.tearDown()
-
         try destinationStack.tearDown(deleteStores: true)
+        destinationStack = nil
+        sourceStack = nil
     }
 
     private func url(for title: String) -> URL {

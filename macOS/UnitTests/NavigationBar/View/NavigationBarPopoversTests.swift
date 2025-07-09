@@ -43,6 +43,11 @@ final class NavigationBarPopoversTests: XCTestCase {
         )
     }
 
+    override func tearDown() {
+        autofillPopoverPresenter = nil
+        sut = nil
+    }
+
     func testSetsPasswordPopoverDomainOnPopover() throws {
         // Given
         let domain = "test"

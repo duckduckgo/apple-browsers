@@ -32,6 +32,10 @@ final class DataImportViewModelTests: XCTestCase {
 
     var model: DataImportViewModel!
 
+    override var allowedNonNilVariables: Set<String> {
+        ["bookmarksResults", "passwordsResults"]
+    }
+
     override func tearDown() {
         model = nil
         importTask = nil

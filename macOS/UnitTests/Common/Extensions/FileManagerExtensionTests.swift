@@ -27,6 +27,10 @@ class FileManagerExtensionTests: XCTestCase {
     let testData = "test".data(using: .utf8)!
     let fm = FileManager.default
 
+    override var allowedNonNilVariables: Set<String> {
+        ["fm"]
+    }
+
     func testWhenItemMovedToSameURLIncrementingIndexThenNoErrorIsThrown() {
         let srcURL = fm.temporaryDirectory.appendingPathComponent(testFile)
         try? testData.write(to: srcURL)

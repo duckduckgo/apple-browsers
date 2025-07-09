@@ -27,12 +27,18 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
     private var store: MockRemoteMessagingStore!
     var message: RemoteMessageModel!
 
-    override func setUpWithError() throws {
+    override func setUp() {
         store = MockRemoteMessagingStore()
         message = RemoteMessageModel(
             id: "1",
             content: .small(titleText: "test", descriptionText: "desc"), matchingRules: [], exclusionRules: [], isMetricsEnabled: false
         )
+    }
+
+    override func tearDown() {
+        model = nil
+        store = nil
+        message = nil
     }
 
     func testWhenNoMessageIsScheduledThenRemoteMessageIsNil() throws {

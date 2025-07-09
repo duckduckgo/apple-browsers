@@ -67,6 +67,10 @@ final class DataImportProviderTests: XCTestCase {
         provider = BookmarksAndPasswordsImportStatusProvider(secureVault: vault, bookmarkManager: bookmarkManager)
     }
 
+    override var allowedNonNilVariables: Set<String> {
+        ["importedAccounts", "importedCards", "importedIdentities", "importedNotes", "notImportedAccounts", "notImportedIdentities"]
+    }
+
     override func tearDown() {
         vault = nil
         bookmarkManager = nil

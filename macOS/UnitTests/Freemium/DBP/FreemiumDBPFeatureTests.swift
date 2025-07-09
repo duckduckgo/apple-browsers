@@ -69,7 +69,14 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         testUserDefaults.removeObject(forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
         testUserDefaults.removeObject(forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride)
         testUserDefaults = nil
-        try super.tearDownWithError()
+        cancellables.removeAll()
+        mockAccountManager = nil
+        mockFeatureDisabler = nil
+        mockFreemiumDBPUserStateManagerManager = nil
+        mockPrivacyConfigurationManager = nil
+        mockStorePurchaseManager = nil
+        mockSubscriptionManager = nil
+        sut = nil
     }
 
     func testWhenPrivacyProNotAvailable_thenFreemiumDBPIsNotAvailable() throws {

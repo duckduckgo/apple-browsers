@@ -56,6 +56,7 @@ final class MaliciousSiteProtectionTests: XCTestCase {
         mockDetector = nil
         dataManager = nil
         featureFlagger = nil
+        apiService = nil
     }
 
     func testDidLoadAndStartDataActivities() async {

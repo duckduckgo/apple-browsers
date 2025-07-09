@@ -50,12 +50,17 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         )
     }
 
+    override var allowedNonNilVariables: Set<String> {
+        ["notificationCenter"]
+    }
+
     override func tearDownWithError() throws {
         sut = nil
         mockUserStateManager = nil
         mockFeature = nil
         mockPresenter = nil
         mockPixelHandler = nil
+        cancellables = []
     }
 
     func testInitialPromotionVisibility_whenFeatureIsAvailable_andNotDismissed() {
@@ -90,6 +95,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertFalse(sut.isHomePagePromotionVisible)
     }
 
+    @MainActor
     func testProceedAction_dismissesPromotion_callsShowFreemium_andFiresPixel() async throws {
         // Given
         try await waitForViewModelUpdate {
@@ -107,9 +113,8 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabScanClick)
     }
 
+    @MainActor
     func testCloseAction_dismissesPromotion_andFiresPixel() async throws {
-        throw XCTSkip("Flaky")
-
         // When
         let viewModel = try await waitForViewModelUpdate(for: 3)
         viewModel?.closeAction()
@@ -119,6 +124,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabScanDismiss)
     }
 
+    @MainActor
     func testProceedAction_dismissesResults_callsShowFreemium_andFiresPixel() async throws {
         // Given
         try await waitForViewModelUpdate {
@@ -136,6 +142,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabResultsClick)
     }
 
+    @MainActor
     func testCloseAction_dismissesResults_andFiresPixel() async throws {
         // Given
         try await waitForViewModelUpdate {
@@ -151,7 +158,10 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabResultsDismiss)
     }
 
+    @MainActor
     func testProceedAction_dismissesNoResults_callsShowFreemium_andFiresPixel() async throws {
+        throw XCTSkip("Flaky")
+
         // Given
         try await waitForViewModelUpdate {
             mockUserStateManager.didActivate = false
@@ -168,8 +178,8 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabNoResultsClick)
     }
 
+    @MainActor
     func testCloseAction_dismissesNoResults_andFiresPixel() async throws {
-        throw XCTSkip("Flaky")
         // Given
         try await waitForViewModelUpdate {
             mockUserStateManager.firstScanResults = FreemiumDBPMatchResults(matchesCount: 0, brokerCount: 0)
@@ -184,6 +194,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabNoResultsDismiss)
     }
 
+    @MainActor
     func testViewModel_whenResultsExist_withMatches() async throws {
         // Given
         try await waitForViewModelUpdate {
@@ -197,6 +208,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertEqual(viewModel?.description, UserText.homePagePromotionFreemiumDBPPostScanEngagementResultPluralDescription(resultCount: 5, brokerCount: 2))
     }
 
+    @MainActor
     func testViewModel_whenNoResultsExist() async throws {
         // Given
         let viewModel = try await waitForViewModelUpdate {
@@ -207,6 +219,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         XCTAssertEqual(viewModel?.description, UserText.homePagePromotionFreemiumDBPDescriptionMarkdown)
     }
 
+    @MainActor
     func testViewModel_whenFeatureNotEnabled() async throws {
         // Given
         try await waitForViewModelUpdate {
@@ -357,7 +370,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
      * then calls the provided `block`, enables home page promotion and waits for time specified by `duration`
      * before cancelling the subscription.
      */
-    @discardableResult
+    @discardableResult @MainActor
     private func waitForViewModelUpdate(for duration: TimeInterval = 1, _ block: () async -> Void = {}) async throws -> PromotionViewModel? {
         let expectation = self.expectation(description: "viewModelUpdate")
         let cancellable = sut.$viewModel.dropFirst().prefix(1).sink { _ in expectation.fulfill() }

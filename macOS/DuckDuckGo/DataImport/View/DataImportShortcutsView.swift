@@ -40,7 +40,7 @@ struct DataImportShortcutsView: ModalView {
             VStack(spacing: 0) {
                 if let dataTypes = model.dataTypes, dataTypes.contains(.bookmarks), OnboardingActionsManager.isOnboardingFinished {
 
-                    importShortcutsRow(image: NSApp.delegateTyped.visualStyle.isNewStyle ? Image(nsImage: DesignSystemImages.Color.Size24.bookmarkFavorite) : Image(.bookmarksFavoritesColor24),
+                    importShortcutsRow(image: Image(nsImage: DesignSystemImages.Color.Size24.bookmarkFavorite),
                                        title: UserText.importShortcutsBookmarksTitle,
                                        subtitle: UserText.importShortcutsBookmarksSubtitle,
                                        isOn: $model.showBookmarksBarStatus)

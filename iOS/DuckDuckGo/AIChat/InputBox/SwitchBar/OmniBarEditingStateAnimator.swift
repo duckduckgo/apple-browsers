@@ -75,8 +75,11 @@ final class OmniBarEditingStateAnimator {
 
         guard let transitionDelegate else { return }
 
-        topSwitchBarConstraint = transitionDelegate.switchBarVC.view.topAnchor.constraint(equalTo: transitionDelegate.rootView.topAnchor,
-                                                                                          constant: expectedStartFrame.minY)
+        topSwitchBarConstraint = transitionDelegate.switchBarVC.view.topAnchor.constraint(
+            equalTo: transitionDelegate.rootView.safeAreaLayoutGuide.topAnchor,
+            constant: 8
+        )
+
         topSwitchBarConstraint?.isActive = true
         transitionDelegate.switchBarVC.setExpanded(false)
         transitionDelegate.switchBarVC.view.alpha = 0.0

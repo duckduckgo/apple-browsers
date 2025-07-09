@@ -75,15 +75,23 @@ public final class CrashCollection {
                 .compactMap(\.crashDiagnostics)
                 .flatMap { $0 }
                 .map { diagnostic in
+
                     var params = [
                         "appVersion": "\(diagnostic.applicationVersion).\(diagnostic.metaData.applicationBuildVersion)",
-                        "bundle": diagnostic.metaData.dictionaryRepresentation()["bundleIdentifier"] as? String ?? "",
                         "code": "\(diagnostic.exceptionCode ?? -1)",
                         "type": "\(diagnostic.exceptionType ?? -1)",
                         "signal": "\(diagnostic.signal ?? -1)",
                     ]
                     if first {
                         params["first"] = "1"
+                    }
+
+                    let metadataString = String(data: diagnostic.metaData.jsonRepresentation(), encoding: .utf8)
+                    let regex = regex(#""bundleIdentifier"\s*:\s*"([^"]+)""#)
+                    if let metadataString,
+                       let match = metadataString.firstMatch(of: regex), match.numberOfRanges > 1,
+                       let range = Range(match.range(at: 1), in: metadataString){
+                        params["bundle"] = String(metadataString[range])
                     }
                     return params
                 }

@@ -187,17 +187,28 @@ class SwitchBarViewController: UIViewController {
         let newMode: TextEntryMode = pickerItems.first == selectedItem ? .search : .aiChat
         switchBarHandler.setToggleState(newMode)
     }
+    
+    // MARK: - Scroll Progress
+    func updateScrollProgress(_ progress: CGFloat) {
+        pickerState?.updateScrollProgress(progress)
+    }
 }
 
 private class PickerState: ObservableObject {
     @Published var selectedItem: ImageSegmentedPickerItem
+    @Published var scrollProgress: CGFloat?
     let items: [ImageSegmentedPickerItem]
     let onSelectionChanged: (ImageSegmentedPickerItem) -> Void
 
     init(items: [ImageSegmentedPickerItem], initialSelection: ImageSegmentedPickerItem, onSelectionChanged: @escaping (ImageSegmentedPickerItem) -> Void) {
         self.items = items
         self.selectedItem = initialSelection
+        self.scrollProgress = nil
         self.onSelectionChanged = onSelectionChanged
+    }
+    
+    func updateScrollProgress(_ progress: CGFloat) {
+        scrollProgress = progress
     }
 }
 
@@ -208,6 +219,7 @@ private struct PickerWrapper: View {
         ImageSegmentedPickerView(
             items: state.items,
             selectedItem: $state.selectedItem,
+            scrollProgress: state.scrollProgress
         )
         .frame(width: 230)
         .onChange(of: state.selectedItem) { newItem in

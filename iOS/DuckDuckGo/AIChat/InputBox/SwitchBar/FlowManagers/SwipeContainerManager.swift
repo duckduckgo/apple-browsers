@@ -24,6 +24,7 @@ import Combine
 /// Protocol for handling swipe container events
 protocol SwipeContainerManagerDelegate: AnyObject {
     func swipeContainerManager(_ manager: SwipeContainerManager, didSwipeToMode mode: TextEntryMode)
+    func swipeContainerManager(_ manager: SwipeContainerManager, didUpdateScrollProgress progress: CGFloat)
 }
 
 /// Manages the horizontal swipe container with pagination between search and AI chat modes
@@ -35,6 +36,12 @@ final class SwipeContainerManager: NSObject {
     
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
+    
+    // MARK: - Scroll Progress
+    @Published private(set) var scrollProgress: CGFloat = 0.0
+    var scrollProgressPublisher: AnyPublisher<CGFloat, Never> {
+        $scrollProgress.eraseToAnyPublisher()
+    }
     
     // MARK: - UI Elements
     
@@ -142,11 +149,25 @@ final class SwipeContainerManager: NSObject {
         let targetX: CGFloat = switchBarHandler.currentToggleState == .search ? 0 : parentView.bounds.width
         swipeScrollView.setContentOffset(CGPoint(x: targetX, y: 0), animated: animated)
     }
+    
+    private func updateScrollProgress(_ progress: CGFloat) {
+        scrollProgress = progress
+        delegate?.swipeContainerManager(self, didUpdateScrollProgress: progress)
+    }
 }
 
 // MARK: - UIScrollViewDelegate
 
 extension SwipeContainerManager: UIScrollViewDelegate {
+    
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let pageWidth = scrollView.frame.width
+        guard pageWidth > 0 else { return }
+        
+        // Calculate progress (0 = search, 1 = aiChat)
+        let progress = max(0, min(1, scrollView.contentOffset.x / pageWidth))
+        updateScrollProgress(progress)
+    }
     
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         let pageWidth = scrollView.frame.width

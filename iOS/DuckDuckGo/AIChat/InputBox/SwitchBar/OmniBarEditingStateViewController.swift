@@ -254,6 +254,11 @@ extension OmniBarEditingStateViewController: SwipeContainerManagerDelegate {
     func swipeContainerManager(_ manager: SwipeContainerManager, didSwipeToMode mode: TextEntryMode) {
         switchBarHandler.setToggleState(mode)
     }
+    
+    func swipeContainerManager(_ manager: SwipeContainerManager, didUpdateScrollProgress progress: CGFloat) {
+        // Forward the scroll progress to the switch bar to animate the toggle
+        switchBarVC.updateScrollProgress(progress)
+    }
 }
 
 // MARK: - SuggestionTrayManagerDelegate

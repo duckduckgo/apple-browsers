@@ -96,6 +96,7 @@ public struct ImageSegmentedPickerView: View {
     let items: [ImageSegmentedPickerItem]
     @Binding var selectedItem: ImageSegmentedPickerItem
     let configuration: ImageSegmentedPickerConfiguration
+    let scrollProgress: CGFloat?
 
     @State private var currentOffset: CGFloat = 0
 
@@ -105,14 +106,17 @@ public struct ImageSegmentedPickerView: View {
     ///   - items: An array of items to display in the picker.
     ///   - selectedItem: A binding to the currently selected item.
     ///   - configuration: The configuration for customizing the picker's appearance. Defaults to `ImageSegmentedPickerConfiguration()`.
+    ///   - scrollProgress: Optional scroll progress (0-1) to animate the toggle indicator alongside a scroll view. When provided, the indicator will interpolate between positions based on this progress.
     public init(
         items: [ImageSegmentedPickerItem],
         selectedItem: Binding<ImageSegmentedPickerItem>,
-        configuration: ImageSegmentedPickerConfiguration = ImageSegmentedPickerConfiguration()
+        configuration: ImageSegmentedPickerConfiguration = ImageSegmentedPickerConfiguration(),
+        scrollProgress: CGFloat? = nil
     ) {
         self.items = items
         self._selectedItem = selectedItem
         self.configuration = configuration
+        self.scrollProgress = scrollProgress
     }
 
     public var body: some View {
@@ -127,12 +131,23 @@ public struct ImageSegmentedPickerView: View {
                     .offset(x: currentOffset)
                     .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 0.5, x: 0, y: 0.5)
                     .onAppear {
-                        currentOffset = selectedOffset(geometry: geometry)
+                        currentOffset = calculateCurrentOffset(geometry: geometry)
                     }
                     .onChange(of: selectedItem.id) { _ in
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            currentOffset = selectedOffset(geometry: geometry)
+                        // Only animate on selection change if not controlled by scroll progress
+                        if scrollProgress == nil {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                currentOffset = calculateCurrentOffset(geometry: geometry)
+                            }
+                        } else {
+                            // Update immediately without animation when controlled by scroll
+                            currentOffset = calculateCurrentOffset(geometry: geometry)
                         }
+                    }
+                    .onChange(of: scrollProgress) { _ in
+                        // Update offset based on scroll progress without animation
+                        // (the scroll animation provides the smooth transition)
+                        currentOffset = calculateCurrentOffset(geometry: geometry)
                     }
 
                 HStack(spacing: 0) {
@@ -153,24 +168,46 @@ public struct ImageSegmentedPickerView: View {
         .frame(height: Constants.outerHeight)
     }
 
-    private func selectedOffset(geometry: GeometryProxy) -> CGFloat {
-        let buttonWidth = geometry.size.width / CGFloat(items.count)
-        guard let selectedIndex = items.firstIndex(where: { $0.id == selectedItem.id }) else {
-            return 0
+    private func calculateCurrentOffset(geometry: GeometryProxy) -> CGFloat {
+        if let progress = scrollProgress {
+            return offsetForScrollProgress(progress, geometry: geometry)
+        } else {
+            return selectedOffset(geometry: geometry)
         }
+    }
 
-        let baseOffset = CGFloat(selectedIndex) * buttonWidth - (geometry.size.width / 2) + (buttonWidth / 2)
+    private func offsetForScrollProgress(_ progress: CGFloat, geometry: GeometryProxy) -> CGFloat {
+        guard items.count >= 2 else { return 0 }
+
+        let firstOffset = offsetForItemIndex(0, geometry: geometry)
+        let secondOffset = offsetForItemIndex(1, geometry: geometry)
+
+        // Interpolate between first and second positions based on scroll progress
+        return firstOffset + (secondOffset - firstOffset) * progress
+    }
+
+    private func offsetForItemIndex(_ index: Int, geometry: GeometryProxy) -> CGFloat {
+        let buttonWidth = geometry.size.width / CGFloat(items.count)
+        let baseOffset = CGFloat(index) * buttonWidth - (geometry.size.width / 2) + (buttonWidth / 2)
 
         let paddingAdjustment: CGFloat
-        if selectedIndex == 0 {
+        if index == 0 {
             paddingAdjustment = Constants.innerHorizontalPadding
-        } else if selectedIndex == items.count - 1 {
+        } else if index == items.count - 1 {
             paddingAdjustment = -Constants.innerHorizontalPadding
         } else {
             paddingAdjustment = 0
         }
 
         return baseOffset + paddingAdjustment
+    }
+
+    private func selectedOffset(geometry: GeometryProxy) -> CGFloat {
+        guard let selectedIndex = items.firstIndex(where: { $0.id == selectedItem.id }) else {
+            return 0
+        }
+
+        return offsetForItemIndex(selectedIndex, geometry: geometry)
     }
 
     private func isItemInSelectedArea(itemIndex: Int, geometry: GeometryProxy, currentOffset: CGFloat) -> Bool {
@@ -184,7 +221,14 @@ public struct ImageSegmentedPickerView: View {
         let itemLeft = CGFloat(itemIndex) * buttonWidth
         let itemRight = itemLeft + buttonWidth
 
-        return selectorLeft < itemRight && selectorRight > itemLeft
+        // Calculate the overlap between selector and item
+        let overlapLeft = max(selectorLeft, itemLeft)
+        let overlapRight = min(selectorRight, itemRight)
+        let overlapWidth = max(0, overlapRight - overlapLeft)
+
+        // Only consider item selected if overlay is more than 50% on top of it
+        let overlapPercentage = overlapWidth / selectorWidth
+        return overlapPercentage > 0.5
     }
 }
 
@@ -250,6 +294,31 @@ public struct ImageSegmentedPickerItem: Identifiable, Hashable {
 // MARK: - View Modifiers for Convenience
 
 public extension ImageSegmentedPickerView {
+    /// Creates a scroll-controlled image segmented picker view.
+    ///
+    /// This convenience method creates a picker that updates its indicator position
+    /// based on scroll progress, making it appear connected to a UIScrollView.
+    ///
+    /// - Parameters:
+    ///   - items: An array of items to display in the picker.
+    ///   - selectedItem: A binding to the currently selected item.
+    ///   - scrollProgress: The scroll progress (0-1) that controls the indicator position.
+    ///   - configuration: The configuration for customizing the picker's appearance.
+    /// - Returns: A scroll-controlled picker view.
+    static func scrollControlled(
+        items: [ImageSegmentedPickerItem],
+        selectedItem: Binding<ImageSegmentedPickerItem>,
+        scrollProgress: CGFloat,
+        configuration: ImageSegmentedPickerConfiguration = ImageSegmentedPickerConfiguration()
+    ) -> ImageSegmentedPickerView {
+        return ImageSegmentedPickerView(
+            items: items,
+            selectedItem: selectedItem,
+            configuration: configuration,
+            scrollProgress: scrollProgress
+        )
+    }
+
     /// Sets the font for the picker's text labels.
     ///
     /// - Parameter font: The font to apply to text labels.
@@ -260,7 +329,8 @@ public extension ImageSegmentedPickerView {
         return ImageSegmentedPickerView(
             items: items,
             selectedItem: $selectedItem,
-            configuration: modifiedConfiguration
+            configuration: modifiedConfiguration,
+            scrollProgress: scrollProgress
         )
     }
 
@@ -277,7 +347,8 @@ public extension ImageSegmentedPickerView {
         return ImageSegmentedPickerView(
             items: items,
             selectedItem: $selectedItem,
-            configuration: modifiedConfiguration
+            configuration: modifiedConfiguration,
+            scrollProgress: scrollProgress
         )
     }
 
@@ -294,7 +365,8 @@ public extension ImageSegmentedPickerView {
         return ImageSegmentedPickerView(
             items: items,
             selectedItem: $selectedItem,
-            configuration: modifiedConfiguration
+            configuration: modifiedConfiguration,
+            scrollProgress: scrollProgress
         )
     }
 }
@@ -303,19 +375,20 @@ public extension ImageSegmentedPickerView {
 
 private struct ImageSegmentedPickerExample: View {
     @State private var selectedItem: ImageSegmentedPickerItem
+    @State private var scrollProgress: CGFloat = 0.0
     private let items: [ImageSegmentedPickerItem]
 
     init() {
         let defaultItems = [
             ImageSegmentedPickerItem(
-                text: "List",
-                selectedImage: Image(systemName: "list.bullet"),
-                unselectedImage: Image(systemName: "list.bullet")
+                text: "Chat",
+                selectedImage: Image(systemName: "message.fill"),
+                unselectedImage: Image(systemName: "message")
             ),
             ImageSegmentedPickerItem(
-                text: "Grid",
-                selectedImage: Image(systemName: "square.grid.2x2.fill"),
-                unselectedImage: Image(systemName: "square.grid.2x2")
+                text: "Search",
+                selectedImage: Image(systemName: "magnifyingglass"),
+                unselectedImage: Image(systemName: "magnifyingglass")
             )
         ]
         self.items = defaultItems
@@ -336,20 +409,32 @@ private struct ImageSegmentedPickerExample: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Custom Configuration (via initializer)")
+                Text("Scroll-Controlled Toggle")
                     .font(.headline)
 
-                ImageSegmentedPickerView(
+                ImageSegmentedPickerView.scrollControlled(
                     items: items,
                     selectedItem: $selectedItem,
-                    configuration: ImageSegmentedPickerConfiguration(
-                        font: .system(size: 14, weight: .bold),
-                        selectedTextColor: .white,
-                        unselectedTextColor: .gray,
-                        backgroundColor: Color(UIColor.secondarySystemBackground),
-                        selectedBackgroundColor: .purple
-                    )
+                    scrollProgress: scrollProgress
                 )
+                .padding(.horizontal)
+
+                // Simulate scroll progress with a slider
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Scroll Progress: \(scrollProgress, specifier: "%.2f")")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Slider(value: $scrollProgress, in: 0...1) {
+                        Text("Progress")
+                    }
+                    .onChange(of: scrollProgress) { progress in
+                        // Update selected item based on progress
+                        // This simulates what would happen in a real scroll view
+                        let newIndex = progress < 0.5 ? 0 : 1
+                        selectedItem = items[newIndex]
+                    }
+                }
                 .padding(.horizontal)
             }
 
@@ -370,23 +455,30 @@ private struct ImageSegmentedPickerExample: View {
                 .padding(.horizontal)
             }
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Dark Theme")
-                    .font(.headline)
+            Text("Usage with UIScrollView:")
+                .font(.headline)
+                .padding(.horizontal)
 
-                ImageSegmentedPickerView(
+            Text("""
+                // In your scroll view delegate:
+                func scrollViewDidScroll(_ scrollView: UIScrollView) {
+                    let progress = scrollView.contentOffset.x / scrollView.contentSize.width
+                    // Update your scroll progress state
+                }
+
+                // Then use:
+                ImageSegmentedPickerView.scrollControlled(
                     items: items,
                     selectedItem: $selectedItem,
-                    configuration: ImageSegmentedPickerConfiguration(
-                        font: .system(size: 15, weight: .medium, design: .rounded),
-                        selectedTextColor: .black,
-                        unselectedTextColor: Color(UIColor.systemGray3),
-                        backgroundColor: .black,
-                        selectedBackgroundColor: .white
-                    )
+                    scrollProgress: scrollProgress
                 )
+                """)
+                .font(.caption)
+                .foregroundColor(.secondary)
                 .padding(.horizontal)
-            }
+                .background(Color(UIColor.systemGray6))
+                .cornerRadius(8)
+                .padding(.horizontal)
 
             Spacer()
         }

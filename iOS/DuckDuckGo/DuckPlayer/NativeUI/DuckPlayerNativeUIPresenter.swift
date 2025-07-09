@@ -118,7 +118,13 @@ final class DuckPlayerNativeUIPresenter {
     internal var duckPlayerSettings: DuckPlayerSettings
 
     /// Current height of the OmniBar
-    private var omniBarHeight: CGFloat = 0
+    private var omniBarHeight: CGFloat = DefaultOmniBarView.expectedHeight
+    
+    /// Gets the address bar height using the expected height from OmniBarView
+    private func getAddressBarHeight() -> CGFloat {
+        // Use the expected height from the OmniBar instead of dynamic height
+        return omniBarHeight > 0 ? omniBarHeight : DefaultOmniBarView.expectedHeight
+    }
 
     /// Bottom constraint for the container view
     private(set) var bottomConstraint: NSLayoutConstraint?
@@ -164,13 +170,11 @@ final class DuckPlayerNativeUIPresenter {
         setupNotificationObservers(notificationCenter: notificationCenter)
     }
 
-    // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
-    // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
     private func setupNotificationObservers(notificationCenter: NotificationCenter) {
         notificationCenter.addObserver(
             self,
-            selector: #selector(handleOmnibarDidLayout),
-            name: DefaultOmniBarView.didLayoutNotification,
+            selector: #selector(handleAddressBarPositionChanged),
+            name: AppUserDefaults.Notifications.addressBarPositionChanged,
             object: nil
         )
 
@@ -191,17 +195,21 @@ final class DuckPlayerNativeUIPresenter {
             .store(in: &cancellables)
     }
 
-    /// Updates the UI based on Ombibar Notification
-    @objc func handleOmnibarDidLayout(_ notification: Notification) {
-        guard let height = notification.object as? CGFloat else { return }
-        omniBarHeight = height
-        
+    /// Updates the UI based on address bar position change
+    @objc func handleAddressBarPositionChanged(_ notification: Notification) {
+        updatePillBottomConstraint()
+    }
+    
+    /// Updates the pill's bottom constraint based on address bar position
+    private func updatePillBottomConstraint() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self,
                   let bottomConstraint = self.bottomConstraint else { return }
-            // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
-            // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
-            bottomConstraint.constant = self.appSettings.currentAddressBarPosition == .bottom ? -height : 0
+            
+            let addressBarPosition = self.appSettings.currentAddressBarPosition
+            let omniBarHeight = self.omniBarHeight
+            
+            bottomConstraint.constant = addressBarPosition == .bottom ? -omniBarHeight : 0
         }
     }
 
@@ -586,11 +594,12 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Add to host view
         hostView.view.addSubview(hostingController.view)
 
-        // Calculate bottom constraints based on URL Bar position
+        // Calculate bottom constraints based on address bar position
         // If at the bottom, the Container should be placed above it
+        let addressBarHeight = getAddressBarHeight()
         let newBottomConstraint =
             appSettings.currentAddressBarPosition == .bottom
-            ? hostingController.view.bottomAnchor.constraint(equalTo: hostView.view.bottomAnchor, constant: -omniBarHeight)
+            ? hostingController.view.bottomAnchor.constraint(equalTo: hostView.view.bottomAnchor, constant: -addressBarHeight)
             : hostingController.view.bottomAnchor.constraint(equalTo: hostView.view.bottomAnchor)
         
         bottomConstraint = newBottomConstraint
@@ -603,6 +612,9 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // Store reference to the hosting controller
         containerViewController = hostingController
+        
+        // Initialize pill position based on current address bar position
+        updatePillBottomConstraint()
 
         // Subscribe to the sheet animation completed event
         containerViewModel.$sheetAnimationCompleted.sink { [weak self, weak containerViewModel] completed in

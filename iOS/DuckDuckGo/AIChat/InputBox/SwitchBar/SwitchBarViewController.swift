@@ -58,7 +58,6 @@ class SwitchBarViewController: UIViewController {
     ]
     
     private var pickerViewModel: ImageSegmentedPickerViewModel!
-    private var onSelectionChanged: ((ImageSegmentedPickerItem) -> Void)?
 
     // MARK: - Initialization
     init(switchBarHandler: SwitchBarHandling) {
@@ -75,10 +74,6 @@ class SwitchBarViewController: UIViewController {
             configuration: ImageSegmentedPickerConfiguration(),
             scrollProgress: nil
         )
-        
-        self.onSelectionChanged = { [weak self] selectedItem in
-            self?.segmentedPickerSelectionChanged(selectedItem)
-        }
     }
 
     required init?(coder: NSCoder) {
@@ -110,6 +105,15 @@ class SwitchBarViewController: UIViewController {
                 self.updateLayouts()
             }
             .store(in: &cancellables)
+        
+        // Listen for picker selection changes to notify SwipeContainerManager
+        pickerViewModel.$selectedItem
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] selectedItem in
+                guard let self = self else { return }
+                self.segmentedPickerSelectionChanged(selectedItem)
+            }
+            .store(in: &cancellables)
     }
 
     private func updateLayouts() {
@@ -128,8 +132,7 @@ class SwitchBarViewController: UIViewController {
         view.backgroundColor = UIColor.systemBackground
         
         let pickerWrapper = PickerWrapper(
-            viewModel: pickerViewModel,
-            onSelectionChanged: onSelectionChanged
+            viewModel: pickerViewModel
         )
         let hostingController = UIHostingController(rootView: pickerWrapper)
         segmentedPickerHostingController = hostingController
@@ -198,18 +201,13 @@ class SwitchBarViewController: UIViewController {
 
 private struct PickerWrapper: View {
     @ObservedObject var viewModel: ImageSegmentedPickerViewModel
-    let onSelectionChanged: ((ImageSegmentedPickerItem) -> Void)?
 
-    init(viewModel: ImageSegmentedPickerViewModel, onSelectionChanged: ((ImageSegmentedPickerItem) -> Void)?) {
+    init(viewModel: ImageSegmentedPickerViewModel) {
         self.viewModel = viewModel
-        self.onSelectionChanged = onSelectionChanged
     }
 
     var body: some View {
         ImageSegmentedPickerView(viewModel: viewModel)
             .frame(width: 230)
-            .onChange(of: viewModel.selectedItem) { newItem in
-                onSelectionChanged?(newItem)
-            }
     }
 }

@@ -90,6 +90,7 @@ public class ImageSegmentedPickerViewModel: ObservableObject {
     /// - Parameter item: The item to select.
     public func selectItem(_ item: ImageSegmentedPickerItem) {
         selectedItem = item
+        print("SELECTED ITEM \(item.text)")
     }
 
     /// Updates the scroll progress.
@@ -161,7 +162,7 @@ public struct ImageSegmentedPickerView: View {
                     .onAppear {
                         currentOffset = calculateCurrentOffset(geometry: geometry)
                     }
-                    .onChange(of: viewModel.selectedItem.id) { _ in
+                    .onChange(of: viewModel.selectedItem) { _ in
                         if viewModel.scrollProgress == nil {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 currentOffset = calculateCurrentOffset(geometry: geometry)

@@ -51,7 +51,7 @@ struct DataImportShortcutsView: ModalView {
                         .padding(.leading)
                 }
 
-                importShortcutsRow(image: NSApp.delegateTyped.visualStyle.isNewStyle ? Image(nsImage: DesignSystemImages.Color.Size24.key) : Image(.keyColor24),
+                importShortcutsRow(image: Image(nsImage: DesignSystemImages.Color.Size24.key),
                                    title: UserText.importShortcutsPasswordsTitle,
                                    subtitle: UserText.importShortcutsPasswordsSubtitle,
                                    isOn: $model.showPasswordsPinnedStatus)

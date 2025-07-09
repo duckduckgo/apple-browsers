@@ -200,15 +200,12 @@ final class DuckPlayerNativeUIPresenter {
     
     /// Updates the pill's bottom constraint based on the current address bar position
     private func updatePillBottomConstraint() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self,
-                  let bottomConstraint = self.bottomConstraint else { return }
-            
-            let addressBarPosition = self.appSettings.currentAddressBarPosition
-            
-            // Position pill above address bar when it's at bottom, or at screen bottom when address bar is at top
-            bottomConstraint.constant = addressBarPosition == .bottom ? -DefaultOmniBarView.expectedHeight : 0
-        }
+        guard let bottomConstraint = self.bottomConstraint else { return }
+        
+        let addressBarPosition = self.appSettings.currentAddressBarPosition
+        
+        // Position pill above address bar when it's at bottom, or at screen bottom when address bar is at top
+        bottomConstraint.constant = addressBarPosition == .bottom ? -DefaultOmniBarView.expectedHeight : 0
     }
 
         /// Updates the UI based on Ombibar Notification

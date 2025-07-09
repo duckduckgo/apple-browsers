@@ -592,9 +592,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar),
-              aiChatMenuConfig.shouldDisplayAddressBarShortcut,
-              !(tabViewModel?.tab.url?.isDuckAIURL ?? false) else {
+        // Early return if AI Chat sidebar feature is not enabled or not configured to show
+        guard shouldShowAskAIChatButton() else {
             askAIChatButton.isHidden = true
             updateAIChatDividerVisibility()
             return
@@ -605,20 +604,25 @@ final class AddressBarButtonsViewController: NSViewController {
             return aiChatSidebarPresenter.isSidebarOpen(for: tabID)
         }()
 
-        func shouldExpandButton() -> Bool {
-            guard isTextFieldEditorFirstResponder,
-                  !isSidebarOpen,
-                  let textFieldValue,
-                  !textFieldValue.isEmpty,
-                  textFieldValue.isUserTyped || textFieldValue.isSuggestion
-            else {
-                return false
-            }
-            return true
+        updateAIChatButtonVisibilityForTextFieldState()
+        updateAIChatDividerVisibility()
+
+        if shouldExpandAskAIChatButton(isSidebarOpen: isSidebarOpen) {
+            expandAskAIChatButton()
+        } else {
+            contractAskAIChatButton(isSidebarOpen: isSidebarOpen)
         }
+    }
 
-        var targetWidth: CGFloat
+    // MARK: - Ask AI Chat Button Helper Methods
 
+    private func shouldShowAskAIChatButton() -> Bool {
+        return featureFlagger.isFeatureOn(.aiChatSidebar) &&
+               aiChatMenuConfig.shouldDisplayAddressBarShortcut &&
+               !(tabViewModel?.tab.url?.isDuckAIURL ?? false)
+    }
+
+    private func updateAIChatButtonVisibilityForTextFieldState() {
         if isTextFieldEditorFirstResponder {
             aiChatButton.isHidden = true
             askAIChatButton.isHidden = false
@@ -626,67 +630,84 @@ final class AddressBarButtonsViewController: NSViewController {
             // aiChatButton visibility managed in updateAIChatButtonVisibility
             askAIChatButton.isHidden = true
         }
+    }
 
-        updateAIChatDividerVisibility()
+    private func shouldExpandAskAIChatButton(isSidebarOpen: Bool) -> Bool {
+        guard isTextFieldEditorFirstResponder,
+              !isSidebarOpen,
+              let textFieldValue = textFieldValue,
+              !textFieldValue.isEmpty,
+              textFieldValue.isUserTyped || textFieldValue.isSuggestion else {
+            return false
+        }
+        return true
+    }
 
-        if shouldExpandButton() {
-            guard !isAskAIChatButtonExpanded else {
-                // Ignore any subsequent calls
-                return
-            }
+    private func expandAskAIChatButton() {
+        guard !isAskAIChatButtonExpanded else {
+            // Ignore any subsequent calls to prevent duplicate animations
+            return
+        }
+        isAskAIChatButtonExpanded = true
 
-            isAskAIChatButtonExpanded = true
+        askAIChatButton.isEnabled = true
+        askAIChatButton.state = .off
+        askAIChatButton.backgroundColor = visualStyle.colorsProvider.fillButtonBackgroundColor
+        askAIChatButton.mouseOverColor = visualStyle.colorsProvider.fillButtonMouseOverColor
 
+        animateAskAIChatButtonExpansion()
+    }
+
+    private func contractAskAIChatButton(isSidebarOpen: Bool) {
+        askAIChatButton.backgroundColor = .clear
+        askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
+
+        if isSidebarOpen {
+            askAIChatButton.isEnabled = false
+            askAIChatButton.state = .on
+
+            isAskAIChatButtonExpanded = false
+            askAIChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        } else {
             askAIChatButton.isEnabled = true
             askAIChatButton.state = .off
 
-            // Calculate expanded button width
-            let fittingSize = askAIChatButton.sizeThatFits(CGSize(width: 1000, height: visualStyle.addressBarStyleProvider.addressBarButtonSize))
-            targetWidth = max(fittingSize.width, visualStyle.addressBarStyleProvider.addressBarButtonSize)
-
-            askAIChatButton.backgroundColor = visualStyle.colorsProvider.fillButtonBackgroundColor
-            askAIChatButton.mouseOverColor = visualStyle.colorsProvider.fillButtonMouseOverColor
-
-            // Animate button expanding
-            NSAnimationContext.runAnimationGroup { context in
-                context.allowsImplicitAnimation = true
-                context.duration = Constants.askAiChatButtonAnimationDuration
-                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-
-                askAIChatButtonWidthConstraint.animator().constant = targetWidth
+            guard isAskAIChatButtonExpanded else {
+                // Ignore any subsequent calls if button is already contracted
+                return
             }
-        } else {
-            askAIChatButton.backgroundColor = .clear
-            askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
 
-            if isSidebarOpen {
-                // Disabled state
-                askAIChatButton.isEnabled = false
-                askAIChatButton.state = .on
+            isAskAIChatButtonExpanded = false
+            animateAskAIChatButtonContraction()
+        }
+    }
 
-                isAskAIChatButtonExpanded = false
+    private func animateAskAIChatButtonExpansion() {
+        let targetWidth = calculateExpandedButtonWidth()
 
-                askAIChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
-            } else {
-                askAIChatButton.isEnabled = true
-                askAIChatButton.state = .off
+        NSAnimationContext.runAnimationGroup { context in
+            context.allowsImplicitAnimation = true
+            context.duration = Constants.askAiChatButtonAnimationDuration
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
 
-                guard isAskAIChatButtonExpanded else {
-                    // Ignore any subsequent calls
-                    return
-                }
+            askAIChatButtonWidthConstraint.animator().constant = targetWidth
+        }
+    }
 
-                isAskAIChatButtonExpanded = false
+    private func calculateExpandedButtonWidth() -> CGFloat {
+        let fittingSize = askAIChatButton.sizeThatFits(
+            CGSize(width: 1000, height: visualStyle.addressBarStyleProvider.addressBarButtonSize)
+        )
+        return max(fittingSize.width, visualStyle.addressBarStyleProvider.addressBarButtonSize)
+    }
 
-                // Animate button shrinking
-                NSAnimationContext.runAnimationGroup { context in
-                    context.allowsImplicitAnimation = true
-                    context.duration = Constants.askAiChatButtonAnimationDuration
-                    context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+    private func animateAskAIChatButtonContraction() {
+        NSAnimationContext.runAnimationGroup { context in
+            context.allowsImplicitAnimation = true
+            context.duration = Constants.askAiChatButtonAnimationDuration
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
 
-                    askAIChatButtonWidthConstraint.animator().constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
-                }
-            }
+            askAIChatButtonWidthConstraint.animator().constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         }
     }
 

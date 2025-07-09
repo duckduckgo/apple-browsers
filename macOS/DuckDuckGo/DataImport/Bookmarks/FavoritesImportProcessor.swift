@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 enum FavoritesImportProcessor {
 
     /// Merges imported bookmarks with the provided array of favorites, marking bookmarks with matching URLs as favorites.
@@ -24,7 +26,7 @@ enum FavoritesImportProcessor {
         guard !favorites.isEmpty else { return }
 
         let favoriteUrlIndices = favorites.reduce(into: [String: Int]()) { result, favorite in
-            guard let urlString = favorite.urlString else { return }
+            guard let urlString = favorite.url?.nakedString else { return }
             result[urlString] = favorite.favoritesIndex
         }
         var foundFavoriteUrls: Set<String> = []
@@ -47,7 +49,7 @@ enum FavoritesImportProcessor {
                     processFolder(&items[idx])
                     continue
                 }
-                guard let urlString = items[idx].urlString else { continue }
+                guard let urlString = items[idx].url?.nakedString else { continue }
                 if let favoriteIndex = favoriteUrlIndices[urlString] {
                     items[idx].isDDGFavorite = true
                     items[idx].favoritesIndex = favoriteIndex
@@ -60,7 +62,7 @@ enum FavoritesImportProcessor {
         processMaybeFolder(&bookmarks.topLevelFolders.syncedBookmarks)
 
         // Create bookmarks objects for favorite shortcuts that don't have matching bookmarks and add them to bookmark bar
-        let uniqueShortcuts = favorites.filter { !foundFavoriteUrls.contains($0.urlString ?? "") }
+        let uniqueShortcuts = favorites.filter { !foundFavoriteUrls.contains($0.url?.nakedString ?? "") }
         bookmarks.topLevelFolders.bookmarkBar?.children?.append(contentsOf: uniqueShortcuts) ?? {
             bookmarks.topLevelFolders.bookmarkBar = .folder(name: bookmarks.topLevelFolders.bookmarkBar?.name ?? "", children: uniqueShortcuts)
         }()

@@ -875,10 +875,10 @@ final class LocalBookmarkStore: BookmarkStore {
         let sortedFavorites = allFavorites.sorted { ($0.index ?? Int.max) < ($1.index ?? Int.max) }.map(\.bookmark)
 
         let favoritesFolders = BookmarkUtils.fetchFavoritesFolders(for: favoritesDisplayMode, in: context)
-        let existingFavoriteURLs = Set(favoritesFolders.flatMap { $0.favoritesArray }.compactMap { $0.url })
+        let existingFavoriteURLs = Set(favoritesFolders.flatMap { $0.favoritesArray }.compactMap { $0.urlObject?.naked })
 
         for bookmarkManagedObject in sortedFavorites {
-            guard let url = bookmarkManagedObject.url, !existingFavoriteURLs.contains(url) else { continue }
+            guard let url = bookmarkManagedObject.urlObject?.naked, !existingFavoriteURLs.contains(url) else { continue }
             bookmarkManagedObject.addToFavorites(folders: favoritesFolders)
         }
 

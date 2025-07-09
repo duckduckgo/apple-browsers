@@ -51,17 +51,21 @@ struct FavoritesImportProcessorTests {
     @Test("Check if mergeBookmarksAndFavorites adds unique favorites to the bookmark bar")
     func mergeBookmarksAndFavorites_AddsUniqueFavoritesToBookmarkBar() throws {
         var bookmarks = createMockImportedBookmarks()
-        let favorite1 = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil, isDDGFavorite: true, favoritesIndex: 0)
-        let favorite2 = ImportedBookmarks.BookmarkOrFolder(name: "Duck.ai", type: .bookmark, urlString: "https://duck.ai", children: nil, isDDGFavorite: true, favoritesIndex: 1)
+        let exactDuplicateFavorite = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil, isDDGFavorite: true, favoritesIndex: 0)
+        let approxDuplicateFavorite = ImportedBookmarks.BookmarkOrFolder(name: "Duck", type: .bookmark, urlString: "http://www.duck.com/", children: nil, isDDGFavorite: true, favoritesIndex: 1)
+        let uniqueFavorite = ImportedBookmarks.BookmarkOrFolder(name: "Duck.ai", type: .bookmark, urlString: "https://duck.ai", children: nil, isDDGFavorite: true, favoritesIndex: 2)
 
         // Check initial state
         try #require(bookmarks.numberOfBookmarks == 2)
         try #require(bookmarks.topLevelFolders.bookmarkBar?.children?.count == 2)
 
-        FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &bookmarks, favorites: [favorite1, favorite2])
+        FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &bookmarks, favorites: [exactDuplicateFavorite, approxDuplicateFavorite, uniqueFavorite])
 
         #expect(bookmarks.numberOfBookmarks == 3)
-        #expect(bookmarks.topLevelFolders.bookmarkBar?.children?.count == 3)
+        let bookmarkBarChildren = try #require(bookmarks.topLevelFolders.bookmarkBar?.children)
+        #expect(bookmarkBarChildren.count == 3)
+        #expect(bookmarkBarChildren.contains(approxDuplicateFavorite) == false)
+        #expect(bookmarkBarChildren.contains(uniqueFavorite) == true)
     }
 
     private func createMockImportedBookmarks() -> ImportedBookmarks {

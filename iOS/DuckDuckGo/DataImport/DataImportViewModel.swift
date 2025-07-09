@@ -317,7 +317,7 @@ final class DataImportViewModel: ObservableObject {
         case .html:
             fileName = UserText.dataImportFileTypeHtml
             Pixel.fire(pixel: .importResultBookmarksParsing, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
-        case .zip, .json:
+        case .zip:
             fileName = UserText.dataImportFileTypeZip
             Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
         case .json:

@@ -25,7 +25,6 @@ import Configuration
 enum GeneralPixel: PixelKitEventV2 {
 
     case crash(appIdentifier: String?)
-    case crashDaily(appIdentifier: String?)
     case crashOnCrashHandlersSetUp
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
@@ -523,13 +522,6 @@ enum GeneralPixel: PixelKitEventV2 {
                 return "m_mac_crash_\(appIdentifier)"
             } else {
                 return "m_mac_crash"
-            }
-
-        case .crashDaily(let appIdentifier):
-            if let appIdentifier {
-                return "m_mac_crash_\(appIdentifier)_daily"
-            } else {
-                return "m_mac_crash_daily"
             }
 
         case .crashOnCrashHandlersSetUp:

@@ -30,6 +30,7 @@ protocol CrashReport: CrashReportPresenting {
     static var fileExtension: String { get }
 
     var url: URL { get }
+    var bundleID: String? { get }
     var contentData: Data? { get }
     var appVersion: String? { get }
 }
@@ -52,6 +53,7 @@ final class LegacyCrashReport: CrashReport {
     }()
 
     let url: URL
+    var bundleID: String?
 
     init(url: URL) {
         self.url = url
@@ -97,6 +99,8 @@ final class JSONCrashReport: CrashReport {
         "deviceIdentifierForVendor",
         "rolloutId"
     ]
+
+    private static let bundleRegex = regex(#""bundleID"\s*:\s*"([^"]+)""#)
     private static let pidRegex = regex(#""pid"\s*:\s*(\d+)(?:,|$)"#)
     private static let timestampRegex = regex(#""timestamp"\s*:\s*"([^"]+)""#)
     private static let dateFormatter: DateFormatter = {
@@ -111,6 +115,16 @@ final class JSONCrashReport: CrashReport {
     init(url: URL) {
         self.url = url
     }
+
+    lazy var bundleID: String? = {
+        guard var fileContents = content else { return nil }
+
+        if let match = fileContents.firstMatch(of: Self.bundleRegex), match.numberOfRanges > 1,
+           let range = Range(match.range(at: 1), in: fileContents){
+            return String(fileContents[range])
+        }
+        return nil
+    }()
 
     lazy var content: String? = {
         guard var fileContents = try? String(contentsOf: self.url) else { return nil }

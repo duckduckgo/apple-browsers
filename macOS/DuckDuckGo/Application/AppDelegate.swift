@@ -905,8 +905,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
 
-                PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), withAdditionalParameters: parameters, includeAppVersionParameter: false)
-                PixelKit.fire(GeneralPixel.crashDaily(appIdentifier: appIdentifier), frequency: .legacyDailyNoSuffix, withAdditionalParameters: parameters, includeAppVersionParameter: false)
+                PixelKit.fire(
+                    GeneralPixel.crash(appIdentifier: appIdentifier),
+                    frequency: .dailyAndStandard,
+                    withAdditionalParameters: parameters,
+                    includeAppVersionParameter: false
+                )
             }
 
             guard let lastPayload = payloads.last else {

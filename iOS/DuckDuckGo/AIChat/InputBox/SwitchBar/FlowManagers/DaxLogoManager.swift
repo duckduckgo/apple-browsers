@@ -50,7 +50,6 @@ final class DaxLogoManager {
     
     // MARK: - Public Methods
     
-    /// Installs the Dax logo in the provided parent view controller
     func installInViewController(_ viewController: UIViewController) {
         let daxLogoView = NewTabPageDaxLogoView()
         let hostingController = UIHostingController(rootView: daxLogoView)
@@ -71,14 +70,11 @@ final class DaxLogoManager {
             hostingController.view.centerXAnchor.constraint(equalTo: viewController.view.centerXAnchor),
             logoCenterYConstraint!
         ])
-        
-        hostingController.didMove(toParent: viewController)
-        
-        // Send to back so it appears behind other views
+
         viewController.view.sendSubviewToBack(hostingController.view)
+        hostingController.didMove(toParent: viewController)
     }
     
-    /// Removes the Dax logo from its parent
     func removeFromParent() {
         daxLogoHostingController?.willMove(toParent: nil)
         daxLogoHostingController?.view.removeFromSuperview()

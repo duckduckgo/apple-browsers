@@ -626,6 +626,44 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(backgroundSchedulerMock.didCallCancelTaskRequestWithIdentifier)
     }
 
+    @MainActor
+    @Test(
+        "Test Background Task Is Not Executed If Fetch is In Progress",
+        arguments: [
+            DataManager.StoredDataType.Kind.hashPrefixSet,
+            .filterSet,
+        ]
+    )
+    func whenBackgroundFetchFiresAndUpdateIsInProgressSkipIt(datasetType: DataManager.StoredDataType.Kind) async throws {
+        // GIVEN
+        featureFlaggerMock.isMaliciousSiteProtectionEnabled = true
+        userPreferencesManagerMock.isMaliciousSiteProtectionOn = true
+        updateManagerMock.lastHashPrefixSetUpdateDate = .distantPast
+        updateManagerMock.lastFilterSetUpdateDate = .distantPast
+        let identifier = datasetType.backgroundTaskIdentifier
+        let backgroundTask = MockBGTask(identifier: identifier)
+        sut.registerBackgroundRefreshTaskHandler()
+        let launchHandler = try #require(backgroundSchedulerMock.launchHandlers[identifier])
+        #expect(backgroundTask.expirationHandler == nil)
+
+        // WHEN
+        let firstCallTask = sut.startFetching()
+
+        // THEN
+         #expect(sut.isDatasetsFetchInProgress)
+
+        // WHEN
+        launchHandler?(backgroundTask)
+
+        // THEN
+        await firstCallTask.value
+
+        // THEN
+        #expect(updateManagerMock.updateCallCount == 2)
+        #expect(updateManagerMock.updateDatasets[.hashPrefixSet] == true)
+        #expect(updateManagerMock.updateDatasets[.filterSet] == true)
+    }
+
 }
 
 // Workaround to wait on unstructured task in tests

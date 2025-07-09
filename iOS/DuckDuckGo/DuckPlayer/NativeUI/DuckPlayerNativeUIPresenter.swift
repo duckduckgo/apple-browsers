@@ -117,12 +117,14 @@ final class DuckPlayerNativeUIPresenter {
     /// DuckPlayer Settings
     internal var duckPlayerSettings: DuckPlayerSettings
 
-    /// Current height of the OmniBar
+    /// Current height of the OmniBar - initialized with expected height for consistent positioning
     private var omniBarHeight: CGFloat = DefaultOmniBarView.expectedHeight
     
     /// Gets the address bar height using the expected height from OmniBarView
+    /// This provides a consistent height value regardless of dynamic layout changes
     private func getAddressBarHeight() -> CGFloat {
         // Use the expected height from the OmniBar instead of dynamic height
+        // This ensures consistent pill positioning and reduces dependency on layout notifications
         return omniBarHeight > 0 ? omniBarHeight : DefaultOmniBarView.expectedHeight
     }
 
@@ -170,7 +172,11 @@ final class DuckPlayerNativeUIPresenter {
         setupNotificationObservers(notificationCenter: notificationCenter)
     }
 
+    /// Sets up notification observers for address bar position changes
+    /// This replaces the previous omnibar layout notification approach for better performance
     private func setupNotificationObservers(notificationCenter: NotificationCenter) {
+        // Listen for address bar position changes to update pill positioning
+        // This is more efficient than listening to layout changes
         notificationCenter.addObserver(
             self,
             selector: #selector(handleAddressBarPositionChanged),
@@ -195,12 +201,15 @@ final class DuckPlayerNativeUIPresenter {
             .store(in: &cancellables)
     }
 
-    /// Updates the UI based on address bar position change
+    /// Handles address bar position change notifications
+    /// Called when the user changes the address bar position in settings
     @objc func handleAddressBarPositionChanged(_ notification: Notification) {
+        // Update the pill's bottom constraint to match the new address bar position
         updatePillBottomConstraint()
     }
     
-    /// Updates the pill's bottom constraint based on address bar position
+    /// Updates the pill's bottom constraint based on the current address bar position
+    /// This ensures the pill is positioned correctly above the address bar when it's at the bottom
     private func updatePillBottomConstraint() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self,
@@ -209,6 +218,7 @@ final class DuckPlayerNativeUIPresenter {
             let addressBarPosition = self.appSettings.currentAddressBarPosition
             let omniBarHeight = self.omniBarHeight
             
+            // Position pill above address bar when it's at bottom, or at screen bottom when address bar is at top
             bottomConstraint.constant = addressBarPosition == .bottom ? -omniBarHeight : 0
         }
     }
@@ -595,7 +605,8 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         hostView.view.addSubview(hostingController.view)
 
         // Calculate bottom constraints based on address bar position
-        // If at the bottom, the Container should be placed above it
+        // If address bar is at the bottom, position the pill above it
+        // If address bar is at the top, position the pill at the bottom of the screen
         let addressBarHeight = getAddressBarHeight()
         let newBottomConstraint =
             appSettings.currentAddressBarPosition == .bottom
@@ -614,6 +625,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         containerViewController = hostingController
         
         // Initialize pill position based on current address bar position
+        // This ensures the pill is positioned correctly on first presentation
         updatePillBottomConstraint()
 
         // Subscribe to the sheet animation completed event

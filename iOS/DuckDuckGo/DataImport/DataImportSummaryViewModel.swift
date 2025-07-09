@@ -65,14 +65,20 @@ final class DataImportSummaryViewModel: ObservableObject {
         fireSummaryPixels()
     }
 
+    /// Returns true only when ALL supported data types (passwords, bookmarks, and optionally credit cards)
+    /// have been imported successfully with zero failures and duplicates for specific UI layout
     func isAllSuccessful() -> Bool {
         guard let passwords = passwordsSummary,
-              let bookmarks = bookmarksSummary,
               passwords.failed == 0,
-              passwords.duplicate == 0,
+              passwords.duplicate == 0 else {
+            return false
+        }
+
+        guard let bookmarks = bookmarksSummary,
               bookmarks.failed == 0,
-              bookmarks.duplicate == 0
-        else { return false }
+              bookmarks.duplicate == 0 else {
+            return false
+        }
 
         if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.autofillCreditCards) {
             guard let creditCards = creditCardsSummary,

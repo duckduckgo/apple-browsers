@@ -116,7 +116,17 @@ public struct ImportArchiveReader: ImportArchiveReading {
 
     private func isPaymentCardsJSON(_ content: String) -> Bool {
         // Quick validation to ensure this is a payment cards JSON
-        let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmedContent.contains("\"payment_cards\"")
+        guard let data = content.data(using: .utf8) else {
+            Logger.autofill.debug("Failed to convert json content to data")
+            return false
+        }
+        do {
+            if let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                return jsonObject["payment_cards"] != nil
+            }
+        } catch {
+            Logger.autofill.debug("Failed to parse JSON: \(error.localizedDescription)")
+        }
+        return false
     }
 }

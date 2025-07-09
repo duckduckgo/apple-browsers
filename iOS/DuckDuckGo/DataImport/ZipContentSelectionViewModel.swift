@@ -58,11 +58,11 @@ final class ZipContentSelectionViewModel: ObservableObject {
 
     weak var delegate: ZipContentSelectionViewModelDelegate?
 
-    var contentHeight: CGFloat = 360 {
+    var contentHeight: CGFloat = AutofillViews.zipImportPromptMinHeight {
         didSet {
             guard contentHeight != oldValue else { return }
             delegate?.zipContentSelectionViewModelDidResizeContent(self,
-                                                                   contentHeight: max(contentHeight, 380))
+                                                                   contentHeight: max(contentHeight, AutofillViews.zipImportPromptMinHeight))
         }
     }
 

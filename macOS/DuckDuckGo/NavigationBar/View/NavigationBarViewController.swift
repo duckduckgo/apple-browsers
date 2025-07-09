@@ -1099,6 +1099,8 @@ final class NavigationBarViewController: NSViewController {
 
         let url = tabCollectionViewModel.selectedTabViewModel?.tab.content.userEditableUrl
 
+        passwordManagementButton.image = visualStyle.iconsProvider.navigationToolbarIconsProvider.passwordManagerButtonImage
+
         if popovers.hasAnySavePopoversVisible() {
             return
         }

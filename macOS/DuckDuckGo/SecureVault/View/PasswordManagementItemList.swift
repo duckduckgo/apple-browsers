@@ -471,10 +471,10 @@ private struct PasswordManagementAddButton: View {
                 Text(UserText.pmAddItem)
 
                 Menu {
-                    createMenuItem(image: NSApp.delegateTyped.visualStyle.isNewStyle ? Image(nsImage: DesignSystemImages.Glyphs.Size16.keyLogin) : Image("PasswordManagement"),
+                    createMenuItem(image: NSApp.delegateTyped.visualStyle.isNewStyle ? Image(nsImage: DesignSystemImages.Glyphs.Size16.keyLogin) : Image("LoginGlyph"),
                                    text: UserText.pmNewLogin,
                                    category: .logins)
-                    createMenuItem(image: NSApp.delegateTyped.visualStyle.isNewStyle ? Image(nsImage: DesignSystemImages.Glyphs.Size16.profile) : Image("Identity-16"),
+                    createMenuItem(image: NSApp.delegateTyped.visualStyle.isNewStyle ? Image(nsImage: DesignSystemImages.Glyphs.Size16.profile) : Image("IdentityGlyph"),
                                    text: UserText.pmNewIdentity,
                                    category: .identities)
                     createMenuItem(image: NSApp.delegateTyped.visualStyle.isNewStyle ? Image(nsImage: DesignSystemImages.Glyphs.Size16.creditCard) : Image("CreditCardGlyph"),

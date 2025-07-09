@@ -85,9 +85,8 @@ class SwitchBarTextEntryViewController: UIViewController {
     private func setupViews() {
         setupContainerViewAppearance()
         setUpBorderOverlayAppearance()
-
-        view.addSubview(containerView)
         view.addSubview(borderOverlayView)
+        view.addSubview(containerView)
 
         containerView.addSubview(textEntryView)
 

@@ -20,6 +20,7 @@ import Foundation
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
+import Combine
 
 @MainActor
 class AutoClearHandlerTests: XCTestCase {
@@ -36,17 +37,20 @@ class AutoClearHandlerTests: XCTestCase {
             persistor: persistor,
             fireproofDomains: MockFireproofDomains(domains: []),
             faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock()
+            windowControllersManager: WindowControllersManagerMock(),
+            featureFlagger: MockFeatureFlagger()
         )
         let persistor2 = StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: "duckduckgo.com")
         let appearancePreferences = AppearancePreferences(
             persistor: MockAppearancePreferencesPersistor(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
         )
         startupPreferences = StartupPreferences(persistor: persistor2,
                                                 appearancePreferences: appearancePreferences)
 
-        fireViewModel = FireViewModel(tld: Application.appDelegate.tld)
+        fireViewModel = FireViewModel(tld: Application.appDelegate.tld,
+                                      visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider())
         let fileName = "AutoClearHandlerTests"
         let fileStore = FileStoreMock()
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
@@ -98,4 +102,13 @@ class AutoClearHandlerTests: XCTestCase {
         XCTAssertFalse(handler.burnOnStartIfNeeded())
     }
 
+}
+
+final class MockVisualizeFireAnimationDecider: VisualizeFireAnimationDecider {
+    var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> = Just(true)
+        .eraseToAnyPublisher()
+
+    var shouldShowFireAnimation: Bool {
+        return true
+    }
 }

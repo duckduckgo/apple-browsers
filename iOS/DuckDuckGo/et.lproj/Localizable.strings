@@ -2650,6 +2650,12 @@
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Duck.ai otseteed";
 
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Otsingusisend";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Otsi veebist või küsi Duck.ai-lt otse aadressiribal";
+
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Otsingu Assist seaded";
 

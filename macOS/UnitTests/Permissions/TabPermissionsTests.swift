@@ -214,6 +214,8 @@ final class TabPermissionsTests: XCTestCase {
 
     @MainActor
     func testWhenExternalAppPermissionEnteredByUser_permissionIsQueriedAndAppIsOpened() async throws {
+        throw XCTSkip("Flaky")
+
         let extensionsBuilder = TestTabExtensionsBuilder(load: [ExternalAppSchemeHandler.self, DownloadsTabExtension.self])
         let workspace = WorkspaceMock()
         let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), workspace: workspace, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)

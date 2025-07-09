@@ -38,19 +38,23 @@ final class OnboardingPageTests: XCTestCase {
 
     @MainActor
     override func setUp() {
-        super.setUp()
-        _=WKUserContentController.swizzleScriptMessageHandlerWithReplyMethodsOnce
-        webViewConfiguration = WKWebViewConfiguration()
-        let contentBlockingMock = ContentBlockingMock()
-        privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
-        tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        autoreleasepool {
+            _=WKUserContentController.swizzleScriptMessageHandlerWithReplyMethodsOnce
+            webViewConfiguration = WKWebViewConfiguration()
+            let contentBlockingMock = ContentBlockingMock()
+            privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
+            tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        }
     }
 
     override func tearDown()  {
-        window?.close()
-        window = nil
-        tab = nil
-        super.tearDown()
+        autoreleasepool {
+            window?.close()
+            window = nil
+            tab = nil
+            privacyFeaturesMock = nil
+            webViewConfiguration = nil
+        }
     }
 
     @MainActor func testWhenTabInitialisedSpeacialPagesHandlersAdded() throws {

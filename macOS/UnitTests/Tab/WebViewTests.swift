@@ -23,19 +23,25 @@ final class WebViewTests: XCTestCase {
 
     typealias WebView = DuckDuckGo_Privacy_Browser.WebView
 
-    let window = NSWindow()
+    var window: NSWindow!
     var webView: WebView!
     var capturingZoomLevelDelegate: CapturingZoomLevelDelegate!
 
     override func setUp() {
-        webView = .init(frame: .zero)
-        window.contentView?.addSubview(webView)
-        capturingZoomLevelDelegate = CapturingZoomLevelDelegate()
+        autoreleasepool {
+            window = MockWindow(isVisible: true)
+            webView = .init(frame: .zero)
+            window.contentView = webView
+            capturingZoomLevelDelegate = CapturingZoomLevelDelegate()
+        }
     }
 
     override func tearDown() {
-        webView = nil
-        capturingZoomLevelDelegate = nil
+        autoreleasepool {
+            webView = nil
+            window = nil
+            capturingZoomLevelDelegate = nil
+        }
     }
 
     func testInitialZoomLevelAndMagnification() {

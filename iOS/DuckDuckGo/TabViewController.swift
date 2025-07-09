@@ -247,6 +247,11 @@ class TabViewController: UIViewController {
         return creditCardInputAccessoryView
     }()
 
+    lazy var credentialsImportManager: AutofillCredentialsImportManager = {
+        let manager = AutofillCredentialsImportManager()
+        return manager
+    }()
+
     public var url: URL? {
         willSet {
             if newValue != url {
@@ -2745,6 +2750,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.contentBlockerUserScript.delegate = self
         userScripts.autofillUserScript.emailDelegate = emailManager
         userScripts.autofillUserScript.vaultDelegate = vaultManager
+        userScripts.autofillUserScript.passwordImportDelegate = credentialsImportManager
         userScripts.faviconScript.delegate = faviconUpdater
         userScripts.printingUserScript.delegate = self
         userScripts.loginFormDetectionScript?.delegate = self
@@ -3295,6 +3301,29 @@ extension TabViewController: SecureVaultManagerDelegate {
         }
 
         self.present(autofillPromptViewController, animated: true, completion: nil)
+    }
+
+    func secureVaultManager(_: SecureVaultManager,
+                            promptUserToImportCredentialsForDomain domain: String,
+                            completionHandler: @escaping (Bool) -> Void) {
+        let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
+        ActionMessageView.present(message: "Import test data for fill.dev?",
+                                  actionTitle: "Import",
+                                  presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+                                  duration: 4.0,
+                                  onAction: {
+            let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+            let account = SecureVaultModels.WebsiteAccount(title: "", username: "Dax", domain: "fill.dev", notes: "")
+            let credentials = SecureVaultModels.WebsiteCredentials(account: account, password: "password".data(using: .utf8))
+            do {
+                _ = try secureVault?.storeWebsiteCredentials(credentials)
+                completionHandler(true)
+                ActionMessageView.present(message: "Import Complete")
+            } catch let error {
+                Logger.general.error("Error inserting credential \(error.localizedDescription, privacy: .public)")
+                completionHandler(false)
+            }
+        })
     }
 
     // Used on macOS to request authentication for individual autofill items

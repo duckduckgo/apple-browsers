@@ -39,7 +39,7 @@ class SwitchBarTextEntryView: UIView {
         static let placeholderHorizontalOffset: CGFloat = 16
 
         // Button view
-        static let buttonViewTrailingOffset: CGFloat = -10
+        static let buttonViewTrailingOffset: CGFloat = -12
         static let textButtonSpacing: CGFloat = -10
 
         // Animation

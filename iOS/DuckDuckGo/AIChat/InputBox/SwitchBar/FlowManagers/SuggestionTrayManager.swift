@@ -98,8 +98,8 @@ final class SuggestionTrayManager: NSObject {
         controller.view.isHidden = true
         
         NSLayoutConstraint.activate([
-            controller.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 6),
-            controller.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -6),
+            controller.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            controller.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             controller.view.topAnchor.constraint(equalTo: containerView.topAnchor),
             controller.view.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         ])

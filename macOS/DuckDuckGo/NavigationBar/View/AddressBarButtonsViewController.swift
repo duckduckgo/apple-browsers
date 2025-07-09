@@ -419,10 +419,25 @@ final class AddressBarButtonsViewController: NSViewController {
             } else {
                 aiChatSidebarPresenter.toggleSidebar()
             }
-        } else if let value = textFieldValue {
-            aiChatTabOpener.openAIChatTab(value, with: behavior)
         } else {
-            aiChatTabOpener.openAIChatTab(nil, with: behavior)
+
+            if let tab = tabViewModel?.tab,
+               aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid),
+               behavior == .currentTab {
+
+                if let value = textFieldValue {
+                    aiChatTabOpener.openAIChatTab(value, with: .newTab(selected: behavior.shouldSelectNewTab))
+                } else {
+                    aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: behavior.shouldSelectNewTab))
+                }
+
+            } else {
+                if let value = textFieldValue {
+                    aiChatTabOpener.openAIChatTab(value, with: behavior)
+                } else {
+                    aiChatTabOpener.openAIChatTab(nil, with: behavior)
+                }
+            }
         }
 
         delegate?.addressBarButtonsViewControllerAIChatButtonClicked(self)

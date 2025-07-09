@@ -27157,8 +27157,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Scan auf personenbezogene Daten"
+            "state" : "translated",
+            "value" : "Kostenloser Scan auf personenbezogene Daten"
           }
         },
         "en" : {
@@ -27169,44 +27169,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Escaneo de información personal"
+            "state" : "translated",
+            "value" : "Escaneo gratuito de información personal"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Analyse des informations personnelles"
+            "state" : "translated",
+            "value" : "Analyse gratuite des informations personnelles"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Scansione delle informazioni personali"
+            "state" : "translated",
+            "value" : "Scansione gratuita delle informazioni personali"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Persoonlijke gegevens scannen"
+            "state" : "translated",
+            "value" : "Gratis scan van persoonlijke gegevens"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Skanowanie danych osobowych"
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie danych osobowych"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Análise de informações pessoais"
+            "state" : "translated",
+            "value" : "Análise grátis de informações pessoais"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Сканер личной информации"
+            "state" : "translated",
+            "value" : "Бесплатный сканер личной информации"
           }
         }
       }

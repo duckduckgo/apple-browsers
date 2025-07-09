@@ -397,13 +397,16 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if featureFlagger.isFeatureOn(.aiChatSidebar),
             aiChatMenuConfig.openAIChatInSidebar,
-            !aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid),
             case .url = tab.content,
             behavior == .currentTab {
 
-            openAIChatSidebar()
+            if aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) {
+                aiChatSidebarPresenter.toggleSidebar()
+            } else {
+                openAIChatSidebar()
+            }
         } else {
-            openAIChatTab(with: behavior)
+            openAIChatTab(for: tab, with: behavior)
         }
 
         delegate?.addressBarButtonsViewControllerAIChatButtonClicked(self)
@@ -418,13 +421,9 @@ final class AddressBarButtonsViewController: NSViewController {
             return !url.isDuckAIURL && tab.content != .newtab
         }()
 
-        let defaultBehaviour = LinkOpenBehavior(event: NSApp.currentEvent,
-                                                switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
-                                                shouldSelectNewTab: shouldSelectNewTab)
-
-        // Force new tab when sidebar is open and we're in current tab mode
-        let shouldOverrideToNewTab = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) && defaultBehaviour == .currentTab
-        return shouldOverrideToNewTab ? .newTab(selected: defaultBehaviour.shouldSelectNewTab) : defaultBehaviour
+        return LinkOpenBehavior(event: NSApp.currentEvent,
+                                switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
+                                shouldSelectNewTab: shouldSelectNewTab)
     }
 
     private func openAIChatSidebar() {
@@ -438,11 +437,15 @@ final class AddressBarButtonsViewController: NSViewController {
         }
     }
 
-    private func openAIChatTab(with behavior: LinkOpenBehavior) {
+    private func openAIChatTab(for tab: Tab, with behavior: LinkOpenBehavior) {
+        // Force new tab when sidebar is open and the behaviour would also load Duck.ai in current tab
+        let shouldOverrideToNewTab = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) && behavior == .currentTab
+        let updatedBehaviour: LinkOpenBehavior = shouldOverrideToNewTab ? .newTab(selected: behavior.shouldSelectNewTab) : behavior
+
         if let value = textFieldValue {
-            aiChatTabOpener.openAIChatTab(value, with: behavior)
+            aiChatTabOpener.openAIChatTab(value, with: updatedBehaviour)
         } else {
-            aiChatTabOpener.openAIChatTab(nil, with: behavior)
+            aiChatTabOpener.openAIChatTab(nil, with: updatedBehaviour)
         }
     }
 

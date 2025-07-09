@@ -903,7 +903,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         crashReporter.checkForNewReports()
 #endif
-        PixelKit.fire(GeneralPixel.crashDaily, frequency: .legacyDailyNoSuffix)
 
         if visualStyleDecider.shouldFirePixel(style: visualStyle) {
             PixelKit.fire(VisualStylePixel.visualUpdatesEnabled, frequency: .uniqueByName)

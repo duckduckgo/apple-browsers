@@ -1,5 +1,5 @@
 //
-//  TestRunHelper.swift
+//  XCTestCaseExtension.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //

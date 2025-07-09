@@ -160,4 +160,17 @@ public extension NewTabPageDataModel {
             }
         }
     }
+
+    // MARK: - omnibar_submitSearch
+
+    enum OpenTarget: String, Codable, Equatable {
+        case sameTab = "same-tab"
+        case newTab = "new-tab"
+        case newWindow = "new-window"
+    }
+
+    struct SubmitSearchAction: Codable, Equatable {
+        let target: OpenTarget
+        let term: String
+    }
 }

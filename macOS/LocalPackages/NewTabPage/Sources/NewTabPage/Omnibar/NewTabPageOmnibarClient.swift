@@ -1,7 +1,7 @@
 //
 //  NewTabPageOmnibarClient.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,19 +24,24 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     enum MessageName: String, CaseIterable {
         case getConfig = "omnibar_getConfig"
         case getSuggestions = "omnibar_getSuggestions"
+        case submitSearch = "omnibar_submitSearch"
     }
 
     private let suggestionsProvider: NewTabPageOmnibarSuggestionsProviding
+    private let actionHandler: NewTabPageOmnibarActionHandling
 
-    public init(suggestionsProvider: NewTabPageOmnibarSuggestionsProviding) {
+    public init(suggestionsProvider: NewTabPageOmnibarSuggestionsProviding,
+                actionHandler: NewTabPageOmnibarActionHandling) {
         self.suggestionsProvider = suggestionsProvider
+        self.actionHandler = actionHandler
         super.init()
     }
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
         userScript.registerMessageHandlers([
             MessageName.getConfig.rawValue: { [weak self] in try await self?.getConfig(params: $0, original: $1) },
-            MessageName.getSuggestions.rawValue: { [weak self] in try await self?.getSuggestions(params: $0, original: $1) }
+            MessageName.getSuggestions.rawValue: { [weak self] in try await self?.getSuggestions(params: $0, original: $1) },
+            MessageName.submitSearch.rawValue: { [weak self] in try await self?.submitSearch(params: $0, original: $1) }
         ])
     }
 
@@ -51,5 +56,13 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             return nil
         }
         return NewTabPageDataModel.SuggestionsData(suggestions: await suggestionsProvider.suggestions(for: request.term))
+    }
+
+    private func submitSearch(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.SubmitSearchAction = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        await actionHandler.openSearch(term: action.term, target: action.target)
+        return nil
     }
 }

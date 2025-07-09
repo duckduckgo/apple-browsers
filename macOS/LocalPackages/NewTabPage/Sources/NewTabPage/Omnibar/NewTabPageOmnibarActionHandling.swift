@@ -1,5 +1,5 @@
 //
-//  NewTabPageOmnibarSuggestionsProviding.swift
+//  NewTabPageOmnibarActionHandling.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-public protocol NewTabPageOmnibarSuggestionsProviding: AnyObject {
+public protocol NewTabPageOmnibarActionHandling: AnyObject {
 
     @MainActor
-    func suggestions(for term: String) async -> NewTabPageDataModel.Suggestions
+    func openSearch(term: String, target: NewTabPageDataModel.OpenTarget)
 
 }

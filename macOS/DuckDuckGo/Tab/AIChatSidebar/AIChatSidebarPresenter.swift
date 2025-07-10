@@ -160,16 +160,14 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
         guard let currentTabID = sidebarHost.currentTabID else { return }
 
-        let isShowingSidebar = sidebarProvider.isShowingSidebar(for: currentTabID)
-
-        if !isShowingSidebar {
+        if let sidebar = sidebarProvider.getSidebar(for: currentTabID) {
+            // If sidebar is open append conversation with prompt
+            let sidebarViewController = sidebar.sidebarViewController
+            sidebarViewController.setAIChatPrompt(prompt)
+        } else {
             AIChatPromptHandler.shared.setData(prompt)
-
             // If not showing the sidebar, open it with the prompt
             updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
-        } else {
-            let sidebarViewController = sidebarProvider.makeSidebar(for: currentTabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
-            sidebarViewController.setAIChatPrompt(prompt)
         }
     }
 

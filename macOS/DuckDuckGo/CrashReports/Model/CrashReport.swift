@@ -100,7 +100,6 @@ final class JSONCrashReport: CrashReport {
         "rolloutId"
     ]
 
-    private static let bundleRegex = regex(#""bundleID"\s*:\s*"([^"]+)""#)
     private static let pidRegex = regex(#""pid"\s*:\s*(\d+)(?:,|$)"#)
     private static let timestampRegex = regex(#""timestamp"\s*:\s*"([^"]+)""#)
     private static let dateFormatter: DateFormatter = {

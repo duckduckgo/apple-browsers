@@ -33,7 +33,7 @@ final class CrashReporter {
 
     func checkForNewReports() {
 
- #if !DEBUG
+#if !DEBUG
 
         guard let lastCheckDate = lastCheckDate else {
             // Initial run
@@ -71,7 +71,7 @@ final class CrashReporter {
             }
         }
 
- #endif
+#endif
 
     }
 }

@@ -1413,7 +1413,7 @@ Take back control of your personal information with the browser designed for dat
     public static var subscriptionTitle: String {
         // Temporary until rebranding launch
         if AppDependencyProvider.shared.featureFlagger.isFeatureOn(.subscriptionRebranding) {
-            return NSLocalizedString("subscription.title", value: "DuckDuckGo Subscription", comment: "Navigation bar Title for subscriptions")
+            return NSLocalizedString("subscription.settings.title", value: "DuckDuckGo Subscription", comment: "Navigation bar Title for subscriptions")
         }
         return NSLocalizedString("subscription.title", value: "Privacy Pro", comment: "Navigation bar Title for subscriptions")
     }

@@ -3133,6 +3133,9 @@ Take back control of your personal information with the browser designed for dat
 /* Alert title for restored purchase */
 "subscription.restore.success.alert.title" = "You’re all set.";
 
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "DuckDuckGo Subscription";
+
 /* Subtitle in header when subscribed */
 "subscription.subscribed" = "Subscribed";
 
@@ -3170,7 +3173,7 @@ Take back control of your personal information with the browser designed for dat
 "subscription.subscription.renewing.yearly.caption" = "Your annual subscription renews on %@.";
 
 /* Navigation bar Title for subscriptions */
-"subscription.title" = "DuckDuckGo Subscription";
+"subscription.title" = "Privacy Pro";
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Free Trial Active";

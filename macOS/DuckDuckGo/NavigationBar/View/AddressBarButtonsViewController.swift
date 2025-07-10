@@ -397,20 +397,21 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if featureFlagger.isFeatureOn(.aiChatSidebar),
            aiChatMenuConfig.openAIChatInSidebar,
+           !isTextFieldEditorFirstResponder,
            case .url = tab.content,
            behavior == .currentTab {
 
-            if !aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid),
-               isTextFieldEditorFirstResponder,
-               let value = textFieldValue,
-               let query = AIChatAddressBarPromptExtractor().queryForValue(value) {
-                // If sidebar is not open and the address bar is in focus and has viable query use it to pass as a prompt to sidebar
-                let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: true)
-                aiChatSidebarPresenter.presentSidebar(for: prompt)
-            } else {
+//            if !aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid),
+//               isTextFieldEditorFirstResponder,
+//               let value = textFieldValue,
+//               let query = AIChatAddressBarPromptExtractor().queryForValue(value) {
+//                // If sidebar is not open and the address bar is in focus and has viable query use it to pass as a prompt to sidebar
+//                let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: true)
+//                aiChatSidebarPresenter.presentSidebar(for: prompt)
+//            } else {
                 // Otherwise just toggle the sidebar
                 aiChatSidebarPresenter.toggleSidebar()
-            }
+//            }
         } else {
             openAIChatTab(for: tab, with: behavior)
         }

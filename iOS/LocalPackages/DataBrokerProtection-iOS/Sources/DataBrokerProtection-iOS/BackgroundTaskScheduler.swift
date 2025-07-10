@@ -25,7 +25,7 @@ import os.log
 import BrowserServicesKit
 
 public final class BackgroundTaskScheduler {
-    static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
+    public static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
 
     public struct Constants {
         public static let defaultMaxWaitTime: TimeInterval = .hours(48)

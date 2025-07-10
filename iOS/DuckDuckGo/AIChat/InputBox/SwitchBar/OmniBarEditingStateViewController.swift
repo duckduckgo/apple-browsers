@@ -269,8 +269,19 @@ extension OmniBarEditingStateViewController: SwipeContainerManagerDelegate {
     }
     
     func swipeContainerManager(_ manager: SwipeContainerManager, didUpdateScrollProgress progress: CGFloat) {
+
+        func easeInOutCirc(_ x: Double) -> Double {
+            return x < 0.5
+            ? (1 - sqrt(1 - pow(2 * x, 2))) / 2
+            : (sqrt(1 - pow(-2 * x + 2, 2)) + 1) / 2
+        }
+
         // Forward the scroll progress to the switch bar to animate the toggle
         switchBarVC.updateScrollProgress(progress)
+        if let logoView {
+            logoView.alpha = easeInOutCirc(progress)
+            logoView.transform = CGAffineTransform(translationX: (1 - progress) * (logoView.center.x + logoView.bounds.width/2.0), y: 0)
+        }
     }
 }
 

@@ -147,9 +147,9 @@ extension UserText {
 
     static let paidDuckAIFeedbackFormCategorySelect = NSLocalizedString("paid-duck-ai.feedback-form.category.select-category", value: "Select a category", comment: "Title for the category selection state of the paid duck.ai feedback form")
 
-    static let paidDuckAIFeedbackFormCategoryAccessSubscriptionModels = NSLocalizedString("paid-duck-ai.feedback-form.category.access-subscription-models", value: "Unable to access the subscription Duck.ai models", comment: "Description for the feedback form when there is an issue with accessing the paid tier models")
+    static let paidDuckAIFeedbackFormCategoryAccessSubscriptionModels = NSLocalizedString("paid-duck-ai.feedback-form.category.access-subscription-models", value: "Unable to access the subscriber-only Duck.ai models", comment: "Description for the feedback form when there is an issue with accessing the paid tier models")
 
-    static let paidDuckAIFeedbackFormCategoryLoginThirdPartyBrowser = NSLocalizedString("paid-duck-ai.feedback-form.category.login-third-party-browser", value: "Can’t log in to Duck.ai with my subscription", comment: "Description for the feedback form when there is an issue with logging into Duck.ai")
+    static let paidDuckAIFeedbackFormCategoryLoginThirdPartyBrowser = NSLocalizedString("paid-duck-ai.feedback-form.category.login-third-party-browser", value: "Can't access Duck.ai with my subscription in other browsers", comment: "Description for the feedback form when there is an issue with logging into Duck.ai")
 
     static let paidDuckAIFeedbackFormCategorySomethingElse = NSLocalizedString("paid-duck-ai.feedback-form.category.something-else", value: "Other Duck.ai feedback", comment: "Description for the feedback form when the user has an issue not categorized in other options")
 

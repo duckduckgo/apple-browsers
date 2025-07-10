@@ -23,6 +23,12 @@ final class AutoconsentManagement {
 
     var sitesNotifiedCache = Set<String>()
 
+    var pixelCounter = [String: Int]()
+
+    var detectedByPatternsCache = Set<String>()
+    var detectedByBothCache = Set<String>()
+    var detectedOnlyRulesCache = Set<String>()
+
     func clearCache() {
         dispatchPrecondition(condition: .onQueue(.main))
         sitesNotifiedCache.removeAll()

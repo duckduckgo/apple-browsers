@@ -126,8 +126,9 @@ class FromHomeScreenTransition: HomeScreenTransition {
                 self.imageView.frame = self.previewFrame(for: self.imageContainer.bounds.size)
                 self.homeScreenSnapshot?.frame = self.imageContainer.bounds
             }
-            
-            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.3) {
+
+            // Slowly fade out to create a cross fade effect
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 self.homeScreenSnapshot?.alpha = 0
             }
             
@@ -213,8 +214,9 @@ class ToHomeScreenTransition: HomeScreenTransition {
                     self.imageContainer.alpha = 1
                 }
             }
-            
-            UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.3) {
+
+            // Longer transition to create cross fade effect
+            UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.8) {
                 self.homeScreenSnapshot?.alpha = 1
                 self.settingsButtonSnapshot?.alpha = 1
             }

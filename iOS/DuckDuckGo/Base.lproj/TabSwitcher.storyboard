@@ -88,7 +88,7 @@
                                                                 <constraint firstAttribute="height" constant="9" id="kLl-cv-jch"/>
                                                             </constraints>
                                                         </imageView>
-                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="11" adjustsFontForContentSizeCategory="YES" translatesAutoresizingMaskIntoConstraints="NO" id="1GE-Nf-lKM">
+                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontForContentSizeCategory="YES" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1GE-Nf-lKM">
                                                             <rect key="frame" x="36" y="14" width="237" height="16"/>
                                                             <accessibility key="accessibilityConfiguration">
                                                                 <accessibilityTraits key="traits" button="YES" staticText="YES"/>
@@ -370,8 +370,8 @@
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="eRo-Z1-BzV">
                                 <rect key="frame" x="768" y="0.0" width="32" height="40"/>
                             </view>
-                            <stackView opaque="NO" contentMode="scaleToFill" ambiguous="YES" spacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="aDD-d2-KuN">
-                                <rect key="frame" x="784" y="2" width="0.0" height="36"/>
+                            <stackView opaque="NO" contentMode="scaleToFill" spacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="aDD-d2-KuN">
+                                <rect key="frame" x="784" y="0.0" width="0.0" height="40"/>
                                 <constraints>
                                     <constraint firstAttribute="width" priority="250" id="Frc-XT-onX"/>
                                 </constraints>
@@ -489,7 +489,7 @@
                             <constraint firstAttribute="trailing" secondItem="eRo-Z1-BzV" secondAttribute="trailing" id="AXl-ER-GiJ"/>
                             <constraint firstAttribute="bottom" secondItem="1wM-Ln-7ly" secondAttribute="bottom" id="Ign-CF-bTN"/>
                             <constraint firstItem="aDD-d2-KuN" firstAttribute="top" relation="greaterThanOrEqual" secondItem="8BH-do-lHc" secondAttribute="top" id="MmQ-jI-s9Q"/>
-                            <constraint firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="aDD-d2-KuN" secondAttribute="bottom" id="N8j-Q1-GG3"/>
+                            <constraint firstAttribute="bottom" secondItem="aDD-d2-KuN" secondAttribute="bottom" id="N8j-Q1-GG3"/>
                             <constraint firstItem="1wM-Ln-7ly" firstAttribute="leading" secondItem="8BH-do-lHc" secondAttribute="leading" constant="8" id="RGE-7m-yXx"/>
                             <constraint firstItem="1wM-Ln-7ly" firstAttribute="height" secondItem="8BH-do-lHc" secondAttribute="height" id="c2u-Ow-7wx"/>
                             <constraint firstItem="eRo-Z1-BzV" firstAttribute="top" secondItem="8BH-do-lHc" secondAttribute="top" id="cOB-V5-0Al"/>

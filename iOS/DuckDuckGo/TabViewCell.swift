@@ -46,6 +46,7 @@ final class TabViewCell: UICollectionViewCell {
 
         static let selectedBorderWidth: CGFloat = 2.0
         static let unselectedBorderWidth: CGFloat = 0.0
+        static let previewPadding: CGFloat = 4.0
     }
 
     var removeThreshold: CGFloat {
@@ -145,6 +146,7 @@ final class TabViewCell: UICollectionViewCell {
         }
 
         previewBottomConstraint?.isActive = !strechContainerVerically
+        previewBottomConstraint?.constant = 0
         previewTrailingConstraint?.isActive = strechContainerVerically
 
         if let preview {
@@ -160,6 +162,7 @@ final class TabViewCell: UICollectionViewCell {
         }
 
         previewBottomConstraint?.isActive = true
+        previewBottomConstraint?.constant = Constants.previewPadding * 2
         previewTrailingConstraint?.isActive = true
     }
 

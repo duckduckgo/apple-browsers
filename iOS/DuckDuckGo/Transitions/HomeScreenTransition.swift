@@ -64,6 +64,7 @@ class HomeScreenTransition: TabSwitcherTransition {
     
     fileprivate func previewFrame(for cellBounds: CGSize) -> CGRect {
         return CGRect(origin: .zero, size: cellBounds)
+            .offsetBy(dx: 0, dy: -TabViewCell.Constants.previewPadding)
     }
     
 }
@@ -121,7 +122,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
                 let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
                 self.imageContainer.frame = containerFrame
                 self.imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
-                self.imageContainer.backgroundColor = theme.tabSwitcherCellBackgroundColor
+                self.imageContainer.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
                 self.imageView.frame = self.previewFrame(for: self.imageContainer.bounds.size)
                 self.homeScreenSnapshot?.frame = self.imageContainer.bounds
             }

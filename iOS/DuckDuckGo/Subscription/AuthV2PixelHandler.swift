@@ -23,30 +23,22 @@ import Core
 
 public struct AuthV2PixelHandler: SubscriptionPixelHandler {
 
-    public enum Source {
-        case mainApp
-        case systemExtension
-        
-        var description: String {
-            switch self {
-            case .mainApp:
-                return "MainApp"
-            case .systemExtension:
-                return "SysExt"
-            }
-        }
+    public enum Source: String {
+        case mainApp = "MainApp"
+        case systemExtension = "SysExt"
     }
 
     let source: Source
 
-    struct Defaults {
+    public struct Defaults {
         static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
     }
 
     public func handle(pixelType: Subscription.SubscriptionPixelType) {
-        let sourceParam = [Defaults.sourceKey: source.description]
+        let sourceParam = [Defaults.sourceKey: source.rawValue,
+                           AuthVersion.key: AuthVersion.v2.rawValue]
         switch pixelType {
         case .invalidRefreshToken:
             DailyPixel.fireDailyAndCount(pixel: .privacyProInvalidRefreshTokenDetected, withAdditionalParameters: sourceParam)

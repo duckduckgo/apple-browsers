@@ -681,7 +681,7 @@ extension MainViewController {
         if event.keyCode == kVK_Return,
            navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
             if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcut {
-                navigationBarViewController.addressBarViewController?.addressBarTextField.aiChatQueryEnterPressed()
+                navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
             } else {
                 navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
             }

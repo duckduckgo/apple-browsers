@@ -62,6 +62,10 @@ public class DataBrokerProtectionFeature: Subfeature {
         self.actionResponseTimeout = actionResponseTimeout
     }
 
+    deinit {
+        removeTimer()
+    }
+
     public func handler(forMethodNamed methodName: String) -> Handler? {
         let actionResult = CCFReceivedMethodName(rawValue: methodName)
 

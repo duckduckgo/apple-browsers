@@ -1113,9 +1113,11 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
     }
 
     public func resetTries() {
+        self.tries = 1
     }
 
     public func incrementTries() {
+        self.tries += 1
     }
 
     func clear() {

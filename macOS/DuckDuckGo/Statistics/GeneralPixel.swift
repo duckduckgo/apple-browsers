@@ -37,8 +37,8 @@ enum GeneralPixel: PixelKitEventV2 {
 
     case dailyOsVersionCounter
 
-    case dataImportFailed(source: DataImport.Source, sourceVersion: String?, error: any DataImportError)
-    case dataImportSucceeded(action: DataImportAction, source: DataImport.Source, sourceVersion: String?)
+    case dataImportFailed(source: String, sourceVersion: String?, error: any DataImportError)
+    case dataImportSucceeded(action: DataImportAction, source: String, sourceVersion: String?)
 
     case formAutofilled(kind: FormAutofillKind)
     case autofillItemSaved(kind: FormAutofillKind)

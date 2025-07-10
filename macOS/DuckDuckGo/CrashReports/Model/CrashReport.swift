@@ -31,7 +31,7 @@ protocol CrashReport: CrashReportPresenting {
 
     var url: URL { get }
     var contentData: Data? { get }
-
+    var appVersion: String? { get }
 }
 
 final class LegacyCrashReport: CrashReport {
@@ -85,6 +85,7 @@ final class LegacyCrashReport: CrashReport {
         content?.data(using: .utf8)
     }
 
+    let appVersion: String? = nil
 }
 
 final class JSONCrashReport: CrashReport {
@@ -140,6 +141,16 @@ final class JSONCrashReport: CrashReport {
         content?.data(using: .utf8)
     }
 
+    lazy var appVersion: String? = {
+        guard let content,
+              let header = content.split(separator: "\n").first,
+              let headerData = header.data(using: .utf8),
+              let headerJSON = try? JSONSerialization.jsonObject(with: headerData, options: []) as? [String: Any]
+        else {
+            return nil
+        }
+        return headerJSON["app_version"] as? String
+    }()
 }
 
 struct CrashDataPayload: CrashReportPresenting {

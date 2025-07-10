@@ -309,12 +309,6 @@ final class AddressBarTextField: NSTextField {
         hideSuggestionWindow()
     }
 
-    func aiChatQueryEnterPressed() {
-        suggestionContainerViewModel?.clearUserStringValue()
-        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(value, with: .currentTab)
-        hideSuggestionWindow()
-    }
-
     private func navigate(suggestion: Suggestion?) {
         switch suggestion {
         case .bookmark,

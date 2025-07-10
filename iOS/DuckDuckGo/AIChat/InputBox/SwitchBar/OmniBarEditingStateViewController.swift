@@ -27,6 +27,7 @@ import History
 import Core
 import Suggestions
 import SwiftUI
+import UIComponents
 
 protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onQueryUpdated(_ query: String)
@@ -35,6 +36,9 @@ protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onSelectFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
+
+    func onAppear()
+    func onDismiss()
 }
 
 /// Main coordinator for the OmniBar editing state, managing multiple specialized components
@@ -99,8 +103,8 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        transitionAnimator.animateAppearance()
         switchBarVC.focusTextField()
+        transitionAnimator.animateAppearance()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -134,6 +138,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         swipeContainerManager?.updateLayout(viewBounds: view.bounds)
     }
 
+    func adjustForAppearance() {
+        delegate?.onAppear()
+    }
+
+    func adjustForDismissal() {
+        delegate?.onDismiss()
+    }
+
     // MARK: - Private Methods
     
     private func setupView() {
@@ -147,12 +159,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installDaxLogoView()
         installNavigationActionBar()
         installKeyboardManager()
+
+        view.bringSubviewToFront(switchBarVC.view)
     }
     
     private func setupTransitionAnimator() {
         transitionAnimator.transitionDelegate = self
     }
-    
+
     private func installSwitchBarVC() {
         addChild(switchBarVC)
         view.addSubview(switchBarVC.view)
@@ -258,6 +272,11 @@ extension OmniBarEditingStateViewController: SwipeContainerManagerDelegate {
     func swipeContainerManager(_ manager: SwipeContainerManager, didUpdateScrollProgress progress: CGFloat) {
         // Forward the scroll progress to the switch bar to animate the toggle
         switchBarVC.updateScrollProgress(progress)
+
+        if let logoView {
+            logoView.alpha = Easing.inOutCirc(progress)
+            logoView.transform = CGAffineTransform(translationX: (1 - progress) * (logoView.center.x + logoView.bounds.width/2.0), y: 0)
+        }
     }
 }
 

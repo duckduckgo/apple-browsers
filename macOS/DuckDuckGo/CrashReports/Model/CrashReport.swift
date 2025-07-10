@@ -30,9 +30,9 @@ protocol CrashReport: CrashReportPresenting {
     static var fileExtension: String { get }
 
     var url: URL { get }
-    var bundleID: String? { get }
     var contentData: Data? { get }
     var appVersion: String? { get }
+    var bundleID: String? { get }
 }
 
 final class LegacyCrashReport: CrashReport {
@@ -53,7 +53,6 @@ final class LegacyCrashReport: CrashReport {
     }()
 
     let url: URL
-    var bundleID: String?
 
     init(url: URL) {
         self.url = url
@@ -88,6 +87,7 @@ final class LegacyCrashReport: CrashReport {
     }
 
     let appVersion: String? = nil
+    let bundleID: String? = nil
 }
 
 final class JSONCrashReport: CrashReport {
@@ -115,16 +115,6 @@ final class JSONCrashReport: CrashReport {
     init(url: URL) {
         self.url = url
     }
-
-    lazy var bundleID: String? = {
-        guard var fileContents = content else { return nil }
-
-        if let match = fileContents.firstMatch(of: Self.bundleRegex), match.numberOfRanges > 1,
-           let range = Range(match.range(at: 1), in: fileContents){
-            return String(fileContents[range])
-        }
-        return nil
-    }()
 
     lazy var content: String? = {
         guard var fileContents = try? String(contentsOf: self.url) else { return nil }
@@ -155,7 +145,7 @@ final class JSONCrashReport: CrashReport {
         content?.data(using: .utf8)
     }
 
-    lazy var appVersion: String? = {
+    private lazy var headerJSON: [String: Any]? = {
         guard let content,
               let header = content.split(separator: "\n").first,
               let headerData = header.data(using: .utf8),
@@ -163,8 +153,16 @@ final class JSONCrashReport: CrashReport {
         else {
             return nil
         }
-        return headerJSON["app_version"] as? String
+        return headerJSON
     }()
+
+    var bundleID: String? {
+        headerJSON?["bundleID"] as? String
+    }
+
+    var appVersion: String? {
+        headerJSON?["app_version"] as? String
+    }
 }
 
 struct CrashDataPayload: CrashReportPresenting {

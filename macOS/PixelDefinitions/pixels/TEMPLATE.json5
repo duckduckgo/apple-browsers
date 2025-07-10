@@ -2,7 +2,7 @@
 {
     pixel_name: {
         description: 'Describe when the pixel fires and its purpose',
-        // DDG usernames of the people responsible for the pixel.
+        // Github usernames of the people responsible for the pixel.
         owners: ['username'],
         triggers: ['other'],
         suffixes: [

@@ -231,14 +231,18 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         switchBarHandler.textSubmissionPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] submission in
+                guard let self = self else { return }
                 switch submission.mode {
                 case .search:
-                    self?.delegate?.onQuerySubmitted(submission.text)
+                    self.delegate?.onQuerySubmitted(submission.text)
                 case .aiChat:
-                    self?.delegate?.onPromptSubmitted(submission.text, tools: nil)
+                    if self.switchBarHandler.forceWebSearch {
+                        self.delegate?.onPromptSubmitted(submission.text, tools: [.webSearch])
+                    } else {
+                        self.delegate?.onPromptSubmitted(submission.text, tools: nil)
+                    }
                 }
-
-                self?.switchBarHandler.clearText()
+                self.switchBarHandler.clearText()
             }
             .store(in: &cancellables)
 

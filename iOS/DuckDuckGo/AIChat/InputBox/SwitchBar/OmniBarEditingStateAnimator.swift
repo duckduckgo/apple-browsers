@@ -102,13 +102,8 @@ final class OmniBarEditingStateAnimator {
             transitionDelegate.rootView.layoutIfNeeded()
         }
 
-        // Schedule animations
-        backgroundFadeAnimator.addCompletion { _ in
-            expandAnimator.startAnimation()
-        }
-
-        // Start animations
         backgroundFadeAnimator.startAnimation()
+        expandAnimator.startAnimation(afterDelay: Constants.TopTransition.fadeInDuration)
     }
 
     private func topPositionDismissal(_ completion: (() -> Void)?) {

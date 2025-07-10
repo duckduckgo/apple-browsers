@@ -306,7 +306,6 @@ extension AutoconsentUserScript {
                 "enableHeuristicDetection": true
             ] as [String: Any?]
         ] as [String: Any?]
-        Logger.autoconsent.debug("autoconsent config: \(String(describing: autoconsentConfig))")
 
         replyHandler(autoconsentConfig, nil)
     }

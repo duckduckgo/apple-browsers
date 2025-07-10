@@ -123,7 +123,6 @@ struct SettingsCellView: View, Identifiable {
             }
         }
         .frame(maxWidth: .infinity)
-        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     private var cellContent: some View {
@@ -259,7 +258,6 @@ struct SettingsPickerCellView<T: CaseIterable & Hashable & CustomStringConvertib
                 }
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     private func getButtonWithAction(action: @escaping () -> Void,
@@ -318,7 +316,6 @@ struct SettingsCustomCell<Content: View>: View {
                 cellContent
             }
         }
-        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     private var cellContent: some View {

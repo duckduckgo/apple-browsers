@@ -73,6 +73,8 @@ public protocol DataBrokerProtectionRepository {
     func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
 
     func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)?
+
+    func fetchFirstEligibleJobDate() throws -> Date?
 }
 
 public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
@@ -645,5 +647,9 @@ extension DataBrokerProtectionDatabase {
                 }
             }
         }
+    }
+
+    public func fetchFirstEligibleJobDate() throws -> Date? {
+        try vault.fetchFirstEligibleJobDate()
     }
 }

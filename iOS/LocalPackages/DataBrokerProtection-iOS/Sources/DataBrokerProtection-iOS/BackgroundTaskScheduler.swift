@@ -59,7 +59,6 @@ public final class BackgroundTaskScheduler {
     public func calculateEarliestBeginDate(from date: Date = .init()) async throws -> Date {
         let allBrokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()
         let maxWaitDate = date.addingTimeInterval(maxWaitTime)
-        let minWaitDate = date.addingTimeInterval(minWaitTime)
 
         let eligibleJobs = BrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(
             brokerProfileQueriesData: allBrokerProfileQueryData,
@@ -67,18 +66,27 @@ public final class BackgroundTaskScheduler {
             priorityDate: maxWaitDate
         ).sortedByEarliestPreferredRunDateFirst()
 
-        guard let firstJobDate = eligibleJobs.first?.preferredRunDate else {
+        let firstJobDate = eligibleJobs.first?.preferredRunDate
+        return calculateEarliestBeginDate(from: date, firstEligibleJobDate: firstJobDate)
+    }
+    
+    public func calculateEarliestBeginDate(from date: Date, firstEligibleJobDate: Date?) -> Date {
+        let maxWaitDate = date.addingTimeInterval(maxWaitTime)
+        
+        guard let jobDate = firstEligibleJobDate else {
             // No eligible jobs
             return maxWaitDate
         }
-
+        
+        let minWaitDate = date.addingTimeInterval(minWaitTime)
+        
         // If overdue → ASAP
-        if firstJobDate <= date {
+        if jobDate <= date {
             return date
         }
-
+        
         // Otherwise → clamp to [minWaitTime, maxWaitTime]
-        return min(max(firstJobDate, minWaitDate), maxWaitDate)
+        return min(max(jobDate, minWaitDate), maxWaitDate)
     }
 
     public func registerBackgroundTaskHandler() {
@@ -96,7 +104,25 @@ public final class BackgroundTaskScheduler {
             
             let request = BGProcessingTaskRequest(identifier: Self.backgroundJobIdentifier)
             request.requiresNetworkConnectivity = true
-            let earliestBeginDate = try await calculateEarliestBeginDate()
+
+            let currentDate = Date()
+            
+            var start = CFAbsoluteTimeGetCurrent()
+            let earliestBeginDate = try await calculateEarliestBeginDate(from: currentDate)
+            let diff = CFAbsoluteTimeGetCurrent() - start
+            Logger.dataBrokerProtection.log("Earliest begin date calculation took \(diff) seconds: \(earliestBeginDate)")
+
+            // Compare with new database calculation
+            start = CFAbsoluteTimeGetCurrent()
+            let dbFirstJobDate = try database.fetchFirstEligibleJobDate()
+            let dbDiff = CFAbsoluteTimeGetCurrent() - start
+            
+            let dbEarliestBeginDate = calculateEarliestBeginDate(from: currentDate, firstEligibleJobDate: dbFirstJobDate)
+            
+            Logger.dataBrokerProtection.log("Database earliest begin date calculation took \(dbDiff) seconds: \(dbEarliestBeginDate)")
+            Logger.dataBrokerProtection.log("Time difference: \(diff - dbDiff) seconds (positive means DB is faster)")
+            Logger.dataBrokerProtection.log("Date difference: \(dbEarliestBeginDate.timeIntervalSince(earliestBeginDate)) seconds")
+            
             request.earliestBeginDate = earliestBeginDate
             Logger.dataBrokerProtection.log("PIR Background Task: Scheduling next task for \(earliestBeginDate)")
 

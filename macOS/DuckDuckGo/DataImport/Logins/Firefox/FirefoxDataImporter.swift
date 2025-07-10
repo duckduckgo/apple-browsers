@@ -167,4 +167,63 @@ internal class FirefoxDataImporter: DataImporter {
         }
     }
 
+    private func fetchNewTabFavorites() -> [ImportedBookmarks.BookmarkOrFolder] {
+        do {
+            let preferences = try FirefoxPreferences(profileURL: profile.profileURL)
+            guard preferences.newTabFavoritesEnabled else {
+                return []
+            }
+
+            let favoritesCount = preferences.newTabFavoritesCount
+            let pinnedSites = preferences.newTabPinnedSites
+                .prefix(favoritesCount)
+                .map { site -> ImportedBookmarks.BookmarkOrFolder? in
+                    guard let site else { return nil }
+                    return ImportedBookmarks.BookmarkOrFolder(name: site.label ?? site.url, type: .bookmark, urlString: site.url, children: nil, isDDGFavorite: true)
+                }
+            let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: profile.profileURL)
+            var frecentSites = try historyReader.readFrecentSites().get()
+                .reduce(into: (seen: Set<URL>(), result: [ImportedBookmarks.BookmarkOrFolder]())) { partialResult, site in
+                    // Filter out URLs that are blocked, the root domain is pinned, or not HTTP/HTTPS.
+                    // Then, de-duplicate remaining frecent sites by their root domain.
+                    guard let url = URL(string: site.url),
+                            !preferences.isURLBlockedOnNewTab(site.url),
+                            !pinnedSites.contains(where: { $0?.url?.root == url.root }),
+                            url.isHttps || url.isHttp else { return }
+                    let rootDomain = url.root ?? url
+                    if !partialResult.seen.contains(rootDomain) {
+                        partialResult.seen.insert(rootDomain)
+                        let favorite = ImportedBookmarks.BookmarkOrFolder(name: site.title ?? site.url, type: .bookmark, urlString: site.url, children: nil, isDDGFavorite: true, favoritesIndex: partialResult.result.count)
+                        partialResult.result.append(favorite)
+                    }
+                }
+                .result.prefix(favoritesCount).map { $0 }
+
+            guard !pinnedSites.isEmpty else {
+                return frecentSites
+            }
+
+            // Combine pinned sites and frecent sites to create favorites.
+            // The pinned sites array contains nil values as placeholders for frecent sites that are not pinned.
+            var favorites: [ImportedBookmarks.BookmarkOrFolder] = []
+            var frecentIterator = frecentSites.makeIterator()
+
+            for idx in 0..<favoritesCount {
+                if idx < pinnedSites.count, var pinnedSite = pinnedSites[idx] {
+                    pinnedSite.favoritesIndex = idx
+                    favorites.append(pinnedSite)
+                } else if let frecentSite = frecentIterator.next() {
+                    var updatedFrecentSite = frecentSite
+                    updatedFrecentSite.favoritesIndex = idx
+                    favorites.append(updatedFrecentSite)
+                }
+            }
+
+            return favorites
+        } catch {
+            // Send pixel for error: https://app.asana.com/1/137249556945/task/1210674932129670
+            return []
+        }
+    }
+
 }

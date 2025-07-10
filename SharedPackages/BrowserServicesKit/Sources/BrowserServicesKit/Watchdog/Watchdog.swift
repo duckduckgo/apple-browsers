@@ -24,7 +24,8 @@ public final class Watchdog {
     private let monitor: WatchdogMonitor
     private let timeout: TimeInterval
     private let checkInterval: TimeInterval
-    private let logger = Logger(subsystem: "com.duckduckgo.watchdog", category: "hang-detection")
+    private let killAppFunction: (TimeInterval) -> Void
+    private static var logger = { Logger(subsystem: "com.duckduckgo.watchdog", category: "hang-detection") }()
 
     private var monitoringTask: Task<Void, Never>?
 
@@ -35,10 +36,16 @@ public final class Watchdog {
     }
 
     @MainActor
-    public init(timeout: TimeInterval = 10.0, checkInterval: TimeInterval = 2.0) {
+    convenience public init(timeout: TimeInterval = 10.0, checkInterval: TimeInterval = 2.0) {
+        self.init(killAppFunction: Self.killApp(afterTimeout:), timeout: timeout, checkInterval: checkInterval)
+    }
+
+    @MainActor
+    init(killAppFunction: @escaping (TimeInterval) -> Void, timeout: TimeInterval = 10.0, checkInterval: TimeInterval = 2.0) {
         self.timeout = timeout
         self.checkInterval = checkInterval
         self.monitor = WatchdogMonitor()
+        self.killAppFunction = killAppFunction
     }
 
     deinit {
@@ -50,7 +57,7 @@ public final class Watchdog {
         // Cancel any existing task
         monitoringTask?.cancel()
 
-        logger.info("Watchdog started monitoring main thread with timeout: \(self.timeout)s")
+        Self.logger.info("Watchdog started monitoring main thread with timeout: \(self.timeout)s")
 
         monitoringTask = Task {
             await startMonitoring()
@@ -62,7 +69,7 @@ public final class Watchdog {
         monitoringTask?.cancel()
         monitoringTask = nil
 
-        logger.info("Watchdog stopped monitoring")
+        Self.logger.info("Watchdog stopped monitoring")
     }
 
     private func startMonitoring() async {
@@ -87,53 +94,15 @@ public final class Watchdog {
             let timeSinceLastCheck = await monitor.timeSinceLastHeartbeat()
 
             if timeSinceLastCheck > timeout {
-                logger.critical("Main thread hang detected! Last heartbeat: \(timeSinceLastCheck)s ago (timeout: \(self.timeout)s)")
-
-                // Give main thread one more chance
-                let finalCheckSucceeded = await performFinalResponsivenessCheck()
-
-                if finalCheckSucceeded {
-                    logger.warning("Main thread responded to final check. Continuing monitoring.")
-                    await monitor.updateHeartbeat()
-                } else {
-                    logger.critical("Main thread is completely unresponsive. Crashing app to generate stack trace.")
-                    killApp()
-                }
+                Self.logger.critical("Main thread hang detected! Last heartbeat: \(timeSinceLastCheck)s ago (timeout: \(self.timeout)s)")
+                killAppFunction(timeout)
             }
         }
     }
-
-    private func performFinalResponsivenessCheck() async -> Bool {
-        let finalCheckTime: TimeInterval = 2.0
-
-        return await withTaskGroup(of: Bool.self) { group in
-            // Task 1: Try to execute on main thread
-            group.addTask { @MainActor in
-                return true
-            }
-
-            // Task 2: Timeout after finalCheckTime
-            group.addTask {
-                do {
-                    let nanoseconds = UInt64(finalCheckTime * 1_000_000_000)
-                    try await Task.sleep(nanoseconds: nanoseconds)
-                    return false
-                } catch {
-                    // Task was cancelled, main thread responded
-                    return true
-                }
-            }
-
-            // Return the result of whichever task completes first
-            let result = await group.next() ?? true
-            group.cancelAll()
-            return result
-        }
-    }
-
-    private func killApp() {
+    
+    static func killApp(afterTimeout timeout: TimeInterval) {
         // Log before crashing to help with debugging
-        logger.critical("Watchdog is terminating the app due to main thread hang")
+        Self.logger.critical("Watchdog is terminating the app due to main thread hang")
 
         // Use fatalError to generate crash report with stack trace
         fatalError("Main thread hang detected by Watchdog (timeout: \(timeout)s). This crash is intentional to provide debugging information.")

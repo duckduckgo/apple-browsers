@@ -396,14 +396,20 @@ final class AddressBarButtonsViewController: NSViewController {
         let behavior = createAIChatLinkOpenBehavior(for: tab)
 
         if featureFlagger.isFeatureOn(.aiChatSidebar),
-            aiChatMenuConfig.openAIChatInSidebar,
-            case .url = tab.content,
-            behavior == .currentTab {
+           aiChatMenuConfig.openAIChatInSidebar,
+           case .url = tab.content,
+           behavior == .currentTab {
 
-            if aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) {
-                aiChatSidebarPresenter.toggleSidebar()
+            if !aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid),
+               isTextFieldEditorFirstResponder,
+               let value = textFieldValue,
+               let query = AIChatAddressBarPromptExtractor().queryForValue(value) {
+                // If sidebar is not open and the address bar is in focus and has viable query use it to pass as a prompt to sidebar
+                let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: true)
+                aiChatSidebarPresenter.presentSidebar(for: prompt)
             } else {
-                openAIChatSidebar()
+                // Otherwise just toggle the sidebar
+                aiChatSidebarPresenter.toggleSidebar()
             }
         } else {
             openAIChatTab(for: tab, with: behavior)
@@ -424,17 +430,6 @@ final class AddressBarButtonsViewController: NSViewController {
         return LinkOpenBehavior(event: NSApp.currentEvent,
                                 switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
                                 shouldSelectNewTab: shouldSelectNewTab)
-    }
-
-    private func openAIChatSidebar() {
-        if isTextFieldEditorFirstResponder,
-           let value = textFieldValue,
-           let query = AIChatAddressBarPromptExtractor().queryForValue(value) {
-            let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: true)
-            aiChatSidebarPresenter.presentSidebar(for: prompt)
-        } else {
-            aiChatSidebarPresenter.toggleSidebar()
-        }
     }
 
     private func openAIChatTab(for tab: Tab, with behavior: LinkOpenBehavior) {

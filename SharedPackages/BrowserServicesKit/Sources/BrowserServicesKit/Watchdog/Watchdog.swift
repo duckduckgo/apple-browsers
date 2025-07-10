@@ -99,7 +99,7 @@ public final class Watchdog {
             }
         }
     }
-    
+
     static func killApp(afterTimeout timeout: TimeInterval) {
         // Log before crashing to help with debugging
         Self.logger.critical("Watchdog is terminating the app due to main thread hang")

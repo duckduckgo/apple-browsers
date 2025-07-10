@@ -235,18 +235,18 @@ final class WatchdogTests: XCTestCase {
         // Use very short timeout for faster test
         let mockKill = MockKillAppFunction()
         let hangWatchdog = Watchdog(killAppFunction: mockKill.killApp, timeout: 0.2, checkInterval: 0.05)
-        
+
         hangWatchdog.start()
         XCTAssertTrue(hangWatchdog.isRunning)
         XCTAssertFalse(mockKill.wasKilled, "Should not have killed app yet")
-        
+
         // Let the watchdog establish a baseline heartbeat first
         try await Task.sleep(nanoseconds: 50_000_000) // 0.05 seconds
-        
+
         // Now block the main thread using a synchronous dispatch to main queue
         // This ensures the main thread is truly blocked for heartbeat updates
         let expectation = XCTestExpectation(description: "Hang detected")
-        
+
         Task.detached {
             // Wait for the hang to be detected
             while !mockKill.wasKilled {
@@ -254,7 +254,7 @@ final class WatchdogTests: XCTestCase {
             }
             expectation.fulfill()
         }
-        
+
         // Block the main thread using DispatchQueue.main.sync from a background queue
         Task.detached {
             // This will block the main thread from a background thread
@@ -266,11 +266,11 @@ final class WatchdogTests: XCTestCase {
                 }
             }
         }
-        
+
         await fulfillment(of: [expectation], timeout: 1.0)
-        
+
         XCTAssertTrue(mockKill.wasKilled, "Watchdog should have detected hang and killed app")
-        
+
         hangWatchdog.stop()
     }
 
@@ -278,23 +278,23 @@ final class WatchdogTests: XCTestCase {
         // Use short timeout but ensure normal operation
         let mockKill = MockKillAppFunction()
         let normalWatchdog = Watchdog(killAppFunction: mockKill.killApp, timeout: 0.3, checkInterval: 0.05)
-        
+
         normalWatchdog.start()
         XCTAssertTrue(normalWatchdog.isRunning)
-        
+
         // Wait longer than timeout but with normal main thread activity
         try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-        
+
         XCTAssertFalse(mockKill.wasKilled, "Should not have killed app during normal operation")
         XCTAssertTrue(normalWatchdog.isRunning, "Watchdog should still be running")
-        
+
         normalWatchdog.stop()
     }
 
     func testWatchdogStoppedBeforeHangDoesNotKill() async throws {
         let mockKill = MockKillAppFunction()
         let stoppedWatchdog = Watchdog(killAppFunction: mockKill.killApp, timeout: 0.1, checkInterval: 0.02)
-        
+
         stoppedWatchdog.start()
         XCTAssertTrue(stoppedWatchdog.isRunning)
 
@@ -314,7 +314,7 @@ final class WatchdogTests: XCTestCase {
                 }
             }
         }
-        
+
         // Give time for any potential background monitoring to detect hang
         // (but it shouldn't because watchdog is stopped)
         try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds

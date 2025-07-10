@@ -37,13 +37,12 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
     }
 
     public func handle(pixelType: Subscription.SubscriptionPixelType) {
-        let sourceParam = [Defaults.sourceKey: source.rawValue,
-                           AuthVersion.key: AuthVersion.v2.rawValue]
+        let sourceParam = [Defaults.sourceKey: source.rawValue]
         switch pixelType {
         case .invalidRefreshToken:
             DailyPixel.fireDailyAndCount(pixel: .privacyProInvalidRefreshTokenDetected, withAdditionalParameters: sourceParam)
         case .subscriptionIsActive:
-            DailyPixel.fire(pixel: .privacyProSubscriptionActive, withAdditionalParameters: sourceParam)
+            DailyPixel.fire(pixel: .privacyProSubscriptionActive, withAdditionalParameters: [AuthVersion.key: AuthVersion.v2.rawValue])
         case .migrationFailed(let error):
             DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: [Defaults.errorKey: error.localizedDescription].merging(sourceParam) { $1 })
         case .migrationSucceeded:

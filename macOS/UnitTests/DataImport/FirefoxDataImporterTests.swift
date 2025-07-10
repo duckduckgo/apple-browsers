@@ -28,7 +28,8 @@ class FirefoxDataImporterTests: XCTestCase {
         let loginImporter = MockLoginImporter()
         let faviconManager = FaviconManagerMock()
         let bookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _, _ in .init(successful: 1, duplicates: 2, failed: 3) })
-        let importer = FirefoxDataImporter(profile: .init(browser: .firefox, profileURL: resourceURL()), primaryPassword: nil, loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager)
+        let featureFlagger = MockFeatureFlagger()
+        let importer = FirefoxDataImporter(profile: .init(browser: .firefox, profileURL: resourceURL()), primaryPassword: nil, loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
 
         let result = await importer.importData(types: [.bookmarks])
 

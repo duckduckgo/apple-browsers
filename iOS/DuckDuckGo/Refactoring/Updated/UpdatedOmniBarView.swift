@@ -223,6 +223,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
     private var masksTop: Bool = true
+    private var clipsContent: Bool = true
     private let omniBarProgressView = OmniBarProgressView()
     var progressView: ProgressView? { omniBarProgressView.progressView }
 
@@ -261,13 +262,13 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
-        // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
-        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self.frame.height)
-        updateMaskLayer()
-    }
+//    override func layoutSubviews() {
+//        super.layoutSubviews()
+//        // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
+//        // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
+//        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self.frame.height)
+//        updateMaskLayer()
+//    }
 
     private func setUpSubviews() {
         addSubview(stackView)
@@ -658,13 +659,19 @@ extension UpdatedOmniBarView {
     }
 
     // Used to mask shadows going outside of bounds to prevent them covering other content
-    func updateMaskLayer(maskTop: Bool) {
+    func updateMaskLayer(maskTop: Bool, hasContent: Bool) {
+        print("***", #function, maskTop, hasContent)
         self.masksTop = maskTop
-
+        self.clipsContent = hasContent
         updateMaskLayer()
     }
 
     private func updateMaskLayer() {
+        guard clipsContent else {
+            layer.mask = nil
+            return
+        }
+
         let maskLayer = CALayer()
 
         let clippingOffset = 100.0
@@ -673,7 +680,7 @@ extension UpdatedOmniBarView {
         // Make the frame uniformly larger along each axis and offset to top or bottom
         let maskFrame = layer.bounds
             .insetBy(dx: -inset, dy: -inset)
-            .offsetBy(dx: 0, dy: masksTop ? clippingOffset : -clippingOffset)
+            .offsetBy(dx: 0, dy: masksTop ? inset : -inset)
 
         maskLayer.frame = maskFrame
         maskLayer.backgroundColor = UIColor.black.cgColor

@@ -34,6 +34,21 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     // MARK: - Initialization
 
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Handle address bar position changes to set the shadow correctly
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(addressBarPositionChanged),
+                                               name: AppUserDefaults.Notifications.addressBarPositionChanged,
+                                               object: nil)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        updateMaskLayer()
+    }
+
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
             presentExperimentalEditingState(for: textField)
@@ -120,15 +135,30 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         omniBarView.isUsingSmallTopSpacing = false
     }
 
+    var hasContent: Bool {
+        state.showShare || false == dependencies.suggestionTrayDependencies?.favoritesViewModel.favorites.isEmpty
+    }
+
     override func preventShadowsOnTop() {
-        omniBarView.updateMaskLayer(maskTop: true)
+        // omniBarView.updateMaskLayer(maskTop: true, hasContent: hasContent)
     }
 
     override func preventShadowsOnBottom() {
-        omniBarView.updateMaskLayer(maskTop: false)
+        // omniBarView.updateMaskLayer(maskTop: false, hasContent: hasContent)
+    }
+
+    // MARK: Notifications
+
+    @objc private func addressBarPositionChanged() {
+        updateMaskLayer()
     }
 
     // MARK: - Private Helper Methods
+
+    private func updateMaskLayer() {
+        omniBarView.updateMaskLayer(maskTop: AppDependencyProvider.shared.appSettings.currentAddressBarPosition.isBottom,
+                                    hasContent: hasContent)
+    }
 
     private func presentExperimentalEditingState(for textField: UITextField) {
         guard editingStateViewController == nil else { return }

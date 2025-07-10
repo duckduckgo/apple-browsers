@@ -83,6 +83,7 @@ final class AIChatViewControllerManager {
     func openAIChat(_ query: String? = nil,
                     payload: Any? = nil,
                     autoSend: Bool = false,
+                    tools: [AIChatRAGTool]? = nil,
                     on viewController: UIViewController) {
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
 

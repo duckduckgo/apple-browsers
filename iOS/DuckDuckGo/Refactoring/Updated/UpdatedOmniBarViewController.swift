@@ -21,12 +21,14 @@ import UIKit
 import PrivacyDashboard
 import Suggestions
 import Bookmarks
+import AIChat
 
 final class UpdatedOmniBarViewController: OmniBarViewController {
 
     private lazy var omniBarView = UpdatedOmniBarView.create()
     private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
+    private var switchBarHandler: SwitchBarHandler?
 
     override func loadView() {
         view = omniBarView
@@ -144,6 +146,8 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         present(editingStateViewController, animated: false)
         self.editingStateViewController = editingStateViewController
 
+        self.switchBarHandler = switchBarHandler
+
         if shouldAutoSelectText {
             DispatchQueue.main.async {
                 editingStateViewController.setUpForInitialSelectedState()
@@ -188,10 +192,15 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         omniDelegate?.onOmniQuerySubmitted(query)
     }
 
-    func onPromptSubmitted(_ query: String) {
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
         editingStateViewController?.dismissAnimated { [weak self] in
             guard let self else { return }
-            self.omniDelegate?.onOmniPromptSubmitted(query)
+
+            if let switchBarHandler = self.switchBarHandler, switchBarHandler.forceWebSearch {
+                self.omniDelegate?.onPromptSubmitted(query, tools: [.webSearch])
+            } else {
+                self.omniDelegate?.onPromptSubmitted(query, tools: nil)
+            }
         }
     }
 

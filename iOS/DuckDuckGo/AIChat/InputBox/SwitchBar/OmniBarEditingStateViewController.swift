@@ -27,11 +27,12 @@ import History
 import Core
 import Suggestions
 import SwiftUI
+import AIChat
 
 protocol OmniBarEditingStateViewControllerDelegate: AnyObject {
     func onQueryUpdated(_ query: String)
     func onQuerySubmitted(_ query: String)
-    func onPromptSubmitted(_ query: String)
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?)
     func onSelectFavorite(_ favorite: BookmarkEntity)
     func onSelectSuggestion(_ suggestion: Suggestion)
     func onVoiceSearchRequested(from mode: TextEntryMode)
@@ -220,7 +221,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
                 case .search:
                     self?.delegate?.onQuerySubmitted(submission.text)
                 case .aiChat:
-                    self?.delegate?.onPromptSubmitted(submission.text)
+                    self?.delegate?.onPromptSubmitted(submission.text, tools: nil)
                 }
 
                 self?.switchBarHandler.clearText()

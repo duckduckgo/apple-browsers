@@ -755,7 +755,7 @@ public struct UserText {
     static let generalFeedbackFormCategoryVPN = NSLocalizedString("feedback.general.category.vpn", value: "VPN", comment: "Category for VPN feedback")
     static let generalFeedbackFormCategoryPIR = NSLocalizedString("feedback.general.category.pir", value: "Personal Info Removal", comment: "Category for Personal Info Removal feedback")
     static let generalFeedbackFormCategoryITR = NSLocalizedString("feedback.general.category.itr", value: "Identity Theft Restoration", comment: "Category for Identity Theft Restoration feedback")
-    static let generalFeedbackFormCategoryAiChat = NotLocalizedString("feedback.general.category.ai-chat", value: "Duck.ai", comment: "Category for Duck.ai feedback")
+    static let generalFeedbackFormCategoryAiChat = NSLocalizedString("feedback.general.category.ai-chat", value: "Duck.ai", comment: "Category for Duck.ai feedback")
     static let pproFeedbackFormCategorySelect = NSLocalizedString("feedback.ppro.category.select", value: "Select a category", comment: "Prompt to select a category for Privacy Pro feedback")
     static let pproFeedbackFormCategoryOTP = NSLocalizedString("feedback.ppro.category.otp", value: "Issue with one-time password", comment: "Category for one-time password issues")
     static let pproFeedbackFormCategoryOther = NSLocalizedString("feedback.ppro.category.other", value: "Something else", comment: "Category for other Privacy Pro issues")
@@ -770,10 +770,10 @@ public struct UserText {
     static let itrFeedbackFormCategoryCantContactAdvisor = NSLocalizedString("feedback.itr.category.cant-contact-advisor", value: "Unable to contact advisor", comment: "Category for issues contacting an advisor")
     static let itrFeedbackFormCategoryUnhelpful = NSLocalizedString("feedback.itr.category.unhelpful", value: "Call to Advisor was unhelpful", comment: "Category for unhelpful advisor calls")
     static let itrFeedbackFormCategorySomethingElse = NSLocalizedString("feedback.itr.category.something-else", value: "Something else", comment: "Category for other Identity Theft Restoration issues")
-    static let paidDuckAIFeedbackFormCategorySelect = NotLocalizedString("paid-duck-ai.feedback-form.category.select-category", value: "Select a category", comment: "Title for the category selection state of the paid duck.ai feedback form")
-    static let paidDuckAIFeedbackFormCategoryAccessSubscriptionModels = NotLocalizedString("paid-duck-ai.feedback-form.category.access-subscription-models", value: "Unable to access the subscription Duck.ai models", comment: "Description for the feedback form when there is an issue with accessing the paid tier models")
-    static let paidDuckAIFeedbackFormCategoryLoginThirdPartyBrowser = NotLocalizedString("paid-duck-ai.feedback-form.category.login-third-party-browser", value: "Can't log in to Duck.ai with my subscription", comment: "Description for the feedback form when there is an issue with logging into Duck.ai")
-    static let paidDuckAIFeedbackFormCategorySomethingElse = NotLocalizedString("paid-duck-ai.feedback-form.category.something-else", value: "Other Duck.ai feedback", comment: "Description for the feedback form when the user has an issue not categorized in other options")
+    static let paidDuckAIFeedbackFormCategorySelect = NSLocalizedString("paid-duck-ai.feedback-form.category.select-category", value: "Select a category", comment: "Title for the category selection state of the paid duck.ai feedback form")
+    static let paidDuckAIFeedbackFormCategoryAccessSubscriptionModels = NSLocalizedString("paid-duck-ai.feedback-form.category.access-subscription-models", value: "Unable to access the subscription Duck.ai models", comment: "Description for the feedback form when there is an issue with accessing the paid tier models")
+    static let paidDuckAIFeedbackFormCategoryLoginThirdPartyBrowser = NSLocalizedString("paid-duck-ai.feedback-form.category.login-third-party-browser", value: "Can't log in to Duck.ai with my subscription", comment: "Description for the feedback form when there is an issue with logging into Duck.ai")
+    static let paidDuckAIFeedbackFormCategorySomethingElse = NSLocalizedString("paid-duck-ai.feedback-form.category.something-else", value: "Other Duck.ai feedback", comment: "Description for the feedback form when the user has an issue not categorized in other options")
 
     // MARK: VPN Shortcuts
 
@@ -1357,7 +1357,7 @@ Take back control of your personal information with the browser designed for dat
     
     public static let settingsPProVPNTitle = NSLocalizedString("settings.subscription.VPN.title", value: "VPN", comment: "VPN cell title for privacy pro")
     public static let settingsPProDBPTitle = NSLocalizedString("settings.subscription.DBP.title", value: "Personal Information Removal", comment: "Data Broker protection cell title for privacy pro")
-    public static let settingsSubscriptionAiChatTitle = NotLocalizedString("settings.subscription.AIChat.title", value: "Duck.ai", comment: "Paid AIChat protection cell title for subscription")
+    public static let settingsSubscriptionAiChatTitle = NSLocalizedString("settings.subscription.AIChat.title", value: "Duck.ai", comment: "Paid AIChat protection cell title for subscription")
     public static let settingsPProDBPSubTitle = NSLocalizedString("settings.subscription.DBP.subtitle", value: "Remove your info from sites that sell it", comment: "Data Broker protection cell subtitle for privacy pro")
     public static let settingsPProITRTitle = NSLocalizedString("settings.subscription.ITR.title", value: "Identity Theft Restoration", comment: "Identity theft restoration cell title for privacy pro")
     public static let settingsPProITRSubTitle = NSLocalizedString("settings.subscription.ITR.subtitle", value: "If your identity is stolen, we'll help restore it", comment: "Identity theft restoration cell subtitle for privacy pro")
@@ -1420,9 +1420,9 @@ Take back control of your personal information with the browser designed for dat
     public static let subscriptionSubscribed = NSLocalizedString("subscription.subscribed", value: "Subscribed", comment: "Subtitle in header when subscribed")
     public static let subscriptionCloseButton = NSLocalizedString("subscription.close", value: "Close", comment: "Navigation Button for closing subscription view")
     public static let trialSubscription = NSLocalizedString("subscription.trial", value: "Free Trial Active", comment: "Subtitle in header when on a free trial subscription")
-    public static let aiChatSubscriptionTitle = NotLocalizedString("subscription.duck.ai.title", value: "Duck.ai", comment: "Title of the setting page of Duck.ai")
-    static let aiChatSubscriptionCaption = NotLocalizedString("subscription.duck.ai.caption", value: "Upgrades Duck.ai with advanced AI models.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)", comment: "Caption of the Duck.ai settings (do not modify link)")
-    public static let openSubscriptionAIChat = NotLocalizedString("subscription.duck.ai.open", value: "Open Duck.ai", comment: "Title of the setting page action to open Duck.ai")
+    public static let aiChatSubscriptionTitle = NSLocalizedString("subscription.duck.ai.title", value: "Duck.ai", comment: "Title of the setting page of Duck.ai")
+    static let aiChatSubscriptionCaption = NSLocalizedString("subscription.duck.ai.caption", value: "Chat privately with subscriber-exclusive AI models.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)", comment: "Caption of the Duck.ai settings (do not modify link)")
+    public static let openSubscriptionAIChat = NSLocalizedString("subscription.duck.ai.open", value: "Open Duck.ai", comment: "Title of the setting page action to open Duck.ai")
 
     static func renewingSubscriptionInfo(billingPeriod: PrivacyProSubscription.BillingPeriod, renewalDate: String) -> String {
         let localized: String

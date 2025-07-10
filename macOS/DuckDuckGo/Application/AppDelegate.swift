@@ -899,7 +899,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 PixelKit.fire(
                     GeneralPixel.crash(appIdentifier: appIdentifier),
                     frequency: .dailyAndStandard,
-                    withAdditionalParameters: parameters,
+                    withAdditionalParameters: params,
                     includeAppVersionParameter: false
                 )
             }

@@ -86,13 +86,8 @@ public final class CrashCollection {
                         params["first"] = "1"
                     }
 
-                    let metadataString = String(data: diagnostic.metaData.jsonRepresentation(), encoding: .utf8)
-                    let regex = regex(#""bundleIdentifier"\s*:\s*"([^"]+)""#)
-                    if let metadataString,
-                       let match = metadataString.firstMatch(of: regex), match.numberOfRanges > 1,
-                       let range = Range(match.range(at: 1), in: metadataString){
-                        params["bundle"] = String(metadataString[range])
-                    }
+                    let metadataJSON = try? JSONSerialization.jsonObject(with: diagnostic.metaData.jsonRepresentation()) as? [String: Any]
+                    params["bundle"] = metadataJSON?["bundleIdentifier"] as? String
                     return params
                 }
             let processedData = process(payloads)

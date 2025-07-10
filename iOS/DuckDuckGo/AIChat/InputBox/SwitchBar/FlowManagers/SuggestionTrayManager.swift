@@ -56,7 +56,11 @@ final class SuggestionTrayManager: NSObject {
     private var cancellables = Set<AnyCancellable>()
     
     private var suggestionTrayViewController: SuggestionTrayViewController?
-    
+
+    var isShowingSuggestions: Bool {
+        suggestionTrayViewController?.view.isHidden == false
+    }
+
     // MARK: - Initialization
     
     init(switchBarHandler: SwitchBarHandling, dependencies: SuggestionTrayDependencies) {

@@ -84,7 +84,6 @@ final class OmniBarEditingStateAnimator {
         transitionDelegate.switchBarVC.setExpanded(false)
         transitionDelegate.switchBarVC.view.alpha = 0.0
         transitionDelegate.rootView.alpha = 0.0
-        transitionDelegate.rootView.backgroundColor = .clear
 
         transitionDelegate.rootView.layoutIfNeeded()
 
@@ -92,7 +91,6 @@ final class OmniBarEditingStateAnimator {
         let backgroundFadeAnimator = UIViewPropertyAnimator(duration: Constants.TopTransition.fadeInDuration, curve: .easeIn) {
             transitionDelegate.switchBarVC.view.alpha = 1.0
             transitionDelegate.rootView.alpha = 1.0
-            transitionDelegate.rootView.backgroundColor = UIColor(designSystemColor: .background)
             transitionDelegate.adjustForAppearance()
         }
 

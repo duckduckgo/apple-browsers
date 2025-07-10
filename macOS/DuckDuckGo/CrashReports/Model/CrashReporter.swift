@@ -50,7 +50,7 @@ final class CrashReporter {
         }
 
         for crash in crashReports {
-            let appIdentifier = CrashReport.appIdentifier(for: crash.bundleID)
+            let appIdentifier = CrashPixelAppIdentifier(crash.bundleID)
             if let appVersion = crash.appVersion {
                 let parameters = [PixelKit.Parameters.appVersion: appVersion]
                 PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), frequency: .dailyAndStandard, withAdditionalParameters: parameters, includeAppVersionParameter: false)

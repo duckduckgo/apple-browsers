@@ -24,7 +24,7 @@ import Common
 import os.log
 import BrowserServicesKit
 
-final class BackgroundTaskScheduler {
+public final class BackgroundTaskScheduler {
     static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
 
     struct Constants {
@@ -40,13 +40,13 @@ final class BackgroundTaskScheduler {
     private let iOSPixelsHandler: EventMapping<IOSPixels>
     private let validateRunPrerequisites: () async -> Bool
 
-    init(maxWaitTime: TimeInterval = Constants.defaultMaxWaitTime,
-         maxEligibleJobsPerBackgroundTask: Int = Constants.defaultMaxEligibleJobsPerBackgroundTask,
-         database: DataBrokerProtectionRepository,
-         queueManager: BrokerProfileJobQueueManaging,
-         jobDependencies: BrokerProfileJobDependencyProviding,
-         iOSPixelsHandler: EventMapping<IOSPixels>,
-         validateRunPrerequisites: @escaping () async -> Bool) {
+    public init(maxWaitTime: TimeInterval = Constants.defaultMaxWaitTime,
+                maxEligibleJobsPerBackgroundTask: Int = Constants.defaultMaxEligibleJobsPerBackgroundTask,
+                database: DataBrokerProtectionRepository,
+                queueManager: BrokerProfileJobQueueManaging,
+                jobDependencies: BrokerProfileJobDependencyProviding,
+                iOSPixelsHandler: EventMapping<IOSPixels>,
+                validateRunPrerequisites: @escaping () async -> Bool) {
         self.maxWaitTime = maxWaitTime
         self.maxEligibleJobsPerBackgroundTask = maxEligibleJobsPerBackgroundTask
         self.database = database
@@ -56,7 +56,7 @@ final class BackgroundTaskScheduler {
         self.validateRunPrerequisites = validateRunPrerequisites
     }
 
-    func calculateEarliestBeginDate(from date: Date = .init()) async throws -> Date {
+    public func calculateEarliestBeginDate(from date: Date = .init()) async throws -> Date {
         let allBrokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()
         let maxWaitDate = date.addingTimeInterval(maxWaitTime)
 
@@ -78,13 +78,13 @@ final class BackgroundTaskScheduler {
         return max(date, min(lastJobDate, maxWaitDate))
     }
 
-    func registerBackgroundTaskHandler() {
+    public func registerBackgroundTaskHandler() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundJobIdentifier, using: nil) { [weak self] task in
             self?.handleBGProcessingTask(task: task)
         }
     }
 
-    func scheduleBGProcessingTask() {
+    public func scheduleBGProcessingTask() {
         Task {
             guard await validateRunPrerequisites() else {
                 Logger.dataBrokerProtection.log("Prerequisites are invalid during scheduling of background task")

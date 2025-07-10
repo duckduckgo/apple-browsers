@@ -18,8 +18,9 @@
 
 public extension NewTabPageDataModel {
 
+    // https://github.com/duckduckgo/content-scope-scripts/blob/cb36865bf4087456dd3da282bf49ccb59cbfcc47/special-pages/pages/new-tab/app/omnibar/omnibar.md
+
     // MARK: - omnibar_getConfig
-    // https://github.com/duckduckgo/content-scope-scripts/blob/cb36865bf4087456dd3da282bf49ccb59cbfcc47/special-pages/pages/new-tab/app/omnibar/omnibar.md?plain=1#L27
 
     enum OmnibarMode: String, Codable {
         case search, ai
@@ -30,7 +31,6 @@ public extension NewTabPageDataModel {
     }
 
     // MARK: - omnibar_getSuggestions
-    // https://github.com/duckduckgo/content-scope-scripts/blob/cb36865bf4087456dd3da282bf49ccb59cbfcc47/special-pages/pages/new-tab/app/omnibar/omnibar.md?plain=1#L37
 
     struct OmnibarGetSuggestionsRequest: Codable, Equatable {
         let term: String
@@ -173,4 +173,17 @@ public extension NewTabPageDataModel {
         let target: OpenTarget
         let term: String
     }
+
+    // MARK: - omnibar_openSuggestion
+
+    struct OpenSuggestionAction: Codable, Equatable {
+        let suggestion: Suggestion
+        let target: OpenTarget
+    }
+
+    struct OmnibarOpenSuggestionNotification: Codable, Equatable {
+        let method: String // should always be "omnibar_openSuggestion"
+        let params: OpenSuggestionAction
+    }
+
 }

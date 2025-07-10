@@ -25,6 +25,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case getConfig = "omnibar_getConfig"
         case getSuggestions = "omnibar_getSuggestions"
         case submitSearch = "omnibar_submitSearch"
+        case openSuggestion = "omnibar_openSuggestion"
     }
 
     private let suggestionsProvider: NewTabPageOmnibarSuggestionsProviding
@@ -41,7 +42,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         userScript.registerMessageHandlers([
             MessageName.getConfig.rawValue: { [weak self] in try await self?.getConfig(params: $0, original: $1) },
             MessageName.getSuggestions.rawValue: { [weak self] in try await self?.getSuggestions(params: $0, original: $1) },
-            MessageName.submitSearch.rawValue: { [weak self] in try await self?.submitSearch(params: $0, original: $1) }
+            MessageName.submitSearch.rawValue: { [weak self] in try await self?.submitSearch(params: $0, original: $1) },
+            MessageName.openSuggestion.rawValue: { [weak self] in try await self?.openSuggestion(params: $0, original: $1) }
         ])
     }
 
@@ -63,6 +65,14 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             return nil
         }
         await actionHandler.openSearch(term: action.term, target: action.target)
+        return nil
+    }
+
+    private func openSuggestion(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.OpenSuggestionAction = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        await actionHandler.openSuggestion(action.suggestion, target: action.target)
         return nil
     }
 }

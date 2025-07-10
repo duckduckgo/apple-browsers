@@ -18,6 +18,8 @@
 
 import NewTabPage
 import AppKit
+import Suggestions
+import Common
 
 final class NewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
 
@@ -37,6 +39,38 @@ final class NewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
         )
     }
 
+    func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget) {
+        let windowControllersManager = NSApp.delegateTyped.windowControllersManager
+        guard let mainWindowController = windowControllersManager.lastKeyMainWindowController,
+                let addressBarTextField = mainWindowController.mainViewController.navigationBarViewController.addressBarViewController?.addressBarTextField else {
+            assertionFailure("Failed to open suggestion")
+            return
+        }
+
+        let appSuggestion = suggestion.toAppSuggestion()
+
+        if case .internalPage(title: _, url: let url, _) = appSuggestion,
+           url == .bookmarks || url.isSettingsURL {
+            windowControllersManager.show(url: url, tabId: nil, source: .switchToOpenTab, newTab: true)
+        } else if case .openTab(_, url: let url, tabId: let tabId, _) = appSuggestion {
+            windowControllersManager.show(url: url, tabId: tabId, source: .switchToOpenTab, newTab: true)
+        } else {
+            addressBarTextField.makeUrl(suggestion: appSuggestion, stringValueWithoutSuffix: "") { suggestionUrl, _, _ in
+                guard let suggestionUrl else {
+                    assertionFailure("Failed to open suggestion")
+                    return
+                }
+                NewTabPageLinkOpener.open(
+                    suggestionUrl,
+                    source: .ui,
+                    sender: .userScript,
+                    target: target.linkOpenTarget,
+                    sourceWindow: mainWindowController.window
+                )
+            }
+        }
+    }
+
 }
 
 extension NewTabPageDataModel.OpenTarget {
@@ -52,4 +86,41 @@ extension NewTabPageDataModel.OpenTarget {
         }
     }
 
+}
+
+extension NewTabPageDataModel.Suggestion {
+
+    func toAppSuggestion() -> Suggestion {
+        switch self {
+        case .phrase(let phrase):
+            return .phrase(phrase: phrase)
+
+        case .website(let urlString):
+            guard let url = URL(string: urlString) else {
+                return .unknown(value: urlString)
+            }
+            return .website(url: url)
+
+        case .bookmark(let title, let urlString, let isFavorite, let score):
+            guard let url = URL(string: urlString) else {
+                return .unknown(value: urlString)
+            }
+            return .bookmark(title: title, url: url, isFavorite: isFavorite, score: score)
+
+        case .historyEntry(let title, let urlString, let score):
+            guard let url = URL(string: urlString) else {
+                return .unknown(value: urlString)
+            }
+            return .historyEntry(title: title, url: url, score: score)
+
+        case .internalPage(let title, let urlString, let score):
+            guard let url = URL(string: urlString) else {
+                return .unknown(value: urlString)
+            }
+            return .internalPage(title: title, url: url, score: score)
+
+        case .openTab(let title, let tabId, let score):
+            return .openTab(title: title, url: URL.empty, tabId: tabId, score: score)
+        }
+    }
 }

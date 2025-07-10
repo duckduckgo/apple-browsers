@@ -505,7 +505,7 @@ final class AddressBarTextField: NSTextField {
         Application.appDelegate.windowControllersManager.show(url: tab.url, tabId: tab.tabId, source: .switchToOpenTab, newTab: true /* in case not found */)
     }
 
-    private func makeUrl(suggestion: Suggestion?, stringValueWithoutSuffix: String, completion: @escaping (URL?, String, Bool) -> Void) {
+    func makeUrl(suggestion: Suggestion?, stringValueWithoutSuffix: String, completion: @escaping (URL?, String, Bool) -> Void) {
         let finalUrl: URL?
         let userEnteredValue: String
         switch suggestion {

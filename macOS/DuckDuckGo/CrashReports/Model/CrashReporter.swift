@@ -50,16 +50,7 @@ final class CrashReporter {
         }
 
         for crash in crashReports {
-            var appIdentifier: String?
-            if let bundleID = crash.bundleID {
-                if bundleID.hasSuffix("vpn") {
-                    appIdentifier = "vpnagent"
-                } else if bundleID.hasSuffix("vpn.network-extension") {
-                    appIdentifier = "vpnextension"
-                } else if bundleID.hasSuffix("DBP.backgroundAgent") {
-                    appIdentifier = "dbp"
-                }
-            }
+            let appIdentifier = CrashReport.appIdentifier(for: crash.bundleID)
             if let appVersion = crash.appVersion {
                 let parameters = [PixelKit.Parameters.appVersion: appVersion]
                 PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), frequency: .dailyAndStandard, withAdditionalParameters: parameters, includeAppVersionParameter: false)

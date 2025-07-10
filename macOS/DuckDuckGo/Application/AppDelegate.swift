@@ -892,24 +892,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if APPSTORE
         crashCollection.startAttachingCrashLogMessages { pixelParameters, payloads, completion in
-            
-            pixelParameters.forEach { parameters in
-                // Calculate appIdentifier for what crashed - nil for main bundle, otherwise the app identifier is the bundle identifier minus the main bundle identifier.
-                var params = parameters
-                var appIdentifier: String?
-                if let bundle = params.removeValue(forKey: "bundle"),
-                   let mainBundle = Bundle.main.bundleIdentifier {
-                    if bundle != mainBundle {
-                        if bundle.hasSuffix("vpn") {
-                            appIdentifier = "vpnagent"
-                        } else if bundle.hasSuffix("vpn.network-extension") {
-                            appIdentifier = "vpnextension"
-                        } else if bundle.hasSuffix("DBP.backgroundAgent") {
-                            appIdentifier = "dbp"
-                        }
-                    }
-                }
 
+            pixelParameters.forEach { parameters in
+                var params = parameters
+                let appIdentifier = CrashPixelAppIdentifier(params.removeValue(forKey: "bundle"))
                 PixelKit.fire(
                     GeneralPixel.crash(appIdentifier: appIdentifier),
                     frequency: .dailyAndStandard,

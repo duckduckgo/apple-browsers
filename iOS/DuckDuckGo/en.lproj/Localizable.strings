@@ -2360,10 +2360,10 @@ https://duckduckgo.com/mac";
 "open.externally.failed" = "The app required to open that link can’t be found";
 
 /* Description for the feedback form when there is an issue with accessing the paid tier models */
-"paid-duck-ai.feedback-form.category.access-subscription-models" = "Unable to access the subscription Duck.ai models";
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "Unable to access the subscriber-only Duck.ai models";
 
 /* Description for the feedback form when there is an issue with logging into Duck.ai */
-"paid-duck-ai.feedback-form.category.login-third-party-browser" = "Can't log in to Duck.ai with my subscription";
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "Can't access Duck.ai with my subscription in other browsers";
 
 /* Title for the category selection state of the paid duck.ai feedback form */
 "paid-duck-ai.feedback-form.category.select-category" = "Select a category";

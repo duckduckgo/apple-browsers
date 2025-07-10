@@ -125,6 +125,9 @@ final class TabViewCell: UICollectionViewCell {
 
         unread.tintColor = UIColor(designSystemColor: .accent)
 
+        favicon.layer.cornerRadius = 4
+        favicon.layer.masksToBounds = true
+
         removeButton.additionalHitTestSize = 4
     }
 

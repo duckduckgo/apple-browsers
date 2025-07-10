@@ -287,7 +287,7 @@
                                                     </userDefinedRuntimeAttributes>
                                                 </view>
                                                 <view userInteractionEnabled="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="O9l-O9-Bme">
-                                                    <rect key="frame" x="-4" y="-4" width="335" height="78"/>
+                                                    <rect key="frame" x="-2" y="-2" width="331" height="74"/>
                                                     <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                 </view>
                                             </subviews>
@@ -299,8 +299,8 @@
                                             <constraint firstAttribute="bottom" secondItem="PJG-u5-taI" secondAttribute="bottom" id="Aoa-Lh-KNE"/>
                                             <constraint firstItem="O9l-O9-Bme" firstAttribute="centerY" secondItem="Ml9-Ia-4eU" secondAttribute="centerY" id="PwU-Nl-Zgr"/>
                                             <constraint firstAttribute="trailing" secondItem="PJG-u5-taI" secondAttribute="trailing" id="Q7P-qV-oLG"/>
-                                            <constraint firstItem="O9l-O9-Bme" firstAttribute="height" secondItem="Ml9-Ia-4eU" secondAttribute="height" constant="8" id="TBm-dj-wB7"/>
-                                            <constraint firstItem="O9l-O9-Bme" firstAttribute="width" secondItem="Ml9-Ia-4eU" secondAttribute="width" constant="8" id="WwE-f0-15n"/>
+                                            <constraint firstItem="O9l-O9-Bme" firstAttribute="height" secondItem="Ml9-Ia-4eU" secondAttribute="height" constant="4" id="TBm-dj-wB7"/>
+                                            <constraint firstItem="O9l-O9-Bme" firstAttribute="width" secondItem="Ml9-Ia-4eU" secondAttribute="width" constant="4" id="WwE-f0-15n"/>
                                             <constraint firstItem="O9l-O9-Bme" firstAttribute="centerX" secondItem="Ml9-Ia-4eU" secondAttribute="centerX" id="sMV-d6-K40"/>
                                             <constraint firstItem="PJG-u5-taI" firstAttribute="leading" secondItem="Ml9-Ia-4eU" secondAttribute="leading" id="tk0-5g-bz5"/>
                                         </constraints>

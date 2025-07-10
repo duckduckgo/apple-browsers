@@ -104,7 +104,7 @@ public final class Watchdog {
         // Log before crashing to help with debugging
         Self.logger.critical("Watchdog is terminating the app due to main thread hang")
 
-        // Use fatalError to generate crash report with stack trace
+        // Use fatalError to generate crash report with stack trace`
         fatalError("Main thread hang detected by Watchdog (timeout: \(timeout)s). This crash is intentional to provide debugging information.")
     }
 }

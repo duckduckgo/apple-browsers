@@ -848,6 +848,7 @@ final class MainMenu: NSMenu {
         autofillDebugScriptMenuItem.state = AutofillPreferences().debugScriptEnabled ? .on : .off
     }
 
+    @MainActor
     private func updateWatchdogMenuItem() {
         toggleWatchdogMenuItem.state = MainViewController.watchdog.isRunning ? .on : .off
     }

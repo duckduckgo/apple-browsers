@@ -73,6 +73,9 @@ struct ExperimentalColorPalette: ColorPaletteDefinition {
     private static let decorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.48), darkColor: xF9F9F9.opacity(0.64))
     private static let decorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.60), darkColor: xF9F9F9.opacity(0.74))
 
+    // Highlight
+    private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
+
     static func dynamicColor(for color: DesignSystemColor) -> DynamicColor {
         switch color {
         case .urlBar: return urlBar
@@ -98,6 +101,7 @@ struct ExperimentalColorPalette: ColorPaletteDefinition {
         case .decorationPrimary: return decorationPrimary
         case .decorationSecondary: return decorationSecondary
         case .decorationTertiary: return decorationTertiary
+        case .highlightDecoration: return highlightDecoration
 
         default:
             return DefaultColorPalette.dynamicColor(for: color)

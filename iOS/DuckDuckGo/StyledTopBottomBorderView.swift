@@ -69,9 +69,9 @@ final class StyledTopBottomBorderView: UIView {
         let edgeColor = UIColor { traitCollection in
             switch traitCollection.userInterfaceStyle {
             case .dark:
-                return UIColor(designSystemColor: .shadowTertiary)
+                return UIColor(designSystemColor: .highlightDecoration)
             default:
-                return UIColor(designSystemColor: .shadowSecondary)
+                return UIColor(designSystemColor: .shadowTertiary)
             }
         }
         topEdge.backgroundColor = edgeColor
@@ -79,9 +79,12 @@ final class StyledTopBottomBorderView: UIView {
     }
 
     private struct Metrics {
-        static let lineWidth = 1.0
+        static let lineWidth = 0.5
     }
 
+    /// This crudely adds itself as a subview and uses autoresizing.  Itworks well for 'container' type views with a fixed
+    /// height that are already constrained at the top and bottom.  If you need something more sophisticated just
+    /// treat it like a regular view and use constraints.
     func insertSelf(into view: UIView) {
         if !isDescendant(of: view) {
             view.addSubview(self)

@@ -85,6 +85,8 @@ class TabSwitcherViewController: UIViewController {
 
     }
 
+    lazy var borderView = StyledTopBottomBorderView()
+
     @IBOutlet weak var titleBarView: UINavigationBar!
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var toolbar: UIToolbar!
@@ -183,6 +185,11 @@ class TabSwitcherViewController: UIViewController {
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
 
+            borderView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
+            borderView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            borderView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            borderView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
+
             // Always at the bottom
             toolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             toolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -192,6 +199,7 @@ class TabSwitcherViewController: UIViewController {
 
     private func setupBarsLayout() {
         // Remove existing constraints to avoid conflicts
+        borderView.translatesAutoresizingMaskIntoConstraints = false
         titleBarView.translatesAutoresizingMaskIntoConstraints = false
         toolbar.translatesAutoresizingMaskIntoConstraints = false
         collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -203,6 +211,7 @@ class TabSwitcherViewController: UIViewController {
         }
         
         // Re-add the views to the hierarchy
+        view.addSubview(borderView)
         view.addSubview(titleBarView)
         view.addSubview(toolbar)
         view.addSubview(collectionView)

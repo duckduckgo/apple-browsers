@@ -136,7 +136,9 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     }
 
     var hasContent: Bool {
-        state.showShare || false == dependencies.suggestionTrayDependencies?.favoritesViewModel.favorites.isEmpty
+        // For now this is a proxy for showing a web page.  This will need to change
+        //  when we allow customisation (along with a lot of other stuff).
+        state.showShare
     }
 
     override func preventShadowsOnTop() {

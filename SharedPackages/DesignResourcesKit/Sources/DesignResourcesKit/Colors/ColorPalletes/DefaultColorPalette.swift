@@ -113,6 +113,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return background
         case .backgroundSheets: return backgroundSheets
         case .container: return container
+        case .highlightDecoration: return surface
         case .icons: return icons
         case .iconsSecondary: return iconsSecondary
         case .lines: return lines

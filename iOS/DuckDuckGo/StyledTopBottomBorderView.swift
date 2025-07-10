@@ -20,7 +20,7 @@
 import UIKit
 import DesignResourcesKit
 
-final class TabBorderView: UIView {
+final class StyledTopBottomBorderView: UIView {
 
     private let topEdge = UIView()
     private let bottomEdge = UIView()
@@ -81,4 +81,14 @@ final class TabBorderView: UIView {
     private struct Metrics {
         static let lineWidth = 1.0
     }
+
+    func insertSelf(into view: UIView) {
+        if !isDescendant(of: view) {
+            view.addSubview(self)
+
+            frame = view.bounds
+            autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        }
+    }
+
 }

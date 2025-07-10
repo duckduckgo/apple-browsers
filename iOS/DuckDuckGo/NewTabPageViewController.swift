@@ -25,6 +25,8 @@ import Core
 
 final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
+    private lazy var borderView = StyledTopBottomBorderView()
+
     private let variantManager: VariantManager
     private let newTabDialogFactory: any NewTabDaxDialogProvider
     private let newTabDialogTypeProvider: NewTabDialogSpecProvider
@@ -119,6 +121,10 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
         pixelFiring.fire(.homeScreenShown, withAdditionalParameters: [:])
         sendDailyDisplayPixel()
+
+        if !favoritesModel.isEmpty {
+            borderView.insertSelf(into: view)
+        }
     }
 
     func registerForSettingsDidDisappear() {

@@ -52,7 +52,7 @@ class TabViewController: UIViewController {
         static let navigationExpectationInterval = 3.0
     }
 
-    private lazy var borderView = TabBorderView()
+    private lazy var borderView = StyledTopBottomBorderView()
 
     @IBOutlet private(set) weak var error: UIView!
     @IBOutlet private(set) weak var errorInfoImage: UIImageView!
@@ -652,17 +652,6 @@ class TabViewController: UIViewController {
         adClickAttributionLogic.applyInheritedAttribution(state: attribution)
     }
 
-    private func updateBorder(for webView: WKWebView) {
-        guard isExperimentalThemingEnabled else { return }
-
-        if !borderView.isDescendant(of: webView) {
-            webView.addSubview(borderView)
-
-            borderView.frame = webView.bounds
-            borderView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        }
-    }
-
     @objc func updateRoundedCorners() {
         if isRounderCornersEnabled {
             webViewContainer.clipsToBounds = true
@@ -790,7 +779,7 @@ class TabViewController: UIViewController {
 #endif
 
         updateRoundedCorners()
-        updateBorder(for: webView)
+        borderView.insertSelf(into: webView)
     }
 
     private func addObservers() {

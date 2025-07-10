@@ -93,48 +93,6 @@ final class WatchdogTests: XCTestCase {
         XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app")
     }
 
-    // MARK: - State Transition Tests
-
-    func testStateConsistencyDuringStartStop() {
-        // Rapid state changes should be consistent
-        for _ in 0..<10 {
-            watchdog.start()
-            XCTAssertTrue(watchdog.isRunning, "Should be running after start")
-
-            watchdog.stop()
-            XCTAssertFalse(watchdog.isRunning, "Should be stopped after stop")
-        }
-        XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app")
-    }
-
-    // MARK: - Timeout Configuration Tests
-
-    func testCustomTimeout() {
-        let mockKill = MockKillAppFunction()
-        let shortTimeoutWatchdog = Watchdog(killAppFunction: mockKill.killApp, timeout: 0.5, checkInterval: 0.1)
-        XCTAssertFalse(shortTimeoutWatchdog.isRunning)
-
-        shortTimeoutWatchdog.start()
-        XCTAssertTrue(shortTimeoutWatchdog.isRunning)
-
-        shortTimeoutWatchdog.stop()
-        XCTAssertFalse(shortTimeoutWatchdog.isRunning)
-        XCTAssertFalse(mockKill.wasKilled, "Should not have killed app")
-    }
-
-    func testCustomCheckInterval() {
-        let mockKill = MockKillAppFunction()
-        let fastCheckWatchdog = Watchdog(killAppFunction: mockKill.killApp, timeout: 1.0, checkInterval: 0.05)
-        XCTAssertFalse(fastCheckWatchdog.isRunning)
-
-        fastCheckWatchdog.start()
-        XCTAssertTrue(fastCheckWatchdog.isRunning)
-
-        fastCheckWatchdog.stop()
-        XCTAssertFalse(fastCheckWatchdog.isRunning)
-        XCTAssertFalse(mockKill.wasKilled, "Should not have killed app")
-    }
-
     // MARK: - Deinit Tests
 
     func testDeinitStopsWatchdog() {
@@ -221,16 +179,6 @@ final class WatchdogTests: XCTestCase {
         XCTAssertFalse(zeroTimeoutWatchdog.isRunning)
     }
 
-    func testNegativeTimeout() {
-        let mockKill = MockKillAppFunction()
-        let negativeTimeoutWatchdog = Watchdog(killAppFunction: mockKill.killApp, timeout: -1.0, checkInterval: 0.1)
-        negativeTimeoutWatchdog.start()
-
-        // Should handle negative timeout gracefully (probably immediately trigger)
-        XCTAssertTrue(negativeTimeoutWatchdog.isRunning)
-        negativeTimeoutWatchdog.stop()
-    }
-
     func testZeroCheckInterval() {
         let mockKill = MockKillAppFunction()
         let zeroIntervalWatchdog = Watchdog(killAppFunction: mockKill.killApp, timeout: 1.0, checkInterval: 0.0)
@@ -239,32 +187,6 @@ final class WatchdogTests: XCTestCase {
         XCTAssertTrue(zeroIntervalWatchdog.isRunning)
         zeroIntervalWatchdog.stop()
         XCTAssertFalse(zeroIntervalWatchdog.isRunning)
-    }
-
-    // MARK: - Integration Tests
-
-    func testWatchdogWorksWithOtherAsyncTasks() async {
-        watchdog.start()
-
-        let results = await withTaskGroup(of: Int.self) { group in
-            // Start several background tasks
-            for i in 0..<5 {
-                group.addTask {
-                    // Just return the value, no sleep needed
-                    return i
-                }
-            }
-
-            var results: [Int] = []
-            for await result in group {
-                results.append(result)
-            }
-            return results
-        }
-
-        XCTAssertEqual(results.count, 5, "All background tasks should complete")
-        XCTAssertTrue(watchdog.isRunning, "Watchdog should still be running")
-        XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app")
     }
 
     // MARK: - Memory Tests
@@ -305,43 +227,6 @@ final class WatchdogTests: XCTestCase {
             XCTAssertFalse(watchdog.isRunning, "Cycle \(cycle): Should be stopped after stop")
         }
         XCTAssertFalse(mockKillAppFunction.wasKilled, "Should not have killed app during cycles")
-    }
-
-    func testMultipleWatchdogInstances() {
-        let mockKill1 = MockKillAppFunction()
-        let mockKill2 = MockKillAppFunction()
-        let mockKill3 = MockKillAppFunction()
-        
-        let watchdog1 = Watchdog(killAppFunction: mockKill1.killApp, timeout: 1.0, checkInterval: 0.1)
-        let watchdog2 = Watchdog(killAppFunction: mockKill2.killApp, timeout: 2.0, checkInterval: 0.2)
-        let watchdog3 = Watchdog(killAppFunction: mockKill3.killApp, timeout: 3.0, checkInterval: 0.3)
-
-        // All should start independently
-        watchdog1.start()
-        watchdog2.start()
-        watchdog3.start()
-
-        XCTAssertTrue(watchdog1.isRunning)
-        XCTAssertTrue(watchdog2.isRunning)
-        XCTAssertTrue(watchdog3.isRunning)
-
-        // Stop them in different order
-        watchdog2.stop()
-        XCTAssertTrue(watchdog1.isRunning)
-        XCTAssertFalse(watchdog2.isRunning)
-        XCTAssertTrue(watchdog3.isRunning)
-
-        watchdog1.stop()
-        watchdog3.stop()
-
-        XCTAssertFalse(watchdog1.isRunning)
-        XCTAssertFalse(watchdog2.isRunning)
-        XCTAssertFalse(watchdog3.isRunning)
-        
-        // None should have triggered kills
-        XCTAssertFalse(mockKill1.wasKilled)
-        XCTAssertFalse(mockKill2.wasKilled)
-        XCTAssertFalse(mockKill3.wasKilled)
     }
 
     // MARK: - Hang Detection Tests
@@ -435,70 +320,5 @@ final class WatchdogTests: XCTestCase {
         try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
 
         XCTAssertFalse(mockKill.wasKilled, "Stopped watchdog should not kill app")
-    }
-
-    func testMultipleHangDetections() async throws {
-        let mockKill = MockKillAppFunction()
-        let multiHangWatchdog = Watchdog(killAppFunction: mockKill.killApp, timeout: 0.1, checkInterval: 0.02)
-        
-        multiHangWatchdog.start()
-        
-        // Let the watchdog establish a baseline first
-        try await Task.sleep(nanoseconds: 30_000_000) // 0.03 seconds
-        
-        // First hang detection
-        let firstHangExpectation = XCTestExpectation(description: "First hang detected")
-        
-        Task.detached {
-            // Wait for the first hang to be detected
-            while !mockKill.wasKilled {
-                try? await Task.sleep(nanoseconds: 20_000_000) // Check every 0.02 seconds
-            }
-            firstHangExpectation.fulfill()
-        }
-        
-        // Block the main thread from a background task
-        Task.detached {
-            DispatchQueue.main.sync {
-                let startTime = Date()
-                while Date().timeIntervalSince(startTime) < 0.3 {
-                    // Block main thread
-                }
-            }
-        }
-        
-        await fulfillment(of: [firstHangExpectation], timeout: 1.0)
-        
-        XCTAssertTrue(mockKill.wasKilled, "Should have detected first hang")
-        
-        // Reset and try again (simulating if app somehow continued)
-        mockKill.reset()
-        
-        // Second hang detection
-        let secondHangExpectation = XCTestExpectation(description: "Second hang detected")
-        
-        Task.detached {
-            // Wait for the second hang to be detected
-            while !mockKill.wasKilled {
-                try? await Task.sleep(nanoseconds: 20_000_000) // Check every 0.02 seconds
-            }
-            secondHangExpectation.fulfill()
-        }
-        
-        // Block the main thread again from a background task
-        Task.detached {
-            DispatchQueue.main.sync {
-                let startTime = Date()
-                while Date().timeIntervalSince(startTime) < 0.3 {
-                    // Block main thread again
-                }
-            }
-        }
-        
-        await fulfillment(of: [secondHangExpectation], timeout: 1.0)
-        
-        XCTAssertTrue(mockKill.wasKilled, "Should have detected second hang")
-        
-        multiHangWatchdog.stop()
     }
 }

@@ -647,6 +647,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         askAIChatButton.isEnabled = true
         askAIChatButton.state = .off
+        askAIChatButton.toolTip = nil
         askAIChatButton.backgroundColor = visualStyle.colorsProvider.fillButtonBackgroundColor
         askAIChatButton.mouseOverColor = visualStyle.colorsProvider.fillButtonMouseOverColor
 
@@ -656,6 +657,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private func contractAskAIChatButton(isSidebarOpen: Bool) {
         askAIChatButton.backgroundColor = .clear
         askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
+        askAIChatButton.toolTip = UserText.aiChatAddressBarShortcutTooltip
 
         if isSidebarOpen {
             askAIChatButton.isEnabled = false

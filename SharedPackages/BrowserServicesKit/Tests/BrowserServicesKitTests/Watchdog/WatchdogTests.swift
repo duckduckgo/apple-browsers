@@ -412,14 +412,14 @@ final class WatchdogTests: XCTestCase {
         
         stoppedWatchdog.start()
         XCTAssertTrue(stoppedWatchdog.isRunning)
-        
-        // Let the watchdog establish a baseline first
-        try await Task.sleep(nanoseconds: 30_000_000) // 0.03 seconds
-        
+
         // Stop watchdog before hang occurs
         stoppedWatchdog.stop()
         XCTAssertFalse(stoppedWatchdog.isRunning)
-        
+
+        // Give time for the check to happen
+        try await Task.sleep(nanoseconds: 40_000_000) // 0.04 seconds
+
         // Now block main thread using the same approach as other tests
         Task.detached {
             DispatchQueue.main.sync {
@@ -432,8 +432,8 @@ final class WatchdogTests: XCTestCase {
         
         // Give time for any potential background monitoring to detect hang
         // (but it shouldn't because watchdog is stopped)
-        try await Task.sleep(nanoseconds: 400_000_000) // 0.4 seconds
-        
+        try await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+
         XCTAssertFalse(mockKill.wasKilled, "Stopped watchdog should not kill app")
     }
 

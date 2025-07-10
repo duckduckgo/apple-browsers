@@ -184,7 +184,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func installSwipeContainer() {
         let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
         manager.delegate = self
-        manager.installInView(view, belowView: switchBarVC.view, safeAreaGuide: view.safeAreaLayoutGuide)
+        manager.installInView(view, belowView: switchBarVC.view)
         swipeContainerManager = manager
     }
 

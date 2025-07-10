@@ -60,7 +60,7 @@ final class SwipeContainerManager: NSObject {
     // MARK: - Public Methods
     
     /// Installs the swipe container in the provided parent view
-    func installInView(_ parentView: UIView, belowView topView: UIView, safeAreaGuide: UILayoutGuide) {
+    func installInView(_ parentView: UIView, belowView topView: UIView) {
         createScrollView()
         createContainerViews()
         addToParentView(parentView)

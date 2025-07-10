@@ -337,56 +337,50 @@ struct DataImportView: ModalView {
     }
 
     private func debugView() -> some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 10) {
+                if model.errors.count > 0 {
+                    Text(verbatim: "ERRORS:" as String).bold()
+                        .padding(.top, 10)
+                        .padding(.leading, 20)
 
-        VStack(alignment: .leading, spacing: 10) {
-            Divider()
-
-            if model.errors.count > 0 {
-                Text(verbatim: "ERRORS:" as String).bold()
-                    .padding(.top, 10)
-                    .padding(.leading, 20)
-
-                ForEach(model.errors.indices, id: \.self) { i in
-                    ForEach(Array(model.errors[i].keys), id: \.self) { key in
-                        if let value = model.errors[i][key] {
-                            if #available(macOS 12.0, *) {
-                                Text(verbatim: "\(key.rawValue.uppercased()): \(value)").textSelection(.enabled)
-                            } else {
-                                Text(verbatim: "\(key.rawValue.uppercased()): \(value)")
+                    ForEach(model.errors.indices, id: \.self) { i in
+                        ForEach(Array(model.errors[i].keys), id: \.self) { key in
+                            if let value = model.errors[i][key] {
+                                if #available(macOS 12.0, *) {
+                                    Text(verbatim: "\(key.rawValue.uppercased()): \(value)").textSelection(.enabled)
+                                } else {
+                                    Text(verbatim: "\(key.rawValue.uppercased()): \(value)")
+                                }
                             }
                         }
                     }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 10)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
 
-                Divider()
-            }
+                    Divider()
+                }
 #if DEBUG || REVIEW
-            HStack {
                 Text("REVIEW:" as String).bold()
                     .padding(.top, 10)
                     .padding(.leading, 20)
-                Spacer()
-                if case .normal = AppVersion.runType {
-                    Button {
-                        debugViewDisabled.toggle()
-                    } label: {
-                        Image(.closeLarge)
-                    }
-                        .buttonStyle(.borderless)
+
+                ForEach(DataImport.DataType.allCases.filter(model.selectedDataTypes.contains), id: \.self) { selectedDataType in
+                    failureReasonPicker(for: selectedDataType)
+                        .padding(.leading, 20)
                         .padding(.trailing, 20)
                 }
-            }
-
-            ForEach(DataImport.DataType.allCases.filter(model.selectedDataTypes.contains), id: \.self) { selectedDataType in
-                failureReasonPicker(for: selectedDataType)
-                    .padding(.leading, 20)
-                    .padding(.trailing, 20)
-            }
 #endif
+            }
+            Spacer()
+            Button {
+                debugViewDisabled.toggle()
+            } label: {
+                Image(.closeLarge)
+            }
+            .buttonStyle(.borderless)
         }
-        .padding(.bottom, 10)
+        .padding(10)
         .background(Color(NSColor(red: 1, green: 0, blue: 0, alpha: 0.2)))
     }
 

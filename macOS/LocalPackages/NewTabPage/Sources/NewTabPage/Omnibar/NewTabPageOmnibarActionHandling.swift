@@ -19,9 +19,12 @@
 public protocol NewTabPageOmnibarActionHandling: AnyObject {
 
     @MainActor
-    func openSearch(term: String, target: NewTabPageDataModel.OpenTarget)
+    func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget)
 
     @MainActor
     func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget)
+
+    @MainActor
+    func submitChat(_ chat: String, target: NewTabPageDataModel.OpenTarget)
 
 }

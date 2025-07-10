@@ -20,11 +20,21 @@ import NewTabPage
 import AppKit
 import Suggestions
 import Common
+import AIChat
 
 final class NewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
 
-    func openSearch(term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
-        guard let mainWindowController = NSApp.delegateTyped.windowControllersManager.lastKeyMainWindowController,
+    private let promptHandler: AIChatPromptHandler
+    private let windowControllersManager: WindowControllersManager
+
+    init(promptHandler: AIChatPromptHandler = AIChatPromptHandler.shared,
+         windowControllersManager: WindowControllersManager = NSApp.delegateTyped.windowControllersManager) {
+        self.promptHandler = promptHandler
+        self.windowControllersManager = windowControllersManager
+    }
+
+    func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+        guard let mainWindowController = windowControllersManager.lastKeyMainWindowController,
               let searchURL = URL.makeSearchUrl(from: term) else {
             assertionFailure("Failed to open search")
             return
@@ -40,7 +50,6 @@ final class NewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
     }
 
     func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget) {
-        let windowControllersManager = NSApp.delegateTyped.windowControllersManager
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController,
                 let addressBarTextField = mainWindowController.mainViewController.navigationBarViewController.addressBarViewController?.addressBarTextField else {
             assertionFailure("Failed to open suggestion")
@@ -71,18 +80,37 @@ final class NewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
         }
     }
 
+    func submitChat(_ chat: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+        let nativePrompt = AIChatNativePrompt.queryPrompt(chat, autoSubmit: true)
+
+        promptHandler.setData(nativePrompt)
+
+        let tabOpener = AIChatTabOpener(
+            promptHandler: promptHandler,
+            addressBarQueryExtractor: AIChatAddressBarPromptExtractor(),
+            windowControllersManager: windowControllersManager
+        )
+
+        tabOpener.openAIChatTab(chat, with: target.linkOpenBehavior)
+    }
+
 }
 
 extension NewTabPageDataModel.OpenTarget {
 
     var linkOpenTarget: LinkOpenTarget {
         switch self {
-        case .sameTab:
-            return .current
-        case .newTab:
-            return .newTab
-        case .newWindow:
-            return .newWindow
+        case .sameTab: .current
+        case .newTab: .newTab
+        case .newWindow: .newWindow
+        }
+    }
+
+    var linkOpenBehavior: LinkOpenBehavior {
+        switch self {
+        case .sameTab: .currentTab
+        case .newTab: .newTab(selected: TabsPreferences.shared.switchToNewTabWhenOpened)
+        case .newWindow: .newWindow(selected: TabsPreferences.shared.switchToNewTabWhenOpened)
         }
     }
 

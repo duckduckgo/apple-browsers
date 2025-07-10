@@ -186,4 +186,11 @@ public extension NewTabPageDataModel {
         let params: OpenSuggestionAction
     }
 
+    // MARK: - omnibar_submitChat
+
+    struct SubmitChatAction: Codable, Equatable {
+        let chat: String
+        let target: OpenTarget
+    }
+
 }

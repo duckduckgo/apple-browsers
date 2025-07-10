@@ -26,6 +26,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case getSuggestions = "omnibar_getSuggestions"
         case submitSearch = "omnibar_submitSearch"
         case openSuggestion = "omnibar_openSuggestion"
+        case submitChat = "omnibar_submitChat"
     }
 
     private let suggestionsProvider: NewTabPageOmnibarSuggestionsProviding
@@ -43,7 +44,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.getConfig.rawValue: { [weak self] in try await self?.getConfig(params: $0, original: $1) },
             MessageName.getSuggestions.rawValue: { [weak self] in try await self?.getSuggestions(params: $0, original: $1) },
             MessageName.submitSearch.rawValue: { [weak self] in try await self?.submitSearch(params: $0, original: $1) },
-            MessageName.openSuggestion.rawValue: { [weak self] in try await self?.openSuggestion(params: $0, original: $1) }
+            MessageName.openSuggestion.rawValue: { [weak self] in try await self?.openSuggestion(params: $0, original: $1) },
+            MessageName.submitChat.rawValue: { [weak self] in try await self?.submitChat(params: $0, original: $1) }
         ])
     }
 
@@ -64,7 +66,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         guard let action: NewTabPageDataModel.SubmitSearchAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        await actionHandler.openSearch(term: action.term, target: action.target)
+        await actionHandler.submitSearch(action.term, target: action.target)
         return nil
     }
 
@@ -75,4 +77,13 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         await actionHandler.openSuggestion(action.suggestion, target: action.target)
         return nil
     }
+
+    private func submitChat(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.SubmitChatAction = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        await actionHandler.submitChat(action.chat, target: action.target)
+        return nil
+    }
+
 }

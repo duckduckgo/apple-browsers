@@ -113,12 +113,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        
-        swipeContainerManager?.updateLayout(viewBounds: view.bounds)
-    }
-
     // MARK: - Public Methods
     
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {

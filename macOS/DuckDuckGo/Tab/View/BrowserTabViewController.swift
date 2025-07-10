@@ -717,17 +717,19 @@ final class BrowserTabViewController: NSViewController {
             let dialog: Tab.UserDialog?
             let isDisplayingSnapshot: Bool
         }
+        // AI Chat sidebar user interaction dialog
+        let aiChatSidebarUserDialog = NotificationCenter.default.publisher(for: .aiChatSidebarUserInteractionDialogChanged)
+            .map { notification in
+                notification.userInfo?[NSNotification.Name.UserInfoKeys.userInteractionDialog] as? Tab.UserDialog
+            }
+            .prepend(nil)
+
         Publishers.CombineLatest4(
             tabViewModel.tab.$userInteractionDialog,
             tabViewModel.tab.downloads?.savePanelDialogPublisher ?? Just(nil).eraseToAnyPublisher(),
             // when switching to a window containing a pinned tab snapshot re-display an already-presented dialog in this window
             $webViewSnapshot.map { $0 != nil },
-            // AI Chat sidebar user interaction dialog
-            NotificationCenter.default.publisher(for: .aiChatSidebarUserInteractionDialogChanged)
-                .map { notification in
-                    notification.userInfo?[NSNotification.Name.UserInfoKeys.userInteractionDialog] as? Tab.UserDialog
-                }
-                .prepend(nil)
+            aiChatSidebarUserDialog
         )
         .map { userDialog, saveDialog, isDisplayingSnapshot, aiChatSidebarUserDialog in
             return CombinedArg(

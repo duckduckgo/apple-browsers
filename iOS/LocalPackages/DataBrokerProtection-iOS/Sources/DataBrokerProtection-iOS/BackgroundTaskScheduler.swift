@@ -27,9 +27,9 @@ import BrowserServicesKit
 public final class BackgroundTaskScheduler {
     static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
 
-    struct Constants {
-        static let defaultMaxWaitTime: TimeInterval = .hours(48)
-        static let defaultMaxEligibleJobsPerBackgroundTask = 10
+    public struct Constants {
+        public static let defaultMaxWaitTime: TimeInterval = .hours(48)
+        public static let defaultMaxEligibleJobsPerBackgroundTask = 10
     }
 
     private let maxWaitTime: TimeInterval

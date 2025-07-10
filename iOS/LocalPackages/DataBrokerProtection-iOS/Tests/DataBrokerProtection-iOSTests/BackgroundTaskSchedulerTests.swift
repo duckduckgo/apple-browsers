@@ -50,7 +50,7 @@ final class BackgroundTaskSchedulerTests: XCTestCase {
 
         sut = BackgroundTaskScheduler(
             maxWaitTime: .hours(48),
-            maxEligibleJobsPerBackgroundTask: 10,
+            minWaitTime: .minutes(15),
             database: mockDatabase,
             queueManager: mockQueueManager,
             jobDependencies: mockJobDependencies,
@@ -94,7 +94,7 @@ final class BackgroundTaskSchedulerTests: XCTestCase {
         XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: result, date2: expectedDate))
     }
 
-    func testCalculateEarliestBeginDate_MultipleJobs_ReturnsLastJobDateWithinLimit() async throws {
+    func testCalculateEarliestBeginDate_MultipleJobs_ReturnsFirstJobDateClamped() async throws {
         // Given
         let startDate = Date()
         let dates = (1...5).map { startDate.addingTimeInterval(.hours($0)) }
@@ -106,26 +106,26 @@ final class BackgroundTaskSchedulerTests: XCTestCase {
         let result = try await sut.calculateEarliestBeginDate(from: startDate)
 
         // Then
-        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: result, date2: dates.max(by: <)!))
+        let expectedDate = dates.min()!
+        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: result, date2: expectedDate))
     }
 
-    func testCalculateEarliestBeginDate_MoreThan10Jobs_OnlyConsidersFirst10() async throws {
+    func testCalculateEarliestBeginDate_OverdueJob_ReturnsImmediately() async throws {
         // Given
         let startDate = Date()
-        let dates = (1...15).map { startDate.addingTimeInterval(TimeInterval.hours($0)) }
-        mockDatabase.brokerProfileQueryDataToReturn = dates.map {
-            createBrokerProfileQueryData(preferredRunDate: $0)
-        }.shuffled()
+        let overdueDate = startDate.addingTimeInterval(-.hours(2))
+        mockDatabase.brokerProfileQueryDataToReturn = [
+            createBrokerProfileQueryData(preferredRunDate: overdueDate)
+        ]
 
         // When
         let result = try await sut.calculateEarliestBeginDate(from: startDate)
 
         // Then
-        let expectedDate = dates.sorted(by: <)[9]
-        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: result, date2: expectedDate))
+        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: result, date2: startDate))
     }
 
-    func testCalculateEarliestBeginDate_JobsWithNilDates_HandlesCorrectly() async throws {
+    func testCalculateEarliestBeginDate_JobsWithNilDates_SkipsNilAndUsesFirstValid() async throws {
         // Given
         let startDate = Date()
         let futureDate = startDate.addingTimeInterval(.hours(12))
@@ -145,7 +145,7 @@ final class BackgroundTaskSchedulerTests: XCTestCase {
     func testCalculateEarliestBeginDate_AllJobsBeyondMaxWait_ReturnsMaxWaitDate() async throws {
         // Given
         let startDate = Date()
-        let beyondMaxDates = (60...65).map { startDate.addingTimeInterval(TimeInterval.hours($0)) }
+        let beyondMaxDates = (60...65).map { startDate.addingTimeInterval(.hours($0)) }
         mockDatabase.brokerProfileQueryDataToReturn = beyondMaxDates.map {
             createBrokerProfileQueryData(preferredRunDate: $0)
         }
@@ -154,51 +154,23 @@ final class BackgroundTaskSchedulerTests: XCTestCase {
         let result = try await sut.calculateEarliestBeginDate(from: startDate)
 
         // Then
-        let expectedDate = startDate.addingTimeInterval(TimeInterval.hours(48))
+        let expectedDate = startDate.addingTimeInterval(.hours(48))
         XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: result, date2: expectedDate))
     }
 
-    func testCalculateEarliestBeginDate_CustomStartDate_CalculatesFromProvidedDate() async throws {
-        // Given
-        let customStartDate = Date().addingTimeInterval(TimeInterval.hours(100))
-        let futureDate = customStartDate.addingTimeInterval(TimeInterval.hours(12))
-        mockDatabase.brokerProfileQueryDataToReturn = [
-            createBrokerProfileQueryData(preferredRunDate: futureDate)
-        ]
-
-        // When
-        let result = try await sut.calculateEarliestBeginDate(from: customStartDate)
-
-        // Then
-        XCTAssertEqual(result.timeIntervalSince1970, futureDate.timeIntervalSince1970, accuracy: 1.0)
-    }
-
-    func testCalculateEarliestBeginDate_MoreThan10JobsMixedWithNilDates_ReturnsLastNonNilDate() async throws {
+    func testCalculateEarliestBeginDate_JobWithinMinWaitTime_ReturnsMinWaitTime() async throws {
         // Given
         let startDate = Date()
+        let nearFutureDate = startDate.addingTimeInterval(.minutes(5))
         mockDatabase.brokerProfileQueryDataToReturn = [
-            createBrokerProfileQueryData(preferredRunDate: nil),
-            createBrokerProfileQueryData(preferredRunDate: nil),
-            createBrokerProfileQueryData(preferredRunDate: nil),
-            createBrokerProfileQueryData(preferredRunDate: nil),
-            createBrokerProfileQueryData(preferredRunDate: nil),
-            createBrokerProfileQueryData(preferredRunDate: nil),
-            createBrokerProfileQueryData(preferredRunDate: nil),
-            createBrokerProfileQueryData(preferredRunDate: nil),
-            createBrokerProfileQueryData(preferredRunDate: startDate),
-            createBrokerProfileQueryData(preferredRunDate: startDate.addingTimeInterval(.hours(5))),
-            createBrokerProfileQueryData(preferredRunDate: startDate.addingTimeInterval(-.hours(2))),
-            createBrokerProfileQueryData(preferredRunDate: startDate.addingTimeInterval(.hours(50))),
-            createBrokerProfileQueryData(preferredRunDate: startDate.addingTimeInterval(.hours(10))),
-            createBrokerProfileQueryData(preferredRunDate: startDate.addingTimeInterval(.hours(20))),
-            createBrokerProfileQueryData(preferredRunDate: startDate.addingTimeInterval(.hours(45))),
-        ].shuffled()
+            createBrokerProfileQueryData(preferredRunDate: nearFutureDate)
+        ]
 
         // When
         let result = try await sut.calculateEarliestBeginDate(from: startDate)
 
         // Then
-        let expectedDate = startDate.addingTimeInterval(.hours(45))
+        let expectedDate = startDate.addingTimeInterval(.minutes(15))
         XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: result, date2: expectedDate))
     }
 

@@ -29,11 +29,11 @@ public final class BackgroundTaskScheduler {
 
     public struct Constants {
         public static let defaultMaxWaitTime: TimeInterval = .hours(48)
-        public static let defaultMaxEligibleJobsPerBackgroundTask = 10
+        public static let defaultMinWaitTime: TimeInterval = .minutes(15)
     }
 
     private let maxWaitTime: TimeInterval
-    private let maxEligibleJobsPerBackgroundTask: Int
+    private let minWaitTime: TimeInterval
     private let database: DataBrokerProtectionRepository
     private let queueManager: BrokerProfileJobQueueManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
@@ -41,14 +41,14 @@ public final class BackgroundTaskScheduler {
     private let validateRunPrerequisites: () async -> Bool
 
     public init(maxWaitTime: TimeInterval = Constants.defaultMaxWaitTime,
-                maxEligibleJobsPerBackgroundTask: Int = Constants.defaultMaxEligibleJobsPerBackgroundTask,
+                minWaitTime: TimeInterval = Constants.defaultMinWaitTime,
                 database: DataBrokerProtectionRepository,
                 queueManager: BrokerProfileJobQueueManaging,
                 jobDependencies: BrokerProfileJobDependencyProviding,
                 iOSPixelsHandler: EventMapping<IOSPixels>,
                 validateRunPrerequisites: @escaping () async -> Bool) {
         self.maxWaitTime = maxWaitTime
-        self.maxEligibleJobsPerBackgroundTask = maxEligibleJobsPerBackgroundTask
+        self.minWaitTime = minWaitTime
         self.database = database
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -59,6 +59,7 @@ public final class BackgroundTaskScheduler {
     public func calculateEarliestBeginDate(from date: Date = .init()) async throws -> Date {
         let allBrokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()
         let maxWaitDate = date.addingTimeInterval(maxWaitTime)
+        let minWaitDate = date.addingTimeInterval(minWaitTime)
 
         let eligibleJobs = BrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(
             brokerProfileQueriesData: allBrokerProfileQueryData,
@@ -66,16 +67,18 @@ public final class BackgroundTaskScheduler {
             priorityDate: maxWaitDate
         ).sortedByEarliestPreferredRunDateFirst()
 
-        guard !eligibleJobs.isEmpty else {
+        guard let firstJobDate = eligibleJobs.first?.preferredRunDate else {
+            // No eligible jobs
             return maxWaitDate
         }
 
-        let jobsToSchedule = Array(eligibleJobs.prefix(maxEligibleJobsPerBackgroundTask))
-        guard let lastJobDate = jobsToSchedule.compactMap(\.preferredRunDate).last else {
+        // If overdue → ASAP
+        if firstJobDate <= date {
             return date
         }
 
-        return max(date, min(lastJobDate, maxWaitDate))
+        // Otherwise → clamp to [minWaitTime, maxWaitTime]
+        return min(max(firstJobDate, minWaitDate), maxWaitDate)
     }
 
     public func registerBackgroundTaskHandler() {
@@ -95,6 +98,7 @@ public final class BackgroundTaskScheduler {
             request.requiresNetworkConnectivity = true
             let earliestBeginDate = try await calculateEarliestBeginDate()
             request.earliestBeginDate = earliestBeginDate
+            Logger.dataBrokerProtection.log("PIR Background Task: Scheduling next task for \(earliestBeginDate)")
 
 #if !targetEnvironment(simulator)
             do {

@@ -109,6 +109,8 @@ final class SuggestionTrayManager: NSObject {
         controller.didMove(toParent: parentViewController)
         
         containerView.layoutIfNeeded()
+
+        preWarmSuggestionTray()
     }
     
     /// Handles query updates and shows appropriate suggestions
@@ -130,7 +132,11 @@ final class SuggestionTrayManager: NSObject {
     }
     
     // MARK: - Private Methods
-    
+
+    private func preWarmSuggestionTray() {
+        showSuggestionTray(.favorites)
+    }
+
     private func setupBindings() {
         switchBarHandler.toggleStatePublisher
             .receive(on: DispatchQueue.main)

@@ -201,7 +201,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
     private func finish() {
         Logger.dataBrokerProtection.log("Finished operation: \(self.id.uuidString, privacy: .public)")
-        
+
         willChangeValue(forKey: #keyPath(isExecuting))
         willChangeValue(forKey: #keyPath(isFinished))
 

@@ -25,6 +25,15 @@ final class StyledTopBottomBorderView: UIView {
     private let topEdge = UIView()
     private let bottomEdge = UIView()
 
+    var isTopVisible: Bool {
+        get {
+            !topEdge.isHidden
+        }
+        set {
+            topEdge.isHidden = !newValue
+        }
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -92,6 +101,14 @@ final class StyledTopBottomBorderView: UIView {
             frame = view.bounds
             autoresizingMask = [.flexibleWidth, .flexibleHeight]
         }
+    }
+
+}
+
+extension StyledTopBottomBorderView {
+
+    func updateForAddressBarPosition(_ addressBarPosition: AddressBarPosition) {
+        isTopVisible = addressBarPosition == .top
     }
 
 }

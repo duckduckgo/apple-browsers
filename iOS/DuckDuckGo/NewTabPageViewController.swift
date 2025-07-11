@@ -45,6 +45,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     private let messageNavigationDelegate: MessageNavigationDelegate
 
     private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating
+    private let appSettings: AppSettings
 
     init(tab: Tab,
          isNewTabPageCustomizationEnabled: Bool,
@@ -58,7 +59,8 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
          privacyProPromotionCoordinating: PrivacyProPromotionCoordinating = DaxDialogs.shared,
          faviconLoader: FavoritesFaviconLoading,
          pixelFiring: PixelFiring.Type = Pixel.self,
-         messageNavigationDelegate: MessageNavigationDelegate) {
+         messageNavigationDelegate: MessageNavigationDelegate,
+         appSettings: AppSettings) {
 
         self.associatedTab = tab
         self.variantManager = variantManager
@@ -67,6 +69,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         self.privacyProPromotionCoordinating = privacyProPromotionCoordinating
         self.pixelFiring = pixelFiring
         self.messageNavigationDelegate = messageNavigationDelegate
+        self.appSettings = appSettings
 
         newTabPageViewModel = NewTabPageViewModel(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
         shortcutsSettingsModel = NewTabPageShortcutsSettingsModel()
@@ -101,7 +104,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        registerForSettingsDidDisappear()
+        registerForNotifications()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -124,13 +127,25 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
         if !favoritesModel.isEmpty {
             borderView.insertSelf(into: view)
+            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
         }
     }
 
-    func registerForSettingsDidDisappear() {
-        NotificationCenter.default.addObserver(self, selector: #selector(onSettingsDidDisappear), name: .settingsDidDisappear, object: nil)
+    func registerForNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onSettingsDidDisappear),
+                                               name: .settingsDidDisappear,
+                                               object: nil)
+
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(onAddressBarPositionChanged),
+                                               name: AppUserDefaults.Notifications.addressBarPositionChanged,
+                                               object: nil)
     }
 
+    @objc func onAddressBarPositionChanged() {
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+    }
 
     @objc func onSettingsDidDisappear() {
         if self.favoritesModel.hasMissingIcons {

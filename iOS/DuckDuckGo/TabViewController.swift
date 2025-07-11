@@ -581,6 +581,7 @@ class TabViewController: UIViewController {
 
     @objc
     private func onAddressBarPositionChanged() {
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
         updateWebViewBottomAnchor()
     }
 
@@ -780,6 +781,7 @@ class TabViewController: UIViewController {
 
         updateRoundedCorners()
         borderView.insertSelf(into: webView)
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
     }
 
     private func addObservers() {

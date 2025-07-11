@@ -225,6 +225,7 @@ class TabSwitcherViewController: UIViewController {
         }
         toolbar.standardAppearance = toolbarAppearance
         toolbar.compactAppearance = toolbarAppearance
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
         activateLayoutConstraintsBasedOnBarPosition()
     }
 

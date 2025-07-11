@@ -987,7 +987,8 @@ class MainViewController: UIViewController {
                                                   newTabDialogFactory: newTabDaxDialogFactory,
                                                   newTabDialogTypeProvider: DaxDialogs.shared,
                                                   faviconLoader: faviconLoader,
-                                                  messageNavigationDelegate: self)
+                                                  messageNavigationDelegate: self,
+                                                  appSettings: appSettings)
 
         controller.delegate = self
         controller.shortcutsDelegate = self

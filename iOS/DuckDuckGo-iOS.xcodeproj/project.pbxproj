@@ -5075,13 +5075,6 @@
 			path = OnboardingHelpers;
 			sourceTree = "<group>";
 		};
-		56DC47182E1C079000ADE613 /* New Group */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = "New Group";
-			sourceTree = "<group>";
-		};
 		650552982D673E440067D4F2 /* Scripts */ = {
 			isa = PBXGroup;
 			children = (
@@ -7973,7 +7966,6 @@
 		F12D98401F266B30003C2EE3 /* DuckDuckGo */ = {
 			isa = PBXGroup;
 			children = (
-				56DC47182E1C079000ADE613 /* New Group */,
 				6FE23A842DF193BE00E44664 /* RemoteMessage */,
 				56CA25EC2DB7ABAC00BE4226 /* Localization */,
 				6FF9157F2B88E04F0042AC87 /* AdAttribution */,

@@ -30,6 +30,7 @@ class SwitchBarViewController: UIViewController {
         static let textEntryViewTopPadding: CGFloat = 16
         static let textEntryViewSidePadding: CGFloat = 16
         static let backButtonHorizontalPadding: CGFloat = 16
+        static let backButtonSize: CGFloat = 44
     }
 
     private var segmentedPickerHostingController: UIHostingController<PickerWrapper>?
@@ -180,10 +181,12 @@ class SwitchBarViewController: UIViewController {
             textEntryViewController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.textEntryViewSidePadding),
             textEntryViewController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Constants.textEntryViewSidePadding),
             // Create bottom constraint with lower priority to avoid conflicts with parent constraints
-            textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).withPriority(.init(999)),
+            textEntryViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor), // .withPriority(.init(999)),
 
             backButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.backButtonHorizontalPadding),
-            backButton.centerYAnchor.constraint(equalTo: segmentedPickerView.centerYAnchor)
+            backButton.centerYAnchor.constraint(equalTo: segmentedPickerView.centerYAnchor),
+            backButton.heightAnchor.constraint(equalToConstant: Constants.backButtonSize),
+            backButton.widthAnchor.constraint(equalToConstant: Constants.backButtonSize)
         ])
     }
 

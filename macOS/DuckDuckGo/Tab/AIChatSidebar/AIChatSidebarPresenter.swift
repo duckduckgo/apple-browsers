@@ -115,7 +115,14 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         sidebarPresenceWillChangeSubject.send(.init(tabID: tabID, isShown: isShowingSidebar))
 
         if isShowingSidebar {
-            let sidebarViewController = sidebarProvider.sidebar(for: tabID).sidebarViewController
+            let sidebarViewController: AIChatSidebarViewController = {
+                if let sidebar = sidebarProvider.getSidebar(for: tabID) {
+                    return sidebar.sidebarViewController
+                } else {
+                    return sidebarProvider.makeSidebar(for: tabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
+                }
+            }()
+
             sidebarViewController.delegate = self
             sidebarHost.embedSidebarViewController(sidebarViewController)
         }
@@ -153,16 +160,14 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
         guard let currentTabID = sidebarHost.currentTabID else { return }
 
-        let isShowingSidebar = sidebarProvider.isShowingSidebar(for: currentTabID)
-
-        if !isShowingSidebar {
+        if let sidebar = sidebarProvider.getSidebar(for: currentTabID) {
+            // If sidebar is open append conversation with prompt
+            let sidebarViewController = sidebar.sidebarViewController
+            sidebarViewController.setAIChatPrompt(prompt)
+        } else {
             AIChatPromptHandler.shared.setData(prompt)
-
             // If not showing the sidebar, open it with the prompt
             updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
-        } else {
-            let sidebarViewController = sidebarProvider.sidebar(for: currentTabID).sidebarViewController
-            sidebarViewController.setAIChatPrompt(prompt)
         }
     }
 
@@ -174,7 +179,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
         if !isShowingSidebar {
             // If not showing the sidebar open it with the payload received
-            let sidebarViewController = sidebarProvider.sidebar(for: currentTabID).sidebarViewController
+            let sidebarViewController = sidebarProvider.makeSidebar(for: currentTabID, burnerMode: sidebarHost.burnerMode).sidebarViewController
             sidebarViewController.aiChatPayload = payload
             updateSidebarConstraints(for: currentTabID, isShowingSidebar: true, withAnimation: true)
         } else {
@@ -212,6 +217,7 @@ extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
     }
 
     func didClickCloseButton() {
+        windowControllersManager.lastKeyMainWindowController?.window?.makeFirstResponder(nil)
         toggleSidebar()
     }
 

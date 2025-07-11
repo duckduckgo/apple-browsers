@@ -895,6 +895,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             pixelParameters.forEach { parameters in
                 var params = parameters
+                params[PixelKit.Parameters.appVersion] = CrashCollection.removeBuildNumber(from: params[PixelKit.Parameters.appVersion])
                 let appIdentifier = CrashPixelAppIdentifier(params.removeValue(forKey: "bundle"))
                 PixelKit.fire(
                     GeneralPixel.crash(appIdentifier: appIdentifier),

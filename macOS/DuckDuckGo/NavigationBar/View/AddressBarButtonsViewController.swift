@@ -443,10 +443,10 @@ final class AddressBarButtonsViewController: NSViewController {
         let updatedBehaviour: LinkOpenBehavior = shouldOverrideToNewTab ? .newTab(selected: behavior.shouldSelectNewTab) : behavior
 
         if let value = textFieldValue, !value.isEmpty {
-            PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .newTabWithPrompt), frequency: .dailyAndStandard)
+            PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .tabWithPrompt), frequency: .dailyAndStandard)
             aiChatTabOpener.openAIChatTab(value, with: updatedBehaviour)
         } else {
-            PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .newTab), frequency: .dailyAndStandard)
+            PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .tab), frequency: .dailyAndStandard)
             aiChatTabOpener.openAIChatTab(nil, with: updatedBehaviour)
         }
     }

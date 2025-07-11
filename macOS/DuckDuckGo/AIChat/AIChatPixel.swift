@@ -162,8 +162,8 @@ enum AIChatPixel: PixelKitEventV2 {
 /// Action performed when address bar button is clicked
 enum AIChatAddressBarAction: String, CaseIterable {
     case sidebar = "sidebar"
-    case newTab = "new-tab"
-    case newTabWithPrompt = "new-tab-with-prompt"
+    case tab = "tab"
+    case tabWithPrompt = "tab-with-prompt"
 }
 
 /// Source of AI Chat sidebar open action

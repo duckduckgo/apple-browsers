@@ -58,9 +58,17 @@ enum CrashPixelAppIdentifier: String, CaseIterable {
         case .dbp:
             return []
         case .vpnAgent:
-            return ["com.duckduckgo.macos.vpn"]
+            return [
+                "com.duckduckgo.macos.vpn",
+                "com.duckduckgo.macos.vpn.debug",
+                "com.duckduckgo.macos.vpn.review"
+            ]
         case .vpnExtension:
-            return ["com.duckduckgo.macos.vpn.network-extension"]
+            return [
+                "com.duckduckgo.macos.vpn.network-extension",
+                "com.duckduckgo.macos.vpn.network-extension.debug",
+                "com.duckduckgo.macos.vpn.network-extension.review"
+            ]
         }
     }
 }

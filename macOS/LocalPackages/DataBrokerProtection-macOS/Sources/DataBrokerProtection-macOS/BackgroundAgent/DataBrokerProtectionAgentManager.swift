@@ -289,10 +289,8 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
     }
 
     func startScheduledOperations(completion: (() -> Void)?) {
-        Logger.dataBrokerProtection.log("🚀 SCHEDULER: startScheduledOperations triggered at \(Date(), privacy: .public)")
         fireMonitoringPixels()
         startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
-            Logger.dataBrokerProtection.log("🚀 SCHEDULER: startScheduledOperations completed at \(Date(), privacy: .public)")
             completion?()
         }
     }
@@ -316,9 +314,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
 
         eventsHandler.fire(.profileSaved)
         fireMonitoringPixels()
-        Logger.dataBrokerProtection.log("🔴 IMMEDIATE: Starting immediate scan operations after profile saved")
         queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies) { [weak self] errors in
-            Logger.dataBrokerProtection.log("🔴 IMMEDIATE: Error handler called")
             guard let self = self else { return }
 
             if let errors = errors {
@@ -343,7 +339,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
                 self.eventsHandler.fire(.firstScanCompleted)
             }
         } completion: { [weak self] in
-            Logger.dataBrokerProtection.log("🔴 IMMEDIATE: Completion handler called")
             guard let self else { return }
 
             if let hasMatches = try? self.dataManager.hasMatches(),
@@ -353,7 +348,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
 
             fireImmediateScansCompletionPixel(startTime: backgroundAgentInitialScanStartTime)
 
-            Logger.dataBrokerProtection.log("🔴 IMMEDIATE: Starting scheduled operations after immediate scan")
             self.startScheduledOperations(completion: nil)
         }
     }

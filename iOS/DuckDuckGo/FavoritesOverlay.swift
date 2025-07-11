@@ -112,8 +112,9 @@ class FavoritesOverlay: UIViewController {
 
         let keyboardFrameInView = self.view.convert(keyboardFrame, from: nil)
         let intersection = keyboardFrameInView.intersection(view.bounds)
+        let offsetHeight = intersection.height - view.safeAreaInsets.bottom
 
-        let inset = UIEdgeInsets(top: 0.0, left: 0.0, bottom: intersection.height, right: 0.0)
+        let inset = UIEdgeInsets(top: 0.0, left: 0.0, bottom: offsetHeight, right: 0.0)
         collectionView.contentInset = inset
         collectionView.scrollIndicatorInsets = inset
     }

@@ -142,8 +142,10 @@ extension AIChatWebViewController {
 
         var queryItems = components.queryItems ?? []
 
-        queryItems.removeAll { $0.name == QueryParameters.queryKey }
-        queryItems.append(URLQueryItem(name: QueryParameters.queryKey, value: query))
+        if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            queryItems.removeAll { $0.name == QueryParameters.queryKey }
+            queryItems.append(URLQueryItem(name: QueryParameters.queryKey, value: query))
+        }
 
         if autoSend {
             queryItems.removeAll { $0.name == QueryParameters.autoSendKey }

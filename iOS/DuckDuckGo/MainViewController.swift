@@ -3556,19 +3556,6 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     }
 }
 
-extension MainViewController {
-    private func updateOmniBarSeparatorForDuckPlayer(addressBarPosition: AddressBarPosition, isDuckPlayerVisible: Bool) {
-        if isDuckPlayerVisible {
-            switch addressBarPosition {
-            case .top, .bottom:
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    self.viewCoordinator.omniBar.hideSeparator()
-                }
-            }
-        }
-    }
-}
-
 private extension UIBarButtonItem {
     func setCustomItemAction(on target: Any?, action: Selector) {
         if let customControl = customView as? UIControl {

@@ -90,11 +90,6 @@ extension InternalFeedbackFormTabExtension: NavigationResponder {
         guard internalUserDecider.isInternalUser, let webView, navigation.navigationAction.isForMainFrame, isInternalFeedbackURL(navigation.url) else {
             return
         }
-#if APPSTORE
-        let distributionType = "App Store"
-#else
-        let distributionType = "DMG"
-#endif
         webView.evaluateJavaScript(scriptSource)
     }
 

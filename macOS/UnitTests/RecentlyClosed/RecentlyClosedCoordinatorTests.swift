@@ -129,6 +129,8 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
         openNewWindowCalled = .init(contents: tabCollectionViewModel?.tabs.map(\.content), burnerMode: burnerMode, droppingPoint: droppingPoint, contentSize: contentSize, showWindow: showWindow, popUp: popUp, lazyLoadTabs: lazyLoadTabs, isMiniaturized: isMiniaturized, isMaximized: isMaximized, isFullscreen: isFullscreen)
         return nil
     }
+
+    func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {}
     func showTab(with content: DuckDuckGo_Privacy_Browser.Tab.TabContent) { }
 
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}

@@ -46,7 +46,11 @@ struct DataImportView: ModalView {
     }
     @State private var progress: ProgressState?
 
+#if DEBUG || REVIEW
     @State private var debugViewDisabled: Bool = false
+#else
+    @State private var debugViewDisabled: Bool = true
+#endif
 
     private var shouldShowDebugView: Bool {
 #if DEBUG || REVIEW

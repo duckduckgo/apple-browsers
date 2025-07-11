@@ -56,7 +56,11 @@ final class SuggestionTrayManager: NSObject {
     private var cancellables = Set<AnyCancellable>()
     
     private var suggestionTrayViewController: SuggestionTrayViewController?
-    
+
+    var isShowingSuggestions: Bool {
+        suggestionTrayViewController?.view.isHidden == false
+    }
+
     // MARK: - Initialization
     
     init(switchBarHandler: SwitchBarHandling, dependencies: SuggestionTrayDependencies) {
@@ -98,8 +102,8 @@ final class SuggestionTrayManager: NSObject {
         controller.view.isHidden = true
         
         NSLayoutConstraint.activate([
-            controller.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 6),
-            controller.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -6),
+            controller.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            controller.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             controller.view.topAnchor.constraint(equalTo: containerView.topAnchor),
             controller.view.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
         ])
@@ -109,28 +113,32 @@ final class SuggestionTrayManager: NSObject {
         controller.didMove(toParent: parentViewController)
         
         containerView.layoutIfNeeded()
+
+        showInitialSuggestions()
     }
     
     /// Handles query updates and shows appropriate suggestions
     func handleQueryUpdate(_ query: String) {
         guard switchBarHandler.currentToggleState == .search else { return }
-        
+
+        updateSuggestionForQuery(query)
+    }
+    
+    /// Shows the suggestion tray for the initial selected state
+    func showInitialSuggestions() {
+        updateSuggestionForQuery(switchBarHandler.currentText)
+    }
+    
+    // MARK: - Private Methods
+
+    private func updateSuggestionForQuery(_ query: String) {
         if query.isEmpty {
             showSuggestionTray(.favorites)
         } else {
             showSuggestionTray(.autocomplete(query: query))
         }
     }
-    
-    /// Shows the suggestion tray for the initial selected state
-    func showInitialSuggestions() {
-        if switchBarHandler.currentToggleState == .search {
-            showSuggestionTray(.favorites)
-        }
-    }
-    
-    // MARK: - Private Methods
-    
+
     private func setupBindings() {
         switchBarHandler.toggleStatePublisher
             .receive(on: DispatchQueue.main)

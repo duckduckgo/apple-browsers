@@ -270,7 +270,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:
             return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
         case .osSupportForceUnsupportedMessage:

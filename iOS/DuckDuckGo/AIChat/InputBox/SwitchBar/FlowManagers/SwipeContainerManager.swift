@@ -60,11 +60,11 @@ final class SwipeContainerManager: NSObject {
     // MARK: - Public Methods
     
     /// Installs the swipe container in the provided parent view
-    func installInView(_ parentView: UIView, belowView topView: UIView, safeAreaGuide: UILayoutGuide) {
+    func installInView(_ parentView: UIView, belowView topView: UIView) {
         createScrollView()
         createContainerViews()
         addToParentView(parentView)
-        setupConstraints(belowView: topView, safeAreaGuide: safeAreaGuide)
+        setupConstraints(belowView: topView, superview: parentView)
         configureInitialPosition()
     }
     
@@ -94,6 +94,7 @@ final class SwipeContainerManager: NSObject {
         swipeScrollView.delegate = self
         swipeScrollView.bounces = false
         swipeScrollView.translatesAutoresizingMaskIntoConstraints = false
+        swipeScrollView.contentInsetAdjustmentBehavior = .never
     }
     
     private func createContainerViews() {
@@ -112,28 +113,28 @@ final class SwipeContainerManager: NSObject {
         parentView.addSubview(swipeScrollView)
     }
     
-    private func setupConstraints(belowView topView: UIView, safeAreaGuide: UILayoutGuide) {
+    private func setupConstraints(belowView topView: UIView, superview: UIView) {
         NSLayoutConstraint.activate([
             // Scroll view constraints
-            swipeScrollView.leadingAnchor.constraint(equalTo: safeAreaGuide.leadingAnchor),
-            swipeScrollView.trailingAnchor.constraint(equalTo: safeAreaGuide.trailingAnchor),
+            swipeScrollView.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+            swipeScrollView.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
             swipeScrollView.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: 4),
-            swipeScrollView.bottomAnchor.constraint(equalTo: safeAreaGuide.bottomAnchor),
-            
+            swipeScrollView.bottomAnchor.constraint(equalTo: superview.bottomAnchor),
+
             // Search page constraints
-            searchPageContainer.leadingAnchor.constraint(equalTo: swipeScrollView.leadingAnchor),
-            searchPageContainer.topAnchor.constraint(equalTo: swipeScrollView.topAnchor),
-            searchPageContainer.bottomAnchor.constraint(equalTo: swipeScrollView.bottomAnchor),
-            searchPageContainer.widthAnchor.constraint(equalTo: safeAreaGuide.widthAnchor),
-            searchPageContainer.heightAnchor.constraint(equalTo: swipeScrollView.heightAnchor),
-            
+            searchPageContainer.leadingAnchor.constraint(equalTo: swipeScrollView.contentLayoutGuide.leadingAnchor),
+            searchPageContainer.topAnchor.constraint(equalTo: swipeScrollView.contentLayoutGuide.topAnchor),
+            searchPageContainer.bottomAnchor.constraint(equalTo: swipeScrollView.contentLayoutGuide.bottomAnchor),
+            searchPageContainer.widthAnchor.constraint(equalTo: swipeScrollView.frameLayoutGuide.widthAnchor),
+            searchPageContainer.heightAnchor.constraint(equalTo: swipeScrollView.frameLayoutGuide.heightAnchor),
+
             // Chat page constraints
             chatPageContainer.leadingAnchor.constraint(equalTo: searchPageContainer.trailingAnchor),
-            chatPageContainer.trailingAnchor.constraint(equalTo: swipeScrollView.trailingAnchor),
-            chatPageContainer.topAnchor.constraint(equalTo: swipeScrollView.topAnchor),
-            chatPageContainer.bottomAnchor.constraint(equalTo: swipeScrollView.bottomAnchor),
-            chatPageContainer.widthAnchor.constraint(equalTo: safeAreaGuide.widthAnchor),
-            chatPageContainer.heightAnchor.constraint(equalTo: swipeScrollView.heightAnchor)
+            chatPageContainer.trailingAnchor.constraint(equalTo: swipeScrollView.contentLayoutGuide.trailingAnchor),
+            chatPageContainer.topAnchor.constraint(equalTo: swipeScrollView.contentLayoutGuide.topAnchor),
+            chatPageContainer.bottomAnchor.constraint(equalTo: swipeScrollView.contentLayoutGuide.bottomAnchor),
+            chatPageContainer.widthAnchor.constraint(equalTo: swipeScrollView.frameLayoutGuide.widthAnchor),
+            chatPageContainer.heightAnchor.constraint(equalTo: swipeScrollView.frameLayoutGuide.heightAnchor)
         ])
     }
     

@@ -70,6 +70,26 @@ final class UpdatedOmniBarSearchView: UIView {
         trailingItemsContainer.setCustomSpacing(isReduced ? -8 : 0, after: clearButton)
     }
 
+    func hideButtons(moveFactor: Double) {
+        leftIconContainerPlaceholder.transform = CGAffineTransform(translationX: -leftIconContainerPlaceholder.frame.maxX * moveFactor, y: 0)
+        leftIconContainerPlaceholder.alpha = 0
+
+        textField.transform = CGAffineTransform(translationX: -16, y: 0)
+
+        trailingItemsContainer.transform = CGAffineTransform(translationX: (bounds.width - trailingItemsContainer.frame.minX) * moveFactor, y: 0)
+        trailingItemsContainer.alpha = 0
+    }
+
+    func revealButtons() {
+        leftIconContainerPlaceholder.transform = .identity
+        leftIconContainerPlaceholder.alpha = 1
+
+        trailingItemsContainer.transform = .identity
+        trailingItemsContainer.alpha = 1
+
+        textField.transform = .identity
+    }
+
     private func setUpSubviews() {
         addSubview(mainStackView)
 

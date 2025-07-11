@@ -67,6 +67,16 @@ struct NavigationActionBarView: View {
         }
         .padding(.horizontal, Constants.horizontalPadding)
         .frame(height: Constants.barHeight)
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(designSystemColor: .surface).opacity(0.0),
+                    Color(designSystemColor: .surface).opacity(0.8)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
     }
 
     // MARK: - Button Views

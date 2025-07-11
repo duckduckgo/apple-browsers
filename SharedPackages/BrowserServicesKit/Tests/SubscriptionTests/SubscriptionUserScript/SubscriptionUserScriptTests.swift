@@ -121,6 +121,58 @@ final class SubscriptionUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.openSubscriptionPurchaseCallCount, 1)
     }
 
+    func testThatHandshakeIncludesAuthUpdateInAvailableMessages() async throws {
+        let response = try await handler.handshake(params: [], message: WKScriptMessage())
+        XCTAssertTrue(response.availableMessages.contains(.authUpdate), "authUpdate should be included in available messages")
+    }
+
+    func testThatAuthUpdateMessageNameExists() {
+        // Test that the new message name enum case exists and has correct raw value
+        XCTAssertEqual(SubscriptionUserScript.MessageName.authUpdate.rawValue, "authUpdate")
+    }
+
+    // MARK: - Integration Tests - SubscriptionUserScript to Handler Wiring
+
+    func testThatWebViewIsPassedToHandlerWhenSet() {
+        let mockHandler = MockSubscriptionUserScriptHandler()
+        let userScript = SubscriptionUserScript(handler: mockHandler, debugHost: nil)
+        let webView = WKWebView()
+
+        userScript.webView = webView
+
+        XCTAssertIdentical(mockHandler.lastSetWebView, webView)
+    }
+
+    func testThatBrokerIsPassedToHandlerWhenWithBrokerCalled() {
+        let mockHandler = MockSubscriptionUserScriptHandler()
+        let userScript = SubscriptionUserScript(handler: mockHandler, debugHost: nil)
+        let broker = UserScriptMessageBroker(context: "test")
+
+        userScript.with(broker: broker)
+
+        XCTAssertIdentical(mockHandler.lastSetBroker as? UserScriptMessageBroker, broker)
+    }
+
+    func testThatUserScriptIsPassedToHandlerWhenWithBrokerCalled() {
+        let mockHandler = MockSubscriptionUserScriptHandler()
+        let userScript = SubscriptionUserScript(handler: mockHandler, debugHost: nil)
+        let broker = UserScriptMessageBroker(context: "test")
+
+        userScript.with(broker: broker)
+
+        XCTAssertIdentical(mockHandler.lastSetUserScript, userScript)
+    }
+
+    func testThatBrokerIsStoredOnUserScriptWhenWithBrokerCalled() {
+        let mockHandler = MockSubscriptionUserScriptHandler()
+        let userScript = SubscriptionUserScript(handler: mockHandler, debugHost: nil)
+        let broker = UserScriptMessageBroker(context: "test")
+
+        userScript.with(broker: broker)
+
+        XCTAssertIdentical(userScript.broker, broker)
+    }
+
     // MARK: - Helpers
 
     private func handleMessageIgnoringResponse<MessageName: RawRepresentable>(

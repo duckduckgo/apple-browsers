@@ -48,7 +48,7 @@ protocol SubscriptionUserScriptHandling {
     // Notification message, Subscription purchase flow should be open
     func openSubscriptionPurchase(params: Any, message: any UserScriptMessage) async throws -> Encodable?
 
-    func setBroker(_ broker: UserScriptMessageBroker)
+    func setBroker(_ broker: UserScriptMessagePushing)
     func setWebView(_ webView: WKWebView?)
     func setUserScript(_ userScript: SubscriptionUserScript)
 }
@@ -62,6 +62,12 @@ public protocol SubscriptionUserScriptNavigationDelegate: AnyObject {
     @MainActor func navigateToSubscriptionPurchase()
 }
 
+protocol UserScriptMessagePushing: AnyObject {
+    func push(method: String, params: Encodable?, for delegate: Subfeature, into webView: WKWebView)
+}
+
+extension UserScriptMessageBroker: UserScriptMessagePushing {}
+
 final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     typealias DataModel = SubscriptionUserScript.DataModel
 
@@ -70,7 +76,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     private var paidAIChatFlagStatusProvider: () -> Bool
     weak var navigationDelegate: SubscriptionUserScriptNavigationDelegate?
     weak private var webView: WKWebView?
-    weak private var broker: UserScriptMessageBroker?
+    weak private var broker: UserScriptMessagePushing?
     private weak var userScript: SubscriptionUserScript?
     private var cancellables = Set<AnyCancellable>()
 
@@ -86,7 +92,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
         setupSubscriptionEventObservers()
     }
 
-    func setBroker(_ broker: UserScriptMessageBroker) {
+    func setBroker(_ broker: UserScriptMessagePushing) {
         self.broker = broker
     }
 
@@ -99,7 +105,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     }
 
     func handshake(params: Any, message: any UserScriptMessage) async throws -> DataModel.HandshakeResponse {
-        return .init(availableMessages: [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .onAuthUpdate], platform: platform)
+        return .init(availableMessages: [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .authUpdate], platform: platform)
     }
 
     func subscriptionDetails(params: Any, message: any UserScriptMessage) async throws -> DataModel.SubscriptionDetails {
@@ -139,27 +145,27 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 
     private func handleSubscriptionChanged() {
         guard let webView, let userScript else { return }
-        broker?.push(method: SubscriptionUserScript.MessageName.onAuthUpdate.rawValue, params: nil, for: userScript, into: webView)
+        broker?.push(method: SubscriptionUserScript.MessageName.authUpdate.rawValue, params: nil, for: userScript, into: webView)
     }
 
     private func setupSubscriptionEventObservers() {
         NotificationCenter.default.publisher(for: .subscriptionDidChange)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
+            .sink { [weak self] _ in
                 self?.handleSubscriptionChanged()
             }
             .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .accountDidSignIn)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
+            .sink { [weak self] _ in
                 self?.handleSubscriptionChanged()
             }
             .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .accountDidSignOut)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
+            .sink { [weak self] _ in
                 self?.handleSubscriptionChanged()
             }
             .store(in: &cancellables)
@@ -182,7 +188,7 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
         case backToSettings
         case openSubscriptionActivation
         case openSubscriptionPurchase
-        case onAuthUpdate
+        case authUpdate
     }
 
     public let featureName: String = "subscriptions"
@@ -196,9 +202,7 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
     weak public var broker: UserScriptMessageBroker?
     public weak var webView: WKWebView? {
         didSet {
-            if let scriptHandler = handler as? SubscriptionUserScriptHandler {
-                scriptHandler.setWebView(webView)
-            }
+            handler.setWebView(webView)
         }
     }
 

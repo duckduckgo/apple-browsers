@@ -504,7 +504,7 @@ extension AutoconsentUserScript {
 
     func firePixel(pixel: AutoconsentPixel) {
         if management.pixelCounter.isEmpty {
-            DispatchQueue.global().asyncAfter(deadline: .now() + 60*2) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 60*2) {
                 PixelKit.fire(AutoconsentPixel.summary(events: self.management.pixelCounter), frequency: .standard)
                 self.management.pixelCounter = [:]
                 self.management.detectedByPatternsCache.removeAll()
@@ -512,7 +512,6 @@ extension AutoconsentUserScript {
                 self.management.detectedOnlyRulesCache.removeAll()
             }
         }
-
         // increment counter
         management.pixelCounter[pixel.key, default: 0] += 1
 

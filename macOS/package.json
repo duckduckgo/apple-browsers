@@ -3,15 +3,33 @@
   "version": "1.0.0",
   "scripts": {
     "test": "echo 'no test required'",
-    "rebuild-autoconsent": "rollup -c"
+    "rebuild-autoconsent": "rollup -c",
+    "validate-pixel-defs": "validate-ddg-pixel-defs ./PixelDefinitions && prettier ./PixelDefinitions --check",
+    "pixel-lint.fix": "prettier ./PixelDefinitions --write"
   },
   "devDependencies": {
+    "@duckduckgo/pixel-schema": "github:duckduckgo/pixel-schema#v1.0.7",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.0.6",
+    "prettier": "^3.6.2",
     "rollup": "^2.61.0",
     "rollup-plugin-terser": "^7.0.2"
   },
   "dependencies": {
     "@duckduckgo/autoconsent": "^14.3.0"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "printWidth": 140,
+    "tabWidth": 4,
+    "overrides": [
+      {
+        "files": "*.json5",
+        "options": {
+          "parser": "json5",
+          "tabWidth": 4
+        }
+      }
+    ]
   }
 }

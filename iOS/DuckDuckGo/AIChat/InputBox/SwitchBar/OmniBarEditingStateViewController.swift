@@ -114,12 +114,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         DailyPixel.fireDailyAndCount(pixel: .aiChatInternalSwitchBarDisplayed)
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        
-        swipeContainerManager?.updateLayout(viewBounds: view.bounds)
-    }
-
     // MARK: - Public Methods
     
     @objc func dismissAnimated(_ completion: (() -> Void)? = nil) {
@@ -185,7 +179,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private func installSwipeContainer() {
         let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
         manager.delegate = self
-        manager.installInView(view, belowView: switchBarVC.view, safeAreaGuide: view.safeAreaLayoutGuide)
+        manager.installInView(view, belowView: switchBarVC.view)
         swipeContainerManager = manager
     }
 
@@ -279,8 +273,13 @@ extension OmniBarEditingStateViewController: SwipeContainerManagerDelegate {
         switchBarVC.updateScrollProgress(progress)
 
         if let logoView {
-            logoView.alpha = Easing.inOutCirc(progress)
-            logoView.transform = CGAffineTransform(translationX: (1 - progress) * (logoView.center.x + logoView.bounds.width/2.0), y: 0)
+            if suggestionTrayManager?.isShowingSuggestions == true {
+                logoView.alpha = Easing.inOutCirc(progress)
+                logoView.transform = CGAffineTransform(translationX: (1 - progress) * (logoView.center.x + logoView.bounds.width/2.0), y: 0)
+            } else {
+                logoView.alpha = 1.0
+                logoView.transform = .identity
+            }
         }
     }
 }

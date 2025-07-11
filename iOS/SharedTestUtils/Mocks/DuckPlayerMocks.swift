@@ -54,6 +54,7 @@ class MockWebView: WKWebView {
     var reloadCalled = false
 
     var loadCompletionHandler: (() -> Void)?
+    var onDeinitHandler: (() -> Void)?
 
     /// The current URL of the web view.
     private var _url: URL?
@@ -124,6 +125,10 @@ class MockWebView: WKWebView {
         historyStack.removeAll()
         _url = nil
         loadCompletionHandler = nil
+    }
+
+    deinit {
+        onDeinitHandler?()
     }
 }
 

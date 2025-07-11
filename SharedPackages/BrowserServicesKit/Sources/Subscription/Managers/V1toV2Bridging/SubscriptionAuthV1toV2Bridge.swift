@@ -163,3 +163,10 @@ extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 }
+
+public enum AuthVersion: String {
+    case v1
+    case v2
+
+    public static let key = "auth_version"
+}

@@ -69,6 +69,7 @@ final class InternalFeedbackFormTabExtension {
     private let internalUserDecider: InternalUserDecider
     private weak var webView: WKWebView?
     private var cancellables = Set<AnyCancellable>()
+    /// Non-internal users don't need this script, hence lazy load only for them.
     private lazy var scriptSource: String = InternalFeedbackFormUserScript().source
 
     init(

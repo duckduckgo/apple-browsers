@@ -110,13 +110,13 @@ enum AIChatPixel: PixelKitEventV2 {
         case .aiChatAddressBarButtonClicked:
             return "aichat_addressbar_button_clicked"
         case .aiChatSidebarOpened:
-            return "m_mac_aichat_sidebar_opened"
+            return "aichat_sidebar_opened"
         case .aiChatSidebarClosed:
-            return "m_mac_aichat_sidebar_closed"
+            return "aichat_sidebar_closed"
         case .aiChatSidebarExpanded:
-            return "m_mac_aichat_sidebar_expanded"
+            return "aichat_sidebar_expanded"
         case .aiChatSidebarSettingChanged:
-            return "m_mac_aichat_sidebar_setting_changed_u"
+            return "aichat_sidebar_setting_changed_u"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizePromptExpanded:

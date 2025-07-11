@@ -400,19 +400,13 @@ final class AddressBarButtonsViewController: NSViewController {
            !isTextFieldEditorFirstResponder,
            case .url = tab.content,
            behavior == .currentTab {
-
-//            if !aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid),
-//               isTextFieldEditorFirstResponder,
-//               let value = textFieldValue,
-//               let query = AIChatAddressBarPromptExtractor().queryForValue(value) {
-//                // If sidebar is not open and the address bar is in focus and has viable query use it to pass as a prompt to sidebar
-//                let prompt = AIChatNativePrompt.queryPrompt(query, autoSubmit: true)
-//                aiChatSidebarPresenter.presentSidebar(for: prompt)
-//            } else {
-                // Otherwise just toggle the sidebar
+            // Toggle (open or close) the sidebar only when feature flag and setting option are enabled and:
+            // - address bar text field is not in focus
+            // - the current tab is displaying a standard web page (not a special page),
+            // - intended link open behavior is to use the current tab
                 aiChatSidebarPresenter.toggleSidebar()
-//            }
         } else {
+            // Otherwise open Duck.ai in a full tab
             openAIChatTab(for: tab, with: behavior)
         }
 

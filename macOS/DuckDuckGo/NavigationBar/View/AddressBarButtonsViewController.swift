@@ -612,7 +612,7 @@ final class AddressBarButtonsViewController: NSViewController {
         if shouldExpandAskAIChatButton(isSidebarOpen: isSidebarOpen) {
             expandAskAIChatButton()
         } else {
-            contractAskAIChatButton(isSidebarOpen: isSidebarOpen)
+            contractAskAIChatButton()
         }
     }
 
@@ -636,7 +636,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func shouldExpandAskAIChatButton(isSidebarOpen: Bool) -> Bool {
         guard isTextFieldEditorFirstResponder,
-              !isSidebarOpen,
               let textFieldValue = textFieldValue,
               !textFieldValue.isEmpty,
               textFieldValue.isUserTyped || textFieldValue.isSuggestion else {
@@ -661,29 +660,21 @@ final class AddressBarButtonsViewController: NSViewController {
         animateAskAIChatButtonExpansion()
     }
 
-    private func contractAskAIChatButton(isSidebarOpen: Bool) {
+    private func contractAskAIChatButton() {
         askAIChatButton.backgroundColor = .clear
         askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         askAIChatButton.toolTip = UserText.aiChatAddressBarShortcutTooltip
 
-        if isSidebarOpen {
-            askAIChatButton.isEnabled = false
-            askAIChatButton.state = .on
+        askAIChatButton.isEnabled = true
+        askAIChatButton.state = .off
 
-            isAskAIChatButtonExpanded = false
-            askAIChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
-        } else {
-            askAIChatButton.isEnabled = true
-            askAIChatButton.state = .off
-
-            guard isAskAIChatButtonExpanded else {
-                // Ignore any subsequent calls if button is already contracted
-                return
-            }
-
-            isAskAIChatButtonExpanded = false
-            animateAskAIChatButtonContraction()
+        guard isAskAIChatButtonExpanded else {
+            // Ignore any subsequent calls if button is already contracted
+            return
         }
+
+        isAskAIChatButtonExpanded = false
+        animateAskAIChatButtonContraction()
     }
 
     private func animateAskAIChatButtonExpansion() {

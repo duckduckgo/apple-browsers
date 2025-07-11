@@ -29,6 +29,7 @@ final class SubscriptionService {
     let subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability
     private let subscriptionManagerV1 = AppDependencyProvider.shared.subscriptionManager
     private let subscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2
+    private let subscriptionAuthMigrator = AppDependencyProvider.shared.subscriptionAuthMigrator
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private var cancellables: Set<AnyCancellable> = []
 
@@ -101,8 +102,8 @@ final class SubscriptionService {
             }
         }
         Task {
+            await subscriptionAuthMigrator.migrateAuthV1toAuthV2IfNeeded()
             await subscriptionCookieManager.refreshSubscriptionCookie()
         }
     }
-
 }

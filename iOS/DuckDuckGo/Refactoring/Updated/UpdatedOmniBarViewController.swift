@@ -213,4 +213,12 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
             self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
         }
     }
+
+    func onAppear() {
+        barView.hideButtons()
+    }
+
+    func onDismiss() {
+        barView.revealButtons()
+    }
 }

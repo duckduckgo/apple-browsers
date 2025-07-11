@@ -40,7 +40,7 @@ struct BrokerProfileOptOutSubJob {
 
     public func runOptOut(for extractedProfile: ExtractedProfile,
                           brokerProfileQueryData: BrokerProfileQueryData,
-                          showWebView: Bool = false,
+                          showWebView: Bool,
                           shouldRunNextStep: @escaping () -> Bool) async throws {
         // 1. Validate that the broker and profile query data objects each have an ID:
         guard let brokerId = brokerProfileQueryData.dataBroker.id,

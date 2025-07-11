@@ -1,0 +1,446 @@
+---
+title: "iOS Architecture Patterns & Best Practices"
+description: "iOS-specific architecture patterns and best practices for DuckDuckGo browser including dependency injection, AppDependencyProvider, and MainCoordinator"
+keywords: ["iOS", "architecture", "AppDependencyProvider", "MainCoordinator", "dependency injection", "MVVM", "SwiftUI", "UIKit"]
+alwaysApply: false
+---
+
+# iOS DuckDuckGo Browser Architecture Rules
+
+## Dependency Injection and AppDependencies
+
+### Use AppDependencyProvider Pattern
+ALWAYS use the centralized dependency provider for all service dependencies:
+
+```swift
+// ✅ CORRECT - Use the shared dependency provider
+final class FeatureViewModel: ObservableObject {
+    private let networkService: NetworkServiceProtocol
+    
+    init(dependencies: DependencyProvider = AppDependencyProvider.shared) {
+        self.networkService = dependencies.networkService
+    }
+}
+
+// ❌ INCORRECT - Direct singleton access
+final class FeatureViewModel: ObservableObject {
+    private let networkService = NetworkService.shared // Avoid singletons
+}
+```
+
+### Protocol-Based Dependencies
+ALWAYS define protocols for dependencies to enable testing:
+
+```swift
+// ✅ CORRECT - Protocol abstraction
+protocol FeatureServiceProtocol {
+    func fetchData() async throws -> [Item]
+}
+
+final class FeatureService: FeatureServiceProtocol {
+    // Implementation
+}
+
+// ❌ INCORRECT - Concrete dependency
+final class ViewModel {
+    private let service: FeatureService // Hard to test
+}
+```
+
+## AppSettings and Configuration
+
+### Use AppSettings Protocol
+ALWAYS access settings through the AppSettings protocol:
+
+```swift
+// ✅ CORRECT - Protocol-based settings access
+final class SettingsViewModel: ObservableObject {
+    private let appSettings: AppSettings
+    
+    init(appSettings: AppSettings) {
+        self.appSettings = appSettings
+    }
+    
+    var isFeatureEnabled: Bool {
+        get { appSettings.featureEnabled }
+        set { appSettings.featureEnabled = newValue }
+    }
+}
+
+// ❌ INCORRECT - Direct UserDefaults access
+final class SettingsViewModel: ObservableObject {
+    var isFeatureEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: "feature_enabled") }
+        set { UserDefaults.standard.set(newValue, forKey: "feature_enabled") }
+    }
+}
+```
+
+### UserDefaults Property Wrapper
+Use the established @UserDefaultsWrapper pattern for new settings:
+
+```swift
+// ✅ CORRECT - Property wrapper usage
+extension AppUserDefaults {
+    @UserDefaultsWrapper(key: .newFeatureEnabled, defaultValue: false)
+    var newFeatureEnabled: Bool
+}
+
+// ❌ INCORRECT - Manual UserDefaults handling
+extension AppUserDefaults {
+    var newFeatureEnabled: Bool {
+        get { userDefaults.bool(forKey: "new_feature_enabled") }
+        set { userDefaults.set(newValue, forKey: "new_feature_enabled") }
+    }
+}
+```
+
+## Navigation and Coordinators
+
+### Use MainCoordinator for App-Level Navigation
+ALWAYS use MainCoordinator for deep links, URL handling, and app-level navigation:
+
+```swift
+// ✅ CORRECT - MainCoordinator usage
+@MainActor
+final class FeatureCoordinator {
+    private weak var mainCoordinator: MainCoordinator?
+    
+    func handleFeatureAction() {
+        mainCoordinator?.handleURL(featureURL)
+    }
+}
+
+// ❌ INCORRECT - Direct navigation from ViewModels
+final class FeatureViewModel: ObservableObject {
+    func handleAction() {
+        // Don't navigate directly from ViewModels
+        navigationController?.pushViewController(detailVC, animated: true)
+    }
+}
+```
+
+### URL Handling Pattern
+Implement URLHandling protocol for custom URL schemes:
+
+```swift
+// ✅ CORRECT - URLHandling protocol implementation
+extension FeatureCoordinator: URLHandling {
+    func handleURL(_ url: URL) {
+        guard url.scheme == "duckduckgo",
+              url.host == "feature" else { return }
+        
+        presentFeature(with: url.queryParameters)
+    }
+    
+    func shouldProcessDeepLink(_ url: URL) -> Bool {
+        return url.scheme == "duckduckgo" && url.host == "feature"
+    }
+}
+```
+
+## SwiftUI and Design System Integration
+
+### Use DesignResourcesKit Colors
+ALWAYS use semantic colors from DesignResourcesKit:
+
+```swift
+// ✅ CORRECT - Semantic color usage
+struct FeatureView: View {
+    var body: some View {
+        VStack {
+            Text("Title")
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+            
+            Rectangle()
+                .fill(Color(designSystemColor: .surface))
+        }
+        .background(Color(designSystemColor: .background))
+    }
+}
+
+// ❌ INCORRECT - Hardcoded colors
+struct FeatureView: View {
+    var body: some View {
+        VStack {
+            Text("Title")
+                .foregroundColor(.black) // Don't hardcode colors
+            
+            Rectangle()
+                .fill(.gray) // Use semantic colors instead
+        }
+    }
+}
+```
+
+### Use DesignResourcesKit Icons
+ALWAYS use icons from DesignResourcesKitIcons:
+
+```swift
+// ✅ CORRECT - Design system icons
+struct IconButton: View {
+    var body: some View {
+        Button(action: action) {
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.add)
+                .foregroundColor(Color(designSystemColor: .accent))
+        }
+    }
+}
+
+// ❌ INCORRECT - System icons or custom images
+struct IconButton: View {
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "plus") // Use design system icons
+        }
+    }
+}
+```
+
+### Theme Integration
+Use Theme protocol for complex color requirements:
+
+```swift
+// ✅ CORRECT - Theme integration
+struct ThemedView: View {
+    @EnvironmentObject var themeManager: ThemeManager
+    
+    var body: some View {
+        Rectangle()
+            .fill(Color(themeManager.currentTheme.backgroundColor))
+    }
+}
+```
+
+## MVVM Pattern Implementation
+
+### ObservableObject ViewModels
+ALWAYS use ObservableObject for SwiftUI ViewModels:
+
+```swift
+// ✅ CORRECT - ObservableObject ViewModel
+@MainActor
+final class FeatureViewModel: ObservableObject {
+    @Published private(set) var items: [Item] = []
+    @Published private(set) var isLoading = false
+    @Published private(set) var error: Error?
+    
+    private let service: FeatureServiceProtocol
+    private var cancellables = Set<AnyCancellable>()
+    
+    init(service: FeatureServiceProtocol) {
+        self.service = service
+        setupBindings()
+    }
+    
+    func loadData() async {
+        isLoading = true
+        defer { isLoading = false }
+        
+        do {
+            items = try await service.fetchItems()
+            error = nil
+        } catch {
+            self.error = error
+        }
+    }
+    
+    private func setupBindings() {
+        // Setup Combine bindings
+    }
+}
+```
+
+### Published Property Guidelines
+- Use `@Published private(set)` for read-only state
+- Use `@Published` for two-way bindings
+- Always mark ViewModels with `@MainActor`
+
+## Async/Await Patterns
+
+### MainActor Usage
+ALWAYS use @MainActor for UI-related async operations:
+
+```swift
+// ✅ CORRECT - MainActor for UI updates
+@MainActor
+final class CoordinatorClass {
+    func presentModal() async {
+        let viewModel = try await createViewModel()
+        let hostingController = UIHostingController(rootView: FeatureView(viewModel: viewModel))
+        navigationController.present(hostingController, animated: true)
+    }
+}
+
+// ❌ INCORRECT - UI updates without MainActor
+final class CoordinatorClass {
+    func presentModal() async {
+        let viewModel = try await createViewModel()
+        // This will crash - UI updates must be on main thread
+        navigationController.present(hostingController, animated: true)
+    }
+}
+```
+
+### Task Management
+Use Task for async operations in ViewModels:
+
+```swift
+// ✅ CORRECT - Task usage in ViewModels
+final class ViewModel: ObservableObject {
+    func performAction() {
+        Task {
+            await loadData()
+        }
+    }
+}
+```
+
+## Singleton Pattern Guidelines
+
+### Avoid Singletons - Use Dependency Injection
+```swift
+// ❌ INCORRECT - Singleton pattern
+final class FeatureManager {
+    static let shared = FeatureManager()
+    private init() {}
+}
+
+// ✅ CORRECT - Dependency injection
+protocol FeatureManagerProtocol {
+    func performAction()
+}
+
+final class FeatureManager: FeatureManagerProtocol {
+    func performAction() {
+        // Implementation
+    }
+}
+
+// Register in AppDependencyProvider
+extension AppDependencyProvider {
+    var featureManager: FeatureManagerProtocol {
+        return FeatureManager()
+    }
+}
+```
+
+### Acceptable Singleton Usage
+Only use singletons for truly global state that must be shared across the entire app:
+
+```swift
+// ✅ ACCEPTABLE - Global theme management
+final class ThemeManager {
+    static let shared = ThemeManager()
+    private init() {}
+}
+
+// ✅ ACCEPTABLE - Content blocking state
+final class ContentBlocking {
+    static let shared = ContentBlocking()
+    private init() {}
+}
+```
+
+## Error Handling
+
+### Use Result Types for Service Layer
+```swift
+// ✅ CORRECT - Result types in services
+protocol NetworkServiceProtocol {
+    func fetchData() async -> Result<Data, NetworkError>
+}
+
+// ✅ CORRECT - Async throws in ViewModels
+final class ViewModel: ObservableObject {
+    func loadData() async {
+        do {
+            let result = try await service.fetchData()
+            // Handle success
+        } catch {
+            // Handle error
+        }
+    }
+}
+```
+
+### Custom Error Types
+Define domain-specific error types:
+
+```swift
+// ✅ CORRECT - Domain-specific errors
+enum FeatureError: LocalizedError {
+    case networkUnavailable
+    case invalidData
+    case unauthorized
+    
+    var errorDescription: String? {
+        switch self {
+        case .networkUnavailable:
+            return "Network connection unavailable"
+        case .invalidData:
+            return "Invalid data received"
+        case .unauthorized:
+            return "User not authorized"
+        }
+    }
+}
+```
+
+## Performance Optimization
+
+### Lazy Loading for Expensive Operations
+```swift
+// ✅ CORRECT - Lazy property initialization
+final class DataManager {
+    private lazy var expensiveResource: ExpensiveResource = {
+        return ExpensiveResource()
+    }()
+}
+```
+
+### Background Processing
+```swift
+// ✅ CORRECT - Background processing with main thread UI updates
+final class ViewModel: ObservableObject {
+    @Published var result: ProcessedData?
+    
+    func processData() {
+        Task.detached(priority: .userInitiated) {
+            let processed = await heavyProcessing()
+            
+            await MainActor.run {
+                self.result = processed
+            }
+        }
+    }
+}
+```
+
+## Testing Requirements
+
+### Testable Architecture
+ALWAYS write testable code using dependency injection:
+
+```swift
+// ✅ CORRECT - Testable implementation
+final class FeatureViewModel: ObservableObject {
+    private let service: FeatureServiceProtocol
+    
+    init(service: FeatureServiceProtocol) {
+        self.service = service
+    }
+}
+
+// Test setup
+final class FeatureViewModelTests: XCTestCase {
+    func testLoadData() async {
+        let mockService = MockFeatureService()
+        let viewModel = FeatureViewModel(service: mockService)
+        
+        await viewModel.loadData()
+        
+        XCTAssertTrue(mockService.fetchDataCalled)
+    }
+}
+```

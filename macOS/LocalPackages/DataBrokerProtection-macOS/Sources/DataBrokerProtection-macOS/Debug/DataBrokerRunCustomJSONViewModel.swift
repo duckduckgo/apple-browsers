@@ -596,9 +596,11 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     }
 
     func resetTries() {
+        self.tries = 1
     }
 
     func incrementTries() {
+        self.tries += 1
     }
 }
 

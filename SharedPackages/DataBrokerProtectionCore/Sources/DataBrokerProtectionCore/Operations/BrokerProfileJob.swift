@@ -46,6 +46,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     private var _isFinished = false
 
     deinit {
+        Logger.dataBrokerProtection.log("Deinit BrokerProfileJob: \(String(describing: self.id.uuidString), privacy: .public)")
     }
 
     init(dataBrokerID: Int64,
@@ -138,8 +139,11 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                                                                   jobType: jobType,
                                                                                   priorityDate: priorityDate)
 
+        Logger.dataBrokerProtection.log("filteredAndSortedOperationsData count: \(filteredAndSortedJobData.count, privacy: .public) for brokerID \(self.dataBrokerID, privacy: .public)")
+
         for jobData in filteredAndSortedJobData {
             if isCancelled {
+                Logger.dataBrokerProtection.log("Cancelled operation, returning...")
                 return
             }
 
@@ -150,6 +154,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
             guard let brokerProfileData = brokerProfileData else {
                 continue
             }
+
+            Logger.dataBrokerProtection.log("Running operation: \(String(describing: jobData), privacy: .public)")
 
             do {
                 if jobData is ScanJobData {
@@ -179,6 +185,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 }
 
                 let sleepInterval = jobDependencies.executionConfig.intervalBetweenSameBrokerJobs
+                Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")
                 try await Task.sleep(nanoseconds: UInt64(sleepInterval) * 1_000_000_000)
             } catch {
                 Logger.dataBrokerProtection.error("Error: \(error.localizedDescription, privacy: .public)")
@@ -193,6 +200,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     }
 
     private func finish() {
+        Logger.dataBrokerProtection.log("Finished operation: \(self.id.uuidString, privacy: .public)")
+        
         willChangeValue(forKey: #keyPath(isExecuting))
         willChangeValue(forKey: #keyPath(isFinished))
 

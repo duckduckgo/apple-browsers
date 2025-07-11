@@ -80,6 +80,7 @@ struct BrokerProfileOptOutSubJob {
 
         // 6. Record the start of the opt-out job:
         stageDurationCalculator.fireOptOutStart()
+        Logger.dataBrokerProtection.log("Running opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
         // 7. Set up a defer block to report opt-out job completion regardless of its success:
         defer {
@@ -153,6 +154,8 @@ struct BrokerProfileOptOutSubJob {
                                            profileQueryId: Int64,
                                            database: DataBrokerProtectionRepository,
                                            notificationCenter: NotificationCenter) {
+        Logger.dataBrokerProtection.log("Finished opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
+
         try? database.updateLastRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
         do {
             try updateOperationDataDates(

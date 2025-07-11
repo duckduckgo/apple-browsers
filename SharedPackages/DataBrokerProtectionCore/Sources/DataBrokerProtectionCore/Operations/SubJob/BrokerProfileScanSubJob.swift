@@ -42,6 +42,7 @@ struct BrokerProfileScanSubJob {
                         showWebView: Bool,
                         isManual: Bool,
                         shouldRunNextStep: @escaping () -> Bool) async throws {
+        Logger.dataBrokerProtection.log("Running scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
         // 1. Validate that the broker and profile query data objects each have an ID:
         guard let brokerId = brokerProfileQueryData.dataBroker.id,
@@ -54,6 +55,7 @@ struct BrokerProfileScanSubJob {
             let lastRunDate = Date()
             try? dependencies.database.updateLastRunDate(lastRunDate, brokerId: brokerId, profileQueryId: profileQueryId)
             dependencies.notificationCenter.post(name: DataBrokerProtectionNotifications.didFinishScan, object: brokerProfileQueryData.dataBroker.name)
+            Logger.dataBrokerProtection.log("Finished scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
         }
 
         // 2. Set up dependencies used to report the status of the scan job:
@@ -84,6 +86,8 @@ struct BrokerProfileScanSubJob {
             let profilesFoundDuringCurrentScanJob = try await runner.scan(brokerProfileQueryData,
                                                                           showWebView: showWebView,
                                                                           shouldRunNextStep: shouldRunNextStep)
+
+            Logger.dataBrokerProtection.log("OperationManager found profiles: \(profilesFoundDuringCurrentScanJob, privacy: .public)")
 
             // 5. Handle the extracted profiles reported by the runner:
             if !profilesFoundDuringCurrentScanJob.isEmpty {
@@ -226,6 +230,7 @@ struct BrokerProfileScanSubJob {
         )
 
         try database.saveOptOutJob(optOut: optOutJobData, extractedProfile: extractedProfile)
+        Logger.dataBrokerProtection.log("Creating new opt-out operation data for: \(String(describing: extractedProfile.name))")
     }
 
     private func storeScanWithNoMatchesEvent(brokerId: Int64,
@@ -267,6 +272,8 @@ struct BrokerProfileScanSubJob {
                     schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
                     database: database
                 )
+
+                Logger.dataBrokerProtection.log("Profile removed from optOutsData: \(String(describing: removedProfile))")
 
                 if let attempt = try database.fetchAttemptInformation(for: extractedProfileId),
                    let attemptUUID = UUID(uuidString: attempt.attemptId) {

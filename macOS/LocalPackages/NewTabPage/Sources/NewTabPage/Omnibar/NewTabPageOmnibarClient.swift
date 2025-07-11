@@ -23,17 +23,21 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     enum MessageName: String, CaseIterable {
         case getConfig = "omnibar_getConfig"
+        case setConfig = "omnibar_setConfig"
         case getSuggestions = "omnibar_getSuggestions"
         case submitSearch = "omnibar_submitSearch"
         case openSuggestion = "omnibar_openSuggestion"
         case submitChat = "omnibar_submitChat"
     }
 
+    private let modeProvider: NewTabPageOmnibarModeProviding
     private let suggestionsProvider: NewTabPageOmnibarSuggestionsProviding
     private let actionHandler: NewTabPageOmnibarActionHandling
 
-    public init(suggestionsProvider: NewTabPageOmnibarSuggestionsProviding,
+    public init(modeProvider: NewTabPageOmnibarModeProviding,
+                suggestionsProvider: NewTabPageOmnibarSuggestionsProviding,
                 actionHandler: NewTabPageOmnibarActionHandling) {
+        self.modeProvider = modeProvider
         self.suggestionsProvider = suggestionsProvider
         self.actionHandler = actionHandler
         super.init()
@@ -42,6 +46,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
         userScript.registerMessageHandlers([
             MessageName.getConfig.rawValue: { [weak self] in try await self?.getConfig(params: $0, original: $1) },
+            MessageName.setConfig.rawValue: { [weak self] in try await self?.setConfig(params: $0, original: $1) },
             MessageName.getSuggestions.rawValue: { [weak self] in try await self?.getSuggestions(params: $0, original: $1) },
             MessageName.submitSearch.rawValue: { [weak self] in try await self?.submitSearch(params: $0, original: $1) },
             MessageName.openSuggestion.rawValue: { [weak self] in try await self?.openSuggestion(params: $0, original: $1) },
@@ -50,9 +55,17 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     }
 
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        // In future, the mode will be stored locally and provided in initial configuration below
-        let mode = NewTabPageDataModel.OmnibarMode.search
+        let mode = await modeProvider.mode
         return NewTabPageDataModel.OmnibarConfig(mode: mode)
+    }
+
+    @MainActor
+    private func setConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let config: NewTabPageDataModel.OmnibarConfig = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        modeProvider.mode = config.mode
+        return nil
     }
 
     private func getSuggestions(params: Any, original: WKScriptMessage) async throws -> Encodable? {

@@ -26,7 +26,7 @@ public extension NewTabPageDataModel {
         case search, ai
     }
 
-    struct OmnibarConfig: Encodable, Equatable {
+    struct OmnibarConfig: Codable, Equatable {
         let mode: OmnibarMode
     }
 

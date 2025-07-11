@@ -85,6 +85,7 @@ extension NewTabPageActionsManager {
         )
         let suggestionsProvider = NewTabPageOmnibarSuggestionsProvider(suggestionContainer: suggestionContainer)
         let omnibarActionHandler = NewTabPageOmnibarActionHandler()
+        let omnibarModeProvider = NewTabPageOmnibarModeProvider()
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
@@ -111,7 +112,9 @@ extension NewTabPageActionsManager {
             NewTabPageProtectionsReportClient(model: protectionsReportModel),
             NewTabPagePrivacyStatsClient(model: privacyStatsModel),
             NewTabPageRecentActivityClient(model: recentActivityModel),
-            NewTabPageOmnibarClient(suggestionsProvider: suggestionsProvider, actionHandler: omnibarActionHandler)
+            NewTabPageOmnibarClient(modeProvider: omnibarModeProvider,
+                                    suggestionsProvider: suggestionsProvider,
+                                    actionHandler: omnibarActionHandler)
         ])
     }
 }

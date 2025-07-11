@@ -26,7 +26,7 @@ struct FirefoxHistoryReaderTests {
         let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: resourceURL())
         let frecentSites = try historyReader.readFrecentSites().get()
 
-        #expect(frecentSites.count == 3)
+        #expect(frecentSites.count == 2)
 
         let firstSite = try #require(frecentSites.first)
         #expect(firstSite.url == "https://spreadprivacy.com/")

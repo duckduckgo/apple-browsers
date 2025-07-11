@@ -62,6 +62,9 @@ final class FirefoxHistoryReader {
     private let firefoxHistoryDatabaseURL: URL
     private var currentOperationType: ImportError.OperationType = .copyTemporaryFile
 
+    /// Set of search engine hostnames that Firefox uses as a filter
+    private let searchHosts: Set<String> = ["google", "search.yahoo", "yahoo", "bing", "ask", "duckduckgo"]
+
     init(firefoxDataDirectoryURL: URL) {
         self.firefoxHistoryDatabaseURL = firefoxDataDirectoryURL.appendingPathComponent(Constants.historyDatabaseName)
     }
@@ -93,9 +96,9 @@ final class FirefoxHistoryReader {
 
         /// Remove invalid URLs
         let validFrecentSites = frecentSites.filter { site in
-            !site.url.isEmpty && URL(string: site.url) != nil
+            guard let url = URL(string: site.url), let host = url.host else { return false }
+            return (url.isHttps || url.isHttp) && !searchHosts.contains(where: { host.contains($0) })
         }
-
         return validFrecentSites
     }
 
@@ -112,7 +115,7 @@ final class FirefoxHistoryReader {
         ORDER BY
             frecency DESC, last_visit_date DESC
         LIMIT
-            250
+            240
         """
     }
 }

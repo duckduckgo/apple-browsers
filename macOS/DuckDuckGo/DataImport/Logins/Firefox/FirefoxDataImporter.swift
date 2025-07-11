@@ -194,8 +194,7 @@ internal class FirefoxDataImporter: DataImporter {
                     // Then, de-duplicate remaining frecent sites by their root domain.
                     guard let url = URL(string: site.url),
                             !preferences.isURLBlockedOnNewTab(site.url),
-                            !pinnedSites.contains(where: { $0?.url?.root == url.root }),
-                            url.isHttps || url.isHttp else { return }
+                            !pinnedSites.contains(where: { $0?.url?.root == url.root }) else { return }
                     let rootDomain = url.root ?? url
                     if !partialResult.seen.contains(rootDomain) {
                         partialResult.seen.insert(rootDomain)

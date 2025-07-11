@@ -63,6 +63,7 @@ final class FirefoxPreferences {
         (preferences[Constants.PreferenceKeys.topSites]?.lowercased() ?? "true") == "true" // Defaults to enabled
     }()
 
+    /// Maximum number of favorites shown on the new tab page.
     lazy var newTabFavoritesCount: Int = {
         guard let rowCountString = preferences[Constants.PreferenceKeys.topSitesRows],
               let rowCount = Int(rowCountString) else {
@@ -71,11 +72,14 @@ final class FirefoxPreferences {
         return rowCount * 8
     }()
 
+    /// Sites pinned in favorites on the new tab page.
+    /// Includes nil entries for empty slots (to be filled with frecent sites from browsing history).
     lazy var newTabPinnedSites: [PinnedSite?] = {
         let pinnedSitesJSONString = preferences[Constants.PreferenceKeys.pinned]
         return parseJSONValue(pinnedSitesJSONString, as: [PinnedSite?].self) ?? []
     }()
 
+    /// Set of hashed site URLs that are blocked from the favorites section on the new tab page.
     private lazy var newTabBlockedSiteHashes: Set<String> = {
         let blockedSitesJSONString = preferences[Constants.PreferenceKeys.blocked]
         let blockedSitesDict = parseJSONValue(blockedSitesJSONString, as: [String: Int].self) ?? [:]
@@ -126,6 +130,7 @@ final class FirefoxPreferences {
         return Data(digest).base64EncodedString()
     }
 
+    /// Decodes a JSON string value from a preference as the given type.
     private func parseJSONValue<T: Decodable>(_ value: String?, as type: T.Type) -> T? {
         guard let value else { return nil }
 
@@ -140,11 +145,10 @@ final class FirefoxPreferences {
         return try? JSONDecoder().decode(T.self, from: jsonData)
     }
 
-    /// Parses a single preference line and extracts the key and value
+    /// Parses a single preference line and extracts the value as a `String`.
     ///
-    /// Handles the Firefox preference format: `user_pref("key", value);`
-    /// where value can be a string (quoted), boolean, or number.
-    /// Returns the key and the raw value string for further processing.
+    /// Handles the Firefox preference format: `user_pref("key", value);` where value can be a string (quoted), boolean, or number.
+    /// Returns the raw value string for further processing.
     private static func parsePreferenceLine(_ pref: String, withKey key: String) -> String? {
         guard pref.hasPrefix("user_pref(\"\(key)\",") else {
             return nil

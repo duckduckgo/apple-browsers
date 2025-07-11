@@ -69,6 +69,7 @@ final class FirefoxHistoryReader {
         self.firefoxHistoryDatabaseURL = firefoxDataDirectoryURL.appendingPathComponent(Constants.historyDatabaseName)
     }
 
+    /// Returns a list of the most frequently, recently visited ("frecent") sites from the Firefox history database.
     func readFrecentSites() -> DataImportResult<[FirefoxFrecentSite]> {
         currentOperationType = .copyTemporaryFile
         do {

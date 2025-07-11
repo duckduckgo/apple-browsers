@@ -20,6 +20,7 @@
 import XCTest
 import Suggestions
 import Bookmarks
+import AIChat
 
 @testable import DuckDuckGo
 
@@ -139,7 +140,7 @@ final class MockOmniBarDelegate: OmniBarDelegate {
         return nil
     }
 
-    func onOmniPromptSubmitted(_ query: String) {
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
     }
 
     func onAbortPressed() {

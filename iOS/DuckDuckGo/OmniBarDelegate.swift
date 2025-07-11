@@ -20,6 +20,7 @@
 import Foundation
 import Suggestions
 import Bookmarks
+import AIChat
 
 enum OmniBarEditingEndResult {
     case suspended
@@ -82,7 +83,7 @@ protocol OmniBarDelegate: AnyObject {
     func onDidEndEditing()
 
     /// SwitchBar
-    func onOmniPromptSubmitted(_ query: String)
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?)
 
     func onSelectFavorite(_ favorite: BookmarkEntity)
 

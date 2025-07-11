@@ -31,7 +31,8 @@ protocol CrashReport: CrashReportPresenting {
 
     var url: URL { get }
     var contentData: Data? { get }
-
+    var appVersion: String? { get }
+    var bundleID: String? { get }
 }
 
 final class LegacyCrashReport: CrashReport {
@@ -85,6 +86,8 @@ final class LegacyCrashReport: CrashReport {
         content?.data(using: .utf8)
     }
 
+    let appVersion: String? = nil
+    let bundleID: String? = nil
 }
 
 final class JSONCrashReport: CrashReport {
@@ -96,6 +99,7 @@ final class JSONCrashReport: CrashReport {
         "deviceIdentifierForVendor",
         "rolloutId"
     ]
+
     private static let pidRegex = regex(#""pid"\s*:\s*(\d+)(?:,|$)"#)
     private static let timestampRegex = regex(#""timestamp"\s*:\s*"([^"]+)""#)
     private static let dateFormatter: DateFormatter = {
@@ -140,6 +144,24 @@ final class JSONCrashReport: CrashReport {
         content?.data(using: .utf8)
     }
 
+    private lazy var headerJSON: [String: Any]? = {
+        guard let content,
+              let header = content.split(separator: "\n").first,
+              let headerData = header.data(using: .utf8),
+              let headerJSON = try? JSONSerialization.jsonObject(with: headerData, options: []) as? [String: Any]
+        else {
+            return nil
+        }
+        return headerJSON
+    }()
+
+    var bundleID: String? {
+        headerJSON?["bundleID"] as? String
+    }
+
+    var appVersion: String? {
+        headerJSON?["app_version"] as? String
+    }
 }
 
 struct CrashDataPayload: CrashReportPresenting {

@@ -31,7 +31,7 @@ fileprivate let appDistribution = "direct"
 
 enum PrivacyProPixel: PixelKitEventV2 {
     // Subscription
-    case privacyProSubscriptionActive
+    case privacyProSubscriptionActive(AuthVersion)
     case privacyProOfferScreenImpression
     case privacyProPurchaseAttempt
     case privacyProPurchaseFailureOther
@@ -158,6 +158,8 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProAuthV2MigrationFailed(let source, let error):
             return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
                     PrivacyProPixelsDefaults.sourceKey: source.description]
+        case .privacyProSubscriptionActive(let authVersion):
+            return [AuthVersion.key: authVersion.rawValue]
         default:
             return nil
         }

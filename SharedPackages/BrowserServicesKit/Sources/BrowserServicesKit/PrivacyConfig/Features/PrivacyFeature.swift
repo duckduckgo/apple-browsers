@@ -173,6 +173,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds context menu action for summarizing text selected on a website.
     case textSummarization
+
+    // Adds capability to load AI Chat in a sidebar
+    case sidebar
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

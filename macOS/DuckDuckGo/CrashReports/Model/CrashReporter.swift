@@ -49,8 +49,15 @@ final class CrashReporter {
             return
         }
 
-        PixelKit.fire(GeneralPixel.crash)
-        PixelKit.fire(GeneralPixel.crashDaily, frequency: .legacyDailyNoSuffix)
+        for crash in crashReports {
+            let appIdentifier = CrashPixelAppIdentifier(crash.bundleID)
+            if let appVersion = crash.appVersion {
+                let parameters = [PixelKit.Parameters.appVersion: appVersion]
+                PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), frequency: .dailyAndStandard, withAdditionalParameters: parameters, includeAppVersionParameter: false)
+            } else {
+                PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), frequency: .dailyAndStandard)
+            }
+        }
 
         promptPresenter.showPrompt(for: latest) {
             guard let contentData = latest.contentData else {

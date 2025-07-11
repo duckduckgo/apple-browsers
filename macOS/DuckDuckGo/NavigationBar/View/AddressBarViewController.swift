@@ -385,9 +385,20 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func subscribeToButtonsWidth() {
-        addressBarButtonsViewController!.$buttonsWidth
+        guard let addressBarButtonsViewController else {
+            assertionFailure("AddressBarViewController.subscribeToButtonsWidth: addressBarButtonsViewController is nil")
+            return
+        }
+
+        addressBarButtonsViewController.$buttonsWidth
             .sink { [weak self] value in
                 self?.layoutTextFields(withMinX: value)
+            }
+            .store(in: &cancellables)
+
+        addressBarButtonsViewController.$trailingButtonsWidth
+            .sink { [weak self] value in
+                self?.layoutTextFields(trailingWidth: value)
             }
             .store(in: &cancellables)
     }
@@ -627,6 +638,11 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
+    private func layoutTextFields(trailingWidth width: CGFloat) {
+        addressBarTextTrailingConstraint.constant = width
+        passiveTextFieldTrailingConstraint.constant = width
+    }
+
     private func firstResponderDidChange(_ notification: Notification) {
         if view.window?.firstResponder === addressBarTextField.currentEditor() {
             if !isFirstResponder {
@@ -750,18 +766,17 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         aiChatSettings.showShortcutInAddressBar = false
     }
 
-    func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool) {
-        let trailingConstant: CGFloat = isVisible ? 80 : 45
-        addressBarTextTrailingConstraint.constant = trailingConstant
-        passiveTextFieldTrailingConstraint.constant = trailingConstant
-    }
-
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         _ = escapeKeyDown()
     }
 
     func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         tabCollectionViewModel.insertOrAppendNewTab(.settings(pane: .aiChat))
+    }
+
+    func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        addressBarTextField.hideSuggestionWindow()
+        addressBarTextField.escapeKeyDown()
     }
 }
 

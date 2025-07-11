@@ -97,6 +97,7 @@ final class MainMenu: NSMenu {
     let customConfigurationUrlMenuItem = NSMenuItem(title: "Last Update Time", action: nil)
     let configurationDateAndTimeMenuItem = NSMenuItem(title: "Configuration URL", action: nil)
     let autofillDebugScriptMenuItem = NSMenuItem(title: "Autofill Debug Script", action: #selector(MainMenu.toggleAutofillScriptDebugSettingsAction))
+    let toggleWatchdogMenuItem = NSMenuItem(title: "Toggle Hang Watchdog", action: #selector(MainViewController.toggleWatchdog))
 
     // MARK: Help
 
@@ -481,6 +482,7 @@ final class MainMenu: NSMenu {
         updateRemoteConfigurationInfo()
         updateAutofillDebugScriptMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
+        updateWatchdogMenuItem()
     }
 
     private func updateAppAboutDDGMenuItem() {
@@ -758,6 +760,14 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "C++ exception", action: #selector(AppDelegate.crashOnCxxException))
             }
 
+            NSMenuItem(title: "Hang Debugging") {
+                toggleWatchdogMenuItem
+                NSMenuItem(
+                    title: "Simulate 15 Second Hang",
+                    action: #selector(MainViewController.simulate15SecondHang)
+                )
+            }
+
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
 
@@ -836,6 +846,11 @@ final class MainMenu: NSMenu {
 
     private func updateAutofillDebugScriptMenuItem() {
         autofillDebugScriptMenuItem.state = AutofillPreferences().debugScriptEnabled ? .on : .off
+    }
+
+    @MainActor
+    private func updateWatchdogMenuItem() {
+        toggleWatchdogMenuItem.state = MainViewController.watchdog.isRunning ? .on : .off
     }
 
     private func updateRemoteConfigurationInfo() {

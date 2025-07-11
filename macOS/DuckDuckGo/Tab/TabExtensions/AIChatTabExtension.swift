@@ -21,7 +21,6 @@ import Foundation
 import Combine
 import WebKit
 import AIChat
-import Subscription
 
 protocol AIChatUserScriptProvider {
     var aiChatUserScript: AIChatUserScript? { get }
@@ -134,47 +133,4 @@ extension AIChatTabExtension: AIChatProtocol, TabExtension {
 
 extension TabExtensions {
     var aiChat: AIChatProtocol? { resolve(AIChatTabExtension.self) }
-}
-
-
-protocol SubscriptionUserScriptProvider {
-    var subscriptionUserScript: SubscriptionUserScript? { get }
-}
-extension UserScripts: SubscriptionUserScriptProvider {}
-
-final class SubscriptionTabExtension: NSObject {
-    private weak var webView: WKWebView?
-    private weak var subscriptionUserScript: SubscriptionUserScript?
-    private var cancellables = Set<AnyCancellable>()
-
-    init(scriptsPublisher: some Publisher<UserScripts, Never>,
-         webViewPublisher: some Publisher<WKWebView, Never>) {
-
-        super.init()
-
-        webViewPublisher.sink { [weak self] webView in
-            self?.webView = webView
-            self?.subscriptionUserScript?.webView = webView
-        }.store(in: &cancellables)
-        
-        scriptsPublisher.sink { [weak self] scripts in
-            Task { @MainActor in
-                self?.subscriptionUserScript = scripts.subscriptionUserScript // ← This was missing!
-                self?.subscriptionUserScript?.webView = self?.webView
-            }
-        }.store(in: &cancellables)
-    }
-}
-
-protocol SubscriptionProtocol: AnyObject, NavigationResponder {
-}
-extension SubscriptionTabExtension: TabExtension, SubscriptionProtocol {
-    func getPublicProtocol() -> SubscriptionProtocol { self }
-
-}
-
-extension TabExtensions {
-    var subscriptionProtocol: SubscriptionProtocol? {
-        resolve(SubscriptionTabExtension.self)
-    }
 }

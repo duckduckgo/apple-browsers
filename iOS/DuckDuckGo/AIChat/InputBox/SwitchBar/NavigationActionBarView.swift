@@ -35,8 +35,11 @@ struct NavigationActionBarView: View {
         static let horizontalPadding: CGFloat = 16
         static let buttonSpacing: CGFloat = 12
         static let cornerRadius: CGFloat = 8
-        static let shadowRadius: CGFloat = 1
-        static let shadowOffset: CGFloat = 0
+
+        static let shadowRadius1: CGFloat = 6
+        static let shadowOffset1Y: CGFloat = 2
+        static let shadowRadius2: CGFloat = 16
+        static let shadowOffset2Y: CGFloat = 16
     }
 
     // MARK: - Initializer
@@ -126,10 +129,16 @@ struct NavigationActionBarView: View {
                             .fill(backgroundColor)
                     )
                     .shadow(
-                        color: Color(designSystemColor: .shadowPrimary),
-                        radius: Constants.shadowRadius,
+                        color: Color(designSystemColor: .shadowSecondary),
+                        radius: Constants.shadowRadius1,
                         x: 0,
-                        y: Constants.shadowOffset
+                        y: Constants.shadowOffset1Y
+                    )
+                    .shadow(
+                        color: Color(designSystemColor: .shadowSecondary),
+                        radius: Constants.shadowRadius2,
+                        x: 0,
+                        y: Constants.shadowOffset2Y
                     )
             }
             .buttonStyle(PlainButtonStyle())

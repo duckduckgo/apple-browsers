@@ -30,16 +30,26 @@ public protocol DefaultBrowserPromptPresenting: AnyObject {
 @MainActor
 final class DefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenting {
     private let coordinator: DefaultBrowserPromptCoordinating
+    private let uiProvider: any DefaultBrowserPromptUIProviding
 
-    init(coordinator: DefaultBrowserPromptCoordinating) {
+    init(coordinator: DefaultBrowserPromptCoordinating, uiProvider: any DefaultBrowserPromptUIProviding) {
         self.coordinator = coordinator
+        self.uiProvider = uiProvider
     }
 
     public func tryPresentDefaultModalPrompt(from viewController: UIViewController) {
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Attempting To Present Default Browser Prompt.")
         // When prompt for inactive user is implemented check prompt type and present different view accordingly.
-        guard coordinator.getPrompt() != nil else { return }
-        presentDefaultDefaultBrowserPrompt(from: viewController)
+        // guard coordinator.getPrompt() != nil else { return }
+
+        let promptStyle: DefaultBrowserPromptPresentationType = .inactiveUserModal
+
+        switch promptStyle {
+        case .activeUserModal:
+            presentDefaultDefaultBrowserPromptForActiveUser(from: viewController)
+        case .inactiveUserModal:
+            presentDefaultBrowserPromptForInactiveUser(from: viewController)
+        }
     }
 
 }
@@ -48,7 +58,7 @@ final class DefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenti
 
 private extension DefaultBrowserModalPresenter {
 
-    func presentDefaultDefaultBrowserPrompt(from viewController: UIViewController) {
+    func presentDefaultDefaultBrowserPromptForActiveUser(from viewController: UIViewController) {
         let rootView = DefaultBrowserPromptModalView(
             closeAction: { [weak viewController, weak coordinator] in
                 coordinator?.dismissAction(shouldDismissPromptPermanently: false)
@@ -65,6 +75,21 @@ private extension DefaultBrowserModalPresenter {
         hostingController.modalPresentationStyle = .pageSheet
         hostingController.modalTransitionStyle = .coverVertical
         configurePresentationStyle(hostingController: hostingController, presentingController: viewController)
+        viewController.present(hostingController, animated: true)
+    }
+
+    func presentDefaultBrowserPromptForInactiveUser(from viewController: UIViewController) {
+        let rootView = DefaultBrowserInactivePromptModalView(
+            browserComparisonChart: AnyView(uiProvider.makeBrowserComparisonChart()),
+            closeAction: { [weak viewController] in
+                viewController?.dismiss(animated: true)
+            },
+            setAsDefaultAction: { [weak viewController] in
+                viewController?.dismiss(animated: true)
+            }
+        )
+        let hostingController = UIHostingController(rootView: rootView)
+        hostingController.modalPresentationStyle = .overFullScreen
         viewController.present(hostingController, animated: true)
     }
 

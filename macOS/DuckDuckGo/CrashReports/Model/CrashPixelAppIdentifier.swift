@@ -24,18 +24,6 @@ import Foundation
 enum CrashPixelAppIdentifier: String, CaseIterable {
     case dbp, vpnAgent = "vpnagent", vpnExtension = "vpnextension"
 
-    // VPN AGENT
-    //
-    // com.duckduckgo.macos.vpn
-    // com.duckduckgo.mobile.ios.vpn.agent
-
-    // VPN EXTENSION
-    //
-    // com.duckduckgo.macos.vpn.network-extension
-    // com.duckduckgo.mobile.ios.vpn.agent.network-protection-extension
-    // com.duckduckgo.mobile.ios.vpn.agent.network-extension
-    // com.duckduckgo.mobile.ios.vpn.agent.proxy
-
     init?(_ bundleID: String?, mainBundleID: String? = Bundle.main.bundleIdentifier) {
         guard let bundleID, let mainBundleID, bundleID != mainBundleID else {
             return nil

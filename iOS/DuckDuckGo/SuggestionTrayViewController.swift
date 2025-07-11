@@ -233,6 +233,8 @@ class SuggestionTrayViewController: UIViewController {
     private func displayFavoritesIfNeeded(onInstall: @escaping () -> Void = {}) {
         if favoritesOverlay == nil {
             installFavoritesOverlay(onInstall: onInstall)
+        } else {
+            onInstall()
         }
     }
     

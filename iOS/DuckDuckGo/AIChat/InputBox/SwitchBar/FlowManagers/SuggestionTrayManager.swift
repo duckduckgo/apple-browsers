@@ -57,7 +57,7 @@ final class SuggestionTrayManager: NSObject {
     
     private var suggestionTrayViewController: SuggestionTrayViewController?
 
-    var isShowingSuggestions: Bool {
+    var isShowingSuggestionTray: Bool {
         suggestionTrayViewController?.view.isHidden == false
     }
 
@@ -165,7 +165,7 @@ final class SuggestionTrayManager: NSObject {
         guard let suggestionTray = suggestionTrayViewController else { return }
         
         let canShowSuggestion = suggestionTray.canShow(for: type)
-        
+
         if canShowSuggestion {
             suggestionTray.fill()
             suggestionTray.show(for: type)

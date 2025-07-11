@@ -20,8 +20,6 @@ import Foundation
 import SecureStorage
 import PixelKit
 import BrowserServicesKit
-import os.log
-import Common
 
 internal class FirefoxDataImporter: DataImporter {
 
@@ -103,20 +101,28 @@ internal class FirefoxDataImporter: DataImporter {
             let bookmarkReader = FirefoxBookmarksReader(firefoxDataDirectoryURL: profile.profileURL, featureFlagger: featureFlagger)
             let bookmarkResult = bookmarkReader.readBookmarks()
 
-            try updateProgress(.importingBookmarks(numberOfBookmarks: try? bookmarkResult.get().numberOfBookmarks,
+            guard case .success(var importedBookmarks) = bookmarkResult else {
+                summary[.bookmarks] = .failure(bookmarkResult.error!)
+                return summary
+            }
+
+            var markRootBookmarksAsFavoritesByDefault = true
+            if featureFlagger.isFeatureOn(.updateFirefoxBookmarksImport) {
+                markRootBookmarksAsFavoritesByDefault = false
+                let newTabFavorites = fetchNewTabFavorites()
+                FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &importedBookmarks, favorites: newTabFavorites)
+            }
+
+            try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 0.5))
 
-            let bookmarksSummary = bookmarkResult.map { bookmarks in
-                bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: nil)
-            }
+            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault, maxFavoritesCount: nil)
 
-            if case .success = bookmarksSummary {
-                await importFavicons()
-            }
+            await importFavicons()
 
-            summary[.bookmarks] = bookmarksSummary.map { .init($0) }
+            summary[.bookmarks] = .success(.init(bookmarksSummary))
 
-            try updateProgress(.importingBookmarks(numberOfBookmarks: try? bookmarkResult.get().numberOfBookmarks,
+            try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 1.0))
         }
         try updateProgress(.done)

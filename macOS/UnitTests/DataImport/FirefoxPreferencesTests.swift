@@ -24,7 +24,7 @@ class FirefoxPreferencesTests {
     @Test("Check if new tab favorites setting is parsed from preferences")
     func whenPreferencesAreParsed_newTabFavoritesEnabledHasExpectedValue() throws {
         let preferences = try FirefoxPreferences(profileURL: resourceURL())
-        #expect(preferences.newTabFavoritesEnabled == false)
+        #expect(preferences.newTabFavoritesEnabled == true)
     }
 
     @Test("Check if pinned sites are parsed from preferences")
@@ -47,12 +47,10 @@ class FirefoxPreferencesTests {
     }
 
     @Test("Check if blocked sites are parsed from preferences")
-    func whenPreferencesAreParsed_newTabBlockedSiteHashesHasExpectedHashes() throws {
+    func whenPreferencesAreParsed_isURLBlockedOnNewTabReturnsExpectedValue_forBlockedSite() throws {
         let preferences = try FirefoxPreferences(profileURL: resourceURL())
-        let siteURL = "https://spreadprivacy.com/"
-
+        let siteURL = "https://www.mozilla.org/privacy/firefox/"
         let isBlocked = preferences.isURLBlockedOnNewTab(siteURL)
-
         #expect(isBlocked)
     }
 

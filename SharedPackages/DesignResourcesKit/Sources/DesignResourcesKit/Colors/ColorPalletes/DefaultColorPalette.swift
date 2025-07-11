@@ -18,15 +18,12 @@
 
 import SwiftUI
 
-/// [Updated color palette:](https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/🎨-Global-Colors---Styles?node-id=11-1&p=f&vars=1&var-id=5476-10186&m=dev)
 struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Backgrounds
     private static let background = DynamicColor(lightColor: .gray10, darkColor: .gray90)
 
-    // Surfaces
     private static let surface = DynamicColor(lightColor: .white, darkColor: .x2F2F2F)
-
     private static let backgroundSheets = DynamicColor(lightColor: .white, darkColor: .gray90)
     private static let panel = DynamicColor(lightColor: .gray0, darkColor: .gray85)
     private static let container = DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
@@ -47,7 +44,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Brand
     private static let accent = DynamicColor(lightColor: .blue50, darkColor: .blue30)
-    private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
 
     // System
     private static let lines = DynamicColor(lightColor: .shade(0.09), darkColor: .tint(0.09))
@@ -105,7 +101,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .accent: return accent
         case .accentContentPrimary:
             assertionFailure("This color should be used in experimental palette only.")
-            return accentContentPrimary
+            return accent
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .background: return background

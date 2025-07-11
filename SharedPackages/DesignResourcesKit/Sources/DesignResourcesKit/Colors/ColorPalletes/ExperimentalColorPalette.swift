@@ -18,6 +18,7 @@
 
 import SwiftUI
 
+/// [Updated color palette:](https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/🎨-Global-Colors---Styles?node-id=11-1&p=f&vars=1&var-id=5476-10186&m=dev)
 struct ExperimentalColorPalette: ColorPaletteDefinition {
 
     private static let x1F1F1F = Color(0x1F1F1F)
@@ -77,6 +78,9 @@ struct ExperimentalColorPalette: ColorPaletteDefinition {
     // Highlight
     private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
 
+    // Accents
+    private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
+
     static func dynamicColor(for color: DesignSystemColor) -> DynamicColor {
         switch color {
         case .urlBar: return urlBar
@@ -104,6 +108,7 @@ struct ExperimentalColorPalette: ColorPaletteDefinition {
         case .decorationSecondary: return decorationSecondary
         case .decorationTertiary: return decorationTertiary
         case .highlightDecoration: return highlightDecoration
+        case .accentContentPrimary: return accentContentPrimary
 
         default:
             return DefaultColorPalette.dynamicColor(for: color)

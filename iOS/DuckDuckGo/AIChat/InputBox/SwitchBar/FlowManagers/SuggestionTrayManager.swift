@@ -168,7 +168,7 @@ final class SuggestionTrayManager: NSObject {
 
         if canShowSuggestion {
             suggestionTray.fill()
-            suggestionTray.show(for: type)
+            suggestionTray.show(for: type, animated: false)
             suggestionTray.view.isHidden = false
         } else {
             suggestionTray.view.isHidden = true

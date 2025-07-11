@@ -61,7 +61,7 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
                                                            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         // When
-        let result = await sut.arePrerequisitesSatisfied()
+        let result = (try? await sut.arePrerequisitesSatisfied()) ?? false
 
         // Then
         XCTAssertFalse(result)
@@ -80,7 +80,7 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
                                                            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         // When
-        let result = await sut.arePrerequisitesSatisfied()
+        let result = (try? await sut.arePrerequisitesSatisfied()) ?? false
 
         // Then
         XCTAssertFalse(result)
@@ -98,7 +98,7 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
                                                            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         // When
-        let result = await sut.arePrerequisitesSatisfied()
+        let result = (try? await sut.arePrerequisitesSatisfied()) ?? false
 
         // Then
         XCTAssertFalse(result)
@@ -115,7 +115,7 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
                                                            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         // When
-        let result = await sut.arePrerequisitesSatisfied()
+        let result = (try? await sut.arePrerequisitesSatisfied()) ?? false
 
         // Then
         XCTAssertFalse(result)
@@ -134,7 +134,7 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
                                                            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         // When
-        let result = await sut.arePrerequisitesSatisfied()
+        let result = (try? await sut.arePrerequisitesSatisfied()) ?? false
 
         // Then
         XCTAssertTrue(result)
@@ -151,7 +151,7 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
                                                            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         // When
-        let result = await sut.arePrerequisitesSatisfied()
+        let result = (try? await sut.arePrerequisitesSatisfied()) ?? false
 
         // Then
         XCTAssertTrue(result)

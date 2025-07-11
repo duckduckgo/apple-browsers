@@ -88,6 +88,9 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     // static function is needed to allow creation of DefaultOmniBarView from xib
     static func create() -> Self
     static var expectedHeight: CGFloat { get }
+
+    func hideButtons()
+    func revealButtons()
 }
 
 protocol OmniBarStatusUpdateable: AnyObject {

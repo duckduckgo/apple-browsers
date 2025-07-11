@@ -60,8 +60,9 @@ final class VPNSubscriptionEventsHandler {
 
     private func checkEntitlements() {
         Task {
-            let hasEntitlement = await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection)
-            await handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheck)
+            if let hasEntitlement = try? await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection) {
+                await handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheck)
+            }
         }
     }
 
@@ -71,9 +72,10 @@ final class VPNSubscriptionEventsHandler {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 Logger.networkProtection.log("System wake notification received, checking entitlements")
-                Task {
-                    let hasEntitlement = await self?.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection) ?? false
-                    await self?.handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheckOnWake)
+                Task { [weak self] in
+                    if let hasEntitlement = try? await self?.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection) {
+                        await self?.handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheckOnWake)
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -105,7 +107,7 @@ final class VPNSubscriptionEventsHandler {
     @MainActor
     private func handleEntitlementsChange(hasEntitlements: Bool, trigger: VPNSubscriptionStatusPixel.Trigger) async {
         let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
-        let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+        let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
         // For trigger == .clientCheck we only fire pixels if there's an actual change, because they're not guaranteed
         // to be executed only when there are changes - they'll run at every app launch.
@@ -189,7 +191,7 @@ final class VPNSubscriptionEventsHandler {
             }
 
             let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedIn(
@@ -208,7 +210,7 @@ final class VPNSubscriptionEventsHandler {
             print("[NetP Subscription] Deleted NetP auth token after signing out from Privacy Pro")
 
             let isAuthV2Enabled = await NSApp.delegateTyped.isUsingAuthV2
-            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheOnly).isActive
+            let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
 
             PixelKit.fire(
                 VPNSubscriptionStatusPixel.signedOut(

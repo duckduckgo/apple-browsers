@@ -18165,7 +18165,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browserdaten löschen …"
+            "value" : "Browserdaten löschen…"
           }
         },
         "en" : {
@@ -27155,10 +27155,58 @@
       "comment" : "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenloser Scan auf personenbezogene Daten"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Personal Information Scan"
+            "value" : "Free Personal Information Scan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escaneo gratuito de información personal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analyse gratuite des informations personnelles"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scansione gratuita delle informazioni personali"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratis scan van persoonlijke gegevens"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie danych osobowych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Análise grátis de informações pessoais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатный сканер личной информации"
           }
         }
       }
@@ -29972,10 +30020,58 @@
       "comment" : "Title for the Freemium DBP Home Page Promotion Button",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenloser Scan"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Free Scan"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escaneo gratuito"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analyse gratuite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scansione gratuita"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratis scan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verificação gratuita"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатная проверка"
           }
         }
       }
@@ -29984,10 +30080,58 @@
       "comment" : "Description for the Freemium DBP Home Page Promotion",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde heraus, welche Websites deine Daten verkaufen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Find out which sites are selling your info."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descubre qué sitios están vendiendo tu información."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Découvrez quels sites vendent vos informations."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopri quali siti vendono le tue informazioni."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontdek welke sites jouw gegevens verkopen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dowiedz się, które strony sprzedają Twoje dane."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descobre quais são os sites que estão a vender as tuas informações."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Узнайте, какие сайты продают ваши данные."
           }
         }
       }
@@ -29996,10 +30140,58 @@
       "comment" : "Markdown Description for the Freemium DBP Home Page Promotion. Please make sure to keep **STRING** intact.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finde heraus, welche Websites **deine Daten** verkaufen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Find out which sites are selling **your info.**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descubre qué sitios están vendiendo **tu información.**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Découvrez quels sites vendent **vos informations**."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopri quali siti stanno vendendo **le tue informazioni.**"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontdek welke sites **jouw gegevens** verkopen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dowiedz się, które strony sprzedają **Twoje dane.**"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descobre quais são os sites que estão a vender **as tuas informações**."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Узнайте, какие сайты продают **ваши данные**."
           }
         }
       }
@@ -30008,10 +30200,58 @@
       "comment" : "Title for the Freemium DBP Home Page Post Scan Engagement Promotion Button",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ergebnisse anzeigen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "View Results"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver resultados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher les résultats"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visualizza risultati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resultaten weergeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zobacz wyniki"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver resultados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просмотреть результаты"
           }
         }
       }
@@ -30020,10 +30260,58 @@
       "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When There Are No Results",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gute Nachrichten: Dein kostenloser persönlicher Info-Scan hat keine Aufzeichnungen über dich gefunden. Wir werden das regelmäßig überprüfen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Good news, your free personal info scan didn't find any records about you. We'll keep checking periodically."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buenas noticias: tu escaneo gratuito de información personal no ha encontrado ningún dato sobre ti. Seguiremos comprobándolo periódicamente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bonne nouvelle, votre analyse gratuite d'informations personnelles n’a trouvé aucun enregistrement vous concernant. Nous continuerons de vérifier périodiquement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buone notizie, la tua scansione gratuita delle informazioni personali non ha trovato alcun dato su di te. Continueremo a controllare periodicamente."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goed nieuws, je gratis persoonlijke gegevensscan heeft geen gegevens over jou gevonden. We blijven regelmatig controleren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dobra wiadomość: bezpłatne skanowanie danych osobowych nie wykazało żadnych danych na Twój temat. Będziemy to sprawdzać okresowo."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boas notícias, a tua análise de informações pessoais gratuita não encontrou nenhum registo sobre ti. Vamos continuar a analisar periodicamente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хорошая новость! В результате бесплатной проверки ваших личных данных не обнаружено. Время от времени мы будем повторять проверку."
           }
         }
       }
@@ -30032,10 +30320,58 @@
       "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on multiple broker sites",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein kostenloser Scan personenbezogener Daten hat %1$d Datensätze über dich auf %2$d verschiedenen Websites gefunden."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your free personal info scan found %1$d records about you on %2$d different sites."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu escaneo gratuito de información personal ha encontrado %1$d registros sobre ti en %2$d sitios diferentes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre analyse gratuite d'informations personnelles a trouvé %1$d enregistrements vous concernant sur %2$d sites différents."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La scansione gratuita delle informazioni personali ha trovato %1$d record su di te su %2$d siti diversi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis persoonlijke infoscan vond %1$d gegevens over jou op %2$d verschillende sites."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie danych osobowych wykazało %1$d rekordów na Twój temat na %2$d różnych stronach."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua análise de informações pessoais gratuita encontrou %1$d registos sobre ti em %2$d sites diferentes."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По результатам бесплатной поверки обнаружено записей: %1$d, на разных сайтах (%2$d)."
           }
         }
       }
@@ -30044,10 +30380,58 @@
       "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion when records are found on a single broker site",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein kostenloser Scan personenbezogener Daten hat %d Datensätze über dich auf 1 Website gefunden."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your free personal info scan found %d records about you on 1 site."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu escaneo gratuito de información personal ha encontrado %d registros sobre ti en 1 sitio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre analyse gratuite d'informations personnelles a trouvé %d enregistrements vous concernant sur 1 site."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La scansione gratuita delle informazioni personali ha trovato %d record su 1 sito."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis persoonlijke informatiescan heeft %d records over jou gevonden op één site."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie danych osobowych wykazało %d rekordów na Twój temat na 1 stronie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua análise de informações pessoais gratuita encontrou %d registo sobre ti num site."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По результатам бесплатной поверки обнаружено записей: %1$d (на одном сайте)."
           }
         }
       }
@@ -30056,10 +30440,58 @@
       "comment" : "Description for the Freemium DBP Home Page Post Scan Engagement Promotion When Only One Record is Found",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein kostenloser Scan personenbezogener Daten hat 1 Datensatz über dich auf 1 Website gefunden."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Your free personal info scan found 1 record about you on 1 site."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu escaneo gratuito de información personal ha encontrado 1 registro sobre ti en 1 sitio."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre analyse gratuite d'informations personnelles a trouvé 1 enregistrement vous concernant sur 1 site."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La scansione gratuita delle informazioni personali ha trovato 1 record su 1 sito."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis persoonlijke informatiescan heeft 1 record over jou op 1 site gevonden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatne skanowanie danych osobowych wykazało 1 rekord na Twój temat na 1 stronie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua análise de informações pessoais gratuita encontrou 1 registo sobre ti num site."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По результатам бесплатной поверки обнаружена одна запись на одном сайте."
           }
         }
       }
@@ -30068,9 +30500,57 @@
       "comment" : "Title for the Freemium DBP Home Page Promotion",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Information Removal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Personal Information Removal"
           }
         }

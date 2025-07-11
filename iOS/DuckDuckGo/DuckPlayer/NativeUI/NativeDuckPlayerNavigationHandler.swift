@@ -251,6 +251,9 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     ///   - videoID: The ID of the video to load
     ///   - timestamp: The timestamp of the video
     private func presentDuckPlayerPill(for videoID: String, timestamp: TimeInterval?) {
+        // Prevent multiple pending presentations for the same video
+        guard !isDuckPlayerPillPresented else { return }
+        
         isDuckPlayerPillPresented = true
         delayHandler.delay(seconds: Constants.pillPresentationDelay)
             .sink { [weak self] _ in

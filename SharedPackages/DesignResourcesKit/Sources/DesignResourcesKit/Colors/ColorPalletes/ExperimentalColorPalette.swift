@@ -18,7 +18,6 @@
 
 import SwiftUI
 
-/// When this is fully rolled out, all the values here need to be moved to the default color palette.
 struct ExperimentalColorPalette: ColorPaletteDefinition {
 
     private static let x1F1F1F = Color(0x1F1F1F)
@@ -40,6 +39,8 @@ struct ExperimentalColorPalette: ColorPaletteDefinition {
     private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
 
     private static let surface = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: .x474747)
+
     private static let backdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x080808)
     private static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
     private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
@@ -95,6 +96,7 @@ struct ExperimentalColorPalette: ColorPaletteDefinition {
         case .shadowPrimary: return shadowPrimary
         case .shadowSecondary: return shadowSecondary
         case .shadowTertiary: return shadowTertiary
+        case .surfaceTertiary: return surfaceTertiary
         case .controlsFillPrimary: return controlsFillPrimary
         case .controlsFillSecondary: return controlsFillSecondary
         case .controlsFillTertiary: return controlsFillTertiary

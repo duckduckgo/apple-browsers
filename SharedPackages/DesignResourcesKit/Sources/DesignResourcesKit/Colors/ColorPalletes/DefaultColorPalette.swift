@@ -26,7 +26,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Surfaces
     private static let surface = DynamicColor(lightColor: .white, darkColor: .x2F2F2F)
-    private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: .x474747)
 
     private static let backgroundSheets = DynamicColor(lightColor: .white, darkColor: .gray90)
     private static let panel = DynamicColor(lightColor: .gray0, darkColor: .gray85)
@@ -104,7 +103,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         switch designSystemColor {
         case .urlBar: return urlBar
         case .accent: return accent
-        case .accentContentPrimary: return accentContentPrimary
+        case .accentContentPrimary:
+            assertionFailure("This color should be used in experimental palette only.")
+            return accentContentPrimary
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .background: return background
@@ -113,14 +114,18 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return background
         case .backgroundSheets: return backgroundSheets
         case .container: return container
-        case .highlightDecoration: return surface
+        case .highlightDecoration:
+            assertionFailure("This color should be used in experimental palette only.")
+            return lines
         case .icons: return icons
         case .iconsSecondary: return iconsSecondary
         case .lines: return lines
         case .border: return border
         case .panel: return panel
         case .surface: return surface
-        case .surfaceTertiary: return surfaceTertiary
+        case .surfaceTertiary:
+            assertionFailure("This color should be used in experimental palette only.")
+            return surface
         case .textLink: return textLink
         case .textPrimary: return textPrimary
         case .textPlaceholder: return textPlaceholder

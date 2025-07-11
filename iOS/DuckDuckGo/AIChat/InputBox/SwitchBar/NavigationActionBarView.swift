@@ -57,7 +57,9 @@ struct NavigationActionBarView: View {
                     microphoneButton
                 }
                 newLineButton
-                searchButton
+                if viewModel.hasText {
+                    searchButton
+                }
             }
         }
         .padding(.horizontal, Constants.horizontalPadding)

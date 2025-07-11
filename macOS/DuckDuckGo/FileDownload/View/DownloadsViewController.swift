@@ -141,7 +141,7 @@ final class DownloadsViewController: NSViewController {
         separator.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(separator)
 
-        let swiftUIView = DownloadsErrorBannerView(dismiss: { self.dismiss() },
+        let swiftUIView = DownloadsErrorBannerView(dismiss: { [weak self] in self?.dismiss() },
                                                    errorType: NSApp.isSandboxed ? .openHelpURL : .openSystemSettings)
         let hostingView = NSHostingView(rootView: swiftUIView)
         hostingView.translatesAutoresizingMaskIntoConstraints = false

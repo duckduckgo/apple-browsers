@@ -45,6 +45,9 @@ final class UserBackgroundImagesManagerTests: XCTestCase {
     override func tearDown() async throws {
         try FileManager.default.removeItem(at: storageLocation)
         UserDefaultsWrapper<Any>.clearAll()
+        imageProcessor = nil
+        manager = nil
+        sendPixelEvents = []
     }
 
     func testWhenManagerIsInitializedSucessfullyThenPixelIsNotSent() {

@@ -69,7 +69,14 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         testUserDefaults.removeObject(forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
         testUserDefaults.removeObject(forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride)
         testUserDefaults = nil
-        try super.tearDownWithError()
+        cancellables.removeAll()
+        mockAccountManager = nil
+        mockFeatureDisabler = nil
+        mockFreemiumDBPUserStateManagerManager = nil
+        mockPrivacyConfigurationManager = nil
+        mockStorePurchaseManager = nil
+        mockSubscriptionManager = nil
+        sut = nil
     }
 
     func testWhenPrivacyProNotAvailable_thenFreemiumDBPIsNotAvailable() throws {
@@ -225,7 +232,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testWhenFeatureFlagValueChangesToEnabled_thenIsAvailablePublisherEmitsCorrectValue() {
         // Given
-        mockFreemiumDBPUserStateManagerManager.didActivate = true
+        mockFreemiumDBPUserStateManagerManager.didActivate = false
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
         mockSubscriptionManager.canPurchase = true
         mockAccountManager.accessToken = nil
@@ -361,7 +368,7 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testIsAvailablePublisherEmitsWhenCanPurchaseChangesOnAppStore() {
         // Given
-        mockFreemiumDBPUserStateManagerManager.didActivate = true
+        mockFreemiumDBPUserStateManagerManager.didActivate = false
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
         mockSubscriptionManager.canPurchase = false
         mockAccountManager.accessToken = nil
@@ -433,7 +440,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     @available(macOS 12.0, *)
     func testWhenStorefrontIsUSA_andCanPurchase_andNotSubscribed_thenIsAvailable() throws {
         // Given
-        mockFreemiumDBPUserStateManagerManager.didActivate = true
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
         mockSubscriptionManager.canPurchase = true
         mockAccountManager.accessToken = nil
@@ -478,7 +484,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     @available(macOS 12.0, *)
     func testWhenPlatformIsStripe_thenStorefrontIsIgnoredAndIsAvailable() throws {
         // Given
-        mockFreemiumDBPUserStateManagerManager.didActivate = true
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
         mockSubscriptionManager.canPurchase = true
         mockAccountManager.accessToken = nil
@@ -502,7 +507,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testWhenFeatureFlagOverrideIsSetToTrue_thenIsAvailableIsTrue() {
         // Given
-        mockFreemiumDBPUserStateManagerManager.didActivate = true
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false } // Real value is false
         mockSubscriptionManager.canPurchase = true
         mockAccountManager.accessToken = nil
@@ -553,7 +557,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testWhenNoOverrideIsSet_thenRealFeatureFlagValueIsUsed() {
         // Given
-        mockFreemiumDBPUserStateManagerManager.didActivate = true
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
         mockSubscriptionManager.canPurchase = true
         mockAccountManager.accessToken = nil
@@ -579,7 +582,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
     @available(macOS 12.0, *)
     func testWhenStorefrontOverrideIsSetToTrue_thenIsAvailableIsTrue() {
         // Given
-        mockFreemiumDBPUserStateManagerManager.didActivate = true
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in true }
         mockSubscriptionManager.canPurchase = true
         mockAccountManager.accessToken = nil
@@ -679,7 +681,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testWhenFeatureFlagOverrideIsSetAndPublisherUpdates_thenOverrideTakesPrecedence() {
         // Given
-        mockFreemiumDBPUserStateManagerManager.didActivate = true
         mockPrivacyConfigurationManager.mockConfig.isSubfeatureKeyEnabled = { _, _ in false }
         mockSubscriptionManager.canPurchase = true
         mockAccountManager.accessToken = nil
@@ -745,7 +746,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
 
     func testWhenUserDefaultsIsInjected_thenInjectedInstanceIsUsed() {
         // Given
-        mockFreemiumDBPUserStateManagerManager.didActivate = true
         let anotherUserDefaults = UserDefaults(suiteName: "AnotherTestSuite-\(UUID().uuidString)")!
         defer {
             anotherUserDefaults.removeObject(forKey: FreemiumDBPFeatureKeys.featureFlagOverride)

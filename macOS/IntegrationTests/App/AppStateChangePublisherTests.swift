@@ -31,10 +31,12 @@ final class AppStateChangePublisherTests: XCTestCase {
 
     @MainActor
     override func tearDown() {
-        cancellables.removeAll()
-        WindowsManager.closeWindows()
-        for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
-            Application.appDelegate.windowControllersManager.unregister(controller)
+        autoreleasepool {
+            cancellables.removeAll()
+            WindowsManager.closeWindows()
+            for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
+                Application.appDelegate.windowControllersManager.unregister(controller)
+            }
         }
     }
 
@@ -76,7 +78,6 @@ final class AppStateChangePublisherTests: XCTestCase {
         }
 
         waitForExpectations(timeout: 0.3, handler: nil)
-        cancellables.removeAll()
     }
 
     @MainActor

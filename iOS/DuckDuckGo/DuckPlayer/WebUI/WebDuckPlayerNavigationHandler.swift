@@ -1045,14 +1045,22 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///
     /// - Parameter hostViewController: The `TabViewController` to set as the host.
     func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {
-        // NOOP
+        guard let webView = hostViewController.webView else { return }
+        
+        // Resume media playback capability when tab appears (user switches back to tab)
+        // This allows media to play again when the tab becomes active
+        webView.setAllMediaPlaybackSuspended(false) { }
     }
 
     /// Update DuckPlayer for WebView Disappearance
     ///
     /// - Parameter hostViewController: The `TabViewController` to set as the host.
     func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
-        // NOOP
+        guard let webView = hostViewController.webView else { return }
+        
+        // Pause all media playback when tab disappears (user switches to another tab)
+        // This matches normal browser behavior where background tabs pause media
+        webView.setAllMediaPlaybackSuspended(true) { }
     }
 
 }

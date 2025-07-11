@@ -45,6 +45,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         eventSent = nil
         frequency = nil
         userDefaults?.removePersistentDomain(forName: "OnboardingPixelReporterTests")
+        userDefaults = nil
     }
 
     func test_WhenMeasureAddressBarTypedIn_ThenDependingOnTheState_CorrectPixelsAreSent() throws {

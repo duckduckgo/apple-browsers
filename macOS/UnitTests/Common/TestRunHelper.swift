@@ -18,10 +18,63 @@
 
 import Common
 import Foundation
+import os.log
 import WebKit
 import XCTest
+import CommonObjCExtensions
 
 @testable import DuckDuckGo_Privacy_Browser
+
+private final class Expectation: XCTestExpectation, @unchecked Sendable {
+    private(set) var isFulfilled = false
+    override func fulfill() {
+        isFulfilled = true
+        super.fulfill()
+    }
+}
+
+extension XCTestCase {
+
+    var allowedNonNilVariables: Set<String> { [] }
+
+    fileprivate func deallocExpectations() -> [XCTestExpectation] {
+        TestRunHelper.shared.loadedViews.compactMap { [testName=name] ref in
+            var objToDeinit: NSObject!
+            guard let view = ref.view else { return nil }
+
+            autoreleasepool {
+                if view.window?.className.contains("NSMenu") == true
+                    || view.window?.className.contains("TUINSWindow") == true {
+
+                    objToDeinit = nil
+
+                } else if !(view is WKWebView),
+                   let viewController = view.nextResponder as? NSViewController,
+                   !viewController.className.hasPrefix("TUINS") {
+
+                    objToDeinit = viewController
+                } else if view.window != nil {
+                    objToDeinit = view
+                }
+            }
+            guard let objToDeinit else { return nil }
+
+            let descr = autoreleasepool {
+                objToDeinit.description
+            }
+            let e = Expectation(description: "\(testName) deallocation of \(descr)")
+            objToDeinit.onDeinit {
+                Logger.tests.debug("\(testName) \(descr) deallocated")
+                e.fulfill()
+                if !e.isFulfilled {
+                    XCTFail("\(descr) deallocated after timeout")
+                }
+            }
+            return e
+        }
+    }
+
+}
 
 @objc(TestRunHelper)
 final class TestRunHelper: NSObject {
@@ -29,6 +82,12 @@ final class TestRunHelper: NSObject {
     private var windowObserver: Any?
 
     fileprivate let processPool = WKProcessPool()
+    fileprivate struct ViewRef {
+        weak var view: NSView?
+    }
+
+    fileprivate var loadedViews: [ViewRef] = []
+    fileprivate var nonNilVarsStoppedTestCases = Set<ObjectIdentifier>()
 
     override init() {
         super.init()
@@ -37,8 +96,14 @@ final class TestRunHelper: NSObject {
         // allow mocking NSApp.currentEvent
         _=NSApplication.swizzleCurrentEventOnce
 
+        // enable autorelease tracking for debugging
+        NSObject.perform(NSSelectorFromString("enableAutoreleaseTracking"))
+
         // swizzle WKWebViewConfiguration.init to use a shared process pool
         _=WKWebViewConfiguration.swizzleInitOnce
+
+        // swizzle NSView.init to track loaded views
+        _=NSView.swizzleInitWithFrameOnce
 
         // dedicate temporary directory for tests
         _=FileManager.swizzleTemporaryDirectoryOnce
@@ -49,6 +114,10 @@ final class TestRunHelper: NSObject {
 
         // add code to be run on Unit Tests startup here...
 
+    }
+
+    fileprivate func registerView(_ view: NSView) {
+        loadedViews.append(.init(view: view))
     }
 
 }
@@ -63,7 +132,7 @@ extension TestRunHelper: XCTestObservation {
         }
 
         if #available(macOS 13.0, *) {
-            WKProcessPool._setWebProcessCountLimit(20)
+            WKProcessPool._setWebProcessCountLimit(5)
         }
     }
 
@@ -84,6 +153,12 @@ extension TestRunHelper: XCTestObservation {
     }
 
     func testCaseWillStart(_ testCase: XCTestCase) {
+        if !loadedViews.isEmpty {
+            let descr = loadedViews.compactMap(\.view).description
+            Logger.tests.warning("Loaded views not empty at start of test case: \(descr)")
+            loadedViews = []
+        }
+
         if case .unitTests = AppVersion.runType {
             // cleanup dedicated temporary directory before each test run
             FileManager.default.cleanupTemporaryDirectory()
@@ -101,6 +176,114 @@ extension TestRunHelper: XCTestObservation {
         if #available(macOS 12.0, *) {
             WKWebView.customHandlerSchemes = []
         }
+
+        // Check for non-nil variables that should be cleaned up
+#if !CI
+        checkTestCaseVariables(testCase)
+#endif
+
+        if !TestRunHelper.shared.loadedViews.isEmpty {
+            for ref in TestRunHelper.shared.loadedViews {
+                (ref.view as? DuckDuckGo_Privacy_Browser.WebView)?.isLoadingObserver = nil
+                // if the WebView never appears on the screen, `NSView._finalize` method is never called
+                // and the notification observer keeps strong ref to the WebView
+            }
+            let descriptions = TestRunHelper.shared.loadedViews.compactMap(\.view?.description).joined(separator: ", ")
+            let testName = testCase.name
+            Logger.tests.debug("\(testName) tearDown: waiting for deallocation: \(descriptions)")
+
+            class WaiterDelegate: NSObject, XCTWaiterDelegate {
+                let callback: ([XCTestExpectation]) -> Void
+                init(callback: @escaping ([XCTestExpectation]) -> Void) {
+                    self.callback = callback
+                }
+                func waiter(_ waiter: XCTWaiter, didTimeoutWithUnfulfilledExpectations unfulfilledExpectations: [XCTestExpectation]) {
+                    callback(unfulfilledExpectations)
+                }
+            }
+            let waiter = WaiterDelegate { unfulfilledExpectations in
+#if CI
+                fatalError("Test timed out waiting for deallocation: \(unfulfilledExpectations)")
+#else
+                breakByRaisingSigInt("""
+                Test timed out waiting for deallocation: \(unfulfilledExpectations)"
+
+                To exorcise the issue:
+                  1. Wrap setUp and tearDown method contents in autoreleasepool {} to ensure proper cleanup
+                  2. Make sure you‘re using MockWindow where possible and initialize variables in setUp method only
+                  2. Enable MallocStackLogging in the Tests scheme for detailed stack traces in Memory Browser
+                  3. Use AutoreleaseTracker with malloc stack trace option to debug retain cycles in Memory Browser (see NSObject+AutoreleaseTracking.m)
+                  4. Check Memory Browser for retained objects after test completion
+                  5. Consider adding autoreleasepool {} around heavy object creation in tests
+                  6. Use Instruments > Allocations to track object lifecycle
+                  7. Disable this check and add breakpoints in dealloc methods to verify cleanup timing
+                """)
+#endif
+            }
+            XCTWaiter(delegate: waiter).wait(for: testCase.deallocExpectations(), timeout: 3)
+
+            withExtendedLifetime(waiter) {}
+            TestRunHelper.shared.loadedViews = []
+
+            loadedViews = []
+        }
+    }
+
+    private func checkTestCaseVariables(_ testCase: XCTestCase) {
+        let mirror = Mirror(reflecting: testCase)
+        var nonNilVariables: [String] = []
+
+        for child in mirror.children {
+            guard let label = child.label,
+                  !label.hasPrefix("_"), // Ignore private/system properties
+                  !isSystemProperty(label) else { continue }
+
+            if isValueNonNil(child.value) {
+                nonNilVariables.append(label)
+            }
+        }
+
+        let allowedNonNilVariables = testCase.allowedNonNilVariables
+        let unexpectedNonNilVariables = Set(nonNilVariables).subtracting(allowedNonNilVariables)
+
+        if !unexpectedNonNilVariables.isEmpty,
+           // don't break twice
+           nonNilVarsStoppedTestCases.insert(ObjectIdentifier(type(of: testCase))).inserted {
+            breakByRaisingSigInt("""
+            Test case '\(testCase.name)' has non-nil variables that should be nullified (or cleared - for Collections) after test completion: \(Array(unexpectedNonNilVariables).sorted())
+            Reset the variables in `tearDown` method or override `allowedNonNilVariables` and add variable names to the returned value to allow
+            the test to keep the variables after its completion.
+            """)
+        }
+    }
+
+    private func isSystemProperty(_ name: String) -> Bool {
+        // List of known XCTestCase system properties to ignore
+        let systemProperties: Set<String> = [
+            "continueAfterFailure",
+            "testRun",
+            "allowedNonNilVariables" // Our own property
+        ]
+        return systemProperties.contains(name)
+    }
+
+    private func isValueNonNil(_ value: Any) -> Bool {
+        let mirror = Mirror(reflecting: value)
+
+        // Check if it's an Optional or non-empty collection
+        if case .optional = mirror.displayStyle {
+            if let firstChild = mirror.children.first {
+                return isValueNonNil(firstChild.value)
+            } else {
+                return false
+            }
+        } else if [.collection, .dictionary, .set].contains(mirror.displayStyle) {
+            return mirror.children.first != nil
+        }
+
+        // For non-optionals, we only care about reference types that could be cleaned up
+        // Primitive types and value types can remain as they don't represent resources to clean up
+        return mirror.displayStyle == .class
     }
 
 }
@@ -125,6 +308,36 @@ extension NSApplication {
         set {
             objc_setAssociatedObject(self, Self.currentEventKey, newValue, .OBJC_ASSOCIATION_RETAIN)
         }
+    }
+
+}
+
+extension NSView {
+
+    static var swizzleInitWithFrameOnce: Void = {
+        let initMethod = class_getInstanceMethod(NSView.self, #selector(NSView.init(frame:)))!
+        let swizzledInitMethod = class_getInstanceMethod(NSView.self, #selector(NSView.swizzled_initWithFrame))!
+
+        method_exchangeImplementations(initMethod, swizzledInitMethod)
+    }()
+
+    @objc dynamic func swizzled_initWithFrame(frame: CGRect) -> NSView {
+        let view = swizzled_initWithFrame(frame: frame)
+
+        if !(view.className.contains("NSMenu")
+             || view.className.contains("NSNextStep")
+             || view.className.hasPrefix("_")
+             || (view.className.hasPrefix("WK") && !(view is WKWebView))
+             || view.className.contains("NSTextView")) {
+
+                if let observer = view.value(forIvar: "_antialiasThresholdChangedNotificationObserver") {
+                    NotificationCenter.default.removeObserver(observer)
+                }
+
+                TestRunHelper.shared.registerView(view)
+            }
+
+        return view
     }
 
 }

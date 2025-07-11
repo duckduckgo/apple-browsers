@@ -56,6 +56,7 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
     var uiEventsHappened: [SubscriptionUIHandlerMock.UIHandlerMockPerformedAction] = []
 
     override func setUp() async throws {
+        try await super.setUp()
         userDefaults = UserDefaults(suiteName: Constants.userDefaultsSuiteName)!
         userDefaults.removePersistentDomain(forName: Constants.userDefaultsSuiteName)
 
@@ -115,6 +116,8 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
         uiHandler = nil
 
         subscriptionAppStoreRestorer = nil
+        pixelKit = nil
+        subscriptionFeatureMappingCache = nil
     }
 
     // MARK: - Tests for restoreAppStoreSubscription

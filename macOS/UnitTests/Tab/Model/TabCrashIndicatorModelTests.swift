@@ -52,6 +52,13 @@ final class TabCrashIndicatorModelTests: XCTestCase {
             .store(in: &cancellables)
     }
 
+    override func tearDown() {
+        cancellables = []
+        isShowingIndicatorEvents = []
+        crashPublisher = nil
+        model = nil
+    }
+
     func testInitialValues() {
         XCTAssertFalse(model.isShowingIndicator)
         XCTAssertFalse(model.isShowingPopover)

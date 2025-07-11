@@ -22,7 +22,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
 
     // Backgrounds
     private static let background = DynamicColor(lightColor: .gray10, darkColor: .gray90)
-
     private static let surface = DynamicColor(lightColor: .white, darkColor: .x2F2F2F)
     private static let backgroundSheets = DynamicColor(lightColor: .white, darkColor: .gray90)
     private static let panel = DynamicColor(lightColor: .gray0, darkColor: .gray85)

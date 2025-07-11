@@ -45643,7 +45643,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Unable to access the subscription Duck.ai models"
+            "value" : "Unable to access the subscriber-only Duck.ai models"
           }
         }
       }
@@ -45655,7 +45655,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Can’t log in to Duck.ai with my subscription"
+            "value" : "Can't access Duck.ai with my subscription in other browsers"
           }
         }
       }

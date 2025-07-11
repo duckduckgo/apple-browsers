@@ -32,6 +32,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case subtitle
     }
     enum Sections: Int, CaseIterable {
+        case debugOperations
         case healthOverview
         case database
         case brokers
@@ -39,6 +40,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
         var title: String {
             switch self {
+            case .debugOperations:
+                return "Debug Operations"
             case .healthOverview:
                 return "Health Overview"
             case .database:
@@ -52,6 +55,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
         func cellType(for row: Int) -> CellType {
             switch self {
+            case .debugOperations:
+                return .rightDetail
             case .healthOverview:
                 return .rightDetail
             case .database:
@@ -116,6 +121,17 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             switch self {
             case .forceBrokerJSONRefresh:
                 return "Force Broker JSON Refresh"
+            }
+        }
+    }
+
+    enum DebugOperationRows: Int, CaseIterable {
+        case runPIRDebugMode
+
+        var title: String {
+            switch self {
+            case .runPIRDebugMode:
+                return "Run PIR Debug Mode"
             }
         }
     }
@@ -239,6 +255,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         cell.accessoryType = .none
 
         switch section {
+        case .debugOperations:
+            let row = DebugOperationRows(rawValue: indexPath.row)
+            cell.textLabel?.text = row?.title
 
         case .database:
             let row = DatabaseRows(rawValue: indexPath.row)
@@ -317,6 +336,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch Sections(rawValue: section) {
+        case .debugOperations: return DebugOperationRows.allCases.count
         case .healthOverview: return self.healthOverview.rowCount
         case .database: return DatabaseRows.allCases.count
         case .brokers: return BrokerRows.allCases.count
@@ -329,6 +349,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         guard let section = Sections(rawValue: indexPath.section) else { return }
 
         switch section {
+        case .debugOperations:
+            guard let row = DebugOperationRows(rawValue: indexPath.row) else { return }
+            handleDebugOperationAction(for: row)
         case .database:
             guard let row = DatabaseRows(rawValue: indexPath.row) else { return }
             handleDatabaseAction(for: row)
@@ -357,6 +380,16 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             }
 
             return UIMenu(title: "", children: [copyAction])
+        }
+    }
+
+    // MARK: - Debug Operation Rows
+
+    private func handleDebugOperationAction(for row: DebugOperationRows) {
+        switch row {
+        case .runPIRDebugMode:
+            let debugModeViewController = RunDBPDebugModeViewController()
+            self.navigationController?.pushViewController(debugModeViewController, animated: true)
         }
     }
 

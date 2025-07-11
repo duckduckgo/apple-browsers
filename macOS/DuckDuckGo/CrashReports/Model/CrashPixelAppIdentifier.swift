@@ -21,21 +21,58 @@ import Foundation
 /// Represents the identifier of the crashed bundle. It's used by `GeneralPixel.crash`
 ///
 /// For crashes happening in main bundle it should remain `nil`, otherwise it can take one of the predefined values for known bundles.
-enum CrashPixelAppIdentifier: String {
+enum CrashPixelAppIdentifier: String, CaseIterable {
     case dbp, vpnAgent = "vpnagent", vpnExtension = "vpnextension"
 
-    init?(_ bundleID: String?) {
-        guard let bundleID, let mainBundleID = Bundle.main.bundleIdentifier, bundleID != mainBundleID else {
+    // VPN AGENT
+    //
+    // com.duckduckgo.macos.vpn
+    // com.duckduckgo.mobile.ios.vpn.agent
+
+    // VPN EXTENSION
+    //
+    // com.duckduckgo.macos.vpn.network-extension
+    // com.duckduckgo.mobile.ios.vpn.agent.network-protection-extension
+    // com.duckduckgo.mobile.ios.vpn.agent.network-extension
+    // com.duckduckgo.mobile.ios.vpn.agent.proxy
+
+    init?(_ bundleID: String?, mainBundleID: String? = Bundle.main.bundleIdentifier) {
+        guard let bundleID, let mainBundleID, bundleID != mainBundleID else {
             return nil
         }
-        if bundleID.hasSuffix("vpn") {
-            self = .vpnAgent
-        } else if bundleID.hasSuffix("vpn.network-extension") {
-            self = .vpnExtension
-        } else if bundleID.hasSuffix("DBP.backgroundAgent") {
-            self = .dbp
+
+        if let matchingBundleID = Self.allCases.first(where: { $0.bundleIDs.contains(bundleID) }) {
+            self = matchingBundleID
+        } else if let matchingSuffix = Self.allCases.first(where: { $0.bundleSuffixes.contains(where: { bundleID.hasSuffix($0) }) }) {
+            self = matchingSuffix
         } else {
             return nil
+        }
+    }
+
+    private var bundleSuffixes: Set<String> {
+        switch self {
+        case .dbp:
+            return ["DBP.backgroundAgent"]
+        case .vpnAgent:
+            return ["vpn.agent"]
+        case .vpnExtension:
+            return [
+                "vpn.agent.network-protection-extension",
+                "vpn.agent.network-extension",
+                "vpn.agent.proxy"
+            ]
+        }
+    }
+
+    private var bundleIDs: Set<String> {
+        switch self {
+        case .dbp:
+            return []
+        case .vpnAgent:
+            return ["com.duckduckgo.macos.vpn"]
+        case .vpnExtension:
+            return ["com.duckduckgo.macos.vpn.network-extension"]
         }
     }
 }

@@ -1246,6 +1246,8 @@
 		37AA00AD2E1D3D4200844427 /* AIChatSummarizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA00AB2E1D3D4000844427 /* AIChatSummarizer.swift */; };
 		37AA01732E1FE8B200844427 /* CrashPixelAppIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA01722E1FE88900844427 /* CrashPixelAppIdentifier.swift */; };
 		37AA01742E1FE8B200844427 /* CrashPixelAppIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA01722E1FE88900844427 /* CrashPixelAppIdentifier.swift */; };
+		37AA017C2E2100DA00844427 /* CrashPixelAppIdentifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA017B2E2100D500844427 /* CrashPixelAppIdentifierTests.swift */; };
+		37AA017D2E2100DA00844427 /* CrashPixelAppIdentifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37AA017B2E2100D500844427 /* CrashPixelAppIdentifierTests.swift */; };
 		37ABFE7C2DED901200DE39F2 /* SettingsPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37ABFE7B2DED901000DE39F2 /* SettingsPixel.swift */; };
 		37ABFE7D2DED901200DE39F2 /* SettingsPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37ABFE7B2DED901000DE39F2 /* SettingsPixel.swift */; };
 		37ADC3EE2DF031890001CA03 /* MoreOptionsMenuPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */; };
@@ -4188,6 +4190,7 @@
 		37A803DA27FD69D300052F4C /* DataImportResources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = DataImportResources; sourceTree = "<group>"; };
 		37AA00AB2E1D3D4000844427 /* AIChatSummarizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSummarizer.swift; sourceTree = "<group>"; };
 		37AA01722E1FE88900844427 /* CrashPixelAppIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashPixelAppIdentifier.swift; sourceTree = "<group>"; };
+		37AA017B2E2100D500844427 /* CrashPixelAppIdentifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashPixelAppIdentifierTests.swift; sourceTree = "<group>"; };
 		37ABFE7B2DED901000DE39F2 /* SettingsPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPixel.swift; sourceTree = "<group>"; };
 		37ADC3ED2DF031830001CA03 /* MoreOptionsMenuPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreOptionsMenuPixel.swift; sourceTree = "<group>"; };
 		37AFCE8027DA2CA600471A10 /* PreferencesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesViewController.swift; sourceTree = "<group>"; };
@@ -7353,6 +7356,7 @@
 		4B70BFFD27B0793D000386ED /* CrashReports */ = {
 			isa = PBXGroup;
 			children = (
+				37AA017B2E2100D500844427 /* CrashPixelAppIdentifierTests.swift */,
 				4B70BFFE27B0793D000386ED /* ExampleCrashReports */,
 				4B70C00027B0793D000386ED /* CrashReportTests.swift */,
 			);
@@ -13535,6 +13539,7 @@
 				317295D52AF058D3002C3206 /* MockWaitlistFeatureSetupHandler.swift in Sources */,
 				56504F0D2E0D900300333A1E /* SubscriptionNavigationCoordinatorTests.swift in Sources */,
 				3706FE49293F661700E42796 /* BookmarkNodePathTests.swift in Sources */,
+				37AA017D2E2100DA00844427 /* CrashPixelAppIdentifierTests.swift in Sources */,
 				3706FE4A293F661700E42796 /* BookmarkManagedObjectTests.swift in Sources */,
 				BBFF355E2C4AF26200DA3289 /* BookmarksSortModeTests.swift in Sources */,
 				3199AF842C80736C003AEBDC /* DuckPlayerOnboardingLocationValidatorTests.swift in Sources */,
@@ -15521,6 +15526,7 @@
 				37D046A12C7DA9A200AEAA50 /* UserBackgroundImagesManagerTests.swift in Sources */,
 				56BC8F022D312B320046059D /* ConfigurationManagerTests.swift in Sources */,
 				56A214AF2CB583BF00E5BC0E /* TrackerMessageProviderTests.swift in Sources */,
+				37AA017C2E2100DA00844427 /* CrashPixelAppIdentifierTests.swift in Sources */,
 				37CD54B927F1F8AC00F1F7B9 /* AppearancePreferencesTests.swift in Sources */,
 				EEF53E182950CED5002D78F4 /* JSAlertViewModelTests.swift in Sources */,
 				376C4DB928A1A48A00CC0F5B /* FirePopoverViewModelTests.swift in Sources */,

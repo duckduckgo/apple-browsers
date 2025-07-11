@@ -69,14 +69,13 @@ final class InternalFeedbackFormTabExtension {
     private let internalUserDecider: InternalUserDecider
     private weak var webView: WKWebView?
     private var cancellables = Set<AnyCancellable>()
-    private let scriptSource: String
+    private lazy var scriptSource: String = InternalFeedbackFormUserScript().source
 
     init(
         webViewPublisher: some Publisher<WKWebView, Never>,
         internalUserDecider: InternalUserDecider
     ) {
         self.internalUserDecider = internalUserDecider
-        self.scriptSource = InternalFeedbackFormUserScript().source
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView

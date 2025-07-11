@@ -92,7 +92,9 @@ final class SuggestionTrayManager: NSObject {
             assertionFailure("Failed to instantiate SuggestionTrayViewController")
             return
         }
-        
+
+        controller.coversFullScreen = true
+        controller.additionalFavoritesOverlayInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: 6)
         parentViewController.addChild(controller)
         containerView.addSubview(controller.view)
         suggestionTrayViewController = controller

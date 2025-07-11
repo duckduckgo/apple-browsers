@@ -51,22 +51,16 @@ public class DataBrokerProtectionFeature: Subfeature {
     private var actionResponseTimer: Timer?
     private var taskCancellationTimer: Timer?
 
-    private var shouldContinue: (() -> Bool)?
+    private var shouldContinue: () -> Bool
 
     private let executionConfig: BrokerJobExecutionConfig
 
     public init(delegate: CCFCommunicationDelegate,
                 executionConfig: BrokerJobExecutionConfig,
-                shouldContinue: (() -> Bool)?) {
+                shouldContinue: @escaping () -> Bool) {
         self.delegate = delegate
         self.executionConfig = executionConfig
         self.shouldContinue = shouldContinue
-
-        taskCancellationTimer = Timer.scheduledTimer(withTimeInterval: executionConfig.cssActionCancellationCheckInterval, repeats: true) { [weak self] _ in
-            if let shouldContinue = self?.shouldContinue, !shouldContinue() {
-                self?.handleJobTimeout()
-            }
-        }
     }
 
     deinit {
@@ -151,6 +145,13 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     func pushAction(method: CCFSubscribeActionName, webView: WKWebView, params: Encodable) {
+        guard shouldContinue() else {
+            handleJobTimeout()
+            return
+        }
+
+        installTaskCancellationTimer()
+
         guard let broker = broker else {
             assertionFailure("Cannot continue without broker instance")
             return
@@ -168,6 +169,16 @@ public class DataBrokerProtectionFeature: Subfeature {
         actionResponseTimer?.invalidate()
         actionResponseTimer = Timer.scheduledTimer(withTimeInterval: executionConfig.cssActionTimeout, repeats: false) { [weak self] _ in
             self?.handleTimeout(for: action)
+        }
+    }
+
+    private func installTaskCancellationTimer() {
+        taskCancellationTimer?.invalidate()
+        taskCancellationTimer = Timer.scheduledTimer(withTimeInterval: executionConfig.cssActionCancellationCheckInterval, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            if !self.shouldContinue() {
+                self.handleJobTimeout()
+            }
         }
     }
 

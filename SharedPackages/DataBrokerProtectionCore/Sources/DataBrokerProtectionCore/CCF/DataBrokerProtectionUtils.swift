@@ -28,7 +28,7 @@ final class DataBrokerUserContentController: WKUserContentController {
     var dataBrokerUserScripts: DataBrokerUserScript?
 
     @MainActor
-    init(with privacyConfigurationManager: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, executionConfig: BrokerJobExecutionConfig, shouldContinue: (() -> Bool)?) {
+    init(with privacyConfigurationManager: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, executionConfig: BrokerJobExecutionConfig, shouldContinue: @escaping () -> Bool) {
         dataBrokerUserScripts = DataBrokerUserScript(privacyConfig: privacyConfigurationManager, prefs: prefs, delegate: delegate, executionConfig: executionConfig, shouldContinue: shouldContinue)
 
         super.init()
@@ -72,7 +72,7 @@ final class DataBrokerUserScript: UserScriptsProvider {
     let contentScopeUserScriptIsolated: ContentScopeUserScript
     var dataBrokerFeature: DataBrokerProtectionFeature
 
-    init(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, executionConfig: BrokerJobExecutionConfig, shouldContinue: (() -> Bool)?) {
+    init(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, executionConfig: BrokerJobExecutionConfig, shouldContinue: @escaping () -> Bool) {
         contentScopeUserScriptIsolated = ContentScopeUserScript(privacyConfig.withDataBrokerProtectionFeatureOverride,
                                                                 properties: prefs,
                                                                 isIsolated: true,
@@ -134,7 +134,7 @@ extension WKUserContentController {
 extension WKWebViewConfiguration {
 
     @MainActor
-    func applyDataBrokerConfiguration(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, executionConfig: BrokerJobExecutionConfig, shouldContinue: (() -> Bool)?) {
+    func applyDataBrokerConfiguration(privacyConfig: PrivacyConfigurationManaging, prefs: ContentScopeProperties, delegate: CCFCommunicationDelegate, executionConfig: BrokerJobExecutionConfig, shouldContinue: @escaping () -> Bool) {
         setURLSchemeHandler(WebViewSchemeHandler(), forURLScheme: WebViewSchemeHandler.dataBrokerProtectionScheme)
         preferences.isFraudulentWebsiteWarningEnabled = false
         let userContentController = DataBrokerUserContentController(with: privacyConfig, prefs: prefs, delegate: delegate, executionConfig: executionConfig, shouldContinue: shouldContinue)

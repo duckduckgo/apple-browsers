@@ -108,7 +108,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                         if self.shouldRunNextStep() {
                             await executeNextStep()
                         } else {
-                            failed(with: Task.isCancelled ? DataBrokerProtectionError.jobTimeout : .cancelled)
+                            failed(with: DataBrokerProtectionError.cancelled)
                         }
                     } catch {
                         failed(with: DataBrokerProtectionError.unknown(error.localizedDescription))

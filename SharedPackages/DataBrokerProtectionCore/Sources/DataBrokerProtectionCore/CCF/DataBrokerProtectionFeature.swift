@@ -145,6 +145,11 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     func pushAction(method: CCFSubscribeActionName, webView: WKWebView, params: Encodable) {
+        guard let broker = broker else {
+            assertionFailure("Cannot continue without broker instance")
+            return
+        }
+
         guard shouldContinue() else {
             handleJobTimeout()
             return
@@ -152,10 +157,6 @@ public class DataBrokerProtectionFeature: Subfeature {
 
         installTaskCancellationTimer()
 
-        guard let broker = broker else {
-            assertionFailure("Cannot continue without broker instance")
-            return
-        }
         Logger.action.log("Pushing into WebView: \(method.rawValue) params \(String(describing: params))")
 
         broker.push(method: method.rawValue, params: params, for: self, into: webView)

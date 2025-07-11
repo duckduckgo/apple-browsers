@@ -114,7 +114,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                         if self.shouldRunNextStep() {
                             await executeNextStep()
                         } else {
-                            failed(with: Task.isCancelled ? DataBrokerProtectionError.jobTimeout : .cancelled)
+                            failed(with: DataBrokerProtectionError.cancelled)
                         }
 
                     } else {

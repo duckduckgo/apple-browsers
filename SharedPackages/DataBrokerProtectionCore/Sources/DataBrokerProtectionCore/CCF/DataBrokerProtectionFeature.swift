@@ -51,12 +51,22 @@ public class DataBrokerProtectionFeature: Subfeature {
     private var actionResponseTimer: Timer?
     private var taskCancellationTimer: Timer?
 
+    private var shouldContinue: (() -> Bool)?
+
     private let executionConfig: BrokerJobExecutionConfig
 
     public init(delegate: CCFCommunicationDelegate,
-                executionConfig: BrokerJobExecutionConfig) {
+                executionConfig: BrokerJobExecutionConfig,
+                shouldContinue: (() -> Bool)?) {
         self.delegate = delegate
         self.executionConfig = executionConfig
+        self.shouldContinue = shouldContinue
+
+        taskCancellationTimer = Timer.scheduledTimer(withTimeInterval: executionConfig.cssActionCancellationCheckInterval, repeats: true) { [weak self] _ in
+            if let shouldContinue = self?.shouldContinue, !shouldContinue() {
+                self?.handleJobTimeout()
+            }
+        }
     }
 
     deinit {
@@ -149,20 +159,15 @@ public class DataBrokerProtectionFeature: Subfeature {
 
         broker.push(method: method.rawValue, params: params, for: self, into: webView)
 
-        installTimer(for: (params as? Params)?.state.action)
+        installActionTimer(for: (params as? Params)?.state.action)
     }
 
-    private func installTimer(for action: Action?) {
+    private func installActionTimer(for action: Action?) {
         guard let action else { return }
 
-        removeTimers()
+        actionResponseTimer?.invalidate()
         actionResponseTimer = Timer.scheduledTimer(withTimeInterval: executionConfig.cssActionTimeout, repeats: false) { [weak self] _ in
             self?.handleTimeout(for: action)
-        }
-        taskCancellationTimer = Timer.scheduledTimer(withTimeInterval: executionConfig.cssActionCancellationCheckInterval, repeats: true) { [weak self] _ in
-            if Task.isCancelled {
-                self?.handleTimeout(for: action)
-            }
         }
     }
 
@@ -173,6 +178,15 @@ public class DataBrokerProtectionFeature: Subfeature {
         Task {
             await delegate?.onError(error: DataBrokerProtectionError.actionFailed(actionID: action.id,
                                                                                   message: "Action timed out"))
+        }
+    }
+
+    private func handleJobTimeout() {
+        Logger.action.log("Job timeout")
+
+        removeTimers()
+        Task {
+            await delegate?.onError(error: DataBrokerProtectionError.jobTimeout)
         }
     }
 

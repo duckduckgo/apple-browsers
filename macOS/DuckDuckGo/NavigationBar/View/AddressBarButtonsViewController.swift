@@ -383,8 +383,6 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @IBAction func aiChatButtonAction(_ sender: Any) {
-        PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
-
         guard let tab = tabViewModel?.tab else { return }
 
         // Close the sidebar if it's currently open and the user preference is set to open AI chat in new tabs
@@ -404,7 +402,7 @@ final class AddressBarButtonsViewController: NSViewController {
             // - address bar text field is not in focus
             // - the current tab is displaying a standard web page (not a special page),
             // - intended link open behavior is to use the current tab
-                aiChatSidebarPresenter.toggleSidebar()
+            toggleAIChatSidebar(for: tab)
         } else {
             // Otherwise open Duck.ai in a full tab
             openAIChatTab(for: tab, with: behavior)
@@ -427,14 +425,28 @@ final class AddressBarButtonsViewController: NSViewController {
                                 shouldSelectNewTab: shouldSelectNewTab)
     }
 
+    private func toggleAIChatSidebar(for tab: Tab) {
+        let isSidebarCurrentlyOpen = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
+
+        let pixel: AIChatPixel = isSidebarCurrentlyOpen ? .aiChatSidebarClosed(source: .addressBarButton) : .aiChatSidebarOpened(source: .addressBarButton)
+        PixelKit.fire(pixel, frequency: .dailyAndStandard)
+        if !isSidebarCurrentlyOpen {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .sidebar), frequency: .dailyAndStandard)
+        }
+
+        aiChatSidebarPresenter.toggleSidebar()
+    }
+
     private func openAIChatTab(for tab: Tab, with behavior: LinkOpenBehavior) {
-        // Force new tab when sidebar is open and the behaviour would also load Duck.ai in current tab
+        // Force new tab behaviour when sidebar is open to avoid  loading Duck.ai in current tab
         let shouldOverrideToNewTab = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) && behavior == .currentTab
         let updatedBehaviour: LinkOpenBehavior = shouldOverrideToNewTab ? .newTab(selected: behavior.shouldSelectNewTab) : behavior
 
-        if let value = textFieldValue {
+        if let value = textFieldValue, !value.isEmpty {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .newTabWithPrompt), frequency: .dailyAndStandard)
             aiChatTabOpener.openAIChatTab(value, with: updatedBehaviour)
         } else {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .newTab), frequency: .dailyAndStandard)
             aiChatTabOpener.openAIChatTab(nil, with: updatedBehaviour)
         }
     }
@@ -723,6 +735,7 @@ final class AddressBarButtonsViewController: NSViewController {
         } else {
             // Default is new tab, menu action forces sidebar
             aiChatSidebarPresenter.toggleSidebar()
+            PixelKit.fire(AIChatPixel.aiChatSidebarOpened(source: .contextMenu), frequency: .dailyAndStandard)
         }
     }
 

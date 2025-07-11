@@ -69,7 +69,7 @@ struct NavigationActionBarView: View {
     private var webSearchToggleButton: some View {
         CircularButton(
             action: viewModel.handleWebSearchToggle,
-            icon: Image(systemName: "globe"),
+            icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),
             foregroundColor: viewModel.isWebSearchEnabled ? .white : .primary,
             backgroundColor: viewModel.isWebSearchEnabled ? Color(designSystemColor: .accent) : Color(designSystemColor: .surface)
         )
@@ -95,7 +95,7 @@ struct NavigationActionBarView: View {
     private var searchButton: some View {
         CircularButton(
             action: viewModel.onSearchTapped,
-            icon: Image(uiImage: viewModel.isSearchMode ? DesignSystemImages.Glyphs.Size16.findSearch : DesignSystemImages.Glyphs.Size16.sendPlane),
+            icon: Image(uiImage: viewModel.isSearchMode ? DesignSystemImages.Glyphs.Size24.searchFind : DesignSystemImages.Glyphs.Size24.arrowUp),
             foregroundColor: viewModel.hasText ? .white : Color(designSystemColor: .textPlaceholder),
             backgroundColor: viewModel.hasText ? Color(designSystemColor: .accent) : Color(designSystemColor: .surface),
             isEnabled: viewModel.hasText

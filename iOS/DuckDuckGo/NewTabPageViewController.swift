@@ -177,6 +177,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         favoritesModel.onFavoriteDeleted = { [weak self] favorite in
             guard let self else { return }
 
+            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
             delegate?.newTabPageDidDeleteFavorite(self, favorite: favorite)
         }
     }

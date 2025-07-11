@@ -34,7 +34,8 @@ enum CrashPixelAppIdentifier: String {
             self = .vpnExtension
         } else if bundleID.hasSuffix("DBP.backgroundAgent") {
             self = .dbp
+        } else {
+            return nil
         }
-        return nil
     }
 }

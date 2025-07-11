@@ -104,7 +104,7 @@ public struct PreferencesPurchaseSubscriptionView: View {
         .roundedBorder()
         .padding(.bottom, 20)
     }
-    
+
     private var availableFeatures: [SectionView] {
         var features: [SectionView] = []
 

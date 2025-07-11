@@ -178,4 +178,5 @@ enum AIChatSidebarOpenSource: String, CaseIterable {
 enum AIChatSidebarCloseSource: String, CaseIterable {
     case addressBarButton = "address-bar-button"
     case sidebarCloseButton = "sidebar-close-button"
+    case contextMenu = "context-menu"
 }

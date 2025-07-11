@@ -733,9 +733,14 @@ final class AddressBarButtonsViewController: NSViewController {
                 aiChatTabOpener.openAIChatTab(nil, with: behavior)
             }
         } else {
+            if let tab = tabViewModel?.tab {
+                let isSidebarCurrentlyOpen = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
+                let pixel: AIChatPixel = isSidebarCurrentlyOpen ? .aiChatSidebarClosed(source: .contextMenu) : .aiChatSidebarOpened(source: .contextMenu)
+                PixelKit.fire(pixel, frequency: .dailyAndStandard)
+            }
+
             // Default is new tab, menu action forces sidebar
             aiChatSidebarPresenter.toggleSidebar()
-            PixelKit.fire(AIChatPixel.aiChatSidebarOpened(source: .contextMenu), frequency: .dailyAndStandard)
         }
     }
 

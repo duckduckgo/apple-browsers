@@ -46,15 +46,18 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let notificationCenter: NotificationCenter
 
     init(
         storage: AIChatPreferencesStorage,
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
-        windowControllersManager: WindowControllersManagerProtocol
+        windowControllersManager: WindowControllersManagerProtocol,
+        notificationCenter: NotificationCenter = .default
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
+        self.notificationCenter = notificationCenter
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
     }
 
@@ -89,9 +92,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
             payload = paramsDict[AIChatKeys.aiChatPayload] as? AIChatPayload
         }
 
-        NotificationCenter.default.post(name: .aiChatNativeHandoffData,
-                                        object: payload,
-                                        userInfo: nil)
+        notificationCenter.post(name: .aiChatNativeHandoffData, object: payload, userInfo: nil)
         return nil
     }
 

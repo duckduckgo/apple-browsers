@@ -379,6 +379,7 @@ struct DataImportView: ModalView {
             Spacer()
             Button {
                 debugViewDisabled.toggle()
+                model.errors.removeAll()
             } label: {
                 Image(.closeLarge)
             }

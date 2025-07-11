@@ -37,13 +37,15 @@ final class SubscriptionTabExtension: NSObject {
         super.init()
 
         webViewPublisher.sink { [weak self] webView in
-            self?.webView = webView
-            self?.subscriptionUserScript?.webView = webView
+            Task { @MainActor in
+                self?.webView = webView
+                self?.subscriptionUserScript?.webView = webView
+            }
         }.store(in: &cancellables)
 
         scriptsPublisher.sink { [weak self] scripts in
             Task { @MainActor in
-                self?.subscriptionUserScript = scripts.subscriptionUserScript // ← This was missing!
+                self?.subscriptionUserScript = scripts.subscriptionUserScript
                 self?.subscriptionUserScript?.webView = self?.webView
             }
         }.store(in: &cancellables)

@@ -31,7 +31,7 @@ public final class MockSubscriptionUserScriptHandler: SubscriptionUserScriptHand
     public var backToSettingsCallCount = 0
     public var openSubscriptionActivationCallCount = 0
     public var openSubscriptionPurchaseCallCount = 0
-    
+
     // Setter method tracking
     public var lastSetBroker: UserScriptMessagePushing?
     public var lastSetWebView: WKWebView?

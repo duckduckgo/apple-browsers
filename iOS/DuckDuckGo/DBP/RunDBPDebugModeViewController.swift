@@ -177,12 +177,20 @@ struct RunDBPDebugModeView: View {
                 VStack(spacing: 10) {
                     Text("In progress...")
                     
-                    Button("Stop") {
-                        viewModel.stopOperations()
+                    HStack(spacing: 10) {
+                        Button("Show WebView") {
+                            viewModel.showWebView()
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(!viewModel.hasActiveWebView)
+
+                        Button("Stop") {
+                            viewModel.stopOperations()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .foregroundColor(.white)
+                        .background(Color.red)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .foregroundColor(.white)
-                    .background(Color.red)
                 }
             } else {
                 VStack(spacing: 10) {
@@ -271,7 +279,49 @@ struct RunDBPDebugModeView: View {
     }
 }
 
-// MARK: - WebView Container (removed for minimal scope)
+// MARK: - WebView Window Manager
+
+class WebViewWindowManager {
+    private var window: UIWindow?
+    private weak var webViewHandler: WebViewHandler?
+
+    init(webViewHandler: WebViewHandler) {
+        self.webViewHandler = webViewHandler
+    }
+    
+    func showWebView(title: String = "Debug WebView") {
+        guard let handler = webViewHandler else { return }
+        
+        // Force the handler to initialize and show the WebView if it hasn't already
+        Task { @MainActor in
+            await handler.initializeWebView(showWebView: true)
+        }
+    }
+    
+    func hideWebView() {
+        // We can't easily hide the existing window created by DataBrokerProtectionWebViewHandler
+        // But we can present an alert suggesting the user minimize the app or that this is a known limitation
+        DispatchQueue.main.async {
+            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = scene.windows.first(where: { $0.isKeyWindow }),
+               let rootVC = window.rootViewController {
+                
+                let alert = UIAlertController(
+                    title: "WebView Active",
+                    message: "The WebView window is managed by the system. You can minimize the app or the WebView will automatically close when the operation completes.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                
+                var topVC = rootVC
+                while let presentedVC = topVC.presentedViewController {
+                    topVC = presentedVC
+                }
+                topVC.present(alert, animated: true)
+            }
+        }
+    }
+}
 
 // MARK: - View Model
 
@@ -290,7 +340,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     @Published var alertTitle: String = ""
     @Published var alertMessage: String = ""
     
-    // WebView reference removed for minimal scope
+    private var currentWebViewManager: WebViewWindowManager?
+    private var currentRunner: BrokerProfileScanSubJobWebRunner?
     private var cancellables = Set<AnyCancellable>()
     private var currentTask: Task<Void, Never>?
     
@@ -305,6 +356,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     
     var hasValidInput: Bool {
         !firstName.isEmpty && !lastName.isEmpty && !city.isEmpty && !state.isEmpty && !birthYear.isEmpty
+    }
+    
+    var hasActiveWebView: Bool {
+        currentRunner != nil
     }
     
     var appVersion: String {
@@ -431,8 +486,12 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                             pixelHandler: fakePixelHandler
                         ) { true }
                         
-                        // WebView operations run in background for minimal scope
-                        let extractedProfiles = try await runner.scan(brokerProfileQueryData, showWebView: true) { true }
+                        // Store reference to runner for WebView access - this is the key!
+                        self.currentRunner = runner
+                        
+                        // We'll create the WebViewManager when user requests to show WebView
+                        // For now, just run the scan without WebView
+                        let extractedProfiles = try await runner.scan(brokerProfileQueryData, showWebView: false) { true }
 
                         for profile in extractedProfiles {
                             let result = ScanResult(
@@ -460,6 +519,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             self.results = allResults
             self.isRunning = false
             
+            // Clean up WebView references
+            self.currentWebViewManager = nil
+            self.currentRunner = nil
+            
             if allResults.isEmpty {
                 showAlert(title: "No Results", message: "No profiles were found during the scan.")
             } else {
@@ -471,6 +534,39 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     func stopOperations() {
         currentTask?.cancel()
         isRunning = false
+        
+        // Clean up WebView references
+        currentWebViewManager = nil
+        currentRunner = nil
+    }
+    
+    func showWebView() {
+        guard let runner = currentRunner else {
+            showAlert(title: "No Active Scan", message: "There is no active scan to display.")
+            return
+        }
+        
+        // Create WebViewManager if it doesn't exist
+        if currentWebViewManager == nil {
+            // Initialize the WebView handler if needed
+            Task { @MainActor in
+                await runner.initialize(handler: nil, isFakeBroker: false, showWebView: true)
+                
+                if let webViewHandler = runner.webViewHandler {
+                    self.currentWebViewManager = WebViewWindowManager(webViewHandler: webViewHandler)
+                    self.currentWebViewManager?.showWebView(title: "Debug: \(self.selectedBroker?.name ?? "Broker")")
+                } else {
+                    self.showAlert(title: "WebView Error", message: "Could not initialize WebView handler.")
+                }
+            }
+        } else {
+            // WebViewManager already exists, just show it
+            currentWebViewManager?.showWebView(title: "Debug: \(selectedBroker?.name ?? "Broker")")
+        }
+    }
+    
+    func hideWebView() {
+        currentWebViewManager?.hideWebView()
     }
     
     func runOptOut(for result: ScanResult) {

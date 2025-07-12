@@ -85,13 +85,18 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
             window?.contentView = self.webView
             window?.makeKeyAndOrderFront(nil)
 #elseif os(iOS)
+            // Clean up any existing window with tag 42 before creating a new one
+            cleanupExistingWindow(withTag: 42)
+
             window = UIWindow(frame: UIScreen.main.bounds)
             let viewController = UIViewController.init()
             viewController.view = webView
-            window?.rootViewController = viewController
+            let navigationController = UINavigationController(rootViewController: viewController)
+            navigationController.title = "PIR Debug Mode"
 
+            window?.rootViewController = navigationController
             window?.windowLevel = UIWindow.Level.alert
-            window?.makeKeyAndVisible()
+            window?.tag = 42
 #endif
 
         }
@@ -238,6 +243,21 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         timer?.invalidate()
         timer = nil
     }
+
+#if os(iOS)
+    /// Clean up any existing UIWindow with the specified tag to prevent multiple windows
+    private func cleanupExistingWindow(withTag tag: Int) {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return
+        }
+
+        for existingWindow in windowScene.windows where existingWindow.tag == tag {
+            existingWindow.isHidden = true
+            existingWindow.rootViewController = nil
+            break
+        }
+    }
+#endif
 
 }
 

@@ -175,7 +175,7 @@ final class DebugScanJob: SubJobWebRunning {
     }
 
     func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
-        if action.actionType == .expectation {
+        if action.actionType == .expectation, !stageCalculator.isRetrying {
             retriesCountOnError = 1
         }
 

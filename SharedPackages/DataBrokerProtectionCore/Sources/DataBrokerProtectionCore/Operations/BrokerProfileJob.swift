@@ -161,6 +161,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 if jobData is ScanJobData {
                     try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScan(
                         brokerProfileQueryData: brokerProfileData,
+                        showWebView: showWebView,
+                        isManual: jobType == .manualScan,
                         shouldRunNextStep: { [weak self] in
                             guard let self = self else { return false }
                             return !self.isCancelled
@@ -169,6 +171,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                     try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOut(
                         for: optOutJobData.extractedProfile,
                         brokerProfileQueryData: brokerProfileData,
+                        showWebView: showWebView,
                         shouldRunNextStep: { [weak self] in
                             guard let self = self else { return false }
                             return !self.isCancelled

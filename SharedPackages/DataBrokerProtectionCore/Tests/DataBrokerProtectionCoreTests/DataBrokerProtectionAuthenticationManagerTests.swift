@@ -107,6 +107,18 @@ class DataBrokerProtectionAuthenticationManagerTests: XCTestCase {
             XCTAssertEqual(mockError.code, error.code)
         }
     }
+
+    func testIsUserEligibleForFreeTrial_WhenSubscriptionManagerReturnsTrue_ReturnsTrue() {
+        subscriptionManager.isUserEligibleForFreeTrialValue = true
+        authenticationManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
+        XCTAssertTrue(authenticationManager.isUserEligibleForFreeTrial)
+    }
+
+    func testIsUserEligibleForFreeTrial_WhenSubscriptionManagerReturnsFalse_ReturnsFalse() {
+        subscriptionManager.isUserEligibleForFreeTrialValue = false
+        authenticationManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
+        XCTAssertFalse(authenticationManager.isUserEligibleForFreeTrial)
+    }
 }
 
 final class MockDataBrokerProtectionSubscriptionManaging: DataBrokerProtectionSubscriptionManaging {
@@ -114,6 +126,7 @@ final class MockDataBrokerProtectionSubscriptionManaging: DataBrokerProtectionSu
     typealias EntitlementResult = Result<Bool, Error>
 
     var userAuthenticatedValue = false
+    var isUserEligibleForFreeTrialValue = false
     var accessTokenValue: String?
     var entitlementResultValue = false
     var entitlementError: Error?
@@ -131,5 +144,9 @@ final class MockDataBrokerProtectionSubscriptionManaging: DataBrokerProtectionSu
             throw error
         }
         return entitlementResultValue
+    }
+
+    func isUserEligibleForFreeTrial() -> Bool {
+        isUserEligibleForFreeTrialValue
     }
 }

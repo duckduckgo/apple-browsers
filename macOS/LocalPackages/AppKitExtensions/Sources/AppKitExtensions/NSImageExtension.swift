@@ -103,4 +103,27 @@ extension NSImage {
 
         return NSImage(cgImage: downsampledCGImage, size: NSSize(width: 1, height: 1))
     }
+
+    /// Creates a new image with the specified padding around all edges
+    public func withPadding(_ padding: CGFloat) -> NSImage {
+        return withPadding(top: padding, bottom: padding, left: padding, right: padding)
+    }
+
+    /// Creates a new image with custom padding for each edge
+    public func withPadding(top: CGFloat = 0, bottom: CGFloat = 0, left: CGFloat = 0, right: CGFloat = 0) -> NSImage {
+        let newSize = CGSize(
+            width: self.size.width + left + right,
+            height: self.size.height + top + bottom
+        )
+
+        let paddedImage = NSImage(size: newSize, flipped: false) { _ in
+            self.draw(at: CGPoint(x: left, y: bottom), from: .zero, operation: .sourceOver, fraction: 1.0)
+            return true
+        }
+
+        // Preserve template status
+        paddedImage.isTemplate = self.isTemplate
+
+        return paddedImage
+    }
 }

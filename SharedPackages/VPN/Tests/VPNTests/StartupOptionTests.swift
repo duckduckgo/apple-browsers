@@ -32,7 +32,9 @@ final class StartupOptionsTests: XCTestCase {
         let rawOptions = [String: Any]()
         let options = StartupOptions(options: rawOptions)
 
+#if os(macOS)
         XCTAssertEqual(options.authToken, .useExisting)
+#endif
         XCTAssertEqual(options.enableTester, .useExisting)
         XCTAssertEqual(options.keyValidity, .useExisting)
         XCTAssertFalse(options.simulateCrash)
@@ -54,7 +56,9 @@ final class StartupOptionsTests: XCTestCase {
         ]
         let options = StartupOptions(options: rawOptions)
 
+#if os(macOS)
         XCTAssertEqual(options.authToken, .reset)
+#endif
         XCTAssertEqual(options.enableTester, .reset)
         XCTAssertEqual(options.keyValidity, .reset)
         XCTAssertFalse(options.simulateCrash)
@@ -75,7 +79,9 @@ final class StartupOptionsTests: XCTestCase {
         ]
         let options = StartupOptions(options: rawOptions)
 
+#if os(macOS)
         XCTAssertEqual(options.authToken, .useExisting)
+#endif
         XCTAssertEqual(options.enableTester, .useExisting)
         XCTAssertEqual(options.keyValidity, .useExisting)
         XCTAssertFalse(options.simulateCrash)

@@ -255,6 +255,38 @@ public final class DataBrokerProtectionIOSManager {
         try database.deleteProfileData()
     }
 
+    /// Used by the iOS PIR debug menu to trigger scheduled jobs.
+    public func runScheduledJobs(type: JobType,
+                                 errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                 completionHandler: (() -> Void)?) {
+        switch type {
+        case .scheduledScan:
+            queueManager.startScheduledScanOperationsIfPermitted(
+                showWebView: false,
+                jobDependencies: jobDependencies,
+                errorHandler: errorHandler,
+                completion: completionHandler
+            )
+        case .optOut:
+            let optOutCommand = DataBrokerProtectionQueueManagerDebugCommand.startOptOutOperations(
+                showWebView: false,
+                jobDependencies: jobDependencies,
+                errorHandler: errorHandler,
+                completion: completionHandler
+            )
+            queueManager.execute(optOutCommand)
+        case .all:
+            queueManager.startScheduledAllOperationsIfPermitted(
+                showWebView: false,
+                jobDependencies: jobDependencies,
+                errorHandler: errorHandler,
+                completion: completionHandler
+            )
+        case .manualScan:
+            completionHandler?()
+        }
+    }
+
     // MARK: - Run Prerequisites
 
     public var meetsProfileRunPrequisite: Bool {

@@ -337,7 +337,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                     cell.textLabel?.text = "✅ PIR will run some time after device is locked and connected to power"
                 } else {
 #if targetEnvironment(simulator)
-                    cell.textLabel?.text = "❌ Background jobs won't run in the simulator automatically"
+                    cell.textLabel?.text = "❌ Background jobs not supported in the simulator"
 #else
                     if UIApplication.shared.backgroundRefreshStatus == .available {
                         cell.textLabel?.text = "❌ Restart the app to schedule PIR"

@@ -515,7 +515,11 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                 let brokerProfileQueryData = BrokerProfileQueryData(
                     dataBroker: result.dataBroker,
                     profileQuery: result.profileQuery,
-                    scanJobData: ScanJobData(brokerId: 1, profileQueryId: 1, historyEvents: [])
+                    scanJobData: ScanJobData(
+                        brokerId: result.dataBroker.id ?? 1,
+                        profileQueryId: result.profileQuery.id ?? 1,
+                        historyEvents: []
+                    )
                 )
                 
                 let runner = BrokerProfileOptOutSubJobWebRunner(

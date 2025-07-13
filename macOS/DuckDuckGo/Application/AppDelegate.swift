@@ -808,6 +808,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SwiftUIContextMenuRetainCycleFix.setUp()
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard AppVersion.runType.requiresEnvironment else { return }
         defer {

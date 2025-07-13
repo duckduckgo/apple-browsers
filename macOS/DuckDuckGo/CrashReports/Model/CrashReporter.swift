@@ -49,7 +49,7 @@ final class CrashReporter {
         self.lastCheckDate = Date()
 
         guard let latest = crashReports.last else {
-            // No new crash report
+            // No new crash reports
             return
         }
 
@@ -75,7 +75,7 @@ final class CrashReporter {
         for crashReport in crashReports {
             guard let contentData = crashReport.contentData else {
                 assertionFailure("CrashReporter: Can't get the content of the crash report")
-                return
+                continue
             }
             let result = await sender.send(contentData, crcid: crcidManager.crcid)
             crcidManager.handleCrashSenderResult(result: result.result, response: result.response)

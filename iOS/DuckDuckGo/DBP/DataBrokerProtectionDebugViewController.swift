@@ -530,7 +530,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
             self?.settings.serviceRoot = value
             try? self?.manager.deleteAllData()
-            try? self?.forceBrokerJSONFilesUpdate()
+            self?.forceBrokerJSONFilesUpdate()
             self?.tableView.reloadData()
         }
 
@@ -540,15 +540,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         alert.addAction(cancelAction)
 
         present(alert, animated: true)
-    }
-
-    private func removeAllBrokerData() {
-        do {
-            try manager.deleteAllData()
-            Logger.dataBrokerProtection.log("Successfully removed all broker data.")
-        } catch {
-            Logger.dataBrokerProtection.error("Failed to remove all broker data: \(error.localizedDescription)")
-        }
     }
     
     // MARK: - Remote Broker JSON Service Usage

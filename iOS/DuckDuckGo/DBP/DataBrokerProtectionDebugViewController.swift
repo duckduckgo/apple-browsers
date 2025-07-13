@@ -661,11 +661,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         return try await withCheckedThrowingContinuation { continuation in
             let errorHandler: (DataBrokerProtectionJobsErrorCollection?) -> Void = { errors in
                 if let errors = errors, !(errors.operationErrors?.isEmpty ?? true) {
-                    // let errorMessage = errors.map { $0.localizedDescription }.joined(separator: ", ")
-                    // continuation.resume(throwing: NSError(domain: "JobExecutionError", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMessage]))
-                    continuation.resume()
-                } else {
-                    continuation.resume()
+                    print("Job execution completed with errors: \(errors)")
                 }
             }
 

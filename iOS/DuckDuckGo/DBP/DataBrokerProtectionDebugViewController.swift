@@ -552,27 +552,17 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     }
     
     // MARK: - Remote Broker JSON Service Usage
-    
-    private func checkForBrokerUpdates() {
-        guard let brokerUpdater = brokerUpdater else {
-            Logger.dataBrokerProtection.error("Failed to initialize RemoteBrokerJSONService")
-            return
-        }
-        
+
+    private func forceBrokerJSONFilesUpdate() {
         Task {
+            settings.resetBrokerDeliveryData()
+
             do {
-                try forceBrokerJSONFilesUpdate()
+                try await brokerUpdater?.checkForUpdates(skipsLimiter: true)
                 Logger.dataBrokerProtection.log("Successfully checked for broker updates")
             } catch {
                 Logger.dataBrokerProtection.error("Failed to check for broker updates: \(error.localizedDescription)")
             }
-        }
-    }
-
-    private func forceBrokerJSONFilesUpdate() throws {
-        Task {
-            settings.resetBrokerDeliveryData()
-            try await brokerUpdater?.checkForUpdates(skipsLimiter: true)
         }
     }
 }

@@ -161,6 +161,7 @@ struct RunDBPDebugModeView: View {
                     Text(selectedBrokerJSON)
                         .font(.system(.caption, design: .monospaced))
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(2)
                 }
                 .frame(height: 150)
                 .background(Color.gray.opacity(0.1))

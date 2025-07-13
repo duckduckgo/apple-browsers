@@ -208,6 +208,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     }
     
     private var jobCountRefreshTimer: Timer?
+    private let webViewWindowHelper = PIRDebugWebViewWindowHelper()
     
     enum JobExecutionState: Equatable {
         case idle
@@ -289,8 +290,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     private func startJobCountRefreshTimer() {
         stopJobCountRefreshTimer() // Ensure no duplicate timers
         
-        jobCountRefreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+        jobCountRefreshTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.loadJobCounts()
+            self?.updateWebViewButtonIfNeeded()
         }
     }
     
@@ -300,28 +302,34 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     }
     
     private func showWebViewButton() {
+        guard webViewWindowHelper.isWebViewAvailable else {
+            return
+        }
+        
         let webViewButton = UIBarButtonItem(
             title: "Show WebView",
             style: .plain,
             target: self,
             action: #selector(showWebViewTapped)
         )
+
+        webViewButton.tintColor = .systemBlue
         navigationItem.rightBarButtonItem = webViewButton
     }
     
-    @objc private func showWebViewTapped() {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+    private func updateWebViewButtonIfNeeded() {
+        guard jobExecutionState == .running else {
+            navigationItem.rightBarButtonItem = nil
             return
         }
-        
-        for window in windowScene.windows {
-            if let navController = window.rootViewController as? UINavigationController,
-               let title = navController.topViewController?.title,
-               title.hasPrefix("PIR Debug Mode") {
-                window.makeKeyAndVisible()
-                break
-            }
+
+        if webViewWindowHelper.isWebViewAvailable && navigationItem.rightBarButtonItem == nil {
+            showWebViewButton()
         }
+    }
+    
+    @objc private func showWebViewTapped() {
+        webViewWindowHelper.showWebView(title: "PIR Debug Mode")
     }
     
     private func calculatePendingJobCounts() async -> (pendingScans: Int, pendingOptOuts: Int) {
@@ -863,6 +871,89 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 Logger.dataBrokerProtection.log("Successfully checked for broker updates")
             } catch {
                 Logger.dataBrokerProtection.error("Failed to check for broker updates: \(error.localizedDescription)")
+            }
+        }
+    }
+}
+
+// MARK: - PIR Debug WebView Window Helper
+
+class PIRDebugWebViewWindowHelper {
+    
+    var isWebViewAvailable: Bool {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return false
+        }
+        
+        for window in windowScene.windows {
+            if let navController = window.rootViewController as? UINavigationController,
+               let title = navController.topViewController?.title,
+               title.hasPrefix("PIR Debug Mode") {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
+    var isWebViewVisible: Bool {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return false
+        }
+        
+        for window in windowScene.windows {
+            if let navController = window.rootViewController as? UINavigationController,
+               let title = navController.topViewController?.title,
+               title.hasPrefix("PIR Debug Mode") {
+                return window.isKeyWindow
+            }
+        }
+        
+        return false
+    }
+    
+    func showWebView(title: String = "PIR Debug Mode: Debug Session") {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return
+        }
+        
+        for window in windowScene.windows {
+            if let navController = window.rootViewController as? UINavigationController,
+               let topViewController = navController.topViewController,
+               let currentTitle = topViewController.title,
+               currentTitle.hasPrefix("PIR Debug Mode") {
+                
+                // Add close button if not already present
+                if topViewController.navigationItem.rightBarButtonItem == nil {
+                    let closeButton = UIBarButtonItem(
+                        title: "Close",
+                        style: .done,
+                        target: self,
+                        action: #selector(closeWebView)
+                    )
+                    topViewController.navigationItem.rightBarButtonItem = closeButton
+                }
+                
+                // Update title if provided
+                topViewController.title = title
+                
+                window.makeKeyAndVisible()
+                break
+            }
+        }
+    }
+    
+    @objc private func closeWebView() {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return
+        }
+        
+        for window in windowScene.windows {
+            if let navController = window.rootViewController as? UINavigationController,
+               let title = navController.topViewController?.title,
+               title.hasPrefix("PIR Debug Mode") {
+                window.isHidden = true
+                break
             }
         }
     }

@@ -202,21 +202,19 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     
     @MainActor private var jobExecutionState: JobExecutionState = .idle {
         didSet {
+            handleJobExecutionStateChange(from: oldValue, to: jobExecutionState)
             tableView.reloadData()
         }
     }
     
+    private var jobCountRefreshTimer: Timer?
+    
     enum JobExecutionState: Equatable {
         case idle
-        case running(type: String, progress: String)
-        case completed(message: String)
+        case running
         case failed(error: String)
     }
     
-    // Progress tracking
-    private var progressTimer: Timer?
-    private var currentJobType: JobType?
-    private var initialJobCount: Int = 0
 
     // MARK: Lifecycle
 
@@ -226,20 +224,24 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         super.init(coder: coder)
     }
     
-    deinit {
-        stopProgressTimer()
-    }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         loadHealthOverview()
         loadJobCounts()
+        
+        // Check if jobs are running in the background and sync state
+        if manager.isRunningJobs && jobExecutionState == .idle {
+            // Jobs are running but our UI shows idle - likely returned to view during background operation
+            jobExecutionState = .running
+        }
+        
         tableView.reloadData()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        stopProgressTimer()
+        stopJobCountRefreshTimer()
     }
 
     private func loadHealthOverview() {
@@ -270,6 +272,54 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             let counts = await calculatePendingJobCounts()
             await MainActor.run {
                 self.jobCounts = counts
+            }
+        }
+    }
+    
+    private func handleJobExecutionStateChange(from oldState: JobExecutionState, to newState: JobExecutionState) {
+        switch newState {
+        case .running:
+            startJobCountRefreshTimer()
+            showWebViewButton()
+        case .idle, .failed:
+            stopJobCountRefreshTimer()
+        }
+    }
+    
+    private func startJobCountRefreshTimer() {
+        stopJobCountRefreshTimer() // Ensure no duplicate timers
+        
+        jobCountRefreshTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            self?.loadJobCounts()
+        }
+    }
+    
+    private func stopJobCountRefreshTimer() {
+        jobCountRefreshTimer?.invalidate()
+        jobCountRefreshTimer = nil
+    }
+    
+    private func showWebViewButton() {
+        let webViewButton = UIBarButtonItem(
+            title: "Show WebView",
+            style: .plain,
+            target: self,
+            action: #selector(showWebViewTapped)
+        )
+        navigationItem.rightBarButtonItem = webViewButton
+    }
+    
+    @objc private func showWebViewTapped() {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return
+        }
+        
+        for window in windowScene.windows {
+            if let navController = window.rootViewController as? UINavigationController,
+               let title = navController.topViewController?.title,
+               title.hasPrefix("PIR Debug Mode") {
+                window.makeKeyAndVisible()
+                break
             }
         }
     }
@@ -388,34 +438,31 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             let row = DebugActionRows(rawValue: indexPath.row)
             cell.textLabel?.text = row?.title
             
-            // Show job execution progress for pending job actions
+            // Show job execution state for pending job actions
             if let row = row, isJobExecutionAction(row) {
+                let hasJobs = hasJobsForAction(row)
+                
                 switch jobExecutionState {
                 case .idle:
-                    cell.detailTextLabel?.text = nil
-                    cell.textLabel?.textColor = nil
-                case .running(let type, let progress):
-                    if isMatchingJobType(row: row, executingType: type) {
-                        cell.detailTextLabel?.text = progress
-                    } else {
+                    // Disable cell if no jobs available
+                    if !hasJobs {
+                        cell.textLabel?.textColor = .systemGray3
                         cell.detailTextLabel?.text = nil
-                        cell.textLabel?.textColor = .systemGray
-                    }
-                case .completed(let message):
-                    if isMatchingJobType(row: row, executingType: nil) {
-                        cell.detailTextLabel?.text = message
+                        cell.selectionStyle = .none
                     } else {
-                        cell.detailTextLabel?.text = nil
                         cell.textLabel?.textColor = nil
+                        cell.detailTextLabel?.text = nil
+                        cell.selectionStyle = .default
                     }
+                case .running:
+                    // Disable all job action rows while running
+                    cell.textLabel?.textColor = .systemGray
+                    cell.detailTextLabel?.text = "Running..."
+                    cell.selectionStyle = .none
                 case .failed(let error):
-                    if isMatchingJobType(row: row, executingType: nil) {
-                        cell.detailTextLabel?.text = "Error: \(error)"
-                        cell.textLabel?.textColor = .systemRed
-                    } else {
-                        cell.detailTextLabel?.text = nil
-                        cell.textLabel?.textColor = nil
-                    }
+                    cell.textLabel?.textColor = .systemRed
+                    cell.detailTextLabel?.text = "Error: \(error)"
+                    cell.selectionStyle = .default
                 }
             }
 
@@ -469,9 +516,11 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .debugActions:
             guard let row = DebugActionRows(rawValue: indexPath.row) else { return }
             
-            // Prevent starting new job execution if already running
-            if isJobExecutionAction(row) && jobExecutionState != .idle {
-                return
+            // Prevent interaction with job actions if running or no jobs available
+            if isJobExecutionAction(row) {
+                if jobExecutionState == .running || !hasJobsForAction(row) {
+                    return
+                }
             }
             
             handleDebugAction(for: row)
@@ -532,16 +581,17 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             return
         }
         
-        Task { @MainActor in
-            let typeString = jobTypeDisplayName(type)
-            self.jobExecutionState = .running(type: typeString, progress: "Starting...")
+        Task {
+            await MainActor.run {
+                self.jobExecutionState = .running
+            }
 
             do {
                 // Validate prerequisites first
                 let canRun = await manager.validateRunPrerequisites()
                 guard canRun else {
                     await MainActor.run {
-                        self.jobExecutionState = .failed(error: "PIR prerequisites not met. Check Health Overview section.")
+                        self.jobExecutionState = .failed(error: "PIR prerequisites not met")
                     }
                     return
                 }
@@ -550,63 +600,52 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 let initialCounts = await calculatePendingJobCounts()
                 let jobCount: Int
                 switch type {
-                case .scheduledScan: jobCount = initialCounts.pendingScans
-                case .optOut: jobCount = initialCounts.pendingOptOuts
-                case .all: jobCount = initialCounts.pendingScans + initialCounts.pendingOptOuts
-                default: jobCount = 0
+                case .scheduledScan:
+                    jobCount = initialCounts.pendingScans
+                case .optOut:
+                    jobCount = initialCounts.pendingOptOuts
+                case .all:
+                    jobCount = initialCounts.pendingScans + initialCounts.pendingOptOuts
+                default:
+                    jobCount = 0
                 }
                 
                 guard jobCount > 0 else {
-                    self.jobExecutionState = .completed(message: "No pending jobs found")
+                    await MainActor.run {
+                        self.jobExecutionState = .idle
+                    }
                     return
                 }
-                
-                // Store initial state for progress tracking
-                self.currentJobType = type
-                self.initialJobCount = jobCount
-                
-                let typeString = jobTypeDisplayName(type)
-                self.jobExecutionState = .running(type: typeString, progress: "Starting \(jobCount) job(s)...")
-
-                // Start progress timer to track job completion
-                self.startProgressTimer()
 
                 // Execute jobs using production queue manager
                 try await runJobsUsingProductionQueue(type: type)
                 
-                // Stop progress timer
-                self.stopProgressTimer()
-                
-                // Refresh job counts after completion
+                // Refresh job counts and reset to idle
                 let finalCounts = await calculatePendingJobCounts()
-                self.jobCounts = finalCounts
-                self.jobExecutionState = .completed(message: "Completed \(jobCount) job(s)")
-
-                // Auto-reset to idle after 3 seconds
-                try await Task.sleep(nanoseconds: 3_000_000_000)
-                self.jobExecutionState = .idle
+                await MainActor.run {
+                    self.jobCounts = finalCounts
+                    self.jobExecutionState = .idle
+                }
 
             } catch {
-                self.stopProgressTimer()
-                self.jobExecutionState = .failed(error: error.localizedDescription)
+                await MainActor.run {
+                    // Handle different types of errors
+                    let errorMessage: String
+                    if error is CancellationError {
+                        errorMessage = "Operation was cancelled"
+                    } else {
+                        errorMessage = error.localizedDescription
+                    }
+                    
+                    self.jobExecutionState = .failed(error: errorMessage)
+                }
                 
-                // Auto-reset to idle after 5 seconds on error
-                try? await Task.sleep(nanoseconds: 5_000_000_000)
-                self.jobExecutionState = .idle
+                // Auto-reset to idle after showing error briefly
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                await MainActor.run {
+                    self.jobExecutionState = .idle
+                }
             }
-        }
-    }
-    
-    private func jobTypeDisplayName(_ type: JobType) -> String {
-        switch type {
-        case .scheduledScan:
-            return "Scan Jobs"
-        case .optOut:
-            return "Opt-Out Jobs"
-        case .all:
-            return "All Jobs"
-        default:
-            return "Jobs"
         }
     }
     
@@ -643,82 +682,16 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         }
     }
     
-    private func isMatchingJobType(row: DebugActionRows, executingType: String?) -> Bool {
-        let rowTypeString = jobTypeDisplayName(jobTypeForRow(row))
-        return executingType == nil || executingType == rowTypeString
-    }
-    
-    private func jobTypeForRow(_ row: DebugActionRows) -> JobType {
+    private func hasJobsForAction(_ row: DebugActionRows) -> Bool {
         switch row {
         case .runPendingScans:
-            return .scheduledScan
+            return jobCounts.pendingScans > 0
         case .runPendingOptOuts:
-            return .optOut
+            return jobCounts.pendingOptOuts > 0
         case .runAllPendingJobs:
-            return .all
+            return jobCounts.pendingScans > 0 || jobCounts.pendingOptOuts > 0
         default:
-            return .all
-        }
-    }
-    
-    // MARK: - Progress Timer
-    
-    private func startProgressTimer() {
-        stopProgressTimer() // Ensure no existing timer
-        
-        progressTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            
-            Task { @MainActor in
-                await self.updateJobProgress()
-            }
-        }
-    }
-    
-    private func stopProgressTimer() {
-        progressTimer?.invalidate()
-        progressTimer = nil
-        currentJobType = nil
-        initialJobCount = 0
-    }
-    
-    @MainActor
-    private func updateJobProgress() async {
-        guard let jobType = currentJobType, initialJobCount > 0 else { return }
-        
-        let currentCounts = await calculatePendingJobCounts()
-        let remainingJobs = getRemainingJobCount(for: jobType, counts: currentCounts)
-        let completedJobs = max(0, initialJobCount - remainingJobs)
-        
-        let typeString = jobTypeDisplayName(jobType)
-        
-        // Create informative progress text
-        let progressText: String
-        if remainingJobs == 0 {
-            progressText = "Completing... (\(completedJobs)/\(initialJobCount) done)"
-        } else if completedJobs == 0 {
-            progressText = "Starting \(initialJobCount) job(s)..."
-        } else {
-            let percentComplete = Int((Double(completedJobs) / Double(initialJobCount)) * 100)
-            progressText = "Running... (\(completedJobs)/\(initialJobCount) completed, \(percentComplete)%)"
-        }
-        
-        // Only update if still in running state
-        if case .running = jobExecutionState {
-            jobExecutionState = .running(type: typeString, progress: progressText)
-        }
-    }
-    
-    private func getRemainingJobCount(for type: JobType, counts: (pendingScans: Int, pendingOptOuts: Int)) -> Int {
-        switch type {
-        case .scheduledScan:
-            return counts.pendingScans
-        case .optOut:
-            return counts.pendingOptOuts
-        case .all:
-            return counts.pendingScans + counts.pendingOptOuts
-        default:
-            return 0
+            return true
         }
     }
 

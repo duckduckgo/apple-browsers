@@ -273,70 +273,6 @@ struct RunDBPDebugModeView: View {
     }
 }
 
-// MARK: - WebView Window Manager
-
-class WebViewWindowManager {
-    private weak var webViewHandler: WebViewHandler?
-
-    private var isWebViewVisible: Bool {
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            for window in windowScene.windows where window.tag == 42 {
-                return window.isKeyWindow
-            }
-        }
-
-        return false
-    }
-
-    init(webViewHandler: WebViewHandler) {
-        self.webViewHandler = webViewHandler
-    }
-    
-    func showWebView(title: String = "Debug WebView") {
-        guard !isWebViewVisible else { return }
-
-        // Find the window with tag 42 and make it visible with a Close button
-        DispatchQueue.main.async {
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                for window in windowScene.windows where window.tag == 42 {
-                    if let navController = window.rootViewController as? UINavigationController,
-                       let topViewController = navController.topViewController {
-                        let closeButton = UIBarButtonItem(
-                            title: "Close",
-                            style: .done,
-                            target: self,
-                            action: #selector(self.closeWebView)
-                        )
-
-                        topViewController.navigationItem.rightBarButtonItem = closeButton
-                        topViewController.title = title
-                    }
-
-                    window.makeKeyAndVisible()
-                    break
-                }
-            }
-        }
-    }
-    
-    @objc private func closeWebView() {
-        hideWebView()
-    }
-    
-    func hideWebView() {
-        guard isWebViewVisible else { return }
-
-        DispatchQueue.main.async {
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                for window in windowScene.windows where window.tag == 42 {
-                    window.isHidden = true
-                    break
-                }
-            }
-        }
-    }
-}
-
 // MARK: - View Model
 
 final class RunDBPDebugModeViewModel: ObservableObject {
@@ -359,7 +295,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
 
     @Published private var currentRunner: BrokerProfileScanSubJobWebRunner?
 
-    private var currentWebViewManager: WebViewWindowManager?
+    private var currentWebViewManager: DBPDebugWebViewWindowManager?
     private var cancellables = Set<AnyCancellable>()
     private var currentTask: Task<Void, Never>?
     
@@ -558,7 +494,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         
         if currentWebViewManager == nil {
             if let runner = currentRunner, let webViewHandler = runner.webViewHandler {
-                currentWebViewManager = WebViewWindowManager(webViewHandler: webViewHandler)
+                currentWebViewManager = DBPDebugWebViewWindowManager(webViewHandler: webViewHandler)
             } else {
                 showAlert(title: "WebView Error", message: "No active WebView available to display")
                 return
@@ -566,7 +502,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         }
 
         let brokerName = currentRunner?.query.dataBroker.name ?? selectedBroker?.name ?? "Unknown Broker"
-        currentWebViewManager?.showWebView(title: "PIR Debug: \(brokerName)")
+        currentWebViewManager?.showWebView(title: "PIR Debug Mode: \(brokerName)")
     }
     
     func hideWebView() {

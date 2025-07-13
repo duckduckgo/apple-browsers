@@ -262,14 +262,14 @@ public final class DataBrokerProtectionIOSManager {
         switch type {
         case .scheduledScan:
             queueManager.startScheduledScanOperationsIfPermitted(
-                showWebView: false,
+                showWebView: true,
                 jobDependencies: jobDependencies,
                 errorHandler: errorHandler,
                 completion: completionHandler
             )
         case .optOut:
             let optOutCommand = DataBrokerProtectionQueueManagerDebugCommand.startOptOutOperations(
-                showWebView: false,
+                showWebView: true,
                 jobDependencies: jobDependencies,
                 errorHandler: errorHandler,
                 completion: completionHandler
@@ -277,7 +277,7 @@ public final class DataBrokerProtectionIOSManager {
             queueManager.execute(optOutCommand)
         case .all:
             queueManager.startScheduledAllOperationsIfPermitted(
-                showWebView: false,
+                showWebView: true,
                 jobDependencies: jobDependencies,
                 errorHandler: errorHandler,
                 completion: completionHandler
@@ -285,6 +285,11 @@ public final class DataBrokerProtectionIOSManager {
         case .manualScan:
             completionHandler?()
         }
+    }
+
+    /// Used by the iOS PIR debug menu to check if jobs are currently running.
+    public var isRunningJobs: Bool {
+        return queueManager.debugRunningStatusString == "running"
     }
 
     // MARK: - Run Prerequisites

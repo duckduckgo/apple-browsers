@@ -476,25 +476,20 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         currentTask = Task { @MainActor in
             let profile = createProfile()
             let queries = profile.profileQueries
-            
             var allResults: [ScanResult] = []
-            
-            // Set total broker count for progress tracking
+
             self.totalBrokerCount = brokers.count
             
-            // Create a single WebView-enabled runner for UI preview (using first broker)
-            var webViewRunner: BrokerProfileScanSubJobWebRunner?
-            
             for (brokerIndex, broker) in brokers.enumerated() {
-                // Update UI to show current broker being scanned with progress
                 self.currentBrokerIndex = brokerIndex + 1
                 self.currentBrokerName = broker.name
+
                 for (index, query) in queries.enumerated() {
                     let queryWithId = query.with(id: Int64(index + 1))
                     let brokerProfileQueryData = BrokerProfileQueryData(
                         dataBroker: broker,
                         profileQuery: queryWithId,
-                        scanJobData: ScanJobData(brokerId: 0, profileQueryId: Int64(index + 1), historyEvents: [])
+                        scanJobData: ScanJobData(brokerId: broker.id ?? 0, profileQueryId: Int64(index + 1), historyEvents: [])
                     )
                     
                     do {
@@ -509,12 +504,6 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                         ) { true }
 
                         self.currentRunner = runner
-
-                        // Set up WebView runner only for the first scan
-//                        if webViewRunner == nil {
-//                            webViewRunner = runner
-//                            self.currentRunner = runner
-//                        }
                         
                         let extractedProfiles = try await runner.scan(brokerProfileQueryData, showWebView: true) { true }
                         for profile in extractedProfiles {

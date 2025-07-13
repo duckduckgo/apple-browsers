@@ -38,7 +38,7 @@ final class CrashReporter {
     private var lastCheckDate: Date?
 
     func checkForNewReports() async {
- #if !DEBUG
+#if !DEBUG
         guard let lastCheckDate = lastCheckDate else {
             // Initial run
             self.lastCheckDate = Date()
@@ -68,7 +68,7 @@ final class CrashReporter {
         } else if await promptPresenter.showPrompt(for: latest) == .allow {
             await send(crashReports)
         }
- #endif
+#endif
     }
 
     private func send(_ crashReports: [CrashReport]) async {

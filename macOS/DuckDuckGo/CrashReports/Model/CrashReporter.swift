@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
 import Crashes
 import Foundation
@@ -23,6 +24,11 @@ import PixelKit
 
 final class CrashReporter {
 
+    init(internalUserDecider: InternalUserDecider) {
+        self.internalUserDecider = internalUserDecider
+    }
+
+    private let internalUserDecider: InternalUserDecider
     private let reader = CrashReportReader()
     private lazy var sender = CrashReportSender(platform: .macOS, pixelEvents: CrashReportSender.pixelEvents)
     private lazy var crcidManager = CRCIDManager()
@@ -31,10 +37,8 @@ final class CrashReporter {
     @UserDefaultsWrapper(key: .lastCrashReportCheckDate, defaultValue: nil)
     private var lastCheckDate: Date?
 
-    func checkForNewReports() {
-
-#if !DEBUG
-
+    func checkForNewReports() async {
+ #if !DEBUG
         guard let lastCheckDate = lastCheckDate else {
             // Initial run
             self.lastCheckDate = Date()
@@ -59,19 +63,22 @@ final class CrashReporter {
             }
         }
 
-        promptPresenter.showPrompt(for: latest) {
-            guard let contentData = latest.contentData else {
+        if internalUserDecider.isInternalUser {
+            await send(crashReports)
+        } else if await promptPresenter.showPrompt(for: latest) == .allow {
+            await send(crashReports)
+        }
+ #endif
+    }
+
+    private func send(_ crashReports: [CrashReport]) async {
+        for crashReport in crashReports {
+            guard let contentData = crashReport.contentData else {
                 assertionFailure("CrashReporter: Can't get the content of the crash report")
                 return
             }
-            Task {
-                let crcid = self.crcidManager.crcid
-                let result = await self.sender.send(contentData, crcid: crcid)
-                self.crcidManager.handleCrashSenderResult(result: result.result, response: result.response)
-            }
+            let result = await sender.send(contentData, crcid: crcidManager.crcid)
+            crcidManager.handleCrashSenderResult(result: result.result, response: result.response)
         }
-
-#endif
-
     }
 }

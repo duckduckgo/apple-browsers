@@ -82,7 +82,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let crashCollection = CrashCollection(crashReportSender: CrashReportSender(platform: .macOSAppStore,
                                                                                        pixelEvents: CrashReportSender.pixelEvents))
 #else
-    private let crashReporter = CrashReporter()
+    private let crashReporter: CrashReporter
 #endif
 
     let keyValueStore: ThrowingKeyValueStoring
@@ -757,6 +757,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 #endif
+
+#if !APPSTORE
+        crashReporter = CrashReporter(internalUserDecider: internalUserDecider)
+#endif
     }
     // swiftlint:enable cyclomatic_complexity
 
@@ -891,7 +895,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         applyPreferredTheme()
 
 #if APPSTORE
-        crashCollection.startAttachingCrashLogMessages { pixelParameters, payloads, completion in
+        crashCollection.startAttachingCrashLogMessages { [weak self] pixelParameters, payloads, completion in
 
             pixelParameters.forEach { parameters in
                 var params = parameters
@@ -908,12 +912,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let lastPayload = payloads.last else {
                 return
             }
-            DispatchQueue.main.async {
-                CrashReportPromptPresenter().showPrompt(for: CrashDataPayload(data: lastPayload), userDidAllowToReport: completion)
+            if self?.internalUserDecider.isInternalUser == true {
+                completion()
+            } else {
+                Task { @MainActor in
+                    if await CrashReportPromptPresenter().showPrompt(for: CrashDataPayload(data: lastPayload)) == .allow {
+                        completion()
+                    }
+                }
             }
         }
 #else
-        crashReporter.checkForNewReports()
+        Task {
+            await crashReporter.checkForNewReports()
+        }
 #endif
         urlEventHandler.applicationDidFinishLaunching()
 

@@ -19,6 +19,9 @@
 import Cocoa
 
 final class CrashReportPromptPresenter {
+    enum Response: Equatable {
+        case allow, deny
+    }
 
     lazy var windowController: NSWindowController = {
         let storyboard = NSStoryboard(name: "CrashReports", bundle: nil)
@@ -31,12 +34,17 @@ final class CrashReportPromptPresenter {
         // swiftlint:enable force_cast
     }
 
-    func showPrompt(for crashReport: CrashReportPresenting, userDidAllowToReport: @escaping () -> Void) {
-        viewController.crashReport = crashReport
-        viewController.userDidAllowToReport = userDidAllowToReport
+    @MainActor
+    func showPrompt(for crashReport: CrashReportPresenting) async -> Response {
+        await withCheckedContinuation { continuation in
+            viewController.crashReport = crashReport
+            viewController.userDidAnswerPrompt = { response in
+                continuation.resume(returning: response)
+            }
 
-        windowController.showWindow(self)
-        windowController.window?.center()
+            windowController.showWindow(self)
+            windowController.window?.center()
+        }
     }
 
 }

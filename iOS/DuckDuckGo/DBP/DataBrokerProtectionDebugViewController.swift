@@ -71,6 +71,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     enum DatabaseRows: Int, CaseIterable {
         case databaseBrowser
         case saveProfile
+        case pendingScanJobs
+        case pendingOptOutJobs
         case deviceIdentifier
         case deleteAllData
 
@@ -80,6 +82,10 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Database Browser"
             case .saveProfile:
                 return "Save Profile"
+            case .pendingScanJobs:
+                return "Pending Scans"
+            case .pendingOptOutJobs:
+                return "Pending Opt Outs"
             case .deviceIdentifier:
 #if DEBUG || ALPHA
                 return "UUID"
@@ -178,6 +184,12 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             tableView.reloadData()
         }
     }
+    
+    @MainActor private var jobCounts: (pendingScans: Int, pendingOptOuts: Int) = (0, 0) {
+        didSet {
+            tableView.reloadData()
+        }
+    }
 
     // MARK: Lifecycle
 
@@ -190,6 +202,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         loadHealthOverview()
+        loadJobCounts()
         tableView.reloadData()
     }
 
@@ -214,6 +227,50 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 )
             }
         }
+    }
+    
+    private func loadJobCounts() {
+        Task {
+            let counts = await calculatePendingJobCounts()
+            await MainActor.run {
+                self.jobCounts = counts
+            }
+        }
+    }
+    
+    private func calculatePendingJobCounts() async -> (pendingScans: Int, pendingOptOuts: Int) {
+        guard let allData = try? manager.database.fetchAllBrokerProfileQueryData() else {
+            return (0, 0)
+        }
+        
+        let currentDate = Date()
+        let scanJobs = allData
+            .filter { $0.profileQuery.deprecated == false }
+            .compactMap { $0.scanJobData }
+
+        let optOutJobs = allData.flatMap { $0.optOutJobData }
+
+        let pendingScanJobs = scanJobs.filter { job in
+            guard !job.isRemovedByUser else { return false }
+            
+            if let preferredRunDate = job.preferredRunDate {
+                return preferredRunDate <= currentDate
+            }
+
+            return false
+        }
+
+        let pendingOptOutJobs = optOutJobs.filter { job in
+            guard !job.isRemovedByUser else { return false }
+            
+            if let preferredRunDate = job.preferredRunDate {
+                return preferredRunDate <= currentDate
+            }
+
+            return true
+        }
+        
+        return (pendingScanJobs.count, pendingOptOutJobs.count)
     }
 
     // MARK: Table View
@@ -248,6 +305,10 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
             switch row {
             case .databaseBrowser, .saveProfile, nil: break
+            case .pendingScanJobs:
+                cell.detailTextLabel?.text = "\(jobCounts.pendingScans)"
+            case .pendingOptOutJobs:
+                cell.detailTextLabel?.text = "\(jobCounts.pendingOptOuts)"
             case .deviceIdentifier:
                 cell.detailTextLabel?.font = UIFont.monospacedSystemFont(ofSize: 17, weight: .regular)
                 cell.detailTextLabel?.text = DataBrokerProtectionSettings.deviceIdentifier
@@ -398,7 +459,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             self.navigationController?.pushViewController(saveProfileViewController, animated: true)
         case .deleteAllData:
             presentDeleteAllDataAlertController()
-        case .deviceIdentifier:
+        case .deviceIdentifier, .pendingScanJobs, .pendingOptOutJobs:
             break
         }
     }
@@ -408,6 +469,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         alert.addAction(title: "Delete All Data", style: .destructive) { [weak self] in
             try? self?.manager.deleteAllData()
             DataBrokerProtectionSettings.incrementDeviceIdentifier()
+            self?.loadJobCounts()
             self?.tableView.reloadData()
         }
 

@@ -95,7 +95,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     enum HealthOverviewRows {
         case loading
         case runPrerequisitesNotMet(hasAccount: Bool, hasEntitlement: Bool, hasProfile: Bool)
-        case runPrerequesitesMet(jobScheduled: Bool)
+        case runPrerequisitesMet(jobScheduled: Bool)
 
         var rowCount: Int {
             switch self {
@@ -103,7 +103,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return 1
             case .runPrerequisitesNotMet:
                 return 3
-            case .runPrerequesitesMet:
+            case .runPrerequisitesMet:
                 return 1
             }
         }
@@ -201,7 +201,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                     $0.identifier == DataBrokerProtectionIOSManager.backgroundJobIdentifier
                 }
 
-                self.healthOverview = .runPrerequesitesMet(jobScheduled: !dbpScheduledTasks.isEmpty)
+                self.healthOverview = .runPrerequisitesMet(jobScheduled: !dbpScheduledTasks.isEmpty)
             } else {
                 let hasAccount = manager.meetsAuthenticationRunPrequisite
                 let hasEntitlement = (try? await manager.meetsEntitlementRunPrequisite) ?? false
@@ -271,7 +271,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 } else {
                     fatalError("Expected 3 rows for the health overview")
                 }
-            case .runPrerequesitesMet(let jobScheduled):
+            case .runPrerequisitesMet(let jobScheduled):
                 if jobScheduled {
                     cell.textLabel?.text = "✅ PIR will run some time after device is locked and connected to power"
                 } else {

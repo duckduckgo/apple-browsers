@@ -99,6 +99,11 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 self.extractedProfile = inputValue.merge(with: query.profileQuery)
                 self.continuation = continuation
 
+                guard self.shouldRunNextStep() else {
+                    failed(with: DataBrokerProtectionError.cancelled)
+                    return
+                }
+
                 task = Task {
                     await initialize(handler: webViewHandler,
                                      isFakeBroker: query.dataBroker.isFakeBroker,
@@ -124,7 +129,7 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
                 }
             }
         } onCancel: {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 task?.cancel()
             }
         }

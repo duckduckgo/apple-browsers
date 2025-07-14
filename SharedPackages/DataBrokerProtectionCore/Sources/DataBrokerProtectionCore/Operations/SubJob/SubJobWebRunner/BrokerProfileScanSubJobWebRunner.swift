@@ -96,6 +96,12 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 self.continuation = continuation
+
+                guard self.shouldRunNextStep() else {
+                    failed(with: DataBrokerProtectionError.cancelled)
+                    return
+                }
+
                 task = Task {
                     await initialize(handler: webViewHandler, isFakeBroker: query.dataBroker.isFakeBroker, showWebView: showWebView)
                     do {
@@ -116,7 +122,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 }
             }
         } onCancel: {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 task?.cancel()
             }
         }

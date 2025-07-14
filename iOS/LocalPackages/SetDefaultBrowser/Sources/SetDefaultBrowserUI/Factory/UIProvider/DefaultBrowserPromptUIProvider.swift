@@ -20,7 +20,9 @@
 import SwiftUI
 
 public protocol DefaultBrowserPromptUIProviding {
+    associatedtype BackgroundView: View
     associatedtype BrowsersComparisonChartView: View
 
+    func makeBackground() -> BackgroundView
     func makeBrowserComparisonChart() -> BrowsersComparisonChartView
 }

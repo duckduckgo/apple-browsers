@@ -21,6 +21,10 @@ import Foundation
 
 struct DefaultBrowserPromptUIProvider: DefaultBrowserPromptUIProviding {
 
+    func makeBackground() -> OnboardingBackground {
+        OnboardingBackground()
+    }
+
     func makeBrowserComparisonChart() -> BrowsersComparisonChart {
         BrowsersComparisonChart(privacyFeatures: BrowsersComparisonModel.defaultBrowserPromptPrivacyFeatures)
     }
@@ -40,5 +44,5 @@ private extension BrowsersComparisonModel {
                 BrowsersComparisonModel.PrivacyFeature(type: featureType, browsersSupport: browsersSupport(for: featureType))
             }
     }()
-    
+
 }

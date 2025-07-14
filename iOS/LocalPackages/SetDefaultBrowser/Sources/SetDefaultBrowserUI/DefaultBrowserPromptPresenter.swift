@@ -79,7 +79,8 @@ private extension DefaultBrowserModalPresenter {
     }
 
     func presentDefaultBrowserPromptForInactiveUser(from viewController: UIViewController) {
-        let rootView = DefaultBrowserInactivePromptModalView(
+        let rootView = DefaultBrowserPromptInactiveUserView(
+            background: AnyView(uiProvider.makeBackground()),
             browserComparisonChart: AnyView(uiProvider.makeBrowserComparisonChart()),
             closeAction: { [weak viewController] in
                 viewController?.dismiss(animated: true)

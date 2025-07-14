@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserInactivePromptModalView.swift
+//  DefaultBrowserPromptInactiveUserView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -23,10 +23,11 @@ import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
 
-struct DefaultBrowserInactivePromptModalView: View {
+struct DefaultBrowserPromptInactiveUserView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
+    let background: AnyView
     let browserComparisonChart: AnyView
     let closeAction: () -> Void
     let setAsDefaultAction: () -> Void
@@ -38,49 +39,38 @@ struct DefaultBrowserInactivePromptModalView: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .background(background.ignoresSafeArea())
     }
 
     private var content: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            VStack(spacing: 24) {
-                Text("DuckDuckGo has protections other browsers don’t.")
-                    .font(.system(size: 28, weight: .bold))
-                    .kerning(0.38)
-                    .minimumScaleFactor(0.8)
-                    .foregroundStyle(.primary)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
+        VStack(alignment: .leading, spacing: Metrics.Content.sectionsSpacing) {
+            VStack(alignment: .leading, spacing: Metrics.Content.topSectionVerticalSpacing) {
+                Text(UserText.InactiveUserModal.title)
+                    .titleStyle(alignment: .leading)
 
                 ScrollView {
                     browserComparisonChart
-                        .frame(height: 260)
+                        .frame(height: Metrics.Chart.maxHeight)
                 }
-                .frame(maxHeight: Metrics.Chart.maxHeight.build(v: verticalSizeClass, h: horizontalSizeClass))
+                .frame(maxHeight: Metrics.Chart.maxHeight)
             }
 
-            VStack(alignment: .leading, spacing: 24) {
-                Text("[Plus even more protections...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)")
-                    .font(.system(size: 15))
+            VStack(alignment: .leading, spacing: Metrics.Content.bottomSectionVerticalSpacing) {
+                Text(LocalizedStringKey(UserText.InactiveUserModal.moreProtections))
+                    .font(.system(size: Metrics.Content.moreProtectionsFontSize))
                     .underline(true)
                     .foregroundStyle(Color(designSystemColor: .accent))
 
                 Footer(setDefaultBrowserAction: setAsDefaultAction, continueBrowsing: closeAction)
             }
         }
-        .padding(24)
+        .padding(Metrics.Content.innerPadding)
         .background(Color(designSystemColor: .surface))
         .frame(maxWidth: Metrics.Content.maxWidth, alignment: .bottom)
-        .cornerRadius(24)
-        .padding([.horizontal, .bottom], 16)
+        .cornerRadius(Metrics.Content.cornerRadius)
+        .padding(.horizontal, Metrics.Content.outerHorizontalPadding)
+        .padding(.bottom, Metrics.Content.bottomPadding)
         .padding(.top, Metrics.Content.topPadding.build(v: verticalSizeClass, h: horizontalSizeClass))
-    }
-
-}
-
-private struct SizePreferenceKey: @preconcurrency PreferenceKey {
-    @MainActor static var defaultValue: CGSize = .zero
-
-    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
-        value = nextValue()
     }
 }
 
@@ -94,10 +84,10 @@ struct Footer: View {
     var body: some View {
         VStack(spacing: Metrics.Footer.itemsVerticalSpacing) {
             Group {
-                Button("Open Links with DuckDuckGo", action: setDefaultBrowserAction)
+                Button(UserText.InactiveUserModal.setDefaultBrowserCTA, action: setDefaultBrowserAction)
                     .buttonStyle(PrimaryButtonStyle(compact: Metrics.Footer.buttonsCompact.build(v: verticalSizeClass, h: horizontalSizeClass)))
 
-                Button("Continue Browsing", action: continueBrowsing)
+                Button(UserText.InactiveUserModal.continueBrowsingCTA, action: continueBrowsing)
                     .buttonStyle(GhostButtonStyle(compact: Metrics.Footer.buttonsCompact.build(v: verticalSizeClass, h: horizontalSizeClass)))
             }
         }
@@ -111,10 +101,18 @@ private enum Metrics {
         static let maxWidth = MetricBuilder<CGFloat?>(iPhone: nil, iPad: 542).build()
         static let alignment = MetricBuilder<Alignment>(iPhone: .topLeading, iPad: .top).build()
         static let topPadding = MetricBuilder(iPhone: 200.0, iPad: 240.0).iPad(landscape: 200)
+        static let outerHorizontalPadding: CGFloat = 16
+        static let bottomPadding: CGFloat = 12
+        static let innerPadding: CGFloat = 24
+        static let cornerRadius: CGFloat = 24
+        static let sectionsSpacing: CGFloat = 14
+        static let topSectionVerticalSpacing: CGFloat = 24
+        static let bottomSectionVerticalSpacing: CGFloat = 40
+        static let moreProtectionsFontSize: CGFloat = 15
     }
 
     enum Chart {
-        static let maxHeight = MetricBuilder(default: 260.0).iPhoneSmallScreen(120)
+        static let maxHeight: CGFloat = 260.0
     }
 
     enum Footer {
@@ -125,5 +123,5 @@ private enum Metrics {
 }
 
 #Preview {
-    DefaultBrowserInactivePromptModalView(browserComparisonChart: AnyView(EmptyView()), closeAction: {}, setAsDefaultAction: {})
+    DefaultBrowserPromptInactiveUserView(background: AnyView(Color.blue), browserComparisonChart: AnyView(EmptyView()), closeAction: {}, setAsDefaultAction: {})
 }

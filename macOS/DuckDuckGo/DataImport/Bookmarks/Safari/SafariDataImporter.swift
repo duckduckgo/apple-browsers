@@ -84,7 +84,7 @@ final class SafariDataImporter: DataImporter {
         let bookmarkResult = bookmarkReader.readBookmarks()
 
         let summary = bookmarkResult.map { bookmarks in
-            bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source))
+            bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true)
         }
 
         if case .success = summary {

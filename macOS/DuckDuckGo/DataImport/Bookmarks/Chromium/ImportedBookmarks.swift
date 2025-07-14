@@ -33,11 +33,12 @@ struct ImportedBookmarks: Codable, Equatable {
         let type: EntityType?
         let urlString: String?
         var isDDGFavorite: Bool = false
+        var favoritesIndex: Int?
 
-        let children: [BookmarkOrFolder]?
+        var children: [BookmarkOrFolder]?
 
-        static func bookmark(name: String, urlString: String?, isDDGFavorite: Bool) -> BookmarkOrFolder {
-            .init(name: name, type: .bookmark, urlString: urlString, children: nil, isDDGFavorite: isDDGFavorite)
+        static func bookmark(name: String, urlString: String?, isDDGFavorite: Bool, favoritesIndex: Int? = nil) -> BookmarkOrFolder {
+            .init(name: name, type: .bookmark, urlString: urlString, children: nil, isDDGFavorite: isDDGFavorite, favoritesIndex: favoritesIndex)
         }
 
         static func folder(name: String, children: [BookmarkOrFolder]) -> BookmarkOrFolder {
@@ -70,19 +71,20 @@ struct ImportedBookmarks: Codable, Equatable {
             case children
         }
 
-        init(name: String, type: EntityType, urlString: String?, children: [BookmarkOrFolder]?, isDDGFavorite: Bool = false) {
+        init(name: String, type: EntityType, urlString: String?, children: [BookmarkOrFolder]?, isDDGFavorite: Bool = false, favoritesIndex: Int? = nil) {
             self.name = name.trimmingWhitespace()
             self.type = type
             self.urlString = urlString
             self.children = children
             self.isDDGFavorite = isDDGFavorite
+            self.favoritesIndex = favoritesIndex
         }
     }
 
     struct TopLevelFolders: Codable, Equatable {
-        let bookmarkBar: BookmarkOrFolder?
-        let otherBookmarks: BookmarkOrFolder?
-        let syncedBookmarks: BookmarkOrFolder?
+        var bookmarkBar: BookmarkOrFolder?
+        var otherBookmarks: BookmarkOrFolder?
+        var syncedBookmarks: BookmarkOrFolder?
 
         enum CodingKeys: String, CodingKey {
             case bookmarkBar = "bookmark_bar"
@@ -91,7 +93,7 @@ struct ImportedBookmarks: Codable, Equatable {
         }
     }
 
-    let topLevelFolders: TopLevelFolders
+    var topLevelFolders: TopLevelFolders
 
     var numberOfBookmarks: Int {
         [topLevelFolders.bookmarkBar, topLevelFolders.otherBookmarks, topLevelFolders.syncedBookmarks]

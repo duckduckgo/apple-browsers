@@ -707,7 +707,6 @@ final class LocalBookmarkStore: BookmarkStore {
     // MARK: - Import
 
     /// Imports bookmarks into the Core Data store from an `ImportedBookmarks` object.
-    /// The source is used to determine where to put bookmarks, as we want to match the source browser's structure as closely as possible.
     ///
     /// The import strategy is as follows:
     ///
@@ -715,7 +714,12 @@ final class LocalBookmarkStore: BookmarkStore {
     /// 2. **Safari:** Create a root level "Imported Favorites" folder to store bookmarks from the bookmarks bar, and all other bookmarks go at the root level.
     /// 3. **Chrome:** Put all bookmarks at the root level, except for Other Bookmarks which go in a root level "Other Bookmarks" folder.
     /// 4. **Firefox:** Put all bookmarks at the root level, except for Other Bookmarks which go in a root level "Other Bookmarks" folder.
-    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource) -> BookmarksImportSummary {
+    ///
+    /// - Parameters:
+    ///   - bookmarks: The bookmarks to import.
+    ///   - source: The source of the bookmarks. Used to determine where to put bookmarks, as we want to match the source browser's structure as closely as possible.
+    ///   - markRootBookmarksAsFavoritesByDefault: If true, the bookmarks at the root level will be marked as favorites by default.
+    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool = true) -> BookmarksImportSummary {
         var total = BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
 
         do {
@@ -730,6 +734,7 @@ final class LocalBookmarkStore: BookmarkStore {
                 total += createEntitiesFromBookmarks(allFolders: allFolders,
                                                      bookmarks: bookmarks,
                                                      importSourceName: source.importSourceName,
+                                                     markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault,
                                                      in: context)
             }
 
@@ -759,6 +764,7 @@ final class LocalBookmarkStore: BookmarkStore {
     private func createEntitiesFromBookmarks(allFolders: [BookmarkEntity],
                                              bookmarks: ImportedBookmarks,
                                              importSourceName: String,
+                                             markRootBookmarksAsFavoritesByDefault: Bool,
                                              in context: NSManagedObjectContext) -> BookmarksImportSummary {
 
         guard let root = bookmarksRoot(in: context) else {
@@ -770,21 +776,24 @@ final class LocalBookmarkStore: BookmarkStore {
         var total = BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
 
         var parent = root
-        var makeFavorties = true
+        var markFavorites = markRootBookmarksAsFavoritesByDefault
         if root.children?.count != 0 {
-            makeFavorties = false
+            markFavorites = false
             parent = BookmarkEntity.makeFolder(title: "\(UserText.bookmarkImportedFromFolder) \(importSourceName)",
                                                parent: root,
                                                context: context)
         }
 
-        if let bookmarksBar = bookmarks.topLevelFolders.bookmarkBar?.children {
-            let result = recursivelyCreateEntities(from: bookmarksBar,
-                                                   parent: parent,
-                                                   markBookmarksAsFavorite: makeFavorties,
-                                                   in: context)
+        // Collect favorites with their source index so they can be added in the same order as their source
+        var allFavorites: [(BookmarkEntity, Int?)] = []
 
+        if let bookmarksBar = bookmarks.topLevelFolders.bookmarkBar?.children {
+            let (result, favorites) = recursivelyCreateEntitiesAndCollectFavorites(from: bookmarksBar,
+                                                                                   parent: parent,
+                                                                                   markBookmarksAsFavorite: markFavorites,
+                                                                                   in: context)
             total += result
+            allFavorites.append(contentsOf: favorites)
         }
 
         for folder in [bookmarks.topLevelFolders.otherBookmarks, bookmarks.topLevelFolders.syncedBookmarks] {
@@ -798,25 +807,24 @@ final class LocalBookmarkStore: BookmarkStore {
                                                          parent: parent,
                                                          context: context)
             }
-            let result = recursivelyCreateEntities(from: children,
-                                                   parent: folderParent,
-                                                   markBookmarksAsFavorite: false,
-                                                   in: context)
-
+            let (result, favorites) = recursivelyCreateEntitiesAndCollectFavorites(from: children,
+                                                                                   parent: folderParent,
+                                                                                   in: context)
             total += result
+            allFavorites.append(contentsOf: favorites)
         }
 
-        return total
+        addFavoritesInOrder(allFavorites, in: context)
 
+        return total
     }
 
-    private func recursivelyCreateEntities(from bookmarks: [ImportedBookmarks.BookmarkOrFolder],
-                                           parent: BookmarkEntity,
-                                           markBookmarksAsFavorite: Bool? = false,
-                                           in context: NSManagedObjectContext) -> BookmarksImportSummary {
+    private func recursivelyCreateEntitiesAndCollectFavorites(from bookmarks: [ImportedBookmarks.BookmarkOrFolder],
+                                                              parent: BookmarkEntity,
+                                                              markBookmarksAsFavorite: Bool? = false,
+                                                              in context: NSManagedObjectContext) -> (BookmarksImportSummary, [(BookmarkEntity, Int?)]) {
         var total = BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
-
-        let favoritesFolders = BookmarkUtils.fetchFavoritesFolders(for: favoritesDisplayMode, in: context)
+        var favorites: [(BookmarkEntity, Int?)] = []
 
         for bookmarkOrFolder in bookmarks {
 
@@ -838,16 +846,15 @@ final class LocalBookmarkStore: BookmarkStore {
 
             // Bookmarks from the bookmarks bar are imported as favorites
             if bookmarkOrFolder.isDDGFavorite || (!bookmarkOrFolder.isFolder && markBookmarksAsFavorite == true) {
-                bookmarkManagedObject.addToFavorites(folders: favoritesFolders)
+                favorites.append((bookmarkManagedObject, bookmarkOrFolder.favoritesIndex))
             }
 
             if let children = bookmarkOrFolder.children {
-                let result = recursivelyCreateEntities(from: children,
-                                                       parent: bookmarkManagedObject,
-                                                       markBookmarksAsFavorite: false,
-                                                       in: context)
-
+                let (result, childFavorites) = recursivelyCreateEntitiesAndCollectFavorites(from: children,
+                                                                                             parent: bookmarkManagedObject,
+                                                                                             in: context)
                 total += result
+                favorites.append(contentsOf: childFavorites)
             }
 
             // If a managed object is a folder, and it doesn't have any child bookmarks, it can be deleted. In the future, duplicate bookmarks will be
@@ -864,7 +871,22 @@ final class LocalBookmarkStore: BookmarkStore {
             }
         }
 
-        return total
+        return (total, favorites)
+    }
+
+    /// Adds bookmarks to the favorites folders in the order specified by their indices, de-duping any existing favorites.
+    private func addFavoritesInOrder(_ allFavorites: [(bookmark: BookmarkEntity, index: Int?)], in context: NSManagedObjectContext) {
+        let sortedFavorites = allFavorites.sorted { ($0.index ?? Int.max) < ($1.index ?? Int.max) }.map(\.bookmark)
+
+        let favoritesFolders = BookmarkUtils.fetchFavoritesFolders(for: favoritesDisplayMode, in: context)
+        let existingFavoriteURLs = Set(favoritesFolders.flatMap { $0.favoritesArray }.compactMap { $0.urlObject?.naked })
+
+        for bookmarkManagedObject in sortedFavorites {
+            guard let url = bookmarkManagedObject.urlObject?.naked, !existingFavoriteURLs.contains(url) else { continue }
+            bookmarkManagedObject.addToFavorites(folders: favoritesFolders)
+        }
+
+        // Send pixel for success: https://app.asana.com/1/137249556945/task/1210674932129670
     }
 
     /// There is a rare issue where bookmark managed objects can end up in the database with an invalid state, that is that they are missing their title value despite being non-optional.

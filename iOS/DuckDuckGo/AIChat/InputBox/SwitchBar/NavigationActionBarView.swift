@@ -34,7 +34,7 @@ struct NavigationActionBarView: View {
     private enum Constants {
         static let barHeight: CGFloat = 76
         static let buttonSize: CGFloat = 44
-        static let horizontalPadding: CGFloat = 16
+        static let padding: CGFloat = 16
         static let buttonSpacing: CGFloat = 12
         static let cornerRadius: CGFloat = 8
 
@@ -67,8 +67,7 @@ struct NavigationActionBarView: View {
                 }
             }
         }
-        .padding(.horizontal, Constants.horizontalPadding)
-        .frame(height: Constants.barHeight)
+        .padding(Constants.padding)
         .background(
             Group {
                 if keyboardObserver.isKeyboardVisible {

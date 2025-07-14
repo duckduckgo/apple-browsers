@@ -123,6 +123,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210493210455717?focus=true
     case shortHistoryMenu
 
+    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
+    case updatedBookmarksFavoritesImport
+
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210522798790015?focus=true
     case disableFireAnimation
 
@@ -181,6 +184,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 				.aiChatSidebar,
                 .aiChatTextSummarization,
                 .shortHistoryMenu,
+                .updatedBookmarksFavoritesImport,
                 .disableFireAnimation,
                 .newTabPageOmnibar:
             return true
@@ -281,6 +285,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
+        case .updatedBookmarksFavoritesImport:
+            return .disabled
         case .disableFireAnimation:
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:

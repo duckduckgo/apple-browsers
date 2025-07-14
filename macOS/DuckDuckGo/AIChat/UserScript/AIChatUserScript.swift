@@ -88,6 +88,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.restoreChat
         case .removeChat:
             return handler.removeChat
+        case .openSummarizationSourceLink:
+            return handler.openSummarizationSourceLink
         default:
             return nil
         }

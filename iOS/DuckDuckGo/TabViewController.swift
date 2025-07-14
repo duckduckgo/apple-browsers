@@ -290,7 +290,7 @@ class TabViewController: UIViewController {
             return tabModel.link
         }
                         
-        let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url) ?? url
+        let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
         let activeLink = Link(title: title, url: finalURL)
         guard let storedLink = tabModel.link else {
             return activeLink
@@ -951,7 +951,8 @@ class TabViewController: UIViewController {
     func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
         
         // Handle DuckPlayer Navigation URL changes
-        if let currentURL = newURL ?? webView.url {
+        // Only trigger DuckPlayer if there's no navigation error
+        if lastError == nil, let currentURL = newURL ?? webView.url {
             _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL)
         }
             
@@ -1038,6 +1039,9 @@ class TabViewController: UIViewController {
     func goBack() {
         dismissJSAlertIfNeeded()
         
+        // Clear navigation error when going back
+        lastError = nil
+        
         if let url = url, url.isDuckPlayer {
             webView.stopLoading()
             if webView.canGoBack {
@@ -1075,6 +1079,9 @@ class TabViewController: UIViewController {
     
     func goForward() {
         dismissJSAlertIfNeeded()
+        
+        // Clear navigation error when going forward
+        lastError = nil
 
         if webView.goForward() != nil {
             duckPlayerNavigationHandler.handleGoForward(webView: webView)
@@ -1449,7 +1456,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
 
         if let url = webView.url {
-            let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url) ?? url
+            let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             historyCapture.webViewDidCommit(url: finalURL)
             instrumentation.willLoad(url: url)
         }

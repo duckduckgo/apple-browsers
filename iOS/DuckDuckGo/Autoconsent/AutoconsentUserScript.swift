@@ -99,6 +99,7 @@ extension AutoconsentUserScript {
         case selfTestResult
         case autoconsentDone
         case autoconsentError
+        case report
     }
 
     struct InitMessage: Codable {
@@ -153,6 +154,20 @@ extension AutoconsentUserScript {
         let url: String
         let isCosmetic: Bool
     }
+    
+    struct AutoconsentReportState: Codable {
+        let lifecycle: String
+        let detectedCmps: [String]
+        let heuristicPatterns: [String]
+        let heuristicSnippets: [String]
+        let detectedPopups: [String]
+    }
+
+    struct AutoconsentReportMessage: Codable {
+        let type: String
+        let instanceId: String
+        let state: AutoconsentReportState
+    }
 
     func decodeMessageBody<Input: Any, Target: Codable>(from message: Input) -> Target? {
         do {
@@ -196,8 +211,9 @@ extension AutoconsentUserScript {
         case MessageName.autoconsentDone:
             handleAutoconsentDone(message: message, replyHandler: replyHandler)
         case MessageName.autoconsentError:
-            Logger.autoconsent.debug("Autoconsent error: \(String(describing: message.body))")
-            replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
+            handleAutoconsentError(message: message, replyHandler: replyHandler)
+        case .report:
+            handleReport(message: message, replyHandler: replyHandler)
         }
     }
 
@@ -390,6 +406,21 @@ extension AutoconsentUserScript {
         Logger.autoconsent.debug("self-test result: \(String(describing: messageData))")
         refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: false, selftestFailed: messageData.result)
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
+    }
+
+    @MainActor
+    private func handleAutoconsentError(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        Logger.autoconsent.error("Autoconsent error: \(String(describing: message.body))")
+        replyHandler([ "type": "ok" ], nil)
+    }
+
+    @MainActor
+    private func handleReport(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        guard let report: AutoconsentReportMessage = decodeMessageBody(from: message.body) else {
+            replyHandler(nil, "cannot decode message")
+            return
+        }
+        replyHandler([ "type": "ok" ], nil)
     }
 }
 

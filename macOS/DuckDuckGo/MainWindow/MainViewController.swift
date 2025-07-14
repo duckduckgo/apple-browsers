@@ -622,11 +622,7 @@ final class MainViewController: NSViewController {
         let tabContent = tabContent ?? selectedTabViewModel.tab.content
 
         if case .newtab = tabContent {
-            if NSApp.delegateTyped.appearancePreferences.isOmnibarAvailable && NSApp.delegateTyped.appearancePreferences.isOmnibarVisible {
-                browserTabViewController.newTabPageWebViewModel.webView.makeMeFirstResponder()
-            } else {
-                navigationBarViewController.addressBarViewController?.addressBarTextField.makeMeFirstResponder()
-            }
+            navigationBarViewController.addressBarViewController?.addressBarTextField.makeMeFirstResponder()
         } else {
             // ignore published tab switch: BrowserTabViewController
             // adjusts first responder itself

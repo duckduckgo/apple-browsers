@@ -2107,8 +2107,8 @@ class MainViewController: UIViewController {
         Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters, includedParameters: [.atb])
     }
 
-    func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil) {
-        aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, on: self)
+    func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+        aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: self)
     }
 }
 
@@ -2318,8 +2318,8 @@ extension MainViewController: OmniBarDelegate {
         handleFavoriteSelected(favorite)
     }
 
-    func onOmniPromptSubmitted(_ query: String) {
-        openAIChat(query, autoSend: true)
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
+        openAIChat(query, autoSend: true, tools: tools)
     }
 
     func didRequestCurrentURL() -> URL? {

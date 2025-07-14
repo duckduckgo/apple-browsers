@@ -83,6 +83,7 @@ final class AIChatViewControllerManager {
     func openAIChat(_ query: String? = nil,
                     payload: Any? = nil,
                     autoSend: Bool = false,
+                    tools: [AIChatRAGTool]? = nil,
                     on viewController: UIViewController) {
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
 
@@ -99,10 +100,10 @@ final class AIChatViewControllerManager {
             subscriptionAIChatStateHandler.reset()
             Task {
                 await cleanUpSession()
-                setupAndPresentAIChat(query, payload: payload, autoSend: autoSend, on: viewController)
+                setupAndPresentAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: viewController)
             }
         } else {
-            setupAndPresentAIChat(query, payload: payload, autoSend: autoSend, on: viewController)
+            setupAndPresentAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: viewController)
         }
     }
 
@@ -110,9 +111,13 @@ final class AIChatViewControllerManager {
     private func setupAndPresentAIChat(_ query: String?,
                                        payload: Any?,
                                        autoSend: Bool,
+                                       tools: [AIChatRAGTool]?,
                                        on viewController: UIViewController) {
         let aiChatViewController = createAIChatViewController()
-        setupChatViewController(aiChatViewController, query: query, payload: payload, autoSend: autoSend)
+        setupChatViewController(aiChatViewController, query: query,
+                                payload: payload,
+                                autoSend: autoSend,
+                                tools: tools)
 
         let roundedPageSheet = RoundedPageSheetContainerViewController(
             contentViewController: aiChatViewController,
@@ -187,9 +192,13 @@ final class AIChatViewControllerManager {
 
     private func setupChatViewController(_ aiChatViewController: AIChatViewController,
                                          query: String?,
-                                         payload: Any?, autoSend: Bool) {
+                                         payload: Any?,
+                                         autoSend: Bool,
+                                         tools: [AIChatRAGTool]?) {
         if let query = query {
-            aiChatViewController.loadQuery(query, autoSend: autoSend)
+            aiChatViewController.loadQuery(query,
+                                           autoSend: autoSend,
+                                           tools: tools)
         }
 
         if let payload = payload as? AIChatPayload {

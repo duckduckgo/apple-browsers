@@ -30,6 +30,9 @@ struct DataImportView: ModalView {
     @State var model: DataImportViewModel
     let title: String
 
+    @State private var isInternalUser = false
+    let internalUserDecider: InternalUserDecider = Application.appDelegate.internalUserDecider
+
     init(model: DataImportViewModel = DataImportViewModel(), title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool) {
         self._model = State(initialValue: model)
         self.title = title
@@ -43,9 +46,15 @@ struct DataImportView: ModalView {
     }
     @State private var progress: ProgressState?
 
-#if DEBUG || REVIEW
     @State private var debugViewDisabled: Bool = false
+
+    private var shouldShowDebugView: Bool {
+#if DEBUG || REVIEW
+        return !debugViewDisabled
+#else
+        return (!debugViewDisabled && isInternalUser) || (!model.errors.isEmpty && isInternalUser)
 #endif
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -72,15 +81,16 @@ struct DataImportView: ModalView {
                 .padding(.bottom, 16)
                 .padding(.trailing, 20)
 
-#if DEBUG || REVIEW
-            if !debugViewDisabled {
+            if shouldShowDebugView {
                 debugView()
             }
-#endif
         }
         .font(.system(size: 13))
         .frame(width: 420)
         .fixedSize()
+        .onReceive(internalUserDecider.isInternalUserPublisher.removeDuplicates()) {
+            isInternalUser = $0
+        }
     }
 
     @ViewBuilder
@@ -326,38 +336,55 @@ struct DataImportView: ModalView {
         }
     }
 
-#if DEBUG || REVIEW
     private func debugView() -> some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 10) {
+                if model.errors.count > 0 {
+                    Text(verbatim: "ERRORS:" as String).bold()
+                        .padding(.top, 10)
+                        .padding(.leading, 20)
 
-        VStack(alignment: .leading, spacing: 10) {
-            Divider()
+                    ForEach(model.errors.indices, id: \.self) { i in
+                        ForEach(Array(model.errors[i].keys), id: \.self) { key in
+                            if let value = model.errors[i][key] {
+                                if #available(macOS 12.0, *) {
+                                    Text(verbatim: "\(key.rawValue.uppercased()): \(value)").textSelection(.enabled)
+                                } else {
+                                    Text(verbatim: "\(key.rawValue.uppercased()): \(value)")
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
 
-            HStack {
+                    Divider()
+                }
+#if DEBUG || REVIEW
                 Text("REVIEW:" as String).bold()
                     .padding(.top, 10)
                     .padding(.leading, 20)
-                Spacer()
-                if case .normal = AppVersion.runType {
-                    Button {
-                        debugViewDisabled.toggle()
-                    } label: {
-                        Image(.closeLarge)
-                    }
-                        .buttonStyle(.borderless)
+
+                ForEach(DataImport.DataType.allCases.filter(model.selectedDataTypes.contains), id: \.self) { selectedDataType in
+                    failureReasonPicker(for: selectedDataType)
+                        .padding(.leading, 20)
                         .padding(.trailing, 20)
                 }
+#endif
             }
-
-            ForEach(DataImport.DataType.allCases.filter(model.selectedDataTypes.contains), id: \.self) { selectedDataType in
-                failureReasonPicker(for: selectedDataType)
-                    .padding(.leading, 20)
-                    .padding(.trailing, 20)
+            Spacer()
+            Button {
+                debugViewDisabled.toggle()
+            } label: {
+                Image(.closeLarge)
             }
+            .buttonStyle(.borderless)
         }
-        .padding(.bottom, 10)
+        .padding(10)
         .background(Color(NSColor(red: 1, green: 0, blue: 0, alpha: 0.2)))
     }
 
+#if DEBUG || REVIEW
     private var noFailure: String { "No failure" }
     private var zeroSuccess: String { "Success (0 imported)" }
     private var allFailureReasons: [String?] {

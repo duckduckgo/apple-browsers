@@ -63,6 +63,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithRemovedDate)]
                 ),
+                showWebView: false,
                 shouldRunNextStep: { true }
             )
             XCTFail("Scan should fail when brokerProfileQueryData has no id profile query")
@@ -82,6 +83,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithRemovedDate)]
                 ),
+                showWebView: false,
                 shouldRunNextStep: { true }
             )
             XCTFail("Scan should fail when brokerProfileQueryData has no id profile query")
@@ -101,6 +103,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithoutId)]
                 ),
+                showWebView: false,
                 shouldRunNextStep: { true }
             )
             XCTFail("Scan should fail when brokerProfileQueryData has no id profile query")
@@ -120,6 +123,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithRemovedDate)]
                 ),
+                showWebView: false,
                 shouldRunNextStep: { true }
             )
             XCTAssertFalse(mockDatabase.wasDatabaseCalled)
@@ -139,6 +143,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithRemovedDate)]
                 ),
+                showWebView: false,
                 shouldRunNextStep: { true }
             )
             XCTAssertFalse(mockDatabase.wasDatabaseCalled)
@@ -158,6 +163,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
                 ),
+                showWebView: false,
                 shouldRunNextStep: { true }
             )
             XCTAssertTrue(mockDatabase.optOutEvents.contains(where: { $0.type == .optOutStarted }))
@@ -176,6 +182,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
                 ),
+                showWebView: false,
                 shouldRunNextStep: { true }
             )
             XCTAssertTrue(mockDatabase.optOutEvents.contains(where: { $0.type == .optOutRequested }))
@@ -195,6 +202,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
                 ),
+                showWebView: false,
                 shouldRunNextStep: { true }
             )
             XCTFail("Should throw!")
@@ -215,6 +223,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
                 scanJobData: .mock,
                 optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
             ),
+            showWebView: false,
             shouldRunNextStep: { true }
         )
     }

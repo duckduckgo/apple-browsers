@@ -58,6 +58,9 @@ protocol AIChatSidebarHosting: AnyObject  {
     /// Embeds the provided view controller as the sidebar content.
     /// - Parameter vc: The view controller to embed as the sidebar content.
     func embedSidebarViewController(_ vc: NSViewController)
+
+    /// The burner mode status of the current tab (private browsing mode).
+    var burnerMode: BurnerMode { get }
 }
 
 extension BrowserTabViewController: AIChatSidebarHosting {
@@ -72,6 +75,10 @@ extension BrowserTabViewController: AIChatSidebarHosting {
 
     func embedSidebarViewController(_ sidebarViewController: NSViewController) {
         addAndLayoutChild(sidebarViewController, into: sidebarContainer)
+    }
+
+    var burnerMode: BurnerMode {
+        tabViewModel?.tab.burnerMode ?? .regular
     }
 
 }

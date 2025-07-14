@@ -223,19 +223,11 @@ extension AutoconsentUserScript {
     }
 
     @MainActor
-    func handlePopupFound(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
-        Logger.autoconsent.debug("Autoconsent popup found")
-        replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
-    }
-
-    @MainActor
     func handleInit(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
-        guard let messageData: InitMessage = decodeMessageBody(from: message.body) else {
+        guard let messageData: InitMessage = decodeMessageBody(from: message.body),
+              let url = URL(string: messageData.url) else {
+            assertionFailure("Received a malformed message from autoconsent")
             replyHandler(nil, "cannot decode message")
-            return
-        }
-        guard let url = URL(string: messageData.url) else {
-            replyHandler(nil, "cannot decode init request")
             return
         }
 
@@ -326,6 +318,12 @@ extension AutoconsentUserScript {
             replyHandler(nil, "missing frame target")
         }
     }
+    
+    @MainActor
+    func handlePopupFound(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
+        Logger.autoconsent.debug("Autoconsent popup found")
+        replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
+    }
 
     @MainActor
     func handleOptOutResult(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
@@ -349,17 +347,14 @@ extension AutoconsentUserScript {
     @MainActor
     func handleAutoconsentDone(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         // report a managed popup
-        guard let messageData: AutoconsentDoneMessage = decodeMessageBody(from: message.body) else {
+        guard let messageData: AutoconsentDoneMessage = decodeMessageBody(from: message.body),
+              let url = URL(string: messageData.url),
+              let host = url.host else {
+            assertionFailure("Received a malformed message from autoconsent")
             replyHandler(nil, "cannot decode message")
             return
         }
         Logger.autoconsent.debug("opt-out successful: \(String(describing: messageData))")
-
-        guard let url = URL(string: messageData.url),
-              let host = url.host else {
-            replyHandler(nil, "cannot decode message")
-            return
-        }
 
         refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
 

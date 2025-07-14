@@ -23,7 +23,7 @@ import UIKit
 
 extension CompositeShadowView.Shadow {
     private static let defaultColor: UIColor = UIColor(designSystemColor: .shadowSecondary)
-    private static let focusColor: UIColor = UIColor(designSystemColor: .shadowTertiary)
+    private static let focusColor: UIColor = UIColor(designSystemColor: .shadowSecondary)
 
     static let defaultLayer1 = CompositeShadowView.Shadow(
         id: "ddg.shadow1",

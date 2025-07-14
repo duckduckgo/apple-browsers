@@ -59,7 +59,7 @@ final class DefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenti
 private extension DefaultBrowserModalPresenter {
 
     func presentDefaultDefaultBrowserPromptForActiveUser(from viewController: UIViewController) {
-        let rootView = DefaultBrowserPromptModalView(
+        let rootView = DefaultBrowserPromptActiveUserView(
             closeAction: { [weak viewController, weak coordinator] in
                 coordinator?.dismissAction(shouldDismissPromptPermanently: false)
                 viewController?.dismiss(animated: true)
@@ -93,7 +93,7 @@ private extension DefaultBrowserModalPresenter {
         viewController.present(hostingController, animated: true)
     }
 
-    func configurePresentationStyle(hostingController: UIHostingController<DefaultBrowserPromptModalView>, presentingController: UIViewController) {
+    func configurePresentationStyle(hostingController: UIHostingController<DefaultBrowserPromptActiveUserView>, presentingController: UIViewController) {
         guard let presentationController = hostingController.sheetPresentationController else { return }
 
         if #available(iOS 16.0, *) {

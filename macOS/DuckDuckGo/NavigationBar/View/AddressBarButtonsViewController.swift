@@ -678,6 +678,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func animateAskAIChatButtonExpansion() {
+        configureAskAIChatButton()
         let targetWidth = calculateExpandedButtonWidth()
 
         NSAnimationContext.runAnimationGroup { context in
@@ -703,6 +704,8 @@ final class AddressBarButtonsViewController: NSViewController {
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
 
             askAIChatButtonWidthConstraint.animator().constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        } completionHandler: {
+            self.askAIChatButton.title = ""
         }
     }
 

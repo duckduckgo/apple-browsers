@@ -505,9 +505,9 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
         try await tokenRecoveryHandler()
 
-        guard let currentTokenContainer = try oAuthClient.currentTokenContainer(),
+        guard let currentTokenContainer = try? oAuthClient.currentTokenContainer(),
               !currentTokenContainer.decodedRefreshToken.isExpired() else {
-            Logger.subscription.log("Recovery failed: the refresh token is still expired after the recovery attempt.")
+            Logger.subscription.log("Recovery failed: the refresh token is missing or still expired after the recovery attempt.")
             throw SubscriptionManagerError.noTokenAvailable
         }
         return currentTokenContainer

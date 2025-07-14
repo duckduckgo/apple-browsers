@@ -356,7 +356,7 @@ struct DataImportView: ModalView {
                     Divider()
                 }
 #endif
-                
+
                 if model.errors.count > 0 && isInternalUser {
                     Text(verbatim: "ERRORS:" as String).bold()
                         .padding(.top, 10)
@@ -381,7 +381,7 @@ struct DataImportView: ModalView {
             Button {
 #if DEBUG || REVIEW
                 debugViewDisabled = true
-#endif  
+#endif
                 model.errors.removeAll()
             } label: {
                 Image(.closeLarge)

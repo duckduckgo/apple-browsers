@@ -34,6 +34,15 @@ final class StyledTopBottomBorderView: UIView {
         }
     }
 
+    var isBottomVisible: Bool {
+        get {
+            !bottomEdge.isHidden
+        }
+        set {
+            bottomEdge.isHidden = !newValue
+        }
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 

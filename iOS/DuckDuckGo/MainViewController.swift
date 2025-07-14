@@ -1867,13 +1867,6 @@ class MainViewController: UIViewController {
             }
             .store(in: &vpnCancellables)
 
-        NotificationCenter.default.publisher(for: .expiredRefreshTokenDetected)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                self?.onExpiredRefreshTokenDetected(notification)
-            }
-            .store(in: &vpnCancellables)
-
         let notificationCallback: CFNotificationCallback = { _, _, name, _, _ in
             if let name {
                 NotificationCenter.default.post(name: Notification.Name(name.rawValue as String),
@@ -1952,11 +1945,6 @@ class MainViewController: UIViewController {
             tunnelDefaults.resetEntitlementMessaging()
             Logger.networkProtection.info("[NetP Subscription] Reset expired entitlement messaging")
         }
-    }
-
-    @objc
-    private func onExpiredRefreshTokenDetected(_ notification: Notification) {
-        // Not implemented : https://app.asana.com/0/1205842942115003/1209622270835329/f
     }
 
     var networkProtectionTunnelController: NetworkProtectionTunnelController {

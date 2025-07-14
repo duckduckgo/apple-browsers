@@ -49,8 +49,10 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
 
     var injectionTime: WKUserScriptInjectionTime { .atDocumentStart }
     var forMainFrameOnly: Bool { false }
+    
     weak var selfTestWebView: WKWebView?
     weak var selfTestFrameInfo: WKFrameInfo?
+    
     var topUrl: URL?
     var preferences: AutoconsentPreferences
     let management = AutoconsentManagement.shared
@@ -67,11 +69,6 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         self.config = config
         self.preferences = preferences
         self.ignoreNonHTTPURLs = ignoreNonHTTPURLs
-    }
-
-    func userContentController(_ userContentController: WKUserContentController,
-                               didReceive message: WKScriptMessage) {
-        // this is never used because macOS <11 is not supported by autoconsent
     }
 
     @MainActor

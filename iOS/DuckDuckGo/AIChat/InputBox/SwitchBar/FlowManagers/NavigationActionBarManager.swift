@@ -79,8 +79,7 @@ final class NavigationActionBarManager {
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         
         actionBarBottomConstraint = hostingController.view.bottomAnchor.constraint(
-            equalTo: safeAreaGuide.bottomAnchor,
-            constant: -16
+            equalTo: viewController.view.bottomAnchor
         )
         
         NSLayoutConstraint.activate([

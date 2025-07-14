@@ -2869,8 +2869,8 @@ extension TabViewController: ContentScopeUserScriptDelegate {
 // MARK: - AutoconsentUserScriptDelegate
 extension TabViewController: AutoconsentUserScriptDelegate {
     
-    func autoconsentUserScript(_ script: AutoconsentUserScript, didUpdateCookieConsentStatus cookieConsentStatus: PrivacyDashboard.CookieConsentInfo) {
-        privacyInfo?.cookieConsentManaged = cookieConsentStatus
+    func autoconsentUserScript(consentStatus: CookieConsentInfo) {
+        privacyInfo?.cookieConsentManaged = consentStatus
     }
 }
 

@@ -32,7 +32,7 @@ protocol AutoconsentPreferences {
 extension AppUserDefaults: AutoconsentPreferences { }
 
 protocol AutoconsentUserScriptDelegate: AnyObject {
-    func autoconsentUserScript(_ script: AutoconsentUserScript, didUpdateCookieConsentStatus cookieConsentStatus: CookieConsentInfo)
+    func autoconsentUserScript(consentStatus: CookieConsentInfo)
 }
 
 protocol UserScriptWithAutoconsent: UserScript {
@@ -76,13 +76,11 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
 
     @MainActor
     func refreshDashboardState(consentManaged: Bool, cosmetic: Bool?, optoutFailed: Bool?, selftestFailed: Bool?) {
-        let cookieConsentStatus = CookieConsentInfo(consentManaged: consentManaged,
-                                                    cosmetic: cosmetic,
-                                                    optoutFailed: optoutFailed,
-                                                    selftestFailed: selftestFailed)
-
-        Logger.autoconsent.debug("Refreshing dashboard state: \(String(describing: cookieConsentStatus))")
-        self.delegate?.autoconsentUserScript(self, didUpdateCookieConsentStatus: cookieConsentStatus)
+        let consentStatus = CookieConsentInfo(
+            consentManaged: consentManaged, cosmetic: cosmetic, optoutFailed: optoutFailed, selftestFailed: selftestFailed
+        )
+        Logger.autoconsent.debug("Refreshing dashboard state: \(String(describing: consentStatus))")
+        self.delegate?.autoconsentUserScript(consentStatus: consentStatus)
     }
 
     @MainActor

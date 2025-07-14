@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKitIcons
 import DesignResourcesKit
+import Combine
 
 // MARK: - NavigationActionBarView
 
@@ -27,6 +28,7 @@ struct NavigationActionBarView: View {
 
     // MARK: - Properties
     @ObservedObject var viewModel: NavigationActionBarViewModel
+    @StateObject private var keyboardObserver = KeyboardObserver()
 
     // MARK: - Constants
     private enum Constants {
@@ -68,14 +70,18 @@ struct NavigationActionBarView: View {
         .padding(.horizontal, Constants.horizontalPadding)
         .frame(height: Constants.barHeight)
         .background(
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(designSystemColor: .surface).opacity(0.0),
-                    Color(designSystemColor: .surface).opacity(0.8)
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            Group {
+                if keyboardObserver.isKeyboardVisible {
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(designSystemColor: .surface).opacity(0.0),
+                            Color(designSystemColor: .surface).opacity(0.8)
+                        ]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+            }
         )
     }
 
@@ -154,5 +160,32 @@ struct NavigationActionBarView: View {
             .buttonStyle(PlainButtonStyle())
             .disabled(!isEnabled)
         }
+    }
+}
+
+// MARK: - KeyboardObserver
+
+private final class KeyboardObserver: ObservableObject {
+    @Published private(set) var isKeyboardVisible = false
+    private var cancellables = Set<AnyCancellable>()
+    
+    init() {
+        observeKeyboard()
+    }
+    
+    private func observeKeyboard() {
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.isKeyboardVisible = true
+            }
+            .store(in: &cancellables)
+        
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.isKeyboardVisible = false
+            }
+            .store(in: &cancellables)
     }
 }

@@ -85,15 +85,14 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
             window?.contentView = self.webView
             window?.makeKeyAndOrderFront(nil)
 #elseif os(iOS)
-            // Clean up any existing PIR Debug Mode window before creating a new one
             cleanupExistingPIRDebugWindow()
 
-            window = UIWindow(frame: UIScreen.main.bounds)
             let viewController = UIViewController.init()
             viewController.view = webView
             let navigationController = UINavigationController(rootViewController: viewController)
             viewController.title = "PIR Debug Mode"
 
+            window = UIWindow(frame: UIScreen.main.bounds)
             window?.rootViewController = navigationController
             window?.windowLevel = UIWindow.Level.alert
 #endif
@@ -244,7 +243,6 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
     }
 
 #if os(iOS)
-    /// Clean up any existing PIR Debug Mode window to prevent multiple windows
     private func cleanupExistingPIRDebugWindow() {
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
             return

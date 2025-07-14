@@ -61,6 +61,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                   featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
                                   pixelKit: PixelKit,
+                                  subscriptionManager: DataBrokerProtectionSubscriptionManager,
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
@@ -144,7 +145,10 @@ public class DataBrokerProtectionIOSManagerProvider {
             iOSPixelsHandler: iOSPixelsHandler,
             privacyConfigManager: privacyConfigurationManager,
             database: database,
-            quickLinkOpenURLHandler: quickLinkOpenURLHandler
+            quickLinkOpenURLHandler: quickLinkOpenURLHandler,
+            featureFlagger: featureFlagger,
+            settings: dbpSettings,
+            subscriptionManager: subscriptionManager
         )
     }
 }
@@ -162,6 +166,25 @@ public final class DataBrokerProtectionIOSManager {
     private let iOSPixelsHandler: EventMapping<IOSPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let quickLinkOpenURLHandler: (URL) -> Void
+    private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
+    private let settings: DataBrokerProtectionSettings
+    private let subscriptionManager: DataBrokerProtectionSubscriptionManager
+    private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: DatabaseConstants.directoryName,
+            fileName: DatabaseConstants.fileName,
+            appGroupIdentifier: nil
+        )
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
+        guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
+            return nil
+        }
+        return RemoteBrokerJSONService(featureFlagger: featureFlagger,
+                                       settings: settings,
+                                       vault: vault,
+                                       authenticationManager: authenticationManager,
+                                       localBrokerProvider: nil)
+    }()
 
     init(queueManager: BrokerProfileJobQueueManager,
          jobDependencies: BrokerProfileJobDependencies,
@@ -170,7 +193,10 @@ public final class DataBrokerProtectionIOSManager {
          iOSPixelsHandler: EventMapping<IOSPixels>,
          privacyConfigManager: PrivacyConfigurationManaging,
          database: DataBrokerProtectionRepository,
-         quickLinkOpenURLHandler: @escaping (URL) -> Void
+         quickLinkOpenURLHandler: @escaping (URL) -> Void,
+         featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+         settings: DataBrokerProtectionSettings,
+         subscriptionManager: DataBrokerProtectionSubscriptionManager
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -180,6 +206,9 @@ public final class DataBrokerProtectionIOSManager {
         self.privacyConfigManager = privacyConfigManager
         self.database = database
         self.quickLinkOpenURLHandler = quickLinkOpenURLHandler
+        self.featureFlagger = featureFlagger
+        self.settings = settings
+        self.subscriptionManager = subscriptionManager
 
         registerBackgroundTaskHandler()
     }
@@ -253,6 +282,10 @@ public final class DataBrokerProtectionIOSManager {
     /// Used by the iOS PIR debug menu to reset tester data.
     public func deleteAllData() throws {
         try database.deleteProfileData()
+    }
+
+    public func refreshRemoteBrokerJSON() async throws {
+        try await brokerUpdater?.checkForUpdates(skipsLimiter: true)
     }
 
     /// Used by the iOS PIR debug menu to trigger scheduled jobs.

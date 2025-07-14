@@ -159,34 +159,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
 
-    private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
-        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
-            directoryName: DatabaseConstants.directoryName,
-            fileName: DatabaseConstants.fileName,
-            appGroupIdentifier: nil
-        )
-
-        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
-        guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
-            return nil
-        }
-
-        let appDependencies = AppDependencyProvider.shared
-        let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(
-            subscriptionManager: appDependencies.subscriptionAuthV1toV2Bridge,
-            runTypeProvider: appDependencies.dbpSettings,
-            isAuthV2Enabled: appDependencies.isUsingAuthV2
-        )
-
-        let authenticationManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
-        let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
-
-        return RemoteBrokerJSONService(featureFlagger: featureFlagger,
-                                       settings: self.settings,
-                                       vault: vault,
-                                       authenticationManager: authenticationManager,
-                                       localBrokerProvider: nil)
-    }()
 
     @MainActor private var healthOverview: HealthOverviewRows = .loading {
         didSet {
@@ -566,13 +538,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             self.navigationController?.pushViewController(debugModeViewController, animated: true)
         case .forceBrokerJSONRefresh:
             Task { @MainActor in
-                if let brokerUpdater {
-                    try await brokerUpdater.checkForUpdates(skipsLimiter: true)
-
-                    tableView.reloadData()
-                } else {
-                    assertionFailure("Failed to create broker updater")
-                }
+                try await manager.refreshRemoteBrokerJSON()
+                tableView.reloadData()
             }
         case .runPendingScans:
             runPendingJobs(type: .scheduledScan)
@@ -863,7 +830,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             settings.resetBrokerDeliveryData()
 
             do {
-                try await brokerUpdater?.checkForUpdates(skipsLimiter: true)
+                try await manager.refreshRemoteBrokerJSON()
                 Logger.dataBrokerProtection.log("Successfully checked for broker updates")
             } catch {
                 Logger.dataBrokerProtection.error("Failed to check for broker updates: \(error.localizedDescription)")

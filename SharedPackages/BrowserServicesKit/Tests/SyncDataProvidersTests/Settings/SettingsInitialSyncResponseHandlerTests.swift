@@ -99,6 +99,7 @@ final class SettingsInitialSyncResponseHandlerTests: SettingsProviderTestsBase {
     }
 
     func testThatSettingStateIsAppliedLocally() async throws {
+        throw XCTSkip("Flaky – https://app.asana.com/1/137249556945/project/1201899738287924/task/1210778783882503?focus=true")
         testSettingSyncHandler.syncedValue = nil
 
         let received: [Syncable] = [

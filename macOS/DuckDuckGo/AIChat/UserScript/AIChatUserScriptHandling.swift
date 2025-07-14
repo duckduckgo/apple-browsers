@@ -17,20 +17,22 @@
 //
 
 import AIChat
+import AppKit
 import Combine
 import Foundation
 import UserScript
 
 protocol AIChatUserScriptHandling {
-    func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
-    func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func recordChat(params: Any, message: UserScriptMessage) -> Encodable?
     func restoreChat(params: Any, message: UserScriptMessage) -> Encodable?
     func removeChat(params: Any, message: UserScriptMessage) -> Encodable?
+    @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
@@ -43,21 +45,30 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let storage: AIChatPreferencesStorage
+    private let windowControllersManager: WindowControllersManagerProtocol
+    private let notificationCenter: NotificationCenter
 
-    init(storage: AIChatPreferencesStorage,
-         messageHandling: AIChatMessageHandling = AIChatMessageHandler()) {
+    init(
+        storage: AIChatPreferencesStorage,
+        messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
+        windowControllersManager: WindowControllersManagerProtocol,
+        notificationCenter: NotificationCenter = .default
+    ) {
         self.storage = storage
         self.messageHandling = messageHandling
+        self.windowControllersManager = windowControllersManager
+        self.notificationCenter = notificationCenter
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
     }
 
     enum AIChatKeys {
         static let aiChatPayload = "aiChatPayload"
         static let serializedChatData = "serializedChatData"
+        static let url = "url"
     }
 
     @MainActor public func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable? {
-        Application.appDelegate.windowControllersManager.showTab(with: .settings(pane: .aiChat))
+        windowControllersManager.showTab(with: .settings(pane: .aiChat))
         return nil
     }
 
@@ -66,7 +77,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
-        await Application.appDelegate.windowControllersManager.mainWindowController?.mainViewController.closeTab(nil)
+        await windowControllersManager.mainWindowController?.mainViewController.closeTab(nil)
         return nil
     }
 
@@ -81,9 +92,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
             payload = paramsDict[AIChatKeys.aiChatPayload] as? AIChatPayload
         }
 
-        NotificationCenter.default.post(name: .aiChatNativeHandoffData,
-                                        object: payload,
-                                        userInfo: nil)
+        notificationCenter.post(name: .aiChatNativeHandoffData, object: payload, userInfo: nil)
         return nil
     }
 
@@ -109,6 +118,16 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     public func removeChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
         messageHandling.setData(nil, forMessageType: .chatRestorationData)
+        return nil
+    }
+
+    @MainActor func openSummarizationSourceLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        guard let params = params as? [String: String],
+              let urlString = params[AIChatKeys.url],
+              let url = urlString.url
+        else { return nil }
+
+        windowControllersManager.open(url, source: .link, target: nil, event: NSApp.currentEvent)
         return nil
     }
 

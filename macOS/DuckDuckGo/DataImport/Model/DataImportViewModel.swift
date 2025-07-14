@@ -132,7 +132,7 @@ struct DataImportViewModel {
     /// collected import summary for current import operation per selected import source
     private(set) var summary: [DataTypeImportResult]
 
-    private(set) var errors: [[DataType: any DataImportError]] = []
+    var errors: [[DataType: any DataImportError]] = []
 
     private var userReportText: String = ""
 

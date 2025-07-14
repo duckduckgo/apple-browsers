@@ -64,6 +64,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                        appearancePreferences: appearancePreferences,
                                        startupPreferences: startupPreferences,
+                                       windowControllersManager: WindowControllersManagerMock(),
                                        bookmarkManager: MockBookmarkManager(),
                                        historyCoordinator: CapturingHistoryDataSource(),
                                        fireproofDomains: MockFireproofDomains(domains: []),

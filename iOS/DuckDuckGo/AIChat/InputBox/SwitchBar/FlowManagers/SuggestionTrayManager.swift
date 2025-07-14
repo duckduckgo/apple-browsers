@@ -57,7 +57,7 @@ final class SuggestionTrayManager: NSObject {
     
     private var suggestionTrayViewController: SuggestionTrayViewController?
 
-    var isShowingSuggestions: Bool {
+    var isShowingSuggestionTray: Bool {
         suggestionTrayViewController?.view.isHidden == false
     }
 
@@ -92,7 +92,9 @@ final class SuggestionTrayManager: NSObject {
             assertionFailure("Failed to instantiate SuggestionTrayViewController")
             return
         }
-        
+
+        controller.coversFullScreen = true
+        controller.additionalFavoritesOverlayInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: 6)
         parentViewController.addChild(controller)
         containerView.addSubview(controller.view)
         suggestionTrayViewController = controller
@@ -105,9 +107,13 @@ final class SuggestionTrayManager: NSObject {
             controller.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             controller.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             controller.view.topAnchor.constraint(equalTo: containerView.topAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+            controller.view.bottomAnchor.constraint(equalTo: containerView.keyboardLayoutGuide.topAnchor)
         ])
-        
+
+        if #available(iOS 17.0, *) {
+            containerView.keyboardLayoutGuide.usesBottomSafeArea = false
+        }
+
         controller.autocompleteDelegate = self
         controller.favoritesOverlayDelegate = self
         controller.didMove(toParent: parentViewController)
@@ -163,10 +169,10 @@ final class SuggestionTrayManager: NSObject {
         guard let suggestionTray = suggestionTrayViewController else { return }
         
         let canShowSuggestion = suggestionTray.canShow(for: type)
-        
+
         if canShowSuggestion {
             suggestionTray.fill()
-            suggestionTray.show(for: type)
+            suggestionTray.show(for: type, animated: false)
             suggestionTray.view.isHidden = false
         } else {
             suggestionTray.view.isHidden = true

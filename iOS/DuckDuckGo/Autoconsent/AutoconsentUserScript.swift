@@ -24,7 +24,6 @@ import BrowserServicesKit
 import UserScript
 import PrivacyDashboard
 import os.log
-import PixelKit
 
 protocol AutoconsentPreferences {
     var autoconsentEnabled: Bool { get set }
@@ -57,7 +56,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     var topUrl: URL?
     var preferences: AutoconsentPreferences
     let management = AutoconsentManagement.shared
-
+    
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
     let source: String
     private let config: PrivacyConfiguration
@@ -70,8 +69,9 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         self.config = config
         self.preferences = preferences
         self.ignoreNonHTTPURLs = ignoreNonHTTPURLs
+        super.init()
     }
-
+    
     @MainActor
     func refreshDashboardState(consentManaged: Bool, cosmetic: Bool?, optoutFailed: Bool?, selftestFailed: Bool?) {
         let consentStatus = CookieConsentInfo(
@@ -452,20 +452,8 @@ extension AutoconsentUserScript {
     }
     
     func firePixel(pixel: AutoconsentPixel) {
-        if management.pixelCounter.isEmpty {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
-                PixelKit.fire(AutoconsentPixel.summary(events: self.management.pixelCounter), frequency: .standard)
-                self.management.pixelCounter = [:]
-                self.management.detectedByPatternsCache.removeAll()
-                self.management.detectedByBothCache.removeAll()
-                self.management.detectedOnlyRulesCache.removeAll()
-            }
-        }
-        // increment counter
-        management.pixelCounter[pixel.key, default: 0] += 1
-
-        // fire daily pixel if needed
-        PixelKit.fire(pixel, frequency: .daily)
+        // Delegate to the shared management instance to handle pixel firing and task scheduling
+        management.firePixel(pixel: pixel)
     }
 }
 

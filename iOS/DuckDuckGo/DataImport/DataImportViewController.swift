@@ -126,14 +126,13 @@ final class DataImportViewController: UIViewController {
 
     private func presentSummary(for summary: DataImportSummary) {
         summaryPresented = true
+        AutofillLoginImportState(keyValueStore: keyValueStore).hasImportedLogins = true
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
 
             self.navigationController?.present(DataImportSummaryViewController(summary: summary, importScreen: importScreen, syncService: syncService), animated: true) { [weak self] in
                 guard let self = self else { return }
-
-                AutofillLoginImportState(keyValueStore: keyValueStore).hasImportedLogins = true
 
                 if featureFlagger.isFeatureOn(.showSettingsCompleteSetupSection) {
                     try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)

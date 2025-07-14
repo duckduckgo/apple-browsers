@@ -150,9 +150,8 @@ final class AutofillLoginListViewController: UIViewController {
     private lazy var headerViewFactory: AutofillHeaderViewFactoryProtocol = AutofillHeaderViewFactory(delegate: self)
     private var currentHeaderHostingController: UIViewController?
 
-    // This is used to prevent the next Promo from being displayed immediately after one has been dismissed
+    // This is used to prevent the Sync Promo from being displayed immediately after the Survey is dismissed
     private var surveyPromptPresented: Bool = false
-    private var importPromoPresented: Bool = false
 
     private lazy var lockedViewBottomConstraint: NSLayoutConstraint = {
         NSLayoutConstraint(item: tableView,
@@ -695,12 +694,11 @@ final class AutofillLoginListViewController: UIViewController {
         if viewModel.shouldShowImportPasswordsPromo() {
             if shouldUpdateHeaderView(for: .importPromo) {
                 configureTableHeaderView(for: .importPromo)
-                importPromoPresented = true
             }
             return
         }
 
-        if let survey = viewModel.getSurveyToPresent(), !importPromoPresented {
+        if let survey = viewModel.getSurveyToPresent() {
             if shouldUpdateHeaderView(for: .survey(survey)) {
                 configureTableHeaderView(for: .survey(survey))
                 surveyPromptPresented = true
@@ -708,7 +706,7 @@ final class AutofillLoginListViewController: UIViewController {
             return
         }
 
-        if viewModel.shouldShowSyncPromo() && !surveyPromptPresented && !importPromoPresented {
+        if viewModel.shouldShowSyncPromo() && !surveyPromptPresented {
             if shouldUpdateHeaderView(for: .syncPromo(.passwords)) {
                 configureTableHeaderView(for: .syncPromo(.passwords))
             }
@@ -1148,7 +1146,6 @@ extension AutofillLoginListViewController: DataImportViewControllerDelegate {
 
     func dataImportViewControllerDidFinish(_ viewController: DataImportViewController) {
         clearTableHeaderView()
-        importPromoPresented = false
         viewModel.updateData()
     }
 }

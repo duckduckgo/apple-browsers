@@ -23,6 +23,7 @@ import PixelKit
 /// > Related links:
 /// [Original Pixel Triage](https://app.asana.com/0/69071770703008/1208619053222285/f)
 /// [Omnibar and Settings Pixel Triage](https://app.asana.com/0/1204167627774280/1209885580000745)
+/// [Sidebar Pixel Triage](https://app.asana.com/1/137249556945/project/1209671977594486/task/1210676151750614)
 /// [Summarization Pixel Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210636012460969?focus=true)
 
 enum AIChatPixel: PixelKitEventV2 {
@@ -58,7 +59,22 @@ enum AIChatPixel: PixelKitEventV2 {
     case aiChatSettingsDisplayed
 
     /// Event Trigger: User clicks in the Omnibar duck.ai button
-    case aiChatAddressBarButtonClicked
+    case aiChatAddressBarButtonClicked(action: AIChatAddressBarAction)
+
+    // MARK: - Sidebar
+
+    /// Event Trigger: User opens a tab sidebar
+    case aiChatSidebarOpened(source: AIChatSidebarOpenSource)
+
+    /// Event Trigger: User closes a tab sidebar
+    case aiChatSidebarClosed(source: AIChatSidebarCloseSource)
+
+    /// Event Trigger: User expands the sidebar to a full-size tab
+    case aiChatSidebarExpanded
+
+    /// Event Trigger: User changes sidebar setting in AI Features settings
+    /// This is a unique pixel (sent once per app installation)
+    case aiChatSidebarSettingChanged
 
     // MARK: - Summarization
 
@@ -93,6 +109,14 @@ enum AIChatPixel: PixelKitEventV2 {
             return "aichat_settings_displayed"
         case .aiChatAddressBarButtonClicked:
             return "aichat_addressbar_button_clicked"
+        case .aiChatSidebarOpened:
+            return "aichat_sidebar_opened"
+        case .aiChatSidebarClosed:
+            return "aichat_sidebar_closed"
+        case .aiChatSidebarExpanded:
+            return "aichat_sidebar_expanded"
+        case .aiChatSidebarSettingChanged:
+            return "aichat_sidebar_setting_changed_u"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
         case .aiChatSummarizePromptExpanded:
@@ -112,10 +136,17 @@ enum AIChatPixel: PixelKitEventV2 {
                 .aiChatSettingsApplicationMenuShortcutTurnedOff,
                 .aiChatSettingsApplicationMenuShortcutTurnedOn,
                 .aiChatSettingsDisplayed,
-                .aiChatAddressBarButtonClicked,
+                .aiChatSidebarExpanded,
+                .aiChatSidebarSettingChanged,
                 .aiChatSummarizePromptExpanded,
                 .aiChatSummarizeSourceLinkClicked:
             return nil
+        case .aiChatAddressBarButtonClicked(let action):
+            return ["action": action.rawValue]
+        case .aiChatSidebarOpened(let source):
+            return ["source": source.rawValue]
+        case .aiChatSidebarClosed(let source):
+            return ["source": source.rawValue]
         case .aiChatSummarizeText(let source):
             return ["source": source.rawValue]
         }
@@ -124,4 +155,28 @@ enum AIChatPixel: PixelKitEventV2 {
     var error: (any Error)? {
         nil
     }
+}
+
+// MARK: - Parameter values
+
+/// Action performed when address bar button is clicked
+enum AIChatAddressBarAction: String, CaseIterable {
+    case sidebar = "sidebar"
+    case tab = "tab"
+    case tabWithPrompt = "tab-with-prompt"
+}
+
+/// Source of AI Chat sidebar open action
+enum AIChatSidebarOpenSource: String, CaseIterable {
+    case addressBarButton = "address-bar-button"
+    case summarization = "summarization"
+    case serp = "serp"
+    case contextMenu = "context-menu"
+}
+
+/// Source of AI Chat sidebar close action
+enum AIChatSidebarCloseSource: String, CaseIterable {
+    case addressBarButton = "address-bar-button"
+    case sidebarCloseButton = "sidebar-close-button"
+    case contextMenu = "context-menu"
 }

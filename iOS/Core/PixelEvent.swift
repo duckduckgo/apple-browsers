@@ -691,8 +691,8 @@ extension Pixel {
         case remoteMessageSheet
         
         // MARK: debug pixels
-        case dbCrashDetected
-        case dbCrashDetectedDaily
+        case dbCrashDetected(appIdentifier: String?)
+        case dbCrashDetectedDaily(appIdentifier: String?)
         case crashOnCrashHandlersSetUp
 
         case crashReportCRCIDMissing
@@ -1891,8 +1891,18 @@ extension Pixel.Event {
 
             // MARK: debug pixels
 
-        case .dbCrashDetected: return "m_d_crash"
-        case .dbCrashDetectedDaily: return "m_d_crash_daily"
+        case .dbCrashDetected(let appIdentifier):
+            if let appIdentifier {
+                return "m_d_crash_\(appIdentifier)"
+            } else {
+                return "m_d_crash"
+            }
+        case .dbCrashDetectedDaily(let appIdentifier):
+            if let appIdentifier {
+                return "m_d_crash_\(appIdentifier)_daily"
+            } else {
+                return "m_d_crash_daily"
+            }
         case .crashReportCRCIDMissing: return "m_crashreporting_crcid-missing"
         case .crashReportingSubmissionFailed: return "m_crashreporting_submission-failed"
         case .crashOnCrashHandlersSetUp: return "m_d_crash_on_handlers_setup"

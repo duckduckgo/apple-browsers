@@ -294,11 +294,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
         case .importChromeShortcuts:
-            return .disabled
+            return .internalOnly()
         case .updateSafariBookmarksImport:
-            return .disabled
+            return .internalOnly()
         case .updateFirefoxBookmarksImport:
-            return .disabled
+            return .internalOnly()
         case .disableFireAnimation:
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:

@@ -202,10 +202,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         super.viewWillAppear(animated)
         loadHealthOverview()
         loadJobCounts()
-        
-        // Check if jobs are running in the background and sync state
+
+        // Check the manager state when entering the debug screen, since PIR could already be running
         if manager.isRunningJobs && jobExecutionState == .idle {
-            // Jobs are running but our UI shows idle - likely returned to view during background operation
             jobExecutionState = .running
         }
         
@@ -260,8 +259,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     }
     
     private func startJobCountRefreshTimer() {
-        stopJobCountRefreshTimer() // Ensure no duplicate timers
-        
+        stopJobCountRefreshTimer()
         jobCountRefreshTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.loadJobCounts()
             self?.updateWebViewButtonIfNeeded()
@@ -556,18 +554,12 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             return
         }
         
-        Task {
-            await MainActor.run {
-                self.jobExecutionState = .running
-            }
+        Task { @MainActor in
+            self.jobExecutionState = .running
 
             do {
-                // Validate prerequisites first
-                let canRun = await manager.validateRunPrerequisites()
-                guard canRun else {
-                    await MainActor.run {
-                        self.jobExecutionState = .failed(error: "PIR prerequisites not met")
-                    }
+                guard await manager.validateRunPrerequisites() else {
+                    self.jobExecutionState = .failed(error: "PIR prerequisites not met")
                     return
                 }
                 
@@ -586,40 +578,26 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 }
                 
                 guard jobCount > 0 else {
-                    await MainActor.run {
-                        self.jobExecutionState = .idle
-                    }
+                    self.jobExecutionState = .idle
                     return
                 }
 
-                // Execute jobs using production queue manager
                 try await runJobsUsingProductionQueue(type: type)
-                
-                // Refresh job counts and reset to idle
-                let finalCounts = await calculatePendingJobCounts()
-                await MainActor.run {
-                    self.jobCounts = finalCounts
-                    self.jobExecutionState = .idle
-                }
+                self.jobCounts = await calculatePendingJobCounts()
+                self.jobExecutionState = .idle
 
             } catch {
-                await MainActor.run {
-                    // Handle different types of errors
-                    let errorMessage: String
-                    if error is CancellationError {
-                        errorMessage = "Operation was cancelled"
-                    } else {
-                        errorMessage = error.localizedDescription
-                    }
-                    
-                    self.jobExecutionState = .failed(error: errorMessage)
+                let errorMessage: String
+                if error is CancellationError {
+                    errorMessage = "Operation was cancelled"
+                } else {
+                    errorMessage = error.localizedDescription
                 }
-                
-                // Auto-reset to idle after showing error briefly
+
+                self.jobExecutionState = .failed(error: errorMessage)
+
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
-                await MainActor.run {
-                    self.jobExecutionState = .idle
-                }
+                self.jobExecutionState = .idle
             }
         }
     }

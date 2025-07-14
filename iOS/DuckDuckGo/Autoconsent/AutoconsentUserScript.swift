@@ -79,6 +79,11 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         Logger.autoconsent.debug("Refreshing dashboard state: \(String(describing: consentStatus))")
         self.delegate?.autoconsentUserScript(consentStatus: consentStatus)
     }
+    
+    func userContentController(_ userContentController: WKUserContentController,
+                               didReceive message: WKScriptMessage) {
+        // this is never used because macOS <11 is not supported by autoconsent
+    }
 
     @MainActor
     func userContentController(_ userContentController: WKUserContentController,

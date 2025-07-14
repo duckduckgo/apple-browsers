@@ -52,6 +52,7 @@ struct Launching: LaunchingHandling {
     private let configuration = AppConfiguration()
     private let services: AppServices
     private let mainCoordinator: MainCoordinator
+    private let launchTaskManager = LaunchTaskManager()
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
@@ -122,8 +123,6 @@ struct Launching: LaunchingHandling {
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
 
-        let mainController = mainCoordinator.controller
-
         syncService.presenter = mainCoordinator.controller
         let vpnService = VPNService(mainCoordinator: mainCoordinator)
         let overlayWindowManager = OverlayWindowManager(window: window,
@@ -159,12 +158,17 @@ struct Launching: LaunchingHandling {
                                defaultBrowserPromptService: defaultBrowserPromptService
         )
 
+        // MARK: - Register background tasks that run after app is ready
+        // Use this to avoid delaying app startup
+        launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
+                                                                   mainViewController: mainCoordinator.controller))
+
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
 
         configuration.finalize(with: reportingService,
-                               autoClearService: autoClearService,
                                mainViewController: mainCoordinator.controller)
+
         setupWindow()
         logAppLaunchTime()
 
@@ -194,7 +198,8 @@ struct Launching: LaunchingHandling {
     private var appDependencies: AppDependencies {
         .init(
             mainCoordinator: mainCoordinator,
-            services: services
+            services: services,
+            launchTaskManager: launchTaskManager
         )
     }
     

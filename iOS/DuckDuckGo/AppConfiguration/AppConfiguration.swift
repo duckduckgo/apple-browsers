@@ -78,9 +78,7 @@ struct AppConfiguration {
     }
 
     func finalize(with reportingService: ReportingService,
-                  autoClearService: AutoClearService,
                   mainViewController: MainViewController) {
-        removeLeftoverStatesIfNeeded(autoClearService: autoClearService, mainViewController: mainViewController)
         atbAndVariantConfiguration.cleanUpATBAndAssignVariant {
             onVariantAssigned(reportingService: reportingService)
         }
@@ -91,12 +89,6 @@ struct AppConfiguration {
 
     private func configureUserBrowsingUserAgent() {
         _ = DefaultUserAgentManager.shared
-    }
-
-    private func removeLeftoverStatesIfNeeded(autoClearService: AutoClearService, mainViewController: MainViewController) {
-        if !autoClearService.isClearingEnabled {
-            mainViewController.tabManager.removeLeftoverInteractionStates()
-        }
     }
 
     private func startAutomationServerIfNeeded(mainViewController: MainViewController) {

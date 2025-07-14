@@ -84,7 +84,7 @@ final class TabInteractionStateDiskSourceTests: XCTestCase {
             sut.saveState(state, for: tab)
         }
 
-        sut.removeAll(excluding: [])
+        sut.removeAll(excluding: [], isCancelled: nil)
 
         XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: testDirectory()).isEmpty)
     }
@@ -103,7 +103,7 @@ final class TabInteractionStateDiskSourceTests: XCTestCase {
             }
         }
 
-        sut.removeAll(excluding: excludedTabs)
+        sut.removeAll(excluding: excludedTabs, isCancelled: nil)
 
         let directoryContents = try FileManager.default.contentsOfDirectory(atPath: testDirectory())
 

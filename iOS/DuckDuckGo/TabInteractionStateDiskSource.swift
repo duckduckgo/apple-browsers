@@ -25,7 +25,7 @@ protocol TabInteractionStateSource {
     func saveState(_ state: Any?, for tab: Tab)
     func popLastStateForTab(_ tab: Tab) -> Data?
     func removeStateForTab(_ tab: Tab)
-    func removeAll(excluding excludedTabs: [Tab])
+    func removeAll(excluding excludedTabs: [Tab], isCancelled: (() -> Bool)?)
 }
 
 protocol TabInteractionStateSourceDebugging {
@@ -113,13 +113,16 @@ final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInterac
         try? fileManager.removeItem(at: tabCacheLocation)
     }
 
-    func removeAll(excluding excludedTabs: [Tab]) {
+    func removeAll(excluding excludedTabs: [Tab], isCancelled: (() -> Bool)? = nil) {
         guard let allCacheFiles = try? allCacheFiles() else {
             return
         }
 
         // Remove non-excluded tabs caches
         for item in allCacheFiles {
+            if isCancelled?() == true {
+                break
+            }
             let isExcluded = excludedTabs.contains { item.lastPathComponent == $0.uid }
             if !isExcluded {
                 try? fileManager.removeItem(at: item)

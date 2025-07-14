@@ -1,5 +1,5 @@
 //
-//  MockTabInteractionStateSource.swift
+//  CleanInteractionStateTask.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,12 +17,18 @@
 //  limitations under the License.
 //
 
-import Foundation
-@testable import DuckDuckGo
+struct ClearInteractionStateTask: LaunchTask {
 
-final class MockTabInteractionStateSource: TabInteractionStateSource {
-    func saveState(_ state: Any?, for tab: Tab) { }
-    func popLastStateForTab(_ tab: Tab) -> Data? { return nil }
-    func removeStateForTab(_ tab: Tab) { }
-    func removeAll(excluding excludedTabs: [Tab], isCancelled: (() -> Bool)?) { }
+    let autoClearService: AutoClearService
+    let mainViewController: MainViewController
+
+    func run(context: LaunchTaskContext) {
+        guard !autoClearService.isClearingEnabled else {
+            context.finish()
+            return
+        }
+        mainViewController.tabManager.removeLeftoverInteractionStates(isCancelled: context.isCancelled)
+        context.finish()
+    }
+
 }

@@ -1541,6 +1541,9 @@
 		CBD4F13E279EBFAB00B20FD7 /* HomeMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF14FC227970072001D94D0 /* HomeMessageView.swift */; };
 		CBD4F13F279EBFAF00B20FD7 /* HomeMessageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF14FC427970AB0001D94D0 /* HomeMessageViewModel.swift */; };
 		CBD4F140279EBFB300B20FD7 /* SwiftUICollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1AEFB02799AA940031AE3D /* SwiftUICollectionViewCell.swift */; };
+		CBD72E672E25254500DB0938 /* LaunchTaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD72E662E25253E00DB0938 /* LaunchTaskManager.swift */; };
+		CBD72E692E25262A00DB0938 /* LaunchTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD72E682E25262A00DB0938 /* LaunchTask.swift */; };
+		CBD72E6E2E2528EB00DB0938 /* ClearInteractionStateTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD72E6D2E2528E400DB0938 /* ClearInteractionStateTask.swift */; };
 		CBD79F4D2D130F6500DBB45A /* Simulated.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD79F4C2D130F6300DBB45A /* Simulated.swift */; };
 		CBDD5DDF29A6736A00832877 /* APIHeadersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBDD5DDE29A6736A00832877 /* APIHeadersTests.swift */; };
 		CBDEDA162D8079E500123E00 /* RoundedCornersMaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBDEDA152D8079E500123E00 /* RoundedCornersMaskView.swift */; };
@@ -3748,6 +3751,9 @@
 		CBC88EE42C8097B500F0F8C5 /* URLCredentialCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLCredentialCreator.swift; sourceTree = "<group>"; };
 		CBC8DC252AF6D4CD00BA681A /* da */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = da; path = da.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBD4F13B279EBF4A00B20FD7 /* HomeMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeMessage.swift; sourceTree = "<group>"; };
+		CBD72E662E25253E00DB0938 /* LaunchTaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchTaskManager.swift; sourceTree = "<group>"; };
+		CBD72E682E25262A00DB0938 /* LaunchTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchTask.swift; sourceTree = "<group>"; };
+		CBD72E6D2E2528E400DB0938 /* ClearInteractionStateTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearInteractionStateTask.swift; sourceTree = "<group>"; };
 		CBD79F4C2D130F6300DBB45A /* Simulated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Simulated.swift; sourceTree = "<group>"; };
 		CBD7AE812AF6D5B6009052FD /* sv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sv; path = sv.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBDD5DDE29A6736A00832877 /* APIHeadersTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = APIHeadersTests.swift; sourceTree = "<group>"; };
@@ -7525,6 +7531,16 @@
 			path = AppServices;
 			sourceTree = "<group>";
 		};
+		CBD72E6A2E2526C900DB0938 /* LaunchTask */ = {
+			isa = PBXGroup;
+			children = (
+				CBD72E662E25253E00DB0938 /* LaunchTaskManager.swift */,
+				CBD72E682E25262A00DB0938 /* LaunchTask.swift */,
+				CBD72E6D2E2528E400DB0938 /* ClearInteractionStateTask.swift */,
+			);
+			path = LaunchTask;
+			sourceTree = "<group>";
+		};
 		CBF2598C2D47B19800AC63E4 /* AppConfiguration */ = {
 			isa = PBXGroup;
 			children = (
@@ -8419,6 +8435,7 @@
 		F1C5ECF31E37812900C599A4 /* Application */ = {
 			isa = PBXGroup;
 			children = (
+				CBD72E6A2E2526C900DB0938 /* LaunchTask */,
 				CB05BCD52D676AFF0034ABA6 /* UICoordination */,
 				CBAD0F042CFE1DA2006267B8 /* AppLifecycle */,
 				CBF2598C2D47B19800AC63E4 /* AppConfiguration */,
@@ -9848,6 +9865,7 @@
 				F13B4BD31F1822C700814661 /* Tab.swift in Sources */,
 				BDFF031D2BA3D2BD00F324C9 /* DefaultNetworkProtectionVisibility.swift in Sources */,
 				F1BE54581E69DE1000FCF649 /* TutorialSettings.swift in Sources */,
+				CBD72E692E25262A00DB0938 /* LaunchTask.swift in Sources */,
 				1EE52ABB28FB1D6300B750C1 /* UIImageExtension.swift in Sources */,
 				F1849C722D6E3D4C000589A4 /* CrashDebugScreen.swift in Sources */,
 				858650D12469BCDE00C36F8A /* DaxDialogs.swift in Sources */,
@@ -10220,6 +10238,7 @@
 				CBD79F4D2D130F6500DBB45A /* Simulated.swift in Sources */,
 				6F922EDF2D8C5AFA0062DFC1 /* UpdatedOmniBarSearchView.swift in Sources */,
 				37A6A8FE2AFD0208008580A3 /* FaviconsFetcherOnboarding.swift in Sources */,
+				CBD72E672E25254500DB0938 /* LaunchTaskManager.swift in Sources */,
 				F1CA3C3B1F045B65005FADB3 /* Authenticator.swift in Sources */,
 				F1D4472D2D9EB2470085809A /* AuthV2PixelHandler.swift in Sources */,
 				CBD4F13D279EBFA000B20FD7 /* HomeMessageCollectionViewCell.swift in Sources */,
@@ -10322,6 +10341,7 @@
 				1EEF387D285B1A1100383393 /* TrackerImageCache.swift in Sources */,
 				3151F0EC27357FEE00226F58 /* VoiceSearchFeedbackViewModel.swift in Sources */,
 				6F922EE12D8C5C6B0062DFC1 /* URLSeparatorView.swift in Sources */,
+				CBD72E6E2E2528EB00DB0938 /* ClearInteractionStateTask.swift in Sources */,
 				1E53508F2C7C9A1F00818DAA /* DefaultSubscriptionManager+AccountManagerKeychainAccessDelegate.swift in Sources */,
 				9F254AB12CF48A6B0063B308 /* SpecialErrorPageNavigationHandler+SSL.swift in Sources */,
 				1DDF402D2BA09482006850D9 /* SettingsMainSettingsView.swift in Sources */,

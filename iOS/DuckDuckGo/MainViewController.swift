@@ -367,7 +367,8 @@ class MainViewController: UIViewController {
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger,
-                                                              suggestionTrayDependencies: suggestionTrayDependencies)
+                                                              suggestionTrayDependencies: suggestionTrayDependencies,
+                                                              appSettings: appSettings)
 
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
@@ -458,7 +459,8 @@ class MainViewController: UIViewController {
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
-                                                      themingProperties: themeManager.properties)
+                                                      themingProperties: themeManager.properties,
+                                                      appSettings: appSettings)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,

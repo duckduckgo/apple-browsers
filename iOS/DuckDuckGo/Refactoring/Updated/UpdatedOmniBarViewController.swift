@@ -155,7 +155,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     // MARK: - Private Helper Methods
 
     private func updateShadowAppearanceByApplyingLayerMask() {
-        omniBarView.updateMaskLayer(maskTop: AppDependencyProvider.shared.appSettings.currentAddressBarPosition.isBottom,
+        omniBarView.updateMaskLayer(maskTop: dependencies.appSettings.currentAddressBarPosition.isBottom,
                                     clip: shouldClipShadows)
     }
 

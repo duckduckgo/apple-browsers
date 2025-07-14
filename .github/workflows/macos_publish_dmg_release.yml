@@ -78,7 +78,8 @@ jobs:
 
     # Allow to run even if the tag-public-release job was skipped (e.g. for internal releases)
     # or failed (for public releases or hotfixes), because tagging doesn't block publishing the release
-    if: always()
+    # but still allow the workflow to be cancelled
+    if: !cancelled()
 
     runs-on: macos-15-xlarge
     timeout-minutes: 10

@@ -28,7 +28,7 @@ final class SyncBookmarksAdapterTests: XCTestCase {
     var errorHandler: CapturingAdapterErrorHandler!
     var adapter: SyncBookmarksAdapter!
     var appearancePreferences: AppearancePreferences!
-    let metadataStore = MockMetadataStore()
+    var metadataStore: MockMetadataStore! = MockMetadataStore()
     var cancellables: Set<AnyCancellable>!
     var database: CoreDataDatabase!
 
@@ -49,6 +49,9 @@ final class SyncBookmarksAdapterTests: XCTestCase {
         errorHandler = nil
         adapter = nil
         cancellables = nil
+        appearancePreferences = nil
+        database = nil
+        metadataStore = nil
     }
 
     func testWhenSyncErrorPublished_ThenErrorHandlerHandleCredentialErrorCalled() async {

@@ -796,9 +796,13 @@ extension MainViewController {
                 guard let selectedText, !selectedText.isEmpty else {
                     return
                 }
-                NotificationCenter.default.post(name: .aiChatSummarizationRequest,
-                                                object: AIChatSummarizationRequest(text: selectedText, source: .keyboardShortcut),
-                                                userInfo: nil)
+                let request = AIChatTextSummarizationRequest(
+                    text: selectedText,
+                    websiteURL: browserTabViewController.webView?.url,
+                    websiteTitle: browserTabViewController.webView?.title,
+                    source: .keyboardShortcut
+                )
+                aiChatSummarizer.summarize(request)
             } catch {
                 Logger.aiChat.error("Failed to get selected text from the webView")
             }
@@ -1152,6 +1156,22 @@ extension MainViewController {
     @objc func crashOnException(_ sender: Any?) {
         DispatchQueue.main.async {
             self.navigationBarViewController.addressBarViewController?.addressBarTextField.suggestionViewController.tableView.view(atColumn: 1, row: .max, makeIfNecessary: false)
+        }
+    }
+
+    @objc func toggleWatchdog(_ sender: Any?) {
+        if Self.watchdog.isRunning {
+            Self.watchdog.stop()
+        } else {
+            Self.watchdog.start()
+        }
+    }
+
+    @objc func simulate15SecondHang() {
+        DispatchQueue.main.async {
+            print("Simulating main thread hang...")
+            sleep(15)
+            print("Main thread is unblocked")
         }
     }
 

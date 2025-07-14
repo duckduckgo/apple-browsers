@@ -573,7 +573,7 @@
                                     <customView horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="JKb-5c-xaD" userLabel="Rounded Corners View" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="8" y="-3" width="110" height="22"/>
                                         <subviews>
-                                            <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="LBz-Pz-Fw5">
+                                            <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="LBz-Pz-Fw5">
                                                 <rect key="frame" x="10" y="4" width="75" height="14"/>
                                                 <textFieldCell key="cell" lineBreakMode="clipping" title="Switch to Tab" id="xUQ-xN-fdL">
                                                     <font key="font" metaFont="smallSystem"/>
@@ -1165,6 +1165,7 @@
                         <outlet property="privacyShieldLeadingConstraint" destination="aq1-9u-eHl" id="aEU-Iy-fau"/>
                         <outlet property="separator" destination="lbX-yW-2eM" id="b3h-JB-tja"/>
                         <outlet property="trailingAIChatDivider" destination="9Il-3g-u2s" id="twV-65-EfY"/>
+                        <outlet property="trailingButtonsContainer" destination="L9C-04-I02" id="YjI-Ln-HlO"/>
                         <outlet property="trailingStackViewTrailingViewConstraint" destination="SQu-A0-Vje" id="7rh-E8-Hyx"/>
                         <outlet property="zoomButton" destination="b30-aJ-fvG" id="24G-cW-Qmg"/>
                         <outlet property="zoomButtonHeightConstraint" destination="6TS-h0-8pK" id="dyK-lM-9fE"/>

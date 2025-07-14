@@ -135,10 +135,16 @@ private extension DuckURLSchemeHandler {
     func handleDuckPlayer(requestURL: URL, urlSchemeTask: WKURLSchemeTask, webView: WKWebView) {
         let youtubeHandler = YoutubePlayerNavigationHandler()
         let html = youtubeHandler.makeHTMLFromTemplate()
+        webView.stopLoading()
 
         if #available(macOS 12.0, *) {
             let newRequest = youtubeHandler.makeDuckPlayerRequest(from: URLRequest(url: requestURL))
-            webView.loadSimulatedRequest(newRequest, responseHTML: html)
+            // Workaround for https://app.asana.com/1/137249556945/project/1204099484721401/task/1209931387442142
+            // On fast redirections, the webview maybe still loading the old page, when simulated request is sent
+            // A more robust KVO fix did not work as observation misses events in fast redirections
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                webView.loadSimulatedRequest(newRequest, responseHTML: html)
+            }
         } else {
             let data = html.utf8data
 

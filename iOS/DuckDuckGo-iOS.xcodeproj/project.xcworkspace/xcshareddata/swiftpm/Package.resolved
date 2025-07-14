@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "revision" : "144965a993714b67dc6429b6c344e4b7db9c722c",
-        "version" : "10.4.0"
+        "revision" : "782c3fdd5c96d978e7eae5b9734be40abcfdfa50",
+        "version" : "10.8.0"
       }
     },
     {
@@ -52,15 +52,6 @@
       "state" : {
         "revision" : "7532135989abb6ddbde48632b7222e0abed7d253",
         "version" : "18.1.0"
-      }
-    },
-    {
-      "identity" : "grdb.swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/GRDB.swift.git",
-      "state" : {
-        "revision" : "5b2f6a81099d26ae0f9e38788f51490cd6a4b202",
-        "version" : "2.4.2"
       }
     },
     {

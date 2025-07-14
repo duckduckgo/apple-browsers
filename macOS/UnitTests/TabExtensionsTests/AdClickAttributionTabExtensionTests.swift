@@ -58,12 +58,12 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
     let urls = URLs()
     let data = DataSource()
 
-    let logic = MockAdClickLogic()
-    let detection = MockAdClickDetection()
-    let contentBlockerRulesScriptSubj = CurrentValueSubject<ContentBlockerScriptProtocol?, Never>(nil)
+    var logic: MockAdClickLogic! = MockAdClickLogic()
+    var detection: MockAdClickDetection! = MockAdClickDetection()
+    var contentBlockerRulesScriptSubj: CurrentValueSubject<ContentBlockerScriptProtocol?, Never>! = .init(nil)
     var contentBlockerRulesScript: MockContentBlockerRulesUserScript!
-    let userContentController = UserContentControllerMock()
-    let trackerInfoPublisher = PassthroughSubject<DetectedRequest, Never>()
+    var userContentController: UserContentControllerMock! = UserContentControllerMock()
+    var trackerInfoPublisher: PassthroughSubject<DetectedRequest, Never>! = .init()
     let now = Date()
 
     var contentBlockingMock: ContentBlockingMock!
@@ -120,6 +120,12 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
         privacyFeaturesMock = nil
         contentBlockerRulesScript = nil
         schemeHandler = nil
+        contentBlockerRulesScriptSubj = nil
+        detection = nil
+        logic = nil
+        navExtension = nil
+        trackerInfoPublisher = nil
+        userContentController = nil
     }
 
     // MARK: - Tests
@@ -156,7 +162,7 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
 
         let onApplyInheritedAttribution = expectation(description: "onApplyInheritedAttribution")
         /*childTab*/logic.onApplyInheritedAttribution = { [unowned logic] in
-            logic.state = $0!
+            logic!.state = $0!
             onApplyInheritedAttribution.fulfill()
         }
         let onInstallLocalContentRuleList = expectation(description: "onInstallLocalContentRuleList")
@@ -210,7 +216,7 @@ class AdClickAttributionTabExtensionTests: XCTestCase {
 
         let onApplyInheritedAttribution = expectation(description: "onApplyInheritedAttribution")
         /*childTab*/logic.onApplyInheritedAttribution = { [unowned logic] in
-            logic.state = $0!
+            logic!.state = $0!
             onApplyInheritedAttribution.fulfill()
         }
         let onInstallLocalContentRuleList = expectation(description: "onInstallLocalContentRuleList")

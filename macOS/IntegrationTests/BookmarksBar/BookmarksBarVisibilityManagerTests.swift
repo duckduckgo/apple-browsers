@@ -47,6 +47,10 @@ final class BookmarksBarVisibilityManagerTests: XCTestCase {
         )
     }
 
+    override var allowedNonNilVariables: Set<String> {
+        ["selectedTabSubject", "tabContents"]
+    }
+
     override func tearDownWithError() throws {
         cancellables = nil
         appearance = nil

@@ -39,6 +39,12 @@ class FaviconManagerTests: XCTestCase {
         )
     }
 
+    override func tearDown() {
+        faviconManager = nil
+        imageCache = nil
+        referenceCache = nil
+    }
+
     @MainActor
     func testWhenFaviconManagerIsInMemory_ThenItMustInitNullStore() {
         let faviconManager = FaviconManager(

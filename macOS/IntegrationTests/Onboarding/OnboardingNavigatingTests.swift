@@ -35,6 +35,7 @@ final class OnboardingNavigatingTests: XCTestCase {
     @MainActor
     override func tearDown() {
         onboardingNavigation = nil
+        fireCoordinator = nil
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
         super.tearDown()
     }

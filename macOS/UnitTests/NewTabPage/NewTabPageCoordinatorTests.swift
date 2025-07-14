@@ -99,9 +99,20 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),
             keyValueStore: keyValueStore,
             notificationCenter: notificationCenter,
-            fireDailyPixel: { self.firePixelCalls.append($0) },
-            featureFlagger: featureFlagger
+            visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider(),
+            featureFlagger: featureFlagger,
+            fireDailyPixel: { self.firePixelCalls.append($0) }
         )
+    }
+
+    override func tearDown() {
+        appearancePreferences = nil
+        coordinator = nil
+        customizationModel = nil
+        featureFlagger = nil
+        firePixelCalls = []
+        keyValueStore = nil
+        notificationCenter = nil
     }
 
     func testWhenNewTabPageAppearsThenPixelIsSent() {

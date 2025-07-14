@@ -34,19 +34,30 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
     private var cancellables: Set<AnyCancellable> = []
 
     override func setUp() {
-        super.setUp()
         tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor())
         provider = PinnedTabsManagerProvider(tabsPreferences: tabsPreferences)
+        clearSharedPinnedTabs()
+    }
+
+    private func clearSharedPinnedTabs() {
+        while !Application.appDelegate.pinnedTabsManager.isEmpty {
+            _=Application.appDelegate.pinnedTabsManager.unpinTab(at: 0, published: false, firePixel: false)
+        }
     }
 
     @MainActor
     override func tearDown() {
-        provider = nil
-        tabsPreferences = nil
-        cancellables.removeAll()
+        autoreleasepool {
+            clearSharedPinnedTabs()
+            provider = nil
+            tabsPreferences = nil
+            cancellables.removeAll()
 
-        Application.appDelegate.windowControllersManager.mainWindowControllers.forEach { $0.close() }
-        super.tearDown()
+            WindowsManager.closeWindows()
+            for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
+                Application.appDelegate.windowControllersManager.unregister(controller)
+            }
+        }
     }
 
     func test_providerReturnsSameModeAsTabsPreferences() {
@@ -136,8 +147,6 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
         let window = WindowsManager.openNewWindow(with: tabCollectionViewModel)
         window?.makeKeyAndOrderFront(nil)
 
-        try? await Task.sleep(interval: 1)
-
         let newManager = provider.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: tabCollectionViewModel)
 
         let secondNewManager = provider.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider))
@@ -165,8 +174,6 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
 
         let tab2 = Tab(content: .url(URL(string: "https://second.com")!, source: .ui))
         secondTabCollectionViewModel.pinnedTabsManager!.pin(tab2)
-
-        try? await Task.sleep(interval: 1)
 
         // Switch to shared mode and trigger migration
         tabsPreferences.pinnedTabsMode = .shared

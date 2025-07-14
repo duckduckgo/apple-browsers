@@ -82,7 +82,9 @@ final class RemoteMessagingClientTests: XCTestCase {
     override func tearDownWithError() throws {
         try tearDownBookmarksDatabase()
         try tearDownRemoteMessagingDatabase()
-        try super.tearDownWithError()
+        availabilityProvider = nil
+        client = nil
+        subscriptionAuthV1toV2Bridge = nil
     }
 
     private func setUpRemoteMessagingDatabase() {

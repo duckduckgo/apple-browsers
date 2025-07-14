@@ -55,6 +55,10 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
 
     override func tearDown() async throws {
         try? FileManager.default.removeItem(at: storageLocation)
+        appearancePreferences = nil
+        customizationModel = nil
+        provider = nil
+        userBackgroundImagesManager = nil
     }
 
     func testThatCustomizerOpenerReturnsSettingsModelCustomizerOpener() {

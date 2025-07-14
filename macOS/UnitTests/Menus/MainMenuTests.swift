@@ -32,7 +32,7 @@ class MainMenuTests: XCTestCase {
     var manager: ReopenMenuItemKeyEquivalentManager!
     var appearancePreferences: AppearancePreferences!
 
-    override func setUpWithError() throws {
+    override func setUp() {
         isInInitialState = true
         lastSessionMenuItem = NSMenuItem()
         lastTabMenuItem = NSMenuItem()
@@ -41,6 +41,13 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
         )
+    }
+
+    override func tearDown() {
+        appearancePreferences = nil
+        lastSessionMenuItem = nil
+        lastTabMenuItem = nil
+        manager = nil
     }
 
     func testWhenIsInInitialState_AndCanRestoreState_ThenLastSessionMenuItemHasShortcut() {

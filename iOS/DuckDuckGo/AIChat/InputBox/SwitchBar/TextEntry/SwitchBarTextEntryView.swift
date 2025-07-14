@@ -31,7 +31,7 @@ class SwitchBarTextEntryView: UIView {
 
         // Text container insets
         static let textTopInset: CGFloat = 12
-        static let textBottomInset: CGFloat = 8
+        static let textBottomInset: CGFloat = 12
         static let textHorizontalInset: CGFloat = 12
 
         // Placeholder positioning
@@ -39,8 +39,8 @@ class SwitchBarTextEntryView: UIView {
         static let placeholderHorizontalOffset: CGFloat = 16
 
         // Button view
-        static let buttonViewTrailingOffset: CGFloat = -14
-        static let textButtonSpacing: CGFloat = -8
+        static let buttonViewTrailingOffset: CGFloat = -12
+        static let textButtonSpacing: CGFloat = -10
 
         // Animation
         static let animationDuration: TimeInterval = 0.2
@@ -83,13 +83,15 @@ class SwitchBarTextEntryView: UIView {
         textView.delegate = self
         textView.isScrollEnabled = false
         textView.showsVerticalScrollIndicator = false
-        textView.textContainerInset = UIEdgeInsets(top: Constants.textTopInset, left: Constants.textHorizontalInset, bottom: Constants.textBottomInset, right: Constants.textHorizontalInset)
+        textView.textContainerInset = UIEdgeInsets(top: Constants.textTopInset,
+                                                   left: Constants.textHorizontalInset,
+                                                   bottom: Constants.textBottomInset,
+                                                   right: 0)
 
         placeholderLabel.font = UIFont.systemFont(ofSize: Constants.fontSize)
         placeholderLabel.textColor = UIColor.placeholderText
         placeholderLabel.numberOfLines = 0
 
-        // Setup SwiftUI buttons view
         setupButtonsView()
 
         addSubview(textView)
@@ -146,24 +148,33 @@ class SwitchBarTextEntryView: UIView {
             buttonsView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
             buttonsView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: Constants.buttonViewTrailingOffset),
             buttonsView.heightAnchor.constraint(equalToConstant: 24),
-            buttonsView.widthAnchor.constraint(lessThanOrEqualToConstant: 60)
+            buttonsView.widthAnchor.constraint(lessThanOrEqualToConstant: 24)
         ])
     }
 
     // MARK: - UI Updates
 
     private func updateForCurrentMode() {
+        textView.autocorrectionType = .no
+        textView.smartDashesType = .no
+        textView.smartQuotesType = .no
+        textView.smartInsertDeleteType = .no
+        textView.spellCheckingType = .no
+        textView.textContentType = .none
+
         switch currentMode {
         case .search:
             placeholderLabel.text = "Search..."
             textView.keyboardType = .webSearch
-            textView.textContentType = .none
             textView.returnKeyType = .search
+            textView.autocapitalizationType = .none
         case .aiChat:
             placeholderLabel.text = "Ask Duck.ai..."
             textView.keyboardType = .default
             textView.returnKeyType = .go
+            textView.autocapitalizationType = .sentences
         }
+
         textView.reloadInputViews()
         updatePlaceholderVisibility()
         updateButtonState()

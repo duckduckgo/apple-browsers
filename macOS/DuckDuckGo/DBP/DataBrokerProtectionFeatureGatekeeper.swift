@@ -27,7 +27,7 @@ import Subscription
 
 protocol DataBrokerProtectionFeatureGatekeeper {
     func disableAndDeleteForAllUsers()
-    func arePrerequisitesSatisfied() async -> Bool
+    func arePrerequisitesSatisfied() async throws -> Bool
 }
 
 struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeatureGatekeeper {
@@ -86,13 +86,13 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
     /// 2. The user has a subscription with valid entitlements
     ///
     /// - Returns: Bool indicating prerequisites are satisfied
-    func arePrerequisitesSatisfied() async -> Bool {
+    func arePrerequisitesSatisfied() async throws -> Bool {
 
         let isAuthenticated = subscriptionManager.isUserAuthenticated
         if !isAuthenticated && freemiumDBPUserStateManager.didActivate { return true }
 
         // NOTE: This check In AuthV1 this can fail in case of bad network, in AuthV2 works as expected in any network condition
-        let hasEntitlements = await subscriptionManager.isFeatureEnabledForUser(feature: .dataBrokerProtection)
+        let hasEntitlements = try await subscriptionManager.isFeatureEnabledForUser(feature: .dataBrokerProtection)
         firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: hasEntitlements, isAuthenticatedResult: isAuthenticated)
         return hasEntitlements && isAuthenticated
     }

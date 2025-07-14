@@ -23,8 +23,13 @@ import XCTest
 
 final class DownloadListStoreTests: XCTestCase {
 
-    let container = CoreData.downloadsContainer()
-    lazy var store = DownloadListStore(context: container.viewContext)
+    var container: NSPersistentContainer! = CoreData.downloadsContainer()
+    lazy var store: DownloadListStore! = DownloadListStore(context: container.viewContext)
+
+    override func tearDown() {
+        container = nil
+        store = nil
+    }
 
     func save(_ item: DownloadListItem, expectation: XCTestExpectation) {
         store.save(item) { error in

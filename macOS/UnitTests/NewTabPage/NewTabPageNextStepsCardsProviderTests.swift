@@ -51,6 +51,10 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         )
     }
 
+    override func tearDown() {
+        provider = nil
+    }
+
     func testWhenCardsViewIsNotOutdatedThenCardsAreReportedByModel() {
         provider.appearancePreferences.isContinueSetUpCardsViewOutdated = false
         provider.continueSetUpModel.featuresMatrix = [[.defaultBrowser, .dock, .emailProtection]]

@@ -68,6 +68,14 @@ final class NewTabPageShownPixelSenderTests: XCTestCase {
         )
     }
 
+    override func tearDown() {
+        appearancePreferences = nil
+        customizationModel = nil
+        firePixelCalls = []
+        handler = nil
+        visibleFeedProvider = nil
+    }
+
     func testWhenFirePixelIsCalledThenPixelIsSent() {
         handler.firePixel()
         XCTAssertEqual(firePixelCalls.count, 1)

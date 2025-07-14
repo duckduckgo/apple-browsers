@@ -130,7 +130,7 @@ private extension DefaultBrowserPromptTypeDecider {
         userActivityProvider.numberOfActiveDays() == featureFlagger.secondModalDelayDays
     }
 
-    // If the user has seen the last modal and they have been active for `secondModalDelayDays`, show the second modal.
+    // If the user has seen the last modal and they have been active for `subsequentModalRepeatIntervalDays`, show the subsequentModalRepeatIntervalDays modal.
     func shouldShowSubsequentModal(for user: DefaultBrowserPromptUserType) -> Bool {
         let modalSeenCondition = user.isNewOrReturningUser ? store.hasSeenSecondModal : store.hasSeenFirstModal
 

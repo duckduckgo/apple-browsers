@@ -30,6 +30,11 @@ final class PermissionManagerTests: XCTestCase {
         store = PermissionStoreMock()
     }
 
+    override func tearDown() {
+        manager = nil
+        store = nil
+    }
+
     func testWhenPermissionManagerInitializedThenPermissionsAreLoaded() {
         store.permissions = [.entity1, .entity2]
         let result1 = manager.permission(forDomain: "www." + PermissionEntity.entity1.domain,

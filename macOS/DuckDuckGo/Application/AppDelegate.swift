@@ -82,7 +82,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let crashCollection = CrashCollection(crashReportSender: CrashReportSender(platform: .macOSAppStore,
                                                                                        pixelEvents: CrashReportSender.pixelEvents))
 #else
-    private let crashReporter = CrashReporter()
+    private let crashReporter: CrashReporter
 #endif
 
     let keyValueStore: ThrowingKeyValueStoring
@@ -95,6 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
     let featureFlagger: FeatureFlagger
+    let visualizeFireAnimationDecider: VisualizeFireAnimationDecider
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
@@ -145,6 +146,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tld: tld,
         fireCoordinator: fireCoordinator,
         keyValueStore: keyValueStore,
+        visualizeFireAnimationDecider: visualizeFireAnimationDecider,
         featureFlagger: featureFlagger
     )
 
@@ -166,10 +168,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let visualStyle: VisualStyleProviding
     private let visualStyleDecider: VisualStyleDecider
 
-    let isAuthV2Enabled: Bool
+    let isUsingAuthV2: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     let subscriptionManagerV1: (any SubscriptionManager)?
     let subscriptionManagerV2: (any SubscriptionManagerV2)?
+    let subscriptionAuthMigrator: AuthMigrator
 
     public let subscriptionUIHandler: SubscriptionUIHandling
     private let subscriptionCookieManager: any SubscriptionCookieManaging
@@ -432,29 +435,88 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return Application.appDelegate.windowControllersManager
         })
 
-        self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
-        if !isAuthV2Enabled {
-            // MARK: V1
-            Logger.general.log("Using Auth V1")
-            let subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger)
-            subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: subscriptionManager, currentCookieStore: {
-                WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
-            }, eventMapping: SubscriptionCookieManageEventPixelMapping())
-            subscriptionManagerV1 = subscriptionManager
-            subscriptionManagerV2 = nil
-            subscriptionAuthV1toV2Bridge = subscriptionManager
-        } else {
+        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+        let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+
+        // Configuring V2 for migration
+        let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
+        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
+                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
+        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { accessType, error in
+            PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
+                                                                             accessError: error,
+                                                                             source: KeychainErrorSource.shared,
+                                                                             authVersion: KeychainErrorAuthVersion.v2),
+                          frequency: .legacyDailyAndCount)
+        }
+        let legacyTokenStorage = SubscriptionTokenKeychainStorage(keychainType: keychainType)
+        let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                            legacyTokenStorage: legacyTokenStorage,
+                                            authService: authService)
+        let pixelHandler: SubscriptionPixelHandler = AuthV2PixelHandler(source: .mainApp)
+        let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
+        subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
+                                                    pixelHandler: pixelHandler,
+                                                    isAuthV2Enabled: isAuthV2Enabled)
+        self.isUsingAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
+
+        if self.isUsingAuthV2 {
             // MARK: V2
-            Logger.general.log("Using Auth V2")
-            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-            let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
-            let subscriptionManager = DefaultSubscriptionManagerV2(keychainType: KeychainType.dataProtection(.named(subscriptionAppGroup)),
-                                                                   environment: subscriptionEnvironment,
-                                                                   featureFlagger: featureFlagger,
-                                                                   userDefaults: subscriptionUserDefaults,
-                                                                   canPerformAuthMigration: true,
-                                                                   pixelHandlingSource: .mainApp)
+            Logger.general.log("Configuring Subscription V2")
+            var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
+            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
+                                                                                   baseURL: subscriptionEnvironment.serviceEnvironment.url)
+            apiServiceForSubscription.authorizationRefresherCallback = { _ in
+
+                guard let tokenContainer = try? tokenStorage.getTokenContainer() else {
+                    throw OAuthClientError.internalError("Missing refresh token")
+                }
+
+                if tokenContainer.decodedAccessToken.isExpired() {
+                    Logger.OAuth.debug("Refreshing tokens")
+                    let tokens = try await authClient.getTokens(policy: .localForceRefresh)
+                    return tokens.accessToken
+                } else {
+                    Logger.general.debug("Trying to refresh valid token, using the old one")
+                    return tokenContainer.accessToken
+                }
+            }
+            let subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags> = FeatureFlaggerMapping { feature in
+                switch feature {
+                case .usePrivacyProUSARegionOverride:
+                    return (featureFlagger.internalUserDecider.isInternalUser &&
+                            subscriptionEnvironment.serviceEnvironment == .staging &&
+                            subscriptionUserDefaults.storefrontRegionOverride == .usa)
+                case .usePrivacyProROWRegionOverride:
+                    return (featureFlagger.internalUserDecider.isInternalUser &&
+                            subscriptionEnvironment.serviceEnvironment == .staging &&
+                            subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
+                }
+            }
+
+            let isInternalUserEnabled = { featureFlagger.internalUserDecider.isInternalUser }
+            let legacyAccountStorage = AccountKeychainStorage()
+            let subscriptionManager: DefaultSubscriptionManagerV2
+            if #available(macOS 12.0, *) {
+                subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
+                                                                              subscriptionFeatureFlagger: subscriptionFeatureFlagger),
+                          oAuthClient: authClient,
+                          userDefaults: subscriptionUserDefaults,
+                          subscriptionEndpointService: subscriptionEndpointService,
+                          subscriptionEnvironment: subscriptionEnvironment,
+                          pixelHandler: pixelHandler,
+                          legacyAccountStorage: legacyAccountStorage,
+                          isInternalUserEnabled: isInternalUserEnabled)
+            } else {
+                subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
+                          userDefaults: subscriptionUserDefaults,
+                          subscriptionEndpointService: subscriptionEndpointService,
+                          subscriptionEnvironment: subscriptionEnvironment,
+                          pixelHandler: pixelHandler,
+                          legacyAccountStorage: legacyAccountStorage,
+                          isInternalUserEnabled: isInternalUserEnabled)
+            }
 
             // Expired refresh token recovery
             if #available(iOS 15.0, macOS 12.0, *) {
@@ -474,8 +536,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManagerV2 = subscriptionManager
             subscriptionManagerV1 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
+        } else {
+            Logger.general.log("Configuring Subscription V1")
+            let subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger)
+            subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: subscriptionManager, currentCookieStore: {
+                WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
+            }, eventMapping: SubscriptionCookieManageEventPixelMapping())
+            subscriptionManagerV1 = subscriptionManager
+            subscriptionManagerV2 = nil
+            subscriptionAuthV1toV2Bridge = subscriptionManager
         }
-        VPNAppState(defaults: .netP).isAuthV2Enabled = isAuthV2Enabled
+
+        VPNAppState(defaults: .netP).isAuthV2Enabled = isUsingAuthV2
 
         let windowControllersManager = WindowControllersManager(
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
@@ -519,8 +591,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fireproofDomains: fireproofDomains,
             faviconManager: faviconManager,
             windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger,
             pixelFiring: PixelKit.shared
         )
+        visualizeFireAnimationDecider = DefaultVisualizeFireAnimationDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
         startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyle: visualStyle, appearancePreferences: appearancePreferences)
 
@@ -650,7 +724,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Update DBP environment and match the Subscription environment
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
         dbpSettings.alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
-        dbpSettings.isAuthV2Enabled = isAuthV2Enabled
+        dbpSettings.isAuthV2Enabled = isUsingAuthV2
 
         // Also update the stored run type so the login item knows if tests are running
         dbpSettings.updateStoredRunType()
@@ -682,6 +756,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 await WebExtensionManager.shared.loadInstalledExtensions()
             }
         }
+#endif
+
+#if !APPSTORE
+        crashReporter = CrashReporter(internalUserDecider: internalUserDecider)
 #endif
     }
     // swiftlint:enable cyclomatic_complexity
@@ -730,6 +808,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         SwiftUIContextMenuRetainCycleFix.setUp()
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard AppVersion.runType.requiresEnvironment else { return }
         defer {
@@ -817,27 +896,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         applyPreferredTheme()
 
 #if APPSTORE
-        crashCollection.startAttachingCrashLogMessages { pixelParameters, payloads, completion in
+        crashCollection.startAttachingCrashLogMessages { [weak self] pixelParameters, payloads, completion in
+
             pixelParameters.forEach { parameters in
-                PixelKit.fire(GeneralPixel.crash, withAdditionalParameters: parameters, includeAppVersionParameter: false)
-                PixelKit.fire(GeneralPixel.crashDaily, frequency: .legacyDailyNoSuffix)
+                var params = parameters
+                params[PixelKit.Parameters.appVersion] = CrashCollection.removeBuildNumber(from: params[PixelKit.Parameters.appVersion])
+                let appIdentifier = CrashPixelAppIdentifier(params.removeValue(forKey: "bundle"))
+                PixelKit.fire(
+                    GeneralPixel.crash(appIdentifier: appIdentifier),
+                    frequency: .dailyAndStandard,
+                    withAdditionalParameters: params,
+                    includeAppVersionParameter: false
+                )
             }
 
             guard let lastPayload = payloads.last else {
                 return
             }
-            DispatchQueue.main.async {
-                CrashReportPromptPresenter().showPrompt(for: CrashDataPayload(data: lastPayload), userDidAllowToReport: completion)
+            if self?.internalUserDecider.isInternalUser == true {
+                completion()
+            } else {
+                Task { @MainActor in
+                    if await CrashReportPromptPresenter().showPrompt(for: CrashDataPayload(data: lastPayload)) == .allow {
+                        completion()
+                    }
+                }
             }
         }
 #else
-        crashReporter.checkForNewReports()
-#endif
-
-        if visualStyleDecider.shouldFirePixel(style: visualStyle) {
-            PixelKit.fire(VisualStylePixel.visualUpdatesEnabled, frequency: .uniqueByName)
+        Task {
+            await crashReporter.checkForNewReports()
         }
-
+#endif
         urlEventHandler.applicationDidFinishLaunching()
 
         subscribeToEmailProtectionStatusNotifications()
@@ -915,12 +1005,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in
             if isSubscriptionActive {
-                PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive, frequency: .legacyDaily)
+                PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive(AuthVersion.v1), frequency: .legacyDaily)
             }
         }
 
+        Task {
+            await subscriptionAuthMigrator.migrateAuthV1toAuthV2IfNeeded()
+        }
+
         Task { @MainActor in
-            await vpnAppEventsHandler.applicationDidBecomeActive()
+            vpnAppEventsHandler.applicationDidBecomeActive()
             await subscriptionCookieManager.refreshSubscriptionCookie()
         }
     }

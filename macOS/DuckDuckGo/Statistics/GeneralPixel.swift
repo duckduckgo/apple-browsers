@@ -24,8 +24,7 @@ import Configuration
 
 enum GeneralPixel: PixelKitEventV2 {
 
-    case crash
-    case crashDaily
+    case crash(appIdentifier: CrashPixelAppIdentifier?)
     case crashOnCrashHandlersSetUp
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
@@ -37,8 +36,8 @@ enum GeneralPixel: PixelKitEventV2 {
 
     case dailyOsVersionCounter
 
-    case dataImportFailed(source: DataImport.Source, sourceVersion: String?, error: any DataImportError)
-    case dataImportSucceeded(action: DataImportAction, source: DataImport.Source, sourceVersion: String?)
+    case dataImportFailed(source: String, sourceVersion: String?, error: any DataImportError)
+    case dataImportSucceeded(action: DataImportAction, source: String, sourceVersion: String?)
 
     case formAutofilled(kind: FormAutofillKind)
     case autofillItemSaved(kind: FormAutofillKind)
@@ -108,6 +107,7 @@ enum GeneralPixel: PixelKitEventV2 {
     // Fire Button
     case fireButtonFirstBurn
     case fireButton(option: FireButtonOption)
+    case fireAnimationSetting(enabled: Bool)
 
     /**
      * Event Trigger: User opens the fire popover (fire button details view).
@@ -517,11 +517,12 @@ enum GeneralPixel: PixelKitEventV2 {
 
     var name: String {
         switch self {
-        case .crash:
-            return "m_mac_crash"
-
-        case .crashDaily:
-            return "m_mac_crash_daily"
+        case .crash(let appIdentifier):
+            if let appIdentifier {
+                return "m_mac_crash_\(appIdentifier.rawValue)"
+            } else {
+                return "m_mac_crash"
+            }
 
         case .crashOnCrashHandlersSetUp:
             return "m_mac_crash_on_handlers_setup"
@@ -678,6 +679,8 @@ enum GeneralPixel: PixelKitEventV2 {
             return "m_mac_fire_button_first_burn"
         case .fireButton(option: let option):
             return "m_mac_fire_button_\(option)"
+        case .fireAnimationSetting(let enabled):
+            return "m_mac_fire_animation_\(enabled ? "on" : "off")"
         case .fireButtonDetailsViewed:
             return "m_mac_fire_button_details_viewed"
 

@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+require_relative "spaceship_patch"
+
 opt_out_usage
 fastlane_require 'httparty'
 fastlane_require 'rexml/document'

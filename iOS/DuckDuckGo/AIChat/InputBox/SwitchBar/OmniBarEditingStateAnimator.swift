@@ -101,6 +101,7 @@ final class OmniBarEditingStateAnimator {
 
             transitionDelegate.rootView.layoutIfNeeded()
         }
+        
 
         backgroundFadeAnimator.startAnimation()
         expandAnimator.startAnimation(afterDelay: Constants.TopTransition.fadeInDuration)

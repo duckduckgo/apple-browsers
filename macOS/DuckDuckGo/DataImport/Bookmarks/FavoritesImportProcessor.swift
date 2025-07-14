@@ -29,6 +29,8 @@ enum FavoritesImportProcessor {
             guard let urlString = favorite.url?.nakedString else { return }
             result[urlString] = favorite.favoritesIndex
         }
+        guard !favoriteUrlIndices.isEmpty else { return }
+
         var foundFavoriteUrls: Set<String> = []
 
         // Recursively process bookmarks to mark matching URLs as favorites

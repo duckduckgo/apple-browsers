@@ -89,6 +89,6 @@ final class AutofillLoginImportState: AutofillLoginImportStateProvider, Autofill
     }
 
     func hasNeverPromptWebsitesFor(_ domain: String) -> Bool {
-        AutofillNeverPromptWebsitesManager.shared.hasNeverPromptWebsitesFor(domain: domain)
+        AppDependencyProvider.shared.autofillNeverPromptWebsitesManager.hasNeverPromptWebsitesFor(domain: domain)
     }
 }

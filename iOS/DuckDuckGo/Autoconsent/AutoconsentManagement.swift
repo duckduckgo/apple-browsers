@@ -1,8 +1,7 @@
 //
 //  AutoconsentManagement.swift
-//  DuckDuckGo
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2022 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,14 +19,19 @@
 import Foundation
 
 final class AutoconsentManagement {
-    
     static let shared = AutoconsentManagement()
-    private init() {}
-    
+
     var sitesNotifiedCache = Set<String>()
-    
+
+    var pixelCounter = [String: Int]()
+
+    var detectedByPatternsCache = Set<String>()
+    var detectedByBothCache = Set<String>()
+    var detectedOnlyRulesCache = Set<String>()
+
     func clearCache() {
         dispatchPrecondition(condition: .onQueue(.main))
         sitesNotifiedCache.removeAll()
     }
+
 }

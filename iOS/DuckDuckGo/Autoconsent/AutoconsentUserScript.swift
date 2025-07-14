@@ -24,6 +24,7 @@ import BrowserServicesKit
 import UserScript
 import PrivacyDashboard
 import os.log
+import PixelKit
 
 protocol AutoconsentPreferences {
     var autoconsentEnabled: Bool { get set }
@@ -248,6 +249,9 @@ extension AutoconsentUserScript {
         guard config.isFeature(.autoconsent, enabledForDomain: topURLDomain) else {
             Logger.autoconsent.info("disabled for site: \(String(describing: url.absoluteString))")
             replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
+            if message.frameInfo.isMainFrame {
+                firePixel(pixel: .disabledForSite)
+            }
             return
         }
 
@@ -260,6 +264,7 @@ extension AutoconsentUserScript {
                 optoutFailed: nil,
                 selftestFailed: nil
             )
+            firePixel(pixel: .acInit)
         }
         let remoteConfig = self.config.settings(for: .autoconsent)
         let disabledCMPs = remoteConfig["disabledCMPs"] as? [String] ?? []
@@ -276,7 +281,8 @@ extension AutoconsentUserScript {
                 "enablePrehide": true,
                 "enableCosmeticRules": true,
                 "detectRetries": 20,
-                "isMainWorld": false
+                "isMainWorld": false,
+                "enableHeuristicDetection": true
             ] as [String: Any?]
         ] as [String: Any?], nil)
     }
@@ -322,6 +328,7 @@ extension AutoconsentUserScript {
     @MainActor
     func handlePopupFound(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         Logger.autoconsent.debug("Autoconsent popup found")
+        firePixel(pixel: .popupFound)
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
     }
 
@@ -335,6 +342,7 @@ extension AutoconsentUserScript {
 
         if !messageData.result {
             refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: true, selftestFailed: nil)
+            firePixel(pixel: .errorOptoutFailed)
         } else if messageData.scheduleSelfTest {
             // save a reference to the webview and frame for self-test
             selfTestWebView = message.webView
@@ -357,6 +365,7 @@ extension AutoconsentUserScript {
         Logger.autoconsent.debug("opt-out successful: \(String(describing: messageData))")
 
         refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
+        firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
 
         // trigger popup once per domain
         if !management.sitesNotifiedCache.contains(host) {
@@ -369,6 +378,7 @@ extension AutoconsentUserScript {
                     UserInfoKeys.isCosmetic: messageData.isCosmetic
                 ])
             }
+            firePixel(pixel: messageData.isCosmetic ? .animationShownCosmetic : .animationShown)
         }
 
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
@@ -405,12 +415,15 @@ extension AutoconsentUserScript {
         // store self-test result
         Logger.autoconsent.debug("self-test result: \(String(describing: messageData))")
         refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: false, selftestFailed: messageData.result)
+        firePixel(pixel: messageData.result ? .selfTestOk : .selfTestFail)
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
     }
 
     @MainActor
     private func handleAutoconsentError(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         Logger.autoconsent.error("Autoconsent error: \(String(describing: message.body))")
+        // Currently the only type of error that can be sent here is due to multiple popups on the page.
+        firePixel(pixel: .errorMultiplePopups)
         replyHandler([ "type": "ok" ], nil)
     }
 
@@ -420,7 +433,39 @@ extension AutoconsentUserScript {
             replyHandler(nil, "cannot decode message")
             return
         }
+        let heuristicMatch = report.state.heuristicPatterns.count > 0 || report.state.heuristicSnippets.count > 0
+        if message.frameInfo.isMainFrame && heuristicMatch && !management.detectedByPatternsCache.contains(report.instanceId) {
+                    management.detectedByPatternsCache.insert(report.instanceId)
+            firePixel(pixel: .detectedByPatterns)
+        }
+
+        if message.frameInfo.isMainFrame && heuristicMatch && report.state.detectedPopups.count > 0 && !management.detectedByBothCache.contains(report.instanceId) {
+            management.detectedByBothCache.insert(report.instanceId)
+            firePixel(pixel: .detectedByBoth)
+        }
+
+        if message.frameInfo.isMainFrame && !heuristicMatch && report.state.detectedPopups.count > 0 && !management.detectedOnlyRulesCache.contains(report.instanceId) {
+            management.detectedOnlyRulesCache.insert(report.instanceId)
+            firePixel(pixel: .detectedOnlyRules)
+        }
         replyHandler([ "type": "ok" ], nil)
+    }
+    
+    func firePixel(pixel: AutoconsentPixel) {
+        if management.pixelCounter.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
+                PixelKit.fire(AutoconsentPixel.summary(events: self.management.pixelCounter), frequency: .standard)
+                self.management.pixelCounter = [:]
+                self.management.detectedByPatternsCache.removeAll()
+                self.management.detectedByBothCache.removeAll()
+                self.management.detectedOnlyRulesCache.removeAll()
+            }
+        }
+        // increment counter
+        management.pixelCounter[pixel.key, default: 0] += 1
+
+        // fire daily pixel if needed
+        PixelKit.fire(pixel, frequency: .daily)
     }
 }
 

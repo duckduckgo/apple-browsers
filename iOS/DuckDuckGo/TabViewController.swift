@@ -951,9 +951,8 @@ class TabViewController: UIViewController {
     func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
         
         // Handle DuckPlayer Navigation URL changes
-        // Only trigger DuckPlayer if there's no navigation error
-        if lastError == nil, let currentURL = newURL ?? webView.url {
-            _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL)
+        if let currentURL = newURL ?? webView.url {
+            _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL, isNavigationError: lastError != nil)
         }
             
         if url == nil {

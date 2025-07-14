@@ -93,12 +93,13 @@ extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDataset
     func startFetching() -> Task<Void, Never> {
         guard
             canFetchDatasets,
-            !isDatasetsFetchInProgress
+            !isDatasetsFetchInProgress,
+            shouldUpdateHashPrefixSets || shouldUpdateFilterSets
         else {
             return Task {}
         }
 
-        isDatasetsFetchInProgress = shouldUpdateHashPrefixSets || shouldUpdateFilterSets
+        isDatasetsFetchInProgress = true
         Logger.MaliciousSiteProtection.datasetsFetcher.debug("Start Updating Datasets...")
 
         return Task {

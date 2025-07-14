@@ -91,6 +91,40 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     private var testNotificationCenter: TestNotificationCenter!
     private var constraintUpdates: [DuckPlayerConstraintUpdate] = []
 
+    // MARK: - Helper Methods
+    
+    /// Waits for a condition to become true using manual polling.
+    /// This is useful for properties that are not KVO-compliant.
+    /// - Parameters:
+    ///   - timeout: Maximum time to wait for the condition
+    ///   - pollingInterval: Time between condition checks
+    ///   - condition: The condition to check
+    ///   - description: Description of what we're waiting for
+    private func waitForCondition(
+        timeout: TimeInterval = 2.0,
+        pollingInterval: TimeInterval = 0.1,
+        condition: @escaping () -> Bool,
+        description: String
+    ) {
+        let expectation = expectation(description: description)
+        
+        func checkCondition() {
+            if condition() {
+                expectation.fulfill()
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + pollingInterval) {
+                    checkCondition()
+                }
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + pollingInterval) {
+            checkCondition()
+        }
+        
+        wait(for: [expectation], timeout: timeout)
+    }
+
     // MARK: - Setup
 
     override func setUp() {
@@ -1227,25 +1261,11 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // When - Simulate navigation away which triggers cleanup
         sut.playerViewModel?.youtubeNavigationRequestPublisher.send(URL.youtube(videoID))
         
-        // Wait for cleanup with manual polling since playerViewModel is not KVO-compliant
-        let cleanupExpectation = expectation(description: "Player cleanup")
-        
-        func checkCleanup() {
-            if sut.playerViewModel == nil {
-                cleanupExpectation.fulfill()
-            } else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    checkCleanup()
-                }
-            }
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            checkCleanup()
-        }
-        
-        // Wait for the cleanup to complete
-        wait(for: [cleanupExpectation], timeout: 2.0)
+        // Wait for cleanup using helper method
+        waitForCondition(
+            condition: { [weak sut] in sut?.playerViewModel == nil },
+            description: "Player view model should be cleaned up"
+        )
         
         // Then
         XCTAssertNil(sut.playerViewModel, "Player view model should be cleaned up")
@@ -1904,25 +1924,11 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Simulate the view disappearing and dismiss publisher firing
         playerViewModel.dismissPublisher.send(timestamp)
         
-        // Wait for pill presentation with manual polling since containerViewController is not KVO-compliant
-        let pillExpectation = expectation(description: "Pill should be presented after dismissal")
-        
-        func checkPillPresentation() {
-            if sut.containerViewController != nil {
-                pillExpectation.fulfill()
-            } else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    checkPillPresentation()
-                }
-            }
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            checkPillPresentation()
-        }
-        
-        // Wait for the pill presentation to complete
-        wait(for: [pillExpectation], timeout: 2.0)
+        // Wait for pill presentation using helper method
+        waitForCondition(
+            condition: { [weak sut] in sut?.containerViewController != nil },
+            description: "Pill should be presented after dismissal"
+        )
 
         // Then - Should present re-entry pill 
         XCTAssertNotNil(sut.containerViewController, "Pill container should be created after dismissal")

@@ -56,6 +56,8 @@ protocol WindowControllersManagerProtocol {
                        isMiniaturized: Bool,
                        isMaximized: Bool,
                        isFullscreen: Bool) -> MainWindow?
+
+    func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?)
     func showTab(with content: Tab.TabContent)
 
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior)

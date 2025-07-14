@@ -46,13 +46,15 @@ struct DataImportView: ModalView {
     }
     @State private var progress: ProgressState?
 
+#if DEBUG || REVIEW
     @State private var debugViewDisabled: Bool = false
+#endif
 
     private var shouldShowDebugView: Bool {
 #if DEBUG || REVIEW
         return !debugViewDisabled
 #else
-        return (!debugViewDisabled && isInternalUser) || (!model.errors.isEmpty && isInternalUser)
+        return (!model.errors.isEmpty && isInternalUser)
 #endif
     }
 
@@ -339,7 +341,23 @@ struct DataImportView: ModalView {
     private func debugView() -> some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 10) {
-                if model.errors.count > 0 {
+#if DEBUG || REVIEW
+                Text("REVIEW:" as String).bold()
+                    .padding(.top, 10)
+                    .padding(.leading, 20)
+
+                ForEach(DataImport.DataType.allCases.filter(model.selectedDataTypes.contains), id: \.self) { selectedDataType in
+                    failureReasonPicker(for: selectedDataType)
+                        .padding(.leading, 20)
+                        .padding(.trailing, 20)
+                }
+
+                if model.errors.count > 0 && isInternalUser {
+                    Divider()
+                }
+#endif
+
+                if model.errors.count > 0 && isInternalUser {
                     Text(verbatim: "ERRORS:" as String).bold()
                         .padding(.top, 10)
                         .padding(.leading, 20)
@@ -357,24 +375,14 @@ struct DataImportView: ModalView {
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 10)
-
-                    Divider()
                 }
-#if DEBUG || REVIEW
-                Text("REVIEW:" as String).bold()
-                    .padding(.top, 10)
-                    .padding(.leading, 20)
-
-                ForEach(DataImport.DataType.allCases.filter(model.selectedDataTypes.contains), id: \.self) { selectedDataType in
-                    failureReasonPicker(for: selectedDataType)
-                        .padding(.leading, 20)
-                        .padding(.trailing, 20)
-                }
-#endif
             }
             Spacer()
             Button {
-                debugViewDisabled.toggle()
+#if DEBUG || REVIEW
+                debugViewDisabled = true
+#endif
+                model.errors.removeAll()
             } label: {
                 Image(.closeLarge)
             }

@@ -26,6 +26,9 @@ import Foundation
 /// potentially blocking the entire operation queue.
 protocol LaunchTask {
 
+    
+    var name: String { get }
+
     /// Performs the task. Can be implemented using async/await, GCD, or synchronous code.
     /// - Parameter context: Provides control methods for cancellation checks and completion signaling.
     func run(context: LaunchTaskContext)

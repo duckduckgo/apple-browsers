@@ -39,29 +39,19 @@ final class LaunchTaskManager {
         return queue
     }()
 
+    private var hasStarted = false
     private var tasks: [LaunchTask] = []
-    private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
 
     func register(task: LaunchTask) {
         tasks.append(task)
     }
 
     func start() {
-        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "LaunchTask") { [weak self] in
-            self?.queue.cancelAllOperations()
-            self?.endBackgroundTask()
-        }
+        guard !hasStarted else { return }
+        hasStarted = true
 
         let operations = tasks.map { LaunchOperation(task: $0) }
         queue.addOperations(operations, waitUntilFinished: true)
-        endBackgroundTask()
-    }
-
-    private func endBackgroundTask() {
-        if backgroundTaskID != .invalid {
-            UIApplication.shared.endBackgroundTask(backgroundTaskID)
-            backgroundTaskID = .invalid
-        }
     }
 
 }
@@ -77,6 +67,7 @@ final class LaunchOperation: Operation, @unchecked Sendable {
 
     private let task: LaunchTask
     private var taskContext: LaunchTaskContext?
+    private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
 
     init(task: LaunchTask) {
         self.task = task
@@ -126,6 +117,11 @@ final class LaunchOperation: Operation, @unchecked Sendable {
 
         isExecuting = true
 
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "LaunchTask-\(task.name)") { [weak self] in
+            self?.cancel()
+            self?.finish()
+        }
+
         let context = LaunchTaskContext(
             isCancelled: { [weak self] in self?.isCancelled ?? true },
             finish: { [weak self] in self?.finish() }
@@ -135,7 +131,16 @@ final class LaunchOperation: Operation, @unchecked Sendable {
     }
 
     private func finish() {
+        endBackgroundTask()
         isExecuting = false
         isFinished = true
     }
+
+    private func endBackgroundTask() {
+        if backgroundTaskID != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
+            backgroundTaskID = .invalid
+        }
+    }
+
 }

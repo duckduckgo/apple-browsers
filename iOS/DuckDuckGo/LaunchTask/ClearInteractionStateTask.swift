@@ -22,6 +22,8 @@ struct ClearInteractionStateTask: LaunchTask {
     let autoClearService: AutoClearService
     let mainViewController: MainViewController
 
+    var name: String = "ClearInteractionState"
+
     func run(context: LaunchTaskContext) {
         guard !autoClearService.isClearingEnabled else {
             context.finish()

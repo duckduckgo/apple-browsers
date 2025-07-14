@@ -710,6 +710,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
             askAIChatButtonWidthConstraint.animator().constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         } completionHandler: {
+            guard !self.isAskAIChatButtonExpanded else { return }
             self.askAIChatButton.title = ""
         }
     }

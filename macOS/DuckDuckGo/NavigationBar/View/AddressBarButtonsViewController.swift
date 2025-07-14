@@ -438,16 +438,18 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func openAIChatTab(for tab: Tab, with behavior: LinkOpenBehavior) {
-        // Force new tab behaviour when sidebar is open to avoid  loading Duck.ai in current tab
-        let shouldOverrideToNewTab = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) && behavior == .currentTab
-        let updatedBehaviour: LinkOpenBehavior = shouldOverrideToNewTab ? .newTab(selected: true) : behavior
+        // If the AI Chat sidebar is open and the intended behavior is to open in the current tab,
+        // close the sidebar before opening Duck.ai in the current tab.
+        if aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) && behavior == .currentTab {
+            aiChatSidebarPresenter.collapseSidebar(withAnimation: false)
+        }
 
         if let value = textFieldValue, !value.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .tabWithPrompt), frequency: .dailyAndStandard)
-            aiChatTabOpener.openAIChatTab(value, with: updatedBehaviour)
+            aiChatTabOpener.openAIChatTab(value, with: behavior)
         } else {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .tab), frequency: .dailyAndStandard)
-            aiChatTabOpener.openAIChatTab(nil, with: updatedBehaviour)
+            aiChatTabOpener.openAIChatTab(nil, with: behavior)
         }
     }
 

@@ -107,19 +107,28 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         description: String
     ) {
         let expectation = expectation(description: description)
+        var isFulfilled = false
         
-        func checkCondition() {
-            if condition() {
-                expectation.fulfill()
-            } else {
-                DispatchQueue.main.asyncAfter(deadline: .now() + pollingInterval) {
-                    checkCondition()
+        func scheduleNextCheck() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + pollingInterval) {
+                // Check if we should continue polling
+                guard !isFulfilled else { return }
+                
+                if condition() {
+                    isFulfilled = true
+                    expectation.fulfill()
+                } else {
+                    scheduleNextCheck()
                 }
             }
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + pollingInterval) {
-            checkCondition()
+        // Check condition immediately
+        if condition() {
+            isFulfilled = true
+            expectation.fulfill()
+        } else {
+            scheduleNextCheck()
         }
         
         wait(for: [expectation], timeout: timeout)

@@ -2308,6 +2308,10 @@ extension MainViewController: BrowserChromeDelegate {
 
 // MARK: - OmniBarDelegate Methods
 extension MainViewController: OmniBarDelegate {
+    func isSuggestionTrayVisible() -> Bool {
+        suggestionTrayController?.isShowing == true
+    }
+
     func onSelectFavorite(_ favorite: BookmarkEntity) {
         handleFavoriteSelected(favorite)
     }

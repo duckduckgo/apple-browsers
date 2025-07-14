@@ -24,6 +24,10 @@ import Bookmarks
 
 final class UpdatedOmniBarViewController: OmniBarViewController {
 
+    var isSuggestionTrayVisible: Bool {
+        omniDelegate?.isSuggestionTrayVisible() == true
+    }
+
     private lazy var omniBarView = UpdatedOmniBarView.create()
     private let aiChatSettings = AIChatSettings()
     private weak var editingStateViewController: OmniBarEditingStateViewController?
@@ -46,7 +50,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        updateMaskLayer()
+        updateShadowAppearanceByApplyingLayerMask()
     }
 
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
@@ -105,6 +109,8 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         // Should show separator only when there is another button next to accessory button
         let isShowingSeparator = state.showAccessoryButton && (state.showClear || state.showVoiceSearch || state.showRefresh || state.showAbort || state.showShare)
         omniBarView.isShowingSeparator = isShowingSeparator
+
+        updateShadowAppearanceByApplyingLayerMask()
     }
 
     override func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -135,31 +141,22 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         omniBarView.isUsingSmallTopSpacing = false
     }
 
-    var hasContent: Bool {
-        // For now this is a proxy for showing a web page.  This will need to change
-        //  when we allow customisation (along with a lot of other stuff).
-        state.showShare
-    }
-
-    override func preventShadowsOnTop() {
-        // omniBarView.updateMaskLayer(maskTop: true, hasContent: hasContent)
-    }
-
-    override func preventShadowsOnBottom() {
-        // omniBarView.updateMaskLayer(maskTop: false, hasContent: hasContent)
+    var shouldClipShadows: Bool {
+        state.isBrowsing
+            && !isSuggestionTrayVisible
     }
 
     // MARK: Notifications
 
     @objc private func addressBarPositionChanged() {
-        updateMaskLayer()
+        updateShadowAppearanceByApplyingLayerMask()
     }
 
     // MARK: - Private Helper Methods
 
-    private func updateMaskLayer() {
+    private func updateShadowAppearanceByApplyingLayerMask() {
         omniBarView.updateMaskLayer(maskTop: AppDependencyProvider.shared.appSettings.currentAddressBarPosition.isBottom,
-                                    hasContent: hasContent)
+                                    clip: shouldClipShadows)
     }
 
     private func presentExperimentalEditingState(for textField: UITextField) {

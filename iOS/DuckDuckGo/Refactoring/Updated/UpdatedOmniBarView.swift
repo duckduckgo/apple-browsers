@@ -262,14 +262,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         fatalError("init(coder:) has not been implemented")
     }
 
-//    override func layoutSubviews() {
-//        super.layoutSubviews()
-//        // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
-//        // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
-//        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self.frame.height)
-//        updateMaskLayer()
-//    }
-
     private func setUpSubviews() {
         addSubview(stackView)
 
@@ -659,10 +651,9 @@ extension UpdatedOmniBarView {
     }
 
     // Used to mask shadows going outside of bounds to prevent them covering other content
-    func updateMaskLayer(maskTop: Bool, hasContent: Bool) {
-        print("***", #function, maskTop, hasContent)
+    func updateMaskLayer(maskTop: Bool, clip: Bool) {
         self.masksTop = maskTop
-        self.clipsContent = hasContent
+        self.clipsContent = clip
         updateMaskLayer()
     }
 

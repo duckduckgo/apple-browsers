@@ -53,6 +53,8 @@ struct SmallOmniBarState {
         var showSearchLoupe: Bool { dependencies.shouldShowSearchLoupeIfPossible }
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
 
+        let isBrowsing = false
+
         let dependencies: OmnibarDependencyProvider
         let isLoading: Bool
     }
@@ -87,6 +89,9 @@ struct SmallOmniBarState {
         var onEnterPhoneState: OmniBarState { return self }
         var onReloadState: OmniBarState { return HomeTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var showSearchLoupe: Bool { dependencies.shouldShowSearchLoupeIfPossible }
+
+        let isBrowsing = false
+
         let dependencies: OmnibarDependencyProvider
         let isLoading: Bool
     }
@@ -122,6 +127,7 @@ struct SmallOmniBarState {
         var onReloadState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
 
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
+        let isBrowsing = false
 
         let dependencies: OmnibarDependencyProvider
         let isLoading: Bool
@@ -156,6 +162,8 @@ struct SmallOmniBarState {
         var onEnterPhoneState: OmniBarState { return self }
         var onReloadState: OmniBarState { return BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
         var showSearchLoupe: Bool { dependencies.shouldShowSearchLoupeIfPossible }
+
+        let isBrowsing = true
 
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
         let dependencies: OmnibarDependencyProvider
@@ -194,6 +202,8 @@ struct SmallOmniBarState {
         var onReloadState: OmniBarState { return BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var showSearchLoupe: Bool { dependencies.shouldShowSearchLoupeIfPossible }
 
+        let isBrowsing = true
+
         let dependencies: OmnibarDependencyProvider
         let isLoading: Bool
     }
@@ -230,6 +240,8 @@ struct SmallOmniBarState {
         var onEnterPhoneState: OmniBarState { return self }
         var onReloadState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
 
+        let isBrowsing = true
+
         let dependencies: OmnibarDependencyProvider
         let isLoading: Bool
     }
@@ -264,6 +276,8 @@ struct SmallOmniBarState {
         var onReloadState: OmniBarState { return BrowsingTextEditingStartedState(dependencies: dependencies, isLoading: isLoading) }
         var showSearchLoupe: Bool { dependencies.shouldShowSearchLoupeIfPossible }
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
+
+        let isBrowsing = true
 
         let dependencies: OmnibarDependencyProvider
         let isLoading: Bool

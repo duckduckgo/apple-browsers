@@ -44,6 +44,14 @@ class SuggestionTrayViewController: UIViewController {
         autocompleteController != nil
     }
 
+    var isShowingFavoritesOverlay: Bool {
+        favoritesOverlay != nil
+    }
+
+    var isShowing: Bool {
+        isShowingAutocompleteSuggestions || isShowingFavoritesOverlay
+    }
+
     private var autocompleteController: AutocompleteViewController?
     private var favoritesOverlay: FavoritesOverlay?
     private var willRemoveAutocomplete = false

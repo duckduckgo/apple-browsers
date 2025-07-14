@@ -511,7 +511,7 @@ extension AppDelegate {
         autofillPixelReporter.resetStoreDefaults()
         let loginImportState = AutofillLoginImportState()
         loginImportState.hasImportedLogins = false
-        loginImportState.isCredentialsImportPromptPermanantlyDismissed = false
+        loginImportState.isCredentialsImportPromoInBrowserPermanentlyDismissed = false
     }
 
     @objc func resetBookmarks(_ sender: Any?) {

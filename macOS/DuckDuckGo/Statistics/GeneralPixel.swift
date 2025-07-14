@@ -538,7 +538,7 @@ enum GeneralPixel: PixelKitEventV2 {
             return "m_mac_cbr-wait_\(onboardingShown)_\(waitTime)_\(result)"
 
         case .launch:
-            return "ml_mac"
+            return "ml_mac_app-launch"
 
         case .dailyActiveUser:
             return  "m_mac_daily_active_user"

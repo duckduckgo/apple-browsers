@@ -95,16 +95,15 @@ private extension DefaultBrowserPromptActiveUserView {
 
                 Group {
                     Text(UserText.ActiveUserModal.title)
-                        .font(.system(size: Metrics.Content.titleFontSize, weight: .bold))
-                        .kerning(Metrics.Content.kerning)
+                        .titleStyle(alignment: .center)
 
                     Text(UserText.ActiveUserModal.message)
                         .font(.system(size: Metrics.Content.messageFontSize))
+                        .foregroundStyle(Color.primary)
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.7)
                 }
-                .foregroundStyle(Color.primary)
                 .opacity(0.84)
-                .multilineTextAlignment(.center)
-                .minimumScaleFactor(0.7)
             }
         }
 

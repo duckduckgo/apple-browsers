@@ -707,7 +707,6 @@ final class LocalBookmarkStore: BookmarkStore {
     // MARK: - Import
 
     /// Imports bookmarks into the Core Data store from an `ImportedBookmarks` object.
-    /// The source is used to determine where to put bookmarks, as we want to match the source browser's structure as closely as possible.
     ///
     /// The import strategy is as follows:
     ///
@@ -715,6 +714,11 @@ final class LocalBookmarkStore: BookmarkStore {
     /// 2. **Safari:** Create a root level "Imported Favorites" folder to store bookmarks from the bookmarks bar, and all other bookmarks go at the root level.
     /// 3. **Chrome:** Put all bookmarks at the root level, except for Other Bookmarks which go in a root level "Other Bookmarks" folder.
     /// 4. **Firefox:** Put all bookmarks at the root level, except for Other Bookmarks which go in a root level "Other Bookmarks" folder.
+    ///
+    /// - Parameters:
+    ///   - bookmarks: The bookmarks to import.
+    ///   - source: The source of the bookmarks. Used to determine where to put bookmarks, as we want to match the source browser's structure as closely as possible.
+    ///   - markRootBookmarksAsFavoritesByDefault: If true, the bookmarks at the root level will be marked as favorites by default.
     func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool = true) -> BookmarksImportSummary {
         var total = BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
 

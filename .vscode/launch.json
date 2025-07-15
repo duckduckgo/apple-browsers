@@ -1,0 +1,40 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:duckplayer.pixel.updates}/SharedPackages/BrowserServicesKit",
+            "name": "Debug SyncMetadataTestDBBuilder (SharedPackages/BrowserServicesKit)",
+            "program": "${workspaceFolder:duckplayer.pixel.updates}/SharedPackages/BrowserServicesKit/.build/debug/SyncMetadataTestDBBuilder",
+            "preLaunchTask": "swift: Build Debug SyncMetadataTestDBBuilder (SharedPackages/BrowserServicesKit)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:duckplayer.pixel.updates}/SharedPackages/BrowserServicesKit",
+            "name": "Release SyncMetadataTestDBBuilder (SharedPackages/BrowserServicesKit)",
+            "program": "${workspaceFolder:duckplayer.pixel.updates}/SharedPackages/BrowserServicesKit/.build/release/SyncMetadataTestDBBuilder",
+            "preLaunchTask": "swift: Build Release SyncMetadataTestDBBuilder (SharedPackages/BrowserServicesKit)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:duckplayer.pixel.updates}/SharedPackages/BrowserServicesKit",
+            "name": "Debug BookmarksTestDBBuilder (SharedPackages/BrowserServicesKit)",
+            "program": "${workspaceFolder:duckplayer.pixel.updates}/SharedPackages/BrowserServicesKit/.build/debug/BookmarksTestDBBuilder",
+            "preLaunchTask": "swift: Build Debug BookmarksTestDBBuilder (SharedPackages/BrowserServicesKit)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:duckplayer.pixel.updates}/SharedPackages/BrowserServicesKit",
+            "name": "Release BookmarksTestDBBuilder (SharedPackages/BrowserServicesKit)",
+            "program": "${workspaceFolder:duckplayer.pixel.updates}/SharedPackages/BrowserServicesKit/.build/release/BookmarksTestDBBuilder",
+            "preLaunchTask": "swift: Build Release BookmarksTestDBBuilder (SharedPackages/BrowserServicesKit)"
+        }
+    ]
+}

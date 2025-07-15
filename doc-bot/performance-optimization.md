@@ -1,4 +1,4 @@
----
+/---
 alwaysApply: false
 title: "Performance Optimization Guidelines"
 description: "Performance optimization guidelines for DuckDuckGo browser including memory management, UI performance, network optimization, and monitoring"

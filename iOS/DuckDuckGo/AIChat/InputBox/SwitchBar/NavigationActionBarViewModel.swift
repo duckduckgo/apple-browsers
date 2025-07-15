@@ -104,10 +104,6 @@ final class NavigationActionBarViewModel: ObservableObject {
         switchBarHandler.toggleForceWebSearch()
     }
 
-    func markUserInteraction() {
-        hasUserInteractedWithText = true
-    }
-
     var shouldShowMicButton: Bool {
         /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210777323867681?focus=true
         guard isVoiceSearchEnabled else { return false }

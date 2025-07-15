@@ -187,7 +187,9 @@ jobs:
       run: |
         echo "app-version=${{ env.app-version }}" >> $GITHUB_OUTPUT
         echo "app-name=${{ env.app-name }}" >> $GITHUB_OUTPUT
-        echo "dsym-name=DuckDuckGo-${{ env.app-version }}-dSYM.zip" >> $GITHUB_OUTPUT
+        app_name="${{ env.app-name }}"
+        app_name="${app_name// /-}"
+        echo "dsym-name=${app_name}-${{ env.app-version }}-dSYM.zip" >> $GITHUB_OUTPUT
 
     - name: Upload app artifact
       uses: actions/upload-artifact@v4
@@ -353,7 +355,10 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        dmg="duckduckgo-${{ env.app-version }}.dmg"
+        app_name="${{ env.app-name }}"
+        app_name="${app_name// /-}" # replace spaces with hyphens
+        app_name="${app_name,,}" # lowercase
+        dmg="${app_name}-${{ env.app-version }}.dmg"
         # Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
         create-dmg --volname "${{ env.app-name }}" \
             --volicon "scripts/assets/dmg-${{ env.release-type }}.icns" \

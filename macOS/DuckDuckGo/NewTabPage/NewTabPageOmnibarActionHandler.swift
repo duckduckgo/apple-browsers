@@ -54,9 +54,8 @@ final class NewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
     }
 
     func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget) {
-        guard let mainWindowController = windowControllersManager.lastKeyMainWindowController,
-                let addressBarTextField = mainWindowController.mainViewController.navigationBarViewController.addressBarViewController?.addressBarTextField else {
-            Logger.newTabPageOmnibar.error("Failed to get mainWindowController or addressBarTextField in openSuggestion")
+        guard let mainWindowController = windowControllersManager.lastKeyMainWindowController else {
+            Logger.newTabPageOmnibar.error("Failed to get mainWindowController")
             return
         }
 
@@ -68,7 +67,7 @@ final class NewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
         } else if case .openTab(_, url: let url, tabId: let tabId, _) = appSuggestion {
             windowControllersManager.show(url: url, tabId: tabId, source: .switchToOpenTab, newTab: true)
         } else {
-            addressBarTextField.makeUrl(suggestion: appSuggestion, stringValueWithoutSuffix: "") { suggestionUrl, _, _ in
+            URL.makeUrl(suggestion: appSuggestion, stringValueWithoutSuffix: "") { suggestionUrl, _, _ in
                 guard let suggestionUrl else {
                     Logger.newTabPageOmnibar.error("Failed to convert suggestion to URL")
                     return

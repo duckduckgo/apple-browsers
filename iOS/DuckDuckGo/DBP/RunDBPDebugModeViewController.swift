@@ -33,16 +33,56 @@ import Core
 // MARK: - Main View Controller
 
 final class RunDBPDebugModeViewController: UIHostingController<RunDBPDebugModeView> {
+    private var viewModel: RunDBPDebugModeViewModel
     
     init() {
         let viewModel = RunDBPDebugModeViewModel()
         let contentView = RunDBPDebugModeView(viewModel: viewModel)
+        self.viewModel = viewModel
         super.init(rootView: contentView)
         self.title = "PIR Debug Mode"
+        
+        setupWebViewButtonObservation()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupWebViewButtonObservation() {
+        viewModel.$isWebViewAvailable
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isAvailable in
+                self?.updateWebViewButton(isAvailable: isAvailable)
+            }
+            .store(in: &viewModel.cancellables)
+    }
+    
+    private func updateWebViewButton(isAvailable: Bool) {
+        if isAvailable {
+            showWebViewButton()
+        } else {
+            hideWebViewButton()
+        }
+    }
+    
+    private func showWebViewButton() {
+        let webViewButton = UIBarButtonItem(
+            title: "Show WebView",
+            style: .plain,
+            target: self,
+            action: #selector(showWebViewTapped)
+        )
+        webViewButton.tintColor = .systemBlue
+        navigationItem.rightBarButtonItem = webViewButton
+    }
+    
+    private func hideWebViewButton() {
+        navigationItem.rightBarButtonItem = nil
+    }
+    
+    @objc private func showWebViewTapped() {
+        viewModel.showWebView()
     }
 }
 
@@ -177,14 +217,6 @@ struct RunDBPDebugModeView: View {
             if viewModel.isRunning {
                 VStack(spacing: 10) {
                     Text(viewModel.currentBrokerName != nil ? "Scanning \(viewModel.currentBrokerName!) (\(viewModel.currentBrokerIndex)/\(viewModel.totalBrokerCount))" : "Scanning...")
-
-                    HStack(spacing: 10) {
-                        Button("Show WebView") {
-                            viewModel.showWebView()
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(!viewModel.isRunning)
-                    }
                 }
             } else {
                 VStack(spacing: 10) {
@@ -303,11 +335,13 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     @Published var alertTitle: String = ""
     @Published var alertMessage: String = ""
     @Published var optOutInProgress: Set<UUID> = []
+    @Published var isWebViewAvailable: Bool = false
 
     @Published private var currentRunner: BrokerProfileScanSubJobWebRunner?
+    private var currentOptOutRunner: BrokerProfileOptOutSubJobWebRunner?
 
     private var currentWebViewManager: DBPDebugWebViewWindowManager?
-    private var cancellables = Set<AnyCancellable>()
+    var cancellables = Set<AnyCancellable>()
     private var currentTask: Task<Void, Never>?
     
     private var privacyConfigManager: PrivacyConfigurationManaging {
@@ -424,6 +458,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
         
         isRunning = true
         results.removeAll()
+        updateWebViewAvailability()
         
         currentTask = Task { @MainActor in
             let profile = createProfile()
@@ -488,10 +523,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
             self.currentBrokerIndex = 0
             self.totalBrokerCount = 0
             
-            // Clean up WebView and close window when scan completes
             self.hideWebView()
             self.currentWebViewManager = nil
             self.currentRunner = nil
+            self.updateWebViewAvailability()
             
             if allResults.isEmpty {
                 showAlert(title: "No Results", message: "No profiles were found during the scan.")
@@ -502,22 +537,45 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     }
     
     func showWebView() {
-        guard isRunning else {
-            showAlert(title: "No Active Scan", message: "There is no active scan to display")
-            return
-        }
-        
-        if currentWebViewManager == nil {
-            if let runner = currentRunner, let webViewHandler = runner.webViewHandler {
+        if let webViewHandler = getActiveWebViewHandler() {
+            if currentWebViewManager == nil {
                 currentWebViewManager = DBPDebugWebViewWindowManager(webViewHandler: webViewHandler)
-            } else {
-                showAlert(title: "WebView Error", message: "No active WebView available to display")
-                return
             }
+            let title = getWebViewTitle()
+            currentWebViewManager?.showWebView(title: title)
+        } else if isRunning {
+            showAlert(title: "WebView Loading", message: "WebView is not ready yet. Please try again in a moment.")
+        } else if !optOutInProgress.isEmpty {
+            showAlert(title: "WebView Loading", message: "WebView is not ready yet. Please try again in a moment.")
+        } else {
+            showAlert(title: "No Active Operation", message: "No scan or opt-out operation is currently running")
         }
-
-        let brokerName = currentRunner?.query.dataBroker.name ?? selectedBroker?.name ?? "Unknown Broker"
-        currentWebViewManager?.showWebView(title: "PIR Debug Mode: \(brokerName)")
+    }
+    
+    private func getActiveWebViewHandler() -> WebViewHandler? {
+        if let runner = currentRunner {
+            return runner.webViewHandler
+        }
+        if let optOutRunner = currentOptOutRunner {
+            return optOutRunner.webViewHandler
+        }
+        return nil
+    }
+    
+    private func getWebViewTitle() -> String {
+        if let runner = currentRunner {
+            let brokerName = runner.query.dataBroker.name
+            return "PIR Debug Mode: \(brokerName) (Scan)"
+        }
+        if let optOutRunner = currentOptOutRunner {
+            let brokerName = optOutRunner.query.dataBroker.name
+            return "PIR Debug Mode: \(brokerName) (Opt Out)"
+        }
+        return "PIR Debug Mode"
+    }
+    
+    private func updateWebViewAvailability() {
+        isWebViewAvailable = isRunning || !optOutInProgress.isEmpty
     }
     
     func hideWebView() {
@@ -527,11 +585,15 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     func runOptOut(for result: ScanResult) {
         // Add to in-progress set
         optOutInProgress.insert(result.id)
+        updateWebViewAvailability()
         
         Task { @MainActor in
             defer {
-                // Always remove from in-progress set when done
                 optOutInProgress.remove(result.id)
+                updateWebViewAvailability()
+                self.currentOptOutRunner = nil
+                self.hideWebView()
+                self.currentWebViewManager = nil
             }
             
             do {
@@ -554,6 +616,8 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler
                 ) { true }
+                
+                self.currentOptOutRunner = runner
                 
                 try await runner.optOut(
                     profileQuery: brokerProfileQueryData,

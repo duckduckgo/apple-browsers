@@ -60,14 +60,17 @@ final class DefaultBrowserPromptUserActivityManager: DefaultBrowserPromptUserAct
     func recordActivity() {
         let today = calendar.startOfDay(for: dateProvider())
 
-        var currentActivity = store.currentActivity()
+        let currentActivity = store.currentActivity()
 
         // If we already measured today, skip.
         if let lastActive = currentActivity.lastActiveDate, calendar.isDate(lastActive, inSameDayAs: today) {
             return
         }
 
-        let newActivity = DefaultBrowserPromptUserActivity(numberOfActiveDays: currentActivity.numberOfActiveDays + 1, lastActiveDate: today)
+        let lastActiveDate = today
+        let secondLastActiveDate = currentActivity.lastActiveDate ?? lastActiveDate
+
+        let newActivity = DefaultBrowserPromptUserActivity(numberOfActiveDays: currentActivity.numberOfActiveDays + 1, lastActiveDate: lastActiveDate, secondLastActiveDate: secondLastActiveDate)
         store.save(newActivity)
     }
 
@@ -75,9 +78,15 @@ final class DefaultBrowserPromptUserActivityManager: DefaultBrowserPromptUserAct
         store.currentActivity().numberOfActiveDays
     }
 
+    func numberOfInactiveDays() -> Int {
+        let currentActivity = store.currentActivity()
+        guard let lastActiveDate = currentActivity.lastActiveDate, let secondLastActiveDate = currentActivity.secondLastActiveDate else { return 0 }
+        return calendar.numberOfDaysBetween(secondLastActiveDate, and: lastActiveDate) ?? 0
+    }
+
     func resetNumberOfActiveDays() {
         let currentActivity = store.currentActivity()
-        let newActivity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 0, lastActiveDate: currentActivity.lastActiveDate)
+        let newActivity = DefaultBrowserPromptUserActivity(numberOfActiveDays: 0, lastActiveDate: currentActivity.lastActiveDate, secondLastActiveDate: currentActivity.secondLastActiveDate)
         store.save(newActivity)
     }
 }

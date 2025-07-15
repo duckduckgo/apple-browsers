@@ -51,7 +51,7 @@ final class LaunchTaskManager {
         hasStarted = true
 
         let operations = tasks.map { LaunchOperation(task: $0) }
-        queue.addOperations(operations, waitUntilFinished: true)
+        queue.addOperations(operations, waitUntilFinished: false)
     }
 
 }

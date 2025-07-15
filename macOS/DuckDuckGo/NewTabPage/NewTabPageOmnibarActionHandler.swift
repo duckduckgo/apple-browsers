@@ -21,6 +21,7 @@ import AppKit
 import Suggestions
 import Common
 import AIChat
+import os.log
 
 final class NewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
 
@@ -34,9 +35,12 @@ final class NewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
     }
 
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
-        guard let mainWindowController = windowControllersManager.lastKeyMainWindowController,
-              let searchURL = URL.makeSearchUrl(from: term) else {
-            assertionFailure("Failed to open search")
+        guard let mainWindowController = windowControllersManager.lastKeyMainWindowController else {
+            Logger.newTabPageOmnibar.error("Failed to get mainWindowController in submitSearch")
+            return
+        }
+        guard let searchURL = URL.makeSearchUrl(from: term) else {
+            Logger.newTabPageOmnibar.error("Failed to create search URL from term: \(term)")
             return
         }
 
@@ -52,7 +56,7 @@ final class NewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
     func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget) {
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController,
                 let addressBarTextField = mainWindowController.mainViewController.navigationBarViewController.addressBarViewController?.addressBarTextField else {
-            assertionFailure("Failed to open suggestion")
+            Logger.newTabPageOmnibar.error("Failed to get mainWindowController or addressBarTextField in openSuggestion")
             return
         }
 
@@ -66,7 +70,7 @@ final class NewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
         } else {
             addressBarTextField.makeUrl(suggestion: appSuggestion, stringValueWithoutSuffix: "") { suggestionUrl, _, _ in
                 guard let suggestionUrl else {
-                    assertionFailure("Failed to open suggestion")
+                    Logger.newTabPageOmnibar.error("Failed to convert suggestion to URL")
                     return
                 }
                 NewTabPageLinkOpener.open(

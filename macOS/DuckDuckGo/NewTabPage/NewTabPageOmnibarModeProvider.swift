@@ -19,6 +19,7 @@
 import NewTabPage
 import Persistence
 import AppKit
+import os.log
 
 final class NewTabPageOmnibarModeProvider: NewTabPageOmnibarModeProviding {
 
@@ -34,14 +35,22 @@ final class NewTabPageOmnibarModeProvider: NewTabPageOmnibarModeProviding {
 
     var mode: NewTabPageDataModel.OmnibarMode {
         get {
-            guard let rawValue = try? keyValueStore.object(forKey: Key.newTabPageOmnibarMode.rawValue) as? String,
-                  let mode = NewTabPageDataModel.OmnibarMode(rawValue: rawValue) else {
-                return .search
+            do {
+                if let rawValue = try keyValueStore.object(forKey: Key.newTabPageOmnibarMode.rawValue) as? String,
+                   let mode = NewTabPageDataModel.OmnibarMode(rawValue: rawValue) {
+                    return mode
+                }
+            } catch {
+                Logger.newTabPageOmnibar.error("Failed to retrieve omnibar mode from keyValueStore: \(error.localizedDescription)")
             }
-            return mode
+            return .search
         }
         set {
-            try? keyValueStore.set(newValue.rawValue, forKey: Key.newTabPageOmnibarMode.rawValue)
+            do {
+                try keyValueStore.set(newValue.rawValue, forKey: Key.newTabPageOmnibarMode.rawValue)
+            } catch {
+                Logger.newTabPageOmnibar.error("Failed to set omnibar mode in keyValueStore: \(error.localizedDescription)")
+            }
         }
     }
 

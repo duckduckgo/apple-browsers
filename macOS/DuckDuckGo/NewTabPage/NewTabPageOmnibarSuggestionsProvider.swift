@@ -18,6 +18,7 @@
 
 import NewTabPage
 import Suggestions
+import os.log
 
 final class NewTabPageOmnibarSuggestionsProvider: NewTabPageOmnibarSuggestionsProviding {
 
@@ -31,6 +32,7 @@ final class NewTabPageOmnibarSuggestionsProvider: NewTabPageOmnibarSuggestionsPr
         await withCheckedContinuation { [weak self] continuation in
             self?.suggestionContainer.getSuggestions(for: term) { result in
                 guard let result else {
+                    Logger.newTabPageOmnibar.error("Failed to get suggestions")
                     continuation.resume(returning: .empty)
                     return
                 }

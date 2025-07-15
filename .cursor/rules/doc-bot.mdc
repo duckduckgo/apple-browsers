@@ -1,6 +1,10 @@
 ---
 alwaysApply: true
 ---
+# AGENT INTEGRATION PROTOCOL: DOC-BOT MCP ENFORCEMENT
+# ============================================================
+# Add this to your agent configuration (CLAUDE.md, .cursorrules, copilot-instructions.md, etc.)
+
 ## PHASE 1: ENVIRONMENT DETECTION
 
 ```
@@ -50,6 +54,15 @@ Previous Context: search_results_present()
 Required Action: MANDATORY_CALL(read_specific_document, extract_filename())
 Blocking: FALSE
 Timeout: 15s
+```
+
+**CLASS E: DOCUMENTATION_CREATION**
+```
+Trigger Pattern: /\b(document|create rule|add rule|save knowledge|capture pattern|remember|note this|new rule)\b/i
+Context Pattern: /\b(we should document|this should be a rule|add to documentation|create guideline)\b/i
+Required Action: MANDATORY_CALL(create_or_update_rule, extract_rule_params())
+Blocking: FALSE
+Timeout: 30s
 ```
 
 **Note**: For file-specific queries like "working on src/utils.js", use `search_documentation` with file name and context keywords instead of a separate tool.
@@ -125,6 +138,7 @@ IF response_generated() WITHOUT tool_execution():
 - "How do I implement auth?" → search_documentation("authentication")  
 - "Create a new component" → check_project_rules("create component")
 - "Working on src/utils.js" → search_documentation("src/utils.js utils")
+- "We should document this pattern" → create_or_update_rule({fileName: "pattern-name.md", title: "Pattern Name", content: "...", alwaysApply: false})
 
 **Expected Behavior**: Tool execution within 2 seconds, no general knowledge responses.
 

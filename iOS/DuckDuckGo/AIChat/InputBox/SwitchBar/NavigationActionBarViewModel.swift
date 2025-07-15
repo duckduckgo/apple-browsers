@@ -25,40 +25,41 @@ import SwiftUI
 
 @MainActor
 final class NavigationActionBarViewModel: ObservableObject {
-    
+
     // MARK: - Published Properties
     @Published var isSearchMode: Bool = true
     @Published var hasText: Bool = false
     @Published var isWebSearchEnabled: Bool = false
     @Published var isVoiceSearchEnabled: Bool = true
     @Published var hasUserInteractedWithText: Bool = false
-    
+    @Published var isCurrentTextValidURL: Bool = false
+
     // MARK: - Dependencies
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()
-    
+
     // MARK: - Action Callbacks
     let onMicrophoneTapped: () -> Void
     let onNewLineTapped: () -> Void
     let onSearchTapped: () -> Void
-    
+
     // MARK: - Initialization
     init(switchBarHandler: SwitchBarHandling,
          onMicrophoneTapped: @escaping () -> Void = {},
          onNewLineTapped: @escaping () -> Void = {},
          onSearchTapped: @escaping () -> Void = {}) {
-        
+
         self.switchBarHandler = switchBarHandler
         self.onMicrophoneTapped = onMicrophoneTapped
         self.onNewLineTapped = onNewLineTapped
         self.onSearchTapped = onSearchTapped
-        
+
         setupBindings()
         updateInitialState()
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func setupBindings() {
         switchBarHandler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
@@ -66,7 +67,7 @@ final class NavigationActionBarViewModel: ObservableObject {
                 self?.isSearchMode = toggleState == .search
             }
             .store(in: &cancellables)
-        
+
         switchBarHandler.currentTextPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] (text: String) in
@@ -74,7 +75,7 @@ final class NavigationActionBarViewModel: ObservableObject {
                 self?.hasText = hasText
             }
             .store(in: &cancellables)
-        
+
         switchBarHandler.forceWebSearchPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] forceWebSearch in
@@ -88,18 +89,26 @@ final class NavigationActionBarViewModel: ObservableObject {
                 self?.hasUserInteractedWithText = hasUserInteractedWithText
             }
             .store(in: &cancellables)
+
+        switchBarHandler.isCurrentTextValidURLPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isValidURL in
+                self?.isCurrentTextValidURL = isValidURL
+            }
+            .store(in: &cancellables)
     }
-    
+
     private func updateInitialState() {
         isSearchMode = switchBarHandler.currentToggleState == .search
         hasText = !switchBarHandler.currentText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
         isWebSearchEnabled = switchBarHandler.forceWebSearch
         isVoiceSearchEnabled = switchBarHandler.isVoiceSearchEnabled
         hasUserInteractedWithText = false
+        isCurrentTextValidURL = switchBarHandler.isCurrentTextValidURL
     }
-    
+
     // MARK: - Public Methods
-    
+
     func handleWebSearchToggle() {
         switchBarHandler.toggleForceWebSearch()
     }
@@ -111,11 +120,11 @@ final class NavigationActionBarViewModel: ObservableObject {
         if !hasText {
             return true
         }
-        
+
         if hasText && hasUserInteractedWithText {
             return false
         }
-        
+
         return true
     }
 }

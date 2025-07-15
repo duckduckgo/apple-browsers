@@ -85,6 +85,8 @@ final class MainCoordinator {
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: daxDialogs,
                                                                       contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
+        let textZoomCoordinator = Self.makeTextZoomCoordinator()
+        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
         interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         tabManager = TabManager(model: tabsModel,
                                 persistence: tabsPersistence,
@@ -101,8 +103,8 @@ final class MainCoordinator {
                                 contentScopeExperimentManager: contentScopeExperimentManager,
                                 subscriptionCookieManager: subscriptionService.subscriptionCookieManager,
                                 appSettings: AppDependencyProvider.shared.appSettings,
-                                textZoomCoordinator: Self.makeTextZoomCoordinator(),
-                                websiteDataManager: Self.makeWebsiteDataManager(fireproofing: fireproofing),
+                                textZoomCoordinator: textZoomCoordinator,
+                                websiteDataManager: websiteDataManager,
                                 fireproofing: fireproofing,
                                 maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                 maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
@@ -127,8 +129,8 @@ final class MainCoordinator {
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
                                         subscriptionCookieManager: subscriptionService.subscriptionCookieManager,
-                                        textZoomCoordinator: Self.makeTextZoomCoordinator(),
-                                        websiteDataManager: Self.makeWebsiteDataManager(fireproofing: fireproofing),
+                                        textZoomCoordinator: textZoomCoordinator,
+                                        websiteDataManager: websiteDataManager,
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,

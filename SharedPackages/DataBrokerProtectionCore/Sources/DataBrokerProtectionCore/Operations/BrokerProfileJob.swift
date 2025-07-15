@@ -195,8 +195,6 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                                            version: brokerProfileQueriesData.first?.dataBroker.version)
             }
         }
-
-        finish()
     }
 
     private func finish() {

@@ -124,7 +124,7 @@ platform :mac do
   #
   desc 'Makes App Store Alpha build and uploads it to TestFlight'
   lane :release_testflight_alpha do |options|
-    build_review(options)
+    build_alpha(options)
 
     upload_to_testflight(
       options.merge(
@@ -280,6 +280,19 @@ platform :mac do
     build_app(
       export_method: "app-store",
       scheme: "macOS Browser Review App Store",
+      export_options: "scripts/assets/AppStoreExportOptions.plist",
+      xcargs: "-skipPackagePluginValidation -skipMacroValidation"
+    )
+  end
+
+  # Builds the App Store review version of the app.
+  #
+  private_lane :build_alpha do |options|
+    sync_signing(options)
+
+    build_app(
+      export_method: "app-store",
+      scheme: "macOS Browser Alpha App Store",
       export_options: "scripts/assets/AppStoreExportOptions.plist",
       xcargs: "-skipPackagePluginValidation -skipMacroValidation"
     )

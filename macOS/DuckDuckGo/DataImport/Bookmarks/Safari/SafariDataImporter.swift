@@ -103,6 +103,7 @@ final class SafariDataImporter: DataImporter {
 
             summary[.bookmarks] = .success(.init(bookmarksSummary))
         case .failure(let error):
+            // We don't fire GeneralPixel.favoritesImportFailed here because any failures are due to bookmarks parsing, not fetching/importing favorites.
             summary[.bookmarks] = .failure(error)
         }
 

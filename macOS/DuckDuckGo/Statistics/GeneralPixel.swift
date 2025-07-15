@@ -555,7 +555,7 @@ enum GeneralPixel: PixelKitEventV2 {
         case .dataImportSucceeded(action: let action, source: let source, sourceVersion: _):
             return "m_mac_data-import-succeeded_\(action)_\(source)"
 
-        case .favoritesImportFailed(source: let source, sourceVersion: _, error: let error):
+        case .favoritesImportFailed(source: let source, sourceVersion: _, error: _):
             return "m_mac_data-import-failed_favorites_\(source)"
         case .favoritesImportSucceeded(source: let source, sourceVersion: _, favoritesBucket: _):
             return "m_mac_data-import-succeeded_favorites_\(source)"

@@ -102,6 +102,7 @@ public enum DataImportAction: String, RawRepresentable {
     case bookmarks
     case passwords
     case favicons
+    case favorites
     case generic
 
     public init(_ type: DataImport.DataType) {

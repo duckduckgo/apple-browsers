@@ -42,11 +42,13 @@ final class SafariDataImporter: DataImporter {
     private var source: DataImport.Source {
         profile.browser.importSource
     }
+    private let featureFlagger: FeatureFlagger
 
-    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager) {
+    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager, featureFlagger: FeatureFlagger) {
         self.profile = profile
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
+        self.featureFlagger = featureFlagger
     }
 
     var importableTypes: [DataImport.DataType] {
@@ -69,7 +71,7 @@ final class SafariDataImporter: DataImporter {
     func validateAccess(for types: Set<DataImport.DataType>) -> [DataImport.DataType: any DataImportError]? {
         guard types.contains(.bookmarks) else { return nil }
 
-        if case .failure(let error) = SafariBookmarksReader(safariBookmarksFileURL: fileUrl).validateFileReadAccess() {
+        if case .failure(let error) = SafariBookmarksReader(safariBookmarksFileURL: fileUrl, featureFlagger: featureFlagger).validateFileReadAccess() {
             return [.bookmarks: error]
         }
         return nil
@@ -80,11 +82,12 @@ final class SafariDataImporter: DataImporter {
         // logins will be imported from CSV
         guard types.contains(.bookmarks) else { return [:] }
 
-        let bookmarkReader = SafariBookmarksReader(safariBookmarksFileURL: fileUrl)
+        let bookmarkReader = SafariBookmarksReader(safariBookmarksFileURL: fileUrl, featureFlagger: featureFlagger)
         let bookmarkResult = bookmarkReader.readBookmarks()
 
         let summary = bookmarkResult.map { bookmarks in
-            bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source))
+            let maxFavoritesCount = featureFlagger.isFeatureOn(.updateSafariBookmarksImport) ? 12 : nil
+            return bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: maxFavoritesCount)
         }
 
         if case .success = summary {

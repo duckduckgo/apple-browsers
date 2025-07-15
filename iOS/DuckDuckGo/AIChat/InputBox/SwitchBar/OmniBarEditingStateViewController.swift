@@ -273,7 +273,7 @@ extension OmniBarEditingStateViewController: SwipeContainerManagerDelegate {
         switchBarVC.updateScrollProgress(progress)
 
         if let logoView {
-            if suggestionTrayManager?.isShowingSuggestions == true {
+            if suggestionTrayManager?.isShowingSuggestionTray == true {
                 logoView.alpha = Easing.inOutCirc(progress)
                 logoView.transform = CGAffineTransform(translationX: (1 - progress) * (logoView.center.x + logoView.bounds.width/2.0), y: 0)
             } else {

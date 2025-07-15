@@ -43,6 +43,7 @@ final class LaunchTaskManager {
     private var tasks: [LaunchTask] = []
 
     func register(task: LaunchTask) {
+        assert(!hasStarted, "Registering tasks after starting the manager has no effect.")
         tasks.append(task)
     }
 

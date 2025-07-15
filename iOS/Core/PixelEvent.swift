@@ -1266,6 +1266,12 @@ extension Pixel {
         case aiChatMetricSentPromptOngoingChat
         case aiChatInternalSwitchBarDisplayed
 
+        // MARK: Privacy Pro Toolbar Button
+        case privacyProToolbarButtonShown
+        case privacyProToolbarButtonPopoverShown
+        case privacyProToolbarButtonPopoverNoThanksClicked
+        case privacyProToolbarButtonPopoverTryForFreeClicked
+
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
 
@@ -2476,6 +2482,12 @@ extension Pixel.Event {
         case .aiChatMetricOpenMostRecentHistoryChat: return "m_aichat_open_most_recent_history_chat"
         case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
+
+        // MARK: Privacy Pro Toolbar Button
+        case .privacyProToolbarButtonShown: return "m_privacy_pro_toolbar_button_shown"
+        case .privacyProToolbarButtonPopoverShown: return "m_privacy_pro_toolbar_button_popover_shown"
+        case .privacyProToolbarButtonPopoverNoThanksClicked: return "m_privacy_pro_toolbar_button_popover_no_thanks_clicked"
+        case .privacyProToolbarButtonPopoverTryForFreeClicked: return "m_privacy_pro_toolbar_button_popover_try_for_free_clicked"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

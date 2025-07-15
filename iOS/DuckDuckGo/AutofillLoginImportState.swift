@@ -25,7 +25,7 @@ final class AutofillLoginImportState: AutofillLoginImportStateProvider, Autofill
 
     private enum Key {
         static let hasImportedLogins: String = "com.duckduckgo.logins.hasImportedLogins"
-        static let isCredentialsImportViaBrowserPromptPermanentlyDismissed: String = "com.duckduckgo.logins.isCredentialsImportBrowserPromptPermananentlyDismissed"
+        static let isCredentialsImportViaBrowserPromptPermanentlyDismissed: String = "com.duckduckgo.logins.isCredentialsImportBrowserPromptPermanentlyDismissed"
         static let isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed: String = "com.duckduckgo.logins.isCredentialsImportPasswordsPromoPermanentlyDismissed"
     }
 

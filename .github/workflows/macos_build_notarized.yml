@@ -15,6 +15,7 @@ on:
         options:
         - review
         - release
+        - alpha
       create-dmg:
         description: "Create DMG image"
         required: true
@@ -126,11 +127,17 @@ jobs:
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
       run: |
-        if [[ "${{ env.release-type }}" == "release" ]]; then
-          bundle exec fastlane sync_signing_dmg_release
-        else
-          bundle exec fastlane sync_signing_dmg_review
-        fi
+        case "${{ env.release-type }}" in
+          "release")
+            bundle exec fastlane sync_signing_dmg_release
+            ;;
+          "review")
+            bundle exec fastlane sync_signing_dmg_review
+            ;;
+          "alpha")
+            bundle exec fastlane sync_signing_dmg_alpha
+            ;;
+        esac
 
     - name: Check if this is an official release build
       id: is-official-release
@@ -321,7 +328,7 @@ jobs:
       run: |
         tar -xf DuckDuckGo-${{ env.app-version }}.app.tar.xz
         rm -f DuckDuckGo-${{ env.app-version }}.app.tar.xz
-        
+
         # Rename extracted app to match expected name for DMG creation
         extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
         if [[ -n "${extracted_app}" ]]; then

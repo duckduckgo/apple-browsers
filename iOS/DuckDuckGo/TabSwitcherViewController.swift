@@ -188,8 +188,8 @@ class TabSwitcherViewController: UIViewController {
                 collectionView.bottomAnchor.constraint(equalTo: isBottomBar ? titleBarView.topAnchor : toolbar.topAnchor),
 
             borderView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
-            borderView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            borderView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            borderView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            borderView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
             // On iPad large mode constrain to the bottom as the toolbar is hidden
             interfaceMode.isLarge ? borderView.bottomAnchor.constraint(equalTo: view.bottomAnchor) :
@@ -216,11 +216,11 @@ class TabSwitcherViewController: UIViewController {
         }
         
         // Re-add the views to the hierarchy
-        view.addSubview(borderView)
         view.addSubview(titleBarView)
         view.addSubview(toolbar)
         view.addSubview(collectionView)
-        
+        view.addSubview(borderView)
+
         let toolbarAppearance = UIToolbarAppearance()
         if isExperimentalThemingEnabled {
             toolbarAppearance.configureWithTransparentBackground()

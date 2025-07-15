@@ -37,8 +37,8 @@ extension CompositeShadowView.Shadow {
         id: "ddg.shadow2",
         color: defaultColor,
         opacity: 1,
-        radius: 48.0,
-        offset: CGSize(width: 0, height: 16)
+        radius: 24.0,
+        offset: CGSize(width: 0, height: 8)
     )
 
     static let activeLayer1 = CompositeShadowView.Shadow(

@@ -1,5 +1,5 @@
 //
-//  CleanInteractionStateTask.swift
+//  ClearInteractionStateTask.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.

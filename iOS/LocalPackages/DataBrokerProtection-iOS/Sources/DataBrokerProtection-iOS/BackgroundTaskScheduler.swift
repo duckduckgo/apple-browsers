@@ -99,7 +99,13 @@ public final class BackgroundTaskScheduler {
                 let request = BGProcessingTaskRequest(identifier: Self.backgroundJobIdentifier)
                 request.requiresNetworkConnectivity = true
 
-                let earliestBeginDate = calculateEarliestBeginDate(firstEligibleJobDate: try database.fetchFirstEligibleJobDate())
+                let earliestBeginDate: Date
+
+                do {
+                    earliestBeginDate = calculateEarliestBeginDate(firstEligibleJobDate: try database.fetchFirstEligibleJobDate())
+                } catch {
+                    earliestBeginDate = Date().addingTimeInterval(maxWaitTime)
+                }
 
                 request.earliestBeginDate = earliestBeginDate
                 Logger.dataBrokerProtection.log("PIR Background Task: Scheduling next task for \(earliestBeginDate)")

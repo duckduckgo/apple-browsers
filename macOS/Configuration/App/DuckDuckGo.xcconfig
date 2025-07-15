@@ -43,6 +43,9 @@ GCC_PREPROCESSOR_DEFINITIONS[config=Debug][arch=*][sdk=*] = DEBUG=1 SWIFT_OBJC_I
 GCC_PREPROCESSOR_DEFINITIONS[config=Review][arch=*][sdk=*] = REVIEW=1 SWIFT_OBJC_INTERFACE_HEADER_NAME=$(SWIFT_OBJC_INTERFACE_HEADER_NAME) $(inherited)
 GCC_PREPROCESSOR_DEFINITIONS[config=Alpha][arch=*][sdk=*] = ALPHA=1 SWIFT_OBJC_INTERFACE_HEADER_NAME=$(SWIFT_OBJC_INTERFACE_HEADER_NAME) $(inherited)
 
+SPARKLE_FEED_URL = "https://staticcdn.duckduckgo.com/macos-desktop-browser/appcast2.xml"
+SPARKLE_FEED_URL[config=Alpha] = "https://staticcdn.duckduckgo.com/macos-desktop-browser/appcast-alpha.xml"
+
 SWIFT_ACTIVE_COMPILATION_CONDITIONS[arch=*][sdk=*] = $(FEATURE_FLAGS)
 SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=CI][arch=*][sdk=*] = DEBUG CI $(FEATURE_FLAGS)
 SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Debug][arch=*][sdk=*] = DEBUG $(FEATURE_FLAGS)

@@ -264,13 +264,16 @@ struct SettingsSubscriptionView: View {
 
         if subscriptionFeatures.contains(.dataBrokerProtection) {
             let hasDBPEntitlement = userEntitlements.contains(.dataBrokerProtection)
+            let hasValidStoredProfile = (try? settingsViewModel.dataBrokerProtectionIOSManager.meetsProfileRunPrequisite) ?? false
+            let statusIndicator: StatusIndicator = hasDBPEntitlement && hasValidStoredProfile ? .on : .off
 
             if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
-                NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: DataBrokerProtectionIOSManager.shared!)), isActive: $isShowingDBP) {
+                NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: settingsViewModel.dataBrokerProtectionIOSManager)),
+                               isActive: $isShowingDBP) {
                     SettingsCellView(
                         label: UserText.settingsPProDBPTitle,
                         image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
-                        statusIndicator: StatusIndicatorView(status: hasDBPEntitlement ? .on : .off),
+                        statusIndicator: StatusIndicatorView(status: statusIndicator),
                         isGreyedOut: !hasDBPEntitlement
                     )
                 }
@@ -280,7 +283,7 @@ struct SettingsSubscriptionView: View {
                     SettingsCellView(
                         label: UserText.settingsPProDBPTitle,
                         image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
-                        statusIndicator: StatusIndicatorView(status: hasDBPEntitlement ? .on : .off),
+                        statusIndicator: StatusIndicatorView(status: statusIndicator),
                         isGreyedOut: !hasDBPEntitlement
                     )
                 }

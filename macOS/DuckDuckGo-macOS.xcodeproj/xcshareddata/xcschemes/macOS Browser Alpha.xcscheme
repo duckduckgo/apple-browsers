@@ -52,7 +52,7 @@
       </BuildableProductRunnable>
    </LaunchAction>
    <ProfileAction
-      buildConfiguration = "Review"
+      buildConfiguration = "Alpha"
       shouldUseLaunchSchemeArgsEnv = "YES"
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
@@ -69,10 +69,10 @@
       </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction
-      buildConfiguration = "Review">
+      buildConfiguration = "Alpha">
    </AnalyzeAction>
    <ArchiveAction
-      buildConfiguration = "Review"
+      buildConfiguration = "Alpha"
       revealArchiveInOrganizer = "YES">
    </ArchiveAction>
 </Scheme>

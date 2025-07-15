@@ -490,14 +490,14 @@ extension AutoconsentUserScript {
             firePixel(pixel: .detectedByPatterns)
         }
 
-        if message.frameInfo.isMainFrame && heuristicMatch && report.state.detectedPopups.count > 0 && !management.detectedByBothCache.contains(report.instanceId) {
-            management.detectedByBothCache.insert(report.instanceId)
-            firePixel(pixel: .detectedByBoth)
-        }
-
-        if message.frameInfo.isMainFrame && !heuristicMatch && report.state.detectedPopups.count > 0 && !management.detectedOnlyRulesCache.contains(report.instanceId) {
-            management.detectedOnlyRulesCache.insert(report.instanceId)
-            firePixel(pixel: .detectedOnlyRules)
+        if message.frameInfo.isMainFrame && report.state.detectedPopups.count > 0 {
+            if heuristicMatch && !management.detectedByBothCache.contains(report.instanceId) {
+                management.detectedByBothCache.insert(report.instanceId)
+                firePixel(pixel: .detectedByBoth)
+            } else if !heuristicMatch && !management.detectedOnlyRulesCache.contains(report.instanceId) {
+                management.detectedOnlyRulesCache.insert(report.instanceId)
+                firePixel(pixel: .detectedOnlyRules)
+            }
         }
         replyHandler([ "type": "ok" ], nil)
     }

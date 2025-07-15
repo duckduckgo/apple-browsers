@@ -29,7 +29,7 @@ on:
     inputs:
       release-type:
         description: "Build type (product review or public release)"
-        required: true
+        required: false
         default: release
         type: string
       create-dmg:
@@ -43,6 +43,10 @@ on:
         type: string
       branch:
         description: "Branch name"
+        required: false
+        type: string
+      override-build-number:
+        description: "Override build number (for Alpha builds)"
         required: false
         type: string
       skip-notify:
@@ -144,7 +148,8 @@ jobs:
       env:
         is-official-release: ${{ env.release-type == 'release' && (startsWith(env.branch, 'release') || startsWith(env.branch, 'hotfix')) }}
       run: |
-        if [[ "${{ env.is-official-release }}" == "true" ]]; then
+        echo "is-official-release=${{ env.is-official-release }}" >> $GITHUB_ENV
+        if [[ "${{ env.is-official-release }}" == "true" ]] || [[ "${{ env.release-type }}" == "alpha" ]]; then
           echo "upload-to=s3" >> $GITHUB_OUTPUT
           echo "upload-to=s3" >> $GITHUB_ENV
         else
@@ -154,6 +159,12 @@ jobs:
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
+
+    - name: Override build number for Alpha release
+      if: ${{ env.release-type == 'alpha' }} && ${{ inputs.override-build-number != '' }}
+      run: |
+        echo "Overriding build number to ${{ inputs.override-build-number }}"
+        echo "CURRENT_PROJECT_VERSION = ${{ inputs.override-build-number }}" >> Configuration/BuildNumber.xcconfig
 
     - name: Archive and notarize the app
       id: archive
@@ -264,7 +275,7 @@ jobs:
         echo "dsym-s3-path=${dsym_s3_path}" >> $GITHUB_OUTPUT
 
     - name: Report success
-      if: ${{ env.upload-to == 's3' }}
+      if: ${{ env.upload-to == 's3' }} && ${{ env.asana-task-url != '' }}
       env:
         DSYM_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
         TAG: ${{ env.app-version }}
@@ -403,6 +414,10 @@ jobs:
         RELEASE_BUCKET_NAME: ${{ vars.RELEASE_BUCKET_NAME }}
         RELEASE_BUCKET_PREFIX: ${{ vars.RELEASE_BUCKET_PREFIX }}
       run: |
+        if [[ ${{ env.release-type }} == 'alpha' ]]; then
+          DMG_URL_ROOT="${DMG_URL_ROOT}alpha/"
+          RELEASE_BUCKET_PREFIX="${RELEASE_BUCKET_PREFIX}/alpha"
+        fi
         if [[ "${{ env.upload-to }}" == 's3' ]]; then
           dmg_s3_path="s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/${{ steps.create-dmg.outputs.dmg }}"
         else

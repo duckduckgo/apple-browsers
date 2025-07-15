@@ -1,0 +1,126 @@
+name: macOS - Prepare Alpha Release
+
+defaults:
+  run:
+    working-directory: macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip-appstore:
+        description: "Skip App Store release and only make a DMG build"
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      branch:
+        description: "Branch name"
+        required: false
+        type: string
+      skip-appstore:
+        description: "Skip App Store release and only make a DMG build"
+        default: false
+        type: boolean
+    secrets:
+      APPLE_API_KEY_BASE64:
+        required: true
+      APPLE_API_KEY_ID:
+        required: true
+      APPLE_API_KEY_ISSUER:
+        required: true
+      ASANA_ACCESS_TOKEN:
+        required: true
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_ACCESS_KEY_ID_RELEASE_S3:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AWS_SECRET_ACCESS_KEY_RELEASE_S3:
+        required: true
+      MATCH_PASSWORD:
+        required: true
+      MM_WEBHOOK_URL:
+        required: true
+      SSH_PRIVATE_KEY_FASTLANE_MATCH:
+        required: true
+
+jobs:
+
+  calcaulate-alpha-build-number:
+    name: Calculate Alpha Build Number
+    runs-on: macos-latest
+
+    outputs:
+      build-number: ${{ steps.build-number.outputs.next_build_number }}
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
+
+    - name: Calculate Alpha Build Number
+      id: build-number
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+      run: |
+        bundle exec fastlane calculate_next_build_number \
+          platform:macos \
+          config:alpha \
+          bundle_id:com.duckduckgo.mobile.ios.alpha
+
+  dmg-release:
+    name: Prepare DMG Release
+
+    needs: calcaulate-alpha-build-number
+
+    uses: ./.github/workflows/macos_build_notarized.yml
+    with:
+      release-type: release
+      create-dmg: true
+      branch: ${{ inputs.branch }}
+      override-build-number: ${{ needs.calcaulate-alpha-build-number.outputs.build-number }}
+    secrets:
+      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_ACCESS_KEY_ID_RELEASE_S3: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
+      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+
+  appstore-release:
+    name: Prepare AppStore Release
+
+    needs: calcaulate-alpha-build-number
+
+    if: inputs.skip-appstore != 'true'
+
+    uses: ./.github/workflows/macos_build_appstore.yml
+    with:
+      destination: testflight_alpha
+      branch: ${{ inputs.branch }}
+      override-build-number: ${{ needs.calcaulate-alpha-build-number.outputs.build-number }}
+    secrets:
+      SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+      MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

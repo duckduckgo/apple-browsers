@@ -157,8 +157,7 @@ struct Launching: LaunchingHandling {
                                defaultBrowserPromptService: defaultBrowserPromptService
         )
 
-        // MARK: - Register background tasks that run after app is ready
-        // Use this to avoid delaying app startup
+        // Register background tasks that run after app is ready
         launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
                                                                    interactionStateSource: mainCoordinator.interactionStateSource,
                                                                    tabManager: mainCoordinator.tabManager))
@@ -166,8 +165,12 @@ struct Launching: LaunchingHandling {
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
 
-        configuration.finalize(with: reportingService,
-                               mainViewController: mainCoordinator.controller)
+        configuration.finalize(
+            reportingService: reportingService,
+            mainViewController: mainCoordinator.controller,
+            launchTaskManager: launchTaskManager,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
 
         setupWindow()
         logAppLaunchTime()

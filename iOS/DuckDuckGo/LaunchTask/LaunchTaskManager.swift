@@ -19,6 +19,7 @@
 
 import Foundation
 import UIKit
+import Core
 
 /// Manages and runs a sequence of launch-time tasks using a background operation queue with iOS background execution support.
 ///
@@ -44,6 +45,7 @@ final class LaunchTaskManager {
 
     func register(task: LaunchTask) {
         assert(!hasStarted, "Registering tasks after starting the manager has no effect.")
+        Logger.lifecycle.info("📦 Registered LaunchTask: \(task.name)")
         tasks.append(task)
     }
 
@@ -118,7 +120,9 @@ final class LaunchOperation: Operation, @unchecked Sendable {
 
         isExecuting = true
 
-        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "LaunchTask-\(task.name)") { [weak self] in
+        Logger.lifecycle.info("▶️ Starting LaunchTask: \(self.task.name)")
+
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "LaunchTask - \(task.name)") { [weak self] in
             self?.cancel()
             self?.finish()
         }
@@ -132,6 +136,7 @@ final class LaunchOperation: Operation, @unchecked Sendable {
     }
 
     private func finish() {
+        Logger.lifecycle.info("✅ Finished LaunchTask: \(self.task.name)")
         endBackgroundTask()
         isExecuting = false
         isFinished = true

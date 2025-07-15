@@ -25,7 +25,7 @@ struct ClearInteractionStateTask: LaunchTask {
     let interactionStateSource: TabInteractionStateSource?
     let tabManager: TabManager
 
-    var name: String = "ClearInteractionState"
+    var name: String = "Clear Interaction State"
 
     func run(context: LaunchTaskContext) {
         guard !autoClearService.isClearingEnabled, let interactionStateSource else {

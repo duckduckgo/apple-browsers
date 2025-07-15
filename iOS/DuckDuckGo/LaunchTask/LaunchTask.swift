@@ -21,17 +21,36 @@ import Foundation
 
 /// A unit of work scheduled by `LaunchTaskManager`.
 ///
-/// You are responsible for calling `context.finish()` exactly once when your task completes.
+/// ⚠️ You are responsible for calling `context.finish()` exactly once when your task completes.
 /// Failing to do so will prevent the underlying operation from finishing,
 /// potentially blocking the entire operation queue.
 protocol LaunchTask {
 
-    
+
     var name: String { get }
 
     /// Performs the task. Can be implemented using async/await, GCD, or synchronous code.
     /// - Parameter context: Provides control methods for cancellation checks and completion signaling.
     func run(context: LaunchTaskContext)
+
+}
+
+/// A convenience implementation of `LaunchTask` that allows defining task behavior inline using a closure.
+///
+/// `BlockLaunchTask` is useful when you want to register simple, one-off launch tasks without creating a separate type.
+/// The closure receives a `LaunchTaskContext`, which can be used to check for cancellation and signal task completion.
+///
+/// ⚠️ You are responsible for calling `context.finish()` exactly once when your task completes.
+/// Failing to do so will prevent the underlying operation from finishing,
+/// potentially blocking the entire operation queue.
+struct BlockLaunchTask: LaunchTask {
+
+    let name: String
+    let onRun: (LaunchTaskContext) -> Void
+
+    func run(context: LaunchTaskContext) {
+        onRun(context)
+    }
 
 }
 

@@ -22,6 +22,7 @@ import WidgetKit
 import Core
 import Networking
 import Configuration
+import Persistence
 
 struct AppConfiguration {
 
@@ -77,18 +78,20 @@ struct AppConfiguration {
         ))
     }
 
-    func finalize(with reportingService: ReportingService,
-                  mainViewController: MainViewController) {
+    @MainActor
+    func finalize(reportingService: ReportingService,
+                  mainViewController: MainViewController,
+                  launchTaskManager: LaunchTaskManager,
+                  keyValueStore: ThrowingKeyValueStoring) {
         atbAndVariantConfiguration.cleanUpATBAndAssignVariant {
             onVariantAssigned(reportingService: reportingService)
         }
         CrashHandlersConfiguration.handleCrashDuringCrashHandlersSetup()
         startAutomationServerIfNeeded(mainViewController: mainViewController)
-        configureUserBrowsingUserAgent() // Called at launch end to avoid IPC race when spawning WebView for content blocking.
-    }
-
-    private func configureUserBrowsingUserAgent() {
-        _ = DefaultUserAgentManager.shared
+        UserAgentConfiguration(
+            keyValueStore: keyValueStore,
+            launchTaskManager: launchTaskManager
+        ).configure() // Called at launch end to avoid IPC race when spawning WebView for content blocking.
     }
 
     private func startAutomationServerIfNeeded(mainViewController: MainViewController) {

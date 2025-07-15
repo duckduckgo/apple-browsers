@@ -1008,11 +1008,25 @@ class TabViewController: UIViewController {
     }
 
     private func handlePullToRefresh() {
-        reload()
-        delegate?.tabDidRequestRefresh(tab: self)
-        Pixel.fire(pixel: .pullToRefresh)
-        if let url = webView.url {
-            AppDependencyProvider.shared.pageRefreshMonitor.register(for: url)
+
+        getDefaultAgent(webView: webView) { [weak self] agent in
+
+            guard let defaultAgent = agent else { return }
+            
+        }
+
+//        reload()
+//        delegate?.tabDidRequestRefresh(tab: self)
+//        Pixel.fire(pixel: .pullToRefresh)
+//        if let url = webView.url {
+//            AppDependencyProvider.shared.pageRefreshMonitor.register(for: url)
+//        }
+    }
+
+    private func getDefaultAgent(webView: WKWebView, completion: @escaping (String?) -> Void) {
+        webView.evaluateJavaScript("navigator.userAgent") { (result, _) in
+            let agent = result as? String
+            completion(agent)
         }
     }
 

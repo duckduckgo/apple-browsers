@@ -362,7 +362,7 @@ jobs:
       run: |
         app_name="${{ env.app-name }}"
         app_name="${app_name// /-}" # replace spaces with hyphens
-        app_name="${app_name,,}" # lowercase
+        app_name="$(echo "$app_name" | tr '[:upper:]' '[:lower:]')" # lowercase
         dmg="${app_name}-${{ env.app-version }}.dmg"
         # Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
         create-dmg --volname "${{ env.app-name }}" \

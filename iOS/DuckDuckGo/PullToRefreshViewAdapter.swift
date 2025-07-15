@@ -47,15 +47,11 @@ final class PullToRefreshViewAdapter: NSObject {
         // Minimum values to ensure usability on very small screens
         static let minimumPullLimit: CGFloat = 120
         static let minimumTriggerThreshold: CGFloat = 80
-
-        // Maximum values to prevent excessive pulling on large screens
-        // static let maximumTriggerThreshold: CGFloat = 200
     }
 
     private var refreshTriggerThreshold: CGFloat {
         let containerHeight = pullableView?.bounds.height ?? UIScreen.main.bounds.height
         let calculatedThreshold = containerHeight * Constant.refreshTriggerRatio
-        // return min(max(calculatedThreshold, Constant.minimumTriggerThreshold), Constant.maximumTriggerThreshold)
         return max(calculatedThreshold, Constant.minimumTriggerThreshold)
     }
 

@@ -719,7 +719,7 @@ final class LocalBookmarkStore: BookmarkStore {
     ///   - bookmarks: The bookmarks to import.
     ///   - source: The source of the bookmarks. Used to determine where to put bookmarks, as we want to match the source browser's structure as closely as possible.
     ///   - markRootBookmarksAsFavoritesByDefault: If true, the bookmarks at the root level will be marked as favorites by default.
-    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool = true) -> BookmarksImportSummary {
+    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool = true, maxFavoritesCount: Int? = nil) -> BookmarksImportSummary {
         var total = BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
 
         do {
@@ -735,6 +735,7 @@ final class LocalBookmarkStore: BookmarkStore {
                                                      bookmarks: bookmarks,
                                                      importSourceName: source.importSourceName,
                                                      markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault,
+                                                     maxFavoritesCount: maxFavoritesCount,
                                                      in: context)
             }
 
@@ -765,6 +766,7 @@ final class LocalBookmarkStore: BookmarkStore {
                                              bookmarks: ImportedBookmarks,
                                              importSourceName: String,
                                              markRootBookmarksAsFavoritesByDefault: Bool,
+                                             maxFavoritesCount: Int?,
                                              in context: NSManagedObjectContext) -> BookmarksImportSummary {
 
         guard let root = bookmarksRoot(in: context) else {
@@ -778,7 +780,8 @@ final class LocalBookmarkStore: BookmarkStore {
         var parent = root
         var markFavorites = markRootBookmarksAsFavoritesByDefault
         if root.children?.count != 0 {
-            markFavorites = false
+            // Keep adding favorites from the root folder if there is a specified limit for favorites
+            markFavorites = markRootBookmarksAsFavoritesByDefault ? maxFavoritesCount != nil : false
             parent = BookmarkEntity.makeFolder(title: "\(UserText.bookmarkImportedFromFolder) \(importSourceName)",
                                                parent: root,
                                                context: context)
@@ -814,7 +817,7 @@ final class LocalBookmarkStore: BookmarkStore {
             allFavorites.append(contentsOf: favorites)
         }
 
-        addFavoritesInOrder(allFavorites, in: context)
+        addFavoritesInOrder(allFavorites, limit: maxFavoritesCount, in: context)
 
         return total
     }
@@ -874,17 +877,26 @@ final class LocalBookmarkStore: BookmarkStore {
         return (total, favorites)
     }
 
-    /// Adds bookmarks to the favorites folders in the order specified by their indices, de-duping any existing favorites.
-    private func addFavoritesInOrder(_ allFavorites: [(bookmark: BookmarkEntity, index: Int?)], in context: NSManagedObjectContext) {
-        let sortedFavorites = allFavorites.sorted { ($0.index ?? Int.max) < ($1.index ?? Int.max) }.map(\.bookmark)
-
+    /// Adds bookmarks to the favorites folders in the order specified by their indices, up to the provided limit (if any), de-duping any existing favorites.
+    private func addFavoritesInOrder(_ allFavorites: [(bookmark: BookmarkEntity, index: Int?)], limit: Int?, in context: NSManagedObjectContext) {
         let favoritesFolders = BookmarkUtils.fetchFavoritesFolders(for: favoritesDisplayMode, in: context)
         let existingFavoriteURLs = Set(favoritesFolders.flatMap { $0.favoritesArray }.compactMap { $0.urlObject?.naked })
+        let availableFavoriteSlots = limit.map { max(0, $0 - existingFavoriteURLs.count) } ?? Int.max
 
-        for bookmarkManagedObject in sortedFavorites {
-            guard let url = bookmarkManagedObject.urlObject?.naked, !existingFavoriteURLs.contains(url) else { continue }
-            bookmarkManagedObject.addToFavorites(folders: favoritesFolders)
+        guard availableFavoriteSlots > 0 else {
+            return
         }
+
+        allFavorites
+            .sorted { ($0.index ?? Int.max) < ($1.index ?? Int.max) }
+            .lazy
+            .compactMap { favorite -> BookmarkEntity? in
+                guard let url = favorite.bookmark.urlObject?.naked,
+                      !existingFavoriteURLs.contains(url) else { return nil }
+                return favorite.bookmark
+            }
+            .prefix(availableFavoriteSlots)
+            .forEach { $0.addToFavorites(folders: favoritesFolders) }
 
         // Send pixel for success: https://app.asana.com/1/137249556945/task/1210674932129670
     }

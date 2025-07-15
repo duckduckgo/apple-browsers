@@ -447,7 +447,8 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
                             faviconManager: NSApp.delegateTyped.faviconManager)
     case .safari, .safariTechnologyPreview:
         SafariDataImporter(profile: profile,
-                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
+                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                           featureFlagger: Application.appDelegate.featureFlagger)
     }
 }
 

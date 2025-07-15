@@ -103,7 +103,7 @@ internal class FirefoxDataImporter: DataImporter {
                                                    fraction: passwordsFraction + dataTypeFraction * 0.5))
 
             let bookmarksSummary = bookmarkResult.map { bookmarks in
-                bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true)
+                bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: nil)
             }
 
             if case .success = bookmarksSummary {

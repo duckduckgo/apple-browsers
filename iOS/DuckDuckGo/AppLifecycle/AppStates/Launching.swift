@@ -117,8 +117,7 @@ struct Launching: LaunchingHandling {
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
                                               didFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                               keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-                                              defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter
-        )
+                                              defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
@@ -161,7 +160,8 @@ struct Launching: LaunchingHandling {
         // MARK: - Register background tasks that run after app is ready
         // Use this to avoid delaying app startup
         launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
-                                                                   mainViewController: mainCoordinator.controller))
+                                                                   interactionStateSource: mainCoordinator.interactionStateSource,
+                                                                   tabManager: mainCoordinator.tabManager))
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window

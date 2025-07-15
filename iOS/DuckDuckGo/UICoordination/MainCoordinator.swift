@@ -44,6 +44,10 @@ protocol ShortcutItemHandling {
 final class MainCoordinator {
 
     let controller: MainViewController
+
+    private(set) var tabManager: TabManager
+    private(set) var interactionStateSource: TabInteractionStateSource?
+
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let featureFlagger: FeatureFlagger
     private let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
@@ -81,6 +85,28 @@ final class MainCoordinator {
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: daxDialogs,
                                                                       contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
+        interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
+        tabManager = TabManager(model: tabsModel,
+                                persistence: tabsPersistence,
+                                previewsSource: previewsSource,
+                                interactionStateSource: interactionStateSource,
+                                bookmarksDatabase: bookmarksDatabase,
+                                historyManager: historyManager,
+                                syncService: syncService.sync,
+                                privacyProDataReporter: reportingService.privacyProDataReporter,
+                                contextualOnboardingPresenter: contextualOnboardingPresenter,
+                                contextualOnboardingLogic: daxDialogs,
+                                onboardingPixelReporter: reportingService.onboardingPixelReporter,
+                                featureFlagger: featureFlagger,
+                                contentScopeExperimentManager: contentScopeExperimentManager,
+                                subscriptionCookieManager: subscriptionService.subscriptionCookieManager,
+                                appSettings: AppDependencyProvider.shared.appSettings,
+                                textZoomCoordinator: Self.makeTextZoomCoordinator(),
+                                websiteDataManager: Self.makeWebsiteDataManager(fireproofing: fireproofing),
+                                fireproofing: fireproofing,
+                                maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
+                                maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
+                                featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard))
         controller = MainViewController(bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,
@@ -89,12 +115,10 @@ final class MainCoordinator {
                                         syncDataProviders: syncService.syncDataProviders,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
-                                        tabsModel: tabsModel,
-                                        tabsPersistence: tabsPersistence,
+                                        tabManager: tabManager,
                                         syncPausedStateManager: syncService.syncErrorHandler,
                                         privacyProDataReporter: reportingService.privacyProDataReporter,
                                         variantManager: variantManager,
-                                        contextualOnboardingPresenter: contextualOnboardingPresenter,
                                         contextualOnboardingLogic: daxDialogs,
                                         contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter,
                                         subscriptionFeatureAvailability: subscriptionService.subscriptionFeatureAvailability,
@@ -106,7 +130,6 @@ final class MainCoordinator {
                                         textZoomCoordinator: Self.makeTextZoomCoordinator(),
                                         websiteDataManager: Self.makeWebsiteDataManager(fireproofing: fireproofing),
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
-                                        maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
                                         aiChatSettings: aiChatSettings,
                                         themeManager: ThemeManager.shared,

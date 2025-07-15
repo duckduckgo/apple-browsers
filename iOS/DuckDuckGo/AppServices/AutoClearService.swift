@@ -22,6 +22,7 @@ import UIKit
 protocol AutoClearServiceProtocol {
 
     var autoClearTask: Task<Void, Never>? { get }
+    var isClearingEnabled: Bool { get }
     func waitForDataCleared() async
 
 }

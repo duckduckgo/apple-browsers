@@ -365,12 +365,12 @@ class TabManager {
         for controller in tabControllerCache {
             removeFromCache(controller)
         }
-        interactionStateSource?.removeAll(excluding: [], isCancelled: nil)
+        interactionStateSource?.removeAll(excluding: [])
         save()
     }
 
-    func removeLeftoverInteractionStates(isCancelled: (() -> Bool)? = nil) {
-        interactionStateSource?.removeAll(excluding: model.tabs, isCancelled: isCancelled)
+    func removeLeftoverInteractionStates() {
+        interactionStateSource?.removeAll(excluding: model.tabs)
     }
 
     @MainActor

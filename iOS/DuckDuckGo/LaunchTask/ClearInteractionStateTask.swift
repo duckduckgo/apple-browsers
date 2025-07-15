@@ -17,19 +17,29 @@
 //  limitations under the License.
 //
 
+import Foundation
+
 struct ClearInteractionStateTask: LaunchTask {
 
-    let autoClearService: AutoClearService
-    let mainViewController: MainViewController
+    let autoClearService: AutoClearServiceProtocol
+    let interactionStateSource: TabInteractionStateSource?
+    let tabManager: TabManager
 
     var name: String = "ClearInteractionState"
 
     func run(context: LaunchTaskContext) {
-        guard !autoClearService.isClearingEnabled else {
+        guard !autoClearService.isClearingEnabled, let interactionStateSource else {
             context.finish()
             return
         }
-        mainViewController.tabManager.removeLeftoverInteractionStates(isCancelled: context.isCancelled)
+
+        // Accessing tabManager.model.tabs must happen on the main thread
+        let statesToRemove: [URL] = DispatchQueue.main.sync {
+            interactionStateSource.urlsToRemove(excluding: tabManager.model.tabs)
+        }
+
+        // Perform file removal on the current background queue as it is thread-safe
+        interactionStateSource.removeStates(at: statesToRemove, isCancelled: context.isCancelled)
         context.finish()
     }
 

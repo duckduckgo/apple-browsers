@@ -95,7 +95,7 @@ private final class WebViewStateRestorationDebugViewModel: ObservableObject {
     }
 
     func clearCache() {
-        interactionStateSource?.removeAll(excluding: [], isCancelled: nil)
+        interactionStateSource?.removeAll(excluding: [])
         allFiles = (try? interactionStateSource?.allCacheFiles()) ?? []
     }
 

@@ -114,6 +114,7 @@ class MainViewController: UIViewController {
     let contextualOnboardingPixelReporter: OnboardingPixelReporting
     private let statisticsStore: StatisticsStore
     let voiceSearchHelper: VoiceSearchHelperProtocol
+    let featureFlagger: FeatureFlagger
 
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
@@ -139,7 +140,6 @@ class MainViewController: UIViewController {
     let privacyProDataReporter: PrivacyProDataReporting
 
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
-    private(set) lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
     private lazy var faviconLoader: FavoritesFaviconLoading = FavoritesFaviconLoader()
     private lazy var faviconsFetcherOnboarding = FaviconsFetcherOnboarding(syncService: syncService, syncBookmarksAdapter: syncDataProviders.bookmarksAdapter)
 
@@ -238,12 +238,10 @@ class MainViewController: UIViewController {
         syncDataProviders: SyncDataProviders,
         appSettings: AppSettings,
         previewsSource: TabPreviewsSource,
-        tabsModel: TabsModel,
-        tabsPersistence: TabsModelPersisting,
+        tabManager: TabManager,
         syncPausedStateManager: any SyncPausedStateManaging,
         privacyProDataReporter: PrivacyProDataReporting,
         variantManager: VariantManager,
-        contextualOnboardingPresenter: ContextualOnboardingPresenting,
         contextualOnboardingLogic: ContextualOnboardingLogic,
         contextualOnboardingPixelReporter: OnboardingPixelReporting,
         tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
@@ -257,7 +255,6 @@ class MainViewController: UIViewController {
         textZoomCoordinator: TextZoomCoordinating,
         websiteDataManager: WebsiteDataManaging,
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
-        maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
         aiChatSettings: AIChatSettingsProvider,
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
@@ -277,31 +274,9 @@ class MainViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.experimentalAIChatManager = experimentalAIChatManager
         self.previewsSource = previewsSource
+        self.tabManager = tabManager
         self.featureDiscovery = featureDiscovery
         self.themeManager = themeManager
-
-        let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
-        self.tabManager = TabManager(model: tabsModel,
-                                     persistence: tabsPersistence,
-                                     previewsSource: previewsSource,
-                                     interactionStateSource: interactionStateSource,
-                                     bookmarksDatabase: bookmarksDatabase,
-                                     historyManager: historyManager,
-                                     syncService: syncService,
-                                     privacyProDataReporter: privacyProDataReporter,
-                                     contextualOnboardingPresenter: contextualOnboardingPresenter,
-                                     contextualOnboardingLogic: contextualOnboardingLogic,
-                                     onboardingPixelReporter: contextualOnboardingPixelReporter,
-                                     featureFlagger: featureFlagger,
-                                     contentScopeExperimentManager: contentScopeExperimentsManager,
-                                     subscriptionCookieManager: subscriptionCookieManager,
-                                     appSettings: appSettings,
-                                     textZoomCoordinator: textZoomCoordinator,
-                                     websiteDataManager: websiteDataManager,
-                                     fireproofing: fireproofing,
-                                     maliciousSiteProtectionManager: maliciousSiteProtectionManager,
-                                     maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
-                                     featureDiscovery: featureDiscovery)
         self.syncPausedStateManager = syncPausedStateManager
         self.privacyProDataReporter = privacyProDataReporter
         self.homeTabManager = NewTabPageManager()
@@ -312,6 +287,7 @@ class MainViewController: UIViewController {
         self.statisticsStore = statisticsStore
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
+        self.featureFlagger = featureFlagger
         self.fireproofing = fireproofing
         self.subscriptionCookieManager = subscriptionCookieManager
         self.textZoomCoordinator = textZoomCoordinator

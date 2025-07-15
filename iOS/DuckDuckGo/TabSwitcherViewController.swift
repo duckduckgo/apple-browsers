@@ -131,7 +131,7 @@ class TabSwitcherViewController: UIViewController {
     }
 
     /// Updated based on featureflag / killswitch in `viewDidLoad`
-    var barsHandler: TabSwitcherBarsStateHandling = DefaultTabSwitcherBarsStateHandler()
+    var barsHandler: TabSwitcherBarsStateHandling!
 
     private var tabObserverCancellable: AnyCancellable?
     private let appSettings: AppSettings
@@ -210,9 +210,9 @@ class TabSwitcherViewController: UIViewController {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
 
         // Clear existing constraints for these views comprehensively
-        let viewsToRemoveConstraintsFor = [titleBarView, toolbar, collectionView]
+        let viewsToRemoveConstraintsFor: [UIView] = [titleBarView, toolbar, collectionView, borderView]
         viewsToRemoveConstraintsFor.forEach { targetView in
-            targetView?.removeFromSuperview()
+            targetView.removeFromSuperview()
         }
         
         // Re-add the views to the hierarchy
@@ -239,40 +239,26 @@ class TabSwitcherViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        // These should only be done once
         applyJune2025LayoutChanges()
-
         createTitleBar()
-        setupBarsLayout()
-
-        refreshTitle()
         setupBackgroundView()
-        currentSelection = tabsModel.currentIndex
+        tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.collectionView.reloadData()
+        }
+
+        // These can be done more than once but don't need to
         decorate()
         becomeFirstResponder()
-        updateUIForSelectionMode()
-
         collectionView.allowsSelection = true
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
 
-        if !tabSwitcherSettings.hasSeenNewLayout {
-            Pixel.fire(pixel: .tabSwitcherNewLayoutSeen)
-            tabSwitcherSettings.hasSeenNewLayout = true
-        }
-
-        tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
-            self?.collectionView.reloadData()
-        }
     }
 
     private func applyJune2025LayoutChanges() {
+        assert(barsHandler == nil)
         barsHandler = isJune2025LayoutChangeEnabled ? DefaultTabSwitcherBarsStateHandler() : LegacyTabSwitcherBarsStateHandler()
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        setupBarsLayout()
-        updateUIForSelectionMode()
     }
 
     private func setupBackgroundView() {
@@ -287,12 +273,21 @@ class TabSwitcherViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        collectionView.dragInteractionEnabled = true
-        collectionView.dragDelegate = self
-        collectionView.dropDelegate = self
-        
+        refreshTitle()
+        currentSelection = tabsModel.currentIndex
         updateUIForSelectionMode()
+        setupBarsLayout()
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        _ = AppWidthObserver.shared.willResize(toWidth: size.width)
+        updateUIForSelectionMode()
+        setupBarsLayout()
+        collectionView.setNeedsLayout()
+        collectionView.collectionViewLayout.invalidateLayout()
+
     }
 
     func prepareForPresentation() {
@@ -308,11 +303,6 @@ class TabSwitcherViewController: UIViewController {
         } else {
             dismiss()
         }
-    }
-
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-        collectionView.collectionViewLayout.invalidateLayout()
     }
 
     private func scrollToInitialTab() {
@@ -575,11 +565,11 @@ extension TabSwitcherViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
-        
+        let size: CGSize
         if tabSwitcherSettings.isGridViewEnabled {
             let columnWidth = calculateColumnWidth(minimumColumnWidth: 150, maxColumns: 4)
             let rowHeight = calculateRowHeight(columnWidth: columnWidth)
-            return CGSize(width: floor(columnWidth),
+            size = CGSize(width: floor(columnWidth),
                           height: floor(rowHeight))
         } else {
             let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
@@ -587,8 +577,9 @@ extension TabSwitcherViewController: UICollectionViewDelegateFlowLayout {
             
             let width = min(664, collectionView.bounds.size.width - 2 * spacing)
             
-            return CGSize(width: width, height: 70)
+            size = CGSize(width: width, height: 70)
         }
+        return size
     }
     
 }

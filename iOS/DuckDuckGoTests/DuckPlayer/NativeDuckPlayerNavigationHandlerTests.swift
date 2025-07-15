@@ -108,14 +108,14 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // Test with .ask mode
         playerSettings.nativeUIYoutubeMode = .ask
         sut.isLinkPreview = true
-        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk)
+        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk, isNavigationError: false)
         XCTAssertEqual(result, .notHandled(.isLinkPreview))
         XCTAssertNil(sut.lastHandledVideoID)
 
         // Test with .auto mode
         playerSettings.nativeUIYoutubeMode = .auto
         sut.isLinkPreview = true
-        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAskAuto)
+        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAskAuto, isNavigationError: false)
         XCTAssertEqual(resultAuto, .notHandled(.isLinkPreview))
         XCTAssertNil(sut.lastHandledVideoID)
     }
@@ -127,13 +127,13 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Test with .ask mode
         playerSettings.nativeUIYoutubeMode = .ask
-        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: url)
+        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: url, isNavigationError: false)
         XCTAssertEqual(result, .notHandled(.featureOff))
         XCTAssertNil(sut.lastHandledVideoID)
 
         // Test with .auto mode
         playerSettings.nativeUIYoutubeMode = .auto
-        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: url)
+        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: url, isNavigationError: false)
         XCTAssertEqual(resultAuto, .notHandled(.featureOff))
         XCTAssertNil(sut.lastHandledVideoID)
     }
@@ -145,13 +145,13 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Test with .ask mode
         playerSettings.nativeUIYoutubeMode = .ask
-        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: url)
+        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: url, isNavigationError: false)
         XCTAssertEqual(result, .notHandled(.invalidURL))
         XCTAssertNil(sut.lastHandledVideoID)
 
         // Test with .auto mode
         playerSettings.nativeUIYoutubeMode = .auto
-        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: url)
+        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: url, isNavigationError: false)
         XCTAssertEqual(resultAuto, .notHandled(.invalidURL))
         XCTAssertNil(sut.lastHandledVideoID)
     }
@@ -165,7 +165,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // Test with .ask mode
         playerSettings.nativeUIYoutubeMode = .ask
         sut.lastHandledVideoID = nil
-        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk)
+        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk, isNavigationError: false)
         XCTAssertEqual(result, .handled(.duckPlayerEnabled))
         XCTAssertTrue(sut.isDuckPlayerPillPresented)
         XCTAssertFalse(sut.isDuckPlayerPresented)
@@ -178,7 +178,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Test with .auto mode
         playerSettings.nativeUIYoutubeMode = .auto
-        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAuto)
+        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAuto, isNavigationError: false)
         XCTAssertEqual(resultAuto, .handled(.duckPlayerEnabled))
         XCTAssertTrue(sut.isDuckPlayerPillPresented)
         XCTAssertTrue(sut.isDuckPlayerPresented)
@@ -197,13 +197,13 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         playerSettings.nativeUIYoutubeMode = .ask
         sut.lastHandledVideoID = nil
         sut.disableDuckPlayerForNextVideo = true
-        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: disabledVideoURLAsk)
+        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: disabledVideoURLAsk, isNavigationError: false)
         XCTAssertEqual(result, .notHandled(.disabledForVideo))
         XCTAssertFalse(sut.isDuckPlayerPillPresented)
         XCTAssertFalse(sut.isDuckPlayerPresented)
         XCTAssertFalse(mockDuckPlayer.loadNativeDuckPlayerVideoCalled)
 
-        let result2 = sut.handleURLChange(webView: mockWebView, previousURL: disabledVideoURLAsk, newURL: enabledVideoURLAsk)
+        let result2 = sut.handleURLChange(webView: mockWebView, previousURL: disabledVideoURLAsk, newURL: enabledVideoURLAsk, isNavigationError: false)
         XCTAssertEqual(result2, .handled(.duckPlayerEnabled))
         XCTAssertTrue(sut.isDuckPlayerPillPresented)
         XCTAssertFalse(sut.isDuckPlayerPresented)
@@ -217,13 +217,13 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Test with .auto mode
         playerSettings.nativeUIYoutubeMode = .auto
-        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: disabledVideoURLAuto)
+        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: disabledVideoURLAuto, isNavigationError: false)
         XCTAssertEqual(resultAuto, .notHandled(.disabledForVideo))
         XCTAssertFalse(sut.isDuckPlayerPillPresented)
         XCTAssertFalse(sut.isDuckPlayerPresented)
         XCTAssertFalse(mockDuckPlayer.loadNativeDuckPlayerVideoCalled)
 
-        let resultAuto2 = sut.handleURLChange(webView: mockWebView, previousURL: disabledVideoURLAuto, newURL: enabledVideoURLAuto)
+        let resultAuto2 = sut.handleURLChange(webView: mockWebView, previousURL: disabledVideoURLAuto, newURL: enabledVideoURLAuto, isNavigationError: false)
         XCTAssertEqual(resultAuto2, .handled(.duckPlayerEnabled))
         XCTAssertTrue(sut.isDuckPlayerPillPresented)
         XCTAssertTrue(sut.isDuckPlayerPresented)
@@ -239,7 +239,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // Test with .ask mode
         playerSettings.nativeUIYoutubeMode = .never
         sut.lastHandledVideoID = nil
-        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: videoURLAsk)
+        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: videoURLAsk, isNavigationError: false)
         XCTAssertEqual(result, .notHandled(.duckPlayerDisabled))
         XCTAssertFalse(sut.isDuckPlayerPillPresented)
         XCTAssertFalse(sut.isDuckPlayerPresented)
@@ -248,7 +248,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // Test with .auto mode
         playerSettings.nativeUIYoutubeMode = .never
         sut.lastHandledVideoID = nil
-        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: videoURLAuto)
+        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: videoURLAuto, isNavigationError: false)
         XCTAssertEqual(resultAuto, .notHandled(.duckPlayerDisabled))
         XCTAssertFalse(sut.isDuckPlayerPillPresented)
         XCTAssertFalse(sut.isDuckPlayerPresented)
@@ -265,9 +265,9 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // Test with .ask mode
         playerSettings.nativeUIYoutubeMode = .ask
         sut.lastHandledVideoID = nil
-        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk)
-        _ = sut.handleURLChange(webView: mockWebView, previousURL: urlAsk, newURL: nonYoutubeURL)
-        let result = sut.handleURLChange(webView: mockWebView, previousURL: nonYoutubeURL, newURL: urlAsk)
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk, isNavigationError: false)
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: urlAsk, newURL: nonYoutubeURL, isNavigationError: false)
+        let result = sut.handleURLChange(webView: mockWebView, previousURL: nonYoutubeURL, newURL: urlAsk, isNavigationError: false)
         XCTAssertEqual(result, .handled(.duckPlayerEnabled))
         XCTAssertTrue(sut.isDuckPlayerPillPresented)
         XCTAssertFalse(sut.isDuckPlayerPresented)
@@ -280,9 +280,9 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Test with .auto mode
         playerSettings.nativeUIYoutubeMode = .auto
-        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAuto)
-        _ = sut.handleURLChange(webView: mockWebView, previousURL: urlAuto, newURL: nonYoutubeURL)
-        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nonYoutubeURL, newURL: urlAuto)
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAuto, isNavigationError: false)
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: urlAuto, newURL: nonYoutubeURL, isNavigationError: false)
+        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nonYoutubeURL, newURL: urlAuto, isNavigationError: false)
         XCTAssertEqual(resultAuto, .handled(.duckPlayerEnabled))
         XCTAssertTrue(sut.isDuckPlayerPillPresented)
         XCTAssertTrue(sut.isDuckPlayerPresented)
@@ -298,7 +298,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // Test with .ask mode
         playerSettings.nativeUIYoutubeMode = .ask
         sut.lastHandledVideoID = nil
-        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk)
+        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk, isNavigationError: false)
         XCTAssertEqual(result, .handled(.duckPlayerEnabled))
         XCTAssertTrue(sut.isDuckPlayerPillPresented)
         XCTAssertFalse(sut.isDuckPlayerPresented)
@@ -311,7 +311,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Test with .auto mode
         playerSettings.nativeUIYoutubeMode = .auto
-        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAuto)
+        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAuto, isNavigationError: false)
         XCTAssertEqual(resultAuto, .handled(.duckPlayerEnabled))
         XCTAssertTrue(sut.isDuckPlayerPillPresented)
         XCTAssertTrue(sut.isDuckPlayerPresented)
@@ -545,7 +545,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         
         // Test 1: Verify pill does NOT show on SERP via handleURLChange
         playerSettings.nativeUIYoutubeMode = .ask
-        let urlChangeResult = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: serpURL)
+        let urlChangeResult = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: serpURL, isNavigationError: false)
         XCTAssertEqual(urlChangeResult, .notHandled(.invalidURL), "SERP pages should not trigger pill via URL change")
         XCTAssertFalse(sut.isDuckPlayerPillPresented, "Pill should NOT be presented on SERP pages")
         XCTAssertEqual(sut.referrer, .serp, "Referrer should be set to SERP")
@@ -588,7 +588,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         
         // When
         playerSettings.nativeUIYoutubeMode = .ask
-        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk)
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk, isNavigationError: false)
         sut.handleGoBack(webView: mockWebView)
                         
         XCTAssertNil(sut.lastHandledVideoID)
@@ -601,7 +601,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         
         // When
         playerSettings.nativeUIYoutubeMode = .ask
-        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk)
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk, isNavigationError: false)
         sut.handleGoForward(webView: mockWebView)
                         
         XCTAssertNil(sut.lastHandledVideoID)
@@ -615,22 +615,22 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         let youtubeURLWithHashtag = URL(string: "https://www.youtube.com/watch?v=\(videoID)#settings")!
         
         // Test navigation from regular URL to hashtag URL (same video ID)
-        let result1 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURL, newURL: youtubeURLWithHashtag)
+        let result1 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURL, newURL: youtubeURLWithHashtag, isNavigationError: false)
         XCTAssertEqual(result1, .notHandled(.isYoutubeInternalNavigation))
         
         // Test navigation from hashtag URL to regular URL (same video ID)
-        let result2 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURLWithHashtag, newURL: youtubeURL)
+        let result2 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURLWithHashtag, newURL: youtubeURL, isNavigationError: false)
         XCTAssertEqual(result2, .notHandled(.isYoutubeInternalNavigation))
         
         // Test navigation between different hashtags (same video ID)
         let youtubeURLWithDifferentHashtag = URL(string: "https://www.youtube.com/watch?v=\(videoID)#comments")!
-        let result3 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURLWithHashtag, newURL: youtubeURLWithDifferentHashtag)
+        let result3 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURLWithHashtag, newURL: youtubeURLWithDifferentHashtag, isNavigationError: false)
         XCTAssertEqual(result3, .notHandled(.isYoutubeInternalNavigation))
         
         // Verify that different video IDs don't trigger the internal navigation handling
         let differentVideoID = "xyz987654"
         let differentVideoURL = URL(string: "https://www.youtube.com/watch?v=\(differentVideoID)#settings")!
-        let result4 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURLWithHashtag, newURL: differentVideoURL)
+        let result4 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURLWithHashtag, newURL: differentVideoURL, isNavigationError: false)
         XCTAssertNotEqual(result4, .notHandled(.isYoutubeInternalNavigation))
     }
 
@@ -652,7 +652,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
             // Test with .ask mode
             playerSettings.nativeUIYoutubeMode = .ask
             sut.lastHandledVideoID = nil
-            let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: serpURL)
+            let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: serpURL, isNavigationError: false)
             
             // Then - pill should NOT be presented on SERP pages
             XCTAssertEqual(result, .notHandled(.invalidURL), "Should not handle SERP pages: \(serpURL)")
@@ -669,7 +669,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
             
             // Test with .auto mode
             playerSettings.nativeUIYoutubeMode = .auto
-            let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: serpURL)
+            let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: serpURL, isNavigationError: false)
             
             // Then - pill should NOT be presented on SERP pages even in auto mode
             XCTAssertEqual(resultAuto, .notHandled(.invalidURL), "Should not handle SERP pages in auto mode: \(serpURL)")
@@ -703,7 +703,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // Test for .ask mode
         playerSettings.nativeUIYoutubeMode = .ask
         sut.lastHandledVideoID = nil // Reset last handled ID
-        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL)
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL, isNavigationError: false)
 
         waitForExpectations(timeout: 1.0) { error in
             XCTAssertNil(error, "Expectation should not error for .ask mode")
@@ -727,7 +727,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         cancellables.insert(newCancellable)
         
         playerSettings.nativeUIYoutubeMode = .auto
-        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL)
+        _ = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL, isNavigationError: false)
 
         waitForExpectations(timeout: 1.0) { error in
             XCTAssertNil(error, "Expectation should not error for .auto mode")
@@ -736,5 +736,31 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         XCTAssertTrue(sut.isDuckPlayerPillPresented, "Pill should be presented in .auto mode")
         XCTAssertTrue(sut.isDuckPlayerPresented, "Player should be presented in .auto mode")
         XCTAssertEqual(sut.lastHandledVideoID, "testVideoID", "lastHandledVideoID should be updated in .auto mode")
+    }
+    
+    func testHandleURLChange_WhenNavigationError_ReturnsNotHandledAndPausesVideo() {
+        // Given
+        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        let youtubeURL = URL(string: "https://www.youtube.com/watch?v=testVideoID")!
+        
+        // Test with .ask mode
+        playerSettings.nativeUIYoutubeMode = .ask
+        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL, isNavigationError: true)
+        
+        // Then
+        XCTAssertEqual(result, .notHandled(.invalidURL), "Should not handle URL when there's a navigation error")
+        XCTAssertFalse(sut.isDuckPlayerPillPresented, "Pill should not be presented on navigation error")
+        XCTAssertFalse(sut.isDuckPlayerPresented, "Player should not be presented on navigation error")
+        XCTAssertNil(sut.lastHandledVideoID, "lastHandledVideoID should not be set on navigation error")
+        
+        // Test with .auto mode
+        playerSettings.nativeUIYoutubeMode = .auto
+        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL, isNavigationError: true)
+        
+        // Then
+        XCTAssertEqual(resultAuto, .notHandled(.invalidURL), "Should not handle URL when there's a navigation error in auto mode")
+        XCTAssertFalse(sut.isDuckPlayerPillPresented, "Pill should not be presented on navigation error in auto mode")
+        XCTAssertFalse(sut.isDuckPlayerPresented, "Player should not be presented on navigation error in auto mode")
+        XCTAssertNil(sut.lastHandledVideoID, "lastHandledVideoID should not be set on navigation error in auto mode")
     }
 }

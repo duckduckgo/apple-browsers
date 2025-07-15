@@ -46,7 +46,7 @@ PRODUCT_BUNDLE_IDENTIFIER[config=Alpha][sdk=*] = $(PROXY_APPEX_BUNDLE_ID)
 PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] = match Direct com.duckduckgo.mobile.ios.vpn.agent.debug.proxy macos
 PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match AppStore $(AGENT_BUNDLE_ID).proxy macos
 PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match AppStore $(AGENT_BUNDLE_ID).proxy macos
-PROVISIONING_PROFILE_SPECIFIER[config=Alpha][sdk=macosx*] = match AppStore $(AGENT_BUNDLE_ID).proxy.alpha macos
+PROVISIONING_PROFILE_SPECIFIER[config=Alpha][sdk=macosx*] = match AppStore $(AGENT_BUNDLE_ID).proxy macos
 
 SDKROOT = macosx
 SKIP_INSTALL = YES

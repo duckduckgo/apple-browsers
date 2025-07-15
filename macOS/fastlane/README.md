@@ -69,7 +69,15 @@ Makes App Store release build and uploads it to TestFlight
 [bundle exec] fastlane mac release_testflight_review
 ```
 
-Makes App Store release build and uploads it to TestFlight
+Makes App Store Review build and uploads it to TestFlight
+
+### mac release_testflight_alpha
+
+```sh
+[bundle exec] fastlane mac release_testflight_alpha
+```
+
+Makes App Store Alpha build and uploads it to TestFlight
 
 ### mac promote_latest_testflight_to_appstore
 

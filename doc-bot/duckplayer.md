@@ -325,6 +325,94 @@ struct DuckPlayerView: View {
 }
 ```
 
+### DuckPlayer Native Pixels
+
+DuckPlayer Native fires various pixels to track user interactions and system events:
+
+#### Pill Interaction Pixels
+```swift
+// Welcome Pill (first-time users)
+.duckPlayerNativeWelcomePillShown      // When welcome pill is displayed
+.duckPlayerNativeWelcomePillTapped     // When user taps welcome pill
+.duckPlayerNativeWelcomePillDismissed  // When welcome pill is dismissed
+
+// Entry Pill (returning users, new videos)
+.duckPlayerNativeEntryPillShown        // When entry pill is displayed
+.duckPlayerNativeEntryPillTapped       // When user taps entry pill
+.duckPlayerNativeEntryPillDismissed    // When entry pill is dismissed
+
+// Re-entry Pill (previously watched videos)
+.duckPlayerNativeReEntryPillShown      // When re-entry pill is displayed
+.duckPlayerNativeReEntryPillTapped     // When user taps re-entry pill
+.duckPlayerNativeReEntryPillDismissed  // When re-entry pill is dismissed
+```
+
+#### Video Playback Pixels
+```swift
+// Playback events
+.duckPlayerNativeVideoPlaybackStarted  // When video starts playing
+.duckPlayerNativeVideoPlaybackPaused   // When video is paused
+.duckPlayerNativeVideoPlaybackResumed  // When video is resumed
+.duckPlayerNativeVideoPlaybackCompleted // When video finishes
+
+// Daily unique playback tracking
+.duckPlayerNativeDailyVideoPlayed      // Fired once per day when any video is played
+```
+
+#### YouTube Error Pixels
+
+DuckPlayer Native tracks YouTube-specific errors with both volume (impression) and daily-unique pixels:
+
+```swift
+// Sign-in Required Errors
+.duckPlayerNativeYouTubeSignInErrorImpression      // Every occurrence
+.duckPlayerNativeYouTubeSignInErrorDaily           // Once per day
+
+// Age-Restricted Content Errors
+.duckPlayerNativeYouTubeAgeRestrictedErrorImpression // Every occurrence
+.duckPlayerNativeYouTubeAgeRestrictedErrorDaily       // Once per day
+
+// No-Embed Errors (embedding disabled)
+.duckPlayerNativeYouTubeNoEmbedErrorImpression     // Every occurrence
+.duckPlayerNativeYouTubeNoEmbedErrorDaily          // Once per day
+
+// Unknown/Generic Errors
+.duckPlayerNativeYouTubeUnknownErrorImpression     // Every occurrence
+.duckPlayerNativeYouTubeUnknownErrorDaily          // Once per day
+```
+
+#### Error Handling Implementation
+
+YouTube errors are handled in the UserScript layer:
+
+```swift
+// In DuckPlayerUserScriptPlayer.swift
+@MainActor
+private func onYoutubeError(params: Any, original: WKScriptMessage) -> Encodable? {
+    let (volumePixel, dailyPixel) = getPixelsForNativeYouTubeErrorParams(params)
+    DailyPixel.fire(pixel: dailyPixel)
+    Pixel.fire(pixel: volumePixel)
+    return [:] as [String: String]
+}
+
+private func getPixelsForNativeYouTubeErrorParams(_ params: Any) -> (Pixel.Event, Pixel.Event) {
+    if let paramsDict = params as? [String: Any],
+       let errorParam = paramsDict["error"] as? String {
+        switch errorParam {
+        case "sign-in-required":
+            return (.duckPlayerNativeYouTubeSignInErrorImpression, .duckPlayerNativeYouTubeSignInErrorDaily)
+        case "age-restricted":
+            return (.duckPlayerNativeYouTubeAgeRestrictedErrorImpression, .duckPlayerNativeYouTubeAgeRestrictedErrorDaily)
+        case "no-embed":
+            return (.duckPlayerNativeYouTubeNoEmbedErrorImpression, .duckPlayerNativeYouTubeNoEmbedErrorDaily)
+        default:
+            return (.duckPlayerNativeYouTubeUnknownErrorImpression, .duckPlayerNativeYouTubeUnknownErrorDaily)
+        }
+    }
+    return (.duckPlayerNativeYouTubeUnknownErrorImpression, .duckPlayerNativeYouTubeUnknownErrorDaily)
+}
+```
+
 ### Analytics Best Practices
 
 ```swift
@@ -347,8 +435,21 @@ final class DuckPlayerAnalytics {
         let parameters = ["duration": String(duration)]
         pixelFiring.fireVideoPlaybackPixel(parameters: parameters)
     }
+    
+    func trackYouTubeError(_ error: DuckPlayerError) {
+        // Errors are tracked in UserScript layer
+        // This method exists for future expansion
+    }
 }
 ```
+
+### Pixel Naming Convention
+
+All DuckPlayer Native pixels follow this naming pattern:
+- **Volume pixels**: `duckplayer_native_{event}_impression_ios_{formfactor}`
+- **Daily pixels**: `duckplayer_native_{event}_daily-unique_ios_{formfactor}`
+
+The formfactor (phone/tablet) is automatically appended by the pixel infrastructure.
 
 ## Toast Notification System
 

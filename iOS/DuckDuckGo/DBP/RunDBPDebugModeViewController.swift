@@ -426,7 +426,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
                     let brokerProfileQueryData = BrokerProfileQueryData(
                         dataBroker: broker,
                         profileQuery: queryWithId,
-                        scanJobData: ScanJobData(brokerId: broker.id ?? 0, profileQueryId: Int64(index + 1), historyEvents: [])
+                        scanJobData: ScanJobData(brokerId: broker.id ?? 1, profileQueryId: Int64(index + 1), historyEvents: [])
                     )
                     
                     do {

@@ -37,10 +37,10 @@ struct BookmarkImportErrorMock: Error {}
 
 struct MockBookmarkImporter: BookmarkImporter {
 
-    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool) -> BookmarksImportSummary {
-        return importBookmarks(bookmarks, source, markRootBookmarksAsFavoritesByDefault)
+    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool, maxFavoritesCount: Int? = nil) -> BookmarksImportSummary {
+        return importBookmarks(bookmarks, source, markRootBookmarksAsFavoritesByDefault, maxFavoritesCount)
     }
 
-    var importBookmarks: (ImportedBookmarks, BookmarkImportSource, Bool) -> BookmarksImportSummary
+    var importBookmarks: (ImportedBookmarks, BookmarkImportSource, Bool, Int?) -> BookmarksImportSummary
 
 }

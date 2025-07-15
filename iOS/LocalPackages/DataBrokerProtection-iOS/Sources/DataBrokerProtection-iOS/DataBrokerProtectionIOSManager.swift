@@ -155,7 +155,7 @@ public class DataBrokerProtectionIOSManagerProvider {
 
 public final class DataBrokerProtectionIOSManager {
 
-    public static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
+    private static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
     public static var shared: DataBrokerProtectionIOSManager?
 
     public let database: DataBrokerProtectionRepository
@@ -185,6 +185,15 @@ public final class DataBrokerProtectionIOSManager {
                                        authenticationManager: authenticationManager,
                                        localBrokerProvider: nil)
     }()
+
+    public var hasScheduledBackgroundJob: Bool {
+        get async {
+            let scheduledTasks = await BGTaskScheduler.shared.pendingTaskRequests()
+            return scheduledTasks.contains {
+                $0.identifier == DataBrokerProtectionIOSManager.backgroundJobIdentifier
+            }
+        }
+    }
 
     init(queueManager: BrokerProfileJobQueueManager,
          jobDependencies: BrokerProfileJobDependencies,

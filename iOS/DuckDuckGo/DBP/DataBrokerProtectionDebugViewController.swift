@@ -19,7 +19,6 @@
 
 import UIKit
 import Common
-import BackgroundTasks
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 import Core
@@ -219,12 +218,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     private func loadHealthOverview() {
         Task {
             if await manager.validateRunPrerequisites() {
-                let allScheduledTasks = await BGTaskScheduler.shared.pendingTaskRequests()
-                let dbpScheduledTasks = allScheduledTasks.filter {
-                    $0.identifier == DataBrokerProtectionIOSManager.backgroundJobIdentifier
-                }
-
-                self.healthOverview = .runPrerequisitesMet(jobScheduled: !dbpScheduledTasks.isEmpty)
+                let hasScheduledBackgroundJob = await manager.hasScheduledBackgroundJob
+                self.healthOverview = .runPrerequisitesMet(jobScheduled: hasScheduledBackgroundJob)
             } else {
                 let hasAccount = manager.meetsAuthenticationRunPrequisite
                 let hasEntitlement = (try? await manager.meetsEntitlementRunPrequisite) ?? false

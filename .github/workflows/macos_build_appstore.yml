@@ -15,6 +15,7 @@ on:
         options:
         - testflight
         - testflight_review
+        - testflight_alpha
         - appstore
       asana-task-url:
         description: "Asana release task URL"
@@ -116,13 +117,20 @@ jobs:
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       run: |
-        if [ "${{ env.destination }}" == "testflight_review" ]; then
-          app_bundle_name="DuckDuckGo App Store Review"
-          app_dsym_name="DuckDuckGo-AppStore-Review"
-        else
-          app_bundle_name="DuckDuckGo App Store"
-          app_dsym_name="DuckDuckGo-AppStore"
-        fi
+        case "${{ env.destination }}" in
+          testflight_review)
+            app_bundle_name="DuckDuckGo App Store Review"
+            app_dsym_name="DuckDuckGo-AppStore-Review"
+            ;;
+          testflight_alpha)
+            app_bundle_name="DuckDuckGo App Store Alpha"
+            app_dsym_name="DuckDuckGo-AppStore-Alpha"
+            ;;
+          *)
+            app_bundle_name="DuckDuckGo App Store"
+            app_dsym_name="DuckDuckGo-AppStore"
+            ;;
+        esac
 
         bundle exec fastlane release_${{ env.destination }}
         dsym_path="${{ github.workspace }}/macOS/${app_dsym_name}.app.dSYM.zip"

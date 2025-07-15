@@ -814,12 +814,16 @@ class MainViewController: UIViewController {
             if let currentTab {
                 let inset = intersection.height > 0 ? omniBarHeight : 0
                 currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+
+                let bottomOffset = intersection.height > 0 ? containerHeight - omniBarHeight : 0
+                currentTab.borderView.bottomOffset = -bottomOffset
             }
 
             self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
                 self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
                 self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
+                self.currentTab?.borderView.layoutIfNeeded()
             }
         }
 

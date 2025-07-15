@@ -25,6 +25,18 @@ final class StyledTopBottomBorderView: UIView {
     private let topEdge = UIView()
     private let bottomEdge = UIView()
 
+    private var bottomConstraint: NSLayoutConstraint!
+
+    var bottomOffset: CGFloat {
+        get {
+            bottomConstraint.constant
+        }
+
+        set {
+            bottomConstraint.constant = newValue
+        }
+    }
+
     var isTopVisible: Bool {
         get {
             !topEdge.isHidden
@@ -62,10 +74,14 @@ final class StyledTopBottomBorderView: UIView {
     }
 
     private func setUpConstraints() {
+        assert(bottomConstraint == nil)
+
         topEdge.translatesAutoresizingMaskIntoConstraints = false
         bottomEdge.translatesAutoresizingMaskIntoConstraints = false
 
         let height = Metrics.lineWidth
+
+        bottomConstraint = bottomEdge.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor)
 
         NSLayoutConstraint.activate([
             topEdge.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
@@ -73,10 +89,10 @@ final class StyledTopBottomBorderView: UIView {
             topEdge.trailingAnchor.constraint(equalTo: trailingAnchor),
             topEdge.heightAnchor.constraint(equalToConstant: height),
 
-            bottomEdge.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor),
+            bottomConstraint,
             bottomEdge.leadingAnchor.constraint(equalTo: leadingAnchor),
             bottomEdge.trailingAnchor.constraint(equalTo: trailingAnchor),
-            bottomEdge.heightAnchor.constraint(equalToConstant: height)
+            bottomEdge.heightAnchor.constraint(equalToConstant: height),
         ])
     }
 

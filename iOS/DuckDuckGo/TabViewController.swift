@@ -52,7 +52,7 @@ class TabViewController: UIViewController {
         static let navigationExpectationInterval = 3.0
     }
 
-    private lazy var borderView = StyledTopBottomBorderView()
+    lazy var borderView = StyledTopBottomBorderView()
 
     @IBOutlet private(set) weak var error: UIView!
     @IBOutlet private(set) weak var errorInfoImage: UIImageView!

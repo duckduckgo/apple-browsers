@@ -69,7 +69,6 @@ final class EarliestBeginDateForBackgroundTaskCalculationTests: XCTestCase {
             if fileManager.fileExists(atPath: vaultURL.path) {
                 try fileManager.removeItem(at: vaultURL)
             }
-            
             let testDirectory = vaultURL.deletingLastPathComponent()
             if fileManager.fileExists(atPath: testDirectory.path) {
                 try? fileManager.removeItem(at: testDirectory)

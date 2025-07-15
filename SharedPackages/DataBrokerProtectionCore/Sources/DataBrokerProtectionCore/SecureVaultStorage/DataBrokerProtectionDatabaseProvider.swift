@@ -665,8 +665,8 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
                 ),
                 user_removed_profiles AS (
                     -- Identify profiles that users manually marked as removed (using "This isn't me")
-                    SELECT DISTINCT \(OptOutHistoryEventDB.Columns.extractedProfileId.rawValue), 
-                           \(OptOutHistoryEventDB.Columns.brokerId.rawValue), 
+                    SELECT DISTINCT \(OptOutHistoryEventDB.Columns.extractedProfileId.rawValue),
+                           \(OptOutHistoryEventDB.Columns.brokerId.rawValue),
                            \(OptOutHistoryEventDB.Columns.profileQueryId.rawValue)
                     FROM \(OptOutHistoryEventDB.databaseTableName)
                     WHERE \(OptOutHistoryEventDB.Columns.event.rawValue) LIKE '%matchRemovedByUser%'

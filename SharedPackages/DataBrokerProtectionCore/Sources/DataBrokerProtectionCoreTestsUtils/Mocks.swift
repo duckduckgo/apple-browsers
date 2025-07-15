@@ -756,7 +756,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws {
     }
-    
+
     public func fetchFirstEligibleJobDate() throws -> Date? {
         return nil
     }
@@ -1015,7 +1015,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)? {
         nil
     }
-    
+
     public func fetchFirstEligibleJobDate() throws -> Date? {
         return nil
     }

@@ -64,8 +64,7 @@ final class DBPService: NSObject {
                     let view = UnifiedFeedbackRootView(viewModel: viewModel)
                     return view
                 })
-            self.dbpIOSManager?.registerBGProcessingTask()
-
+            
             DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
         } else {
             assertionFailure("PixelKit not set up")

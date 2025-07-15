@@ -105,7 +105,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             if await manager.validateRunPrerequisites() {
                 let allScheduledTasks = await BGTaskScheduler.shared.pendingTaskRequests()
                 let dbpScheduledTasks = allScheduledTasks.filter {
-                    $0.identifier == BackgroundTaskScheduler.backgroundJobIdentifier
+                    $0.identifier == DataBrokerProtectionIOSManager.backgroundJobIdentifier
                 }
 
                 self.healthOverview = .runPrerequesitesMet(jobScheduled: !dbpScheduledTasks.isEmpty)

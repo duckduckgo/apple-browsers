@@ -158,7 +158,13 @@ public class DataBrokerProtectionIOSManagerProvider {
 
 public final class DataBrokerProtectionIOSManager {
 
-    private static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
+    public struct Constants {
+        public static let defaultMaxWaitTime: TimeInterval = .hours(48)
+        public static let defaultMinWaitTime: TimeInterval = .minutes(15)
+    }
+
+    public static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
+
     public static var shared: DataBrokerProtectionIOSManager?
 
     public let database: DataBrokerProtectionRepository
@@ -169,6 +175,8 @@ public final class DataBrokerProtectionIOSManager {
     private let iOSPixelsHandler: EventMapping<IOSPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let quickLinkOpenURLHandler: (URL) -> Void
+    private let maxWaitTime: TimeInterval
+    private let minWaitTime: TimeInterval
     private let feedbackViewCreator: () -> (any View)
     private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
     private let settings: DataBrokerProtectionSettings
@@ -213,6 +221,8 @@ public final class DataBrokerProtectionIOSManager {
          privacyConfigManager: PrivacyConfigurationManaging,
          database: DataBrokerProtectionRepository,
          quickLinkOpenURLHandler: @escaping (URL) -> Void,
+         maxWaitTime: TimeInterval = Constants.defaultMaxWaitTime,
+         minWaitTime: TimeInterval = Constants.defaultMinWaitTime,
          feedbackViewCreator: @escaping () -> (any View),
          featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
          settings: DataBrokerProtectionSettings,
@@ -234,9 +244,12 @@ public final class DataBrokerProtectionIOSManager {
         registerBackgroundTaskHandler()
     }
 
-    public func registerBGProcessingTask() {
-        backgroundTaskScheduler.registerBackgroundTaskHandler()
+    private func registerBackgroundTaskHandler() {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundJobIdentifier, using: nil) { task in
+            self.handleBGProcessingTask(task: task)
+        }
     }
+
 
     public func scheduleBGProcessingTask() {
         Task {
@@ -244,14 +257,29 @@ public final class DataBrokerProtectionIOSManager {
                 Logger.dataBrokerProtection.log("Prerequisites are invalid during scheduling of background task")
                 return
             }
-            
-            let request = BGProcessingTaskRequest(identifier: Self.backgroundJobIdentifier)
-            request.requiresNetworkConnectivity = true
-            let earliestBeginDate = try await calculateEarliestBeginDate()
-            request.earliestBeginDate = earliestBeginDate
+
+            let pendingRequests = await BGTaskScheduler.shared.pendingTaskRequests()
+            guard !pendingRequests.contains(where: { $0.identifier == Self.backgroundJobIdentifier }) else {
+                Logger.dataBrokerProtection.log("Background task already scheduled")
+                return
+            }
 
 #if !targetEnvironment(simulator)
             do {
+                let request = BGProcessingTaskRequest(identifier: Self.backgroundJobIdentifier)
+                request.requiresNetworkConnectivity = true
+
+                let earliestBeginDate: Date
+
+                do {
+                    earliestBeginDate = calculateEarliestBeginDate(firstEligibleJobDate: try database.fetchFirstEligibleJobDate())
+                } catch {
+                    earliestBeginDate = Date().addingTimeInterval(maxWaitTime)
+                }
+
+                request.earliestBeginDate = earliestBeginDate
+                Logger.dataBrokerProtection.log("PIR Background Task: Scheduling next task for \(earliestBeginDate)")
+
                 try BGTaskScheduler.shared.submit(request)
                 Logger.dataBrokerProtection.log("Scheduling background task successful")
             } catch {
@@ -263,7 +291,7 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
-    func handleBGProcessingTask(task: BGTask) {
+    private func handleBGProcessingTask(task: BGTask) {
         Logger.dataBrokerProtection.log("Background task started")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
         iOSPixelsHandler.fire(.backgroundTaskStarted(deviceID: DataBrokerProtectionSettings.deviceIdentifier))
@@ -271,7 +299,7 @@ public final class DataBrokerProtectionIOSManager {
 
         task.expirationHandler = {
             self.queueManager.stop()
-            
+
             let timeTaken = Date.now.timeIntervalSince(startTime)
             Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
@@ -300,6 +328,25 @@ public final class DataBrokerProtectionIOSManager {
                 task.setTaskCompleted(success: true)
             }
         }
+    }
+
+    private func calculateEarliestBeginDate(from date: Date = .init(), firstEligibleJobDate: Date?) -> Date {
+        let maxWaitDate = date.addingTimeInterval(maxWaitTime)
+
+        guard let jobDate = firstEligibleJobDate else {
+            // No eligible jobs
+            return maxWaitDate
+        }
+
+        let minWaitDate = date.addingTimeInterval(minWaitTime)
+
+        // If overdue → ASAP
+        if jobDate <= date {
+            return date
+        }
+
+        // Otherwise → clamp to [minWaitTime, maxWaitTime]
+        return min(max(jobDate, minWaitDate), maxWaitDate)
     }
 
     /// Used by the iOS PIR debug menu to reset tester data.

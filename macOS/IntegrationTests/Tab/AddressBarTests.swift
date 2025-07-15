@@ -623,7 +623,7 @@ class AddressBarTests: XCTestCase {
         let didFinishNavigation = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         _=window.makeFirstResponder(addressBarTextField)
         type("\r")
-        try await Task.sleep(interval: 0.01)
+        try await Task.sleep(interval: 0.1)
         _=window.makeFirstResponder(addressBarTextField)
         type("some-text")
 
@@ -738,7 +738,7 @@ class AddressBarTests: XCTestCase {
         let didFinishNavigation = tab.webViewDidFinishNavigationPublisher.timeout(50).first().promise()
         type(URL.duckDuckGo.absoluteString + "\r")
 
-        try await Task.sleep(interval: 0.01)
+        try await Task.sleep(interval: 0.1)
         _=window.makeFirstResponder(addressBarTextField)
         type("some-text")
 

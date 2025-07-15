@@ -87,7 +87,13 @@ public final class BackgroundTaskScheduler {
                 Logger.dataBrokerProtection.log("Prerequisites are invalid during scheduling of background task")
                 return
             }
-            
+
+            let pendingRequests = await BGTaskScheduler.shared.pendingTaskRequests()
+            guard !pendingRequests.contains(where: { $0.identifier == Self.backgroundJobIdentifier }) else {
+                Logger.dataBrokerProtection.log("Background task already scheduled")
+                return
+            }
+
             let request = BGProcessingTaskRequest(identifier: Self.backgroundJobIdentifier)
             request.requiresNetworkConnectivity = true
 

@@ -59,7 +59,6 @@ final class NavigationActionBarViewModel: ObservableObject {
     }
 
     // MARK: - Private Methods
-
     private func setupBindings() {
         switchBarHandler.toggleStatePublisher
             .receive(on: DispatchQueue.main)
@@ -108,7 +107,6 @@ final class NavigationActionBarViewModel: ObservableObject {
     }
 
     // MARK: - Public Methods
-
     func handleWebSearchToggle() {
         switchBarHandler.toggleForceWebSearch()
     }

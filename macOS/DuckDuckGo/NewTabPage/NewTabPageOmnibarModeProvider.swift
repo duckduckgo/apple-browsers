@@ -33,6 +33,7 @@ final class NewTabPageOmnibarModeProvider: NewTabPageOmnibarModeProviding {
         self.keyValueStore = keyValueStore
     }
 
+    @MainActor
     var mode: NewTabPageDataModel.OmnibarMode {
         get {
             do {

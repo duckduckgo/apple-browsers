@@ -50,4 +50,88 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
         XCTAssertEqual(config.mode, .search)
     }
+
+    // MARK: - setConfig
+
+    @MainActor
+    func testSetConfigUpdatesMode() async throws {
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+        let mode = modeProvider.mode
+        XCTAssertEqual(mode, .ai)
+    }
+
+    // MARK: - getSuggestions
+
+    func testGetSuggestionsReturnsSuggestionsFromProvider() async throws {
+        suggestionsProvider.suggestionsHandler = { term in
+            XCTAssertEqual(term, "test")
+            return NewTabPageDataModel.Suggestions(
+                topHits: [.website(url: "https://example.com")],
+                duckduckgoSuggestions: [],
+                localSuggestions: []
+            )
+        }
+
+        let request = NewTabPageDataModel.OmnibarGetSuggestionsRequest(term: "test")
+        let response: NewTabPageDataModel.SuggestionsData = try await messageHelper.handleMessage(
+            named: .getSuggestions,
+            parameters: request
+        )
+
+        let expected = NewTabPageDataModel.SuggestionsData(
+            suggestions: NewTabPageDataModel.Suggestions(
+                topHits: [.website(url: "https://example.com")],
+                duckduckgoSuggestions: [],
+                localSuggestions: []
+            )
+        )
+        XCTAssertEqual(response, expected)
+    }
+
+    // MARK: - submitSearch
+
+    func testSubmitSearchIsForwardedToHandler() async throws {
+        let expectation = expectation(description: "submitSearchCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionHandler)?.submitSearchHandler = { term, target in
+            XCTAssertEqual(term, "searchTerm")
+            XCTAssertEqual(target, .sameTab)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitSearchAction(target: .sameTab, term: "searchTerm")
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitSearch, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    // MARK: - openSuggestion
+
+    func testOpenSuggestionIsForwardedToHandler() async throws {
+        let expectation = expectation(description: "openSuggestionCalled")
+        let suggestion = NewTabPageDataModel.Suggestion.website(url: "https://suggestion.com")
+        (actionHandler as? MockNewTabPageOmnibarActionHandler)?.openSuggestionHandler = { s, target in
+            XCTAssertEqual(s, suggestion)
+            XCTAssertEqual(target, .newTab)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.OpenSuggestionAction(suggestion: suggestion, target: .newTab)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openSuggestion, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    // MARK: - submitChat
+
+    func testSubmitChatIsForwardedToHandler() async throws {
+        let expectation = expectation(description: "submitChatCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionHandler)?.submitChatHandler = { chat, target in
+            XCTAssertEqual(chat, "Hello Chat")
+            XCTAssertEqual(target, .newWindow)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hello Chat", target: .newWindow)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
 }

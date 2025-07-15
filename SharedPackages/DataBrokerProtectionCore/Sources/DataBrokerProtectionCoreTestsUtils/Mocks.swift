@@ -756,6 +756,10 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws {
     }
+    
+    public func fetchFirstEligibleJobDate() throws -> Date? {
+        return nil
+    }
 }
 
 public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {
@@ -778,7 +782,6 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
 }
 
 public final class MockDatabase: DataBrokerProtectionRepository {
-
     public enum MockError: Error {
         case saveFailed
     }
@@ -1012,6 +1015,21 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)? {
         nil
     }
+    
+    public func fetchFirstEligibleJobDate() throws -> Date? {
+        return nil
+    }
+
+    public func saveProfileQuery(profileQuery: DataBrokerProtectionCore.ProfileQuery, profileId: Int64) throws -> Int64 {
+        1
+    }
+
+    public func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws {
+    }
+
+    public func saveBroker(dataBroker: DataBroker) throws -> Int64 {
+        1
+    }
 
     public func clear() {
         wasSaveProfileCalled = false
@@ -1227,9 +1245,12 @@ public extension ScanJobData {
 
 public extension OptOutJobData {
     static func mock(with extractedProfile: ExtractedProfile,
+                     brokerId: Int64 = 1,
+                     profileQueryId: Int64 = 1,
+                     createdDate: Date = Date(),
                      preferredRunDate: Date? = nil,
                      historyEvents: [HistoryEvent] = [HistoryEvent]()) -> OptOutJobData {
-        .init(brokerId: 1, profileQueryId: 1, createdDate: Date(), preferredRunDate: preferredRunDate, historyEvents: historyEvents, attemptCount: 0, extractedProfile: extractedProfile)
+        .init(brokerId: brokerId, profileQueryId: profileQueryId, createdDate: createdDate, preferredRunDate: preferredRunDate, historyEvents: historyEvents, attemptCount: 0, extractedProfile: extractedProfile)
     }
 
     static func mock(with createdDate: Date) -> OptOutJobData {

@@ -73,6 +73,7 @@ let package = Package(
                 "BrowserServicesKit",
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
+                .product(name: "SecureStorageTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
             ],
             resources: [

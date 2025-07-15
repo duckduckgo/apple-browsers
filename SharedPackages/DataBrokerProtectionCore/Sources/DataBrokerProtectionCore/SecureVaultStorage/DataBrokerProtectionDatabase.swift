@@ -29,6 +29,9 @@ public protocol DataBrokerProtectionRepository {
 
     func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker]
 
+    func saveBroker(dataBroker: DataBroker) throws -> Int64
+    func saveProfileQuery(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64
+    func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws
     func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws
 
     func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData?
@@ -377,6 +380,33 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
             return try vault.fetchAllBrokers()
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchAllDataBrokers")
+            throw error
+        }
+    }
+
+    public func saveBroker(dataBroker: DataBroker) throws -> Int64 {
+        do {
+            return try vault.save(broker: dataBroker)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.saveBroker dataBroker")
+            throw error
+        }
+    }
+
+    public func saveProfileQuery(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64 {
+        do {
+            return try vault.save(profileQuery: profileQuery, profileId: profileId)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.saveProfileQuery profileQuery profileId")
+            throw error
+        }
+    }
+
+    public func saveScanJob(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws {
+        do {
+            try vault.save(brokerId: brokerId, profileQueryId: profileQueryId, lastRunDate: lastRunDate, preferredRunDate: preferredRunDate)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.saveScanJob profileQuery profileQueryId lastRunDate preferredRunDate")
             throw error
         }
     }

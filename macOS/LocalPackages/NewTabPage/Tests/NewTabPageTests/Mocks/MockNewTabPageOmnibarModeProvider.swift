@@ -20,11 +20,7 @@ import NewTabPage
 
 final class MockNewTabPageOmnibarModeProvider: NewTabPageOmnibarModeProviding {
 
-    var _mode: NewTabPageDataModel.OmnibarMode = .search
-
     @MainActor
-    var mode: NewTabPageDataModel.OmnibarMode {
-        get { _mode }
-        set { _mode = newValue }
-    }
+    var mode: NewTabPageDataModel.OmnibarMode = .search
+
 }

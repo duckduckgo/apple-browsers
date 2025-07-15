@@ -1395,7 +1395,7 @@
 		C17BA7212D945A1600562138 /* AutofillCreditCardDetailsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17BA71E2D945A1600562138 /* AutofillCreditCardDetailsViewModel.swift */; };
 		C17BDC672E16CD540082485E /* AutofillCredentialsImportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17BDC652E16CD540082485E /* AutofillCredentialsImportManager.swift */; };
 		C17BDC692E16CDCB0082485E /* AutofillLoginImportState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17BDC682E16CDCB0082485E /* AutofillLoginImportState.swift */; };
-		C17BDC6C2E16D2B70082485E /* ImportPromotionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17BDC6A2E16D2B70082485E /* ImportPromotionView.swift */; };
+		C17BDC6C2E16D2B70082485E /* ImportPromotionHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17BDC6A2E16D2B70082485E /* ImportPromotionHeaderView.swift */; };
 		C17BDC702E16D9290082485E /* password-keys.json in Resources */ = {isa = PBXBuildFile; fileRef = C17BDC6F2E16D9290082485E /* password-keys.json */; };
 		C18128A22D737D8700807C09 /* AutofillSettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18128A12D737D8700807C09 /* AutofillSettingsViewModel.swift */; };
 		C18128A32D737D8700807C09 /* AutofillSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18128A02D737D8700807C09 /* AutofillSettingsViewController.swift */; };
@@ -3574,7 +3574,7 @@
 		C17BA71E2D945A1600562138 /* AutofillCreditCardDetailsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCreditCardDetailsViewModel.swift; sourceTree = "<group>"; };
 		C17BDC652E16CD540082485E /* AutofillCredentialsImportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCredentialsImportManager.swift; sourceTree = "<group>"; };
 		C17BDC682E16CDCB0082485E /* AutofillLoginImportState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginImportState.swift; sourceTree = "<group>"; };
-		C17BDC6A2E16D2B70082485E /* ImportPromotionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPromotionView.swift; sourceTree = "<group>"; };
+		C17BDC6A2E16D2B70082485E /* ImportPromotionHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPromotionHeaderView.swift; sourceTree = "<group>"; };
 		C17BDC6F2E16D9290082485E /* password-keys.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "password-keys.json"; sourceTree = "<group>"; };
 		C180CAFA2D0863E500ADB0FE /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C180CAFB2D0863E500ADB0FE /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -4750,6 +4750,7 @@
 		319A37132829A5450079FBCE /* Table */ = {
 			isa = PBXGroup;
 			children = (
+				C17BDC6B2E16D2B70082485E /* ImportPromotion */,
 				C1935A0C2C88D101001AD72D /* Survey */,
 				31CC224828369B38001654A4 /* AutofillLoginListViewController.swift */,
 				319A37142829A55F0079FBCE /* AutofillListItemTableViewCell.swift */,
@@ -7084,7 +7085,7 @@
 		C17BDC6B2E16D2B70082485E /* ImportPromotion */ = {
 			isa = PBXGroup;
 			children = (
-				C17BDC6A2E16D2B70082485E /* ImportPromotionView.swift */,
+				C17BDC6A2E16D2B70082485E /* ImportPromotionHeaderView.swift */,
 			);
 			path = ImportPromotion;
 			sourceTree = "<group>";
@@ -8657,8 +8658,6 @@
 		F44D279327F331930037F371 /* Autofill */ = {
 			isa = PBXGroup;
 			children = (
-				EE00D2D52DFB2D3000B79E9D /* Usage */,
-				C17BDC6B2E16D2B70082485E /* ImportPromotion */,
 				F4147353283BF834004AA7A5 /* AutofillContentScopeFeatureToggles.swift */,
 				C17BDC682E16CDCB0082485E /* AutofillLoginImportState.swift */,
 				C1D21E2C293A5965006E5A05 /* AutofillLoginSession.swift */,
@@ -8681,6 +8680,7 @@
 				F407605428131923006B1E0B /* SaveLogin */,
 				C181289E2D737D5B00807C09 /* Settings */,
 				31951E9328230D8900CAF535 /* Shared */,
+				EE00D2D52DFB2D3000B79E9D /* Usage */,
 			);
 			name = Autofill;
 			sourceTree = "<group>";
@@ -9961,7 +9961,7 @@
 				F4B0B796252CB35700830156 /* OnboardingWidgetsDetailsViewController.swift in Sources */,
 				3105BCF12DF214A000EB755E /* AIChatPixelMetricHandler.swift in Sources */,
 				CB258D1329A4F24E00DEBA24 /* ConfigurationStore.swift in Sources */,
-				C17BDC6C2E16D2B70082485E /* ImportPromotionView.swift in Sources */,
+				C17BDC6C2E16D2B70082485E /* ImportPromotionHeaderView.swift in Sources */,
 				D6E3EF242DC4EE8B00EA12C2 /* DuckPlayerWelcomePillView.swift in Sources */,
 				85058370219F424500ED4EDB /* SearchBarExtension.swift in Sources */,
 				310D09212799FD1A00DC0060 /* MIMEType.swift in Sources */,

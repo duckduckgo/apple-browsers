@@ -93,8 +93,8 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
         return hostingController
     }
 
-    private func makeImportPromoView() -> UIHostingController<ImportPromotionView> {
-        let headerView = ImportPromotionView(
+    private func makeImportPromoView() -> UIHostingController<ImportPromotionHeaderView> {
+        let headerView = ImportPromotionHeaderView(
             primaryButtonAction: { [weak delegate] in
                 delegate?.handlePrimaryAction(for: .importPromo)
             },

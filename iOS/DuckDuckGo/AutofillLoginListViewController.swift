@@ -742,7 +742,7 @@ final class AutofillLoginListViewController: UIViewController {
             }
         case .importPromo:
             currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .importPromo)
-            if let hostingController = currentHeaderHostingController as? UIHostingController<ImportPromotionView> {
+            if let hostingController = currentHeaderHostingController as? UIHostingController<ImportPromotionHeaderView> {
                 setupTableHeaderView(with: hostingController)
             }
         }

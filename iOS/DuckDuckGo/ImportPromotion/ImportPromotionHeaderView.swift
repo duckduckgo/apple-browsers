@@ -1,5 +1,5 @@
 //
-//  ImportPromotionView.swift
+//  ImportPromotionHeaderView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -23,7 +23,7 @@ import DesignResourcesKitIcons
 import DuckUI
 import Lottie
 
-struct ImportPromotionView: View {
+struct ImportPromotionHeaderView: View {
     var primaryButtonAction: (() -> Void)?
     var dismissButtonAction: (() -> Void)?
     
@@ -112,5 +112,5 @@ struct ImportPromotionView: View {
 }
 
 #Preview {
-    ImportPromotionView()
+    ImportPromotionHeaderView()
 }

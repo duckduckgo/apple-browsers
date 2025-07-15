@@ -740,7 +740,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self, weak alert] _ in
             guard let textField = alert?.textFields?.first,
                   let value = textField.text,
-                  let url = URL(string: value), url.isValid else {
+                  let url = URL(string: value) else {
                 return
             }
             self?.webUISettings.setCustomURL(value)
@@ -897,11 +897,5 @@ class PIRDebugWebViewWindowHelper {
                 break
             }
         }
-    }
-}
-
-extension URL {
-    var isValid: Bool {
-        return scheme != nil && host != nil
     }
 }

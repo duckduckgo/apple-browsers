@@ -31,6 +31,7 @@ final class NavigationActionBarViewModel: ObservableObject {
     @Published var hasText: Bool = false
     @Published var isWebSearchEnabled: Bool = false
     @Published var isVoiceSearchEnabled: Bool = true
+    @Published var hasUserInteractedWithText: Bool = false
     
     // MARK: - Dependencies
     private let switchBarHandler: SwitchBarHandling
@@ -69,7 +70,8 @@ final class NavigationActionBarViewModel: ObservableObject {
         switchBarHandler.currentTextPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] (text: String) in
-                self?.hasText = !text.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
+                let hasText = !text.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
+                self?.hasText = hasText
             }
             .store(in: &cancellables)
         
@@ -79,6 +81,13 @@ final class NavigationActionBarViewModel: ObservableObject {
                 self?.isWebSearchEnabled = forceWebSearch
             }
             .store(in: &cancellables)
+
+        switchBarHandler.hasUserInteractedWithTextPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] hasUserInteractedWithText in
+                self?.hasUserInteractedWithText = hasUserInteractedWithText
+            }
+            .store(in: &cancellables)
     }
     
     private func updateInitialState() {
@@ -86,6 +95,7 @@ final class NavigationActionBarViewModel: ObservableObject {
         hasText = !switchBarHandler.currentText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
         isWebSearchEnabled = switchBarHandler.forceWebSearch
         isVoiceSearchEnabled = switchBarHandler.isVoiceSearchEnabled
+        hasUserInteractedWithText = false
     }
     
     // MARK: - Public Methods
@@ -94,7 +104,22 @@ final class NavigationActionBarViewModel: ObservableObject {
         switchBarHandler.toggleForceWebSearch()
     }
 
+    func markUserInteraction() {
+        hasUserInteractedWithText = true
+    }
+
     var shouldShowMicButton: Bool {
-        isVoiceSearchEnabled
+        /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210777323867681?focus=true
+        guard isVoiceSearchEnabled else { return false }
+
+        if !hasText {
+            return true
+        }
+        
+        if hasText && hasUserInteractedWithText {
+            return false
+        }
+        
+        return true
     }
 }

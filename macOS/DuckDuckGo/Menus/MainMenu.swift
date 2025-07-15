@@ -421,7 +421,7 @@ final class MainMenu: NSMenu {
 
     @MainActor
     func buildDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenuItem? {
-#if DEBUG || REVIEW
+#if DEBUG || REVIEW || ALPHA
         NSMenuItem(title: "Debug")
             .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
 #else

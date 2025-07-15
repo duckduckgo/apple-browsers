@@ -30,7 +30,11 @@ final class NewTabPageOmnibarSuggestionsProvider: NewTabPageOmnibarSuggestionsPr
 
     func suggestions(for term: String) async -> NewTabPageDataModel.Suggestions {
         await withCheckedContinuation { [weak self] continuation in
-            self?.suggestionContainer.getSuggestions(for: term) { result in
+            guard let self else {
+                continuation.resume(returning: .empty)
+                return
+            }
+            self.suggestionContainer.getSuggestions(for: term) { result in
                 guard let result else {
                     Logger.newTabPageOmnibar.error("Failed to get suggestions")
                     continuation.resume(returning: .empty)

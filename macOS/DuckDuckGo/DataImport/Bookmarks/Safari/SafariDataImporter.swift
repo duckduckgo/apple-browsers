@@ -79,22 +79,34 @@ final class SafariDataImporter: DataImporter {
 
     @MainActor
     private func importDataSync(types: Set<DataImport.DataType>, updateProgress: DataImportProgressCallback) async -> DataImportSummary {
+        let updateSafariBookmarksImport = featureFlagger.isFeatureOn(.updateSafariBookmarksImport)
+
         // logins will be imported from CSV
         guard types.contains(.bookmarks) else { return [:] }
 
         let bookmarkReader = SafariBookmarksReader(safariBookmarksFileURL: fileUrl, featureFlagger: featureFlagger)
         let bookmarkResult = bookmarkReader.readBookmarks()
 
-        let summary = bookmarkResult.map { bookmarks in
-            let maxFavoritesCount = featureFlagger.isFeatureOn(.updateSafariBookmarksImport) ? 12 : nil
-            return bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: maxFavoritesCount)
-        }
+        var summary = DataImportSummary()
 
-        if case .success = summary {
+        switch bookmarkResult {
+        case .success(let bookmarks):
+            let maxFavoritesCount = updateSafariBookmarksImport ? 12 : nil
+            let bookmarksSummary = bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: maxFavoritesCount)
+
             await importFavicons(from: profile.profileURL)
+
+            if updateSafariBookmarksImport {
+                let numberOfFavorites = min(bookmarks.topLevelFolders.bookmarkBar?.children?.count ?? 0, maxFavoritesCount ?? Int.max)
+                PixelKit.fire(GeneralPixel.favoritesImportSucceeded(source: source.pixelSourceParameterName, sourceVersion: profile.installedAppsMajorVersionDescription(), favoritesBucket: .init(count: numberOfFavorites)), frequency: .dailyAndStandard)
+            }
+
+            summary[.bookmarks] = .success(.init(bookmarksSummary))
+        case .failure(let error):
+            summary[.bookmarks] = .failure(error)
         }
 
-        return [.bookmarks: summary.map { .init($0) }]
+        return summary
     }
 
     private func importFavicons(from dataDirectoryURL: URL) async {

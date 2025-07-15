@@ -174,9 +174,12 @@ internal class FirefoxDataImporter: DataImporter {
     }
 
     private func fetchNewTabFavorites() -> [ImportedBookmarks.BookmarkOrFolder] {
+        let sourceVersion = profile.installedAppsMajorVersionDescription()
+
         do {
             let preferences = try FirefoxPreferences(profileURL: profile.profileURL)
             guard preferences.newTabFavoritesEnabled else {
+                PixelKit.fire(GeneralPixel.favoritesImportSucceeded(source: source.pixelSourceParameterName, sourceVersion: sourceVersion, favoritesBucket: .none), frequency: .dailyAndStandard)
                 return []
             }
 
@@ -224,9 +227,11 @@ internal class FirefoxDataImporter: DataImporter {
                 }
             }
 
+            PixelKit.fire(GeneralPixel.favoritesImportSucceeded(source: source.pixelSourceParameterName, sourceVersion: sourceVersion, favoritesBucket: .init(count: favorites.count)), frequency: .dailyAndStandard)
+
             return favorites
         } catch {
-            // Send pixel for error: https://app.asana.com/1/137249556945/task/1210674932129670
+            PixelKit.fire(GeneralPixel.favoritesImportFailed(source: source.pixelSourceParameterName, sourceVersion: sourceVersion, error: error), frequency: .dailyAndStandard)
             return []
         }
     }

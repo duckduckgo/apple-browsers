@@ -142,7 +142,13 @@ public enum FeatureFlag: String, CaseIterable {
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .removeWWWInCanonicalizationInThreatProtection, .visualUpdatesInternalOnly:
+        case .failsafeExampleCrossPlatformFeature,
+                .failsafeExamplePlatformSpecificSubfeature,
+                .removeWWWInCanonicalizationInThreatProtection,
+                .visualUpdatesInternalOnly,
+                .importChromeShortcuts,
+                .updateSafariBookmarksImport,
+                .updateFirefoxBookmarksImport:
             true
         default:
             false
@@ -294,11 +300,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
         case .importChromeShortcuts:
-            return .disabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.importChromeShortcuts))
         case .updateSafariBookmarksImport:
-            return .disabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.updateSafariBookmarksImport))
         case .updateFirefoxBookmarksImport:
-            return .disabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.updateFirefoxBookmarksImport))
         case .disableFireAnimation:
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:

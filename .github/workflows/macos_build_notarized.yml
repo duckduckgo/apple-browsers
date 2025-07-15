@@ -189,7 +189,12 @@ jobs:
         echo "app-name=${{ env.app-name }}" >> $GITHUB_OUTPUT
         app_name="${{ env.app-name }}"
         app_name="${app_name// /-}"
-        echo "dsym-name=${app_name}-${{ env.app-version }}-dSYM.zip" >> $GITHUB_OUTPUT
+
+        # Rename dSYM to match app name
+        original_dsym_name="DuckDuckGo-${{ env.app-version }}-dSYM.zip"
+        dsym_name="${app_name}-${{ env.app-version }}-dSYM.zip"
+        mv -f "$original_dsym_name" "$dsym_name"
+        echo "dsym-name=${dsym_name}" >> $GITHUB_OUTPUT
 
     - name: Upload app artifact
       uses: actions/upload-artifact@v4

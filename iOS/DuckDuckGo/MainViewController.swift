@@ -816,9 +816,10 @@ class MainViewController: UIViewController {
                 currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
             }
 
+            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
                 self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-                self.newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: max(omniBarHeight, containerHeight), right: 0)
+                self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
             }
         }
 

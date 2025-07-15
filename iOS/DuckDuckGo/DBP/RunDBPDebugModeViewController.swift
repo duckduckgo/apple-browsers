@@ -256,11 +256,21 @@ struct RunDBPDebugModeView: View {
                 
                 Spacer()
                 
-                Button("Opt Out") {
-                    viewModel.runOptOut(for: result)
+                if viewModel.optOutInProgress.contains(result.id) {
+                    HStack(spacing: 4) {
+                        SwiftUI.ProgressView()
+                        Text("Opting Out...")
+                    }
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                } else {
+                    Button("Opt Out") {
+                        viewModel.runOptOut(for: result)
+                    }
+                    .buttonStyle(.bordered)
+                    .font(.caption)
+                    .disabled(viewModel.isAnyOptOutInProgress)
                 }
-                .buttonStyle(.bordered)
-                .font(.caption)
             }
             
             Text("Broker: \(result.dataBroker.name)")
@@ -292,6 +302,7 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     @Published var showAlert: Bool = false
     @Published var alertTitle: String = ""
     @Published var alertMessage: String = ""
+    @Published var optOutInProgress: Set<UUID> = []
 
     @Published private var currentRunner: BrokerProfileScanSubJobWebRunner?
 
@@ -310,6 +321,10 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     
     var hasValidInput: Bool {
         !firstName.isEmpty && !lastName.isEmpty && !city.isEmpty && !state.isEmpty && !birthYear.isEmpty
+    }
+    
+    var isAnyOptOutInProgress: Bool {
+        !optOutInProgress.isEmpty
     }
     
     var appVersion: String {
@@ -510,7 +525,15 @@ final class RunDBPDebugModeViewModel: ObservableObject {
     }
     
     func runOptOut(for result: ScanResult) {
+        // Add to in-progress set
+        optOutInProgress.insert(result.id)
+        
         Task { @MainActor in
+            defer {
+                // Always remove from in-progress set when done
+                optOutInProgress.remove(result.id)
+            }
+            
             do {
                 let brokerProfileQueryData = BrokerProfileQueryData(
                     dataBroker: result.dataBroker,

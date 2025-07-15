@@ -32,6 +32,9 @@ final class AutoconsentManagement {
     func clearCache() {
         dispatchPrecondition(condition: .onQueue(.main))
         sitesNotifiedCache.removeAll()
+        detectedByPatternsCache.removeAll()
+        detectedByBothCache.removeAll()
+        detectedOnlyRulesCache.removeAll()
     }
 
 }

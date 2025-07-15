@@ -504,6 +504,8 @@ extension AutoconsentUserScript {
 
     func firePixel(pixel: AutoconsentPixel) {
         if management.pixelCounter.isEmpty {
+            // Fire a summary pixel, containing counters of all other pixels, 2 minutes after
+            // the first event is received.
             DispatchQueue.main.asyncAfter(deadline: .now() + 60*2) {
                 PixelKit.fire(AutoconsentPixel.summary(events: self.management.pixelCounter), frequency: .standard)
                 self.management.pixelCounter = [:]

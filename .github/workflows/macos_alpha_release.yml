@@ -138,7 +138,6 @@ jobs:
           curl -fLSs -O "${{ env.APPCAST_URL }}"
           curl -fLSs -O "${{ env.DMG_URL }}"
           echo "dmg-name=$(basename "${{ env.DMG_URL }}")" >> $GITHUB_OUTPUT
-          echo "dmg-path=$DMG_NAME" >> $GITHUB_OUTPUT
 
       - name: Add release notes
         id: add-release-notes
@@ -152,7 +151,6 @@ jobs:
         id: appcast
         working-directory: sparkle
         env:
-          DMG_PATH: ${{ steps.fetch-dmg.outputs.dmg-path }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
           echo "$SPARKLE_PRIVATE_KEY" | generate_appcast --ed-key-file - \

@@ -16,4 +16,14 @@
 //  limitations under the License.
 //
 
-public enum NewTabPageDataModel {}
+public enum NewTabPageDataModel {
+
+    // MARK: - Common
+
+    public enum OpenTarget: String, Codable, Equatable {
+        case sameTab = "same-tab"
+        case newTab = "new-tab"
+        case newWindow = "new-window"
+    }
+
+}

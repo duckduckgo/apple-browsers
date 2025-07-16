@@ -110,7 +110,7 @@ internal class ChromiumDataImporter: DataImporter {
             }
 
             var markRootBookmarksAsFavoritesByDefault = true
-            if featureFlagger.isFeatureOn(.updatedBookmarksFavoritesImport) {
+            if featureFlagger.isFeatureOn(.importChromeShortcuts) {
                 markRootBookmarksAsFavoritesByDefault = false
                 let newTabShortcuts = fetchShortcutsAsFavorites()
                 FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &importedBookmarks, favorites: newTabShortcuts)
@@ -119,7 +119,7 @@ internal class ChromiumDataImporter: DataImporter {
             try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 0.5))
 
-            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault)
+            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault, maxFavoritesCount: nil)
 
             await importFavicons()
 

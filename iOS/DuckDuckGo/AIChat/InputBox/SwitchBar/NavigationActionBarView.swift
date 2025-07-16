@@ -113,14 +113,25 @@ struct NavigationActionBarView: View {
     }
 
     private var searchButton: some View {
-        CircularButton(
+        let icon: Image = {
+            if viewModel.isSearchMode && viewModel.isCurrentTextValidURL {
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.globe)
+            } else if viewModel.isSearchMode {
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.searchFind)
+            } else {
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.arrowUp)
+            }
+        }()
+        
+        return CircularButton(
             action: viewModel.onSearchTapped,
-            icon: Image(uiImage: viewModel.isSearchMode ? DesignSystemImages.Glyphs.Size24.searchFind : DesignSystemImages.Glyphs.Size24.arrowUp),
+            icon: icon,
             foregroundColor: viewModel.hasText ? .white : Color(designSystemColor: .textPlaceholder),
             backgroundColor: viewModel.hasText ? Color(designSystemColor: .accent) : Color(designSystemColor: .surface),
             isEnabled: viewModel.hasText
         )
         .animation(.easeInOut(duration: 0.2), value: viewModel.hasText)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.isCurrentTextValidURL)
     }
 
     // MARK: - CircularButton

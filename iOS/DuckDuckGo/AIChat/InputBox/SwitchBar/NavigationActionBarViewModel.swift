@@ -31,6 +31,7 @@ final class NavigationActionBarViewModel: ObservableObject {
     @Published var hasText: Bool = false
     @Published var isWebSearchEnabled: Bool = false
     @Published var isVoiceSearchEnabled: Bool = true
+    @Published var isCurrentTextValidURL: Bool = false
     
     // MARK: - Dependencies
     private let switchBarHandler: SwitchBarHandling
@@ -79,6 +80,13 @@ final class NavigationActionBarViewModel: ObservableObject {
                 self?.isWebSearchEnabled = forceWebSearch
             }
             .store(in: &cancellables)
+        
+        switchBarHandler.isCurrentTextValidURLPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isValidURL in
+                self?.isCurrentTextValidURL = isValidURL
+            }
+            .store(in: &cancellables)
     }
     
     private func updateInitialState() {
@@ -86,6 +94,7 @@ final class NavigationActionBarViewModel: ObservableObject {
         hasText = !switchBarHandler.currentText.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty
         isWebSearchEnabled = switchBarHandler.forceWebSearch
         isVoiceSearchEnabled = switchBarHandler.isVoiceSearchEnabled
+        isCurrentTextValidURL = switchBarHandler.isCurrentTextValidURL
     }
     
     // MARK: - Public Methods

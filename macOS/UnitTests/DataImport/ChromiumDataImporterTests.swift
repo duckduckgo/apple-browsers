@@ -26,7 +26,7 @@ class ChromiumDataImporterTests {
     func whenImportingBookmarks_AndBookmarkImportSucceeds_ThenSummaryIsPopulated() async throws {
         let loginImporter = MockLoginImporter()
         let faviconManager = FaviconManagerMock()
-        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _ in .init(successful: 1, duplicates: 2, failed: 3) })
+        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _, _ in .init(successful: 1, duplicates: 2, failed: 3) })
         let featureFlagger = MockFeatureFlagger()
         let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore().resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
 
@@ -46,7 +46,7 @@ class ChromiumDataImporterTests {
 
         let loginImporter = MockLoginImporter()
         let faviconManager = FaviconManagerMock()
-        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { bookmarks, _, markBookmarksBarAsFavorites in
+        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { bookmarks, _, markBookmarksBarAsFavorites, _ in
             bookmarksToImport = bookmarks
             bookmarksBarMarkedAsFavorites = markBookmarksBarAsFavorites
             return .init(successful: 1, duplicates: 2, failed: 3)
@@ -67,13 +67,13 @@ class ChromiumDataImporterTests {
 
         let loginImporter = MockLoginImporter()
         let faviconManager = FaviconManagerMock()
-        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { bookmarks, _, markBookmarksBarAsFavorites in
+        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { bookmarks, _, markBookmarksBarAsFavorites, _ in
             bookmarksToImport = bookmarks
             bookmarksBarMarkedAsFavorites = markBookmarksBarAsFavorites
             return .init(successful: 1, duplicates: 2, failed: 3)
         })
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags.append(.updatedBookmarksFavoritesImport)
+        featureFlagger.enabledFeatureFlags.append(.importChromeShortcuts)
         let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore.customShortcuts.resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
 
         _ = await importer.importData(types: [.bookmarks])
@@ -89,13 +89,13 @@ class ChromiumDataImporterTests {
 
         let loginImporter = MockLoginImporter()
         let faviconManager = FaviconManagerMock()
-        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { bookmarks, _, markBookmarksBarAsFavorites in
+        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { bookmarks, _, markBookmarksBarAsFavorites, _ in
             bookmarksToImport = bookmarks
             bookmarksBarMarkedAsFavorites = markBookmarksBarAsFavorites
             return .init(successful: 1, duplicates: 2, failed: 3)
         })
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags.append(.updatedBookmarksFavoritesImport)
+        featureFlagger.enabledFeatureFlags.append(.importChromeShortcuts)
         let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore.topSitesShortcuts.resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
 
         _ = await importer.importData(types: [.bookmarks])

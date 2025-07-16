@@ -310,7 +310,7 @@ compress_app_and_dsym() {
 
 	# Create tar archive of the versioned app bundle
 	echo "Creating tar archive..."
-	tar -cvf "DuckDuckGo-${version_identifier}.app.tar" "${versioned_app_name}"
+	tar -cf "DuckDuckGo-${version_identifier}.app.tar" "${versioned_app_name}"
 
 	# Rename app bundle back to original name for compatibility with other workflows
 	if [[ "${original_app_name}" != "${versioned_app_name}" ]]; then

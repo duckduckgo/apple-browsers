@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Common
 
 public enum AccountKeychainAccessError: Error, LocalizedError {
     case failedToDecodeKeychainData
@@ -33,9 +34,9 @@ public enum AccountKeychainAccessError: Error, LocalizedError {
         case .failedToDecodeKeychainValueAsData: return "failedToDecodeKeychainValueAsData"
         case .failedToDecodeKeychainDataAsString: return "failedToDecodeKeychainDataAsString"
         case .failedToEncodeKeychainData: return "failedToEncodeKeychainData"
-        case .keychainSaveFailure(let status): return "keychainSaveFailure(\(status))"
-        case .keychainDeleteFailure(let status): return "keychainDeleteFailure(\(status))"
-        case .keychainLookupFailure(let status): return "keychainLookupFailure(\(status))"
+        case .keychainSaveFailure(let status): return "keychainSaveFailure(\(status) - \(status.humanReadableDescription))"
+        case .keychainDeleteFailure(let status): return "keychainDeleteFailure(\(status) - \(status.humanReadableDescription))"
+        case .keychainLookupFailure(let status): return "keychainLookupFailure(\(status) - \(status.humanReadableDescription))"
         }
     }
 

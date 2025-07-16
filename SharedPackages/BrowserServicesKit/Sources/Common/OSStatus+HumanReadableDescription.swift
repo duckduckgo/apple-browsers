@@ -1,5 +1,5 @@
 //
-//  OSStatus+ErrorDescription.swift
+//  OSStatus+HumanReadableDescription.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import Foundation
 
 public extension OSStatus {
 
-    func humanReadableDescription() -> String {
+    var humanReadableDescription: String {
         switch self {
         // Security Framework - General
         case errSecSuccess:

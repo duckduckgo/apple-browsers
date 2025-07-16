@@ -25,6 +25,10 @@ import Core
 
 final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
+    var isShowingLogo: Bool {
+        favoritesModel.isEmpty
+    }
+
     private lazy var borderView = StyledTopBottomBorderView()
 
     private let variantManager: VariantManager

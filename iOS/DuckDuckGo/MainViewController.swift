@@ -819,10 +819,19 @@ class MainViewController: UIViewController {
                 currentTab.borderView.bottomOffset = -bottomOffset
             }
 
-            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+            // This NTP stuff is to animate the bottom border divider, but also allow the logo to show.
+            //  If we hever have the bottom border and the logo visible at the same... we'll need to do something else.
+            if let ntp = self.newTabPageViewController, !ntp.isShowingLogo {
+                self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+            }
+
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
                 self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-                self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
+                if let ntp = self.newTabPageViewController, ntp.isShowingLogo {
+                    self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(omniBarHeight, containerHeight)
+                } else {
+                    self.newTabPageViewController?.viewSafeAreaInsetsDidChange()
+                }
                 self.currentTab?.borderView.layoutIfNeeded()
             }
         }

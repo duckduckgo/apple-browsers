@@ -1,7 +1,7 @@
 //
-//  NewTabPageDataModel.swift
+//  NewTabPageOmnibarActionsHandling.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,22 +16,15 @@
 //  limitations under the License.
 //
 
-public enum NewTabPageDataModel {
+public protocol NewTabPageOmnibarActionsHandling: AnyObject {
 
-    // MARK: - Common
+    @MainActor
+    func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget)
 
-    public enum OpenTarget: String, Codable, Equatable {
-        case sameTab = "same-tab"
-        case newTab = "new-tab"
-        case newWindow = "new-window"
+    @MainActor
+    func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget)
 
-        public var linkOpenTarget: LinkOpenTarget {
-            switch self {
-            case .sameTab: .current
-            case .newTab: .newTab
-            case .newWindow: .newWindow
-            }
-        }
-    }
+    @MainActor
+    func submitChat(_ chat: String, target: NewTabPageDataModel.OpenTarget)
 
 }

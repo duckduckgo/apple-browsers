@@ -197,7 +197,6 @@
 		31B2F1132C92FEF500CD30E3 /* MarketplaceAdPostbackUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B2F1122C92FEF500CD30E3 /* MarketplaceAdPostbackUpdater.swift */; };
 		31B2F11F287846320040427A /* NoMicPermissionAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B2F11E287846320040427A /* NoMicPermissionAlert.swift */; };
 		31B524572715BB23002225AB /* WebJSAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B524562715BB23002225AB /* WebJSAlert.swift */; };
-		31B5E8BE2E1D54BB00EECC1E /* KeyboardAdjustmentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8BA2E1D54BB00EECC1E /* KeyboardAdjustmentManager.swift */; };
 		31B5E8C02E1D54BB00EECC1E /* NavigationActionBarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8BB2E1D54BB00EECC1E /* NavigationActionBarManager.swift */; };
 		31B5E8C12E1D54BB00EECC1E /* SuggestionTrayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8BC2E1D54BB00EECC1E /* SuggestionTrayManager.swift */; };
 		31B5E8C22E1D54BB00EECC1E /* SwipeContainerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B5E8BD2E1D54BB00EECC1E /* SwipeContainerManager.swift */; };
@@ -2139,7 +2138,6 @@
 		31B2F1122C92FEF500CD30E3 /* MarketplaceAdPostbackUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceAdPostbackUpdater.swift; sourceTree = "<group>"; };
 		31B2F11E287846320040427A /* NoMicPermissionAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoMicPermissionAlert.swift; sourceTree = "<group>"; };
 		31B524562715BB23002225AB /* WebJSAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebJSAlert.swift; sourceTree = "<group>"; };
-		31B5E8BA2E1D54BB00EECC1E /* KeyboardAdjustmentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardAdjustmentManager.swift; sourceTree = "<group>"; };
 		31B5E8BB2E1D54BB00EECC1E /* NavigationActionBarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationActionBarManager.swift; sourceTree = "<group>"; };
 		31B5E8BC2E1D54BB00EECC1E /* SuggestionTrayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionTrayManager.swift; sourceTree = "<group>"; };
 		31B5E8BD2E1D54BB00EECC1E /* SwipeContainerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeContainerManager.swift; sourceTree = "<group>"; };
@@ -4778,7 +4776,6 @@
 		31B5E8C32E1D564000EECC1E /* FlowManagers */ = {
 			isa = PBXGroup;
 			children = (
-				31B5E8BA2E1D54BB00EECC1E /* KeyboardAdjustmentManager.swift */,
 				31B5E8BB2E1D54BB00EECC1E /* NavigationActionBarManager.swift */,
 				31B5E8BC2E1D54BB00EECC1E /* SuggestionTrayManager.swift */,
 				31B5E8BD2E1D54BB00EECC1E /* SwipeContainerManager.swift */,
@@ -9911,7 +9908,6 @@
 				653561022D4D2C6D0064F258 /* Logger+DuckPlayer.swift in Sources */,
 				8C4838B5221C8F7F008A6739 /* GestureToolbarButton.swift in Sources */,
 				859DB8172CE6263C001F7210 /* TextZoomLevel.swift in Sources */,
-				31B5E8BE2E1D54BB00EECC1E /* KeyboardAdjustmentManager.swift in Sources */,
 				31B5E8C02E1D54BB00EECC1E /* NavigationActionBarManager.swift in Sources */,
 				31B5E8C12E1D54BB00EECC1E /* SuggestionTrayManager.swift in Sources */,
 				31B5E8C22E1D54BB00EECC1E /* SwipeContainerManager.swift in Sources */,

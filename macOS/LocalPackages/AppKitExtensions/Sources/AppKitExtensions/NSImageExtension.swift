@@ -20,7 +20,7 @@ import AppKit
 
 extension NSImage {
 
-    public var pngData: Data? {
+    public func pngData() -> Data? {
         guard let tiffRepresentation = self.tiffRepresentation,
               let bitmapImage = NSBitmapImageRep(data: tiffRepresentation) else {
             return nil
@@ -29,7 +29,7 @@ extension NSImage {
         return bitmapImage.representation(using: .png, properties: [:])
     }
 
-    public var jpegData: Data? {
+    public func jpegData() -> Data? {
         guard let tiffData = self.tiffRepresentation,
               let bitmapImage = NSBitmapImageRep(data: tiffData) else {
             return nil

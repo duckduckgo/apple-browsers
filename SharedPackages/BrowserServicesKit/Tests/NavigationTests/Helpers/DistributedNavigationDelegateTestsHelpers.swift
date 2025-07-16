@@ -33,7 +33,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
     var navigationDelegate: DistributedNavigationDelegate { navigationDelegateProxy.delegate }
     var testSchemeHandler: TestNavigationSchemeHandler! = TestNavigationSchemeHandler()
-    var server: HttpServer!
+    var server: SafeHttpServer!
 
     var currentHistoryItemIdentityCancellable: AnyCancellable!
     var history = [UInt64: HistoryItemIdentity]()
@@ -61,7 +61,7 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
         NavigationAction.resetIdentifier()
 
         server?.stop()
-        server = HttpServer()
+        server = SafeHttpServer()
         navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
         self.navigationDelegate.responders.forEach { responder in
             (responder as? NavigationResponderMock)?.reset(defaultHandler: { [testName=name] in

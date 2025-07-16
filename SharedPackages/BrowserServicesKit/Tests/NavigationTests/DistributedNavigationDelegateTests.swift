@@ -32,7 +32,16 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
 #if _WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED
     func testWhenCustomHeadersAreSet_headersAreSent() throws {
-        var shouldAddHeaders = true
+        var _shouldAddHeaders = true
+        let lock = NSLock()
+        var shouldAddHeaders: Bool {
+            get {
+                lock.withLock { _shouldAddHeaders }
+            }
+            set {
+                lock.withLock { _shouldAddHeaders = newValue }
+            }
+        }
         let headers = ["x-custom-header": "val", "x-another-header": "test"]
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
         responder(at: 0).onNavigationAction = { _, preferences in

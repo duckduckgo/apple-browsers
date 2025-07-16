@@ -5,6 +5,7 @@ defaults:
     working-directory: macOS
 
 on:
+  push:
   workflow_dispatch:
     inputs:
       skip-appstore:

@@ -20,6 +20,7 @@ import AIChat
 import BrowserServicesKit
 import Foundation
 import HistoryView
+import PixelKit
 import SpecialErrorPages
 import Subscription
 import UserScript
@@ -65,7 +66,8 @@ final class UserScripts: UserScriptsProvider {
         aiChatUserScript = AIChatUserScript(
             handler: AIChatUserScriptHandler(
                 storage: DefaultAIChatPreferencesStorage(),
-                windowControllersManager: sourceProvider.windowControllersManager
+                windowControllersManager: sourceProvider.windowControllersManager,
+                pixelFiring: PixelKit.shared
             ),
             urlSettings: aiChatDebugURLSettings
         )

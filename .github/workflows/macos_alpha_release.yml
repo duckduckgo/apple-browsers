@@ -144,7 +144,7 @@ jobs:
           DMG_PATH: ${{ steps.fetch-dmg.outputs.dmg-path }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
-          echo "$SPARKLE_PRIVATE_KEY" | ./generate_appcast --ed-key-file - .
+          echo "$SPARKLE_PRIVATE_KEY" | generate_appcast --ed-key-file - .
           mv -f appcast.xml appcast-alpha.xml
 
       - name: Upload to S3

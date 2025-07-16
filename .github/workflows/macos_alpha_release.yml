@@ -146,9 +146,7 @@ jobs:
         env:
           DMG_NAME: ${{ steps.fetch-dmg.outputs.dmg-name }}
         run: |
-          echo <<EOF > ${DMG_NAME/dmg/html}
-          Alpha release built from <a href="https://github.com/duckduckgo/apple-browsers/commits/main/?since=${{ github.sha }}">commit ${{ github.sha }}</a>.
-          EOF
+          echo "Alpha release built from <a href=\"${{ github.server_url }}/${{ github.repository }}/commits/main/?since=${{ github.sha }}\">commit ${{ github.sha }}</a>." > ${DMG_NAME/dmg/html}
 
       - name: Generate appcast
         id: appcast

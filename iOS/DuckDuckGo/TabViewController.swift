@@ -247,8 +247,8 @@ class TabViewController: UIViewController {
         return creditCardInputAccessoryView
     }()
 
-    lazy var credentialsImportManager: AutofillCredentialsImportManager = {
-        let manager = AutofillCredentialsImportManager()
+    lazy var credentialsImportManager: AutofillCredentialsImportPresentationManager = {
+        let manager = AutofillCredentialsImportPresentationManager(loginImportStateProvider: AutofillLoginImportState(keyValueStore: keyValueStore))
         return manager
     }()
 
@@ -382,7 +382,8 @@ class TabViewController: UIViewController {
                                    fireproofing: Fireproofing,
                                    tabInteractionStateSource: TabInteractionStateSource?,
                                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
-                                   featureDiscovery: FeatureDiscovery) -> TabViewController {
+                                   featureDiscovery: FeatureDiscovery,
+                                   keyValueStore: ThrowingKeyValueStoring) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -404,7 +405,8 @@ class TabViewController: UIViewController {
                               websiteDataManager: websiteDataManager,
                               tabInteractionStateSource: tabInteractionStateSource,
                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
-                              featureDiscovery: featureDiscovery
+                              featureDiscovery: featureDiscovery,
+                              keyValueStore: keyValueStore
             )
         })
         return controller
@@ -448,6 +450,7 @@ class TabViewController: UIViewController {
     let websiteDataManager: WebsiteDataManaging
     let specialErrorPageNavigationHandler: SpecialErrorPageManaging
     let featureDiscovery: FeatureDiscovery
+    let keyValueStore: ThrowingKeyValueStoring
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -471,6 +474,7 @@ class TabViewController: UIViewController {
                    tabInteractionStateSource: TabInteractionStateSource?,
                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                    featureDiscovery: FeatureDiscovery,
+                   keyValueStore: ThrowingKeyValueStoring,
                    themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
         self.tabModel = tabModel
         self.appSettings = appSettings
@@ -493,6 +497,7 @@ class TabViewController: UIViewController {
         self.tabInteractionStateSource = tabInteractionStateSource
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
         self.featureDiscovery = featureDiscovery
+        self.keyValueStore = keyValueStore
         self.themingProperties = themingProperties
 
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {

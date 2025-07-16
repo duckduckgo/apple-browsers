@@ -43,7 +43,7 @@ class FirefoxPreferencesTests {
     @Test("Check if favorites count is parsed from preferences")
     func whenPreferencesAreParsed_newTabFavoritesCountHasExpectedValue() throws {
         let preferences = try FirefoxPreferences(profileURL: resourceURL())
-        #expect(preferences.newTabFavoritesCount == 16)
+        #expect(preferences.newTabFavoritesCount == 13)
     }
 
     @Test("Check if blocked sites are parsed from preferences")

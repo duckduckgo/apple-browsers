@@ -43,10 +43,14 @@ final class FirefoxPreferences {
 
     enum Constants {
         static let preferencesFileName = "prefs.js"
+        static let topSitesRows = 1 // Firefox defaults to a single row of shortcuts on the new tab page
+        static let topSitesPerRow = 8 // Firefox defaults to 8 sites per row of shortcuts
+        static let sponsoredSitesCount = 3 // Firefox defaults to 3 sponsored sites in shortcuts
 
         enum PreferenceKeys {
             static let topSites = "browser.newtabpage.activity-stream.feeds.topsites"
             static let topSitesRows = "browser.newtabpage.activity-stream.topSitesRows"
+            static let showSponsoredTopSites = "browser.newtabpage.activity-stream.showSponsoredTopSites"
             static let pinned = "browser.newtabpage.pinned"
             static let blocked = "browser.newtabpage.blocked"
         }
@@ -64,12 +68,24 @@ final class FirefoxPreferences {
     }()
 
     /// Maximum number of favorites shown on the new tab page.
+    /// We remove the sponsored sites from the total count, since they can't be imported.
     lazy var newTabFavoritesCount: Int = {
+        return ( newTabFavoritesRowCount * Constants.topSitesPerRow ) - newTabSponsoredSitesCount
+    }()
+
+    /// The number of rows of favorites shown on the new tab page.
+    private lazy var newTabFavoritesRowCount: Int = {
         guard let rowCountString = preferences[Constants.PreferenceKeys.topSitesRows],
               let rowCount = Int(rowCountString) else {
-            return 8 // Default is a single row of 8 sites
+            return Constants.topSitesRows
         }
-        return rowCount * 8
+        return rowCount
+    }()
+
+    /// The number of sponsored sites shown on the new tab page.
+    private lazy var newTabSponsoredSitesCount: Int = {
+        let showSponsoredTopSites = preferences[Constants.PreferenceKeys.showSponsoredTopSites] ?? "true" // Defaults to enabled
+        return showSponsoredTopSites.lowercased() == "true" ? Constants.sponsoredSitesCount : 0
     }()
 
     /// Sites pinned in favorites on the new tab page.
@@ -94,7 +110,8 @@ final class FirefoxPreferences {
         let keys = [Constants.PreferenceKeys.topSites,
                     Constants.PreferenceKeys.pinned,
                     Constants.PreferenceKeys.topSitesRows,
-                    Constants.PreferenceKeys.blocked]
+                    Constants.PreferenceKeys.blocked,
+                    Constants.PreferenceKeys.showSponsoredTopSites]
         preferencesData.utf8String()?.enumerateLines { line, _ in
             for key in keys {
                 guard preferences[key] == nil else { continue } // Skip if already found

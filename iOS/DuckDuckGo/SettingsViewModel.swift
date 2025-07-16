@@ -30,6 +30,7 @@ import Crashes
 import Subscription
 import VPN
 import AIChat
+import DataBrokerProtection_iOS
 
 final class SettingsViewModel: ObservableObject {
 
@@ -54,6 +55,7 @@ final class SettingsViewModel: ObservableObject {
     private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
     let featureDiscovery: FeatureDiscovery
     private let urlOpener: URLOpener
+    let dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager?
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -515,7 +517,8 @@ final class SettingsViewModel: ObservableObject {
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          urlOpener: URLOpener = UIApplication.shared,
-         keyValueStore: ThrowingKeyValueStoring
+         keyValueStore: ThrowingKeyValueStoring,
+         dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager? = .shared
     ) {
 
         self.state = SettingsState.defaults
@@ -541,6 +544,7 @@ final class SettingsViewModel: ObservableObject {
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.urlOpener = urlOpener
         self.keyValueStore = keyValueStore
+        self.dataBrokerProtectionIOSManager = dataBrokerProtectionIOSManager
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }

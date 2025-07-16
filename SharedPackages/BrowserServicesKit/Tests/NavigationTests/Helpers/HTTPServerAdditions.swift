@@ -131,10 +131,10 @@ open class SafeHttpServer {
     public var delete, patch, head, post, get, put: MethodRoute
 
     public subscript(path: String) -> ((HttpRequest) -> HttpResponse)? {
+        get { return nil }
         set {
             router.register(nil, path: path, handler: newValue)
         }
-        get { return nil }
     }
 
     public var routes: [String] {
@@ -145,16 +145,7 @@ open class SafeHttpServer {
 
     public var middleware = [(HttpRequest) -> HttpResponse?]()
 
-    public struct MethodRoute {
-        public let method: String
-        public let router: HttpRouter
-        public subscript(path: String) -> ((HttpRequest) -> HttpResponse)? {
-            set {
-                router.register(method, path: path, handler: newValue)
-            }
-            get { return nil }
-        }
-    }
+    public typealias MethodRoute = HttpServer.MethodRoute
 
     deinit {
         stop()

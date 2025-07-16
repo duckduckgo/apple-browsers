@@ -38,7 +38,6 @@ final class NavigationActionBarManager {
     private let switchBarHandler: SwitchBarHandling
     private var navigationActionBarHostingController: UIHostingController<NavigationActionBarView>?
     private var navigationActionBarViewModel: NavigationActionBarViewModel?
-    private(set) var actionBarBottomConstraint: NSLayoutConstraint?
     
     // MARK: - Initialization
     
@@ -78,14 +77,10 @@ final class NavigationActionBarManager {
         viewController.view.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
         
-        actionBarBottomConstraint = hostingController.view.bottomAnchor.constraint(
-            equalTo: viewController.view.bottomAnchor
-        )
-        
         NSLayoutConstraint.activate([
             hostingController.view.leadingAnchor.constraint(equalTo: viewController.view.leadingAnchor),
             hostingController.view.trailingAnchor.constraint(equalTo: viewController.view.trailingAnchor),
-            actionBarBottomConstraint!
+            hostingController.view.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor)
         ])
         
         hostingController.didMove(toParent: viewController)
@@ -98,6 +93,5 @@ final class NavigationActionBarManager {
         navigationActionBarHostingController?.removeFromParent()
         navigationActionBarHostingController = nil
         navigationActionBarViewModel = nil
-        actionBarBottomConstraint = nil
     }
 }

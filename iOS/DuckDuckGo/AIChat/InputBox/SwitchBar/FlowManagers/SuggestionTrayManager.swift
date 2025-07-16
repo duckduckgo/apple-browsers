@@ -55,7 +55,7 @@ final class SuggestionTrayManager: NSObject {
     private let dependencies: SuggestionTrayDependencies
     private var cancellables = Set<AnyCancellable>()
     
-    private var suggestionTrayViewController: SuggestionTrayViewController?
+    private(set) var suggestionTrayViewController: SuggestionTrayViewController?
 
     var isShowingSuggestionTray: Bool {
         suggestionTrayViewController?.view.isHidden == false
@@ -95,6 +95,7 @@ final class SuggestionTrayManager: NSObject {
 
         controller.coversFullScreen = true
         controller.additionalFavoritesOverlayInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: 6)
+
         parentViewController.addChild(controller)
         containerView.addSubview(controller.view)
         suggestionTrayViewController = controller
@@ -102,12 +103,13 @@ final class SuggestionTrayManager: NSObject {
         
         // Prevent flash during initial load
         controller.view.isHidden = true
-        
+
         NSLayoutConstraint.activate([
             controller.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             controller.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
             controller.view.topAnchor.constraint(equalTo: containerView.topAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: containerView.keyboardLayoutGuide.topAnchor)
+            controller.view.bottomAnchor.constraint(equalTo: containerView.keyboardLayoutGuide.topAnchor),
+            controller.view.bottomAnchor.constraint(lessThanOrEqualTo: containerView.bottomAnchor)
         ])
 
         if #available(iOS 17.0, *) {

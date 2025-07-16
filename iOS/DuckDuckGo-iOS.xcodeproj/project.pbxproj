@@ -1392,6 +1392,9 @@
 		C1641EB32BC2F53C0012607A /* ImportPasswordsViaSyncViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1641EB22BC2F53C0012607A /* ImportPasswordsViaSyncViewModel.swift */; };
 		C167D9062DAD5BDA00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C167D9052DAD5BDA00FA1E70 /* SubscriptionFunnelOrigin.swift */; };
 		C177D9F62CFDDFEB0039CBF7 /* UIAlertControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C177D9F52CFDDFEB0039CBF7 /* UIAlertControllerExtension.swift */; };
+		C17A8E5D2E26C7D900CAE1B9 /* ImportPasswordsPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17A8E5A2E26C7D900CAE1B9 /* ImportPasswordsPromptView.swift */; };
+		C17A8E5E2E26C7D900CAE1B9 /* ImportPasswordsPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17A8E5B2E26C7D900CAE1B9 /* ImportPasswordsPromptViewController.swift */; };
+		C17A8E5F2E26C7D900CAE1B9 /* ImportPasswordsPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17A8E5C2E26C7D900CAE1B9 /* ImportPasswordsPromptViewModel.swift */; };
 		C17B59592A03AAD30055F2D1 /* PasswordGenerationPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17B59562A03AAD30055F2D1 /* PasswordGenerationPromptViewModel.swift */; };
 		C17B595A2A03AAD30055F2D1 /* PasswordGenerationPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17B59572A03AAD30055F2D1 /* PasswordGenerationPromptViewController.swift */; };
 		C17B595B2A03AAD30055F2D1 /* PasswordGenerationPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17B59582A03AAD30055F2D1 /* PasswordGenerationPromptView.swift */; };
@@ -3582,6 +3585,9 @@
 		C174E08E2D08625300ACE1AF /* el */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = el; path = el.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C174E08F2D08625300ACE1AF /* el */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = el; path = el.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C177D9F52CFDDFEB0039CBF7 /* UIAlertControllerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIAlertControllerExtension.swift; sourceTree = "<group>"; };
+		C17A8E5A2E26C7D900CAE1B9 /* ImportPasswordsPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsPromptView.swift; sourceTree = "<group>"; };
+		C17A8E5B2E26C7D900CAE1B9 /* ImportPasswordsPromptViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsPromptViewController.swift; sourceTree = "<group>"; };
+		C17A8E5C2E26C7D900CAE1B9 /* ImportPasswordsPromptViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsPromptViewModel.swift; sourceTree = "<group>"; };
 		C17B59562A03AAD30055F2D1 /* PasswordGenerationPromptViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PasswordGenerationPromptViewModel.swift; sourceTree = "<group>"; };
 		C17B59572A03AAD30055F2D1 /* PasswordGenerationPromptViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PasswordGenerationPromptViewController.swift; sourceTree = "<group>"; };
 		C17B59582A03AAD30055F2D1 /* PasswordGenerationPromptView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PasswordGenerationPromptView.swift; sourceTree = "<group>"; };
@@ -7107,6 +7113,16 @@
 			name = ImportViaSync;
 			sourceTree = "<group>";
 		};
+		C17A8E592E26C78600CAE1B9 /* ImportPasswordsPrompt */ = {
+			isa = PBXGroup;
+			children = (
+				C17A8E5A2E26C7D900CAE1B9 /* ImportPasswordsPromptView.swift */,
+				C17A8E5B2E26C7D900CAE1B9 /* ImportPasswordsPromptViewController.swift */,
+				C17A8E5C2E26C7D900CAE1B9 /* ImportPasswordsPromptViewModel.swift */,
+			);
+			path = ImportPasswordsPrompt;
+			sourceTree = "<group>";
+		};
 		C17B59552A03AAC40055F2D1 /* PasswordGeneration */ = {
 			isa = PBXGroup;
 			children = (
@@ -8728,6 +8744,7 @@
 				C1B3BF462D8D99DA00EE1D43 /* CreditCardManagement */,
 				C1AD33272DBAD18E003B80A4 /* CreditCardPrompt */,
 				C1641EAD2BC2F46C0012607A /* ImportViaSync */,
+				C17A8E592E26C78600CAE1B9 /* ImportPasswordsPrompt */,
 				C11A8E962E01B76B002A602B /* KeyboardInputAccessory */,
 				C17B59552A03AAC40055F2D1 /* PasswordGeneration */,
 				310C4B4A281B69BC00BA79A9 /* PasswordManagement */,
@@ -10020,6 +10037,9 @@
 				9FEBDE1E2E0BEE6800175B8B /* DefaultBrowserPromptActivityKeyValueFilesStore.swift in Sources */,
 				C1AD332F2DBAD1BD003B80A4 /* CreditCardRowViewModel.swift in Sources */,
 				1EEF123F2850A68A003DDE57 /* PrivacyInfoContainerView.swift in Sources */,
+				C17A8E5D2E26C7D900CAE1B9 /* ImportPasswordsPromptView.swift in Sources */,
+				C17A8E5E2E26C7D900CAE1B9 /* ImportPasswordsPromptViewController.swift in Sources */,
+				C17A8E5F2E26C7D900CAE1B9 /* ImportPasswordsPromptViewModel.swift in Sources */,
 				CBF259582D3AA85900AC63E4 /* VPNService.swift in Sources */,
 				F4B0B796252CB35700830156 /* OnboardingWidgetsDetailsViewController.swift in Sources */,
 				3105BCF12DF214A000EB755E /* AIChatPixelMetricHandler.swift in Sources */,

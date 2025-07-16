@@ -118,7 +118,7 @@ jobs:
       if: ${{ env.destination == 'testflight_alpha' && inputs.override-build-number != '' }}
       run: |
         echo "Overriding build number to ${{ inputs.override-build-number }}"
-        echo "CURRENT_PROJECT_VERSION = ${{ inputs.override-build-number }}" >> Configuration/BuildNumber.xcconfig
+        echo "CURRENT_PROJECT_VERSION = ${{ inputs.override-build-number }}" > Configuration/BuildNumber.xcconfig
 
     - name: Archive and Upload the App
       env:

@@ -18,7 +18,7 @@ on:
 
 jobs:
 
-  calcaulate-alpha-build-number:
+  calculate-alpha-build-number:
     name: Calculate Alpha Build Number
     runs-on: macos-15
 
@@ -55,14 +55,14 @@ jobs:
   dmg-release:
     name: Prepare DMG Release
 
-    needs: calcaulate-alpha-build-number
+    needs: calculate-alpha-build-number
 
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
       release-type: alpha
       create-dmg: true
       branch: ${{ inputs.branch }}
-      override-build-number: ${{ needs.calcaulate-alpha-build-number.outputs.build-number }}
+      override-build-number: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
     secrets:
       APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
       APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -79,7 +79,7 @@ jobs:
   appstore-release:
     name: Prepare AppStore Release
 
-    needs: calcaulate-alpha-build-number
+    needs: calculate-alpha-build-number
 
     if: inputs.skip-appstore != 'true'
 
@@ -87,7 +87,7 @@ jobs:
     with:
       destination: testflight_alpha
       branch: ${{ inputs.branch }}
-      override-build-number: ${{ needs.calcaulate-alpha-build-number.outputs.build-number }}
+      override-build-number: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
     secrets:
       SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
       APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}

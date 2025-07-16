@@ -41,10 +41,13 @@ final class VPNSubscriptionEventsHandler {
         self.tunnelController = tunnelController
         self.vpnUninstaller = vpnUninstaller
         self.userDefaults = userDefaults
+    }
 
+    public func startMonitoring() {
         checkEntitlements()
         subscribeToWakeNotifications()
         subscribeToEntitlementChanges()
+        registerForSubscriptionAccountManagerEvents()
     }
 
     /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
@@ -185,7 +188,7 @@ final class VPNSubscriptionEventsHandler {
         }
     }
 
-    func registerForSubscriptionAccountManagerEvents() {
+    private func registerForSubscriptionAccountManagerEvents() {
         NotificationCenter.default
             .publisher(for: .accountDidSignIn)
             .sink { [weak self] notification in

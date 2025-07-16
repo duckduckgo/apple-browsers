@@ -68,6 +68,8 @@ private final class MockWindowControllerManager: WindowControllersManagerProtoco
         showTabContent = content
     }
 
+    func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {}
+
     func show(url: URL?, tabId: String?, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, newTab: Bool, selected: Bool?) {}
 
     func showBookmarksTab() {}

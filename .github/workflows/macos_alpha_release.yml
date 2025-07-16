@@ -62,7 +62,7 @@ jobs:
       release-type: alpha
       create-dmg: true
       branch: ${{ inputs.branch }}
-      override-build-number: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
+      build-number-override: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
     secrets:
       APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
       APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -87,7 +87,7 @@ jobs:
     with:
       destination: testflight_alpha
       branch: ${{ inputs.branch }}
-      override-build-number: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
+      build-number-override: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
     secrets:
       SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
       APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}

@@ -45,7 +45,7 @@ on:
         description: "Branch name"
         required: false
         type: string
-      override-build-number:
+      build-number-override:
         description: "Override build number (for Alpha builds)"
         required: false
         type: string
@@ -161,10 +161,10 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Override build number for Alpha release
-      if: ${{ env.release-type == 'alpha' && inputs.override-build-number != '' }}
+      if: ${{ env.release-type == 'alpha' && inputs.build-number-override != '' }}
       run: |
-        echo "Overriding build number to ${{ inputs.override-build-number }}"
-        echo "CURRENT_PROJECT_VERSION = ${{ inputs.override-build-number }}" > Configuration/BuildNumber.xcconfig
+        echo "Overriding build number to ${{ inputs.build-number-override }}"
+        echo "CURRENT_PROJECT_VERSION = ${{ inputs.build-number-override }}" > Configuration/BuildNumber.xcconfig
 
     - name: Archive and notarize the app
       id: archive

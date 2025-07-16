@@ -51,16 +51,16 @@ public class DataBrokerProtectionFeature: Subfeature {
     private var actionResponseTimer: Timer?
     private var taskCancellationTimer: Timer?
 
-    private var shouldContinue: () -> Bool
+    private var shouldContinueAction: () -> Bool
 
     private let executionConfig: BrokerJobExecutionConfig
 
     public init(delegate: CCFCommunicationDelegate,
                 executionConfig: BrokerJobExecutionConfig,
-                shouldContinue: @escaping () -> Bool) {
+                shouldContinueActionHandler shouldContinueAction: @escaping () -> Bool) {
         self.delegate = delegate
         self.executionConfig = executionConfig
-        self.shouldContinue = shouldContinue
+        self.shouldContinueAction = shouldContinueAction
     }
 
     deinit {
@@ -150,7 +150,7 @@ public class DataBrokerProtectionFeature: Subfeature {
             return
         }
 
-        guard shouldContinue() else {
+        guard shouldContinueAction() else {
             handleJobTimeout()
             return
         }
@@ -177,7 +177,7 @@ public class DataBrokerProtectionFeature: Subfeature {
         taskCancellationTimer?.invalidate()
         taskCancellationTimer = Timer.scheduledTimer(withTimeInterval: executionConfig.cssActionCancellationCheckInterval, repeats: true) { [weak self] _ in
             guard let self else { return }
-            if !self.shouldContinue() {
+            if !self.shouldContinueAction() {
                 self.handleJobTimeout()
             }
         }

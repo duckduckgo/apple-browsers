@@ -189,7 +189,7 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
 
     public func stop() {
         jobQueue.cancelAllOperations()
-        resetMode()
+        cancelCurrentModeAndResetIfNeeded()
     }
 }
 

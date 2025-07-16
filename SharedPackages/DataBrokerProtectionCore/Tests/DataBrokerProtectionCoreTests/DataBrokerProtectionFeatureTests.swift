@@ -38,7 +38,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     func testWhenParseActionCompletedFailsOnParsing_thenDelegateSendsBackTheCorrectError() async {
         let params = ["result": "something"]
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinue: { true })
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
 
         await sut.parseActionCompleted(params: params)
 
@@ -47,7 +47,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     func testWhenErrorIsParsed_thenDelegateSendsBackActionFailedError() async {
         let params = ["result": ["error": ["actionID": "someActionID", "message": "some message"]]]
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinue: { true })
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
 
         await sut.parseActionCompleted(params: params)
 
@@ -56,7 +56,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     func testWhenNavigateActionIsParsed_thenDelegateSendsBackURL() async {
         let params = ["result": ["success": ["actionID": "1", "actionType": "navigate", "response": ["url": "www.duckduckgo.com"]] as [String: Any]]]
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinue: { true })
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
 
         await sut.parseActionCompleted(params: params)
 
@@ -67,7 +67,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
     func testWhenExtractActionIsParsed_thenDelegateSendsExtractedProfiles() async {
         let profiles = NSArray(objects: ["name": "John"], ["name": "Ben"])
         let params = ["result": ["success": ["actionID": "1", "actionType": "extract", "response": profiles] as [String: Any]]]
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinue: { true })
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
 
         await sut.parseActionCompleted(params: params)
 
@@ -78,7 +78,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     func testWhenUnknownActionIsParsed_thenDelegateSendsParsingError() async {
         let params = ["result": ["success": ["actionID": "1", "actionType": "unknown"] as [String: Any]]]
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinue: { true })
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
 
         await sut.parseActionCompleted(params: params)
 
@@ -87,7 +87,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     func testWhenClickActionIsParsed_thenDelegateSendsSuccessWithCorrectActionId() async {
         let params = ["result": ["success": ["actionID": "click", "actionType": "click"] as [String: Any]]]
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinue: { true })
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
 
         await sut.parseActionCompleted(params: params)
 
@@ -96,7 +96,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     func testWhenExpectationActionIsParsed_thenDelegateSendsSuccessWithCorrectActionId() async {
         let params = ["result": ["success": ["actionID": "expectation", "actionType": "expectation"] as [String: Any]]]
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinue: { true })
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
 
         await sut.parseActionCompleted(params: params)
 
@@ -105,7 +105,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     func testWhenGetCaptchaInfoIsParsed_thenTheCorrectCaptchaInfoIsParsed() async {
         let params = ["result": ["success": ["actionID": "getCaptchaInfo", "actionType": "getCaptchaInfo", "response": ["siteKey": "1234", "url": "www.test.com", "type": "g-captcha"]] as [String: Any]]]
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinue: { true })
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
 
         await sut.parseActionCompleted(params: params)
 
@@ -121,7 +121,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         stepType: StepType
     ) async {
         let executionConfig = BrokerJobExecutionConfig(cssActionTimeout: 0.01)
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: executionConfig, shouldContinue: { true })
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: executionConfig, shouldContinueActionHandler: { true })
         sut.with(broker: mockBroker)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
 
@@ -161,7 +161,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     @MainActor
     func testWhenActionCompletesBeforeTimeout_thenNoTimeoutErrorIsSent() async {
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinue: { true })
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
         sut.with(broker: mockBroker)
         let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
@@ -177,7 +177,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     @MainActor
     func testWhenActionFailsBeforeTimeout_thenNoTimeoutErrorIsSent() async {
-        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinue: { true })
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, executionConfig: BrokerJobExecutionConfig(), shouldContinueActionHandler: { true })
         sut.with(broker: mockBroker)
         let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))

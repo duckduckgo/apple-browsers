@@ -109,6 +109,7 @@ extension DataBrokerProtectionError: CustomNSError {
         case .cantCalculatePreferredRunDate: return 111
         case .httpError: return 112
         case .dataNotInDatabase: return 113
+        /// code 114 was for .vaultNotAvailable error, which has been removed
         case .jobTimeout: return 115
         }
     }

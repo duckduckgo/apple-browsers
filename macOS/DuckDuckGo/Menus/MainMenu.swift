@@ -820,8 +820,10 @@ final class MainMenu: NSMenu {
         }
 
         debugMenu.addItem(internalUserItem)
+#if !ALPHA
         debugMenu.addItem(.separator())
         debugMenu.addItem(NSMenuItem(title: "Download DuckDuckGo Alpha Build", action: #selector(downloadAlphaBuild), target: self))
+#endif
         debugMenu.autoenablesItems = false
         return debugMenu
     }

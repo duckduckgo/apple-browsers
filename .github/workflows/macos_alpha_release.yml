@@ -5,9 +5,10 @@ defaults:
     working-directory: macOS
 
 on:
-  push:
-    branches:
-      - main
+  # To be enabled later
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
     inputs:
       skip-appstore:

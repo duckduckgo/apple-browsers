@@ -42,7 +42,8 @@ extension NewTabPageActionsManager {
         tld: TLD,
         fire: @escaping () async -> Fire,
         keyValueStore: KeyValueStoring = UserDefaults.standard,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        windowControllersManager: WindowControllersManagerProtocol
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -84,7 +85,7 @@ extension NewTabPageActionsManager {
             isUrlIgnored: { _ in false }
         )
         let suggestionsProvider = NewTabPageOmnibarSuggestionsProvider(suggestionContainer: suggestionContainer)
-        let omnibarActionHandler = NewTabPageOmnibarActionsHandler()
+        let omnibarActionHandler = NewTabPageOmnibarActionsHandler(windowControllersManager: windowControllersManager)
         let omnibarModeProvider = NewTabPageOmnibarModeProvider()
 
         self.init(scriptClients: [

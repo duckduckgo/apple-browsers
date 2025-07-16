@@ -50,6 +50,7 @@ final class NewTabPageCoordinator {
         notificationCenter: NotificationCenter = .default,
         visualizeFireAnimationDecider: VisualizeFireAnimationDecider,
         featureFlagger: FeatureFlagger,
+        windowControllersManager: WindowControllersManagerProtocol,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
 
@@ -77,7 +78,8 @@ final class NewTabPageCoordinator {
             freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
             tld: tld,
             fire: { @MainActor in fireCoordinator.fireViewModel.fire },
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            windowControllersManager: windowControllersManager
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

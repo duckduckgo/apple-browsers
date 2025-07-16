@@ -26,10 +26,10 @@ import os.log
 final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
     private let promptHandler: AIChatPromptHandler
-    private let windowControllersManager: WindowControllersManager
+    private let windowControllersManager: WindowControllersManagerProtocol
 
     init(promptHandler: AIChatPromptHandler = AIChatPromptHandler.shared,
-         windowControllersManager: WindowControllersManager = NSApp.delegateTyped.windowControllersManager) {
+         windowControllersManager: WindowControllersManagerProtocol) {
         self.promptHandler = promptHandler
         self.windowControllersManager = windowControllersManager
     }
@@ -63,9 +63,17 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
         if case .internalPage(title: _, url: let url, _) = appSuggestion,
            url == .bookmarks || url.isSettingsURL {
-            windowControllersManager.show(url: url, tabId: nil, source: .switchToOpenTab, newTab: true)
+            windowControllersManager.show(url: url,
+                                          tabId: nil,
+                                          source: .switchToOpenTab,
+                                          newTab: true,
+                                          selected: nil)
         } else if case .openTab(_, url: let url, tabId: let tabId, _) = appSuggestion {
-            windowControllersManager.show(url: url, tabId: tabId, source: .switchToOpenTab, newTab: true)
+            windowControllersManager.show(url: url,
+                                          tabId: tabId,
+                                          source: .switchToOpenTab,
+                                          newTab: true,
+                                          selected: nil)
         } else {
             URL.makeUrl(suggestion: appSuggestion, stringValueWithoutSuffix: "") { suggestionUrl, _, _ in
                 guard let suggestionUrl else {

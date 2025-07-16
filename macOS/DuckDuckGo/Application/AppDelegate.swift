@@ -147,7 +147,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireCoordinator: fireCoordinator,
         keyValueStore: keyValueStore,
         visualizeFireAnimationDecider: visualizeFireAnimationDecider,
-        featureFlagger: featureFlagger
+        featureFlagger: featureFlagger,
+        windowControllersManager: windowControllersManager
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(

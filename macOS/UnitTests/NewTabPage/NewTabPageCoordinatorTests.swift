@@ -45,6 +45,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var keyValueStore: MockKeyValueFileStore!
     var firePixelCalls: [PixelKitEvent] = []
     var featureFlagger: FeatureFlagger!
+    var windowControllersManager: WindowControllersManagerProtocol!
 
     @MainActor
     override func setUp() async throws {
@@ -70,6 +71,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             showAddImageFailedAlert: {},
             visualStyle: VisualStyle.legacy
         )
+
+        windowControllersManager = WindowControllersManagerMock()
 
         featureFlagger = FeatureFlaggerMock()
 
@@ -101,6 +104,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             notificationCenter: notificationCenter,
             visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider(),
             featureFlagger: featureFlagger,
+            windowControllersManager: windowControllersManager,
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }

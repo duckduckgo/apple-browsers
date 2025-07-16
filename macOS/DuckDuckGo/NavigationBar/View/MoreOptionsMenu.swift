@@ -1170,7 +1170,9 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
     }
 
     private func addMenuItems() async {
-        let features = await subscriptionManager.currentSubscriptionFeatures()
+        // This requires follow-up work:
+        // https://app.asana.com/1/137249556945/task/1210799126744217
+        let features = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
 
         if features.contains(.networkProtection) {
             addItem(networkProtectionItem)
@@ -1231,7 +1233,8 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         guard subscriptionManager.isUserAuthenticated else { return }
 
         @Sendable func hasEntitlement(for productName: Entitlement.ProductName) async -> Bool {
-            (try? await subscriptionManager.isEnabled(feature: productName)) ?? false
+            // Note by Diego: this is bad as it will default to `false` on transient errors
+            (try? await subscriptionManager.isFeatureEnabled(productName)) ?? false
         }
 
         Task.detached(priority: .background) { [weak self] in

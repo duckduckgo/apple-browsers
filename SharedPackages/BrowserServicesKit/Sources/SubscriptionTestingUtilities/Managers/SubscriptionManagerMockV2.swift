@@ -24,6 +24,7 @@ import Common
 import NetworkingTestingUtils
 
 public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
+
     public var canPurchasePublisher: AnyPublisher<Bool, Never> = .init(Just(false))
 
     public var email: String?
@@ -170,21 +171,21 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         self.resultTokenContainer = tokenContainer
     }
 
-    public var resultFeatures: [SubscriptionFeatureV2] = []
-    public func currentSubscriptionFeatures(forceRefresh: Bool) async -> [SubscriptionFeatureV2] {
+    public var resultFeatures: [SubscriptionEntitlement] = []
+    public func currentSubscriptionFeatures(forceRefresh: Bool) async -> [SubscriptionEntitlement] {
         resultFeatures
     }
 
     public func isSubscriptionFeatureEnabled(_ entitlement: Networking.SubscriptionEntitlement) async throws -> Bool {
-        resultFeatures.contains { $0.entitlement == entitlement }
+        resultFeatures.contains { $0 == entitlement }
     }
 
-    public func isFeatureAvailableAndEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
-        resultFeatures.contains { $0.entitlement == feature.subscriptionEntitlement }
+    public func isFeatureIncludedInSubscription(_ feature: Entitlement.ProductName) async throws -> Bool {
+        resultFeatures.contains { $0 == feature.subscriptionEntitlement }
     }
 
-    public func isFeatureEnabledForUser(feature: Entitlement.ProductName) async -> Bool {
-        resultFeatures.contains { $0.entitlement == feature.subscriptionEntitlement }
+    public func isFeatureEnabled(_ feature: Entitlement.ProductName) async -> Bool {
+        resultFeatures.contains { $0 == feature.subscriptionEntitlement }
     }
 
     // MARK: - Subscription Token Provider
@@ -203,23 +204,23 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
     public func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
         switch feature {
         case .networkProtection:
-            return await isFeatureEnabledForUser(feature: .networkProtection)
+            return await isFeatureEnabled(.networkProtection)
         case .dataBrokerProtection:
-            return await isFeatureEnabledForUser(feature: .dataBrokerProtection)
+            return await isFeatureEnabled(.dataBrokerProtection)
         case .identityTheftRestoration:
-            return await isFeatureEnabledForUser(feature: .identityTheftRestoration)
+            return await isFeatureEnabled(.identityTheftRestoration)
         case .identityTheftRestorationGlobal:
-            return await isFeatureEnabledForUser(feature: .identityTheftRestorationGlobal)
+            return await isFeatureEnabled(.identityTheftRestorationGlobal)
         case .paidAIChat:
-            return await isFeatureEnabledForUser(feature: .paidAIChat)
+            return await isFeatureEnabled(.paidAIChat)
         case .unknown:
             return false
         }
     }
 
     public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
-        await currentSubscriptionFeatures(forceRefresh: false).compactMap { subscriptionFeatureV2 in
-            switch subscriptionFeatureV2.entitlement {
+        await currentSubscriptionFeatures(forceRefresh: false).compactMap { feature in
+            switch feature {
             case .networkProtection:
                 return .networkProtection
             case .dataBrokerProtection:

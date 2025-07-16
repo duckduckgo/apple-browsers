@@ -1035,7 +1035,7 @@ extension SettingsViewModel {
             subscriptionStateCache.set(state.subscription) // Sync cache
             return
         }
-        
+
         do {
             let subscription = try await subscriptionAuthV1toV2Bridge.getSubscription(cachePolicy: .cacheFirst)
             state.subscription.platform = subscription.platform
@@ -1048,14 +1048,17 @@ extension SettingsViewModel {
             let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
             for entitlement in entitlementsToCheck {
-                if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isEnabled(feature: entitlement),
+                if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isFeatureEnabled(entitlement),
                     hasEntitlement {
                     currentEntitlements.append(entitlement)
                 }
             }
 
             self.state.subscription.entitlements = currentEntitlements
-            self.state.subscription.subscriptionFeatures = await subscriptionAuthV1toV2Bridge.currentSubscriptionFeatures()
+
+            // This requires follow-up work:
+            // https://app.asana.com/1/137249556945/task/1210799126744217
+            self.state.subscription.subscriptionFeatures = (try? await subscriptionAuthV1toV2Bridge.currentSubscriptionFeatures()) ?? []
         } catch SubscriptionEndpointServiceError.noData {
             Logger.subscription.debug("No subscription data available")
             state.subscription.hasSubscription = false

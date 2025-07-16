@@ -471,7 +471,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                subscriptionEndpointService: subscriptionEndpointServiceV2,
                                                                subscriptionEnvironment: subscriptionEnvironment,
                                                                pixelHandler: pixelHandler,
-                                                               tokenRecoveryHandler: nil,
                                                                initForPurchase: false)
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {

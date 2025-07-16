@@ -288,6 +288,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updateButtonState()
         updateTextViewHeight()
         handler.updateCurrentText(textView.text ?? "")
+        handler.markUserInteraction()
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {

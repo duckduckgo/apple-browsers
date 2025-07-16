@@ -1,7 +1,7 @@
 //
-//  NewTabPageOmnibarModel.swift
+//  Logger+NewTabPageOmnibar.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-public final class NewTabPageOmnibarModel {
+import Foundation
+import os.log
 
-    public init() {}
-
+public extension Logger {
+    static var newTabPageOmnibar = { Logger(subsystem: "newTabPageOmnibar", category: "") }()
 }

@@ -1,7 +1,7 @@
 //
-//  NewTabPageDataModel.swift
+//  MockNewTabPageOmnibarSuggestionsProvider.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,22 +16,14 @@
 //  limitations under the License.
 //
 
-public enum NewTabPageDataModel {
+import NewTabPage
 
-    // MARK: - Common
+final class MockNewTabPageOmnibarSuggestionsProvider: NewTabPageOmnibarSuggestionsProviding {
 
-    public enum OpenTarget: String, Codable, Equatable {
-        case sameTab = "same-tab"
-        case newTab = "new-tab"
-        case newWindow = "new-window"
+    var suggestionsHandler: ((String) -> NewTabPageDataModel.Suggestions)?
 
-        public var linkOpenTarget: LinkOpenTarget {
-            switch self {
-            case .sameTab: .current
-            case .newTab: .newTab
-            case .newWindow: .newWindow
-            }
-        }
+    @MainActor
+    func suggestions(for term: String) async -> NewTabPageDataModel.Suggestions {
+        suggestionsHandler?(term) ?? .empty
     }
-
 }

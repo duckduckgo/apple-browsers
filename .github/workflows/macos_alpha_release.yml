@@ -76,7 +76,7 @@ jobs:
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
       run: |
-        bundle exec fastlane calculate_next_build_number \
+        bundle exec fastlane run calculate_next_build_number \
           platform:macos \
           config:alpha \
           bundle_id:com.duckduckgo.mobile.ios.alpha

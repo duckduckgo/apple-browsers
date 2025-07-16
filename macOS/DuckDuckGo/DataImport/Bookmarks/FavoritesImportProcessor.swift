@@ -25,13 +25,11 @@ enum FavoritesImportProcessor {
     static func mergeBookmarksAndFavorites(bookmarks: inout ImportedBookmarks, favorites: [ImportedBookmarks.BookmarkOrFolder]) {
         guard !favorites.isEmpty else { return }
 
-        let favoriteUrlIndices = favorites.reduce(into: [String: Int]()) { result, favorite in
+        var favoriteUrlIndices = favorites.reduce(into: [String: Int]()) { result, favorite in
             guard let urlString = favorite.url?.nakedString else { return }
             result[urlString] = favorite.favoritesIndex
         }
         guard !favoriteUrlIndices.isEmpty else { return }
-
-        var foundFavoriteUrls: Set<String> = []
 
         // Recursively process bookmarks to mark matching URLs as favorites
         func processMaybeFolder(_ folder: inout ImportedBookmarks.BookmarkOrFolder?) {
@@ -55,7 +53,7 @@ enum FavoritesImportProcessor {
                 if let favoriteIndex = favoriteUrlIndices[urlString] {
                     items[idx].isDDGFavorite = true
                     items[idx].favoritesIndex = favoriteIndex
-                    foundFavoriteUrls.insert(urlString)
+                    favoriteUrlIndices.removeValue(forKey: urlString)
                 }
             }
         }
@@ -64,7 +62,7 @@ enum FavoritesImportProcessor {
         processMaybeFolder(&bookmarks.topLevelFolders.syncedBookmarks)
 
         // Create bookmarks objects for favorite shortcuts that don't have matching bookmarks and add them to bookmark bar
-        let uniqueShortcuts = favorites.filter { !foundFavoriteUrls.contains($0.url?.nakedString ?? "") }
+        let uniqueShortcuts = favorites.filter { favoriteUrlIndices.keys.contains($0.url?.nakedString ?? "") }
         bookmarks.topLevelFolders.bookmarkBar?.children?.append(contentsOf: uniqueShortcuts) ?? {
             bookmarks.topLevelFolders.bookmarkBar = .folder(name: bookmarks.topLevelFolders.bookmarkBar?.name ?? "", children: uniqueShortcuts)
         }()

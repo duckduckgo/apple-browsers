@@ -21,6 +21,12 @@ import Foundation
 import UIKit
 import Core
 
+protocol LaunchTaskManaging: AnyObject {
+
+    func register(task: LaunchTask)
+
+}
+
 /// Manages and runs a sequence of launch-time tasks using a background operation queue with iOS background execution support.
 ///
 /// `LaunchTaskManager` lets you register multiple `LaunchTask`s to be executed serially in the background
@@ -31,7 +37,7 @@ import Core
 ///
 /// Use `register(task:)` to enqueue tasks, and `start()` to begin execution.
 /// Ideal for structured app initialization flows that must run reliably and in sequence.
-final class LaunchTaskManager {
+final class LaunchTaskManager: LaunchTaskManaging {
 
     private let queue: OperationQueue = {
         let queue = OperationQueue()

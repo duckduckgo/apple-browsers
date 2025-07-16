@@ -18,7 +18,13 @@
 
 import Foundation
 
-public struct AppVersion {
+public protocol OSVersionProviding {
+
+    var osVersion: String { get }
+
+}
+
+public struct AppVersion: OSVersionProviding {
 
     public static let shared = AppVersion()
 

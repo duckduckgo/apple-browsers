@@ -89,7 +89,7 @@ struct AppConfiguration {
         CrashHandlersConfiguration.handleCrashDuringCrashHandlersSetup()
         startAutomationServerIfNeeded(mainViewController: mainViewController)
         UserAgentConfiguration(
-            keyValueStore: keyValueStore,
+            store: keyValueStore,
             launchTaskManager: launchTaskManager
         ).configure() // Called at launch end to avoid IPC race when spawning WebView for content blocking.
     }

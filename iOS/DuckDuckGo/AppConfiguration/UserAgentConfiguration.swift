@@ -36,48 +36,60 @@ struct UserAgentConfiguration {
 
     }
 
-    let userAgentManager: UserAgentManager = DefaultUserAgentManager.shared
-    let keyValueStore: ThrowingKeyValueStoring
-    let appVersion: AppVersion = .shared
-    let launchTaskManager: LaunchTaskManager
+    let userAgentManager: UserAgentManaging
+    let store: ThrowingKeyValueStoring
+    let osVersionProvider: OSVersionProviding
+    let launchTaskManager: LaunchTaskManaging
+
+    init(userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
+         store: ThrowingKeyValueStoring,
+         osVersionProvider: OSVersionProviding = AppVersion.shared,
+         launchTaskManager: LaunchTaskManaging) {
+        self.userAgentManager = userAgentManager
+        self.store = store
+        self.osVersionProvider = osVersionProvider
+        self.launchTaskManager = launchTaskManager
+    }
 
     @MainActor
-    func configure() {
+    func configure(completion: (() -> Void)? = nil) {
         if let cachedUserAgent {
             userAgentManager.setDefaultUserAgent(cachedUserAgent.userAgent)
-            if appVersion.osVersion != cachedUserAgent.osVersion {
-                launchTaskManager.register(task: BlockLaunchTask(name: "Update User Agent", onRun: { taskContext in
+            if osVersionProvider.osVersion != cachedUserAgent.osVersion {
+                launchTaskManager.register(task: BlockLaunchTask(name: "Update User Agent") { taskContext in
                     Task {
                         await extractAndSetDefaultUserAgent()
                         taskContext.finish()
                     }
-                }))
+                })
             }
+            completion?()
         } else {
             Task {
                 await extractAndSetDefaultUserAgent()
+                completion?()
             }
         }
     }
 
     private var cachedUserAgent: CachedUserAgent? {
-        if let data = try? keyValueStore.object(forKey: "default_user_agent") as? Data {
+        if let data = try? store.object(forKey: Constants.userAgentCacheKey) as? Data {
             return try? PropertyListDecoder().decode(CachedUserAgent.self, from: data)
         }
         return nil
     }
 
     @MainActor
-    public func extractAndSetDefaultUserAgent() async {
+    private func extractAndSetDefaultUserAgent() async {
         if let userAgent = try? await userAgentManager.extractAndSetDefaultUserAgent() {
             cacheUserAgent(userAgent)
         }
     }
 
     private func cacheUserAgent(_ userAgent: String) {
-        let userAgent = CachedUserAgent(userAgent: userAgent, osVersion: appVersion.osVersion)
-        let encoded = try? PropertyListEncoder().encode(userAgent)
-        try? keyValueStore.set(encoded, forKey: Constants.userAgentCacheKey)
+        let userAgent = CachedUserAgent(userAgent: userAgent, osVersion: osVersionProvider.osVersion)
+        let encodedUserAgent = try? PropertyListEncoder().encode(userAgent)
+        try? store.set(encodedUserAgent, forKey: Constants.userAgentCacheKey)
     }
 
 }

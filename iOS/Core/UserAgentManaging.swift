@@ -1,5 +1,5 @@
 //
-//  UserAgentManager.swift
+//  UserAgentManaging.swift
 //  Core
 //
 //  Copyright © 2020 DuckDuckGo. All rights reserved.
@@ -22,7 +22,7 @@ import Common
 import Foundation
 import WebKit
 
-public protocol UserAgentManager {
+public protocol UserAgentManaging {
 
     @MainActor func extractAndSetDefaultUserAgent() async throws -> String
     @MainActor func setDefaultUserAgent(_ userAgent: String)
@@ -34,15 +34,15 @@ public protocol UserAgentManager {
 
 }
 
-enum UserAgentError: Error {
+private enum UserAgentError: Error {
 
     case invalidResult
 
 }
 
-public class DefaultUserAgentManager: UserAgentManager {
+public class DefaultUserAgentManager: UserAgentManaging {
 
-    public static let shared: UserAgentManager = DefaultUserAgentManager()
+    public static let shared: UserAgentManaging = DefaultUserAgentManager()
     private var userAgent = UserAgent()
 
     @MainActor

@@ -192,8 +192,6 @@ extension FavoriteHomeCell {
             titleLabel.adjustsFontSizeToFitWidth = false
 
             iconBackground.layer.cornerRadius = Constant.cornerRadius
-            iconBackground.layer.shadowOpacity = 1
-            iconBackground.layer.cornerCurve = .circular
         }
     }
 

@@ -142,7 +142,6 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let sourceTitle: String?
     }
 
-    // Custom coding keys for flat structure
     private enum CodingKeys: String, CodingKey {
         case platform
         case tool

@@ -1,7 +1,8 @@
 //
-//  AutofillCredentialsImportManager.swift
+//  AutofillCredentialsImportPresentationManager.swift
+//  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,7 +18,6 @@
 //
 
 import Foundation
-import PixelKit
 import BrowserServicesKit
 
 public protocol AutofillCredentialsImportPresentationDelegate: AnyObject {
@@ -25,79 +25,72 @@ public protocol AutofillCredentialsImportPresentationDelegate: AnyObject {
 }
 
 public protocol AutofillLoginImportStateProvider {
-    var isEligibleDDGUser: Bool { get }
+    var isImportPromoInBrowserPromptFeatureEnabled: Bool { get }
+    var isImportPromoInPasswordsScreenFeatureEnabled: Bool { get }
     var hasImportedLogins: Bool { get }
     var isAutofillEnabled: Bool { get }
     var isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool { get }
+    var isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed: Bool { get }
     func hasNeverPromptWebsitesFor(_ domain: String) -> Bool
 }
 
-final public class AutofillCredentialsImportManager {
+final public class AutofillCredentialsImportPresentationManager {
     private var loginImportStateProvider: AutofillLoginImportStateProvider & AutofillLoginImportStateStoring
-    private let isBurnerWindow: Bool
 
     weak var presentationDelegate: AutofillCredentialsImportPresentationDelegate?
 
-    init(loginImportStateProvider: AutofillLoginImportStateProvider & AutofillLoginImportStateStoring = AutofillLoginImportState(),
-         isBurnerWindow: Bool) {
+    init(loginImportStateProvider: AutofillLoginImportStateProvider & AutofillLoginImportStateStoring) {
         self.loginImportStateProvider = loginImportStateProvider
-        self.isBurnerWindow = isBurnerWindow
     }
 }
 
-extension AutofillCredentialsImportManager: AutofillPasswordImportDelegate {
+extension AutofillCredentialsImportPresentationManager: AutofillPasswordImportDelegate {
     private struct CredentialsImportInputContext: Decodable {
         var inputType: String
         var credentialsImport: Bool
     }
 
-    public func autofillUserScriptDidRequestPasswordImportFlow(_ completion: @escaping () -> Void) {
-        PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowStarted.withoutMacPrefix)
-        presentationDelegate?.autofillDidRequestCredentialsImportFlow(
-            onFinished: {
-                PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowEnded.withoutMacPrefix)
-                completion()
-            },
-            onCancelled: {
-                PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowCancelled.withoutMacPrefix)
-                completion()
-            }
-        )
-    }
+    public func autofillUserScriptDidRequestPasswordImportFlow(_ completion: @escaping () -> Void) {}
 
-    public func autofillUserScriptDidFinishImportWithImportedCredentialForCurrentDomain() {
-        PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowHadCredentials.withoutMacPrefix)
-    }
+    public func autofillUserScriptDidFinishImportWithImportedCredentialForCurrentDomain() {}
 
     public func autofillUserScriptDidRequestPermanentCredentialsImportPromptDismissal() {
         loginImportStateProvider.isCredentialsImportPromoInBrowserPermanentlyDismissed = true
-        PixelKit.fire(AutofillPixelKitEvent.importCredentialsPromptNeverAgainClicked.withoutMacPrefix)
+    }
+
+    public func passwordsScreenDidRequestPermanentCredentialsImportPromptDismissal() {
+        loginImportStateProvider.isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed = true
     }
 
     public func autofillUserScriptShouldDisplayOverlay(_ serializedInputContext: String, for domain: String) -> Bool {
-        if let data = serializedInputContext.data(using: .utf8),
-           let decoded = try? JSONDecoder().decode(CredentialsImportInputContext.self, from: data) {
-            if decoded.credentialsImport {
-                return !loginImportStateProvider.isCredentialsImportPromoInBrowserPermanentlyDismissed
-            }
-        }
-        return true
+        // no-op on iOS
+        return false
     }
 
     public func autofillUserScriptShouldShowPasswordImportDialog(domain: String, credentials: [SecureVaultModels.WebsiteCredentials], credentialsProvider: SecureVaultModels.CredentialsProvider, totalCredentialsCount: Int) -> Bool {
-        guard credentialsProvider.name != .bitwarden else {
-            return false
-        }
-        guard !isBurnerWindow else {
+        guard #available(iOS 18.2, *) else {
             return false
         }
         guard credentials.isEmpty else {
             return false
         }
-        guard totalCredentialsCount < 50 else {
+        guard totalCredentialsCount < 25 else {
             return false
         }
         guard loginImportStateProvider.shouldShowPasswordImportDialog(for: domain) else {
+            return false
+        }
+        return true
+    }
+
+    public func passwordsScreenShouldShowPasswordImportPromotion(totalCredentialsCount: Int) -> Bool {
+        guard #available(iOS 18.2, *) else {
+            return false
+        }
+        guard totalCredentialsCount < 25 else {
+            return false
+        }
+        guard loginImportStateProvider.shouldShowPasswordsScreenImportPromotion() else {
             return false
         }
         return true
@@ -112,13 +105,26 @@ private extension AutofillLoginImportStateProvider {
         guard !hasImportedLogins else {
             return false
         }
-        guard isEligibleDDGUser else {
+        guard isImportPromoInBrowserPromptFeatureEnabled else {
             return false
         }
         guard !hasNeverPromptWebsitesFor(domain) else {
             return false
         }
         guard !isCredentialsImportPromoInBrowserPermanentlyDismissed else {
+            return false
+        }
+        return true
+    }
+
+    func shouldShowPasswordsScreenImportPromotion() -> Bool {
+        guard !hasImportedLogins else {
+            return false
+        }
+        guard isImportPromoInPasswordsScreenFeatureEnabled else {
+            return false
+        }
+        guard !isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed else {
             return false
         }
         return true

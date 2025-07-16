@@ -141,6 +141,8 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case passwordVariantCategorization
     case autocompleteAttributeSupport
     case inputFocusApi
+    case canPromoteImportPasswordsInPasswordManagement
+    case canPromoteImportPasswordsInBrowser
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {

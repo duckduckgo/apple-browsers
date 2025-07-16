@@ -23,6 +23,7 @@ import Core
 import Common
 import PrivacyDashboard
 import os.log
+import Persistence
 
 class AutofillDebugViewController: UITableViewController {
 
@@ -38,9 +39,11 @@ class AutofillDebugViewController: UITableViewController {
         case resetAutofillBrokenReports = 209
         case resetAutofillSurveys = 210
         case viewAllCredentials = 211
+        case resetAutofillImportPromos = 212
     }
 
     let defaults = AppUserDefaults()
+    var keyValueStore: ThrowingKeyValueStoring?
 
     override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         if cell.tag == Row.toggleAutofillDebugScript.rawValue {
@@ -135,6 +138,17 @@ class AutofillDebugViewController: UITableViewController {
                 let autofillSurveyManager = AutofillSurveyManager()
                 autofillSurveyManager.resetSurveys()
                 ActionMessageView.present(message: "Autofill Surveys reset")
+            } else if cell.tag == Row.resetAutofillImportPromos.rawValue {
+                guard let keyValueStore = keyValueStore else {
+                    ActionMessageView.present(message: "Failed to reset Import Prompts")
+                    return
+                }
+                let importState = AutofillLoginImportState(keyValueStore: keyValueStore)
+                importState.hasImportedLogins = false
+                importState.isCredentialsImportPromoInBrowserPermanentlyDismissed = false
+                importState.isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed = false
+                try? keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
+                ActionMessageView.present(message: "Import Prompts reset")
             }
         }
     }

@@ -126,6 +126,7 @@ final class DataImportViewController: UIViewController {
 
     private func presentSummary(for summary: DataImportSummary) {
         summaryPresented = true
+        AutofillLoginImportState(keyValueStore: keyValueStore).hasImportedLogins = true
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }

@@ -145,8 +145,8 @@ jobs:
         bundle exec fastlane release_${{ env.destination }}
         dsym_path="${{ github.workspace }}/macOS/${app_dsym_name}.app.dSYM.zip"
         mv -f "${{ github.workspace }}/macOS/${app_bundle_name}.app.dSYM.zip" "${dsym_path}"
-        version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)"
-        build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
+        version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig | tr -d '\n')"
+        build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig | tr -d '\n')"
         echo "dsym-path=${dsym_path}" >> $GITHUB_ENV
         echo "app-version=${version}.${build_number}" >> $GITHUB_ENV
         echo "app-dsym-name=${app_dsym_name}" >> $GITHUB_ENV

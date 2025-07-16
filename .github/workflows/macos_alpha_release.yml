@@ -157,6 +157,6 @@ jobs:
           DMG_NAME: ${{ steps.fetch-dmg.outputs.dmg-name }}
         run: |
           s3_path="s3://${{ vars.RELEASE_BUCKET_NAME }}/${{ vars.RELEASE_BUCKET_PREFIX }}/alpha"
-          aws s3 cp appcast-alpha.xml "$s3_path" --acl public-read
-          aws s3 cp "$DMG_NAME" "$s3_path" --acl public-read
+          aws s3 cp appcast-alpha.xml "${s3_path}/appcast-alpha.xml" --acl public-read
+          aws s3 cp "$DMG_NAME" "${s3_path}/${DMG_NAME}" --acl public-read
           aws s3 cp "$DMG_NAME" "${s3_path}/duckduckgo-alpha.dmg" --acl public-read

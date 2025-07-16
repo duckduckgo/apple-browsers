@@ -18,7 +18,10 @@
 
 import Cocoa
 
-final class CrashReportPromptPresenter {
+final class CrashReportPromptPresenter: NSObject {
+    enum Response: Equatable {
+        case allow, deny
+    }
 
     lazy var windowController: NSWindowController = {
         let storyboard = NSStoryboard(name: "CrashReports", bundle: nil)
@@ -31,12 +34,39 @@ final class CrashReportPromptPresenter {
         // swiftlint:enable force_cast
     }
 
-    func showPrompt(for crashReport: CrashReportPresenting, userDidAllowToReport: @escaping () -> Void) {
-        viewController.crashReport = crashReport
-        viewController.userDidAllowToReport = userDidAllowToReport
+    @MainActor
+    func showPrompt(for crashReport: CrashReportPresenting) async -> Response {
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
 
-        windowController.showWindow(self)
-        windowController.window?.center()
+            viewController.crashReport = crashReport
+            viewController.userDidAnswerPrompt = { [weak self] response in
+                self?.resumeContinuation(with: response)
+            }
+
+            // Set up window delegate to handle window closing
+            windowController.window?.delegate = self
+            windowController.showWindow(self)
+            windowController.window?.center()
+        }
     }
 
+    private func resumeContinuation(with response: Response) {
+        guard let continuation = continuation else {
+            return
+        }
+        self.continuation = nil
+        continuation.resume(returning: response)
+    }
+
+    private var continuation: CheckedContinuation<Response, Never>?
+}
+
+// MARK: - NSWindowDelegate
+
+extension CrashReportPromptPresenter: NSWindowDelegate {
+    func windowWillClose(_ notification: Notification) {
+        // If window is closed without explicit user response, treat as deny
+        resumeContinuation(with: .deny)
+    }
 }

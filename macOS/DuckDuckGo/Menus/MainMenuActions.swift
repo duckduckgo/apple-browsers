@@ -1159,6 +1159,22 @@ extension MainViewController {
         }
     }
 
+    @objc func toggleWatchdog(_ sender: Any?) {
+        if Self.watchdog.isRunning {
+            Self.watchdog.stop()
+        } else {
+            Self.watchdog.start()
+        }
+    }
+
+    @objc func simulate15SecondHang() {
+        DispatchQueue.main.async {
+            print("Simulating main thread hang...")
+            sleep(15)
+            print("Main thread is unblocked")
+        }
+    }
+
     @objc func resetPinnedTabs(_ sender: Any?) {
         if tabCollectionViewModel.selectedTabIndex?.isPinnedTab == true, tabCollectionViewModel.tabCollection.tabs.count > 0 {
             tabCollectionViewModel.select(at: .unpinned(0))

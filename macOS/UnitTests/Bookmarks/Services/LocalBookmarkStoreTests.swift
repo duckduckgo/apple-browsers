@@ -20,6 +20,7 @@ import Foundation
 import Bookmarks
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
+@testable import BrowserServicesKit
 
 extension LocalBookmarkStore {
 
@@ -1505,6 +1506,72 @@ final class LocalBookmarkStoreTests: XCTestCase {
         XCTAssertEqual(bookmarks.count, 4)
     }
 
+    @MainActor
+    func testWhenBookmarksAreImported_AndRootBookmarksFavoritedByDefault_ThenFavoritesAreImportedInExpectedOrder() async throws {
+        let context = container.viewContext
+        let bookmarkStore = LocalBookmarkStore(context: context)
+
+        let bookmark1 = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil)
+        let bookmark2 = ImportedBookmarks.BookmarkOrFolder(name: "Duck", type: .bookmark, urlString: "https://duck.com", children: nil)
+        let bookmarkBar = ImportedBookmarks.BookmarkOrFolder(name: "Bookmark Bar", type: .folder, urlString: nil, children: [bookmark2, bookmark1])
+        let otherBookmarks = ImportedBookmarks.BookmarkOrFolder(name: "Other Bookmarks", type: .folder, urlString: nil, children: [])
+
+        let topLevelFolders = ImportedBookmarks.TopLevelFolders(bookmarkBar: bookmarkBar, otherBookmarks: otherBookmarks, syncedBookmarks: nil)
+        let importedBookmarks = ImportedBookmarks(topLevelFolders: topLevelFolders)
+
+        _ = bookmarkStore.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(.chrome), markRootBookmarksAsFavoritesByDefault: true)
+
+        let favorites = try await bookmarkStore.loadAll(type: .favorites)
+
+        XCTAssertEqual(favorites.count, 2)
+        XCTAssertEqual(favorites[0].title, bookmark2.name)
+        XCTAssertEqual(favorites[1].title, bookmark1.name)
+    }
+
+    @MainActor
+    func testWhenBookmarksAreImported_AndRootBookmarksNotFavoritedByDefault_ThenFavoritesAreImportedInExpectedOrder() async throws {
+        let context = container.viewContext
+        let bookmarkStore = LocalBookmarkStore(context: context)
+
+        let bookmark1 = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil, isDDGFavorite: true, favoritesIndex: 0)
+        let bookmark2 = ImportedBookmarks.BookmarkOrFolder(name: "Duck", type: .bookmark, urlString: "https://duck.com", children: nil, isDDGFavorite: true, favoritesIndex: 1)
+        let bookmarkBar = ImportedBookmarks.BookmarkOrFolder(name: "Bookmark Bar", type: .folder, urlString: nil, children: [bookmark2, bookmark1])
+        let otherBookmarks = ImportedBookmarks.BookmarkOrFolder(name: "Other Bookmarks", type: .folder, urlString: nil, children: [])
+
+        let topLevelFolders = ImportedBookmarks.TopLevelFolders(bookmarkBar: bookmarkBar, otherBookmarks: otherBookmarks, syncedBookmarks: nil)
+        let importedBookmarks = ImportedBookmarks(topLevelFolders: topLevelFolders)
+
+        _ = bookmarkStore.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(.chrome), markRootBookmarksAsFavoritesByDefault: false)
+
+        let favorites = try await bookmarkStore.loadAll(type: .favorites)
+
+        XCTAssertEqual(favorites.count, 2)
+        XCTAssertEqual(favorites[0].title, bookmark1.name)
+        XCTAssertEqual(favorites[1].title, bookmark2.name)
+    }
+
+    @MainActor
+    func testWhenBookmarksAreImported_AndRootBookmarksNotFavoritedByDefault_ThenFavoritesAreDeduped() async throws {
+        let context = container.viewContext
+        let bookmarkStore = LocalBookmarkStore(context: context)
+
+        let bookmark1 = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil, isDDGFavorite: true, favoritesIndex: 0)
+        let bookmark2 = ImportedBookmarks.BookmarkOrFolder(name: "Duck", type: .bookmark, urlString: "https://duck.com", children: nil, isDDGFavorite: true, favoritesIndex: 1)
+        let bookmarkBar = ImportedBookmarks.BookmarkOrFolder(name: "Bookmark Bar", type: .folder, urlString: nil, children: [bookmark2, bookmark1])
+        let otherBookmarks = ImportedBookmarks.BookmarkOrFolder(name: "Other Bookmarks", type: .folder, urlString: nil, children: [])
+
+        let topLevelFolders = ImportedBookmarks.TopLevelFolders(bookmarkBar: bookmarkBar, otherBookmarks: otherBookmarks, syncedBookmarks: nil)
+        let importedBookmarks = ImportedBookmarks(topLevelFolders: topLevelFolders)
+
+        // Import bookmarks twice to test deduplication on second import
+        _ = bookmarkStore.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(.chrome), markRootBookmarksAsFavoritesByDefault: false)
+        _ = bookmarkStore.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(.chrome), markRootBookmarksAsFavoritesByDefault: false)
+
+        let favorites = try await bookmarkStore.loadAll(type: .favorites)
+
+        XCTAssertEqual(favorites.count, 2)
+    }
+
     func testWhenSafariBookmarksAreImported_AndTheBookmarksStoreIsEmpty_ThenBookmarksAreImportedToTheRootFolder_AndRootBookmarksAreFavorited() async throws {
         try await validateInitialImport(for: .thirdPartyBrowser(.safari))
     }
@@ -1535,6 +1602,54 @@ final class LocalBookmarkStoreTests: XCTestCase {
 
     func testWhenDDGHTMLBookmarksAreImported_AndTheBookmarksStoreIsNotEmpty_ThenBookmarksAreImportedToTheirOwnFolder_AndNoBookmarksAreFavorited() async throws {
         try await validateSubsequentImport(for: .duckduckgoWebKit)
+    }
+
+    @MainActor
+    func testWhenBookmarksAreImported_AndMaxFavoritesCountIsSet_ThenFavoritesAreLimitedToThatCount() async throws {
+        let maxFavoritesCount = 1
+        let context = container.viewContext
+        let bookmarkStore = LocalBookmarkStore(context: context)
+
+        let bookmark1 = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil, isDDGFavorite: true)
+        let bookmark2 = ImportedBookmarks.BookmarkOrFolder(name: "Duck", type: .bookmark, urlString: "https://duck.com", children: nil, isDDGFavorite: true)
+        let bookmarkBar = ImportedBookmarks.BookmarkOrFolder(name: "Bookmark Bar", type: .folder, urlString: nil, children: [bookmark1, bookmark2])
+        let otherBookmarks = ImportedBookmarks.BookmarkOrFolder(name: "Other Bookmarks", type: .folder, urlString: nil, children: [])
+
+        let topLevelFolders = ImportedBookmarks.TopLevelFolders(bookmarkBar: bookmarkBar, otherBookmarks: otherBookmarks, syncedBookmarks: nil)
+        let importedBookmarks = ImportedBookmarks(topLevelFolders: topLevelFolders)
+
+        _ = bookmarkStore.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(.chrome), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: maxFavoritesCount)
+
+        let favorites = try await bookmarkStore.loadAll(type: .favorites)
+
+        XCTAssertEqual(favorites.count, maxFavoritesCount)
+    }
+
+    @MainActor
+    func testWhenBookmarksAreImportedWithMaxFavoritesCount_AndTheBookmarksStoreIsNotEmpty_ThenTotalFavoritesAreLimitedToThatCount() async throws {
+        let maxFavoritesCount = 2
+        let context = container.viewContext
+        let bookmarkStore = LocalBookmarkStore(context: context)
+
+        // Initial condition: Store has one favorite bookmark.
+        let existingBookmark = Bookmark(id: UUID().uuidString, url: "https://example.com", title: "Example", isFavorite: true)
+        _ = try await bookmarkStore.save(bookmark: existingBookmark)
+        let existingFavorites = try await bookmarkStore.loadAll(type: .favorites)
+        XCTAssertEqual(existingFavorites.count, 1)
+
+        let bookmark1 = ImportedBookmarks.BookmarkOrFolder(name: "DuckDuckGo", type: .bookmark, urlString: "https://duckduckgo.com", children: nil, isDDGFavorite: true)
+        let bookmark2 = ImportedBookmarks.BookmarkOrFolder(name: "Duck", type: .bookmark, urlString: "https://duck.com", children: nil, isDDGFavorite: true)
+        let bookmarkBar = ImportedBookmarks.BookmarkOrFolder(name: "Bookmark Bar", type: .folder, urlString: nil, children: [bookmark1, bookmark2])
+        let otherBookmarks = ImportedBookmarks.BookmarkOrFolder(name: "Other Bookmarks", type: .folder, urlString: nil, children: [])
+
+        let topLevelFolders = ImportedBookmarks.TopLevelFolders(bookmarkBar: bookmarkBar, otherBookmarks: otherBookmarks, syncedBookmarks: nil)
+        let importedBookmarks = ImportedBookmarks(topLevelFolders: topLevelFolders)
+
+        _ = bookmarkStore.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(.chrome), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: maxFavoritesCount)
+
+        let favorites = try await bookmarkStore.loadAll(type: .favorites)
+
+        XCTAssertEqual(favorites.count, maxFavoritesCount)
     }
 
     @MainActor

@@ -176,8 +176,8 @@ final class MainCoordinator {
 
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
-            if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
-               hasEntitlement {
+            if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
+               canShowVPNInUI {
                 controller.segueToVPN()
             } else {
                 controller.segueToPrivacyPro()

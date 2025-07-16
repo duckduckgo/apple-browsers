@@ -21,6 +21,7 @@ import UIKit
 import PrivacyDashboard
 import Suggestions
 import Bookmarks
+import AIChat
 
 final class UpdatedOmniBarViewController: OmniBarViewController {
 
@@ -188,10 +189,10 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
         omniDelegate?.onOmniQuerySubmitted(query)
     }
 
-    func onPromptSubmitted(_ query: String) {
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
         editingStateViewController?.dismissAnimated { [weak self] in
             guard let self else { return }
-            self.omniDelegate?.onOmniPromptSubmitted(query)
+            self.omniDelegate?.onPromptSubmitted(query, tools: tools)
         }
     }
 
@@ -212,5 +213,13 @@ extension UpdatedOmniBarViewController: OmniBarEditingStateViewControllerDelegat
             let voiceSearchTarget: VoiceSearchTarget = (mode == .aiChat) ? .AIChat : .SERP
             self.omniDelegate?.onVoiceSearchPressed(preferredTarget: voiceSearchTarget)
         }
+    }
+
+    func onAppear() {
+        barView.hideButtons()
+    }
+
+    func onDismiss() {
+        barView.revealButtons()
     }
 }

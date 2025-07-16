@@ -94,6 +94,7 @@ final class AppDependencyProvider: DependencyProvider {
     var subscriptionManagerV2: (any SubscriptionManagerV2)?
     let isUsingAuthV2: Bool
     public let subscriptionAuthMigrator: AuthMigrator
+    static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
     let networkProtectionKeychainTokenStore: NetworkProtectionKeychainTokenStore
@@ -220,7 +221,7 @@ final class AppDependencyProvider: DependencyProvider {
 
             let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: storePurchaseManager)
             subscriptionManager.tokenRecoveryHandler = {
-                try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
+                try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
             }
 
             self.subscriptionManagerV2 = subscriptionManager

@@ -534,30 +534,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     private func addSubscriptionAndFreemiumDBPItems() {
-        let subscriptionItem = getSubscriptionItem()
-        let freemiumItem = getFreemiumDBPItem()
-
-        var itemsWereAdded = false
-        if let subscriptionItem = subscriptionItem {
-            addItem(subscriptionItem)
-            itemsWereAdded = true
-        }
-
-        if let freemiumItem = freemiumItem {
-            if itemsWereAdded {
-                addItem(NSMenuItem.separator())
-            }
-            addItem(freemiumItem)
-            itemsWereAdded = true
-        }
-
-        if itemsWereAdded {
-            addItem(NSMenuItem.separator())
-        }
+        addSubscriptionItems()
+        addFreemiumDBPItem()
+        addItem(NSMenuItem.separator())
     }
 
     @MainActor
-    private func getSubscriptionItem() -> NSMenuItem? {
+    private func addSubscriptionItems() {
         func shouldHideDueToNoProduct() -> Bool {
             let platform = subscriptionManager.currentEnvironment.purchasePlatform
             return platform == .appStore && subscriptionManager.canPurchase == false
@@ -585,7 +568,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
             // Do not add for App Store when purchase not available in the region
             if !shouldHideDueToNoProduct() {
-                return privacyProItem
+                addItem(privacyProItem)
             }
         } else {
             let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
@@ -599,14 +582,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                          onComplete: { [weak self] in
                                                              self?.submenuBuildingCompleteSubject.send(true)
                                                          })
-            return privacyProItem
+            addItem(privacyProItem)
         }
-        return nil
     }
 
     @MainActor
-    private func getFreemiumDBPItem() -> NSMenuItem? {
-        guard freemiumDBPFeature.isAvailable else { return nil }
+    private func addFreemiumDBPItem() {
+        guard freemiumDBPFeature.isAvailable else { return }
 
         let freemiumDBPItem = NSMenuItem(title: UserText.freemiumDBPOptionsMenuItem)
             .withImage(moreOptionsMenuIconsProvider.personalInformationRemovalIcon)
@@ -614,7 +596,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         freemiumDBPItem.target = self
         freemiumDBPItem.action = #selector(openFreemiumDBP(_:))
 
-        return freemiumDBPItem
+        addItem(freemiumDBPItem)
     }
 
     @MainActor
@@ -1188,7 +1170,9 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
     }
 
     private func addMenuItems() async {
-        let features = await subscriptionManager.currentSubscriptionFeatures()
+        // This requires follow-up work:
+        // https://app.asana.com/1/137249556945/task/1210799126744217
+        let features = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
 
         if features.contains(.networkProtection) {
             addItem(networkProtectionItem)
@@ -1249,7 +1233,8 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         guard subscriptionManager.isUserAuthenticated else { return }
 
         @Sendable func hasEntitlement(for productName: Entitlement.ProductName) async -> Bool {
-            (try? await subscriptionManager.isEnabled(feature: productName)) ?? false
+            // Note by Diego: this is bad as it will default to `false` on transient errors
+            (try? await subscriptionManager.isFeatureEnabled(productName)) ?? false
         }
 
         Task.detached(priority: .background) { [weak self] in

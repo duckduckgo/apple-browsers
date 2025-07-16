@@ -453,7 +453,7 @@ struct UserText {
 
     static let aiChatAddressBarShortcutTooltip = NSLocalizedString("tooltip.aichat.address-bar-shortcut", value: "Duck.ai ⇧↵", comment: "Tooltip With Shortcut for the AI Chat address bar button")
 
-    static let aiChatAddressBarTooltip = NSLocalizedString("tooltip.aichat.address-bar", value: "Duck.ai", comment: "Tooltip for the AI Chat address bar button")
+    static let aiChatAddressBarTooltip = NSLocalizedString("tooltip.aichat.address-bar", value: "Duck.ai ⌥⌘N", comment: "Tooltip for the AI Chat address bar button")
 
     static let aiChatAddressBarTrustedIndicator = NSLocalizedString("aichat.address-bar.trusted-indicator", value: "Duck.ai", comment: "Label for the AI Chat displayed in the address bar")
 
@@ -1543,7 +1543,7 @@ struct UserText {
     static let syncPromoSidePanelTitle = NSLocalizedString("sync.promo.passwords.side.panel.title", value: "Setup", comment: "Title for the Sync Promotion in passwords side panel")
     static let syncPromoSidePanelSubtitle = NSLocalizedString("sync.promo.passwords.side.panel.subtitle", value: "Sync & Backup", comment: "Subtitle for the Sync Promotion in passwords side panel")
 
-    static let freemiumDBPOptionsMenuItem = NSLocalizedString("freemium.dbp.menu.item", value: "Personal Information Scan", comment: "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu")
+    static let freemiumDBPOptionsMenuItem = NSLocalizedString("freemium.dbp.menu.item", value: "Free Personal Information Scan", comment: "Title for Freemium Personal Information Removal (Scan-Only) item in the options menu")
 
     static let homePagePromotionFreemiumDBPTitle = NSLocalizedString("home.page.promotion.freemium.dbp.title", value: "Personal Information Removal", comment: "Title for the Freemium DBP Home Page Promotion")
 

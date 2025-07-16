@@ -77,16 +77,25 @@ final class SettingsRegularSyncResponseHandlerTests: SettingsProviderTestsBase {
     }
 
     func testThatSettingStateIsApplied() async throws {
+
         let received: [Syncable] = [
             .testSetting("remote")
         ]
 
+        let exp = XCTestExpectation(description: "should process response")
+
+        let cancellable = testSettingSyncHandler.$syncedValue.sink { value in
+            guard let value else { return }
+            XCTAssertEqual(value, "remote")
+            exp.fulfill()
+        }
+
         try await handleSyncResponse(received: received)
+        await fulfillment(of: [exp], timeout: 1.0)
 
         let context = metadataDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
         let settingsMetadata = fetchAllSettingsMetadata(in: context)
         XCTAssertTrue(settingsMetadata.isEmpty)
-        XCTAssertEqual(testSettingSyncHandler.syncedValue, "remote")
     }
 
     func testThatSettingDeletedStateIsApplied() async throws {

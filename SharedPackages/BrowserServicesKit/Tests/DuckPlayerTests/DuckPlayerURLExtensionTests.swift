@@ -63,8 +63,8 @@ final class DuckPlayerURLExtensionTests: XCTestCase {
         XCTAssertTrue("\(baseUrl)/watch?v=abcdef12345".url!.isYoutubeVideo)
         XCTAssertTrue("\(baseUrl)/watch?v=abcdef12345&list=abcdefgh12345678&index=1".url!.isYoutubeVideo)
         XCTAssertTrue("\(baseUrl)/watch?v=abcdef12345&t=5m".url!.isYoutubeVideo)
+        XCTAssertTrue("\(baseUrl)/watch?v=abcdef12345&list=abcdefgh12345678".url!.isYoutubeVideo)
 
-        XCTAssertFalse("\(baseUrl)/watch?v=abcdef12345&list=abcdefgh12345678".url!.isYoutubeVideo)
         XCTAssertFalse("https://duckduckgo.com/watch?v=abcdef12345".url!.isYoutubeVideo)
     }
 

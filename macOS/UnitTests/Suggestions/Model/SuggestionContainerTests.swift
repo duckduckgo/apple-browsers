@@ -403,6 +403,9 @@ extension SuggestionContainerTests {
         func showTab(with content: DuckDuckGo_Privacy_Browser.Tab.TabContent) {
         }
 
+        func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
+        }
+
         var allTabCollectionViewModels: [TabCollectionViewModel] = []
         var selectedWindowIndex: Int
         var selectedTab: Tab? {

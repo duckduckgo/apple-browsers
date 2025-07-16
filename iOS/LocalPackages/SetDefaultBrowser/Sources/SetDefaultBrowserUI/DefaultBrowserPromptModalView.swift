@@ -165,3 +165,7 @@ private enum Metrics {
     }
 
 }
+
+#Preview {
+    DefaultBrowserPromptModalView(closeAction: {}, setAsDefaultAction: {}, doNotAskAgainAction: {})
+}

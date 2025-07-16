@@ -135,10 +135,16 @@ private extension DuckURLSchemeHandler {
     func handleDuckPlayer(requestURL: URL, urlSchemeTask: WKURLSchemeTask, webView: WKWebView) {
         let youtubeHandler = YoutubePlayerNavigationHandler()
         let html = youtubeHandler.makeHTMLFromTemplate()
+        webView.stopLoading()
 
         if #available(macOS 12.0, *) {
             let newRequest = youtubeHandler.makeDuckPlayerRequest(from: URLRequest(url: requestURL))
-            webView.loadSimulatedRequest(newRequest, responseHTML: html)
+            // Workaround for https://app.asana.com/1/137249556945/project/1204099484721401/task/1209931387442142
+            // On fast redirections, the webview maybe still loading the old page, when simulated request is sent
+            // A more robust KVO fix did not work as observation misses events in fast redirections
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                webView.loadSimulatedRequest(newRequest, responseHTML: html)
+            }
         } else {
             let data = html.utf8data
 
@@ -189,7 +195,7 @@ private extension DuckURLSchemeHandler {
     func response(for requestURL: URL, withFaviconURL faviconURL: URL) -> (URLResponse, Data)? {
         guard faviconManager.isCacheLoaded,
               let favicon = faviconManager.getCachedFavicon(for: faviconURL, sizeCategory: .medium, fallBackToSmaller: true),
-              let imagePNGData = favicon.image?.pngData
+              let imagePNGData = favicon.image?.pngData()
         else {
             guard let response = HTTPURLResponse(url: requestURL, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: nil) else {
                 return nil
@@ -236,7 +242,7 @@ private extension DuckURLSchemeHandler {
         guard let userBackgroundImagesManager,
               let userBackgroundImage = userBackgroundImagesManager.availableImages.first(where: { $0.fileName == fileName }),
               let image = isThumbnail ? userBackgroundImagesManager.thumbnailImage(for: userBackgroundImage) : userBackgroundImagesManager.image(for: userBackgroundImage),
-              let imageJPEGData = image.jpegData
+              let imageJPEGData = image.jpegData()
         else {
             guard let response = HTTPURLResponse(url: requestURL, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: nil) else {
                 return nil

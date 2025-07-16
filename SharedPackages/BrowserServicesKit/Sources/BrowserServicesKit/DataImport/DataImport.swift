@@ -108,6 +108,7 @@ public enum DataImportAction: String, RawRepresentable {
     case bookmarks
     case passwords
     case favicons
+    case favorites
     #if os(iOS)
     case creditCards
     #endif

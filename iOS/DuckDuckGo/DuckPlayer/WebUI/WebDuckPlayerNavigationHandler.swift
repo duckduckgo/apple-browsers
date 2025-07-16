@@ -735,7 +735,12 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Parameter webView: The `WKWebView` whose URL has changed.
     /// - Returns: A result indicating whether the URL change was handled.
     @MainActor
-    func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
+    func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?, isNavigationError: Bool) -> DuckPlayerNavigationHandlerURLChangeResult {
+
+        // Don't trigger DuckPlayer if there was a navigation error
+        if isNavigationError {
+            return .notHandled(.invalidURL)
+        }
 
         // We want to prevent multiple simultaneous redirects
         // This can be caused by Duplicate Nav events, and quick URL changes
@@ -1045,14 +1050,22 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///
     /// - Parameter hostViewController: The `TabViewController` to set as the host.
     func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {
-        // NOOP
+        guard let webView = hostViewController.webView else { return }
+        
+        // Resume media playback capability when tab appears (user switches back to tab)
+        // This allows media to play again when the tab becomes active
+        webView.setAllMediaPlaybackSuspended(false) { }
     }
 
     /// Update DuckPlayer for WebView Disappearance
     ///
     /// - Parameter hostViewController: The `TabViewController` to set as the host.
     func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
-        // NOOP
+        guard let webView = hostViewController.webView else { return }
+        
+        // Pause all media playback when tab disappears (user switches to another tab)
+        // This matches normal browser behavior where background tabs pause media
+        webView.setAllMediaPlaybackSuspended(true) { }
     }
 
 }

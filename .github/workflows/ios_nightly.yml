@@ -109,3 +109,20 @@ jobs:
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
       ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+
+  notify-failure:
+    name: Notify on failure
+    if: ${{ always() && (needs.atb-ui-tests.result == 'failure' || needs.atb-ui-tests.result == 'cancelled' || needs.fingerprinting-ui-tests.result == 'failure' || needs.fingerprinting-ui-tests.result == 'cancelled') }}
+    needs: [atb-ui-tests, fingerprinting-ui-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+    - name: Create Asana task when workflow failed
+      run: |
+        curl -s "https://app.asana.com/api/1.0/tasks" \
+          --header "Accept: application/json" \
+          --header "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
+          --header "Content-Type: application/json" \
+          --data ' { "data": { "name": "GH Workflow Failure - iOS nightly tests", "workspace": "${{ vars.ASANA_WORKSPACE_ID }}", "projects": [ "${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}" ], "notes" : "The iOS nightly tests workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" } }'

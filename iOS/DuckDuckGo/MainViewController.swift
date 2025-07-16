@@ -1966,7 +1966,7 @@ class MainViewController: UIViewController {
                 isAuthV2Enabled: isAuthV2Enabled,
                 trigger: trigger,
                 error: error),
-            frequency: .dailyAndCount)
+            frequency: .daily)
     }
 
     func checkSubscriptionEntitlements() {

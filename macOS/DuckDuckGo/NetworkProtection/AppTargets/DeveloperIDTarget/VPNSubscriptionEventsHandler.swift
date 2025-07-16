@@ -121,7 +121,7 @@ final class VPNSubscriptionEventsHandler {
                 isAuthV2Enabled: isAuthV2Enabled,
                 trigger: trigger,
                 error: error),
-            frequency: .dailyAndCount)
+            frequency: .daily)
     }
 
     @MainActor

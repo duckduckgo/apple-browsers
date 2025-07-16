@@ -145,7 +145,7 @@ jobs:
         env:
           DMG_NAME: ${{ steps.fetch-dmg.outputs.dmg-name }}
         run: |
-          echo <<EOF > ${DMG_NAME}.html
+          echo <<EOF > ${DMG_NAME/dmg/html}
           Alpha release built from <a href="https://github.com/duckduckgo/apple-browsers/commits/main/?since=${{ github.sha }}">commit ${{ github.sha }}</a>.
           EOF
 

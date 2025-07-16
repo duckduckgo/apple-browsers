@@ -61,7 +61,6 @@ jobs:
     with:
       release-type: alpha
       create-dmg: true
-      branch: ${{ inputs.branch }}
       build-number-override: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
       skip-notify: true
     secrets:
@@ -87,7 +86,6 @@ jobs:
     uses: ./.github/workflows/macos_build_appstore.yml
     with:
       destination: testflight_alpha
-      branch: ${{ inputs.branch }}
       build-number-override: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
       skip-notify: true
     secrets:

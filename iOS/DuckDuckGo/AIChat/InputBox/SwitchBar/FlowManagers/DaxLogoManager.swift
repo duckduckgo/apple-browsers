@@ -34,7 +34,7 @@ final class DaxLogoManager {
     
     // MARK: - Public Methods
     
-    func installInViewController(_ viewController: UIViewController) {
+    func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {
         let daxLogoView = FullHeightLogoView()
         let hostingController = UIHostingController(rootView: daxLogoView)
         daxLogoHostingController = hostingController
@@ -43,11 +43,20 @@ final class DaxLogoManager {
         viewController.addChild(hostingController)
         viewController.view.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-        
+
+        let centeringGuide = UILayoutGuide()
+        viewController.view.addLayoutGuide(centeringGuide)
+
         NSLayoutConstraint.activate([
-            hostingController.view.centerXAnchor.constraint(equalTo: viewController.view.centerXAnchor),
-            hostingController.view.topAnchor.constraint(equalTo: viewController.view.topAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: viewController.view.bottomAnchor)
+            viewController.view.leadingAnchor.constraint(equalTo: centeringGuide.leadingAnchor),
+            viewController.view.trailingAnchor.constraint(equalTo: centeringGuide.trailingAnchor),
+            topView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
+            viewController.view.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor),
+
+            hostingController.view.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
+            hostingController.view.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor),
+            hostingController.view.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
+            hostingController.view.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor)
         ])
 
         viewController.view.sendSubviewToBack(hostingController.view)
@@ -67,8 +76,8 @@ final class DaxLogoManager {
 // allowing to automatically adjust for keyboard.
 private struct FullHeightLogoView: View {
     var body: some View {
-        Spacer()
         NewTabPageDaxLogoView()
-        Spacer()
+            .padding(24)
+            .scaledToFit()
     }
 }

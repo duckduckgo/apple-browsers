@@ -46,6 +46,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var firePixelCalls: [PixelKitEvent] = []
     var featureFlagger: FeatureFlagger!
     var windowControllersManager: WindowControllersManagerProtocol!
+    var tabsPreferences: TabsPreferences!
 
     @MainActor
     override func setUp() async throws {
@@ -73,6 +74,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         )
 
         windowControllersManager = WindowControllersManagerMock()
+
+        tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor())
 
         featureFlagger = FeatureFlaggerMock()
 
@@ -105,6 +108,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider(),
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
+            tabsPreferences: tabsPreferences,
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }

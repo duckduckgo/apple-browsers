@@ -51,6 +51,7 @@ final class NewTabPageCoordinator {
         visualizeFireAnimationDecider: VisualizeFireAnimationDecider,
         featureFlagger: FeatureFlagger,
         windowControllersManager: WindowControllersManagerProtocol,
+        tabsPreferences: TabsPreferences,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
 
@@ -79,7 +80,8 @@ final class NewTabPageCoordinator {
             tld: tld,
             fire: { @MainActor in fireCoordinator.fireViewModel.fire },
             featureFlagger: featureFlagger,
-            windowControllersManager: windowControllersManager
+            windowControllersManager: windowControllersManager,
+            tabsPreferences: tabsPreferences
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

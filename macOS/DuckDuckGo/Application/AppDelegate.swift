@@ -148,7 +148,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         keyValueStore: keyValueStore,
         visualizeFireAnimationDecider: visualizeFireAnimationDecider,
         featureFlagger: featureFlagger,
-        windowControllersManager: windowControllersManager
+        windowControllersManager: windowControllersManager,
+        tabsPreferences: TabsPreferences.shared
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(

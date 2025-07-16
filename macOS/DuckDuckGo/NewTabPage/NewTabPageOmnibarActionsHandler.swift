@@ -27,11 +27,14 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
     private let promptHandler: AIChatPromptHandler
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let tabsPreferences: TabsPreferences
 
     init(promptHandler: AIChatPromptHandler = AIChatPromptHandler.shared,
-         windowControllersManager: WindowControllersManagerProtocol) {
+         windowControllersManager: WindowControllersManagerProtocol,
+         tabsPreferences: TabsPreferences) {
         self.promptHandler = promptHandler
         self.windowControllersManager = windowControllersManager
+        self.tabsPreferences = tabsPreferences
     }
 
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
@@ -102,7 +105,18 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             windowControllersManager: windowControllersManager
         )
 
-        tabOpener.openAIChatTab(chat, with: target.linkOpenBehavior)
+        tabOpener.openAIChatTab(chat, with: linkOpenBehavior(for: target, using: tabsPreferences))
+    }
+
+    private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {
+        switch target {
+        case .sameTab:
+            return .currentTab
+        case .newTab:
+            return .newTab(selected: tabsPreferences.switchToNewTabWhenOpened)
+        case .newWindow:
+            return .newWindow(selected: tabsPreferences.switchToNewTabWhenOpened)
+        }
     }
 
 }
@@ -114,14 +128,6 @@ extension NewTabPageDataModel.OpenTarget {
         case .sameTab: .current
         case .newTab: .newTab
         case .newWindow: .newWindow
-        }
-    }
-
-    var linkOpenBehavior: LinkOpenBehavior {
-        switch self {
-        case .sameTab: .currentTab
-        case .newTab: .newTab(selected: TabsPreferences.shared.switchToNewTabWhenOpened)
-        case .newWindow: .newWindow(selected: TabsPreferences.shared.switchToNewTabWhenOpened)
         }
     }
 

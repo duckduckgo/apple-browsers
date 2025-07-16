@@ -176,20 +176,22 @@ struct RunDBPDebugModeView: View {
                                 }
                                 .font(.caption)
                             }
-                            .padding(.vertical, 4)
+                            .padding(4)
                             .onTapGesture {
                                 viewModel.selectedBroker = broker
                                 selectedBrokerJSON = broker.toJSONString()
                             }
                             .background(viewModel.selectedBroker?.name == broker.name ? Color.blue.opacity(0.2) : Color.clear)
-                            .cornerRadius(4)
+                            .cornerRadius(6)
                         }
                     }
                     .padding(.horizontal, 4)
                 }
                 .frame(height: 200)
-                .border(Color.gray.opacity(0.3), width: 1)
-                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
             }
             
             if !selectedBrokerJSON.isEmpty {
@@ -201,11 +203,13 @@ struct RunDBPDebugModeView: View {
                     Text(selectedBrokerJSON)
                         .font(.system(.caption, design: .monospaced))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(2)
+                        .padding(4)
                 }
                 .frame(height: 150)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
             }
         }
     }

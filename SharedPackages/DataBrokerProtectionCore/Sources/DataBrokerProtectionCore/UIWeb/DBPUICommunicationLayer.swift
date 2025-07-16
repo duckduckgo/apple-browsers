@@ -23,11 +23,6 @@ import UserScript
 import Common
 import os.log
 
-enum DBPDeviceCapability: String, Codable {
-    case useUnifiedFeedback
-    case excludeVpnTraffic
-}
-
 public struct DBPUIFeatureConfigurationResponse: Encodable {
     public let useUnifiedFeedback: Bool
     public let excludeVpnTraffic: Bool

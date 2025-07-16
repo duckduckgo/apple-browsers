@@ -18,7 +18,7 @@
 
 public extension NewTabPageDataModel {
 
-    // https://github.com/duckduckgo/content-scope-scripts/blob/cb36865bf4087456dd3da282bf49ccb59cbfcc47/special-pages/pages/new-tab/app/omnibar/omnibar.md
+    // https://duckduckgo.github.io/content-scope-scripts/documents/New_Tab_Page.Omnibar_Widget.html
 
     // MARK: - omnibar_getConfig
 

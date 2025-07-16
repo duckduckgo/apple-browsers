@@ -121,18 +121,6 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
 }
 
-extension NewTabPageDataModel.OpenTarget {
-
-    var linkOpenTarget: LinkOpenTarget {
-        switch self {
-        case .sameTab: .current
-        case .newTab: .newTab
-        case .newWindow: .newWindow
-        }
-    }
-
-}
-
 extension NewTabPageDataModel.Suggestion {
 
     func toAppSuggestion() -> Suggestion {

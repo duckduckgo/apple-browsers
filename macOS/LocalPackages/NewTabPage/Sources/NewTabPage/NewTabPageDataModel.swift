@@ -24,6 +24,14 @@ public enum NewTabPageDataModel {
         case sameTab = "same-tab"
         case newTab = "new-tab"
         case newWindow = "new-window"
+
+        public var linkOpenTarget: LinkOpenTarget {
+            switch self {
+            case .sameTab: .current
+            case .newTab: .newTab
+            case .newWindow: .newWindow
+            }
+        }
     }
 
 }

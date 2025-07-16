@@ -1,5 +1,5 @@
 //
-//  MockNewTabPageOmnibarActionHandler.swift
+//  MockNewTabPageOmnibarActionsHandler.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,7 @@
 
 import NewTabPage
 
-final class MockNewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
+final class MockNewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
     var submitSearchHandler: ((String, NewTabPageDataModel.OpenTarget) -> Void)?
     var openSuggestionHandler: ((NewTabPageDataModel.Suggestion, NewTabPageDataModel.OpenTarget) -> Void)?

@@ -32,11 +32,11 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     private let modeProvider: NewTabPageOmnibarModeProviding
     private let suggestionsProvider: NewTabPageOmnibarSuggestionsProviding
-    private let actionHandler: NewTabPageOmnibarActionHandling
+    private let actionHandler: NewTabPageOmnibarActionsHandling
 
     public init(modeProvider: NewTabPageOmnibarModeProviding,
                 suggestionsProvider: NewTabPageOmnibarSuggestionsProviding,
-                actionHandler: NewTabPageOmnibarActionHandling) {
+                actionHandler: NewTabPageOmnibarActionsHandling) {
         self.modeProvider = modeProvider
         self.suggestionsProvider = suggestionsProvider
         self.actionHandler = actionHandler

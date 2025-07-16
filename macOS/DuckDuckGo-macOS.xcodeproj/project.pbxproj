@@ -3480,8 +3480,8 @@
 		E274EFF42E1BD8B000373C41 /* NewTabPageSectionsAvailabilityProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E274EFF22E1BD8B000373C41 /* NewTabPageSectionsAvailabilityProviderTests.swift */; };
 		E274EFF62E1D55D500373C41 /* NewTabPageOmnibarSuggestionsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E274EFF52E1D55CF00373C41 /* NewTabPageOmnibarSuggestionsProvider.swift */; };
 		E274EFF72E1D55D500373C41 /* NewTabPageOmnibarSuggestionsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E274EFF52E1D55CF00373C41 /* NewTabPageOmnibarSuggestionsProvider.swift */; };
-		E274EFF92E1E8DFF00373C41 /* NewTabPageOmnibarActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E274EFF82E1E8DED00373C41 /* NewTabPageOmnibarActionHandler.swift */; };
-		E274EFFA2E1E8DFF00373C41 /* NewTabPageOmnibarActionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E274EFF82E1E8DED00373C41 /* NewTabPageOmnibarActionHandler.swift */; };
+		E274EFF92E1E8DFF00373C41 /* NewTabPageOmnibarActionsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E274EFF82E1E8DED00373C41 /* NewTabPageOmnibarActionsHandler.swift */; };
+		E274EFFA2E1E8DFF00373C41 /* NewTabPageOmnibarActionsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E274EFF82E1E8DED00373C41 /* NewTabPageOmnibarActionsHandler.swift */; };
 		E2BC1B232E210AF200F58D61 /* NewTabPageOmnibarModeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BC1B222E210AE600F58D61 /* NewTabPageOmnibarModeProvider.swift */; };
 		E2BC1B242E210AF300F58D61 /* NewTabPageOmnibarModeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2BC1B222E210AE600F58D61 /* NewTabPageOmnibarModeProvider.swift */; };
 		EA0BA3A9272217E6002A0B6C /* ClickToLoadUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0BA3A8272217E6002A0B6C /* ClickToLoadUserScript.swift */; };
@@ -5551,7 +5551,7 @@
 		E231C3CC2E1BB72300B53914 /* NewTabPageSectionsAvailabilityProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSectionsAvailabilityProvider.swift; sourceTree = "<group>"; };
 		E274EFF22E1BD8B000373C41 /* NewTabPageSectionsAvailabilityProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSectionsAvailabilityProviderTests.swift; sourceTree = "<group>"; };
 		E274EFF52E1D55CF00373C41 /* NewTabPageOmnibarSuggestionsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarSuggestionsProvider.swift; sourceTree = "<group>"; };
-		E274EFF82E1E8DED00373C41 /* NewTabPageOmnibarActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarActionHandler.swift; sourceTree = "<group>"; };
+		E274EFF82E1E8DED00373C41 /* NewTabPageOmnibarActionsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarActionsHandler.swift; sourceTree = "<group>"; };
 		E2BC1B222E210AE600F58D61 /* NewTabPageOmnibarModeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageOmnibarModeProvider.swift; sourceTree = "<group>"; };
 		EA0BA3A8272217E6002A0B6C /* ClickToLoadUserScript.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ClickToLoadUserScript.swift; sourceTree = "<group>"; };
 		EA18D1C9272F0DC8006DC101 /* social_images */ = {isa = PBXFileReference; lastKnownFileType = folder; path = social_images; sourceTree = "<group>"; };
@@ -6528,7 +6528,7 @@
 				E231C3CC2E1BB72300B53914 /* NewTabPageSectionsAvailabilityProvider.swift */,
 				E274EFF52E1D55CF00373C41 /* NewTabPageOmnibarSuggestionsProvider.swift */,
 				E2BC1B222E210AE600F58D61 /* NewTabPageOmnibarModeProvider.swift */,
-				E274EFF82E1E8DED00373C41 /* NewTabPageOmnibarActionHandler.swift */,
+				E274EFF82E1E8DED00373C41 /* NewTabPageOmnibarActionsHandler.swift */,
 				1D2EE7042E26625300F51C57 /* Logger+NewTabPageOmnibar.swift */,
 				379E4D632D439F9A00A901B1 /* Features */,
 			);
@@ -13229,7 +13229,7 @@
 				9F872D992B8DA9F800138637 /* Bookmarks+Tab.swift in Sources */,
 				B6B4D1D02B0E0DD000C26286 /* DataImportNoDataView.swift in Sources */,
 				3706FC57293F65D500E42796 /* TabPreviewWindowController.swift in Sources */,
-				E274EFFA2E1E8DFF00373C41 /* NewTabPageOmnibarActionHandler.swift in Sources */,
+				E274EFFA2E1E8DFF00373C41 /* NewTabPageOmnibarActionsHandler.swift in Sources */,
 				3148727E2CC68F6900EEF89B /* AIChatTabExtension.swift in Sources */,
 				1D9A37682BD8EA8800EBC58D /* DockPositionProvider.swift in Sources */,
 				3706FC58293F65D500E42796 /* NSSizeExtension.swift in Sources */,
@@ -14577,7 +14577,7 @@
 				31ECDA112BED339600AE679F /* DataBrokerAuthenticationManagerBuilder.swift in Sources */,
 				4B4D60E02A0C875F00BCD287 /* Bundle+VPN.swift in Sources */,
 				AA6820E425502F19005ED0D5 /* WebsiteDataStore.swift in Sources */,
-				E274EFF92E1E8DFF00373C41 /* NewTabPageOmnibarActionHandler.swift in Sources */,
+				E274EFF92E1E8DFF00373C41 /* NewTabPageOmnibarActionsHandler.swift in Sources */,
 				3199AF732C80734A003AEBDC /* DuckPlayerOnboardingModalManager.swift in Sources */,
 				B6F9BDDC2B45B7EE00677B33 /* WebsiteInfo.swift in Sources */,
 				4B67854A2AA8DE75008A5004 /* VPNFeatureGatekeeper.swift in Sources */,

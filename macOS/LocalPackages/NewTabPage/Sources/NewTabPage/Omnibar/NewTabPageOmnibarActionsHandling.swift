@@ -1,5 +1,5 @@
 //
-//  NewTabPageOmnibarActionHandling.swift
+//  NewTabPageOmnibarActionsHandling.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-public protocol NewTabPageOmnibarActionHandling: AnyObject {
+public protocol NewTabPageOmnibarActionsHandling: AnyObject {
 
     @MainActor
     func submitSearch(_ term: String, target: NewTabPageDataModel.OpenTarget)

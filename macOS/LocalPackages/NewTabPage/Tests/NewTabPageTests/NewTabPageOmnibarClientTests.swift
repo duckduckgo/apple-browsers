@@ -23,7 +23,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     private var suggestionsProvider: MockNewTabPageOmnibarSuggestionsProvider!
     private var modeProvider: NewTabPageOmnibarModeProviding!
-    private var actionHandler: NewTabPageOmnibarActionHandling!
+    private var actionHandler: NewTabPageOmnibarActionsHandling!
     private var client: NewTabPageOmnibarClient!
     private var userScript: NewTabPageUserScript!
     private var messageHelper: MessageHelper<NewTabPageOmnibarClient.MessageName>!
@@ -33,7 +33,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
         suggestionsProvider = MockNewTabPageOmnibarSuggestionsProvider()
         modeProvider = MockNewTabPageOmnibarModeProvider()
-        actionHandler = MockNewTabPageOmnibarActionHandler()
+        actionHandler = MockNewTabPageOmnibarActionsHandler()
         client = NewTabPageOmnibarClient(modeProvider: modeProvider,
                                          suggestionsProvider: suggestionsProvider,
                                          actionHandler: actionHandler)
@@ -93,7 +93,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     func testSubmitSearchIsForwardedToHandler() async throws {
         let expectation = expectation(description: "submitSearchCalled")
-        (actionHandler as? MockNewTabPageOmnibarActionHandler)?.submitSearchHandler = { term, target in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitSearchHandler = { term, target in
             XCTAssertEqual(term, "searchTerm")
             XCTAssertEqual(target, .sameTab)
             expectation.fulfill()
@@ -109,7 +109,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     func testOpenSuggestionIsForwardedToHandler() async throws {
         let expectation = expectation(description: "openSuggestionCalled")
         let suggestion = NewTabPageDataModel.Suggestion.website(url: "https://suggestion.com")
-        (actionHandler as? MockNewTabPageOmnibarActionHandler)?.openSuggestionHandler = { s, target in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openSuggestionHandler = { s, target in
             XCTAssertEqual(s, suggestion)
             XCTAssertEqual(target, .newTab)
             expectation.fulfill()
@@ -124,7 +124,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     func testSubmitChatIsForwardedToHandler() async throws {
         let expectation = expectation(description: "submitChatCalled")
-        (actionHandler as? MockNewTabPageOmnibarActionHandler)?.submitChatHandler = { chat, target in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, target in
             XCTAssertEqual(chat, "Hello Chat")
             XCTAssertEqual(target, .newWindow)
             expectation.fulfill()

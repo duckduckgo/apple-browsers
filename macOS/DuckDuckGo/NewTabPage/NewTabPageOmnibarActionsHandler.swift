@@ -1,5 +1,5 @@
 //
-//  NewTabPageOmnibarActionHandler.swift
+//  NewTabPageOmnibarActionsHandler.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import Common
 import AIChat
 import os.log
 
-final class NewTabPageOmnibarActionHandler: NewTabPageOmnibarActionHandling {
+final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
     private let promptHandler: AIChatPromptHandler
     private let windowControllersManager: WindowControllersManager

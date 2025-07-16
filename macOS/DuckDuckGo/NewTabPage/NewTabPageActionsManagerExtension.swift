@@ -84,7 +84,7 @@ extension NewTabPageActionsManager {
             isUrlIgnored: { _ in false }
         )
         let suggestionsProvider = NewTabPageOmnibarSuggestionsProvider(suggestionContainer: suggestionContainer)
-        let omnibarActionHandler = NewTabPageOmnibarActionHandler()
+        let omnibarActionHandler = NewTabPageOmnibarActionsHandler()
         let omnibarModeProvider = NewTabPageOmnibarModeProvider()
 
         self.init(scriptClients: [

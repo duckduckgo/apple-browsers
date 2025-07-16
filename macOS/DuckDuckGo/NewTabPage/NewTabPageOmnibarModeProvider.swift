@@ -29,7 +29,7 @@ final class NewTabPageOmnibarModeProvider: NewTabPageOmnibarModeProviding {
 
     private let keyValueStore: ThrowingKeyValueStoring
 
-    init(keyValueStore: ThrowingKeyValueStoring = NSApp.delegateTyped.keyValueStore) {
+    init(keyValueStore: ThrowingKeyValueStoring) {
         self.keyValueStore = keyValueStore
     }
 

@@ -41,7 +41,7 @@ extension NewTabPageActionsManager {
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
         tld: TLD,
         fire: @escaping () async -> Fire,
-        keyValueStore: KeyValueStoring = UserDefaults.standard,
+        keyValueStore: ThrowingKeyValueStoring,
         featureFlagger: FeatureFlagger,
         windowControllersManager: WindowControllersManagerProtocol,
         tabsPreferences: TabsPreferences
@@ -90,7 +90,7 @@ extension NewTabPageActionsManager {
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences
         )
-        let omnibarModeProvider = NewTabPageOmnibarModeProvider()
+        let omnibarModeProvider = NewTabPageOmnibarModeProvider(keyValueStore: keyValueStore)
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(

@@ -79,6 +79,7 @@ final class NewTabPageCoordinator {
             freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
             tld: tld,
             fire: { @MainActor in fireCoordinator.fireViewModel.fire },
+            keyValueStore: keyValueStore,
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences

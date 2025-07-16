@@ -169,7 +169,7 @@ class SwitchBarTextEntryView: UIView {
             textView.returnKeyType = .search
             textView.autocapitalizationType = .none
         case .aiChat:
-            placeholderLabel.text = "Ask Duck.ai..."
+            placeholderLabel.text = "Ask..."
             textView.keyboardType = .default
             textView.returnKeyType = .go
             textView.autocapitalizationType = .sentences

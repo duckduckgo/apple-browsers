@@ -59,6 +59,8 @@ class DistributedNavigationDelegateTestsBase: XCTestCase {
 
     override func setUp() {
         NavigationAction.resetIdentifier()
+
+        server?.stop()
         server = HttpServer()
         navigationDelegateProxy = DistributedNavigationDelegateTests.makeNavigationDelegateProxy()
         self.navigationDelegate.responders.forEach { responder in
@@ -481,18 +483,20 @@ extension DistributedNavigationDelegateTestsBase {
         var rhs = rhs
         var lastEventLine = line
         let rhsMap = rhs.enumerated().reduce(into: [Int: TestsNavigationEvent]()) { $0[$1.offset] = $1.element }
+        var idx2subst = 0
         for idx in 0..<max(lhs.count, rhs.count) {
             let event1 = lhs.indices.contains(idx) ? lhs[idx] : nil
             var idx2: Int! = (event1 != nil ? rhs.firstIndex(where: { event2 in compare("", event1, event2) == nil }) : nil)
             if let idx2 {
                 // events are equal
                 rhs.remove(at: idx2)
+                idx2subst += 1
                 continue
             } else if let originalEvent2 = rhsMap[idx], originalEvent2.type == event1?.type,
                       let idx = rhs.firstIndex(where: { event2 in compare("", originalEvent2, event2) == nil }) {
                 idx2 = idx
             } else {
-                idx2 = idx
+                idx2 = idx - idx2subst
             }
 
             let event2 = rhs.indices.contains(idx2) ? rhs.remove(at: idx2) : nil

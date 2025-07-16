@@ -56,8 +56,6 @@ public extension OSStatus {
             return "The item cannot be found"
         case errSecInteractionNotAllowed:
             return "Interaction with the Security Server is not allowed"
-        case errSecInteractionRequired:
-            return "User interaction is required"
         case errSecNoDefaultKeychain:
             return "A default keychain does not exist"
         case errSecReadOnlyAttr:
@@ -554,8 +552,6 @@ public extension OSStatus {
             return "The certificate authority was not valid"
         case errSecInvalidCRLAuthority:
             return "The CRL authority was not valid"
-        case errSecInvaldCRLAuthority:
-            return "The CRL authority was not valid"
         case errSecInvalidCRLEncoding:
             return "The CRL encoding was not valid"
         case errSecInvalidCRLType:
@@ -586,8 +582,6 @@ public extension OSStatus {
             return "The tuple was not valid"
         case errSecMultipleValuesUnsupported:
             return "Multiple values are not supported"
-        case errSecNotTrusted:
-            return "The certificate was not trusted"
         case errSecNoDefaultAuthority:
             return "No default authority was detected"
         case errSecRejectedForm:

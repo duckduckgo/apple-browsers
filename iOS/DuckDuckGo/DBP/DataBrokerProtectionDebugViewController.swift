@@ -550,7 +550,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             return
         }
         
-        Task { @MainActor in
+        Task {
             self.jobExecutionState = .running
 
             do {
@@ -563,14 +563,10 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 let initialCounts = await calculatePendingJobCounts()
                 let jobCount: Int
                 switch type {
-                case .scheduledScan:
-                    jobCount = initialCounts.pendingScans
-                case .optOut:
-                    jobCount = initialCounts.pendingOptOuts
-                case .all:
-                    jobCount = initialCounts.pendingScans + initialCounts.pendingOptOuts
-                default:
-                    jobCount = 0
+                case .scheduledScan: jobCount = initialCounts.pendingScans
+                case .optOut: jobCount = initialCounts.pendingOptOuts
+                case .all: jobCount = initialCounts.pendingScans + initialCounts.pendingOptOuts
+                default: jobCount = 0
                 }
                 
                 guard jobCount > 0 else {
@@ -581,7 +577,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 try await runJobsUsingProductionQueue(type: type)
                 self.jobCounts = await calculatePendingJobCounts()
                 self.jobExecutionState = .idle
-
             } catch {
                 let errorMessage: String
                 if error is CancellationError {

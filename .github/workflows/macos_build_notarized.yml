@@ -436,7 +436,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: dmg_url
-        path: dmg_url.txt
+        path: ${{ github.workspace }}/macOS/dmg_url.txt
 
     - name: Report success
       if: ${{ env.asana-task-url != '' && env.upload-to == 's3' }}

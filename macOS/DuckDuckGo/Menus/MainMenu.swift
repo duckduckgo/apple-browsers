@@ -820,6 +820,8 @@ final class MainMenu: NSMenu {
         }
 
         debugMenu.addItem(internalUserItem)
+        debugMenu.addItem(.separator())
+        debugMenu.addItem(NSMenuItem(title: "Download DuckDuckGo Alpha Build", action: #selector(downloadAlphaBuild), target: self))
         debugMenu.autoenablesItems = false
         return debugMenu
     }
@@ -874,6 +876,17 @@ final class MainMenu: NSMenu {
         AutofillPreferences().debugScriptEnabled = !AutofillPreferences().debugScriptEnabled
         NotificationCenter.default.post(name: .autofillScriptDebugSettingsDidChange, object: nil)
         updateAutofillDebugScriptMenuItem()
+    }
+
+    @MainActor
+    @objc private func downloadAlphaBuild() {
+        let url = URL(string: "https://staticcdn.duckduckgo.com/macos-desktop-browser/alpha/duckduckgo.dmg")!
+        Application.appDelegate.windowControllersManager.open(
+            url,
+            source: .userEntered(url.absoluteString, downloadRequested: true),
+            target: nil,
+            event: NSApp.currentEvent
+        )
     }
 }
 

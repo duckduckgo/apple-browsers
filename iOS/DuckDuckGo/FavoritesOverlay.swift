@@ -101,7 +101,6 @@ class FavoritesOverlay: UIViewController {
         }
         
         collectionView.frame = view.bounds
-        collectionView.reloadData()
     }
     
     private func registerForKeyboardNotifications() {

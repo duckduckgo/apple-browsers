@@ -237,7 +237,7 @@ final class SubscriptionManagerTests: XCTestCase {
 
     // MARK: - Tests for Free Trial Eligibility
 
-    func testWhenPlatformIsStripeUserIsEligibleForFreeTrialThenReturnsNotEligible() throws {
+    func testWhenPlatformIsStripeUserIsEligibleForFreeTrialThenReturnsEligible() throws {
         // Given
         storePurchaseManager.isEligibleForFreeTrialResult = true
         let stripeEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
@@ -252,7 +252,7 @@ final class SubscriptionManagerTests: XCTestCase {
         let result = sut.isUserEligibleForFreeTrial()
 
         // Then
-        XCTAssertFalse(result)
+        XCTAssertTrue(result)
     }
 
     func testWhenPlatformIsAppStoreAndUserIsEligibleForFreeTrialThenReturnsEligible() throws {

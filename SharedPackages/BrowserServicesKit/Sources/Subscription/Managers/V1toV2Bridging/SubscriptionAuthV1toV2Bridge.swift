@@ -50,11 +50,6 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
     func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL
 
     /// Checks if the user is eligible for a free trial.
-    ///
-    /// - Important: This method is part of a temporary bridge for the AuthV1 to AuthV2 migration.
-    ///   Once the migration to AuthV2 is complete, callers should ideally access the `storePurchaseManager()`
-    ///   on an instance of `DefaultSubscriptionManagerV2` (or the final AuthV2 manager) and then call
-    ///   `storePurchaseManager().isUserEligibleForFreeTrial()` directly.
     func isUserEligibleForFreeTrial() -> Bool
 }
 
@@ -106,12 +101,13 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
     /// Checks if the user is eligible for a free trial.
     ///
-    /// - Important: This method is part of a temporary bridge for the AuthV1 to AuthV2 migration.
-    ///   Once the migration to AuthV2 is complete, callers should ideally access the `storePurchaseManager()`
-    ///   on an instance of `DefaultSubscriptionManagerV2` (or the final AuthV2 manager) and then call
-    ///   `storePurchaseManager().isUserEligibleForFreeTrial()` directly.
+    /// Returns `true` for Stripe-based purchases
+    /// or delegates to the store purchase manager for App Store purchases.
     public func isUserEligibleForFreeTrial() -> Bool {
-        guard currentEnvironment.purchasePlatform != .stripe, #available(macOS 12.0, *) else { return false }
+        guard #available(macOS 12.0, *) else { return false }
+        if currentEnvironment.purchasePlatform == .stripe {
+            return true
+        }
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 }
@@ -144,12 +140,13 @@ extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
 
     /// Checks if the user is eligible for a free trial.
     ///
-    /// - Important: This method is part of a temporary bridge for the AuthV1 to AuthV2 migration.
-    ///   Once the migration to AuthV2 is complete, callers should ideally access the `storePurchaseManager()`
-    ///   on an instance of `DefaultSubscriptionManagerV2` (or the final AuthV2 manager) and then call
-    ///   `storePurchaseManager().isUserEligibleForFreeTrial()` directly.
+    /// Returns `true` for Stripe-based purchases
+    /// or delegates to the store purchase manager for App Store purchases.
     public func isUserEligibleForFreeTrial() -> Bool {
-        guard currentEnvironment.purchasePlatform != .stripe, #available(macOS 12.0, *) else { return false }
+        guard #available(macOS 12.0, *) else { return false }
+        if currentEnvironment.purchasePlatform == .stripe {
+            return true
+        }
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 }

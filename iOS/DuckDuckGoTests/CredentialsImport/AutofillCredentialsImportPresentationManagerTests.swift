@@ -1,5 +1,5 @@
 //
-//  AutofillCredentialsImportManagerTests.swift
+//  AutofillCredentialsImportPresentationManagerTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -21,15 +21,15 @@ import XCTest
 @testable import DuckDuckGo
 @testable import BrowserServicesKit
 
-final class AutofillCredentialsImportManagerTests: XCTestCase {
+final class AutofillCredentialsImportPresentationManagerTests: XCTestCase {
     
-    private var manager: AutofillCredentialsImportManager!
+    private var manager: AutofillCredentialsImportPresentationManager!
     private var importState: MockAutofillLoginImportState!
     
     override func setUp() {
         super.setUp()
         importState = MockAutofillLoginImportState()
-        manager = AutofillCredentialsImportManager(loginImportStateProvider: importState)
+        manager = AutofillCredentialsImportPresentationManager(loginImportStateProvider: importState)
     }
     
     override func tearDown() {

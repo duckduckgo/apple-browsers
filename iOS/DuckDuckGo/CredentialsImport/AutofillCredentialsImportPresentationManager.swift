@@ -1,5 +1,5 @@
 //
-//  AutofillCredentialsImportManager.swift
+//  AutofillCredentialsImportPresentationManager.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -34,7 +34,7 @@ public protocol AutofillLoginImportStateProvider {
     func hasNeverPromptWebsitesFor(_ domain: String) -> Bool
 }
 
-final public class AutofillCredentialsImportManager {
+final public class AutofillCredentialsImportPresentationManager {
     private var loginImportStateProvider: AutofillLoginImportStateProvider & AutofillLoginImportStateStoring
 
     weak var presentationDelegate: AutofillCredentialsImportPresentationDelegate?
@@ -44,7 +44,7 @@ final public class AutofillCredentialsImportManager {
     }
 }
 
-extension AutofillCredentialsImportManager: AutofillPasswordImportDelegate {
+extension AutofillCredentialsImportPresentationManager: AutofillPasswordImportDelegate {
     private struct CredentialsImportInputContext: Decodable {
         var inputType: String
         var credentialsImport: Bool

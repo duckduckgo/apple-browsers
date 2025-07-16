@@ -89,7 +89,7 @@ class AutofillLoginListViewModel: ObservableObject {
 
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager(syncService: syncService)
 
-    private lazy var autofillCredentialsImportManager: AutofillCredentialsImportManager = AutofillCredentialsImportManager(loginImportStateProvider: AutofillLoginImportState(keyValueStore: keyValueStore))
+    private lazy var autofillCredentialsImportManager: AutofillCredentialsImportPresentationManager = AutofillCredentialsImportPresentationManager(loginImportStateProvider: AutofillLoginImportState(keyValueStore: keyValueStore))
 
     private lazy var autofillSurveyManager: AutofillSurveyManaging = AutofillSurveyManager()
 

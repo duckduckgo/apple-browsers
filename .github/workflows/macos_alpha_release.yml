@@ -127,12 +127,14 @@ jobs:
           echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
           mkdir -p sparkle
 
-      - name: Fetch DMG
+      - name: Fetch DMG and current appcast
         id: fetch-dmg
         working-directory: sparkle
         env:
+          APPCAST_URL: ${{ vars.DMG_URL_ROOT }}alpha/appcast-alpha.xml
           DMG_URL: ${{ steps.set-dmg-url.outputs.DMG_URL }}
         run: |
+          curl -fLSs -O "${{ env.APPCAST_URL }}"
           curl -fLSs -O "${{ env.DMG_URL }}"
           echo "dmg-name=$(basename "${{ env.DMG_URL }}")" >> $GITHUB_OUTPUT
           echo "dmg-path=$DMG_NAME" >> $GITHUB_OUTPUT
@@ -153,7 +155,11 @@ jobs:
         env:
           DMG_PATH: ${{ steps.fetch-dmg.outputs.dmg-path }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-        run: echo "$SPARKLE_PRIVATE_KEY" | generate_appcast --ed-key-file - -o appcast-alpha.xml .
+        run: |
+          echo "$SPARKLE_PRIVATE_KEY" | generate_appcast --ed-key-file - \
+            -o appcast-alpha.xml \
+            --embed-release-notes \
+            .
 
       - name: Upload to S3
         id: upload

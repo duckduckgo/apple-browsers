@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Kako izvesti lozinke iz Safarija:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Odaberi datoteku...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Odaberi datoteku koja sadrži lozinke izvezene iz Safarija ili Chromea. To je obično ZIP ili CSV datoteka.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Uvoz dovršen!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Kreditne kartice";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Preskočeni duplikati";
@@ -1854,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Uvezi lozinke";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Brzo i sigurno prenesi svoje lozinke iz drugog preglednika.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Uvezi svoje lozinke u DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Trebaš omogućiti VPN iz aplikacije DuckDuckGo.";
@@ -3600,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Nastavi";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Kreditne kartice";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Lozinke";

@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Kaip eksportuoti slaptažodžius iš „Safari“:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Pasirink failą...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Pasirink failą, kuriame yra slaptažodžiai, eksportuoti iš „Safari“ arba „Chrome“. Paprastai tai būna ZIP arba CSV failas.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Importavimas baigtas!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Kreditinės kortelės";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Praleisti dublikatai";
@@ -1854,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Importuoti slaptažodžius";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Greitai ir saugiai perkelk slaptažodžius iš kitos naršyklės.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Importuok slaptažodžius į „DuckDuckGo“";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Reikia įjungti VPN iš „DuckDuckGo“ programėlės.";
@@ -3600,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Tęsti";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Kreditinės kortelės";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Slaptažodžiai";

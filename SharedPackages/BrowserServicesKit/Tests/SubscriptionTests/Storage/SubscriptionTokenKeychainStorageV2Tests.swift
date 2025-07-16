@@ -592,13 +592,6 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         }
     }
 
-    // MARK: - Helper Methods
-
-    // Helper method is no longer needed as we use the factory
-    // private func createMockTokenContainer() -> TokenContainer {
-    //     return OAuthTokensFactory.makeValidTokenContainer()
-    // }
-
     private func getErrorEvents() -> [(AccountKeychainAccessType, AccountKeychainAccessError)] {
         return errorEventsQueue.sync {
             return self.errorEvents

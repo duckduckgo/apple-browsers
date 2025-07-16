@@ -33,7 +33,6 @@ public enum KeychainErrorAuthVersion: String {
     case v2
 }
 
-import Security
 public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
 
     private let keychainType: KeychainType

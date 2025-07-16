@@ -17,7 +17,7 @@
 // SPARKLE_URL_<CONFIG> where <CONFIG> stands for the build configuration.
 // Release automation is looking for URLs here following that format.
 SPARKLE_URL_RELEASE = "https://staticcdn.duckduckgo.com/macos-desktop-browser/appcast2.xml"
-SPARKLE_URL_ALPHA = "https://staticcdn.duckduckgo.com/macos-desktop-browser/appcast-alpha.xml"
+SPARKLE_URL_ALPHA = "https://staticcdn.duckduckgo.com/macos-desktop-browser/alpha/appcast-alpha.xml"
 
 SPARKLE_FEED_URL = $(SPARKLE_URL_RELEASE)
 SPARKLE_FEED_URL[config=Alpha] = $(SPARKLE_URL_ALPHA)

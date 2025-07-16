@@ -236,6 +236,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     /// Spans to available width of the omni bar and allows the input field to center horizontally
     private let searchAreaAlignmentView = UIView()
     private let searchAreaStackView = UIStackView()
+
+    /// Currently unused - should be removed if unlikely to return
     private let activeOutlineView = UIView()
 
     private let stackView = UIStackView()
@@ -253,6 +255,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         setUpCallbacks()
         setUpAccessibility()
 
+        setUpInitialState()
         updateActiveState()
         updateVerticalSpacing()
     }
@@ -507,14 +510,19 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         accessoryButton.accessibilityTraits = .button
     }
 
+    private func setUpInitialState() {
+        // This active outline view needs to be removed in the future.  There is
+        //  some indecision about whether want it or not just now when comparing with
+        //  macOS, the arguments being we should have parity vs it's not need.  So leaving
+        //  it in disabled for now.
+        activeOutlineView.layer.cornerRadius = Metrics.cornerRadius
+        activeOutlineView.alpha = 0
+    }
+
     private func updateActiveState() {
         // This is needed so progress bar is clipped properly
         omniBarProgressView.layer.cornerRadius = Metrics.cornerRadius
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
-        activeOutlineView.layer.cornerRadius = isActiveState ? Metrics.activeBorderRadius : Metrics.cornerRadius
-
-        activeOutlineView.alpha = isActiveState ? 1 : 0
-
         updateShadows()
     }
 

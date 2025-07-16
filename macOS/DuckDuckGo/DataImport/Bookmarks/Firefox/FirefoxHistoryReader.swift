@@ -95,10 +95,10 @@ final class FirefoxHistoryReader {
             try FirefoxFrecentSite.fetchAll(database, sql: allFrecentSitesQuery())
         }
 
-        /// Remove invalid URLs
+        /// Remove invalid URLs and match Firefox filtering (only HTTP/HTTPS URLs and not search engine hosts)
         let validFrecentSites = frecentSites.filter { site in
             guard let url = URL(string: site.url), let host = url.host else { return false }
-            return (url.isHttps || url.isHttp) && !searchHosts.contains(where: { host.contains($0) })
+            return (url.isHttps || url.isHttp) && !searchHosts.contains(where: { host.droppingWwwPrefix().hasPrefix("\($0).") })
         }
         return validFrecentSites
     }

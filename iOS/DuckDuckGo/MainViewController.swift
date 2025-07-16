@@ -3247,7 +3247,10 @@ extension MainViewController: AutoClearWorker {
         URLSession.shared.configuration.urlCache?.removeAllCachedResponses()
 
         let pixel = TimedPixel(.forgetAllDataCleared)
-        await websiteDataManager.clear(dataStore: WKWebsiteDataStore.default())
+
+        // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
+        //  this is the same as `WKWebsiteDataStore.default()`
+        await websiteDataManager.clear(dataStore: DDGWebsiteDataStoreProvider.current())
         pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.count)"])
 
         AutoconsentManagement.shared.clearCache()

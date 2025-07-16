@@ -61,12 +61,14 @@ final class SubscriptionService {
         let subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: tokenProvider,
                                                                   currentCookieStore: {
             guard let mainViewController = application.window?.rootViewController as? MainViewController,
-                mainViewController.tabManager.model.hasActiveTabs else {
+                mainViewController.tabManager.model.hasActiveTabs,
+                  let cookieStore = DDGWebsiteDataStoreProvider.current().httpCookieStore as? HTTPCookieStoreWrapper else {
                 // We shouldn't interact with WebKit's cookie store unless we have a WebView,
                 // eventually the subscription cookie will be refreshed on opening the first tab
                 return nil
             }
-            return WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.current().httpCookieStore)
+
+            return WKHTTPCookieStoreWrapper(store: cookieStore.wrapped)
         }, eventMapping: SubscriptionCookieManageEventPixelMapping())
 
         // Enable subscriptionCookieManager if feature flag is present

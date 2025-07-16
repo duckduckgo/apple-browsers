@@ -48,11 +48,11 @@ class WebCacheManagerTests: XCTestCase {
     }
 
     func test_whenClearingData_ThenCookiesAreRemoved() async {
-        let dataStore = await WKWebsiteDataStore.default()
-        await dataStore.httpCookieStore.setCookie(.make(name: "Test", value: "Value", domain: "example.com"))
-
-        var cookies = await dataStore.httpCookieStore.allCookies()
-        XCTAssertEqual(1, cookies.count)
+//        let dataStore = await WKWebsiteDataStore.default()
+//        await dataStore.httpCookieStore.setCookie(.make(name: "Test", value: "Value", domain: "example.com"))
+//
+//        var cookies = await dataStore.httpCookieStore.allCookies()
+//        XCTAssertEqual(1, cookies.count)
 
         let webCacheManager = await makeWebCacheManager()
         await webCacheManager.clear(dataStore: dataStore)

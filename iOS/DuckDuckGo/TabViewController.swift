@@ -825,7 +825,7 @@ class TabViewController: UIViewController {
         Task { @MainActor in
             await webView.configuration.websiteDataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
             let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
-            await websiteDataManager.consumeCookies(into: cookieStore)
+            await websiteDataManager.consumeCookies(into: HTTPCookieStoreWrapper(wrapped: cookieStore))
             subscriptionCookieManager.resetLastRefreshDate()
             await subscriptionCookieManager.refreshSubscriptionCookie()
             doLoad()

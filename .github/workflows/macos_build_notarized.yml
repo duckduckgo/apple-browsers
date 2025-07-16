@@ -417,6 +417,7 @@ jobs:
         if [[ "${{ env.upload-to }}" == 's3' ]]; then
           if [[ "${{ env.release-type }}" == 'alpha' ]]; then
             RELEASE_BUCKET_PREFIX="${RELEASE_BUCKET_PREFIX}/alpha"
+            echo "${DMG_URL_ROOT}alpha/${{ steps.create-dmg.outputs.dmg }}" > dmg_url.txt
           fi
           dmg_s3_path="s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/${{ steps.create-dmg.outputs.dmg }}"
         else
@@ -429,7 +430,6 @@ jobs:
         fi
         aws s3 cp $DMG_LOCAL_PATH $dmg_s3_path --acl public-read
         echo "dmg-s3-path=${dmg_s3_path}" >> $GITHUB_OUTPUT
-        echo "${dmg_url}" > dmg_url.txt
 
     - name: Upload DMG URL artifact
       if: ${{ env.release-type == 'alpha' }}

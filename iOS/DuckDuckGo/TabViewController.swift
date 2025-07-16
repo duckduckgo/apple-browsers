@@ -3311,24 +3311,33 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             promptUserToImportCredentialsForDomain domain: String,
                             completionHandler: @escaping (Bool) -> Void) {
-        let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
-        ActionMessageView.present(message: "Import test data for fill.dev?",
-                                  actionTitle: "Import",
-                                  presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
-                                  duration: 4.0,
-                                  onAction: {
-            let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
-            let account = SecureVaultModels.WebsiteAccount(title: "", username: "Dax", domain: "fill.dev", notes: "")
-            let credentials = SecureVaultModels.WebsiteCredentials(account: account, password: "password".data(using: .utf8))
-            do {
-                _ = try secureVault?.storeWebsiteCredentials(credentials)
-                completionHandler(true)
-                ActionMessageView.present(message: "Import Complete")
-            } catch let error {
-                Logger.general.error("Error inserting credential \(error.localizedDescription, privacy: .public)")
+        // Ensure keyboard doesn't block prompt
+        dismissKeyboardIfPresent()
+
+        let promptViewController = ImportPasswordsPromptViewController(keyValueStore: keyValueStore) { [weak self] startImport in
+            guard startImport, let self = self else {
                 completionHandler(false)
+                return
             }
-        })
+
+            self.delegate?.tab(self, didRequestDataImport: .promo, onFinished: {
+                completionHandler(true)
+            }, onCancelled: {
+                completionHandler(false)
+            })
+        }
+
+        if let presentationController = promptViewController.presentationController as? UISheetPresentationController {
+            if #available(iOS 16.0, *) {
+                presentationController.detents = [.custom(resolver: { _ in
+                    AutofillViews.loginPromptMinHeight
+                })]
+            } else {
+                presentationController.detents =  [.medium()]
+            }
+        }
+
+        self.present(promptViewController, animated: true, completion: nil)
     }
 
     // Used on macOS to request authentication for individual autofill items

@@ -75,7 +75,7 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
                 }
 
                 guard let data = CodableHelper.encode(tokenContainer) else {
-                    throw AccountKeychainAccessError.failedToDecodeKeychainData
+                    throw AccountKeychainAccessError.failedToEncodeKeychainData
                 }
 
                 try self.store(data: data, forField: .tokenContainer)
@@ -180,6 +180,7 @@ extension SubscriptionTokenKeychainStorageV2 {
     func deleteItem(forField field: SubscriptionKeychainField, useDataProtectionKeychain: Bool = true) throws {
         var query = defaultAttributes()
         query[kSecAttrService] = field.keyValue
+        query[kSecUseDataProtectionKeychain] = useDataProtectionKeychain
 
         let status = SecItemDelete(query as CFDictionary)
 

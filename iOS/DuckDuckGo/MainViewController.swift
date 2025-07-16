@@ -1807,37 +1807,8 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 Logger.networkProtection.log("App foreground notification received, checking entitlements")
-                Task {
-                    guard let self else { return }
-
-                    do {
-                        let hasEntitlement = try await self.subscriptionManager.isFeatureEnabled(.networkProtection)
-                        let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
-                        let isSubscriptionActive = try? await self.subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
-
-                        if hasEntitlement && self.lastKnownEntitlementsExpired {
-                            PixelKit.fire(
-                                VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
-                                    isSubscriptionActive: isSubscriptionActive,
-                                    isAuthV2Enabled: isAuthV2Enabled,
-                                    trigger: .appForegrounded),
-                                frequency: .dailyAndCount)
-
-                            self.lastKnownEntitlementsExpired = false
-                        } else if !hasEntitlement && !self.lastKnownEntitlementsExpired {
-                            PixelKit.fire(
-                                VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
-                                    isSubscriptionActive: isSubscriptionActive,
-                                    isAuthV2Enabled: isAuthV2Enabled,
-                                    trigger: .appForegrounded),
-                                frequency: .dailyAndCount)
-
-                            self.lastKnownEntitlementsExpired = true
-                        }
-                    } catch {
-                        await self.handleClientCheckFailure(error: error, trigger: .appForegrounded)
-                    }
-                }
+                guard let self else { return }
+                self.performClientCheck(trigger: .appForegrounded)
             }
             .store(in: &vpnCancellables)
 
@@ -1953,6 +1924,38 @@ class MainViewController: UIViewController {
         AppDependencyProvider.shared.networkProtectionTunnelController
     }
 
+    private func performClientCheck(trigger: VPNSubscriptionClientCheckPixel.Trigger) {
+        Task {
+            do {
+                let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
+                let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
+                let hasEntitlement = try await subscriptionManager.isFeatureEnabled(.networkProtection)
+
+                if hasEntitlement && lastKnownEntitlementsExpired {
+                    PixelKit.fire(
+                        VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
+                            isSubscriptionActive: isSubscriptionActive,
+                            isAuthV2Enabled: isAuthV2Enabled,
+                            trigger: trigger),
+                        frequency: .dailyAndCount)
+                    
+                    lastKnownEntitlementsExpired = false
+                } else if !hasEntitlement && !lastKnownEntitlementsExpired {
+                    PixelKit.fire(
+                        VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
+                            isSubscriptionActive: isSubscriptionActive,
+                            isAuthV2Enabled: isAuthV2Enabled,
+                            trigger: trigger),
+                        frequency: .dailyAndCount)
+                    
+                    lastKnownEntitlementsExpired = true
+                }
+            } catch {
+                await handleClientCheckFailure(error: error, trigger: trigger)
+            }
+        }
+    }
+
     private func handleClientCheckFailure(error: Error, trigger: VPNSubscriptionClientCheckPixel.Trigger) async {
         let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
         let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
@@ -1967,35 +1970,7 @@ class MainViewController: UIViewController {
     }
 
     func checkSubscriptionEntitlements() {
-        Task {
-            do {
-                let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
-                let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
-                let hasEntitlement = try await subscriptionManager.isFeatureEnabled(.networkProtection)
-
-                if hasEntitlement && lastKnownEntitlementsExpired {
-                    PixelKit.fire(
-                        VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
-                            isSubscriptionActive: isSubscriptionActive,
-                            isAuthV2Enabled: isAuthV2Enabled,
-                            trigger: .appStartup),
-                        frequency: .dailyAndCount)
-                    
-                    lastKnownEntitlementsExpired = false
-                } else if !hasEntitlement && !lastKnownEntitlementsExpired {
-                    PixelKit.fire(
-                        VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
-                            isSubscriptionActive: isSubscriptionActive,
-                            isAuthV2Enabled: isAuthV2Enabled,
-                            trigger: .appStartup),
-                        frequency: .dailyAndCount)
-                    
-                    lastKnownEntitlementsExpired = true
-                }
-            } catch {
-                await handleClientCheckFailure(error: error, trigger: .appStartup)
-            }
-        }
+        performClientCheck(trigger: .appStartup)
     }
 
     @objc

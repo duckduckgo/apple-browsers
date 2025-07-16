@@ -276,6 +276,19 @@ extension NavResponse {
 
 }
 
+extension TestsNavigationEvent.EitherResponseOrNavigation: TestComparable {
+    static func difference(between lhs: Self, and rhs: Self) -> String? {
+        switch (lhs, rhs) {
+        case (.response(let resp1, let nav1), .response(let resp2, let nav2)):
+            return compare_tc("", resp1.response, resp2.response) ?? compare_tc("navigation", nav1, nav2)
+        case (.navigation(let lhs), .navigation(let rhs)):
+            return compare_tc("", lhs, rhs)
+        default:
+            return compare("", lhs, rhs, using: ==)
+        }
+    }
+}
+
 extension URLResponse: TestComparable {
 
     static func difference(between lhs: URLResponse, and rhs: URLResponse) -> String? {
@@ -298,12 +311,11 @@ private extension HTTPURLResponse {
     static func diff(_ lhs: HTTPURLResponse, and rhs: HTTPURLResponse) -> String? {
         compare("statusCode", lhs.statusCode, rhs.statusCode)
         ?? compare("allHeaderFields", lhs.allHeaderFields as NSDictionary, rhs.allHeaderFields as NSDictionary)
-
     }
 
 }
 
-class MockHTTPURLResponse: HTTPURLResponse {
+class MockHTTPURLResponse: HTTPURLResponse, @unchecked Sendable {
     private let mime: String?
     override var mimeType: String? {
         mime ?? super.mimeType

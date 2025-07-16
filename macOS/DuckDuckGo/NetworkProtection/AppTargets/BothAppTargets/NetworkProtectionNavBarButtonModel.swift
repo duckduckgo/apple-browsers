@@ -133,16 +133,22 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
 
     @MainActor
     func updateVisibility() {
-        guard !isPinned,
-              !popoverManager.isShown,
-              !isHavingConnectivityIssues else {
+        Task { @MainActor in
+            guard let canStartVPN = try? await vpnGatekeeper.canStartVPN() else {
+                // If there's an error, don't make any changes
+                return
+            }
 
-            pinNetworkProtectionToNavBarIfNeverPinnedBefore()
-            showVPNButton = true
-            return
+            if canStartVPN {
+                pinNetworkProtectionToNavBarIfNeverPinnedBefore()
+            } else {
+                pinningManager.unpin(.networkProtection)
+                showVPNButton = false
+                return
+            }
+
+            showVPNButton = isPinned || popoverManager.isShown || isHavingConnectivityIssues
         }
-
-        showVPNButton = false
     }
 
     // MARK: - Pinning

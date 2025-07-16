@@ -23,8 +23,6 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
     case internalError(String)
     case missingTokenContainer
     case unauthenticated
-    /// When both access token and refresh token are expired
-    case refreshTokenExpired
     case invalidTokenRequest
     case authMigrationNotPerformed
     case unknownAccount
@@ -37,8 +35,6 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
             return "No tokens available"
         case .unauthenticated:
             return "The account is not authenticated, please re-authenticate"
-        case .refreshTokenExpired:
-            return "The refresh token is expired, the token is unrecoverable please re-authenticate"
         case .invalidTokenRequest:
             return "Invalid token request"
         case .authMigrationNotPerformed:
@@ -226,16 +222,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     public func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         let localTokenContainer = try tokenStorage.getTokenContainer()
-
-        if policy != .local,
-           let localTokenContainer,
-            localTokenContainer.decodedRefreshToken.isExpired() {
-            // The refresh token is expired, the token is un-refreshable
-            throw OAuthClientError.refreshTokenExpired
-        }
 
         switch policy {
         case .local:
@@ -259,9 +247,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             let expiresSoon = expirationInterval < Constants.tokenExpiryBufferInterval
             if localTokenContainer.decodedAccessToken.isExpired() || expiresSoon {
                 Logger.OAuthClient.log("Refreshing local already expired token")
-                return try await getTokens(policy: .localForceRefresh)
-            } else if expiresSoon {
-                Logger.OAuthClient.log("Refreshing local token expiring in \(expirationInterval)s")
                 return try await getTokens(policy: .localForceRefresh)
             } else {
                 return localTokenContainer

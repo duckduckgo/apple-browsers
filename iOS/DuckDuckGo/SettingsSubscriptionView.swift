@@ -261,34 +261,31 @@ struct SettingsSubscriptionView: View {
             }
             .disabled(!hasVPNEntitlement)
         }
-
+        
         if subscriptionFeatures.contains(.dataBrokerProtection) {
             let hasDBPEntitlement = userEntitlements.contains(.dataBrokerProtection)
-            let hasValidStoredProfile = (try? settingsViewModel.dataBrokerProtectionIOSManager.meetsProfileRunPrequisite) ?? false
+            let hasValidStoredProfile = settingsViewModel.dataBrokerProtectionIOSManager
+                .flatMap { try? $0.meetsProfileRunPrequisite } ?? false
             let statusIndicator: StatusIndicator = hasDBPEntitlement && hasValidStoredProfile ? .on : .off
+            
+            let destination: LazyView<AnyView> = {
+                if let dbpManager = settingsViewModel.dataBrokerProtectionIOSManager,
+                   DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
+                    return LazyView(AnyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: dbpManager)))
+                } else {
+                    return LazyView(AnyView(SubscriptionPIRMoveToDesktopView()))
+                }
+            }()
 
-            if DataBrokerProtectionIOSManager.isDBPStaticallyEnabled {
-                NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: settingsViewModel.dataBrokerProtectionIOSManager)),
-                               isActive: $isShowingDBP) {
-                    SettingsCellView(
-                        label: UserText.settingsPProDBPTitle,
-                        image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
-                        statusIndicator: StatusIndicatorView(status: statusIndicator),
-                        isGreyedOut: !hasDBPEntitlement
-                    )
-                }
-                .disabled(!hasDBPEntitlement)
-            } else {
-                NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView()), isActive: $isShowingDBP) {
-                    SettingsCellView(
-                        label: UserText.settingsPProDBPTitle,
-                        image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
-                        statusIndicator: StatusIndicatorView(status: statusIndicator),
-                        isGreyedOut: !hasDBPEntitlement
-                    )
-                }
-                .disabled(!hasDBPEntitlement)
+            NavigationLink(destination: destination, isActive: $isShowingDBP) {
+                SettingsCellView(
+                    label: UserText.settingsPProDBPTitle,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
+                    statusIndicator: StatusIndicatorView(status: statusIndicator),
+                    isGreyedOut: !hasDBPEntitlement
+                )
             }
+            .disabled(!hasDBPEntitlement)
         }
 
         if subscriptionFeatures.contains(.paidAIChat) && settingsViewModel.isPaidAIChatEnabled {

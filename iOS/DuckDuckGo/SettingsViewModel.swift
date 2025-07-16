@@ -55,7 +55,7 @@ final class SettingsViewModel: ObservableObject {
     private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
     let featureDiscovery: FeatureDiscovery
     private let urlOpener: URLOpener
-    let dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager
+    let dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager?
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -518,7 +518,7 @@ final class SettingsViewModel: ObservableObject {
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          urlOpener: URLOpener = UIApplication.shared,
          keyValueStore: ThrowingKeyValueStoring,
-         dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager = .shared!
+         dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager? = .shared
     ) {
 
         self.state = SettingsState.defaults

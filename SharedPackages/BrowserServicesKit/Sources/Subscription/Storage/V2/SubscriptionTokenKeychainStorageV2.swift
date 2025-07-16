@@ -167,8 +167,7 @@ extension SubscriptionTokenKeychainStorageV2 {
 
         let newAttributes = [
             kSecValueData: data,
-            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock,
-            kSecAttrModificationDate: Date()
+            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock
         ] as [CFString: Any]
 
         let status = keychainOperations.update(query as CFDictionary, newAttributes as CFDictionary)

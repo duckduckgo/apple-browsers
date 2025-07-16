@@ -159,8 +159,11 @@ public class DataBrokerProtectionIOSManagerProvider {
 public final class DataBrokerProtectionIOSManager {
 
     public struct Constants {
-        public static let defaultMaxWaitTime: TimeInterval = .hours(48)
-        public static let defaultMinWaitTime: TimeInterval = .minutes(15)
+        /// Maximum delay before the next background task must run
+        public static let defaultMaxBackgroundTaskWaitTime: TimeInterval = .hours(48)
+
+        /// Minimum delay before scheduling the next background task
+        public static let defaultMinBackgroundTaskWaitTime: TimeInterval = .minutes(15)
     }
 
     public static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
@@ -175,8 +178,8 @@ public final class DataBrokerProtectionIOSManager {
     private let iOSPixelsHandler: EventMapping<IOSPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let quickLinkOpenURLHandler: (URL) -> Void
-    private let maxWaitTime: TimeInterval
-    private let minWaitTime: TimeInterval
+    private let maxBackgroundTaskWaitTime: TimeInterval
+    private let minBackgroundTaskWaitTime: TimeInterval
     private let feedbackViewCreator: () -> (any View)
     private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
     private let settings: DataBrokerProtectionSettings
@@ -221,8 +224,8 @@ public final class DataBrokerProtectionIOSManager {
          privacyConfigManager: PrivacyConfigurationManaging,
          database: DataBrokerProtectionRepository,
          quickLinkOpenURLHandler: @escaping (URL) -> Void,
-         maxWaitTime: TimeInterval = Constants.defaultMaxWaitTime,
-         minWaitTime: TimeInterval = Constants.defaultMinWaitTime,
+         maxBackgroundTaskWaitTime: TimeInterval = Constants.defaultMaxBackgroundTaskWaitTime,
+         minBackgroundTaskWaitTime: TimeInterval = Constants.defaultMinBackgroundTaskWaitTime,
          feedbackViewCreator: @escaping () -> (any View),
          featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
          settings: DataBrokerProtectionSettings,
@@ -237,6 +240,8 @@ public final class DataBrokerProtectionIOSManager {
         self.database = database
         self.quickLinkOpenURLHandler = quickLinkOpenURLHandler
         self.feedbackViewCreator = feedbackViewCreator
+        self.maxBackgroundTaskWaitTime = maxBackgroundTaskWaitTime
+        self.minBackgroundTaskWaitTime = minBackgroundTaskWaitTime
         self.featureFlagger = featureFlagger
         self.settings = settings
         self.subscriptionManager = subscriptionManager
@@ -274,7 +279,7 @@ public final class DataBrokerProtectionIOSManager {
                 do {
                     earliestBeginDate = calculateEarliestBeginDate(firstEligibleJobDate: try database.fetchFirstEligibleJobDate())
                 } catch {
-                    earliestBeginDate = Date().addingTimeInterval(maxWaitTime)
+                    earliestBeginDate = Date().addingTimeInterval(maxBackgroundTaskWaitTime)
                 }
 
                 request.earliestBeginDate = earliestBeginDate
@@ -331,22 +336,22 @@ public final class DataBrokerProtectionIOSManager {
     }
 
     private func calculateEarliestBeginDate(from date: Date = .init(), firstEligibleJobDate: Date?) -> Date {
-        let maxWaitDate = date.addingTimeInterval(maxWaitTime)
+        let maxBackgroundTaskWaitDate = date.addingTimeInterval(maxBackgroundTaskWaitTime)
 
         guard let jobDate = firstEligibleJobDate else {
             // No eligible jobs
-            return maxWaitDate
+            return maxBackgroundTaskWaitDate
         }
 
-        let minWaitDate = date.addingTimeInterval(minWaitTime)
+        let minBackgroundTaskWaitDate = date.addingTimeInterval(minBackgroundTaskWaitTime)
 
         // If overdue → ASAP
         if jobDate <= date {
             return date
         }
 
-        // Otherwise → clamp to [minWaitTime, maxWaitTime]
-        return min(max(jobDate, minWaitDate), maxWaitDate)
+        // Otherwise → clamp to [minBackgroundTaskWaitTime, maxBackgroundTaskWaitTime]
+        return min(max(jobDate, minBackgroundTaskWaitDate), maxBackgroundTaskWaitDate)
     }
 
     /// Used by the iOS PIR debug menu to reset tester data.

@@ -469,12 +469,15 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             switch error {
 
             case OAuthClientError.unknownAccount:
+
                 Logger.subscription.error("Refresh failed, the account is unknown. Logging out...")
                 await signOut(notifyUI: true)
                 throw SubscriptionManagerError.noTokenAvailable
 
-            case OAuthClientError.refreshTokenExpired,
-                OAuthClientError.invalidTokenRequest:
+            case OAuthClientError.invalidTokenRequest:
+
+                pixelHandler.handle(pixelType: .invalidRefreshToken)
+                Logger.subscription.error("Refresh failed, invalid token request")
                 do {
                     let recoveredTokenContainer = try await attemptTokenRecovery()
                     pixelHandler.handle(pixelType: .invalidRefreshTokenRecovered)
@@ -492,16 +495,22 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     }
 
     func attemptTokenRecovery() async throws -> TokenContainer {
-        guard let tokenRecoveryHandler else {
-            throw SubscriptionManagerError.errorRetrievingTokenContainer(error: nil)
-        }
 
-        Logger.subscription.log("The refresh token is expired, attempting subscription recovery...")
-        pixelHandler.handle(pixelType: .invalidRefreshToken)
+        Logger.subscription.log("Attempting token recovery...")
+
+        guard let tokenRecoveryHandler else {
+            Logger.subscription.log("Recovery not possible, no handler configured.")
+            throw SubscriptionManagerError.noTokenAvailable
+        }
 
         try await tokenRecoveryHandler()
 
-        return try await getTokenContainer(policy: .local)
+        guard let currentTokenContainer = try? oAuthClient.currentTokenContainer(),
+              !currentTokenContainer.decodedRefreshToken.isExpired() else {
+            Logger.subscription.log("Recovery failed: the refresh token is missing or still expired after the recovery attempt.")
+            throw SubscriptionManagerError.noTokenAvailable
+        }
+        return currentTokenContainer
     }
 
     public func exchange(tokenV1: String) async throws -> TokenContainer {

@@ -115,7 +115,7 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Override build number for Alpha release
-      if: ${{ env.destination == 'testflight_alpha' }} && ${{ inputs.override-build-number != '' }}
+      if: ${{ env.destination == 'testflight_alpha' && inputs.override-build-number != '' }}
       run: |
         echo "Overriding build number to ${{ inputs.override-build-number }}"
         echo "CURRENT_PROJECT_VERSION = ${{ inputs.override-build-number }}" >> Configuration/BuildNumber.xcconfig

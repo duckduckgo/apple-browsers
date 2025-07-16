@@ -161,7 +161,7 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Override build number for Alpha release
-      if: ${{ env.release-type == 'alpha' }} && ${{ inputs.override-build-number != '' }}
+      if: ${{ env.release-type == 'alpha' && inputs.override-build-number != '' }}
       run: |
         echo "Overriding build number to ${{ inputs.override-build-number }}"
         echo "CURRENT_PROJECT_VERSION = ${{ inputs.override-build-number }}" >> Configuration/BuildNumber.xcconfig
@@ -275,7 +275,7 @@ jobs:
         echo "dsym-s3-path=${dsym_s3_path}" >> $GITHUB_OUTPUT
 
     - name: Report success
-      if: ${{ env.upload-to == 's3' }} && ${{ env.asana-task-url != '' }}
+      if: ${{ env.upload-to == 's3' && env.asana-task-url != '' }}
       env:
         DSYM_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
         TAG: ${{ env.app-version }}
@@ -431,7 +431,7 @@ jobs:
         echo "dmg-s3-path=${dmg_s3_path}" >> $GITHUB_OUTPUT
 
     - name: Report success
-      if: ${{ env.asana-task-url != '' }} && ${{ env.upload-to == 's3' }}
+      if: ${{ env.asana-task-url != '' && env.upload-to == 's3' }}
       env:
         DMG_URL: ${{ vars.DMG_URL_ROOT }}${{ steps.create-dmg.outputs.dmg }}
         TAG: ${{ env.app-version }}
@@ -445,7 +445,7 @@ jobs:
           is_scheduled_release:"${{ github.event_name == 'schedule' }}"
 
     - name: Report success (test build)
-      if: ${{ env.asana-task-url != '' }} && ${{ env.upload-to == 's3testbuilds' }}
+      if: ${{ env.asana-task-url != '' && env.upload-to == 's3testbuilds' }}
       env:
         DMG_URL: ${{ steps.upload-dmg-to-s3.outputs.dmg-url }}
         DMG_S3_PATH: ${{ steps.upload-dmg-to-s3.outputs.dmg-s3-path }}

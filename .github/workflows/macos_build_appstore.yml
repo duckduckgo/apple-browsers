@@ -40,6 +40,11 @@ on:
         description: "Override build number (for Alpha builds)"
         required: false
         type: string
+      skip-notify:
+        description: "Skip Mattermost notification"
+        required: false
+        default: false
+        type: boolean
     secrets:
       SSH_PRIVATE_KEY_FASTLANE_MATCH:
         required: true
@@ -190,7 +195,9 @@ jobs:
         DESTINATION: ${{ env.destination }}
         PLATFORM: macOS
       run: |
-        bundle exec fastlane run mattermost_send_message \
-          mattermost_webhook_url:${{ secrets.MM_WEBHOOK_URL }} \
-          github_handle:${{ github.actor }} \
-          template_name:$([[ "${{ job.status }}" == "success" ]] && echo "public-release-complete" || echo "public-release-failed")
+        if [[ "${{ inputs.skip-notify }}" == "false" ]]; then
+          bundle exec fastlane run mattermost_send_message \
+            mattermost_webhook_url:${{ secrets.MM_WEBHOOK_URL }} \
+            github_handle:${{ github.actor }} \
+            template_name:$([[ "${{ job.status }}" == "success" ]] && echo "public-release-complete" || echo "public-release-failed")
+        fi

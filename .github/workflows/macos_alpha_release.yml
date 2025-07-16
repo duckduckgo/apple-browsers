@@ -63,6 +63,7 @@ jobs:
       create-dmg: true
       branch: ${{ inputs.branch }}
       build-number-override: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
+      skip-notify: true
     secrets:
       APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
       APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -88,6 +89,7 @@ jobs:
       destination: testflight_alpha
       branch: ${{ inputs.branch }}
       build-number-override: ${{ needs.calculate-alpha-build-number.outputs.build-number }}
+      skip-notify: true
     secrets:
       SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
       APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
@@ -145,7 +147,7 @@ jobs:
         env:
           DMG_NAME: ${{ steps.fetch-dmg.outputs.dmg-name }}
         run: |
-          echo "Alpha release built from <a href=\"${{ github.server_url }}/${{ github.repository }}/commits/main/?since=${{ github.sha }}\">commit ${{ github.sha }}</a>." > ${DMG_NAME/dmg/html}
+          echo "<h3>What's new</h3><ul><li>Alpha release built from <a href=\"${{ github.server_url }}/${{ github.repository }}/commits/main/?since=${{ github.sha }}\">commit ${{ github.sha }}</a>.</li></ul>" > ${DMG_NAME/dmg/html}
 
       - name: Generate appcast
         id: appcast

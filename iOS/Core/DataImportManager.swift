@@ -84,7 +84,7 @@ public final class DataImportManager: DataImportManaging {
         self.loginImporter = loginImporter
         self.creditCardImporter = creditCardImporter
         self.reporter = reporter
-        self.vault = vault != nil ? vault : try? AutofillSecureVaultFactory.makeVault(reporter: reporter)
+        self.vault = vault ?? (try? AutofillSecureVaultFactory.makeVault(reporter: reporter))
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
         self.tld = tld

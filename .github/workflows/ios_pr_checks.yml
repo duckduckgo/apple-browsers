@@ -294,8 +294,8 @@ jobs:
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
-  verify-content-scope-scripts:
-    name: 'Verify content-scope-scripts bundle'
+  verify-npm-bundles:
+    name: 'Verify npm bundles (content-scope-scripts)'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -318,7 +318,7 @@ jobs:
 
   create-asana-task:
     name: Create Asana Task
-    needs: [unit-tests, shellcheck, release-build, verify-content-scope-scripts]
+    needs: [unit-tests, shellcheck, release-build, verify-npm-bundles]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
 
@@ -339,7 +339,7 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [unit-tests, shellcheck, release-build, verify-content-scope-scripts]
+    needs: [unit-tests, shellcheck, release-build, verify-npm-bundles]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true
 

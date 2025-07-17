@@ -457,8 +457,8 @@ jobs:
         path: release-xcodebuild.log
         retention-days: 7
 
-  verify-autoconsent-bundle:
-    name: 'Verify autoconsent bundle'
+  verify-npm-bundles:
+    name: 'Verify npm bundles (autoconsent & content-scope-scripts)'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -466,30 +466,16 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
-          cache-dependency-path: macOS/package-lock.json
-      - name: Build bundle
+          cache-dependency-path: |
+            package-lock.json
+            macOS/package-lock.json
+      - name: Build autoconsent bundle
+        working-directory: macOS
         run: |
           npm ci
           npm run rebuild-autoconsent
-      - name: Verify clean tree
-        run: |
-          git update-index --refresh
-          git diff-index --quiet HEAD --
-
-  verify-content-scope-scripts:
-    name: 'Verify content-scope-scripts bundle'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
+      - name: Build content-scope-scripts bundle
         working-directory: .
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-      - name: Build content-scope-scripts
         run: |
           npm ci
           npm run build-content-scope-scripts
@@ -500,7 +486,7 @@ jobs:
 
   create-asana-task:
     name: Create Asana Task
-    needs: [bats, tests, release-build, verify-autoconsent-bundle, verify-content-scope-scripts, private-api]
+    needs: [bats, tests, release-build, verify-npm-bundles, private-api]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
 
@@ -521,7 +507,7 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
+    needs: [bats, tests, release-build, verify-npm-bundles, private-api]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true
 

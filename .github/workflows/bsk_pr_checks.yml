@@ -323,8 +323,8 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-  verify-content-scope-scripts:
-    name: 'Verify content-scope-scripts bundle'
+  verify-npm-bundles:
+    name: 'Verify npm bundles (content-scope-scripts)'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -347,7 +347,7 @@ jobs:
 
   create-asana-task:
     name: Create Asana Task
-    needs: [unit-tests, unit-tests-ios, verify-content-scope-scripts]
+    needs: [unit-tests, unit-tests-ios, verify-npm-bundles]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1
 
@@ -368,7 +368,7 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [unit-tests, unit-tests-ios, verify-content-scope-scripts]
+    needs: [unit-tests, unit-tests-ios, verify-npm-bundles]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1
 

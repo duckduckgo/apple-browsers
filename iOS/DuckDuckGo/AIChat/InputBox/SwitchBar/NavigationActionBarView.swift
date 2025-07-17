@@ -71,14 +71,34 @@ struct NavigationActionBarView: View {
         .background(
             Group {
                 if keyboardObserver.isKeyboardVisible {
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color(designSystemColor: .surface).opacity(0.0),
-                            Color(designSystemColor: .surface).opacity(0.8)
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
+                    VStack (spacing: 0) {
+                        Spacer()
+                            .frame(height: Constants.padding)
+
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(designSystemColor: .surface).opacity(0.0),
+                                Color(designSystemColor: .surface).opacity(0.8)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                         .frame(height: Constants.barHeight)
+
+                        /// Add a gradient bellow the top gradient so it doesn't show a cut-off during keyboard animations
+                        /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210809108643486?focus=true
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(designSystemColor: .surface).opacity(0.8),
+                                Color(designSystemColor: .surface).opacity(0.0),
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
+                    /// Overflow the gradient view behind the keyboard
+                    .frame(height: 140)
+                    .clipped()
                     .ignoresSafeArea(.container, edges: .horizontal)
                 }
             }

@@ -75,13 +75,27 @@ jobs:
         # Check for any in-progress upload jobs - if one is found then we can
         # skip doing this build, since the workflow will check at the end of the
         # upload whether a re-build needs to happen.
-        active_runs=$(gh run list \
+        echo "🔍 Checking for active upload jobs..."
+        
+        # Get all in-progress runs for this workflow
+        runs=$(gh run list \
           --workflow="ios_alpha.yml" \
           --status="in_progress" \
-          --json="databaseId,jobs" \
-          --jq='.[].jobs[] | select(.name == "Upload to TestFlight" and .status == "in_progress") | .name')
+          --json="databaseId,headSha" \
+          --jq='.[].databaseId')
         
-        if [ -n "$active_runs" ]; then
+        upload_in_progress=false
+        for run_id in $runs; do
+          # Check if this run has an upload job in progress
+          upload_job=$(gh run view "$run_id" --json="jobs" --jq='.jobs[] | select(.name == "Upload to TestFlight" and .status == "in_progress") | .name' 2>/dev/null || echo "")
+          if [ -n "$upload_job" ]; then
+            upload_in_progress=true
+            echo "🚫 Found active upload job in run #$run_id"
+            break
+          fi
+        done
+        
+        if [ "$upload_in_progress" = true ]; then
           echo "🚫 Bailing out early - the rerun logic will handle this commit once upload completes."
           exit 0
         else

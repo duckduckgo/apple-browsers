@@ -755,11 +755,7 @@ protocol NewWindowPolicyDecisionMaker {
         let canGoForward = webView.canGoForward
         let canReload = {
             switch content {
-            case .url:
-                return true
-            case .history:
-                return true
-            case .aiChat:
+            case .url, .history, .aiChat:
                 return true
             default:
                 return false

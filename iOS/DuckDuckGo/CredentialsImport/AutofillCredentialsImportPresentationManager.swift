@@ -39,6 +39,8 @@ final public class AutofillCredentialsImportPresentationManager {
 
     weak var presentationDelegate: AutofillCredentialsImportPresentationDelegate?
 
+    var domainPasswordImportLastShownOn: String?
+
     init(loginImportStateProvider: AutofillLoginImportStateProvider & AutofillLoginImportStateStoring) {
         self.loginImportStateProvider = loginImportStateProvider
     }

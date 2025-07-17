@@ -3311,8 +3311,14 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             promptUserToImportCredentialsForDomain domain: String,
                             completionHandler: @escaping (Bool) -> Void) {
+        guard let eTLDplus1 = TabViewController.tld.eTLDplus1(url?.host), credentialsImportManager.domainPasswordImportLastShownOn != eTLDplus1 else {
+            return
+        }
+
         // Ensure keyboard doesn't block prompt
         dismissKeyboardIfPresent()
+
+        credentialsImportManager.domainPasswordImportLastShownOn = TabViewController.tld.eTLDplus1(url?.host)
 
         let promptViewController = ImportPasswordsPromptViewController(keyValueStore: keyValueStore) { [weak self] startImport in
             guard startImport, let self = self else {

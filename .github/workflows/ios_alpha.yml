@@ -104,7 +104,7 @@ jobs:
         app_version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)"
         bundle exec fastlane increment_build_number_for_version version:$app_version app_identifier:"com.duckduckgo.mobile.ios.alpha"
         build_version="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
-        bundle exec fastlane build_alpha_only
+        bundle exec fastlane build_alpha
         
         # Export build metadata
         echo "app_version=${app_version}" >> $GITHUB_OUTPUT
@@ -159,7 +159,7 @@ jobs:
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
       run: |
-        bundle exec fastlane upload_alpha_only groups:["${{ env.destination }}"] ipa_path:"${{ needs.build.outputs.ipa_path }}"
+        bundle exec fastlane upload_alpha groups:["${{ env.destination }}"] ipa_path:"${{ needs.build.outputs.ipa_path }}"
 
     - name: Upload dSYMs artifact
       uses: actions/upload-artifact@v4
@@ -181,7 +181,7 @@ jobs:
   rerun-check:
     needs: upload
     runs-on: ubuntu-latest
-    name: Check for Newer Commits
+    name: Post-Upload Checks
     if: github.event_name == 'push'
 
     steps:

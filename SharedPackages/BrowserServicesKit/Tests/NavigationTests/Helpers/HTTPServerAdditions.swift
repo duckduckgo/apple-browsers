@@ -228,7 +228,7 @@ open class SafeHttpServer {
             let (params, handler) = self.dispatch(request)
             request.params = params
             let response = handler(request)
-            
+
             let headersString = response.headers().map { "\($0.key): \($0.value)" }.joined(separator: ", ")
             Logger.httpServer.debug("\(request.path): \(response.statusCode) \(headersString)")
 

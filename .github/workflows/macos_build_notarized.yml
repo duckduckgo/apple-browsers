@@ -160,11 +160,20 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
-    - name: Override build number for Alpha release
-      if: ${{ env.release-type == 'alpha' && inputs.build-number-override != '' }}
+    - name: Override version and build number for Alpha release and add commit SHA to plist
+      if: ${{ env.release-type == 'alpha' }}
+      env:
+        ALPHA_VERSION: 9999.9.9
       run: |
-        echo "Overriding build number to ${{ inputs.build-number-override }}"
-        echo "CURRENT_PROJECT_VERSION = ${{ inputs.build-number-override }}" > Configuration/BuildNumber.xcconfig
+        echo "Overriding version number to ${ALPHA_VERSION}"
+        echo "MARKETING_VERSION = ${ALPHA_VERSION}" > Configuration/Version.xcconfig
+        if [[ "${{ inputs.build-number-override }}" != "" ]]; then
+          echo "Overriding build number to ${{ inputs.build-number-override }}"
+          echo "CURRENT_PROJECT_VERSION = ${{ inputs.build-number-override }}" > Configuration/BuildNumber.xcconfig
+        fi
+        plist_path="DuckDuckGo/Info.plist"
+        /usr/libexec/PlistBuddy -c "Add :DDG_COMMIT_SHA string ${{ github.sha }}" "${plist_path}" \
+          || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${{ github.sha }}" "${plist_path}"
 
     - name: Archive and notarize the app
       id: archive

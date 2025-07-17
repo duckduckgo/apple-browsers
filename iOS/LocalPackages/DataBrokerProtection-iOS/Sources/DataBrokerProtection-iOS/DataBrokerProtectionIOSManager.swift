@@ -453,10 +453,25 @@ extension DataBrokerProtectionIOSManager: DBPUIViewModelDelegate {
     public func getAllBrokerProfileQueryData() throws -> [DataBrokerProtectionCore.BrokerProfileQueryData] {
         try database.fetchAllBrokerProfileQueryData()
     }
-    
+
+    @MainActor
     public func saveProfile(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws {
-        try await database.save(profile)
-        queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+        let backgroundAssertion = QRunInBackgroundAssertion(name: "DataBrokerProtectionIOSManager", application: .shared) {
+            self.queueManager.stop()
+        }
+
+        do {
+            try await database.save(profile)
+            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+                DispatchQueue.main.async {
+                    backgroundAssertion.release()
+                }
+            }
+        } catch {
+            DispatchQueue.main.async {
+                backgroundAssertion.release()
+            }
+            throw error
         }
     }
     

@@ -210,12 +210,6 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
-    /// Number of jobs to justify scheduling a background task right away
-    private let minOverdueJobsForBackgroundTask = 10
-
-    /// Maximum amount of time without a background task being scheduled
-    private let maxSchedulingInterval: TimeInterval = .hours(48)
-
     init(queueManager: BrokerProfileJobQueueManaging,
          jobDependencies: BrokerProfileJobDependencyProviding,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,

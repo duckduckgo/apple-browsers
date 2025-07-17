@@ -116,7 +116,7 @@ extension Preferences {
                     Text(UserText.duckDuckGoForMacAppStore)
                         .font(.companyName)
                     if model.isInternalUser {
-                        Text("BETA")
+                        Text(model.prereleaseLabel)
                             .font(.caption2)
                             .fontWeight(.bold)
                             .padding(.horizontal, 6)
@@ -144,7 +144,7 @@ extension Preferences {
                     Text(UserText.duckDuckGo)
                         .font(.companyName)
                     if model.isInternalUser {
-                        Text("BETA")
+                        Text(model.prereleaseLabel)
                             .font(.caption2)
                             .fontWeight(.bold)
                             .padding(.horizontal, 6)

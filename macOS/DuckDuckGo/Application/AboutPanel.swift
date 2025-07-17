@@ -43,6 +43,12 @@ struct AboutPanelView: View {
         Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String ?? ""
     }
 
+#if ALPHA
+    private let prereleaseLabel: String = "ALPHA"
+#else
+    private let prereleaseLabel: String = "BETA"
+#endif
+
     var body: some View {
         VStack(spacing: 8) {
             Image(nsImage: NSApp.applicationIconImage)
@@ -67,7 +73,7 @@ struct AboutPanelView: View {
                     .cursor(.pointingHand)
                     .help(UserText.clickToCopyVersion)
                 if isInternal {
-                    Text("BETA")
+                    Text(prereleaseLabel)
                         .font(.footnote)
                         .fontWeight(.bold)
                         .padding(.horizontal, 8)

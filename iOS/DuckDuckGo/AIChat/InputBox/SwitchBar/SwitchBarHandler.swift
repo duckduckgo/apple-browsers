@@ -157,6 +157,7 @@ final class SwitchBarHandler: SwitchBarHandling {
         storage.set(currentToggleState.rawValue, forKey: StorageKey.toggleState)
     }
 
+    /// Intentionally not called yet, https://app.asana.com/1/137249556945/project/72649045549333/task/1210814996510636?focus=true
     func restoreToggleState() {
         if let storedValue = storage.object(forKey: StorageKey.toggleState) as? String,
            let restoredState = TextEntryMode(rawValue: storedValue) {

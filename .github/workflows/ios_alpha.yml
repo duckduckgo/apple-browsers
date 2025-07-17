@@ -42,7 +42,7 @@ on:
 jobs:
   build:
     runs-on: macos-15-xlarge
-    name: Build Alpha App
+    name: Build Alpha
     timeout-minutes: 20
     
     concurrency:
@@ -98,7 +98,7 @@ jobs:
         working-directory: iOS
         cache-key-prefix: ios-ruby
 
-    - name: Build Alpha app
+    - name: Archive the app
       env:
         APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}

@@ -26,10 +26,8 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     static let shared = AboutPreferences(internalUserDecider: NSApp.delegateTyped.internalUserDecider)
 
-    private let internalUserDecider: InternalUserDecider
-    @Published var isInternalUser: Bool
+    let appVersionModel: AppVersionModel
     @Published var featureFlagOverrideToggle = false
-    private var internalUserCancellable: AnyCancellable?
     private let featureFlagger: FeatureFlagger
     let supportedOSChecker: SupportedOSChecking
     private var cancellables = Set<AnyCancellable>()
@@ -39,11 +37,11 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
                  supportedOSChecker: SupportedOSChecking? = nil) {
 
         self.featureFlagger = featureFlagger
-        self.internalUserDecider = internalUserDecider
-        self.isInternalUser = internalUserDecider.isInternalUser
+        self.appVersionModel = .init(internalUserDecider: internalUserDecider, appVersion: AppVersion())
         self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
-        self.internalUserCancellable = internalUserDecider.isInternalUserPublisher
-            .sink { [weak self] in self?.isInternalUser = $0 }
+        internalUserDecider.isInternalUserPublisher
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
 
         subscribeToFeatureFlagOverrideChanges()
     }
@@ -60,28 +58,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             }
             .store(in: &cancellables)
     }
-
-#if ALPHA
-    let shouldDisplayPrereleaseLabel: Bool = true
-    let prereleaseLabel: String = "ALPHA"
-    var versionLabel: String {
-        let versionText = UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
-        let commitSHA = appVersion.commitSHAShort
-        guard !commitSHA.isEmpty else {
-            return versionText
-        }
-        return "\(versionText) [\(commitSHA)]"
-    }
-#else
-    var shouldDisplayPrereleaseLabel: Bool {
-        isInternalUser
-    }
-    let prereleaseLabel: String = "BETA"
-    var versionLabel: String {
-        UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
-    }
-#endif
-
 
 #if SPARKLE
     var useLegacyAutoRestartLogic: Bool {
@@ -167,8 +143,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
 #endif
-
-    let appVersion = AppVersion()
 
     private var cancellable: AnyCancellable?
 

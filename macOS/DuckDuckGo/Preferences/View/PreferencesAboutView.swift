@@ -115,8 +115,8 @@ extension Preferences {
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGoForMacAppStore)
                         .font(.companyName)
-                    if model.shouldDisplayPrereleaseLabel {
-                        Text(model.prereleaseLabel)
+                    if model.appVersionModel.shouldDisplayPrereleaseLabel {
+                        Text(model.appVersionModel.prereleaseLabel)
                             .font(.caption2)
                             .fontWeight(.bold)
                             .padding(.horizontal, 6)
@@ -133,18 +133,18 @@ extension Preferences {
                     .fixedSize(horizontal: false, vertical: true)
                     .multilineTextAlignment(.leading)
 
-                Text(model.versionLabel)
+                Text(model.appVersionModel.versionLabel)
                     .contextMenu(ContextMenu(menuItems: {
                         Button(UserText.copy, action: {
-                            model.copy(model.versionLabel)
+                            model.copy(model.appVersionModel.versionLabel)
                         })
                     }))
 #elseif SPARKLE
                 HStack(spacing: 8) {
                     Text(UserText.duckDuckGo)
                         .font(.companyName)
-                    if model.shouldDisplayPrereleaseLabel {
-                        Text(model.prereleaseLabel)
+                    if model.appVersionModel.shouldDisplayPrereleaseLabel {
+                        Text(model.appVersionModel.prereleaseLabel)
                             .font(.caption2)
                             .fontWeight(.bold)
                             .padding(.horizontal, 6)
@@ -219,10 +219,10 @@ extension Preferences {
         @ViewBuilder
         private var versionText: some View {
             HStack(spacing: 0) {
-                Text(model.versionLabel)
+                Text(model.appVersionModel.versionLabel)
                     .contextMenu(ContextMenu(menuItems: {
                         Button(UserText.copy, action: {
-                            model.copy(model.versionLabel)
+                            model.copy(model.appVersionModel.versionLabel)
                         })
                     }))
 #if SPARKLE

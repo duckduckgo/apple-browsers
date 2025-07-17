@@ -24,26 +24,7 @@ import Common
 // SwiftUI view for the About panel
 struct AboutPanelView: View {
 
-    let isInternal: Bool
-
-    let appVersion = AppVersion()
-
-#if ALPHA
-    private let prereleaseLabel: String = "ALPHA"
-    private var versionLabel: String {
-        let versionText = UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
-        let commitSHA = appVersion.commitSHAShort
-        guard !commitSHA.isEmpty else {
-            return versionText
-        }
-        return "\(versionText) [\(commitSHA)]"
-    }
-#else
-    private let prereleaseLabel: String = "BETA"
-    private var versionLabel: String {
-        UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
-    }
-#endif
+    let model: AppVersionModel
 
     private var appName: String {
 #if APPSTORE
@@ -67,20 +48,20 @@ struct AboutPanelView: View {
                 .font(.title3)
 
             HStack(spacing: 8) {
-                Text(versionLabel)
+                Text(model.versionLabel)
                     .font(.footnote)
                     .onTapGesture {
                         let pasteboard = NSPasteboard.general
                         pasteboard.clearContents()
                         pasteboard.setString(
-                            AppVersion.shared.versionAndBuildNumber,
+                            model.versionLabel,
                             forType: .string
                         )
                     }
                     .cursor(.pointingHand)
                     .help(UserText.clickToCopyVersion)
-                if isInternal {
-                    Text(prereleaseLabel)
+                if model.shouldDisplayPrereleaseLabel {
+                    Text(model.prereleaseLabel)
                         .font(.footnote)
                         .fontWeight(.bold)
                         .padding(.horizontal, 8)
@@ -119,7 +100,8 @@ final class AboutPanelController {
         panel.isReleasedWhenClosed = false
         panel.center()
 
-        let hosting = NSHostingController(rootView: AboutPanelView(isInternal: internalUserDecider.isInternalUser))
+        let appVersionModel = AppVersionModel(internalUserDecider: internalUserDecider, appVersion: AppVersion())
+        let hosting = NSHostingController(rootView: AboutPanelView(model: appVersionModel))
         panel.contentView = hosting.view
     }
 

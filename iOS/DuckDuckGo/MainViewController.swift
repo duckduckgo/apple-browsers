@@ -1424,6 +1424,8 @@ class MainViewController: UIViewController {
             if !self.isExperimentalAppearanceEnabled {
                 self.refreshMenuButtonState()
             }
+
+            self.newTabPageViewController?.widthChanged()
         }
     }
 

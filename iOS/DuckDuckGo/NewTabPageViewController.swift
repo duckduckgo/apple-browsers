@@ -50,6 +50,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating
     private let appSettings: AppSettings
+    private let appWidthObserver: AppWidthObserver
 
     init(tab: Tab,
          isNewTabPageCustomizationEnabled: Bool,
@@ -64,7 +65,8 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
          faviconLoader: FavoritesFaviconLoading,
          pixelFiring: PixelFiring.Type = Pixel.self,
          messageNavigationDelegate: MessageNavigationDelegate,
-         appSettings: AppSettings) {
+         appSettings: AppSettings,
+         appWidthObserver: AppWidthObserver = .shared) {
 
         self.associatedTab = tab
         self.variantManager = variantManager
@@ -74,6 +76,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         self.pixelFiring = pixelFiring
         self.messageNavigationDelegate = messageNavigationDelegate
         self.appSettings = appSettings
+        self.appWidthObserver = appWidthObserver
 
         newTabPageViewModel = NewTabPageViewModel(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
         shortcutsSettingsModel = NewTabPageShortcutsSettingsModel()
@@ -131,8 +134,17 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
         if !favoritesModel.isEmpty {
             borderView.insertSelf(into: view)
-            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+            updateBorderView()
         }
+    }
+
+    func widthChanged() {
+        updateBorderView()
+    }
+
+    func updateBorderView() {
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        borderView.isBottomVisible = !appWidthObserver.isLargeWidth
     }
 
     func registerForNotifications() {
@@ -148,7 +160,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     }
 
     @objc func onAddressBarPositionChanged() {
-        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        updateBorderView()
     }
 
     @objc func onSettingsDidDisappear() {
@@ -245,10 +257,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         presentNextDaxDialog()
         // Show Keyboard when showing the first Dax tip
         chromeDelegate?.omniBar.beginEditing()
-    }
-
-    func reloadFavorites() {
-
     }
 
     // MARK: - Onboarding

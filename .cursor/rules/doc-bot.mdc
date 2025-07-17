@@ -64,9 +64,9 @@ Are you about to:
 
 If doc_bot is unavailable:
 1. STOP
-2. Tell user: "doc_bot MCP server not available"
+2. Tell user: "The doc_bot Rules and Documentation server is not available"
 3. Ask the user if they want to continue without any rulesets applied.
-4. If the user agrees, continue the task using existing knowledge.
+4. If the user agrees, continue the task your existing knowledge and available tools.
 
 ---
 Remember: You're not here to be creative. You're here to be CORRECT.

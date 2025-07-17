@@ -57,6 +57,14 @@ Are you about to:
 - Search for info? → Call doc_bot first
 - Literally anything? → Call doc_bot first
 
+### FAILURE RECOVERY
+
+If doc_bot is unavailable:
+1. STOP
+2. Tell user: "doc_bot MCP server not available"
+3. Ask the user if they want to continue without any rulesets applied.
+4. If the user agrees, continue the task using existing knowledge.
+
 ---
 Remember: You're not here to be creative. You're here to be CORRECT.
 And correctness means: doc_bot() → tools → done.

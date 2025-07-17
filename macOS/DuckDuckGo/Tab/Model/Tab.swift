@@ -1252,7 +1252,6 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         }
 
         hasCommittedContent = true
-        PixelKit.fire(GeneralPixel.navigation)
     }
 
     @MainActor
@@ -1331,6 +1330,10 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         if error != nil,
            navigation.navigationAction.navigationType != .alternateHtmlLoad { // error page navigation
             error = nil
+        }
+
+        if navigation.navigationAction.navigationType != .alternateHtmlLoad {
+            PixelKit.fire(GeneralPixel.navigation)
         }
 
         invalidateInteractionStateData()

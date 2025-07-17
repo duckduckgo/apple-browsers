@@ -42,7 +42,7 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
 
     public init(keychainType: KeychainType = .dataProtection(.unspecified),
                 errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void,
-                keychainOperations: KeychainOperationsProtocol = RealKeychainOperations()) {
+                keychainOperations: KeychainOperationsProtocol = DefaultKeychainOperations()) {
         self.keychainType = keychainType
         self.errorEventsHandler = errorEventsHandler
         self.keychainOperations = keychainOperations
@@ -147,14 +147,11 @@ extension SubscriptionTokenKeychainStorageV2 {
         case errSecDuplicateItem:
             Logger.subscriptionKeychain.debug("Keychain item exists, updating for \(field.keyValue)")
             let updateStatus = updateData(data, forField: field)
-
-            if updateStatus == errSecSuccess {
-                Logger.subscriptionKeychain.debug("Successfully updated keychain item for \(field.keyValue)")
-                return
-            } else {
+            guard updateStatus == errSecSuccess else {
                 Logger.subscriptionKeychain.error("Failed to update keychain item: \(updateStatus)")
                 throw AccountKeychainAccessError.keychainSaveFailure(updateStatus)
             }
+            Logger.subscriptionKeychain.debug("Successfully updated keychain item for \(field.keyValue)")
         default:
             Logger.subscriptionKeychain.error("Failed to add keychain item: \(status.humanReadableDescription)")
             throw AccountKeychainAccessError.keychainSaveFailure(status)

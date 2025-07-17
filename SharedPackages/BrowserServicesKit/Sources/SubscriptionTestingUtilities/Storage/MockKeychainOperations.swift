@@ -34,7 +34,7 @@ public final class MockKeychainOperations: KeychainOperationsProtocol {
     public var updateFailureStatus: OSStatus = errSecItemNotFound
     public var deleteFailureStatus: OSStatus = errSecItemNotFound
 
-    public init(storage: [String : Data] = [:], shouldFailAdd: Bool = false, shouldFailCopyMatching: Bool = false, shouldFailUpdate: Bool = false, shouldFailDelete: Bool = false, addFailureStatus: OSStatus = errSecDuplicateItem, copyMatchingFailureStatus: OSStatus = errSecItemNotFound, updateFailureStatus: OSStatus = errSecItemNotFound, deleteFailureStatus: OSStatus = errSecItemNotFound) {
+    public init(storage: [String: Data] = [:], shouldFailAdd: Bool = false, shouldFailCopyMatching: Bool = false, shouldFailUpdate: Bool = false, shouldFailDelete: Bool = false, addFailureStatus: OSStatus = errSecDuplicateItem, copyMatchingFailureStatus: OSStatus = errSecItemNotFound, updateFailureStatus: OSStatus = errSecItemNotFound, deleteFailureStatus: OSStatus = errSecItemNotFound) {
         self.storage = storage
         self.shouldFailAdd = shouldFailAdd
         self.shouldFailCopyMatching = shouldFailCopyMatching

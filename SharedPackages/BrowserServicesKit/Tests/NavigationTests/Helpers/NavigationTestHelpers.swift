@@ -887,6 +887,7 @@ class NavigationDelegateProxy: NSObject, WKNavigationDelegate {
         case afterDidStartNavigationAction
     }
     var finishEventsDispatchTime: FinishEventsDispatchTime = .instant
+    var didFailEventsDispatchTime: FinishEventsDispatchTime = .instant
 
     var enableWillPerformClientRedirect: Bool = true
 
@@ -906,6 +907,12 @@ class NavigationDelegateProxy: NSObject, WKNavigationDelegate {
         willSet {
             guard let finishWorkItem, !finishWorkItem.isCancelled else { return }
             finishWorkItem.perform()
+        }
+    }
+    private var didFailWorkItem: DispatchWorkItem? {
+        willSet {
+            guard let didFailWorkItem, !didFailWorkItem.isCancelled else { return }
+            didFailWorkItem.perform()
         }
     }
 
@@ -928,6 +935,15 @@ class NavigationDelegateProxy: NSObject, WKNavigationDelegate {
                     self.finishWorkItem = nil
                 }
             }
+            switch self.didFailEventsDispatchTime {
+            case .instant, .afterDidStartNavigationAction: break
+            case .beforeWillStartNavigationAction:
+                self.didFailWorkItem = nil // trigger if set after decidePolicyFor callback
+            case .afterWillStartNavigationAction:
+                navigationAction.onDeinit {
+                    self.didFailWorkItem = nil
+                }
+            }
         }
     }
 
@@ -936,6 +952,9 @@ class NavigationDelegateProxy: NSObject, WKNavigationDelegate {
         delegate.webView(webView, didStartProvisionalNavigation: navigation)
         if case .afterDidStartNavigationAction = self.finishEventsDispatchTime {
             self.finishWorkItem = nil
+        }
+        if case .afterDidStartNavigationAction = self.didFailEventsDispatchTime {
+            self.didFailWorkItem = nil
         }
     }
 
@@ -961,28 +980,28 @@ class NavigationDelegateProxy: NSObject, WKNavigationDelegate {
 
     @MainActor
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        guard finishEventsDispatchTime != .instant else {
+        guard didFailEventsDispatchTime != .instant else {
             delegate.webView(webView, didFail: navigation, withError: error)
             return
         }
-        finishWorkItem = DispatchWorkItem { [delegate, weak self] in
-            self?.finishWorkItem?.cancel()
+        didFailWorkItem = DispatchWorkItem { [delegate, weak self] in
+            self?.didFailWorkItem?.cancel()
             delegate.webView(webView, didFail: navigation, withError: error)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: finishWorkItem!)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: didFailWorkItem!)
     }
 
     @MainActor
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        guard finishEventsDispatchTime != .instant else {
+        guard didFailEventsDispatchTime != .instant else {
             delegate.webView(webView, didFailProvisionalNavigation: navigation, withError: error)
             return
         }
-        finishWorkItem = DispatchWorkItem { [delegate, weak self] in
-            self?.finishWorkItem?.cancel()
+        didFailWorkItem = DispatchWorkItem { [delegate, weak self] in
+            self?.didFailWorkItem?.cancel()
             delegate.webView(webView, didFailProvisionalNavigation: navigation, withError: error)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: finishWorkItem!)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: didFailWorkItem!)
     }
 
     @MainActor

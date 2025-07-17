@@ -25,7 +25,7 @@ public struct Entitlement: Codable, Equatable, Hashable {
         self.product = product
     }
 
-    public enum ProductName: String, Codable {
+    public enum ProductName: String, Codable, CaseIterable {
         case networkProtection = "Network Protection"
         case dataBrokerProtection = "Data Broker Protection"
         case identityTheftRestoration = "Identity Theft Restoration"

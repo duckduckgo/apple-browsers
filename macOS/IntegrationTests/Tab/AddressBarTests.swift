@@ -623,7 +623,7 @@ class AddressBarTests: XCTestCase {
         let didFinishNavigation = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         _=window.makeFirstResponder(addressBarTextField)
         type("\r")
-        try await Task.sleep(interval: 0.01)
+        try await Task.sleep(interval: 0.1)
         _=window.makeFirstResponder(addressBarTextField)
         type("some-text")
 
@@ -738,7 +738,7 @@ class AddressBarTests: XCTestCase {
         let didFinishNavigation = tab.webViewDidFinishNavigationPublisher.timeout(50).first().promise()
         type(URL.duckDuckGo.absoluteString + "\r")
 
-        try await Task.sleep(interval: 0.01)
+        try await Task.sleep(interval: 0.1)
         _=window.makeFirstResponder(addressBarTextField)
         type("some-text")
 
@@ -935,7 +935,7 @@ class AddressBarTests: XCTestCase {
 
         // THEN
         let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyEntryPointButton.image!
-        XCTAssertTrue(shieldImage.isEqualToImage(expectedImage))
+        XCTAssertImagesEqual(shieldImage, expectedImage)
     }
 
     @MainActor
@@ -955,7 +955,7 @@ class AddressBarTests: XCTestCase {
 
         // THEN
         let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyEntryPointButton.image!
-        XCTAssertTrue(shieldImage.isEqualToImage(expectedImage))
+        XCTAssertImagesEqual(shieldImage, expectedImage)
     }
 
     @MainActor
@@ -975,7 +975,7 @@ class AddressBarTests: XCTestCase {
 
         // THEN
         let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyEntryPointButton.image!
-        XCTAssertTrue(shieldImage.isEqualToImage(expectedImage))
+        XCTAssertImagesEqual(shieldImage, expectedImage)
     }
 
     @MainActor
@@ -1050,24 +1050,6 @@ private extension MainWindow {
         return expectation
     }
 
-}
-
-extension NSImage {
-    func pngData() -> Data? {
-        guard let tiffRepresentation = self.tiffRepresentation,
-              let bitmapImage = NSBitmapImageRep(data: tiffRepresentation) else {
-            return nil
-        }
-        return bitmapImage.representation(using: .png, properties: [:])
-    }
-
-    func isEqualToImage(_ image: NSImage) -> Bool {
-        guard let data1 = self.pngData(),
-              let data2 = image.pngData() else {
-            return false
-        }
-        return data1 == data2
-    }
 }
 
 class MockCertificateEvaluator: CertificateTrustEvaluating {

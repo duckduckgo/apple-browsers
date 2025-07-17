@@ -36,13 +36,13 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         }]
         try server.start(8084)
 
-        let eDidFinish = expectation(description: "onDidFinish")
-
         responder(at: 0).onNavigationAction = { _, params in
             return .download
         }
+
+        let eNavActionBecameDownload = expectation(description: "onNavActionBecameDownload")
         responder(at: 0).onNavActionBecameDownload = { _, _ in
-            eDidFinish.fulfill()
+            eNavActionBecameDownload.fulfill()
         }
 
         withWebView { webView in
@@ -79,6 +79,11 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
                 return .download
             }
             return .next
+        }
+
+        let eNavActionBecameDownload = expectation(description: "onNavActionBecameDownload")
+        responder(at: 0).onNavActionBecameDownload = { _, _ in
+            eNavActionBecameDownload.fulfill()
         }
         let eDidFinish = expectation(description: "onDidFinish")
         responder(at: 0).onDidFinish = { _ in
@@ -126,6 +131,10 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
             XCTAssertFalse(resp.shouldDownload)
             XCTAssertEqual(resp.httpResponse?.isSuccessful, true)
             return .download
+        }
+        let eNavResponseBecameDownload = expectation(description: "onNavResponseBecameDownload")
+        responder(at: 0).onNavResponseBecameDownload = { _, _ in
+            eNavResponseBecameDownload.fulfill()
         }
         let eDidFail = expectation(description: "onDidFail")
         responder(at: 0).onDidFail = { _, _ in
@@ -184,10 +193,16 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         responder(at: 0).onNavigationResponse = { _ in
             .download
         }
+
+        let eNavResponseBecameDownload = expectation(description: "onNavResponseBecameDownload")
+        responder(at: 0).onNavResponseBecameDownload = { _, _ in
+            eNavResponseBecameDownload.fulfill()
+        }
         let eDidFailLoadingFrame = expectation(description: "didFailLoadingFrame")
         didFinishLoadingFrameHandler.didFailProvisionalLoadInFrame = { request, frame, _ in
             eDidFailLoadingFrame.fulfill()
         }
+
         responder(at: 0).clear()
         withWebView { webView in
             webView.evaluateJavaScript("window.frames[0].location.href = '\(urls.local1.string)'")
@@ -224,6 +239,12 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
                 return .download
             }
             return .next
+        }
+
+        let eNavActionBecameDownload = expectation(description: "onNavActionBecameDownload")
+        eNavActionBecameDownload.expectedFulfillmentCount = 3
+        responder(at: 0).onNavActionBecameDownload = { _, _ in
+            eNavActionBecameDownload.fulfill()
         }
         let eDidFinish = expectation(description: "onDidFinish")
         responder(at: 0).onDidFinish = { _ in
@@ -287,6 +308,11 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
             return .allow
         }
 
+        let eNavResponseBecameDownload = expectation(description: "onNavResponseBecameDownload")
+        eNavResponseBecameDownload.expectedFulfillmentCount = 3
+        responder(at: 0).onNavResponseBecameDownload = { _, _ in
+            eNavResponseBecameDownload.fulfill()
+        }
         let eDidFinish = expectation(description: "onDidFinish")
         responder(at: 0).onDidFinish = { _ in
             eDidFinish.fulfill()

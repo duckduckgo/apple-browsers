@@ -255,6 +255,14 @@ extension AppDelegate {
         }
     }
 
+    @objc func openReportABrowserProblem(_ sender: Any?) {
+
+    }
+
+    @objc func openRequestANewFeature(_ sender: Any?) {
+
+    }
+
     @MainActor
     @objc func openPProFeedback(_ sender: Any?) {
         Application.appDelegate.windowControllersManager.showShareFeedbackModal(source: .settings)

@@ -70,7 +70,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     // MARK: - Manager Components
     
     private var swipeContainerManager: SwipeContainerManager?
-    private var keyboardAdjustmentManager: KeyboardAdjustmentManager?
     private var navigationActionBarManager: NavigationActionBarManager?
     private var suggestionTrayManager: SuggestionTrayManager?
     private let daxLogoManager = DaxLogoManager()
@@ -153,7 +152,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         installSuggestionsTray()
         installDaxLogoView()
         installNavigationActionBar()
-        installKeyboardManager()
 
         view.bringSubviewToFront(switchBarVC.view)
     }
@@ -194,7 +192,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     }
 
     private func installDaxLogoView() {
-        daxLogoManager.installInViewController(self)
+        daxLogoManager.installInViewController(self, belowView: switchBarVC.view)
     }
     
     private func installNavigationActionBar() {
@@ -202,15 +200,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         manager.delegate = self
         manager.installInViewController(self, safeAreaGuide: view.safeAreaLayoutGuide)
         navigationActionBarManager = manager
-    }
-    
-    private func installKeyboardManager() {
-        let manager = KeyboardAdjustmentManager(
-            parentView: view,
-            logoCenterYConstraint: daxLogoManager.logoCenterYConstraint,
-            actionBarBottomConstraint: navigationActionBarManager?.actionBarBottomConstraint
-        )
-        keyboardAdjustmentManager = manager
     }
 
     private func setupSubscriptions() {

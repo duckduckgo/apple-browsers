@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="23727" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23721"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -47,12 +47,12 @@
                             </userDefinedRuntimeAttribute>
                         </userDefinedRuntimeAttributes>
                     </view>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="DuckDuckGo - Paoli, PA" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" minimumFontSize="12" translatesAutoresizingMaskIntoConstraints="NO" id="igl-3v-DMO">
-                        <rect key="frame" x="0.0" y="72" width="68" height="24"/>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="top" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="DuckDuckGo - Paoli, PA" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" minimumFontSize="12" showsExpansionTextWhenTruncated="YES" translatesAutoresizingMaskIntoConstraints="NO" id="igl-3v-DMO">
+                        <rect key="frame" x="2" y="70" width="64" height="29"/>
                         <accessibility key="accessibilityConfiguration">
                             <bool key="isElement" value="NO"/>
                         </accessibility>
-                        <fontDescription key="fontDescription" type="system" weight="regular" pointSize="13"/>
+                        <fontDescription key="fontDescription" type="system" pointSize="13"/>
                         <color key="textColor" red="1" green="0.14913141730000001" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <nil key="highlightedColor"/>
                     </label>
@@ -84,14 +84,14 @@
             </view>
             <constraints>
                 <constraint firstItem="bW3-He-Unt" firstAttribute="height" secondItem="0FF-Ic-U0T" secondAttribute="height" id="6j2-Gj-J66"/>
-                <constraint firstItem="igl-3v-DMO" firstAttribute="width" secondItem="ico-ty-UiT" secondAttribute="width" id="Dtk-7h-WnU"/>
                 <constraint firstItem="bW3-He-Unt" firstAttribute="width" secondItem="0FF-Ic-U0T" secondAttribute="width" id="H80-28-e1f"/>
                 <constraint firstItem="0FF-Ic-U0T" firstAttribute="centerX" secondItem="ico-ty-UiT" secondAttribute="centerX" id="HBE-64-SHx"/>
+                <constraint firstItem="igl-3v-DMO" firstAttribute="width" secondItem="0FF-Ic-U0T" secondAttribute="width" id="JYb-wV-Wxf"/>
                 <constraint firstItem="bW3-He-Unt" firstAttribute="top" secondItem="0FF-Ic-U0T" secondAttribute="top" id="Rhd-cr-2JX"/>
                 <constraint firstItem="0FF-Ic-U0T" firstAttribute="top" secondItem="ico-ty-UiT" secondAttribute="top" id="RzA-6W-flZ"/>
                 <constraint firstItem="bW3-He-Unt" firstAttribute="leading" secondItem="0FF-Ic-U0T" secondAttribute="leading" id="W1u-6F-xWR"/>
                 <constraint firstItem="h1L-Cf-oUY" firstAttribute="top" secondItem="ico-ty-UiT" secondAttribute="top" constant="-10" id="bXe-1S-uVr"/>
-                <constraint firstItem="igl-3v-DMO" firstAttribute="top" secondItem="0FF-Ic-U0T" secondAttribute="bottom" constant="8" id="bb8-RC-f4d"/>
+                <constraint firstItem="igl-3v-DMO" firstAttribute="top" secondItem="0FF-Ic-U0T" secondAttribute="bottom" constant="6" id="bb8-RC-f4d"/>
                 <constraint firstAttribute="trailing" secondItem="h1L-Cf-oUY" secondAttribute="trailing" constant="-15" id="fq4-iw-rP0"/>
                 <constraint firstItem="igl-3v-DMO" firstAttribute="centerX" secondItem="ico-ty-UiT" secondAttribute="centerX" id="liy-lM-Qld"/>
             </constraints>

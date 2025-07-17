@@ -155,21 +155,17 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 
-        if let action = actionsHandler?.nextAction(), self.shouldRunNextStep() {
+        let shouldContinue = self.shouldRunNextStep()
+        if let action = actionsHandler?.nextAction(), shouldContinue {
             Logger.action.debug("Next action: \(String(describing: action.actionType.rawValue), privacy: .public)")
             await runNextAction(action)
         } else {
             Logger.action.debug("Releasing the web view")
             await webViewHandler?.finish() // If we executed all steps we release the web view
-            finish()
-        }
-    }
 
-    private func finish() {
-        if shouldRunNextStep() {
-            complete([])
-        } else {
-            failed(with: DataBrokerProtectionError.cancelled)
+            if !shouldContinue {
+                failed(with: DataBrokerProtectionError.cancelled)
+            }
         }
     }
 }

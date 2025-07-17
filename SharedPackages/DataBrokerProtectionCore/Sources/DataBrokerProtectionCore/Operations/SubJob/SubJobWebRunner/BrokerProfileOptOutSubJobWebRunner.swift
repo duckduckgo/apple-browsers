@@ -144,20 +144,18 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
         Logger.action.debug("OPTOUT Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)
 
-        if let action = actionsHandler?.nextAction(), self.shouldRunNextStep() {
+        let shouldContinue = self.shouldRunNextStep()
+        if let action = actionsHandler?.nextAction(), shouldContinue {
             stageCalculator.setLastActionId(action.id)
             await runNextAction(action)
         } else {
             await webViewHandler?.finish() // If we executed all steps we release the web view
-            finish()
-        }
-    }
 
-    private func finish() {
-        if shouldRunNextStep() {
-            complete(())
-        } else {
-            failed(with: DataBrokerProtectionError.cancelled)
+            if shouldContinue {
+                complete(())
+            } else {
+                failed(with: DataBrokerProtectionError.cancelled)
+            }
         }
     }
 }

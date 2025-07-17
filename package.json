@@ -12,6 +12,6 @@
     "postinstall": "npm run build-content-scope-scripts"
   },
   "dependencies": {
-    "@duckduckgo/content-scope-scripts": "github:duckduckgo/content-scope-scripts#pr-releases/pr-1808"
+    "@duckduckgo/content-scope-scripts": "github:duckduckgo/content-scope-scripts#bb38565b21488b8ce71ab270b253c86465d2ee7d"
   }
 }

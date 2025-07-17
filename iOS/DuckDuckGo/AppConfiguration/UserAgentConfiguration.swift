@@ -56,25 +56,19 @@ struct UserAgentConfiguration {
     ///
     /// If a cached user agent is found, it's used immediately without blocking.
     /// If the OS version has changed since the last retrieval, a background `LaunchTask` is registered
-    /// to refresh the user agent.
+    /// to update the user agent.
     ///
-    /// If no cached value exists (e.g., first launch), the user agent is retrieved synchronously and cached.
+    /// If no cached value exists (e.g., first launch), the user agent is retrieved "synchronously" and cached.
     ///
     /// - Parameter completion: Called when initial configuration completes (immediately if cached, or after async setup).
+    /// Used primarily for tests.
     ///
     /// For more detail, see the https://app.asana.com/1/137249556945/project/1201392122292466/task/1210787475496146?focus=true.
     @MainActor
     func configure(completion: (() -> Void)? = nil) {
         if let cachedUserAgent {
             userAgentManager.setDefaultUserAgent(cachedUserAgent.userAgent)
-            if osVersionProvider.osVersion != cachedUserAgent.osVersion {
-                launchTaskManager.register(task: BlockLaunchTask(name: "Update User Agent") { taskContext in
-                    Task {
-                        await extractAndSetDefaultUserAgent()
-                        taskContext.finish()
-                    }
-                })
-            }
+            scheduleUserAgentUpdateIfNeeded(for: cachedUserAgent)
             completion?()
         } else {
             Task {
@@ -82,6 +76,16 @@ struct UserAgentConfiguration {
                 completion?()
             }
         }
+    }
+
+    private func scheduleUserAgentUpdateIfNeeded(for cached: CachedUserAgent) {
+        guard osVersionProvider.osVersion != cached.osVersion else { return }
+        launchTaskManager.register(task: BlockLaunchTask(name: "Update User Agent") { taskContext in
+            Task {
+                await extractAndSetDefaultUserAgent()
+                taskContext.finish()
+            }
+        })
     }
 
     private var cachedUserAgent: CachedUserAgent? {

@@ -1016,13 +1016,6 @@ class TabViewController: UIViewController {
         }
     }
 
-    private func getDefaultAgent(webView: WKWebView, completion: @escaping (String?) -> Void) {
-        webView.evaluateJavaScript("navigator.userAgent") { (result, _) in
-            let agent = result as? String
-            completion(agent)
-        }
-    }
-
     private func hideProgressIndicator() {
         progressWorker.didFinishLoading()
         webView.scrollView.refreshControl?.endRefreshing()

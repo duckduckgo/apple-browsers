@@ -1333,6 +1333,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         }
 
         invalidateInteractionStateData()
+        PixelKit.fire(GeneralPixel.navigation)
     }
 
     @MainActor
@@ -1349,6 +1350,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
     func navigation(_ navigation: Navigation, didSameDocumentNavigationOf navigationType: WKSameDocumentNavigationType) {
         guard navigation.isCurrent else { return }
 
+        if navigationType != .sessionStateReplace {
+            PixelKit.fire(GeneralPixel.navigation)
+        }
         invalidateInteractionStateData()
     }
 

@@ -28,12 +28,6 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     private let internalUserDecider: InternalUserDecider
     @Published var isInternalUser: Bool
-#if ALPHA
-    let prereleaseLabel: String = "ALPHA"
-#else
-    let prereleaseLabel: String = "BETA"
-#endif
-
     @Published var featureFlagOverrideToggle = false
     private var internalUserCancellable: AnyCancellable?
     private let featureFlagger: FeatureFlagger
@@ -66,6 +60,28 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             }
             .store(in: &cancellables)
     }
+
+#if ALPHA
+    let shouldDisplayPrereleaseLabel: Bool = true
+    let prereleaseLabel: String = "ALPHA"
+    var versionLabel: String {
+        let versionText = UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
+        let commitSHA = appVersion.commitSHAShort
+        guard !commitSHA.isEmpty else {
+            return versionText
+        }
+        return "\(versionText) [\(commitSHA)]"
+    }
+#else
+    var shouldDisplayPrereleaseLabel: Bool {
+        isInternalUser
+    }
+    let prereleaseLabel: String = "BETA"
+    var versionLabel: String {
+        UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
+    }
+#endif
+
 
 #if SPARKLE
     var useLegacyAutoRestartLogic: Bool {

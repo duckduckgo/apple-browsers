@@ -26,6 +26,25 @@ struct AboutPanelView: View {
 
     let isInternal: Bool
 
+    let appVersion = AppVersion()
+
+#if ALPHA
+    private let prereleaseLabel: String = "ALPHA"
+    private var versionLabel: String {
+        let versionText = UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
+        let commitSHA = appVersion.commitSHAShort
+        guard !commitSHA.isEmpty else {
+            return versionText
+        }
+        return "\(versionText) [\(commitSHA)]"
+    }
+#else
+    private let prereleaseLabel: String = "BETA"
+    private var versionLabel: String {
+        UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
+    }
+#endif
+
     private var appName: String {
 #if APPSTORE
         UserText.duckDuckGoForMacAppStore
@@ -33,21 +52,9 @@ struct AboutPanelView: View {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ""
 #endif
     }
-    private var appVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-    }
-    private var appBuild: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
-    }
     private var copyright: String {
         Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String ?? ""
     }
-
-#if ALPHA
-    private let prereleaseLabel: String = "ALPHA"
-#else
-    private let prereleaseLabel: String = "BETA"
-#endif
 
     var body: some View {
         VStack(spacing: 8) {
@@ -60,7 +67,7 @@ struct AboutPanelView: View {
                 .font(.title3)
 
             HStack(spacing: 8) {
-                Text(UserText.versionLabel(version: appVersion, build: appBuild))
+                Text(versionLabel)
                     .font(.footnote)
                     .onTapGesture {
                         let pasteboard = NSPasteboard.general

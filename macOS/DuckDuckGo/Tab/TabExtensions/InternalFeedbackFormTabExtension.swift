@@ -52,10 +52,8 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
         let distributionType = "DMG Alpha"
 #endif
         let commitSHASuffix: String = {
-            guard let commitSHA = appVersion.commitSHAShort else {
-                return ""
-            }
-            return "_\(commitSHA)"
+            let commitSHA = appVersion.commitSHAShort
+            return commitSHA.isEmpty ? "" : "_\(commitSHA)"
         }()
 
 #else // ALPHA

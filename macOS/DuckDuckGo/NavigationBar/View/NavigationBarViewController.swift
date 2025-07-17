@@ -1458,7 +1458,7 @@ final class NavigationBarViewController: NSViewController {
                 overflowButton.menu?.addItem(menuItem)
             }
             if isAIChatButtonInOverflowMenu {
-                let aiChatItem = NSMenuItem(title: UserText.aiChatAddressBarTooltip, action: #selector(overflowMenuRequestedAIChat), keyEquivalent: "")
+                let aiChatItem = NSMenuItem(title: ShortcutTooltip.newAIChatTab.value, action: #selector(overflowMenuRequestedAIChat), keyEquivalent: "")
                     .targetting(self)
                     .withImage(.aiChat)
                 overflowButton.menu?.addItem(aiChatItem)

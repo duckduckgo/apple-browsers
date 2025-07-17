@@ -84,6 +84,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet private weak var trailingButtonsContainer: NSStackView!
     @IBOutlet weak var aiChatButton: AddressBarMenuButton!
     @IBOutlet weak var askAIChatButton: AddressBarMenuButton!
+    @IBOutlet weak var trailingButtonsBackground: ColorView!
 
     @IBOutlet weak var animationWrapperView: NSView!
     var trackerAnimationView1: LottieAnimationView!
@@ -389,6 +390,10 @@ final class AddressBarButtonsViewController: NSViewController {
         // This ensures consistent behavior when the sidebar is unexpectedly open but shouldn't be the default action
         if !aiChatMenuConfig.openAIChatInSidebar && aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) {
             aiChatSidebarPresenter.toggleSidebar()
+
+            if aiChatButton == sender as? AddressBarMenuButton {
+                return
+            }
         }
 
         let behavior = createAIChatLinkOpenBehavior(for: tab)
@@ -438,16 +443,18 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func openAIChatTab(for tab: Tab, with behavior: LinkOpenBehavior) {
-        // Force new tab behaviour when sidebar is open to avoid  loading Duck.ai in current tab
-        let shouldOverrideToNewTab = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) && behavior == .currentTab
-        let updatedBehaviour: LinkOpenBehavior = shouldOverrideToNewTab ? .newTab(selected: behavior.shouldSelectNewTab) : behavior
+        // If the AI Chat sidebar is open and the intended behavior is to open in the current tab,
+        // close the sidebar before opening Duck.ai in the current tab.
+        if aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid) && behavior == .currentTab {
+            aiChatSidebarPresenter.collapseSidebar(withAnimation: false)
+        }
 
         if let value = textFieldValue, !value.isEmpty {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .tabWithPrompt), frequency: .dailyAndStandard)
-            aiChatTabOpener.openAIChatTab(value, with: updatedBehaviour)
+            aiChatTabOpener.openAIChatTab(value, with: behavior)
         } else {
             PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked(action: .tab), frequency: .dailyAndStandard)
-            aiChatTabOpener.openAIChatTab(nil, with: updatedBehaviour)
+            aiChatTabOpener.openAIChatTab(nil, with: behavior)
         }
     }
 
@@ -564,6 +571,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func updateAIChatButtonForSidebar(_ isShowingSidebar: Bool) {
         configureContextMenuForAIChatButtons(isSidebarOpen: isShowingSidebar)
+        configureAIChatButtonTooltip(isSidebarOpen: isShowingSidebar)
 
         if isShowingSidebar {
             aiChatButton.setButtonType(.toggle)
@@ -577,8 +585,6 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatButtonVisibility() {
-        aiChatButton.toolTip = isTextFieldEditorFirstResponder ? UserText.aiChatAddressBarShortcutTooltip : UserText.aiChatAddressBarTooltip
-
         let isPopUpWindow = view.window?.isPopUpWindow ?? false
         let isDuckAIURL = tabViewModel?.tab.url?.isDuckAIURL ?? false
 
@@ -612,7 +618,7 @@ final class AddressBarButtonsViewController: NSViewController {
         if shouldExpandAskAIChatButton(isSidebarOpen: isSidebarOpen) {
             expandAskAIChatButton()
         } else {
-            contractAskAIChatButton(isSidebarOpen: isSidebarOpen)
+            contractAskAIChatButton()
         }
     }
 
@@ -636,7 +642,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func shouldExpandAskAIChatButton(isSidebarOpen: Bool) -> Bool {
         guard isTextFieldEditorFirstResponder,
-              !isSidebarOpen,
               let textFieldValue = textFieldValue,
               !textFieldValue.isEmpty,
               textFieldValue.isUserTyped || textFieldValue.isSuggestion else {
@@ -661,32 +666,25 @@ final class AddressBarButtonsViewController: NSViewController {
         animateAskAIChatButtonExpansion()
     }
 
-    private func contractAskAIChatButton(isSidebarOpen: Bool) {
+    private func contractAskAIChatButton() {
         askAIChatButton.backgroundColor = .clear
         askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
-        askAIChatButton.toolTip = UserText.aiChatAddressBarShortcutTooltip
+        askAIChatButton.toolTip = ShortcutTooltip.askAIChat.value
 
-        if isSidebarOpen {
-            askAIChatButton.isEnabled = false
-            askAIChatButton.state = .on
+        askAIChatButton.isEnabled = true
+        askAIChatButton.state = .off
 
-            isAskAIChatButtonExpanded = false
-            askAIChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
-        } else {
-            askAIChatButton.isEnabled = true
-            askAIChatButton.state = .off
-
-            guard isAskAIChatButtonExpanded else {
-                // Ignore any subsequent calls if button is already contracted
-                return
-            }
-
-            isAskAIChatButtonExpanded = false
-            animateAskAIChatButtonContraction()
+        guard isAskAIChatButtonExpanded else {
+            // Ignore any subsequent calls if button is already contracted
+            return
         }
+
+        isAskAIChatButtonExpanded = false
+        animateAskAIChatButtonContraction()
     }
 
     private func animateAskAIChatButtonExpansion() {
+        configureAskAIChatButton()
         let targetWidth = calculateExpandedButtonWidth()
 
         NSAnimationContext.runAnimationGroup { context in
@@ -712,6 +710,9 @@ final class AddressBarButtonsViewController: NSViewController {
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
 
             askAIChatButtonWidthConstraint.animator().constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        } completionHandler: {
+            guard !self.isAskAIChatButtonExpanded else { return }
+            self.askAIChatButton.title = ""
         }
     }
 
@@ -1200,6 +1201,27 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         aiChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
+
+        configureAIChatButtonTooltip()
+    }
+
+    private func configureAIChatButtonTooltip(isSidebarOpen: Bool? = nil) {
+        if let tab = tabViewModel?.tab, featureFlagger.isFeatureOn(.aiChatSidebar) {
+            let isSidebarOpen: Bool = isSidebarOpen ?? {
+                guard let tabID = tabViewModel?.tab.uuid else { return false }
+                return aiChatSidebarPresenter.isSidebarOpen(for: tabID)
+            }()
+
+            if isSidebarOpen {
+                aiChatButton.toolTip = UserText.aiChatCloseSidebarButton
+            } else if aiChatMenuConfig.openAIChatInSidebar, case .url = tab.content {
+                aiChatButton.toolTip = UserText.aiChatOpenSidebarButton
+            } else {
+                aiChatButton.toolTip = isTextFieldEditorFirstResponder ? ShortcutTooltip.askAIChat.value : ShortcutTooltip.newAIChatTab.value
+            }
+        } else {
+            aiChatButton.toolTip = isTextFieldEditorFirstResponder ? ShortcutTooltip.askAIChat.value : ShortcutTooltip.newAIChatTab.value
+        }
     }
 
     private func configureAskAIChatButton() {

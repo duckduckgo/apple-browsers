@@ -16,15 +16,15 @@
         parameters: ['appVersion', 'pixelSource'],
     },
 
-    'm_mac_privacy-pro_toolbar_button_popover_no_thanks_clicked': {
-        description: "Fired when the 'No Thanks' button is clicked in the Privacy Pro toolbar button popover",
+    'm_mac_privacy-pro_toolbar_button_popover_dismiss_button_clicked': {
+        description: 'Fired when the dismiss button is clicked in the Privacy Pro toolbar button popover',
         owners: ['jozsef-vesza'],
         triggers: ['user_submitted'],
         parameters: ['appVersion', 'pixelSource'],
     },
 
-    'm_mac_privacy-pro_toolbar_button_popover_try_for_free_clicked': {
-        description: "Fired when the 'Try For Free' button is clicked in the Privacy Pro toolbar button popover",
+    'm_mac_privacy-pro_toolbar_button_popover_proceed_button_clicked': {
+        description: 'Fired when the proceed button is clicked in the Privacy Pro toolbar button popover',
         owners: ['jozsef-vesza'],
         triggers: ['user_submitted'],
         parameters: ['appVersion', 'pixelSource'],

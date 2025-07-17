@@ -83,8 +83,8 @@ enum PrivacyProPixel: PixelKitEventV2 {
     // Toolbar Button Upsell
     case privacyProToolbarButtonShown
     case privacyProToolbarButtonPopoverShown
-    case privacyProToolbarButtonPopoverNoThanksClicked
-    case privacyProToolbarButtonPopoverTryForFreeClicked
+    case privacyProToolbarButtonPopoverDismissButtonClicked
+    case privacyProToolbarButtonPopoverProceedButtonClicked
 
     var name: String {
         switch self {
@@ -141,8 +141,8 @@ enum PrivacyProPixel: PixelKitEventV2 {
             // Toolbar Button Upsell
         case .privacyProToolbarButtonShown: return "m_mac_privacy-pro_toolbar_button_shown"
         case .privacyProToolbarButtonPopoverShown: return "m_mac_privacy-pro_toolbar_button_popover_shown"
-        case .privacyProToolbarButtonPopoverNoThanksClicked: return "m_mac_privacy-pro_toolbar_button_popover_no_thanks_clicked"
-        case .privacyProToolbarButtonPopoverTryForFreeClicked: return "m_mac_privacy-pro_toolbar_button_popover_try_for_free_clicked"
+        case .privacyProToolbarButtonPopoverDismissButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_dismiss_button_clicked"
+        case .privacyProToolbarButtonPopoverProceedButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_proceed_button_clicked"
         }
     }
 

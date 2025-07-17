@@ -91,6 +91,49 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     private var testNotificationCenter: TestNotificationCenter!
     private var constraintUpdates: [DuckPlayerConstraintUpdate] = []
 
+    // MARK: - Helper Methods
+    
+    /// Waits for a condition to become true using manual polling.
+    /// This is useful for properties that are not KVO-compliant.
+    /// - Parameters:
+    ///   - timeout: Maximum time to wait for the condition
+    ///   - pollingInterval: Time between condition checks
+    ///   - condition: The condition to check
+    ///   - description: Description of what we're waiting for
+    private func waitForCondition(
+        timeout: TimeInterval = 2.0,
+        pollingInterval: TimeInterval = 0.1,
+        condition: @escaping () -> Bool,
+        description: String
+    ) {
+        let expectation = expectation(description: description)
+        var isFulfilled = false
+        
+        func scheduleNextCheck() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + pollingInterval) {
+                // Check if we should continue polling
+                guard !isFulfilled else { return }
+                
+                if condition() {
+                    isFulfilled = true
+                    expectation.fulfill()
+                } else {
+                    scheduleNextCheck()
+                }
+            }
+        }
+        
+        // Check condition immediately
+        if condition() {
+            isFulfilled = true
+            expectation.fulfill()
+        } else {
+            scheduleNextCheck()
+        }
+        
+        wait(for: [expectation], timeout: timeout)
+    }
+
     // MARK: - Setup
 
     override func setUp() {
@@ -1227,13 +1270,11 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // When - Simulate navigation away which triggers cleanup
         sut.playerViewModel?.youtubeNavigationRequestPublisher.send(URL.youtube(videoID))
         
-        // Wait for cleanup delay
-        let expectation = XCTestExpectation(description: "Player cleanup")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            expectation.fulfill()
-        }
-        
-        wait(for: [expectation], timeout: 1.0)
+        // Wait for cleanup using helper method
+        waitForCondition(
+            condition: { [weak sut] in sut?.playerViewModel == nil },
+            description: "Player view model should be cleaned up"
+        )
         
         // Then
         XCTAssertNil(sut.playerViewModel, "Player view model should be cleaned up")
@@ -1891,13 +1932,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
 
         // Simulate the view disappearing and dismiss publisher firing
         playerViewModel.dismissPublisher.send(timestamp)
-
-        // Wait for the delayed pill presentation (0.3s delay + buffer)
-        let expectation = XCTestExpectation(description: "Pill should be presented after dismissal")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 2.0)
+        
+        // Wait for pill presentation using helper method
+        waitForCondition(
+            condition: { [weak sut] in sut?.containerViewController != nil },
+            description: "Pill should be presented after dismissal"
+        )
 
         // Then - Should present re-entry pill 
         XCTAssertNotNil(sut.containerViewController, "Pill container should be created after dismissal")

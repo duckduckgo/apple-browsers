@@ -328,6 +328,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     @MainActor
     func testWhenFireButtonPressedThenAskDelegateToRemoveViewHighlights() throws {
+
         // GIVEN
         dialogProvider.dialog = .tryFireButton
         let url = URL.duckDuckGo

@@ -80,19 +80,14 @@ final class AIChatSummarizer: AIChatSummarizing {
             return
         }
 
-        let promptText = """
-            You are an expert summarizer AI. Your purpose is to read the provided text and generate a concise, accurate, and easy-to-understand summary. Summarize the following text in a neutral, encyclopedic tone. The summary should be a single paragraph and should not exceed 50 words. Use the same language as the original text.
-            <text>
-            \(request.text)
-            </text>
-            """
-
-        let prompt = AIChatNativePrompt.queryPrompt(promptText, autoSubmit: true)
+        let prompt = AIChatNativePrompt.summaryPrompt(request.text, url: request.websiteURL, title: request.websiteTitle)
         pixelFiring?.fire(AIChatPixel.aiChatSummarizeText(source: request.source), frequency: .dailyAndStandard)
 
         if featureFlagger.isFeatureOn(.aiChatSidebar) && aiChatMenuConfig.openAIChatInSidebar {
+            if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
+                pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .summarization), frequency: .dailyAndStandard)
+            }
             aiChatSidebarPresenter.presentSidebar(for: prompt)
-            pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .summarization), frequency: .dailyAndStandard)
         } else {
             AIChatPromptHandler.shared.setData(prompt)
             aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: true))

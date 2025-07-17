@@ -147,7 +147,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireCoordinator: fireCoordinator,
         keyValueStore: keyValueStore,
         visualizeFireAnimationDecider: visualizeFireAnimationDecider,
-        featureFlagger: featureFlagger
+        featureFlagger: featureFlagger,
+        windowControllersManager: windowControllersManager,
+        tabsPreferences: TabsPreferences.shared
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -608,6 +610,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     onboardingNavigationDelegate: windowControllersManager,
                     appearancePreferences: appearancePreferences,
                     startupPreferences: startupPreferences,
+                    windowControllersManager: windowControllersManager,
                     bookmarkManager: bookmarkManager,
                     historyCoordinator: historyCoordinator,
                     fireproofDomains: fireproofDomains,
@@ -630,6 +633,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 onboardingNavigationDelegate: windowControllersManager,
                 appearancePreferences: appearancePreferences,
                 startupPreferences: startupPreferences,
+                windowControllersManager: windowControllersManager,
                 bookmarkManager: bookmarkManager,
                 historyCoordinator: historyCoordinator,
                 fireproofDomains: fireproofDomains,
@@ -1017,10 +1021,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func fireAppLaunchPixel() {
+        PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
 #if SPARKLE
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .legacyDaily)
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .legacyDaily)
 #else
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: nil)), frequency: .legacyDaily)
+        PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: nil)), frequency: .legacyDaily)
 #endif
     }
 

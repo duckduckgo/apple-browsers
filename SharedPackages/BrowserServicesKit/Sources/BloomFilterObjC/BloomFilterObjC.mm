@@ -17,7 +17,7 @@
 //
 
 #import "BloomFilterObjC.h"
-#import "BloomFilter.hpp"
+#import <BloomFilter/BloomFilter.hpp>
 
 @interface BloomFilterObjC() {
     BloomFilter *filter;

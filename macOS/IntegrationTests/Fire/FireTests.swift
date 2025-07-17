@@ -44,13 +44,16 @@ final class FireTests: XCTestCase {
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
         let faviconManager = FaviconManagerMock()
+        let visualizeFire = MockVisualizeFireAnimationDecider()
+        visualizeFire.shouldShowFireAnimation = true
 
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
                         windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
-                        tld: Application.appDelegate.tld)
+                        tld: Application.appDelegate.tld,
+                        visualizeFireAnimationDecider: visualizeFire)
 
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)

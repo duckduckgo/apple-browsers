@@ -425,7 +425,11 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: scanResult.dataBroker,
             profileQuery: scanResult.profileQuery,
-            scanJobData: ScanJobData(brokerId: 1, profileQueryId: 1, historyEvents: [HistoryEvent]())
+            scanJobData: ScanJobData(
+                brokerId: scanResult.dataBroker.id ?? 1,
+                profileQueryId: scanResult.profileQuery.id ?? 1,
+                historyEvents: [HistoryEvent]()
+            )
         )
         Task {
             do {

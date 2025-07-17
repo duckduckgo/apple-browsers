@@ -219,7 +219,9 @@ final class MockAutofillLoginImportState: AutofillLoginImportStateProvider, Auto
     var isImportPromoInBrowserPromptFeatureEnabled: Bool = true
     
     var isImportPromoInPasswordsScreenFeatureEnabled: Bool = true
-    
+
+    var credentialsImportPromptPresentationCount: Int = 0
+
     var hasImportedLogins: Bool = false
     
     var isAutofillEnabled: Bool = true

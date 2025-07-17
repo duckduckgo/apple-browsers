@@ -22,6 +22,7 @@ import Core
 @testable import DuckDuckGo
 import SubscriptionTestingUtilities
 import BrowserServicesKit
+import PersistenceTestingUtils
 
 @MainActor
 final class TabManagerTests: XCTestCase {
@@ -99,7 +100,8 @@ final class TabManagerTests: XCTestCase {
                           fireproofing: MockFireproofing(),
                           maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
                           maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
-                          featureDiscovery: MockFeatureDiscovery())
+                          featureDiscovery: MockFeatureDiscovery(),
+                          keyValueStore: try! MockKeyValueFileStore())
     }
 
 }

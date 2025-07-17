@@ -377,6 +377,7 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
 
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public func autofillUserScript(_: AutofillUserScript,
                                    didRequestCredentialsForDomain domain: String,
                                    subType: AutofillUserScript.GetAutofillDataSubType,

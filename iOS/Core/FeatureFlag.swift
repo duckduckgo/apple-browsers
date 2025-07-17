@@ -143,6 +143,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209304767941984?focus=true
     case scheduledSetDefaultBrowserPrompts
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210259429792293?focus=true
+    case canPromoteImportPasswordsInPasswordManagement
+    case canPromoteImportPasswordsInBrowser
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -176,13 +180,10 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .textZoom,
-             .visualUpdates,
              .networkProtectionRiskyDomainsProtection,
              .privacyProAuthV2,
              .scamSiteProtection,
              .maliciousSiteProtection,
-             .autofillCreditCards,
-             .autofillCreditCardsOnByDefault,
              .autocompleteAttributeSupport,
              .privacyProOnboardingPromotion,
              .duckPlayerNativeUI,
@@ -195,7 +196,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
              .experimentalSwitcherBarTransition,
-             .june2025TabManagerLayoutChanges:
+             .june2025TabManagerLayoutChanges,
+             .canPromoteImportPasswordsInPasswordManagement:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -248,6 +250,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.autocompleteAttributeSupport))
         case .inputFocusApi:
             return .remoteReleasable(.subfeature(AutofillSubfeature.inputFocusApi))
+        case .canPromoteImportPasswordsInPasswordManagement:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteImportPasswordsInPasswordManagement))
+        case .canPromoteImportPasswordsInBrowser:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteImportPasswordsInBrowser))
         case .incontextSignup:
             return .remoteReleasable(.feature(.incontextSignup))
         case .autoconsentOnByDefault:
@@ -296,8 +302,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
-        case .visualUpdates:
-            return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
+        case .visualUpdates: // full clean up coming in separate PR
+            return .enabled
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .onboardingSetAsDefaultBrowserPiPVideo:

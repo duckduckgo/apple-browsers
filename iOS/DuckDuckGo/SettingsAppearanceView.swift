@@ -29,7 +29,7 @@ struct SettingsAppearanceView: View {
         List {
             Section {
                 // App Icon
-                let image = Image(uiImage: viewModel.state.appIcon.smallImage ?? UIImage())
+                let image = Image(uiImage: viewModel.state.appIcon.smallImage)
                 SettingsCellView(label: UserText.settingsIcon,
                                  action: { viewModel.presentLegacyView(.appIcon ) },
                                  accessory: .image(image),
@@ -55,16 +55,6 @@ struct SettingsAppearanceView: View {
                                  accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
             }
 
-            if viewModel.isInternalUser {
-                Section {
-                    SettingsCellView(label: UserText.settingsExperimentalMainSwitch,
-                                     accessory: .toggle(isOn: viewModel.experimentalThemingBinding))
-                } header: {
-                    Text(UserText.settingsExperimentalSection)
-                } footer: {
-                    Text(UserText.settingsExperimentalSectionFooter)
-                }
-            }
         }
         .applySettingsListModifiers(title: UserText.settingsAppearanceSection,
                                     displayMode: .inline,

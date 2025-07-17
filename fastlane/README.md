@@ -151,6 +151,14 @@ Fetches and updates certificates and provisioning profiles for App Store distrib
 
 Fetches and updates certificates and provisioning profiles for DMG distribution
 
+### mac sync_signing_dmg_alpha
+
+```sh
+[bundle exec] fastlane mac sync_signing_dmg_alpha
+```
+
+Fetches and updates certificates and provisioning profiles for DMG Alpha builds
+
 ### mac sync_signing_dmg_review
 
 ```sh

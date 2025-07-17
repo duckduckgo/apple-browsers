@@ -23,6 +23,7 @@ import Core
 import Common
 import PrivacyDashboard
 import os.log
+import Persistence
 
 class AutofillDebugViewController: UITableViewController {
 
@@ -30,15 +31,19 @@ class AutofillDebugViewController: UITableViewController {
         case toggleAutofillDebugScript = 201
         case resetEmailProtectionInContextSignUp = 202
         case resetDaysSinceInstalledTo0 = 203
-        case resetAutofillData = 204
-        case addAutofillData = 205
-        case resetAutofillBrokenReports = 206
-        case resetAutofillSurveys = 207
-        case viewAllCredentials = 208
-        case addAutofillCreditCardData = 209
+        case deleteAllCredentials = 204
+        case deleteAllCreditCards = 205
+        case addAutofillCredentials = 206
+        case addAutofillCreditCards = 207
+        case resetAutofillSettings = 208
+        case resetAutofillBrokenReports = 209
+        case resetAutofillSurveys = 210
+        case viewAllCredentials = 211
+        case resetAutofillImportPromos = 212
     }
 
     let defaults = AppUserDefaults()
+    var keyValueStore: ThrowingKeyValueStoring?
 
     override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         if cell.tag == Row.toggleAutofillDebugScript.rawValue {
@@ -73,54 +78,25 @@ class AutofillDebugViewController: UITableViewController {
                 defaults.autofillDebugScriptEnabled.toggle()
                 cell.accessoryType = defaults.autofillDebugScriptEnabled ? .checkmark : .none
                 NotificationCenter.default.post(Notification(name: AppUserDefaults.Notifications.autofillDebugScriptToggled))
-            } else if cell.tag == Row.resetAutofillData.rawValue {
+            } else if cell.tag == Row.deleteAllCredentials.rawValue {
                 let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
                 // delete all credential related data
                 try? secureVault?.deleteAllWebsiteCredentials()
-                let autofillPixelReporter = AutofillPixelReporter(
-                        usageStore: AutofillUsageStore(),
-                        autofillEnabled: AppUserDefaults().autofillCredentialsEnabled,
-                        eventMapping: EventMapping<AutofillPixelEvent> { _, _, _, _ in })
-                autofillPixelReporter.resetStoreDefaults()
-                ActionMessageView.present(message: "Autofill Data reset")
-                autofillSaveModalRejectionCount = 0
-                autofillSaveModalDisablePromptShown = false
-                autofillFirstTimeUser = true
-                _ = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager.deleteAllNeverPromptWebsites()
-
+                ActionMessageView.present(message: "All credentials deleted")
+            } else if cell.tag == Row.deleteAllCreditCards.rawValue {
+                let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
                 // delete all credit card related data
                 let creditCards = try? secureVault?.creditCards()
                 for card in creditCards ?? [] {
                     guard let id = card.id else { continue }
                     try? secureVault?.deleteCreditCardFor(cardId: id)
                 }
-                autofillCreditCardsSaveModalRejectionCount = 0
-                autofillCreditCardsSaveModalDisablePromptShown = false
-                autofillCreditCardsFirstTimeUser = true
-            } else if cell.tag == Row.addAutofillData.rawValue {
+                ActionMessageView.present(message: "All credit cards deleted")
+            } else if cell.tag == Row.addAutofillCredentials.rawValue {
                 promptForNumberOfLoginsToAdd()
-            } else if cell.tag == Row.resetEmailProtectionInContextSignUp.rawValue {
-                EmailManager().resetEmailProtectionInContextPrompt()
-                tableView.deselectRow(at: indexPath, animated: true)
-            } else if cell.tag == Row.resetDaysSinceInstalledTo0.rawValue {
-                StatisticsUserDefaults().installDate = Date()
-                tableView.deselectRow(at: indexPath, animated: true)
-            } else if cell.tag == Row.resetAutofillBrokenReports.rawValue {
-                tableView.deselectRow(at: indexPath, animated: true)
-                let reporter = BrokenSiteReporter(pixelHandler: { _ in }, keyValueStoring: UserDefaults.standard, storageConfiguration: .autofillConfig)
-                let expiryDate = Calendar.current.date(byAdding: .day, value: 60, to: Date())!
-                _ = reporter.persistencyManager.removeExpiredItems(currentDate: expiryDate)
-                ActionMessageView.present(message: "Autofill Broken Reports reset")
-            } else if cell.tag == Row.resetAutofillSurveys.rawValue {
-                tableView.deselectRow(at: indexPath, animated: true)
-                let autofillSurveyManager = AutofillSurveyManager()
-                autofillSurveyManager.resetSurveys()
-                ActionMessageView.present(message: "Autofill Surveys reset")
-            } else if cell.tag == Row.viewAllCredentials.rawValue {
-                tableView.deselectRow(at: indexPath, animated: true)
-            } else if cell.tag == Row.addAutofillCreditCardData.rawValue {
-                let amexCC = SecureVaultModels.CreditCard(cardNumber: "378282246310005", cardholderName: "Dax Duckling", cardSecurityCode: "123", expirationMonth: 12, expirationYear: 2025)
-                let visaCC = SecureVaultModels.CreditCard(cardNumber: "4222222222222", cardholderName: "Dax Duckling", cardSecurityCode: "123", expirationMonth: 1, expirationYear: 2026)
+            } else if cell.tag == Row.addAutofillCreditCards.rawValue {
+                let amexCC = SecureVaultModels.CreditCard(cardNumber: "378282246310005", cardholderName: "Dax Smith", cardSecurityCode: "123", expirationMonth: 12, expirationYear: 2025)
+                let visaCC = SecureVaultModels.CreditCard(cardNumber: "4222222222222", cardholderName: "Daxie Duck", cardSecurityCode: "123", expirationMonth: 1, expirationYear: 2026)
                 let mastercardCC = SecureVaultModels.CreditCard(cardNumber: "5555555555554444", cardholderName: "Dax Duckling", cardSecurityCode: "123", expirationMonth: nil, expirationYear: nil)
 
                 for creditCard in [amexCC, visaCC, mastercardCC] {
@@ -132,6 +108,47 @@ class AutofillDebugViewController: UITableViewController {
                     }
                 }
                 ActionMessageView.present(message: "Credit Cards added")
+            } else if cell.tag == Row.resetAutofillSettings.rawValue {
+                let autofillPixelReporter = AutofillPixelReporter(
+                        usageStore: AutofillUsageStore(),
+                        autofillEnabled: AppUserDefaults().autofillCredentialsEnabled,
+                        eventMapping: EventMapping<AutofillPixelEvent> { _, _, _, _ in })
+                autofillPixelReporter.resetStoreDefaults()
+
+                autofillSaveModalRejectionCount = 0
+                autofillSaveModalDisablePromptShown = false
+                autofillFirstTimeUser = true
+                _ = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager.deleteAllNeverPromptWebsites()
+
+                autofillCreditCardsSaveModalRejectionCount = 0
+                autofillCreditCardsSaveModalDisablePromptShown = false
+                autofillCreditCardsFirstTimeUser = true
+                ActionMessageView.present(message: "Autofill Settings reset")
+            } else if cell.tag == Row.resetEmailProtectionInContextSignUp.rawValue {
+                EmailManager().resetEmailProtectionInContextPrompt()
+                ActionMessageView.present(message: "Email Protection InContext Sign Up reset")
+            } else if cell.tag == Row.resetDaysSinceInstalledTo0.rawValue {
+                StatisticsUserDefaults().installDate = Date()
+            } else if cell.tag == Row.resetAutofillBrokenReports.rawValue {
+                let reporter = BrokenSiteReporter(pixelHandler: { _ in }, keyValueStoring: UserDefaults.standard, storageConfiguration: .autofillConfig)
+                let expiryDate = Calendar.current.date(byAdding: .day, value: 60, to: Date())!
+                _ = reporter.persistencyManager.removeExpiredItems(currentDate: expiryDate)
+                ActionMessageView.present(message: "Autofill Broken Reports reset")
+            } else if cell.tag == Row.resetAutofillSurveys.rawValue {
+                let autofillSurveyManager = AutofillSurveyManager()
+                autofillSurveyManager.resetSurveys()
+                ActionMessageView.present(message: "Autofill Surveys reset")
+            } else if cell.tag == Row.resetAutofillImportPromos.rawValue {
+                guard let keyValueStore = keyValueStore else {
+                    ActionMessageView.present(message: "Failed to reset Import Prompts")
+                    return
+                }
+                let importState = AutofillLoginImportState(keyValueStore: keyValueStore)
+                importState.hasImportedLogins = false
+                importState.isCredentialsImportPromoInBrowserPermanentlyDismissed = false
+                importState.isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed = false
+                try? keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
+                ActionMessageView.present(message: "Import Prompts reset")
             }
         }
     }

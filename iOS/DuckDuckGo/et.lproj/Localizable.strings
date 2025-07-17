@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Kuidas eksportida paroole Safarist:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Valige fail...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Valige fail, mis sisaldab Safarist või Chrome'ist eksporditud paroole. Tavaliselt on see ZIP- või CSV-fail.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import on lõpetatud!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Krediitkaardid";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Duplikaadid vahele jäetud";
@@ -1854,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Impordi paroolid";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Viige oma paroolid kiiresti ja turvaliselt üle teisest brauserist.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Impordi paroolid DuckDuckGosse";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Peate lubama VPN-i rakenduses DuckDuckGo.";
@@ -3600,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Jätka";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Krediitkaardid";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Paroolid";

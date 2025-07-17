@@ -19,6 +19,7 @@
 
 import DesignResourcesKit
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct FavoriteItemView: View {
     let favorite: Favorite
@@ -51,13 +52,21 @@ struct FavoriteItemView: View {
             Button {
                 onMenuAction?(.edit)
             } label: {
-                Label(UserText.favoriteMenuEdit, image: "Edit")
+                Label {
+                    Text(UserText.favoriteMenuEdit)
+                } icon: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.edit)
+                }
             }
 
             Button {
                 onMenuAction?(.delete)
             } label: {
-                Label(UserText.favoriteMenuRemove, image: "RemoveFavoriteMenuIcon")
+                Label {
+                    Text(UserText.favoriteMenuRemove)
+                } icon: {
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.favoriteRemove)
+                }
             }
         }
     }

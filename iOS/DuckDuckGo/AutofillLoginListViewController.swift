@@ -150,8 +150,9 @@ final class AutofillLoginListViewController: UIViewController {
     private lazy var headerViewFactory: AutofillHeaderViewFactoryProtocol = AutofillHeaderViewFactory(delegate: self)
     private var currentHeaderHostingController: UIViewController?
 
-    // This is used to prevent the Sync Promo from being displayed immediately after the Survey is dismissed
+    // This is used to prevent the next Promo from being displayed immediately after one has been dismissed
     private var surveyPromptPresented: Bool = false
+    private var importPromoPresented: Bool = false
 
     private lazy var lockedViewBottomConstraint: NSLayoutConstraint = {
         NSLayoutConstraint(item: tableView,
@@ -196,7 +197,7 @@ final class AutofillLoginListViewController: UIViewController {
         if secureVault == nil {
             Logger.autofill.fault("Failed to make vault")
         }
-        self.viewModel = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: secureVault, currentTabUrl: currentTabUrl, currentTabUid: currentTabUid, syncService: syncService)
+        self.viewModel = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: secureVault, currentTabUrl: currentTabUrl, currentTabUid: currentTabUid, syncService: syncService, keyValueStore: keyValueStore)
         self.syncService = syncService
         self.selectedAccount = selectedAccount
         self.openSearch = openSearch
@@ -413,13 +414,13 @@ final class AutofillLoginListViewController: UIViewController {
         }
     }
 
-    private func segueToFileImport() {
+    private func segueToFileImport(source: DataImportViewModel.ImportScreen = DataImportViewModel.ImportScreen.passwords) {
         let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
                                                   bookmarksDatabase: bookmarksDatabase,
                                                   favoritesDisplayMode: favoritesDisplayMode,
                                                   tld: tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
-                                                                importScreen: DataImportViewModel.ImportScreen.passwords,
+                                                                importScreen: source,
                                                                 syncService: syncService,
                                                                 keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
@@ -691,7 +692,15 @@ final class AutofillLoginListViewController: UIViewController {
             return
         }
 
-        if let survey = viewModel.getSurveyToPresent() {
+        if viewModel.shouldShowImportPasswordsPromo() {
+            if shouldUpdateHeaderView(for: .importPromo) {
+                configureTableHeaderView(for: .importPromo)
+                importPromoPresented = true
+            }
+            return
+        }
+
+        if let survey = viewModel.getSurveyToPresent(), !importPromoPresented {
             if shouldUpdateHeaderView(for: .survey(survey)) {
                 configureTableHeaderView(for: .survey(survey))
                 surveyPromptPresented = true
@@ -699,7 +708,7 @@ final class AutofillLoginListViewController: UIViewController {
             return
         }
 
-        if viewModel.shouldShowSyncPromo() && !surveyPromptPresented {
+        if viewModel.shouldShowSyncPromo(), !surveyPromptPresented, !importPromoPresented {
             if shouldUpdateHeaderView(for: .syncPromo(.passwords)) {
                 configureTableHeaderView(for: .syncPromo(.passwords))
             }
@@ -729,6 +738,11 @@ final class AutofillLoginListViewController: UIViewController {
         case .syncPromo(let promoType):
             currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .syncPromo(promoType))
             if let hostingController = currentHeaderHostingController as? UIHostingController<SyncPromoView> {
+                setupTableHeaderView(with: hostingController)
+            }
+        case .importPromo:
+            currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .importPromo)
+            if let hostingController = currentHeaderHostingController as? UIHostingController<ImportPromotionHeaderView> {
                 setupTableHeaderView(with: hostingController)
             }
         }
@@ -1107,6 +1121,8 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
         case .syncPromo(let touchpoint):
             segueToSync(source: "promotion_passwords")
             Pixel.fire(.syncPromoConfirmed, withAdditionalParameters: ["source": touchpoint.rawValue])
+        case .importPromo:
+            segueToFileImport(source: DataImportViewModel.ImportScreen.promo)
         }
     }
 
@@ -1120,6 +1136,8 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             viewModel.dismissSurvey(id: survey.id)
         case .syncPromo:
             viewModel.dismissSyncPromo()
+        case .importPromo:
+            viewModel.dismissImportPromo()
         }
     }
 }
@@ -1129,6 +1147,8 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
 extension AutofillLoginListViewController: DataImportViewControllerDelegate {
 
     func dataImportViewControllerDidFinish(_ viewController: DataImportViewController) {
+        clearTableHeaderView()
+        importPromoPresented = false
         viewModel.updateData()
     }
 }

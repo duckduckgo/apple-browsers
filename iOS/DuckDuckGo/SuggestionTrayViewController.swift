@@ -45,6 +45,14 @@ class SuggestionTrayViewController: UIViewController {
         autocompleteController != nil
     }
 
+    var isShowingFavoritesOverlay: Bool {
+        favoritesOverlay != nil
+    }
+
+    var isShowing: Bool {
+        isShowingAutocompleteSuggestions || isShowingFavoritesOverlay
+    }
+
     var isUsingNTPCompatibleStyling: Bool = false {
         didSet {
             favoritesOverlay?.isUsingNTPCompatibleStyling = isUsingNTPCompatibleStyling
@@ -201,7 +209,9 @@ class SuggestionTrayViewController: UIViewController {
         fullHeightSafeAreaConstraint.isActive = false
     }
     
-    func fill() {
+    func fill(bottomOffset: CGFloat = 0.0) {
+        additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: bottomOffset, right: 0)
+
         containerView.layer.shadowColor = UIColor.clear.cgColor
         containerView.layer.cornerRadius = 0
 

@@ -155,24 +155,21 @@ class SwitchBarTextEntryView: UIView {
     // MARK: - UI Updates
 
     private func updateForCurrentMode() {
-        textView.autocorrectionType = .no
-        textView.smartDashesType = .no
-        textView.smartQuotesType = .no
-        textView.smartInsertDeleteType = .no
-        textView.spellCheckingType = .no
-        textView.textContentType = .none
-
         switch currentMode {
         case .search:
             placeholderLabel.text = "Search..."
             textView.keyboardType = .webSearch
             textView.returnKeyType = .search
             textView.autocapitalizationType = .none
+            textView.autocorrectionType = .no
+            textView.spellCheckingType = .no
         case .aiChat:
-            placeholderLabel.text = "Ask Duck.ai..."
+            placeholderLabel.text = "Ask..."
             textView.keyboardType = .default
             textView.returnKeyType = .go
             textView.autocapitalizationType = .sentences
+            textView.autocorrectionType = .default
+            textView.spellCheckingType = .default
         }
 
         textView.reloadInputViews()

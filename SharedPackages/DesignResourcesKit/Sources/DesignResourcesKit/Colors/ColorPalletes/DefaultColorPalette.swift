@@ -98,6 +98,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         switch designSystemColor {
         case .urlBar: return urlBar
         case .accent: return accent
+        case .accentContentPrimary:
+            assertionFailure("This color should be used in experimental palette only.")
+            return accent
         case .alertGreen: return alertGreen
         case .alertYellow: return alertYellow
         case .background: return background
@@ -106,12 +109,18 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return background
         case .backgroundSheets: return backgroundSheets
         case .container: return container
+        case .highlightDecoration:
+            assertionFailure("This color should be used in experimental palette only.")
+            return lines
         case .icons: return icons
         case .iconsSecondary: return iconsSecondary
         case .lines: return lines
         case .border: return border
         case .panel: return panel
         case .surface: return surface
+        case .surfaceTertiary:
+            assertionFailure("This color should be used in experimental palette only.")
+            return surface
         case .textLink: return textLink
         case .textPrimary: return textPrimary
         case .textPlaceholder: return textPlaceholder
@@ -168,6 +177,10 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .buttonsDeleteGhostText: return buttonsDeleteGhostText
         case .buttonsDeleteGhostTextPressed: return buttonsDeleteGhostTextPressed
         case .buttonsDeleteGhostTextDisabled: return buttonsDeleteGhostTextDisabled
+
+        case .decorationPrimary, .decorationSecondary, .decorationTertiary:
+            assertionFailure("This color should be used in experimental palette only.")
+            return border
         }
     }
 

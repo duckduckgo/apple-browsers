@@ -18,6 +18,7 @@
 
 import SwiftUI
 
+/// [Updated color palette:](https://www.figma.com/design/3W4vi0zX8hrpQc7zInQQB6/🎨-Global-Colors---Styles?node-id=11-1&p=f&vars=1&var-id=5476-10186&m=dev)
 struct ExperimentalColorPalette: ColorPaletteDefinition {
 
     private static let x1F1F1F = Color(0x1F1F1F)
@@ -39,6 +40,8 @@ struct ExperimentalColorPalette: ColorPaletteDefinition {
     private static let urlBar = DynamicColor(lightColor: .white, darkColor: x474747)
 
     private static let surface = DynamicColor(lightColor: xF9F9F9, darkColor: x373737)
+    private static let surfaceTertiary = DynamicColor(lightColor: .white, darkColor: .x474747)
+
     private static let backdrop = DynamicColor(lightColor: xE0E0E0, darkColor: x080808)
     private static let background = DynamicColor(lightColor: xF2F2F2, darkColor: x282828)
     private static let backgroundTertiary = DynamicColor(lightColor: .white, darkColor: x474747)
@@ -48,7 +51,7 @@ struct ExperimentalColorPalette: ColorPaletteDefinition {
     // Shadow
     private static let shadowPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.04), darkColor: .shade(0.16))
     private static let shadowSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.08), darkColor: .shade(0.24))
-    private static let shadowTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.24), darkColor: .shade(0.48))
+    private static let shadowTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.16), darkColor: .shade(0.48))
 
     // Controls
     private static let controlsFillPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
@@ -66,6 +69,17 @@ struct ExperimentalColorPalette: ColorPaletteDefinition {
 
     // System
     private static let lines = DynamicColor(lightColor: x1F1F1F.opacity(0.09), darkColor: xF9F9F9.opacity(0.12))
+
+    // Decorations
+    private static let decorationPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.3), darkColor: xF9F9F9.opacity(0.36))
+    private static let decorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.48), darkColor: xF9F9F9.opacity(0.64))
+    private static let decorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.60), darkColor: xF9F9F9.opacity(0.74))
+
+    // Highlight
+    private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
+
+    // Accents
+    private static let accentContentPrimary = DynamicColor(lightColor: .white, darkColor: .black)
 
     static func dynamicColor(for color: DesignSystemColor) -> DynamicColor {
         switch color {
@@ -86,9 +100,15 @@ struct ExperimentalColorPalette: ColorPaletteDefinition {
         case .shadowPrimary: return shadowPrimary
         case .shadowSecondary: return shadowSecondary
         case .shadowTertiary: return shadowTertiary
+        case .surfaceTertiary: return surfaceTertiary
         case .controlsFillPrimary: return controlsFillPrimary
         case .controlsFillSecondary: return controlsFillSecondary
         case .controlsFillTertiary: return controlsFillTertiary
+        case .decorationPrimary: return decorationPrimary
+        case .decorationSecondary: return decorationSecondary
+        case .decorationTertiary: return decorationTertiary
+        case .highlightDecoration: return highlightDecoration
+        case .accentContentPrimary: return accentContentPrimary
 
         default:
             return DefaultColorPalette.dynamicColor(for: color)

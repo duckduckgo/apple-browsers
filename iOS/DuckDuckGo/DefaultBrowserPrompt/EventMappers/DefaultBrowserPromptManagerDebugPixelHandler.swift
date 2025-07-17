@@ -25,7 +25,7 @@ import SetDefaultBrowserCore
 final class DefaultBrowserPromptManagerDebugPixelHandler: EventMapping<DefaultBrowserManagerDebugEvent>, DefaultBrowserPromptEventMapping {
 
     public init() {
-        super.init { event, _, _, _ in
+        super.init { event, error, _, _ in
             switch event {
             case .successfulResult:
                 DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserSuccessfulResult)
@@ -34,7 +34,7 @@ final class DefaultBrowserPromptManagerDebugPixelHandler: EventMapping<DefaultBr
             case .rateLimitReachedNoExistingResultPersisted:
                 DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure)
             case .unknownError:
-                DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserUnknownFailure)
+                DailyPixel.fireDailyAndCount(pixel: .debugSetAsDefaultBrowserUnknownFailure, error: error)
             }
         }
     }

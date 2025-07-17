@@ -36,9 +36,14 @@ public protocol DBPUIViewModelDelegate: AnyObject {
     func matchRemovedByUser(with id: Int64) throws
 }
 
+public protocol DBPUIViewModelOpenFeedbackFormDelegate: AnyObject {
+    func openSendFeedbackForm()
+}
+
 public final class DBPUIViewModel {
 
     private weak var delegate: DBPUIViewModelDelegate?
+    private weak var feedbackFormDelegate: DBPUIViewModelOpenFeedbackFormDelegate?
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let contentScopeProperties: ContentScopeProperties
     private var communicationLayer: DBPUICommunicationLayer?
@@ -48,11 +53,13 @@ public final class DBPUIViewModel {
     private var editablePartialProfile: DBPUIEditablePartialProfile
 
     public init(delegate: DBPUIViewModelDelegate,
+                feedbackFormDelegate: DBPUIViewModelOpenFeedbackFormDelegate,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 privacyConfigManager: PrivacyConfigurationManaging,
                 contentScopeProperties: ContentScopeProperties) {
         self.delegate = delegate
+        self.feedbackFormDelegate = feedbackFormDelegate
         self.webUISettings = webUISettings
         self.pixelHandler = pixelHandler
         self.privacyConfigManager = privacyConfigManager
@@ -190,6 +197,10 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
         }
     }
 
+    public func openSendFeedbackModal() async {
+        feedbackFormDelegate?.openSendFeedbackForm()
+    }
+
     public func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata {
         // Return no information as we think this is unused
         DBPUIDebugMetadata(lastRunAppVersion: "")
@@ -198,10 +209,6 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
     public func startScanAndOptOut() -> Bool {
         // No op, as we decided the web UI shouldn't issue commands directly
         return true
-    }
-
-    public func openSendFeedbackModal() async {
-        // No op, as there's now a web feedback model
     }
 
     public func applyVPNBypassSetting(_ bypass: Bool) async {

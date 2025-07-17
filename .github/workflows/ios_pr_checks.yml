@@ -294,9 +294,28 @@ jobs:
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
+  verify-content-scope-scripts:
+    name: 'Verify content-scope-scripts bundle'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      - name: Build content-scope-scripts
+        run: |
+          npm ci
+          npm run build-content-scope-scripts
+      - name: Verify clean tree
+        run: |
+          git update-index --refresh
+          git diff-index --quiet HEAD --
+
   create-asana-task:
     name: Create Asana Task
-    needs: [unit-tests, shellcheck, release-build]
+    needs: [unit-tests, shellcheck, release-build, verify-content-scope-scripts]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
 
@@ -317,7 +336,7 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [unit-tests, shellcheck, release-build]
+    needs: [unit-tests, shellcheck, release-build, verify-content-scope-scripts]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1 && inputs.skip-asana != true
 

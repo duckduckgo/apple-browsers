@@ -11,6 +11,9 @@
          location = "group:BrowserServicesKit">
       </FileRef>
       <FileRef
+         location = "group:ContentScopeScripts">
+      </FileRef>
+      <FileRef
          location = "group:DataBrokerProtectionCore">
       </FileRef>
       <FileRef

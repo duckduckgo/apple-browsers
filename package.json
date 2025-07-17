@@ -4,8 +4,13 @@
   "private": true,
   "workspaces": [
     "iOS",
-    "macOS"
+    "macOS",
+    "SharedPackages/ContentScopeScripts"
   ],
+  "scripts": {
+    "build-content-scope-scripts": "npm run build --workspace=SharedPackages/ContentScopeScripts",
+    "postinstall": "npm run build-content-scope-scripts"
+  },
   "dependencies": {
     "@duckduckgo/content-scope-scripts": "github:duckduckgo/content-scope-scripts#pr-releases/pr-1808"
   }

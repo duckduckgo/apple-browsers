@@ -1,0 +1,11 @@
+{
+  "name": "content-scope-scripts-local",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npm run copy-content-scope-scripts",
+    "copy-content-scope-scripts": "node scripts/copy-content-scope-scripts.js",
+    "clean": "rm -rf Sources/ContentScopeScripts/Resources/*"
+  },
+  "devDependencies": {}
+} 

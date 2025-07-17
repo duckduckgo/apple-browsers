@@ -476,9 +476,28 @@ jobs:
           git update-index --refresh
           git diff-index --quiet HEAD --
 
+  verify-content-scope-scripts:
+    name: 'Verify content-scope-scripts bundle'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+      - name: Build content-scope-scripts
+        run: |
+          npm ci
+          npm run build-content-scope-scripts
+      - name: Verify clean tree
+        run: |
+          git update-index --refresh
+          git diff-index --quiet HEAD --
+
   create-asana-task:
     name: Create Asana Task
-    needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
+    needs: [bats, tests, release-build, verify-autoconsent-bundle, verify-content-scope-scripts, private-api]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1 && inputs.skip-asana != true
 

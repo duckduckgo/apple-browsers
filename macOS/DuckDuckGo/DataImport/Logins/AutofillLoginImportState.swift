@@ -62,10 +62,9 @@ final class AutofillLoginImportState: AutofillLoginImportStateProvider, Autofill
         }
     }
 
-    public var isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed: Bool {
-        get { false }
-        set {}
-    }
+    public var isCredentialsImportPromoInPasswordsScreenPermanentlyDismissed: Bool = false
+
+    public var credentialsImportPromptPresentationCount: Int = 0
 
     init(userDefaults: UserDefaults = .standard, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.userDefaults = userDefaults

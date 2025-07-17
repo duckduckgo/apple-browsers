@@ -164,7 +164,7 @@ final class FirefoxLoginReader {
             case .deleted:
                 return nil // Filter out deleted entries
             case .unparsed:
-                return nil // Filter out unparsed entries and send an error
+                return nil // Filter out unparsed entries and TODO: send an error
             }
         }
 
@@ -241,23 +241,15 @@ private enum FirefoxLoginEntry: Decodable {
     }
 
     init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
+        // Try to decode as active login - this will fail if required fields are missing
         if let activeLogin = try? ActiveLogin(from: decoder) {
-            // Try to decode as active login - this will fail if required fields are missing
-            let activeLogin = try ActiveLogin(from: decoder)
             self = .active(activeLogin)
-        } else if let deleted = try container.decodeIfPresent(Bool.self, forKey: .deleted), deleted {
             // Check if this is a deleted entry
-            let deletedLogin = try DeletedLogin(from: decoder)
+        } else if let deletedLogin = try? DeletedLogin(from: decoder), deletedLogin.deleted {
             self = .deleted(deletedLogin)
         } else {
             self = .unparsed
         }
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case deleted
     }
 }
 

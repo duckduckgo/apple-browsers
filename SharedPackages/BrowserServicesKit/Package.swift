@@ -63,8 +63,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "BloomFilter",
-            url: "https://github.com/duckduckgo/bloom_cpp/releases/download/3.0.3/BloomFilter.xcframework.zip",
-            checksum: "0fcdee7038077bd9db45beb6d48831e5efb0c6ea35a57acf629b8f3b8b0faf4b"
+            url: "https://github.com/duckduckgo/bloom_cpp/releases/download/3.0.4/BloomFilter.xcframework.zip",
+            checksum: "137fefd4a0ccf79560d7071d3387475806b84a7719785a6f80ea9c1d838c7d6b"
         ),
         .binaryTarget(
             name: "GRDB",

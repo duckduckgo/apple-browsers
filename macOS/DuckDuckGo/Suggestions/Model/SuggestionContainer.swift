@@ -58,7 +58,6 @@ final class SuggestionContainer {
 
     private let urlSession: URLSession
 
-    @MainActor
     init(
         openTabsProvider: OpenTabsProvider? = nil,
         suggestionLoading: SuggestionLoading? = nil,
@@ -83,7 +82,7 @@ final class SuggestionContainer {
         self.windowControllersManager = windowControllersManager
     }
 
-    func getSuggestions(for query: String, useCachedData: Bool = false) {
+    func getSuggestions(for query: String, useCachedData: Bool = false, completion: ((SuggestionResult?) -> Void)? = nil) {
         latestQuery = query
 
         // Don't use cache by default
@@ -94,11 +93,15 @@ final class SuggestionContainer {
         loading.getSuggestions(query: query, usingDataSource: self) { [weak self] result, error in
             dispatchPrecondition(condition: .onQueue(.main))
 
-            guard let self, self.latestQuery == query else { return }
+            guard let self, self.latestQuery == query else {
+                completion?(nil)
+                return
+            }
             guard let result else {
                 self.result = nil
                 Logger.general.error("Suggestions: Failed to get suggestions - \(String(describing: error))")
                 PixelKit.fire(DebugEvent(GeneralPixel.suggestionsFetchFailed, error: error))
+                completion?(nil)
                 return
             }
 
@@ -108,6 +111,7 @@ final class SuggestionContainer {
             }
 
             self.result = result
+            completion?(result)
         }
     }
 
@@ -143,6 +147,7 @@ struct OpenTab: BrowserTab, Hashable {
     let url: URL
 
 }
+
 extension HistoryCoordinator: SuggestionContainer.HistoryProvider {
     func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] {
         history ?? []

@@ -67,11 +67,19 @@ final class FirefoxBookmarksReader {
     private var currentOperationType: ImportError.OperationType = .copyTemporaryFile
     private let otherBookmarksFolderTitle: String
     private let mobileBookmarksFolderTitle: String
+    private let bookmarksMenuFolderTitle: String
+    private let featureFlagger: FeatureFlagger
 
-    init(firefoxDataDirectoryURL: URL, otherBookmarksFolderTitle: String = UserText.otherBookmarksImportedFolderTitle, mobileBookmarksFolderTitle: String = UserText.mobileBookmarksImportedFolderTitle) {
+    init(firefoxDataDirectoryURL: URL,
+         otherBookmarksFolderTitle: String = UserText.otherBookmarksImportedFolderTitle,
+         mobileBookmarksFolderTitle: String = UserText.mobileBookmarksImportedFolderTitle,
+         bookmarksMenuFolderTitle: String = "Bookmarks menu", // Replace with localized string after copy review: https://app.asana.com/1/137249556945/project/1201048563534612/task/1210728265847799?focus=true
+         featureFlagger: FeatureFlagger) {
         self.firefoxPlacesDatabaseURL = firefoxDataDirectoryURL.appendingPathComponent(Constants.placesDatabaseName)
         self.otherBookmarksFolderTitle = otherBookmarksFolderTitle
         self.mobileBookmarksFolderTitle = mobileBookmarksFolderTitle
+        self.bookmarksMenuFolderTitle = bookmarksMenuFolderTitle
+        self.featureFlagger = featureFlagger
     }
 
     func readBookmarks() -> DataImportResult<ImportedBookmarks> {
@@ -187,14 +195,38 @@ final class FirefoxBookmarksReader {
         let unfiledBookmarksAndFolders = children(parentID: unfiled?.id, bookmarks: databaseBookmarks)
             + otherFolders.flatMap { children(parentID: $0.id, bookmarks: databaseBookmarks) }
 
-        let toolbarFolder = ImportedBookmarks.BookmarkOrFolder(name: "bar",
-                                                               type: .folder,
-                                                               urlString: nil,
-                                                               children: toolbarBookmarksAndFolders + menuBookmarksAndFolders)
+        let folders: ImportedBookmarks.TopLevelFolders
+        if featureFlagger.isFeatureOn(.updateFirefoxBookmarksImport) {
+            let toolbarFolder = ImportedBookmarks.BookmarkOrFolder(name: "bar",
+                                                                   type: .folder,
+                                                                   urlString: nil,
+                                                                   children: toolbarBookmarksAndFolders)
 
-        let unfiledFolder = ImportedBookmarks.BookmarkOrFolder(name: self.otherBookmarksFolderTitle, type: .folder, urlString: nil, children: unfiledBookmarksAndFolders)
-        let syncedFolder = ImportedBookmarks.BookmarkOrFolder(name: self.mobileBookmarksFolderTitle, type: .folder, urlString: nil, children: syncedBookmarksAndFolders)
-        let folders = ImportedBookmarks.TopLevelFolders(bookmarkBar: toolbarFolder, otherBookmarks: unfiledFolder, syncedBookmarks: syncedFolder)
+            var otherBookmarksChildren: [ImportedBookmarks.BookmarkOrFolder] = []
+
+            if !menuBookmarksAndFolders.isEmpty {
+                let bookmarksMenuFolder = ImportedBookmarks.BookmarkOrFolder(name: self.bookmarksMenuFolderTitle, type: .folder, urlString: nil, children: menuBookmarksAndFolders)
+                otherBookmarksChildren.append(bookmarksMenuFolder)
+            }
+
+            if !unfiledBookmarksAndFolders.isEmpty {
+                let unfiledFolder = ImportedBookmarks.BookmarkOrFolder(name: self.otherBookmarksFolderTitle, type: .folder, urlString: nil, children: unfiledBookmarksAndFolders)
+                otherBookmarksChildren.append(unfiledFolder)
+            }
+
+            let otherBookmarksFolder = ImportedBookmarks.BookmarkOrFolder(name: "", type: .folder, urlString: nil, children: otherBookmarksChildren)
+            let syncedFolder = ImportedBookmarks.BookmarkOrFolder(name: self.mobileBookmarksFolderTitle, type: .folder, urlString: nil, children: syncedBookmarksAndFolders)
+            folders = ImportedBookmarks.TopLevelFolders(bookmarkBar: toolbarFolder, otherBookmarks: otherBookmarksFolder, syncedBookmarks: syncedFolder)
+        } else {
+            let toolbarFolder = ImportedBookmarks.BookmarkOrFolder(name: "bar",
+                                                                   type: .folder,
+                                                                   urlString: nil,
+                                                                   children: toolbarBookmarksAndFolders + menuBookmarksAndFolders)
+
+            let unfiledFolder = ImportedBookmarks.BookmarkOrFolder(name: self.otherBookmarksFolderTitle, type: .folder, urlString: nil, children: unfiledBookmarksAndFolders)
+            let syncedFolder = ImportedBookmarks.BookmarkOrFolder(name: self.mobileBookmarksFolderTitle, type: .folder, urlString: nil, children: syncedBookmarksAndFolders)
+            folders = ImportedBookmarks.TopLevelFolders(bookmarkBar: toolbarFolder, otherBookmarks: unfiledFolder, syncedBookmarks: syncedFolder)
+        }
 
         return ImportedBookmarks(topLevelFolders: folders)
     }

@@ -47,11 +47,11 @@ final class DuckPlayerTests: XCTestCase {
         let otherFaviconView = FaviconView(url: URL(string: "http://example.com")!)
 
         duckPlayer.mode = .enabled
-        XCTAssertEqual(duckPlayer.image(for: duckPlayerFaviconView)?.tiffRepresentation, NSImage.duckPlayer.tiffRepresentation)
+        XCTAssertImagesEqual(duckPlayer.image(for: duckPlayerFaviconView), NSImage.duckPlayer)
         XCTAssertNil(duckPlayer.image(for: otherFaviconView))
 
         duckPlayer.mode = .alwaysAsk
-        XCTAssertEqual(duckPlayer.image(for: duckPlayerFaviconView)?.tiffRepresentation, NSImage.duckPlayer.tiffRepresentation)
+        XCTAssertImagesEqual(duckPlayer.image(for: duckPlayerFaviconView), NSImage.duckPlayer)
         XCTAssertNil(duckPlayer.image(for: otherFaviconView))
 
         duckPlayer.mode = .disabled

@@ -24,34 +24,18 @@ import SwiftUI
 /// Manages the Dax logo view display and positioning
 final class DaxLogoManager {
     
-    // MARK: - Types
-    
-    struct Configuration {
-        let logoOffset: CGFloat
-        
-        static let `default` = Configuration(logoOffset: 18)
-    }
-    
     // MARK: - Properties
-    
-    private let configuration: Configuration
-    private var daxLogoHostingController: UIHostingController<NewTabPageDaxLogoView>?
-    private(set) var logoCenterYConstraint: NSLayoutConstraint?
-    
+
+    private var daxLogoHostingController: UIHostingController<FullHeightLogoView>?
+
     var logoView: UIView? {
         daxLogoHostingController?.view
     }
     
-    // MARK: - Initialization
-    
-    init(configuration: Configuration = .default) {
-        self.configuration = configuration
-    }
-    
     // MARK: - Public Methods
     
-    func installInViewController(_ viewController: UIViewController) {
-        let daxLogoView = NewTabPageDaxLogoView()
+    func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {
+        let daxLogoView = FullHeightLogoView()
         let hostingController = UIHostingController(rootView: daxLogoView)
         daxLogoHostingController = hostingController
         
@@ -59,16 +43,20 @@ final class DaxLogoManager {
         viewController.addChild(hostingController)
         viewController.view.addSubview(hostingController.view)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Offset so the logo is displayed on the same height as the NTP logo
-        logoCenterYConstraint = hostingController.view.centerYAnchor.constraint(
-            equalTo: viewController.view.centerYAnchor,
-            constant: configuration.logoOffset
-        )
-        
+
+        let centeringGuide = UILayoutGuide()
+        viewController.view.addLayoutGuide(centeringGuide)
+
         NSLayoutConstraint.activate([
-            hostingController.view.centerXAnchor.constraint(equalTo: viewController.view.centerXAnchor),
-            logoCenterYConstraint!
+            viewController.view.leadingAnchor.constraint(equalTo: centeringGuide.leadingAnchor),
+            viewController.view.trailingAnchor.constraint(equalTo: centeringGuide.trailingAnchor),
+            topView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
+            viewController.view.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor),
+
+            hostingController.view.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
+            hostingController.view.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor),
+            hostingController.view.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
+            hostingController.view.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor)
         ])
 
         viewController.view.sendSubviewToBack(hostingController.view)
@@ -80,6 +68,16 @@ final class DaxLogoManager {
         daxLogoHostingController?.view.removeFromSuperview()
         daxLogoHostingController?.removeFromParent()
         daxLogoHostingController = nil
-        logoCenterYConstraint = nil
+    }
+}
+
+
+// Makes the logo view expand to fill the full height,
+// allowing to automatically adjust for keyboard.
+private struct FullHeightLogoView: View {
+    var body: some View {
+        NewTabPageDaxLogoView()
+            .padding(24)
+            .scaledToFit()
     }
 }

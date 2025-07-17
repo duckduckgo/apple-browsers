@@ -305,7 +305,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         let (videoID, _) = navigationAction.request.url?.youtubeVideoParams ?? ("", nil)
         let youtubeURL = URL.youtube(videoID)
         webView.load(URLRequest(url: youtubeURL))
-        _ = handleURLChange(webView: webView, previousURL: nil, newURL: youtubeURL)
+        _ = handleURLChange(webView: webView, previousURL: nil, newURL: youtubeURL, isNavigationError: false)
         return
     }
 
@@ -315,9 +315,15 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Parameter webView: The `WKWebView` whose URL has changed.
     /// - Returns: A result indicating whether the URL change was handled.
     @MainActor
-    func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
+    func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?, isNavigationError: Bool) -> DuckPlayerNavigationHandlerURLChangeResult {
 
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return .notHandled(.featureOff) }
+
+        // Don't trigger DuckPlayer if there was a navigation error
+        if isNavigationError {
+            toggleMediaPlayback(webView, pause: true)
+            return .notHandled(.invalidURL)
+        }
 
         // Notify user script of URL change for all URLs
         notifyUserScriptOfURLChange(webView: webView, newURL: newURL)
@@ -434,7 +440,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         lastHandledVideoID = nil
         duckPlayer.dismissPill(reset: true, animated: false, programatic: true, skipTransition: true)
-        _ = handleURLChange(webView: webView, previousURL: nil, newURL: webView.url)
+        _ = handleURLChange(webView: webView, previousURL: nil, newURL: webView.url, isNavigationError: false)
 
     }
 

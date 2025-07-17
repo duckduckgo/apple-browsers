@@ -132,7 +132,7 @@ struct DataImportViewModel {
     /// collected import summary for current import operation per selected import source
     private(set) var summary: [DataTypeImportResult]
 
-    private(set) var errors: [[DataType: any DataImportError]] = []
+    var errors: [[DataType: any DataImportError]] = []
 
     private var userReportText: String = ""
 
@@ -433,19 +433,23 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
     case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi:
         ChromiumDataImporter(profile: profile,
                              loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
-                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
+                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                             featureFlagger: Application.appDelegate.featureFlagger)
     case .yandex:
         YandexDataImporter(profile: profile,
-                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
+                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                           featureFlagger: Application.appDelegate.featureFlagger)
     case .firefox, .tor:
         FirefoxDataImporter(profile: profile,
                             primaryPassword: primaryPassword,
                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
-                            faviconManager: NSApp.delegateTyped.faviconManager)
+                            faviconManager: NSApp.delegateTyped.faviconManager,
+                            featureFlagger: Application.appDelegate.featureFlagger)
     case .safari, .safariTechnologyPreview:
         SafariDataImporter(profile: profile,
-                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
+                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                           featureFlagger: Application.appDelegate.featureFlagger)
     }
 }
 

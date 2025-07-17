@@ -74,6 +74,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             onboardingNavigationDelegate: CapturingOnboardingNavigation(),
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
+            windowControllersManager: WindowControllersManagerMock(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             fireproofDomains: MockFireproofDomains(domains: []),

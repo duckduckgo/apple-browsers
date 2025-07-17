@@ -1281,7 +1281,7 @@ enum GeneralPixel: PixelKitEventV2 {
             return params
 
         case .favoritesImportSucceeded(source: _, sourceVersion: let version, favoritesBucket: let bucket):
-            var params = ["saved_favorites": bucket.description]
+            var params = [PixelKit.Parameters.importedFavorites: bucket.description]
 
             if let version {
                 params[PixelKit.Parameters.sourceBrowserVersion] = version

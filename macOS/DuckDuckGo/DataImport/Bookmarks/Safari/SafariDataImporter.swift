@@ -22,6 +22,11 @@ import BrowserServicesKit
 
 final class SafariDataImporter: DataImporter {
 
+    enum Constants {
+        static let bookmarksFileName = "Bookmarks.plist"
+        static let maxFavoritesCount = 12
+    }
+
     @MainActor
     static func requestDataDirectoryPermission(for fileUrl: URL) -> URL? {
         let openPanel = NSOpenPanel()
@@ -62,10 +67,8 @@ final class SafariDataImporter: DataImporter {
         }
     }
 
-    static let bookmarksFileName = "Bookmarks.plist"
-
     private var fileUrl: URL {
-        profile.profileURL.appendingPathComponent(Self.bookmarksFileName)
+        profile.profileURL.appendingPathComponent(Self.Constants.bookmarksFileName)
     }
 
     func validateAccess(for types: Set<DataImport.DataType>) -> [DataImport.DataType: any DataImportError]? {
@@ -91,7 +94,7 @@ final class SafariDataImporter: DataImporter {
 
         switch bookmarkResult {
         case .success(let bookmarks):
-            let maxFavoritesCount = updateSafariBookmarksImport ? 12 : nil
+            let maxFavoritesCount = updateSafariBookmarksImport ? Constants.maxFavoritesCount : nil
             let bookmarksSummary = bookmarkImporter.importBookmarks(bookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: maxFavoritesCount)
 
             await importFavicons(from: profile.profileURL)

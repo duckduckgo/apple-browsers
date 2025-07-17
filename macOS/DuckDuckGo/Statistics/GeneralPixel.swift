@@ -258,6 +258,7 @@ enum GeneralPixel: PixelKitEventV2 {
     case passwordImportKeychainPromptDenied
 
     // Autocomplete
+    // See macOS/PixelDefinitions/pixels/suggestion_pixels.json5
     case autocompleteClickPhrase(from: AutocompleteSource)
     case autocompleteClickWebsite(from: AutocompleteSource)
     case autocompleteClickBookmark(from: AutocompleteSource)

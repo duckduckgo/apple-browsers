@@ -138,6 +138,7 @@ enum NewTabPagePixel: PixelKitEventV2 {
 
     case newTabPageExceptionReported
 
+    // See macOS/PixelDefinitions/pixels/new_tab_page_pixels.json5
     case searchSubmitted
     case promptSubmitted
     case omnibarModeChanged(mode: OmnibarMode)

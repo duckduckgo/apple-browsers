@@ -472,18 +472,12 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             macOS/package-lock.json
-      - name: Install root dependencies 
-        working-directory: .
-        run: npm ci
-      - name: Install macOS dependencies
-        working-directory: macOS
+      - name: Install dependencies 
         run: npm ci
       - name: Build content-scope-scripts bundle
-        working-directory: .
         run: npm run build-content-scope-scripts
       - name: Build autoconsent bundle
-        working-directory: macOS
-        run: npm run rebuild-autoconsent
+        run: npm run rebuild-autoconsent --workspace=macOS
       - name: Verify clean tree
         run: |
           git update-index --refresh

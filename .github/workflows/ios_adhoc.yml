@@ -52,8 +52,6 @@ jobs:
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
 
-      # Add the commit SHA to Info.plist for use by builds that display it in
-      # their about screen (currently the alpha build)
       - name: Add commit SHA to plist
         run: |
           echo "Setting DDG_COMMIT_SHA to ${{ github.sha }}"

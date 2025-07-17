@@ -53,7 +53,7 @@ let package = Package(
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.5.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
-        .package(path: "../ContentScopeScriptsPackage"),
+        .package(path: "../ContentScopeScripts"),
         .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.4.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
@@ -75,7 +75,7 @@ let package = Package(
             name: "BrowserServicesKit",
             dependencies: [
                 .product(name: "Autofill", package: "duckduckgo-autofill"),
-                .product(name: "ContentScopeScripts", package: "ContentScopeScriptsPackage"),
+                .product(name: "ContentScopeScripts", package: "ContentScopeScripts"),
                 "Persistence",
                 "TrackerRadarKit",
                 "BloomFilterWrapper",

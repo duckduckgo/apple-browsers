@@ -6,7 +6,11 @@ defaults:
 
 on:
   push:
-    branches: [main]
+    # TODO: Replace with only `main`
+    branches: [ main, "sam/deploy-alpha-on-main-branch-updates" ]
+    paths:
+      - 'SharedPackages/**'
+      - 'iOS/**'
   workflow_dispatch:
     inputs:
       destination:
@@ -214,7 +218,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         current_commit="${{ github.sha }}"
-        latest_commit=$(git rev-parse origin/main)
+        # TODO: Replace with `main` branch check
+        latest_commit=$(git rev-parse origin/sam/deploy-alpha-on-main-branch-updates)
         
         echo "Current workflow commit: $current_commit"
         echo "Latest commit on main: $latest_commit"

@@ -669,7 +669,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private func contractAskAIChatButton() {
         askAIChatButton.backgroundColor = .clear
         askAIChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
-        askAIChatButton.toolTip = UserText.aiChatAddressBarShortcutTooltip
+        askAIChatButton.toolTip = ShortcutTooltip.askAIChat.value
 
         askAIChatButton.isEnabled = true
         askAIChatButton.state = .off
@@ -1217,10 +1217,10 @@ final class AddressBarButtonsViewController: NSViewController {
             } else if aiChatMenuConfig.openAIChatInSidebar, case .url = tab.content {
                 aiChatButton.toolTip = UserText.aiChatOpenSidebarButton
             } else {
-                aiChatButton.toolTip = isTextFieldEditorFirstResponder ? UserText.aiChatAddressBarShortcutTooltip : UserText.aiChatAddressBarTooltip
+                aiChatButton.toolTip = isTextFieldEditorFirstResponder ? ShortcutTooltip.askAIChat.value : ShortcutTooltip.newAIChatTab.value
             }
         } else {
-            aiChatButton.toolTip = isTextFieldEditorFirstResponder ? UserText.aiChatAddressBarShortcutTooltip : UserText.aiChatAddressBarTooltip
+            aiChatButton.toolTip = isTextFieldEditorFirstResponder ? ShortcutTooltip.askAIChat.value : ShortcutTooltip.newAIChatTab.value
         }
     }
 

@@ -211,18 +211,25 @@ jobs:
     - name: Check out the code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 2
+        fetch-depth: 10
 
     - name: Check for newer commits and rerun if needed
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         current_commit="${{ github.sha }}"
-        # TODO: Replace with `main` branch check
-        latest_commit=$(git rev-parse origin/sam/deploy-alpha-on-main-branch-updates)
+        branch_name="sam/deploy-alpha-on-main-branch-updates"  # TODO: Replace with `main`
+        
+        echo "Fetching latest changes from origin/${branch_name}..."
+        if ! git fetch origin "${branch_name}"; then
+          echo "❌ Failed to fetch latest changes from origin/${branch_name}"
+          exit 1
+        fi
+        
+        latest_commit=$(git rev-parse "origin/${branch_name}")
         
         echo "Current workflow commit: $current_commit"
-        echo "Latest commit on main: $latest_commit"
+        echo "Latest commit on ${branch_name}: $latest_commit"
         
         if [ "$current_commit" != "$latest_commit" ]; then
           echo "Newer commit detected. Triggering new workflow run..."

@@ -68,6 +68,26 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Check for active upload job
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |        
+        # Check for any in-progress upload jobs - if one is found then we can
+        # skip doing this build, since the workflow will check at the end of the
+        # upload whether a re-build needs to happen.
+        active_runs=$(gh run list \
+          --workflow="ios_alpha.yml" \
+          --status="in_progress" \
+          --json="databaseId,jobs" \
+          --jq='.[].jobs[] | select(.name == "Upload to TestFlight" and .status == "in_progress") | .name')
+        
+        if [ -n "$active_runs" ]; then
+          echo "🚫 Bailing out early - the rerun logic will handle this commit once upload completes."
+          exit 0
+        else
+          echo "✅ No active upload jobs found. Proceeding with build..."
+        fi
+
     - name: Set cache key hash
       id: cache-key
       run: |

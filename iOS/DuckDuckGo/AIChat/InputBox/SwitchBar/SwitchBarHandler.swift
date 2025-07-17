@@ -115,7 +115,6 @@ final class SwitchBarHandler: SwitchBarHandling {
     init(voiceSearchHelper: VoiceSearchHelperProtocol, storage: KeyValueStoring) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
-        restoreToggleState()
     }
 
     // MARK: - SwitchBarHandling Implementation

@@ -5,8 +5,31 @@ const path = require('path');
 
 // Paths
 const ROOT_DIR = path.resolve(__dirname, '../../..');
-const SOURCE_DIR = path.join(ROOT_DIR, 'node_modules/@duckduckgo/content-scope-scripts/build/apple');
+const PACKAGE_DIR = path.join(ROOT_DIR, 'node_modules/@duckduckgo/content-scope-scripts');
+
+// Try both possible paths (build/apple for older versions, apple for newer PR)
+const POSSIBLE_SOURCE_DIRS = [
+    path.join(PACKAGE_DIR, 'build/apple'),
+    path.join(PACKAGE_DIR, 'apple')
+];
+
+let SOURCE_DIR = null;
+for (const dir of POSSIBLE_SOURCE_DIRS) {
+    if (fs.existsSync(dir)) {
+        SOURCE_DIR = dir;
+        break;
+    }
+}
+
 const TARGET_DIR = path.join(__dirname, '../Sources/ContentScopeScripts/Resources');
+
+if (!SOURCE_DIR) {
+    console.error('Could not find content-scope-scripts directory in any of these locations:');
+    POSSIBLE_SOURCE_DIRS.forEach(dir => console.error(`  - ${dir}`));
+    process.exit(1);
+}
+
+console.log(`Found content-scope-scripts at: ${SOURCE_DIR}`);
 
 function copyRecursive(src, dest) {
     if (!fs.existsSync(src)) {

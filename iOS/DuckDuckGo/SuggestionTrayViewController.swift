@@ -209,7 +209,9 @@ class SuggestionTrayViewController: UIViewController {
         fullHeightSafeAreaConstraint.isActive = false
     }
     
-    func fill() {
+    func fill(bottomOffset: CGFloat = 0.0) {
+        additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: bottomOffset, right: 0)
+
         containerView.layer.shadowColor = UIColor.clear.cgColor
         containerView.layer.cornerRadius = 0
 

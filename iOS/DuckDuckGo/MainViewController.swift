@@ -1453,7 +1453,8 @@ class MainViewController: UIViewController {
         if AppWidthObserver.shared.isLargeWidth {
             self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 32, useActiveShadow: isExperimentalAppearanceEnabled)
         } else {
-            self.suggestionTrayController?.fill()
+            let bottomOmniBarHeight = appSettings.currentAddressBarPosition.isBottom ? omniBar.barView.expectedHeight : 0
+            self.suggestionTrayController?.fill(bottomOffset: bottomOmniBarHeight)
         }
     }
     

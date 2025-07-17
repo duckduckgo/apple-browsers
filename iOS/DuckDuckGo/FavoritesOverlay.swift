@@ -41,6 +41,8 @@ class FavoritesOverlay: UIViewController {
     private var renderer: FavoritesHomeViewSectionRenderer!
     private let appSettings: AppSettings
 
+    private lazy var borderView = StyledTopBottomBorderView()
+
     var isUsingNTPCompatibleStyling: Bool {
         get { renderer.isUsingNTPCompatibleStyling }
         set { renderer.isUsingNTPCompatibleStyling = newValue }
@@ -71,6 +73,8 @@ class FavoritesOverlay: UIViewController {
         collectionView.backgroundColor = .clear
 
         view.addSubview(collectionView)
+        borderView.insertSelf(into: view)
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
 
         renderer.install(into: self)
         

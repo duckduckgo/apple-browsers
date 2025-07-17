@@ -755,9 +755,7 @@ protocol NewWindowPolicyDecisionMaker {
         let canGoForward = webView.canGoForward
         let canReload = {
             switch content {
-            case .url(let url, _, _):
-                return !(url.isDuckPlayer || url.isDuckURLScheme)
-            case .history:
+            case .url, .history, .aiChat:
                 return true
             default:
                 return false

@@ -27,7 +27,7 @@ extension WKWebView {
         }!
         let pid = processInfo.value(forKey: "pid") as! pid_t
 
-        NSRunningApplication(processIdentifier: pid)!.forceTerminate()
+        kill(pid, SIGTERM)
     }
 
 }

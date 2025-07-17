@@ -20,6 +20,7 @@
 
 import Combine
 import Common
+import os.log
 import Swifter
 import WebKit
 import XCTest
@@ -525,8 +526,9 @@ extension DistributedNavigationDelegateTestsBase {
     }
 
     func printEncoded(responder idx: Int = 0) {
-        print("Responder #\(idx) history encoded:")
-        print(encodedResponderHistory(at: idx))
+        Logger.navigation.error("Responder #\(idx) history encoded:")
+        let encodedHistory = encodedResponderHistory(at: idx)
+        Logger.navigation.error("\(encodedHistory)")
     }
 
 }

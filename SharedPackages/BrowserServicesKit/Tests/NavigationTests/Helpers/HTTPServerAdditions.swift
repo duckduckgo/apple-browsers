@@ -56,7 +56,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import Foundation
+import os.log
 @testable import Swifter
+
+extension Logger {
+    static let httpServer = Logger(subsystem: "HttpServer", category: "")
+}
 
 open class SafeHttpServer {
 
@@ -159,6 +164,7 @@ open class SafeHttpServer {
         let address = forceIPv4 ? listenAddressIPv4 : listenAddressIPv6
         self.socket = try Socket.tcpSocketForListen(port, forceIPv4, SOMAXCONN, address)
         self.state = .running
+        Logger.httpServer.debug("HttpServer started on \(address ?? "localhost"):\(port)")
         DispatchQueue.global(qos: priority).async { [weak self] in
             guard let strongSelf = self else { return }
             guard strongSelf.operating else { return }
@@ -183,6 +189,7 @@ open class SafeHttpServer {
 
     public func stop() {
         guard self.operating else { return }
+        Logger.httpServer.debug("HttpServer stopping…")
         self.state = .stopping
         self.queue.sync {
             let sockets = self.sockets
@@ -194,6 +201,7 @@ open class SafeHttpServer {
             socket.close()
         }
         self.state = .stopped
+        Logger.httpServer.debug("HttpServer stopped")
     }
 
     open func dispatch(_ request: HttpRequest) -> ([String: String], (HttpRequest) -> HttpResponse) {
@@ -220,13 +228,17 @@ open class SafeHttpServer {
             let (params, handler) = self.dispatch(request)
             request.params = params
             let response = handler(request)
+            
+            let headersString = response.headers().map { "\($0.key): \($0.value)" }.joined(separator: ", ")
+            Logger.httpServer.debug("\(request.path): \(response.statusCode) \(headersString)")
+
             var keepConnection = parser.supportsKeepAlive(request.headers)
             do {
                 if self.operating {
                     keepConnection = try self.respond(socket, response: response, keepAlive: keepConnection)
                 }
             } catch {
-                print("Failed to send response: \(error)")
+                Logger.general.error("Failed to send response: \(error)")
             }
             if let session = response.socketSession() {
                 delegate?.socketConnectionReceived(socket)

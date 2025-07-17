@@ -29,7 +29,7 @@ final class MockMaliciousSiteProtectionManager: MaliciousSiteDetecting, Maliciou
 
     @MainActor
     @discardableResult
-    func startFetching() -> Task<Void, Error> {
+    func startFetching() -> Task<Void, Never> {
         didCallStartFetching = true
         return Task {}
     }

@@ -37,6 +37,8 @@ final class DataBrokerTests: XCTestCase {
         let scanStep = try broker.scanStep()
         XCTAssertEqual(scanStep.type, .scan)
         XCTAssertEqual(scanStep.actions.count, 2)
+        XCTAssertTrue(scanStep.actions[0] is NavigateAction)
+        XCTAssertTrue(scanStep.actions[1] is ExtractAction)
 
         let optOutStep = broker.optOutStep()!
         XCTAssertEqual(optOutStep.type, .optOut)

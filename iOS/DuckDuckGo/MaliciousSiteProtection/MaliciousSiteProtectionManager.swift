@@ -60,7 +60,7 @@ extension MaliciousSiteProtectionManager: MaliciousSiteProtectionDatasetsFetchin
 
     @MainActor
     @discardableResult
-    func startFetching() -> Task<Void, Error> {
+    func startFetching() -> Task<Void, Never> {
         dataFetcher.startFetching()
     }
     

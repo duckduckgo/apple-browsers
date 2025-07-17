@@ -56,9 +56,9 @@ final class DuckPlayerViewModel: ObservableObject {
         static let colorSchemeValue = "white"
     }
 
-    /// A publisher to notify when Youtube navigation is required.
-    /// Emits the videoID that should be opened in YouTube.
-    let youtubeNavigationRequestPublisher = PassthroughSubject<String, Never>()
+    /// A publisher to notify when external navigation is required.
+    /// Emits the URL that should be opened in the browser.
+    let youtubeNavigationRequestPublisher = PassthroughSubject<URL, Never>()
 
     /// A publisher to notify when the settings button is pressed.    
     let settingsRequestPublisher = PassthroughSubject<Void, Never>()
@@ -179,18 +179,26 @@ final class DuckPlayerViewModel: ObservableObject {
         return components?.url
     }
 
-    /// Handles navigation requests to YouTube
-    /// - Parameter url: The YouTube video URL to navigate to
+    /// Handles navigation requests to external URLs
+    /// - Parameter url: The URL to navigate to
     func handleYouTubeNavigation(_ url: URL) {
-        if let (videoID, _) = url.youtubeVideoParams {
-            youtubeNavigationRequestPublisher.send(videoID)
+        // Check if tapped video is the same as currently playing
+        if let tappedVideoID = url.youtubeVideoParams?.videoID,
+           tappedVideoID == videoID {
+            // Same video - just close DuckPlayer (no publisher events needed)
+            // User is already on the correct video and wants to dismiss the player
+            return
+        } else {
+            // Different video/URL - navigate to the URL
+            youtubeNavigationRequestPublisher.send(url)
         }
     }
 
     /// Opens the current video in the YouTube app or website
     func openInYouTube() {
         pixelHandler.fire(.duckPlayerNativeWatchOnYoutube)
-        youtubeNavigationRequestPublisher.send(videoID)
+        let url: URL = .youtube(videoID)
+        youtubeNavigationRequestPublisher.send(url)
     }
 
     /// Called when the view first appears

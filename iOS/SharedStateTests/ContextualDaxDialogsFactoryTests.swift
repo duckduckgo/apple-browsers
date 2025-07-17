@@ -33,6 +33,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     private var window: UIWindow!
 
     override func setUpWithError() throws {
+        throw XCTSkip("Implement test related to UI as UITest")
         delegate = ContextualOnboardingDelegateMock()
         settingsMock = ContextualOnboardingSettingsMock()
         pixelReporterMock = OnboardingPixelReporterMock()

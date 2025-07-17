@@ -28,23 +28,11 @@ import DesignResourcesKitIcons
 
 final class TabViewModel {
 
-    enum Favicon {
-        static let home = NSImage.homeFavicon
-        static let duckPlayer = NSImage.duckPlayerSettings
-        static let burnerHome = NSImage.burnerTabFavicon
-        static let settings = NSImage.settingsMulticolor16
-        static let bookmarks = NSImage.bookmarksFolder
-        static let history = NSImage.historyFavicon
-        static let emailProtection = NSImage.emailProtectionIcon
-        static let dataBrokerProtection = NSImage.personalInformationRemovalMulticolor16
-        static let subscription = NSImage.privacyPro
-        static let identityTheftRestoration = NSImage.identityTheftRestorationMulticolor16
-        static let aiChat = NSImage.aiChatPreferences
-    }
-
     private(set) var tab: Tab
     private let appearancePreferences: AppearancePreferences
     private let accessibilityPreferences: AccessibilityPreferences
+    private let featureFlagger: FeatureFlagger
+    private let visualStyle: VisualStyleProviding
     private var cancellables = Set<AnyCancellable>()
 
     @Published private(set) var canGoForward: Bool = false
@@ -139,10 +127,14 @@ final class TabViewModel {
 
     init(tab: Tab,
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
-         accessibilityPreferences: AccessibilityPreferences = .shared) {
+         accessibilityPreferences: AccessibilityPreferences = .shared,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.tab = tab
         self.appearancePreferences = appearancePreferences
         self.accessibilityPreferences = accessibilityPreferences
+        self.featureFlagger = featureFlagger
+        self.visualStyle = visualStyle
         zoomLevel = accessibilityPreferences.defaultPageZoom
         subscribeToUrl()
         subscribeToCanGoBackForwardAndReload()
@@ -161,6 +153,9 @@ final class TabViewModel {
         if case .url(_, credential: _, source: .pendingStateRestoration) = tab.content {
             updateAddressBarStrings()
         }
+
+        // Set initial favicon based on current tab content
+        updateFavicon()
     }
 
     private func subscribeToUrl() {
@@ -390,9 +385,9 @@ final class TabViewModel {
         case .bookmarks:
                 .bookmarksTrustedIndicator
         case .history:
-            NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
+            featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
         case .url(let url, _, _) where url.isHistory:
-            NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
+            featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
         case .dataBrokerProtection:
                 .dbpTrustedIndicator
         case .subscription:
@@ -480,60 +475,19 @@ final class TabViewModel {
     }
 
     private func updateFavicon(_ tabFavicon: NSImage?? = .none /* provided from .sink or taken from tab.favicon (optional) if .none */) {
-        guard !isShowingErrorPage else {
-            favicon = errorFaviconToShow(error: tab.error)
-            return
-        }
-        favicon = switch tab.content {
-        case .dataBrokerProtection:
-            Favicon.dataBrokerProtection
-        case .newtab where tab.burnerMode.isBurner:
-            NSApp.delegateTyped.visualStyle.isNewStyle ? DesignSystemImages.Glyphs.Size16.fireTab : Favicon.burnerHome
-        case .newtab:
-            Favicon.home
-        case .settings:
-            Favicon.settings
-        case .bookmarks:
-            Favicon.bookmarks
-        case .history:
-            NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? Favicon.history : nil
-        case .url(let url, _, _) where url.isHistory:
-            NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? Favicon.history : nil
-        case .subscription:
-            Favicon.subscription
-        case .identityTheftRestoration:
-            Favicon.identityTheftRestoration
-        case .releaseNotes:
-            Favicon.home
-        case .url(let url, _, _) where url.isDuckPlayer:
-            Favicon.duckPlayer
-        case .url(let url, _, _) where url.isEmailProtection:
-            Favicon.emailProtection
-        case .url, .onboarding, .webExtensionUrl, .none:
-            tabFavicon ?? tab.favicon
-        case .aiChat:
-            Favicon.aiChat
-        }
+        favicon = tab.content.displayedFavicon(
+            error: isShowingErrorPage ? tab.error : nil,
+            actualFavicon: tabFavicon ?? tab.favicon,
+            isBurner: tab.burnerMode.isBurner,
+            featureFlagger: featureFlagger,
+            visualStyle: visualStyle
+        )
     }
 
     func reload() {
         tab.reload()
         updateAddressBarStrings()
         self.updateZoomForWebsite()
-    }
-
-    private func errorFaviconToShow(error: WKError?) -> NSImage {
-        switch error as NSError? {
-        case let error as URLError? where error?.code == .serverCertificateUntrusted:
-            return .redAlertCircle16
-        case .some(let error as MaliciousSiteError):
-            switch error.code {
-            case .phishing, .malware, .scam:
-                return .redAlertCircle16
-            }
-        default:
-            return .alertCircleColor16
-        }
     }
 
     // MARK: - Privacy icon animation

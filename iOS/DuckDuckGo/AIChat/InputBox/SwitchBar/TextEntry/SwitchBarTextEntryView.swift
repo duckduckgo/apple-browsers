@@ -39,7 +39,7 @@ class SwitchBarTextEntryView: UIView {
         static let placeholderHorizontalOffset: CGFloat = 16
 
         // Button view
-        static let buttonViewTrailingOffset: CGFloat = -10
+        static let buttonViewTrailingOffset: CGFloat = -12
         static let textButtonSpacing: CGFloat = -10
 
         // Animation
@@ -159,13 +159,19 @@ class SwitchBarTextEntryView: UIView {
         case .search:
             placeholderLabel.text = "Search..."
             textView.keyboardType = .webSearch
-            textView.textContentType = .none
             textView.returnKeyType = .search
+            textView.autocapitalizationType = .none
+            textView.autocorrectionType = .no
+            textView.spellCheckingType = .no
         case .aiChat:
-            placeholderLabel.text = "Ask Duck.ai..."
+            placeholderLabel.text = "Ask..."
             textView.keyboardType = .default
             textView.returnKeyType = .go
+            textView.autocapitalizationType = .sentences
+            textView.autocorrectionType = .default
+            textView.spellCheckingType = .default
         }
+
         textView.reloadInputViews()
         updatePlaceholderVisibility()
         updateButtonState()
@@ -279,6 +285,7 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
         updateButtonState()
         updateTextViewHeight()
         handler.updateCurrentText(textView.text ?? "")
+        handler.markUserInteraction()
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {

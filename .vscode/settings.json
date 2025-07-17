@@ -11,5 +11,6 @@
     "sweetpad.xcode.useWorkspaceParser": true,
     "sweetpad.build.allowProvisioningUpdates": false,
     "sweetpad.build.xcbeautifyEnabled": true,
-    "sweetpad.xcodebuildserver.autogenerate": true
+    "sweetpad.xcodebuildserver.autogenerate": true,
+    "lldb.library": "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Versions/A/LLDB"
 }

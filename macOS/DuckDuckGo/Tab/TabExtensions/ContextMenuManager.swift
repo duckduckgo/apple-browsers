@@ -107,8 +107,12 @@ extension ContextMenuManager {
         .inspectElement: handleInspectElementItem
     ]
 
+    private var mainViewController: MainViewController? {
+        (webView?.window?.windowController as? MainWindowController)?.mainViewController
+    }
+
     private var isCurrentWindowBurner: Bool {
-        (webView?.window?.windowController as? MainWindowController)?.mainViewController.isBurner ?? false
+        mainViewController?.isBurner ?? false
     }
 
     private func handleOpenLinkItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
@@ -206,7 +210,7 @@ extension ContextMenuManager {
     }
 
     private func handleSearchWebItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
-        let isSummarizationAvailable = featureFlagger.isFeatureOn(.aiChatTextSummarization) && featureFlagger.isFeatureOn(.aiChatSidebar)
+        let isSummarizationAvailable = featureFlagger.isFeatureOn(.aiChatTextSummarization) && AIChatMenuConfiguration().shouldDisplayApplicationMenuShortcut
         var currentIndex = index
         if isSummarizationAvailable {
             menu.insertItem(.separator(), at: currentIndex)
@@ -394,9 +398,8 @@ private extension ContextMenuManager {
             return
         }
 
-        NotificationCenter.default.post(name: .aiChatSummarizationRequest,
-                                        object: AIChatSummarizationRequest(text: selectedText, source: .contextMenu),
-                                        userInfo: nil)
+        let request = AIChatTextSummarizationRequest(text: selectedText, websiteURL: webView?.url, websiteTitle: webView?.title, source: .contextMenu)
+        mainViewController?.aiChatSummarizer.summarize(request)
     }
 
     func openLinkInNewTab(_ sender: NSMenuItem) {

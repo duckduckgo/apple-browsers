@@ -90,9 +90,9 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
             .init(id: .nextSteps),
+            .init(id: .omnibar),
             .init(id: .favorites),
-            .init(id: .protections),
-            .init(id: .omnibar)
+            .init(id: .protections)
         ])
         XCTAssertEqual(configuration.widgetConfigs, [
             .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),

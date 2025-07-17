@@ -1343,7 +1343,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
     // somewhat arguable: I don‘t know how to simulate failing navigation after it has performed client redirect
     // but just in case it can be failed we‘re handling it the same way as the one competed normally
     func testClientRedirectWithFailingInitialNavigation() throws {
-        navigationDelegateProxy.finishEventsDispatchTime = .beforeWillStartNavigationAction
+        navigationDelegateProxy.didFailEventsDispatchTime = .beforeWillStartNavigationAction
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         let eDidFinish = expectation(description: "onDidFinish")

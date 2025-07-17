@@ -339,6 +339,14 @@ extension DefaultOmniBarView: OmniBarView {
     var progressView: ProgressView? {
         nil
     }
+
+    func hideButtons() {
+        // no-op
+    }
+
+    func revealButtons() {
+        // no-op
+    }
 }
 
 // MARK: - OmniBarStatusUpdateable conformance

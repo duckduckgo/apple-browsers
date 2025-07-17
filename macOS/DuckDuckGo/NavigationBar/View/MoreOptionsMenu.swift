@@ -29,6 +29,7 @@ import Freemium
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import SwiftUI
+import DesignResourcesKitIcons
 
 protocol OptionsButtonMenuDelegate: AnyObject {
 
@@ -173,10 +174,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .withImage(moreOptionsMenuIconsProvider.sendFeedbackIcon)
 
         feedbackMenuItem.submenu = FeedbackSubMenu(targetting: self,
-                                                   tabCollectionViewModel: tabCollectionViewModel,
-                                                   subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                    authenticationStateProvider: subscriptionManager,
                                                    internalUserDecider: internalUserDecider,
+                                                   featureFlagger: featureFlagger,
                                                    moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
         addItem(feedbackMenuItem)
 
@@ -534,30 +534,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     private func addSubscriptionAndFreemiumDBPItems() {
-        let subscriptionItem = getSubscriptionItem()
-        let freemiumItem = getFreemiumDBPItem()
-
-        var itemsWereAdded = false
-        if let subscriptionItem = subscriptionItem {
-            addItem(subscriptionItem)
-            itemsWereAdded = true
-        }
-
-        if let freemiumItem = freemiumItem {
-            if itemsWereAdded {
-                addItem(NSMenuItem.separator())
-            }
-            addItem(freemiumItem)
-            itemsWereAdded = true
-        }
-
-        if itemsWereAdded {
-            addItem(NSMenuItem.separator())
-        }
+        addSubscriptionItems()
+        addFreemiumDBPItem()
+        addItem(NSMenuItem.separator())
     }
 
     @MainActor
-    private func getSubscriptionItem() -> NSMenuItem? {
+    private func addSubscriptionItems() {
         func shouldHideDueToNoProduct() -> Bool {
             let platform = subscriptionManager.currentEnvironment.purchasePlatform
             return platform == .appStore && subscriptionManager.canPurchase == false
@@ -585,7 +568,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
             // Do not add for App Store when purchase not available in the region
             if !shouldHideDueToNoProduct() {
-                return privacyProItem
+                addItem(privacyProItem)
             }
         } else {
             let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
@@ -599,14 +582,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                          onComplete: { [weak self] in
                                                              self?.submenuBuildingCompleteSubject.send(true)
                                                          })
-            return privacyProItem
+            addItem(privacyProItem)
         }
-        return nil
     }
 
     @MainActor
-    private func getFreemiumDBPItem() -> NSMenuItem? {
-        guard freemiumDBPFeature.isAvailable else { return nil }
+    private func addFreemiumDBPItem() {
+        guard freemiumDBPFeature.isAvailable else { return }
 
         let freemiumDBPItem = NSMenuItem(title: UserText.freemiumDBPOptionsMenuItem)
             .withImage(moreOptionsMenuIconsProvider.personalInformationRemovalIcon)
@@ -614,7 +596,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         freemiumDBPItem.target = self
         freemiumDBPItem.action = #selector(openFreemiumDBP(_:))
 
-        return freemiumDBPItem
+        addItem(freemiumDBPItem)
     }
 
     @MainActor
@@ -794,45 +776,39 @@ final class EmailOptionsButtonSubMenu: NSMenu {
 }
 
 final class FeedbackSubMenu: NSMenu {
-    private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let authenticationStateProvider: any SubscriptionAuthenticationStateProvider
     private let internalUserDecider: InternalUserDecider
 
     init(targetting target: AnyObject,
-         tabCollectionViewModel: TabCollectionViewModel,
-         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          authenticationStateProvider: any SubscriptionAuthenticationStateProvider,
          internalUserDecider: InternalUserDecider,
+         featureFlagger: FeatureFlagger,
          moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
-        self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.authenticationStateProvider = authenticationStateProvider
         self.internalUserDecider = internalUserDecider
         super.init(title: UserText.sendFeedback)
-        updateMenuItems(with: tabCollectionViewModel, targetting: target, moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
+
+        updateMenuItems(targetting: target,
+                        featureFlagger: featureFlagger,
+                        moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
     }
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private func updateMenuItems(with tabCollectionViewModel: TabCollectionViewModel,
-                                 targetting target: AnyObject,
+    private func updateMenuItems(targetting target: AnyObject,
+                                 featureFlagger: FeatureFlagger,
                                  moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         removeAllItems()
 
 #if FEEDBACK
-        let browserFeedbackItem = NSMenuItem(title: UserText.browserFeedback,
-                                             action: #selector(sendFeedback(_:)),
-                                             keyEquivalent: "")
-            .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.browserFeedbackIcon)
-        addItem(browserFeedbackItem)
 
-        let reportBrokenSiteItem = NSMenuItem(title: UserText.reportBrokenSite,
-                                              action: #selector(AppDelegate.openReportBrokenSite(_:)),
-                                              keyEquivalent: "")
-            .withImage(moreOptionsMenuIconsProvider.reportBrokenSiteIcon)
-        addItem(reportBrokenSiteItem)
+        if featureFlagger.isFeatureOn(.newFeedbackForm) {
+            newFlow(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
+        } else {
+            legacyFlow(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
+        }
 
         if authenticationStateProvider.isUserAuthenticated {
             addItem(.separator())
@@ -850,6 +826,43 @@ final class FeedbackSubMenu: NSMenu {
             addItem(withTitle: "Copy Version", action: #selector(AppDelegate.copyVersion(_:)), keyEquivalent: "")
         }
 #endif
+    }
+
+    private func newFlow(moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
+        let reportBrokenSiteItem = NSMenuItem(title: UserText.reportBrokenSite,
+                                              action: #selector(AppDelegate.openReportBrokenSite(_:)),
+                                              keyEquivalent: "")
+            .withImage(moreOptionsMenuIconsProvider.reportBrokenSiteIcon)
+        addItem(reportBrokenSiteItem)
+
+        addItem(.separator())
+
+        let reportABrowserProblemItem = NSMenuItem(title: "Report a Browser Problem",
+                                                   action: #selector(AppDelegate.openReportABrowserProblem(_:)),
+                                                   keyEquivalent: "")
+            .withImage(DesignSystemImages.Glyphs.Size16.alert)
+        addItem(reportABrowserProblemItem)
+
+        let requestANewFeatureItem = NSMenuItem(title: "Request a New Feature",
+                                                action: #selector(AppDelegate.openRequestANewFeature(_:)),
+                                                keyEquivalent: "")
+            .withImage(DesignSystemImages.Glyphs.Size16.windowNew)
+        addItem(requestANewFeatureItem)
+    }
+
+    private func legacyFlow(moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
+        let browserFeedbackItem = NSMenuItem(title: UserText.browserFeedback,
+                                             action: #selector(sendFeedback(_:)),
+                                             keyEquivalent: "")
+            .targetting(self)
+            .withImage(moreOptionsMenuIconsProvider.browserFeedbackIcon)
+        addItem(browserFeedbackItem)
+
+        let reportBrokenSiteItem = NSMenuItem(title: UserText.reportBrokenSite,
+                                              action: #selector(AppDelegate.openReportBrokenSite(_:)),
+                                              keyEquivalent: "")
+            .withImage(moreOptionsMenuIconsProvider.reportBrokenSiteIcon)
+        addItem(reportBrokenSiteItem)
     }
 
 #if FEEDBACK
@@ -1188,7 +1201,9 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
     }
 
     private func addMenuItems() async {
-        let features = await subscriptionManager.currentSubscriptionFeatures()
+        // This requires follow-up work:
+        // https://app.asana.com/1/137249556945/task/1210799126744217
+        let features = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
 
         if features.contains(.networkProtection) {
             addItem(networkProtectionItem)
@@ -1249,7 +1264,8 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         guard subscriptionManager.isUserAuthenticated else { return }
 
         @Sendable func hasEntitlement(for productName: Entitlement.ProductName) async -> Bool {
-            (try? await subscriptionManager.isEnabled(feature: productName)) ?? false
+            // Note by Diego: this is bad as it will default to `false` on transient errors
+            (try? await subscriptionManager.isFeatureEnabled(productName)) ?? false
         }
 
         Task.detached(priority: .background) { [weak self] in

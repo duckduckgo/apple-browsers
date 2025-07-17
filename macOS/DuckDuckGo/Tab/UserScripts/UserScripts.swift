@@ -20,6 +20,7 @@ import AIChat
 import BrowserServicesKit
 import Foundation
 import HistoryView
+import PixelKit
 import SpecialErrorPages
 import Subscription
 import UserScript
@@ -62,8 +63,14 @@ final class UserScripts: UserScriptsProvider {
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
         let aiChatDebugURLSettings = AIChatDebugURLSettings()
-        aiChatUserScript = AIChatUserScript(handler: AIChatUserScriptHandler(storage: DefaultAIChatPreferencesStorage()),
-                                            urlSettings: aiChatDebugURLSettings)
+        aiChatUserScript = AIChatUserScript(
+            handler: AIChatUserScriptHandler(
+                storage: DefaultAIChatPreferencesStorage(),
+                windowControllersManager: sourceProvider.windowControllersManager,
+                pixelFiring: PixelKit.shared
+            ),
+            urlSettings: aiChatDebugURLSettings
+        )
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
             subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
@@ -158,7 +165,7 @@ final class UserScripts: UserScriptsProvider {
         }
 
         var delegate: Subfeature
-        if !Application.appDelegate.isAuthV2Enabled {
+        if !Application.appDelegate.isUsingAuthV2 {
             guard let subscriptionManager = Application.appDelegate.subscriptionManagerV1 else {
                 assertionFailure("SubscriptionManager is not available")
                 return
@@ -186,7 +193,7 @@ final class UserScripts: UserScriptsProvider {
         userScripts.append(subscriptionPagesUserScript)
 
         let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
-                                                                                        isAuthV2Enabled: Application.appDelegate.isAuthV2Enabled)
+                                                                                        isAuthV2Enabled: Application.appDelegate.isUsingAuthV2)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
     }

@@ -62,6 +62,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                   featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
                                   pixelKit: PixelKit,
+                                  subscriptionManager: DataBrokerProtectionSubscriptionManager,
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
                                   feedbackViewCreator: @escaping () -> (any View)) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
@@ -147,14 +148,17 @@ public class DataBrokerProtectionIOSManagerProvider {
             privacyConfigManager: privacyConfigurationManager,
             database: database,
             quickLinkOpenURLHandler: quickLinkOpenURLHandler,
-            feedbackViewCreator: feedbackViewCreator
+            feedbackViewCreator: feedbackViewCreator,
+            featureFlagger: featureFlagger,
+            settings: dbpSettings,
+            subscriptionManager: subscriptionManager
         )
     }
 }
 
 public final class DataBrokerProtectionIOSManager {
 
-    public static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
+    private static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
     public static var shared: DataBrokerProtectionIOSManager?
 
     public let database: DataBrokerProtectionRepository
@@ -166,6 +170,34 @@ public final class DataBrokerProtectionIOSManager {
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let quickLinkOpenURLHandler: (URL) -> Void
     private let feedbackViewCreator: () -> (any View)
+    private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
+    private let settings: DataBrokerProtectionSettings
+    private let subscriptionManager: DataBrokerProtectionSubscriptionManager
+    private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
+            directoryName: DatabaseConstants.directoryName,
+            fileName: DatabaseConstants.fileName,
+            appGroupIdentifier: nil
+        )
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
+        guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
+            return nil
+        }
+        return RemoteBrokerJSONService(featureFlagger: featureFlagger,
+                                       settings: settings,
+                                       vault: vault,
+                                       authenticationManager: authenticationManager,
+                                       localBrokerProvider: nil)
+    }()
+
+    public var hasScheduledBackgroundJob: Bool {
+        get async {
+            let scheduledTasks = await BGTaskScheduler.shared.pendingTaskRequests()
+            return scheduledTasks.contains {
+                $0.identifier == DataBrokerProtectionIOSManager.backgroundJobIdentifier
+            }
+        }
+    }
 
     init(queueManager: BrokerProfileJobQueueManager,
          jobDependencies: BrokerProfileJobDependencies,
@@ -175,7 +207,10 @@ public final class DataBrokerProtectionIOSManager {
          privacyConfigManager: PrivacyConfigurationManaging,
          database: DataBrokerProtectionRepository,
          quickLinkOpenURLHandler: @escaping (URL) -> Void,
-         feedbackViewCreator: @escaping () -> (any View)
+         feedbackViewCreator: @escaping () -> (any View),
+         featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+         settings: DataBrokerProtectionSettings,
+         subscriptionManager: DataBrokerProtectionSubscriptionManager
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -186,6 +221,9 @@ public final class DataBrokerProtectionIOSManager {
         self.database = database
         self.quickLinkOpenURLHandler = quickLinkOpenURLHandler
         self.feedbackViewCreator = feedbackViewCreator
+        self.featureFlagger = featureFlagger
+        self.settings = settings
+        self.subscriptionManager = subscriptionManager
 
         registerBackgroundTaskHandler()
     }
@@ -259,6 +297,47 @@ public final class DataBrokerProtectionIOSManager {
     /// Used by the iOS PIR debug menu to reset tester data.
     public func deleteAllData() throws {
         try database.deleteProfileData()
+    }
+
+    public func refreshRemoteBrokerJSON() async throws {
+        try await brokerUpdater?.checkForUpdates(skipsLimiter: true)
+    }
+
+    /// Used by the iOS PIR debug menu to trigger scheduled jobs.
+    public func runScheduledJobs(type: JobType,
+                                 errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                 completionHandler: (() -> Void)?) {
+        switch type {
+        case .scheduledScan:
+            queueManager.startScheduledScanOperationsIfPermitted(
+                showWebView: true,
+                jobDependencies: jobDependencies,
+                errorHandler: errorHandler,
+                completion: completionHandler
+            )
+        case .optOut:
+            let optOutCommand = DataBrokerProtectionQueueManagerDebugCommand.startOptOutOperations(
+                showWebView: true,
+                jobDependencies: jobDependencies,
+                errorHandler: errorHandler,
+                completion: completionHandler
+            )
+            queueManager.execute(optOutCommand)
+        case .all:
+            queueManager.startScheduledAllOperationsIfPermitted(
+                showWebView: true,
+                jobDependencies: jobDependencies,
+                errorHandler: errorHandler,
+                completion: completionHandler
+            )
+        case .manualScan:
+            completionHandler?()
+        }
+    }
+
+    /// Used by the iOS PIR debug menu to check if jobs are currently running.
+    public var isRunningJobs: Bool {
+        return queueManager.debugRunningStatusString == "running"
     }
 
     // MARK: - Run Prerequisites

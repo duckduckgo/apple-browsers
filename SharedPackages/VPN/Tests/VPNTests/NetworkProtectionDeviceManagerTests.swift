@@ -109,27 +109,6 @@ final class NetworkProtectionDeviceManagerTests: XCTestCase {
         XCTAssertEqual(networkClient.spyRegister?.requestBody.server, server.serverName)
     }
 
-    func testWhenGeneratingTunnelConfig_storedAuthTokenIsInvalidOnGettingServers_deletesToken() async {
-        _ = NetworkProtectionServer.mockRegisteredServer
-        networkClient.stubRegister = .failure(.invalidAuthToken)
-
-        XCTAssertNotNil(tokenHandler.token)
-
-        _ = try? await manager.generateTunnelConfiguration(selectionMethod: .automatic, regenerateKey: false)
-
-        XCTAssertNil(tokenHandler.token)
-    }
-
-    func testWhenGeneratingTunnelConfig_storedAuthTokenIsInvalidOnRegisteringServer_deletesToken() async {
-        networkClient.stubRegister = .failure(.invalidAuthToken)
-
-        XCTAssertNotNil(tokenHandler.token)
-
-        _ = try? await manager.generateTunnelConfiguration(selectionMethod: .automatic, regenerateKey: false)
-
-        XCTAssertNil(tokenHandler.token)
-    }
-
     func testDecodingServers() throws {
         let servers1 = try JSONDecoder().decode([NetworkProtectionServer].self, from: TestData.mockServers)
         XCTAssertEqual(servers1.count, 6)

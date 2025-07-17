@@ -173,6 +173,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds context menu action for summarizing text selected on a website.
     case textSummarization
+
+    // Adds capability to load AI Chat in a sidebar
+    case sidebar
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -327,7 +330,10 @@ public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
 
     // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210225579353384?focus=true
-    case scheduledDefaultBrowserAndDockPrompts
+    case scheduledDefaultBrowserAndDockPrompts // macOS
+
+    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1209304767941984?focus=true
+    case scheduledDefaultBrowserPrompts // iOS
 }
 
 public enum OnboardingSubfeature: String, PrivacySubfeature {

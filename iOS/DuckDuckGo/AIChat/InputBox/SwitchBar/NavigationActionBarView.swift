@@ -79,6 +79,7 @@ struct NavigationActionBarView: View {
                         startPoint: .top,
                         endPoint: .bottom
                     )
+                    .ignoresSafeArea(.container, edges: .horizontal)
                 }
             }
         )

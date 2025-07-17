@@ -640,7 +640,6 @@ final class AddressBarViewController: NSViewController {
 
     private func layoutTextFields(trailingWidth width: CGFloat) {
         addressBarTextTrailingConstraint.constant = width
-        passiveTextFieldTrailingConstraint.constant = width
     }
 
     private func firstResponderDidChange(_ notification: Notification) {

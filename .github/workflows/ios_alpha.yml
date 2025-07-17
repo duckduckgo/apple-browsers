@@ -5,6 +5,8 @@ defaults:
     working-directory: iOS
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       destination:
@@ -34,13 +36,17 @@ on:
         required: true
 
 jobs:
-  make-alpha:
+  build:
     runs-on: macos-15-xlarge
-    name: Make TestFlight Alpha Build
-    timeout-minutes: 30
-
-    env:
-      destination: ${{ github.event.inputs.destination || inputs.destination }}
+    name: Build Alpha App
+    timeout-minutes: 20
+    
+    concurrency:
+      group: ios-alpha-build-${{ github.ref }}
+      cancel-in-progress: true
+    
+    outputs:
+      cache_key_hash: ${{ steps.cache-key.outputs.cache_key_hash }}
 
     steps:
 
@@ -55,10 +61,13 @@ jobs:
         submodules: recursive
 
     - name: Set cache key hash
+      id: cache-key
       run: |
          has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
          if [[ "$has_only_tags" == "true" ]]; then
-           echo "cache_key_hash=${{ hashFiles('iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+           cache_key_hash="${{ hashFiles('iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}"
+           echo "cache_key_hash=${cache_key_hash}" >> $GITHUB_ENV
+           echo "cache_key_hash=${cache_key_hash}" >> $GITHUB_OUTPUT
          else
            echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
          fi
@@ -81,7 +90,55 @@ jobs:
         working-directory: iOS
         cache-key-prefix: ios-ruby
 
+  upload:
+    needs: build
+    runs-on: macos-15-xlarge
+    name: Upload to TestFlight
+    timeout-minutes: 15
+
+    concurrency:
+      group: ios-alpha-upload
+      cancel-in-progress: false
+
+    env:
+      destination: ${{ github.event.inputs.destination || inputs.destination || 'Latest Alpha Group' }}
+
+    outputs:
+      app_version: ${{ steps.upload-app.outputs.app_version }}
+      build_version: ${{ steps.upload-app.outputs.build_version }}
+      dsyms_path: ${{ steps.upload-app.outputs.dsyms_path }}
+
+    steps:
+    - name: Register SSH keys for access to certificates
+      uses: webfactory/ssh-agent@v0.9.1
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Cache SPM
+      if: needs.build.outputs.cache_key_hash
+      uses: actions/cache@v4
+      with:
+        path: iOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-ios-${{ needs.build.outputs.cache_key_hash }}
+        restore-keys: |
+          ${{ runner.os }}-ios-
+
+    - name: Select Xcode
+      uses: ./.github/actions/select-xcode-version
+
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: iOS
+        cache-key-prefix: ios-ruby
+
     - name: Archive and upload the app
+      id: upload-app
       env:
         APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -92,23 +149,57 @@ jobs:
         bundle exec fastlane increment_build_number_for_version version:$app_version app_identifier:"com.duckduckgo.mobile.ios.alpha"
         build_version="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
         bundle exec fastlane release_alpha groups:["${{ env.destination }}"]
-        echo "dsyms_path=${{ github.workspace }}/iOS/DuckDuckGo-Alpha.app.dSYM.zip" >> $GITHUB_ENV
-        echo "app_version=${app_version}" >> $GITHUB_ENV
-        echo "build_version=${build_version}" >> $GITHUB_ENV
+        dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-Alpha.app.dSYM.zip"
+        echo "app_version=${app_version}" >> $GITHUB_OUTPUT
+        echo "build_version=${build_version}" >> $GITHUB_OUTPUT
+        echo "dsyms_path=${dsyms_path}" >> $GITHUB_OUTPUT
 
     - name: Upload dSYMs artifact
       uses: actions/upload-artifact@v4
       with:
-        name: DuckDuckGo-Alpha-dSYM-${{ env.app_version }}
-        path: ${{ env.dsyms_path }}
+        name: DuckDuckGo-Alpha-dSYM-${{ steps.upload-app.outputs.app_version }}
+        path: ${{ steps.upload-app.outputs.dsyms_path }}
 
     - name: Upload debug symbols to Asana
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       run: |
-        asana_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-Alpha-${{ env.app_version }}(${{ env.build_version }})-dSYM.zip"
-        mv -f "${{ env.dsyms_path }}" "$asana_dsyms_path"
+        asana_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-Alpha-${{ steps.upload-app.outputs.app_version }}(${{ steps.upload-app.outputs.build_version }})-dSYM.zip"
+        mv -f "${{ steps.upload-app.outputs.dsyms_path }}" "$asana_dsyms_path"
 
         curl -s "https://app.asana.com/api/1.0/tasks/1205344386326139/attachments" \
           -H "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
           --form "file=@${asana_dsyms_path};type=application/zip"
+
+  rerun-check:
+    needs: upload
+    runs-on: ubuntu-latest
+    name: Check for Newer Commits
+    if: github.event_name == 'push'
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
+
+    - name: Check for newer commits and rerun if needed
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        current_commit="${{ github.sha }}"
+        latest_commit=$(git rev-parse origin/main)
+        
+        echo "Current workflow commit: $current_commit"
+        echo "Latest commit on main: $latest_commit"
+        
+        if [ "$current_commit" != "$latest_commit" ]; then
+          echo "Newer commit detected. Triggering new workflow run..."
+          curl -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/ios_alpha.yml/dispatches" \
+            -d '{"ref":"main"}'
+        else
+          echo "No newer commits. Workflow complete."
+        fi

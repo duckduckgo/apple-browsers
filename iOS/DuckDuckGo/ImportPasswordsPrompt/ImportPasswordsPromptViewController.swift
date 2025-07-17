@@ -63,7 +63,7 @@ class ImportPasswordsPromptViewController: UIViewController {
 
 extension ImportPasswordsPromptViewController: UISheetPresentationControllerDelegate {
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-//        manager.incrementNumberOfTimesAutofillPromptShown()
+        manager.incrementCredentialsImportPromptPresentationCount()
         self.completion?(false)
     }
 }
@@ -84,6 +84,7 @@ extension ImportPasswordsPromptViewController: ImportPasswordsPromptViewModelDel
     }
     
     func importPasswordsPromptViewModelDidDismiss(_ viewModel: ImportPasswordsPromptViewModel) {
+        manager.incrementCredentialsImportPromptPresentationCount()
         self.dismiss(animated: true) { [weak self] in
             self?.completion?(false)
         }

@@ -411,8 +411,8 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
                         if shouldRefresh {
                             completionHandler(nil, self.credentialsProvider, .refreshAvailableInputTypes)
                         } else {
-                    completionHandler(nil, self.credentialsProvider, .none)
-                }
+                            completionHandler(nil, self.credentialsProvider, .none)
+                        }
                     }
                 } else {
                     self.delegate?.secureVaultManager(self, promptUserToAutofillCredentialsForDomain: domain,

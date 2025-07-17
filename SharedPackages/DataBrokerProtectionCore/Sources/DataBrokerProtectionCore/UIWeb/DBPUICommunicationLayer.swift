@@ -23,9 +23,14 @@ import UserScript
 import Common
 import os.log
 
-enum DBPDeviceCapability: String, Codable {
-    case useUnifiedFeedback
-    case excludeVpnTraffic
+public struct DBPUIFeatureConfigurationResponse: Encodable {
+    public let useUnifiedFeedback: Bool
+    public let excludeVpnTraffic: Bool
+
+    public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool) {
+        self.useUnifiedFeedback = useUnifiedFeedback
+        self.excludeVpnTraffic = excludeVpnTraffic
+    }
 }
 
 public protocol DBPUICommunicationDelegate: AnyObject {
@@ -321,8 +326,10 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return [DBPDeviceCapability.useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
-                DBPDeviceCapability.excludeVpnTraffic: vpnBypassService?.isSupported ?? false]
+        return DBPUIFeatureConfigurationResponse(
+            useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
+            excludeVpnTraffic: vpnBypassService?.isSupported ?? false
+        )
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {

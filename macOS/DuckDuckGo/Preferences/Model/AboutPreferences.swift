@@ -28,6 +28,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     private let internalUserDecider: InternalUserDecider
     @Published var isInternalUser: Bool
+#if ALPHA
+    let prereleaseLabel: String = "ALPHA"
+#else
+    let prereleaseLabel: String = "BETA"
+#endif
+
     @Published var featureFlagOverrideToggle = false
     private var internalUserCancellable: AnyCancellable?
     private let featureFlagger: FeatureFlagger

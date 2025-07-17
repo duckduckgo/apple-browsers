@@ -1,8 +1,7 @@
 //
-//  FaviconRequestModifier.swift
-//  Core
+//  AccountKeychainAccessType.swift
 //
-//  Copyright © 2020 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,21 +16,16 @@
 //  limitations under the License.
 //
 
-import Core
-import Kingfisher
+import Foundation
 
-class FaviconRequestModifier: ImageDownloadRequestModifier {
-
-    let userAgentManager: UserAgentManaging
-
-    init(userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared) {
-        self.userAgentManager = userAgentManager
-    }
-
-    func modified(for request: URLRequest) -> URLRequest? {
-        var r = request
-        userAgentManager.update(request: &r, isDesktop: false)
-        return r
-    }
-
+public enum AccountKeychainAccessType: String {
+    case getAuthToken
+    case storeAuthToken
+    case getAccessToken
+    case storeAccessToken
+    case getEmail
+    case storeEmail
+    case getExternalID
+    case storeExternalID
+    case clearAuthenticationData
 }

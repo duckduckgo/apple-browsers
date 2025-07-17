@@ -241,7 +241,7 @@ final class VPNSubscriptionClientCheckPixelTests: XCTestCase {
         XCTAssertEqual(fullName, "m_vpn_subs_client_check_on_foreground_failed")
     }
 #endif
-    
+
     // MARK: - Edge Cases
 
     func testParameters_allCombinations() {

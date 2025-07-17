@@ -10,30 +10,28 @@
 	<dict>
 		<key>com.duckduckgo.macos.browser</key>
 		<string>match Direct com.duckduckgo.macos.browser macos</string>
-		<key>com.duckduckgo.macos.browser.review</key>
-		<string>match Direct com.duckduckgo.macos.browser.review macos</string>
-		<key>com.duckduckgo.macos.browser.dbp</key>
-		<string>macOS DBP Profile</string>
-		<key>com.duckduckgo.mobile.ios</key>
-		<string>Sandbox MacOS Browser Release</string>
-		<key>com.duckduckgo.mobile.ios.review</key>
-		<string>Sandbox MacOS Browser Product Review</string>
 		<key>com.duckduckgo.macos.DBP.backgroundAgent</key>
 		<string>match Direct com.duckduckgo.macos.DBP.backgroundAgent macos</string>
-		<key>com.duckduckgo.macos.DBP.backgroundAgent.review</key>
-		<string>match Direct com.duckduckgo.macos.DBP.backgroundAgent.review macos</string>
 		<key>com.duckduckgo.macos.vpn.network-extension</key>
 		<string>match Direct com.duckduckgo.macos.vpn.network-extension macos</string>
-		<key>com.duckduckgo.macos.vpn.network-extension.review</key>
-		<string>match Direct com.duckduckgo.macos.vpn.network-extension.review macos</string>
 		<key>com.duckduckgo.macos.vpn</key>
 		<string>match Direct com.duckduckgo.macos.vpn macos</string>
+		<key>com.duckduckgo.macos.browser.alpha</key>
+		<string>match Direct com.duckduckgo.macos.browser.alpha macos</string>
+		<key>com.duckduckgo.macos.DBP.backgroundAgent.alpha</key>
+		<string>match Direct com.duckduckgo.macos.DBP.backgroundAgent.alpha macos</string>
+		<key>com.duckduckgo.macos.vpn.network-extension.alpha</key>
+		<string>match Direct com.duckduckgo.macos.vpn.network-extension.alpha macos</string>
+		<key>com.duckduckgo.macos.vpn.alpha</key>
+		<string>match Direct com.duckduckgo.macos.vpn.alpha macos</string>
+		<key>com.duckduckgo.macos.browser.review</key>
+		<string>match Direct com.duckduckgo.macos.browser.review macos</string>
+		<key>com.duckduckgo.macos.DBP.backgroundAgent.review</key>
+		<string>match Direct com.duckduckgo.macos.DBP.backgroundAgent.review macos</string>
+		<key>com.duckduckgo.macos.vpn.network-extension.review</key>
+		<string>match Direct com.duckduckgo.macos.vpn.network-extension.review macos</string>
 		<key>com.duckduckgo.macos.vpn.review</key>
 		<string>match Direct com.duckduckgo.macos.vpn.review macos</string>
-		<key>HKE973VLUW.com.duckduckgo.macos.browser.network-protection.notifications</key>
-		<string>match Direct HKE973VLUW.com.duckduckgo.macos.browser.network-protection.notifications macos</string>
-		<key>HKE973VLUW.com.duckduckgo.macos.browser.network-protection.notifications.review</key>
-		<string>match Direct HKE973VLUW.com.duckduckgo.macos.browser.network-protection.notifications.review macos</string>
 	</dict>
 	<key>signingCertificate</key>
 	<string></string>

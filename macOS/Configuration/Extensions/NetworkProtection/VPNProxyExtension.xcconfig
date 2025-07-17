@@ -20,6 +20,7 @@ CODE_SIGN_ENTITLEMENTS[config=CI][sdk=macosx*] =
 CODE_SIGN_ENTITLEMENTS[config=Debug][sdk=macosx*] = VPNProxyExtension/VPNProxyExtension.entitlements
 CODE_SIGN_ENTITLEMENTS[config=Release][sdk=macosx*] = VPNProxyExtension/VPNProxyExtension.entitlements
 CODE_SIGN_ENTITLEMENTS[config=Review][sdk=macosx*] = VPNProxyExtension/VPNProxyExtension.entitlements
+CODE_SIGN_ENTITLEMENTS[config=Alpha][sdk=macosx*] = VPNProxyExtension/VPNProxyExtension.entitlements
 CODE_SIGN_STYLE[config=Debug][sdk=*] = Automatic
 
 CODE_SIGN_IDENTITY[sdk=macosx*] = 3rd Party Mac Developer Application
@@ -40,10 +41,12 @@ PRODUCT_BUNDLE_IDENTIFIER[config=CI][sdk=*] = $(PROXY_APPEX_BUNDLE_ID)
 PRODUCT_BUNDLE_IDENTIFIER[config=Debug][sdk=*] = $(PROXY_APPEX_BUNDLE_ID)
 PRODUCT_BUNDLE_IDENTIFIER[config=Release][sdk=*] = $(PROXY_APPEX_BUNDLE_ID)
 PRODUCT_BUNDLE_IDENTIFIER[config=Review][sdk=*] = $(PROXY_APPEX_BUNDLE_ID)
+PRODUCT_BUNDLE_IDENTIFIER[config=Alpha][sdk=*] = $(PROXY_APPEX_BUNDLE_ID)
 
 PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] = match Direct com.duckduckgo.mobile.ios.vpn.agent.debug.proxy macos
 PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match AppStore $(AGENT_BUNDLE_ID).proxy macos
 PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match AppStore $(AGENT_BUNDLE_ID).proxy macos
+PROVISIONING_PROFILE_SPECIFIER[config=Alpha][sdk=macosx*] = match AppStore $(AGENT_BUNDLE_ID).proxy macos
 
 SDKROOT = macosx
 SKIP_INSTALL = YES

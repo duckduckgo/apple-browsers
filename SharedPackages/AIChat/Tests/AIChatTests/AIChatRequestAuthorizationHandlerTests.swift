@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
 import XCTest
 import WebKit
 @testable import AIChat
@@ -178,3 +179,4 @@ final class MockWKFrameInfo: WKFrameInfo {
         return mockIsMainFrame
     }
 }
+#endif

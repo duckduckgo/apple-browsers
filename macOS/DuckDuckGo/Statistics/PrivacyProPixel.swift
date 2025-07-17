@@ -80,6 +80,11 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProAuthV2MigrationFailed(AuthV2PixelHandler.Source, Error)
     case privacyProAuthV2MigrationSucceeded(AuthV2PixelHandler.Source)
     case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, AuthV2PixelHandler.Source, Error)
+    // Toolbar Button Upsell
+    case privacyProToolbarButtonShown
+    case privacyProToolbarButtonPopoverShown
+    case privacyProToolbarButtonPopoverNoThanksClicked
+    case privacyProToolbarButtonPopoverTryForFreeClicked
 
     var name: String {
         switch self {
@@ -133,6 +138,11 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
+            // Toolbar Button Upsell
+        case .privacyProToolbarButtonShown: return "m_mac_privacy-pro_toolbar_button_shown"
+        case .privacyProToolbarButtonPopoverShown: return "m_mac_privacy-pro_toolbar_button_popover_shown"
+        case .privacyProToolbarButtonPopoverNoThanksClicked: return "m_mac_privacy-pro_toolbar_button_popover_no_thanks_clicked"
+        case .privacyProToolbarButtonPopoverTryForFreeClicked: return "m_mac_privacy-pro_toolbar_button_popover_try_for_free_clicked"
         }
     }
 

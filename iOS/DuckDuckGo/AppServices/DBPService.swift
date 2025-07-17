@@ -48,6 +48,7 @@ final class DBPService: NSObject {
                 privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
                 pixelKit: pixelKit,
+                subscriptionManager: dbpSubscriptionManager,
                 quickLinkOpenURLHandler: { url in
                     guard let quickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(url.absoluteString)) else { return }
                     UIApplication.shared.open(quickLinkURL)
@@ -66,7 +67,7 @@ final class DBPService: NSObject {
     }
 }
 
-private final class DBPFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
+final class DBPFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
     private let appDependencies: DependencyProvider
 
     var isRemoteBrokerDeliveryFeatureOn: Bool {

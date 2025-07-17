@@ -91,6 +91,9 @@ final class AIChatSummarizer: AIChatSummarizing {
         pixelFiring?.fire(AIChatPixel.aiChatSummarizeText(source: request.source), frequency: .dailyAndStandard)
 
         if featureFlagger.isFeatureOn(.aiChatSidebar) && aiChatMenuConfig.openAIChatInSidebar {
+            if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
+                pixelFiring?.fire(AIChatPixel.aiChatSidebarOpened(source: .summarization), frequency: .dailyAndStandard)
+            }
             aiChatSidebarPresenter.presentSidebar(for: prompt)
         } else {
             AIChatPromptHandler.shared.setData(prompt)

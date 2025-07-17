@@ -26,7 +26,7 @@ final class CrashReportPromptViewController: NSViewController {
     @IBOutlet weak var descriptionLabel: NSTextField!
     @IBOutlet var textView: NSTextView!
 
-    var userDidAllowToReport: () -> Void = {}
+    var userDidAnswerPrompt: ((CrashReportPromptPresenter.Response) -> Void)?
 
     var crashReport: CrashReportPresenting? {
         didSet {
@@ -52,11 +52,12 @@ final class CrashReportPromptViewController: NSViewController {
     }
 
     @IBAction func sendAction(_ sender: Any) {
-        userDidAllowToReport()
+        userDidAnswerPrompt?(.allow)
         view.window?.close()
     }
 
     @IBAction func dontSendAction(_ sender: Any) {
+        userDidAnswerPrompt?(.deny)
         view.window?.close()
     }
 

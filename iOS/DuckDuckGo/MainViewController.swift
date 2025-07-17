@@ -555,7 +555,7 @@ class MainViewController: UIViewController {
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection), hasEntitlement {
+            if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection), canShowVPNInUI {
                 segueToVPN()
             } else {
                 segueToPrivacyPro()
@@ -1786,7 +1786,7 @@ class MainViewController: UIViewController {
                 Task {
                     guard let self else { return }
 
-                    guard let hasEntitlement = try? await self.subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection) else {
+                    guard let hasEntitlement = try? await self.subscriptionManager.isFeatureEnabled(.networkProtection) else {
                         return
                     }
                     let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
@@ -1840,13 +1840,6 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.onNetworkProtectionEntitlementMessagingChange()
-            }
-            .store(in: &vpnCancellables)
-
-        NotificationCenter.default.publisher(for: .expiredRefreshTokenDetected)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                self?.onExpiredRefreshTokenDetected(notification)
             }
             .store(in: &vpnCancellables)
 
@@ -1930,11 +1923,6 @@ class MainViewController: UIViewController {
         }
     }
 
-    @objc
-    private func onExpiredRefreshTokenDetected(_ notification: Notification) {
-        // Not implemented : https://app.asana.com/0/1205842942115003/1209622270835329/f
-    }
-
     var networkProtectionTunnelController: NetworkProtectionTunnelController {
         AppDependencyProvider.shared.networkProtectionTunnelController
     }
@@ -1943,7 +1931,7 @@ class MainViewController: UIViewController {
         Task {
             let isAuthV2Enabled = AppDependencyProvider.shared.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
-            guard let hasEntitlement = try? await subscriptionManager.isFeatureEnabledForUser(feature: .networkProtection) else {
+            guard let hasEntitlement = try? await subscriptionManager.isFeatureEnabled(.networkProtection) else {
                 return
             }
 
@@ -2080,8 +2068,8 @@ class MainViewController: UIViewController {
         Pixel.fire(pixel: pixel, withAdditionalParameters: pixelParameters, includedParameters: [.atb])
     }
 
-    func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil) {
-        aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, on: self)
+    func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil, tools: [AIChatRAGTool]? = nil) {
+        aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, tools: tools, on: self)
     }
 }
 
@@ -2287,8 +2275,8 @@ extension MainViewController: OmniBarDelegate {
         handleFavoriteSelected(favorite)
     }
 
-    func onOmniPromptSubmitted(_ query: String) {
-        openAIChat(query, autoSend: true)
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
+        openAIChat(query, autoSend: true, tools: tools)
     }
 
     func didRequestCurrentURL() -> URL? {

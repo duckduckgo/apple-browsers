@@ -118,6 +118,7 @@ extension AIChatWebViewController {
         static let queryKey = "q"
         static let autoSendKey = "prompt"
         static let autoSendValue = "1"
+        static let toolChoice = "toolChoice"
     }
 
     func reload() {
@@ -129,14 +130,37 @@ extension AIChatWebViewController {
         webView.load(request)
     }
 
-    func loadQuery(_ query: String, autoSend: Bool) {
-        let urlQuery = URLQueryItem(name: QueryParameters.queryKey, value: query)
-        var queryURL = chatModel.aiChatURL.addingOrReplacing(urlQuery)
-        if autoSend {
-            let autoSendQuery = URLQueryItem(name: QueryParameters.autoSendKey, value: QueryParameters.autoSendValue)
-            queryURL = queryURL.addingOrReplacing(autoSendQuery)
+    func loadQuery(_ query: String, autoSend: Bool, tools: [AIChatRAGTool]?) {
+        let url = buildQueryURL(query: query, autoSend: autoSend, tools: tools)
+        webView.load(URLRequest(url: url))
+    }
+
+    private func buildQueryURL(query: String, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL {
+        guard var components = URLComponents(url: chatModel.aiChatURL, resolvingAgainstBaseURL: false) else {
+            return chatModel.aiChatURL
         }
-        webView.load(URLRequest(url: queryURL))
+
+        var queryItems = components.queryItems ?? []
+
+        if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            queryItems.removeAll { $0.name == QueryParameters.queryKey }
+            queryItems.append(URLQueryItem(name: QueryParameters.queryKey, value: query))
+        }
+
+        if autoSend {
+            queryItems.removeAll { $0.name == QueryParameters.autoSendKey }
+            queryItems.append(URLQueryItem(name: QueryParameters.autoSendKey, value: QueryParameters.autoSendValue))
+        }
+
+        if let tools = tools, !tools.isEmpty {
+            queryItems.removeAll { $0.name == QueryParameters.toolChoice }
+            for tool in tools {
+                queryItems.append(URLQueryItem(name: QueryParameters.toolChoice, value: tool.rawValue))
+            }
+        }
+
+        components.queryItems = queryItems
+        return components.url ?? chatModel.aiChatURL
     }
 }
 

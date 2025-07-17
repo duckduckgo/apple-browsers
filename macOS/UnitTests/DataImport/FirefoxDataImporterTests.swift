@@ -27,8 +27,9 @@ class FirefoxDataImporterTests: XCTestCase {
     func testWhenImportingBookmarks_AndBookmarkImportSucceeds_ThenSummaryIsPopulated() async {
         let loginImporter = MockLoginImporter()
         let faviconManager = FaviconManagerMock()
-        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _ in .init(successful: 1, duplicates: 2, failed: 3) })
-        let importer = FirefoxDataImporter(profile: .init(browser: .firefox, profileURL: resourceURL()), primaryPassword: nil, loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager)
+        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _, _ in .init(successful: 1, duplicates: 2, failed: 3) })
+        let featureFlagger = MockFeatureFlagger()
+        let importer = FirefoxDataImporter(profile: .init(browser: .firefox, profileURL: resourceURL()), primaryPassword: nil, loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
 
         let result = await importer.importData(types: [.bookmarks])
 
@@ -40,6 +41,49 @@ class FirefoxDataImporterTests: XCTestCase {
         } else {
             XCTFail("Received populated summary unexpectedly")
         }
+    }
+
+    @MainActor
+    func testWhenImportingBookmarks_AndFeatureFlagDisabled_NewTabFavoritesNotImported_AndBookmarksBarIsFavorited() async {
+        var bookmarksToImport: ImportedBookmarks?
+        var bookmarksBarMarkedAsFavorites: Bool?
+
+        let loginImporter = MockLoginImporter()
+        let faviconManager = FaviconManagerMock()
+        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { bookmarks, _, markBookmarksBarAsFavorites, _ in
+            bookmarksToImport = bookmarks
+            bookmarksBarMarkedAsFavorites = markBookmarksBarAsFavorites
+            return .init(successful: 1, duplicates: 2, failed: 3)
+        })
+        let featureFlagger = MockFeatureFlagger()
+        let importer = FirefoxDataImporter(profile: .init(browser: .firefox, profileURL: resourceURL()), primaryPassword: nil, loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
+
+        _ = await importer.importData(types: [.bookmarks])
+
+        XCTAssertEqual(bookmarksToImport?.numberOfBookmarks, 7)
+        XCTAssertEqual(bookmarksBarMarkedAsFavorites, true)
+    }
+
+    @MainActor
+    func testWhenImportingBookmarks_AndFeatureFlagEnabled_BookmarksAndFavoritesAreMerged_AndBookmarksBarIsNotFavorited() async {
+        var bookmarksToImport: ImportedBookmarks?
+        var bookmarksBarMarkedAsFavorites: Bool?
+
+        let loginImporter = MockLoginImporter()
+        let faviconManager = FaviconManagerMock()
+        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { bookmarks, _, markBookmarksBarAsFavorites, _ in
+            bookmarksToImport = bookmarks
+            bookmarksBarMarkedAsFavorites = markBookmarksBarAsFavorites
+            return .init(successful: 1, duplicates: 2, failed: 3)
+        })
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags.append(.updateFirefoxBookmarksImport)
+        let importer = FirefoxDataImporter(profile: .init(browser: .firefox, profileURL: resourceURL()), primaryPassword: nil, loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
+
+        _ = await importer.importData(types: [.bookmarks])
+
+        XCTAssertEqual(bookmarksToImport?.numberOfBookmarks, 10)
+        XCTAssertEqual(bookmarksBarMarkedAsFavorites, false)
     }
 
     private func resourceURL() -> URL {

@@ -177,6 +177,8 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
                                           let errorHandler,
                                           let completion) = command else { return }
 
+        cancelCurrentModeAndResetIfNeeded()
+        mode = .immediate(errorHandler: nil, completion: nil)
         addJobs(for: .optOut,
                       showWebView: showWebView,
                       jobDependencies: operationDependencies,

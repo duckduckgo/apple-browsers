@@ -23,7 +23,7 @@ public enum LinkOpenTarget: Equatable {
 }
 
 extension LinkOpenTarget {
-    init(_ target: NewTabPageDataModel.ActivityOpenAction.OpenTarget) {
+    init(_ target: NewTabPageDataModel.OpenTarget) {
         switch target {
         case .sameTab:
             self = .current

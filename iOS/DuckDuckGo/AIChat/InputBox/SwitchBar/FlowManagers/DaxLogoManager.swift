@@ -26,25 +26,16 @@ final class DaxLogoManager {
     
     // MARK: - Properties
 
-    private var daxLogoHostingController: UIHostingController<FullHeightLogoView>?
-
-    var logoView: UIView? {
-        daxLogoHostingController?.view
-    }
+    var logoView = DaxLogoView()
     
     // MARK: - Public Methods
     
-    func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {
-        let daxLogoView = FullHeightLogoView()
-        let hostingController = UIHostingController(rootView: daxLogoView)
-        daxLogoHostingController = hostingController
-        
-        hostingController.view.backgroundColor = .clear
-        viewController.addChild(hostingController)
-        viewController.view.addSubview(hostingController.view)
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+    func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {        viewController.view.addSubview(logoView)
+        logoView.translatesAutoresizingMaskIntoConstraints = false
+        logoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         let centeringGuide = UILayoutGuide()
+        centeringGuide.identifier = "DaxLogoCenteringGuide"
         viewController.view.addLayoutGuide(centeringGuide)
 
         NSLayoutConstraint.activate([
@@ -53,31 +44,60 @@ final class DaxLogoManager {
             topView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
             viewController.view.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor),
 
-            hostingController.view.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
-            hostingController.view.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor),
-            hostingController.view.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
-            hostingController.view.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor)
+            logoView.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
+            logoView.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor),
+            logoView.leadingAnchor.constraint(greaterThanOrEqualTo: centeringGuide.leadingAnchor),
+            logoView.trailingAnchor.constraint(lessThanOrEqualTo: centeringGuide.trailingAnchor),
+            logoView.centerXAnchor.constraint(equalTo: centeringGuide.centerXAnchor),
+            logoView.centerYAnchor.constraint(equalTo: centeringGuide.centerYAnchor)
         ])
 
-        viewController.view.sendSubviewToBack(hostingController.view)
-        hostingController.didMove(toParent: viewController)
-    }
-    
-    func removeFromParent() {
-        daxLogoHostingController?.willMove(toParent: nil)
-        daxLogoHostingController?.view.removeFromSuperview()
-        daxLogoHostingController?.removeFromParent()
-        daxLogoHostingController = nil
+        viewController.view.sendSubviewToBack(logoView)
     }
 }
 
+final class DaxLogoView: UIView {
+    let logoImage = UIImageView(image: UIImage(resource: .home))
+    let textImage = UIImageView(image: UIImage(resource: .textDuckDuckGo))
 
-// Makes the logo view expand to fill the full height,
-// allowing to automatically adjust for keyboard.
-private struct FullHeightLogoView: View {
-    var body: some View {
-        NewTabPageDaxLogoView()
-            .padding(24)
-            .scaledToFit()
+    private let stackView = UIStackView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        setUpView()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setUpView() {
+        stackView.addArrangedSubview(logoImage)
+        stackView.addArrangedSubview(textImage)
+
+        textImage.tintColor = UIColor(designSystemColor: .textPrimary)
+
+        stackView.spacing = 12
+        stackView.axis = .vertical
+        stackView.alignment = .fill
+        stackView.distribution = .fill
+
+        addSubview(stackView)
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            stackView.topAnchor.constraint(equalTo: topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            logoImage.heightAnchor.constraint(lessThanOrEqualToConstant: 96),
+            logoImage.heightAnchor.constraint(equalToConstant: 96).withPriority(.defaultHigh)
+        ])
+
+        logoImage.contentMode = .scaleAspectFit
+        textImage.contentMode = .center
+
     }
 }

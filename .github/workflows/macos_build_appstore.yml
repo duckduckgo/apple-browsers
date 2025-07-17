@@ -119,11 +119,17 @@ jobs:
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
-    - name: Override build number for Alpha release
-      if: ${{ env.destination == 'testflight_alpha' && inputs.build-number-override != '' }}
+    - name: Override version and build number for Alpha release
+      if: ${{ env.destination == 'testflight_alpha' }}
+      env:
+        ALPHA_VERSION: 9999.9.9
       run: |
-        echo "Overriding build number to ${{ inputs.build-number-override }}"
-        echo "CURRENT_PROJECT_VERSION = ${{ inputs.build-number-override }}" > Configuration/BuildNumber.xcconfig
+        echo "Overriding version number to ${ALPHA_VERSION}"
+        echo "MARKETING_VERSION = ${ALPHA_VERSION}" > Configuration/Version.xcconfig
+        if [[ "${{ inputs.build-number-override }}" != "" ]]; then
+          echo "Overriding build number to ${{ inputs.build-number-override }}"
+          echo "CURRENT_PROJECT_VERSION = ${{ inputs.build-number-override }}" > Configuration/BuildNumber.xcconfig
+        fi
 
     - name: Archive and Upload the App
       env:

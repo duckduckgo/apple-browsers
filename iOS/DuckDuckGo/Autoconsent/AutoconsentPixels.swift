@@ -17,6 +17,7 @@
 //
 
 import PixelKit
+import UIKit
 
 enum AutoconsentPixel: PixelKitEventV2 {
 
@@ -38,8 +39,8 @@ enum AutoconsentPixel: PixelKitEventV2 {
 
     case summary(events: [String: Int])
 
-    static var summaryPixels = [AutoconsentPixel] (
-        arrayLiteral: .acInit,
+    static var summaryPixels: [AutoconsentPixel] =  [
+        .acInit,
         .missedPopup,
         .errorMultiplePopups,
         .errorOptoutFailed,
@@ -54,7 +55,7 @@ enum AutoconsentPixel: PixelKitEventV2 {
         .detectedOnlyRules,
         .selfTestOk,
         .selfTestFail
-    )
+    ]
 
     var name: String {
         switch self {
@@ -78,7 +79,7 @@ enum AutoconsentPixel: PixelKitEventV2 {
     }
 
     var key: String {
-        return String(name.dropFirst(12))
+        return name.dropping(prefix: "autoconsent_")
     }
 
     var parameters: [String: String]? {

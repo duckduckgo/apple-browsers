@@ -84,10 +84,9 @@ final class AutoconsentManagement {
             // Cancel any existing pending task (shouldn't happen but safety first)
             pendingSummaryTask?.cancel()
             
-            // Create new task for firing summary after 30 seconds
+            // Create new task for firing summary after 120 seconds
             let summaryTask = DispatchWorkItem { [weak self] in
                 guard let self = self else { return }
-                Logger.autoconsent.debug("Firing scheduled pixel summary after 30 seconds")
                 self.fireSummaryPixel()
                 self.pendingSummaryTask = nil
             }
@@ -103,12 +102,12 @@ final class AutoconsentManagement {
         pixelCounter[pixel.key, default: 0] += 1
 
         // fire daily pixel if needed
-        PixelKit.fire(pixel, frequency: .daily)
+        PixelKit.fire(pixel, frequency: .daily, includeAppVersionParameter: true)
     }
     
     func fireSummaryPixel() {
         if !pixelCounter.isEmpty {
-            PixelKit.fire(AutoconsentPixel.summary(events: pixelCounter), frequency: .standard)
+            PixelKit.fire(AutoconsentPixel.summary(events: pixelCounter), frequency: .standard, includeAppVersionParameter: true)
             pixelCounter = [:]
             detectedByPatternsCache.removeAll()
             detectedByBothCache.removeAll()
@@ -119,6 +118,9 @@ final class AutoconsentManagement {
     func clearCache() {
         dispatchPrecondition(condition: .onQueue(.main))
         sitesNotifiedCache.removeAll()
+        detectedByPatternsCache.removeAll()
+        detectedByBothCache.removeAll()
+        detectedOnlyRulesCache.removeAll()
     }
 
 }

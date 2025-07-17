@@ -264,6 +264,8 @@ public final class DataBrokerProtectionIOSManager {
         let startTime = Date.now
 
         task.expirationHandler = {
+            self.queueManager.stop()
+            
             let timeTaken = Date.now.timeIntervalSince(startTime)
             Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS

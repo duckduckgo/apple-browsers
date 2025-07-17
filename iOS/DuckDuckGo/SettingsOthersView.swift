@@ -31,9 +31,15 @@ struct SettingsOthersView: View {
         Section {
             // About
             NavigationLink(destination: AboutView().environmentObject(viewModel)) {
+#if ALPHA
+                let version = "v\(viewModel.state.version) (\(Bundle.main.ShortGitRevision ?? "unknown revision"))"
+#else
+                let version = "v\(viewModel.state.version)"
+#endif
+
                 SettingsCellView(label: UserText.settingsAboutSection,
                                  image: Image(.logoIcon),
-                                 accessory: .rightDetail("v\(viewModel.state.version)"))
+                                 accessory: .rightDetail(version))
             }
 
             // Share Feedback

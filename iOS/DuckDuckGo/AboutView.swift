@@ -84,8 +84,19 @@ struct AboutViewVersion: View {
 
     var body: some View {
         Section(header: Text("DuckDuckGo for iOS"), footer: Text(UserText.settingsSendCrashReportsDescription)) {
-            SettingsCellView(label: UserText.settingsVersion,
-                             accessory: .rightDetail(viewModel.state.version))
+#if ALPHA
+            let version = "\(viewModel.state.version) (Alpha)"
+#else
+            let version = viewModel.state.version
+#endif
+
+            SettingsCellView(label: UserText.settingsVersion, accessory: .rightDetail(version))
+
+#if ALPHA
+            if let buildVersion = Bundle.main.ShortGitRevision {
+                SettingsCellView(label: "Build", accessory: .rightDetail(buildVersion))
+            }
+#endif
 
             // Send Crash Reports
             SettingsCellView(label: UserText.settingsSendCrashReports,

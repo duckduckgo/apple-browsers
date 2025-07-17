@@ -47,6 +47,10 @@ jobs:
     
     outputs:
       cache_key_hash: ${{ steps.cache-key.outputs.cache_key_hash }}
+      app_version: ${{ steps.build-alpha.outputs.app_version }}
+      build_version: ${{ steps.build-alpha.outputs.build_version }}
+      ipa_path: ${{ steps.build-alpha.outputs.ipa_path }}
+      dsyms_path: ${{ steps.build-alpha.outputs.dsyms_path }}
 
     steps:
 
@@ -90,6 +94,34 @@ jobs:
         working-directory: iOS
         cache-key-prefix: ios-ruby
 
+    - name: Build Alpha app
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      run: |
+        app_version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)"
+        bundle exec fastlane increment_build_number_for_version version:$app_version app_identifier:"com.duckduckgo.mobile.ios.alpha"
+        build_version="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
+        bundle exec fastlane build_alpha_only
+        
+        # Export build metadata
+        echo "app_version=${app_version}" >> $GITHUB_OUTPUT
+        echo "build_version=${build_version}" >> $GITHUB_OUTPUT
+        echo "ipa_path=${{ github.workspace }}/iOS/DuckDuckGo-Alpha.ipa" >> $GITHUB_OUTPUT
+        echo "dsyms_path=${{ github.workspace }}/iOS/DuckDuckGo-Alpha.app.dSYM.zip" >> $GITHUB_OUTPUT
+      id: build-alpha
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: alpha-build-${{ steps.build-alpha.outputs.app_version }}-${{ steps.build-alpha.outputs.build_version }}
+        path: |
+          iOS/DuckDuckGo-Alpha.ipa
+          iOS/DuckDuckGo-Alpha.app.dSYM.zip
+        retention-days: 1
+
   upload:
     needs: build
     runs-on: macos-15-xlarge
@@ -103,33 +135,17 @@ jobs:
     env:
       destination: ${{ github.event.inputs.destination || inputs.destination || 'Latest Alpha Group' }}
 
-    outputs:
-      app_version: ${{ steps.upload-app.outputs.app_version }}
-      build_version: ${{ steps.upload-app.outputs.build_version }}
-      dsyms_path: ${{ steps.upload-app.outputs.dsyms_path }}
-
     steps:
-    - name: Register SSH keys for access to certificates
-      uses: webfactory/ssh-agent@v0.9.1
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-
     - name: Check out the code
       uses: actions/checkout@v4
       with:
         submodules: recursive
 
-    - name: Cache SPM
-      if: needs.build.outputs.cache_key_hash
-      uses: actions/cache@v4
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
       with:
-        path: iOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-ios-${{ needs.build.outputs.cache_key_hash }}
-        restore-keys: |
-          ${{ runner.os }}-ios-
-
-    - name: Select Xcode
-      uses: ./.github/actions/select-xcode-version
+        name: alpha-build-${{ needs.build.outputs.app_version }}-${{ needs.build.outputs.build_version }}
+        path: iOS/
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
@@ -137,35 +153,26 @@ jobs:
         working-directory: iOS
         cache-key-prefix: ios-ruby
 
-    - name: Archive and upload the app
-      id: upload-app
+    - name: Upload app to TestFlight
       env:
         APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       run: |
-        app_version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)"
-        bundle exec fastlane increment_build_number_for_version version:$app_version app_identifier:"com.duckduckgo.mobile.ios.alpha"
-        build_version="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
-        bundle exec fastlane release_alpha groups:["${{ env.destination }}"]
-        dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-Alpha.app.dSYM.zip"
-        echo "app_version=${app_version}" >> $GITHUB_OUTPUT
-        echo "build_version=${build_version}" >> $GITHUB_OUTPUT
-        echo "dsyms_path=${dsyms_path}" >> $GITHUB_OUTPUT
+        bundle exec fastlane upload_alpha_only groups:["${{ env.destination }}"] ipa_path:"${{ needs.build.outputs.ipa_path }}"
 
     - name: Upload dSYMs artifact
       uses: actions/upload-artifact@v4
       with:
-        name: DuckDuckGo-Alpha-dSYM-${{ steps.upload-app.outputs.app_version }}
-        path: ${{ steps.upload-app.outputs.dsyms_path }}
+        name: DuckDuckGo-Alpha-dSYM-${{ needs.build.outputs.app_version }}
+        path: ${{ needs.build.outputs.dsyms_path }}
 
     - name: Upload debug symbols to Asana
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       run: |
-        asana_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-Alpha-${{ steps.upload-app.outputs.app_version }}(${{ steps.upload-app.outputs.build_version }})-dSYM.zip"
-        mv -f "${{ steps.upload-app.outputs.dsyms_path }}" "$asana_dsyms_path"
+        asana_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-Alpha-${{ needs.build.outputs.app_version }}(${{ needs.build.outputs.build_version }})-dSYM.zip"
+        mv -f "${{ needs.build.outputs.dsyms_path }}" "$asana_dsyms_path"
 
         curl -s "https://app.asana.com/api/1.0/tasks/1205344386326139/attachments" \
           -H "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \

@@ -266,6 +266,21 @@ platform :ios do
     )
   end
 
+  desc 'Makes Alpha release build only (without uploading)'
+  lane :build_alpha_only do |options|
+    build_alpha(options)
+  end
+
+  desc 'Uploads pre-built Alpha app to TestFlight'
+  lane :upload_alpha_only do |options|
+    upload_to_testflight(
+      api_key: get_api_key,
+      groups: options[:groups],
+      skip_waiting_for_build_processing: true,
+      ipa: options[:ipa_path]
+    )
+  end
+
   desc 'Increment build number based on version in App Store Connect'
   lane :increment_build_number_for_version do |options|
     build_number = latest_testflight_build_number(

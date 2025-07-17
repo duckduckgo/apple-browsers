@@ -234,7 +234,6 @@ class TabViewController: UIViewController {
     let syncService: DDGSyncing
 
     private let daxDialogsDebouncer = Debouncer(mode: .common)
-    var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
 
     lazy var autofillCreditCardAccessoryView: CreditCardInputAccessoryView? = {
         let initialFrame = CGRect(x: 0, y: 0, width: view.frame.width, height: 58)
@@ -716,19 +715,8 @@ class TabViewController: UIViewController {
             webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
         ])
 
-        if isExperimentalThemingEnabled {
-            pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
-                                                                pullableView: webViewContainerView,
-                                                                onRefresh: { [weak self] in
-                self?.handlePullToRefresh()
-            })
-        } else {
-            webView.scrollView.refreshControl = refreshControl
-            // Be sure to set `tintColor` after the control is attached to ScrollView otherwise haptics are gone.
-            // We don't have to care about it for this control instance the next time `setRefreshControlEnabled`
-            // is called. Looks like a bug introduced in iOS 17.4 (https://github.com/facebook/react-native/issues/43388)
-            configureRefreshControl(refreshControl)
-        }
+        webView.scrollView.refreshControl = refreshControl
+        configureRefreshControl(refreshControl)
 
         updateContentMode()
 
@@ -794,10 +782,19 @@ class TabViewController: UIViewController {
     }
 
     private func configureRefreshControl(_ control: UIRefreshControl) {
+        func determineRefreshControlTintColor(for backgroundColor: UIColor?) -> UIColor {
+            guard let backgroundColor = backgroundColor else {
+                return UIColor(designSystemColor: .iconsSecondary)
+            }
+
+            let userInterfaceStyle: UIUserInterfaceStyle = backgroundColor.brightnessPercentage < 50 ? .dark : .light
+            return UIColor(designSystemColor: .iconsSecondary).resolvedColor(with: .init(userInterfaceStyle: userInterfaceStyle))
+        }
+
         refreshControl.addAction(UIAction { [weak self] _ in
             self?.handlePullToRefresh()
         }, for: .valueChanged)
-        refreshControl.tintColor = .label
+        refreshControl.tintColor = determineRefreshControlTintColor(for: webView.backgroundColor)
     }
 
     private func consumeCookiesThenLoadRequest(_ request: URLRequest?) {
@@ -1010,7 +1007,6 @@ class TabViewController: UIViewController {
     private func hideProgressIndicator() {
         progressWorker.didFinishLoading()
         webView.scrollView.refreshControl?.endRefreshing()
-        pullToRefreshViewAdapter?.endRefreshing()
     }
 
     public func reload() {
@@ -1179,11 +1175,7 @@ class TabViewController: UIViewController {
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {
-        if isExperimentalThemingEnabled {
-            pullToRefreshViewAdapter?.setRefreshControlEnabled(isEnabled)
-        } else {
-            webView.scrollView.refreshControl = isEnabled ? refreshControl : nil
-        }
+        webView.scrollView.refreshControl = isEnabled ? refreshControl : nil
     }
 
     private var didGoBackForward: Bool = false {

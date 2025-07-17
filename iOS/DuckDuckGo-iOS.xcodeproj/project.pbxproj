@@ -8850,7 +8850,6 @@
 			buildPhases = (
 				CBCCF59B29940C3800C02DFE /* Assert Xcode version */,
 				0A991F5B239418D100AA1F64 /* Prevent Version Override */,
-				4BCF46DE2E295EB9002E86A0 /* Add Git Ref to Info.plist */,
 				98B0CE69251C937D003FB601 /* Update Localizable.strings */,
 				84E3418E1E2F7EFB00BDBA6F /* Sources */,
 				B6409DC62BC7D9BF00D66F9E /* Run swiftlint */,
@@ -9673,24 +9672,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"$SOURCE_ROOT/scripts/fix_libswiftWebkit_simulator.sh\"\n";
-		};
-		4BCF46DE2E295EB9002E86A0 /* Add Git Ref to Info.plist */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Add Git Ref to Info.plist";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [ \"${CONFIGURATION}\" = \"Alpha\" ] || [ \"${CONFIGURATION}\" = \"Alpha Debug\" ]; then\n    \"$SOURCE_ROOT/scripts/add_git_ref_to_info_plist.sh\"\nfi\n";
 		};
 		98B0CE69251C937D003FB601 /* Update Localizable.strings */ = {
 			isa = PBXShellScriptBuildPhase;

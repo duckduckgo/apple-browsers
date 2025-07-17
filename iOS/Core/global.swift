@@ -44,8 +44,4 @@ extension Bundle {
         return Bundle(for: CoreModule.self)
     }
 
-    public var ShortGitRevision: String? {
-        return Bundle.main.object(forInfoDictionaryKey: "ShortGitRevision") as? String
-    }
-
 }

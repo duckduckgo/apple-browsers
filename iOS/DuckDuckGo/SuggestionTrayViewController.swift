@@ -53,6 +53,12 @@ class SuggestionTrayViewController: UIViewController {
         isShowingAutocompleteSuggestions || isShowingFavoritesOverlay
     }
 
+    var isUsingNTPCompatibleStyling: Bool = false {
+        didSet {
+            favoritesOverlay?.isUsingNTPCompatibleStyling = isUsingNTPCompatibleStyling
+        }
+    }
+
     private var autocompleteController: AutocompleteViewController?
     private var favoritesOverlay: FavoritesOverlay?
     private var willRemoveAutocomplete = false
@@ -247,6 +253,7 @@ class SuggestionTrayViewController: UIViewController {
     private func installFavoritesOverlay(animated: Bool, onInstall: @escaping () -> Void = {}) {
         let controller = FavoritesOverlay(viewModel: favoritesModel)
         controller.delegate = favoritesOverlayDelegate
+        controller.isUsingNTPCompatibleStyling = isUsingNTPCompatibleStyling
         install(controller: controller,
                 animated: animated,
                 additionalInsets: additionalFavoritesOverlayInsets,

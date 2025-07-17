@@ -94,6 +94,7 @@ final class SuggestionTrayManager: NSObject {
         }
 
         controller.coversFullScreen = true
+        controller.isUsingNTPCompatibleStyling = true
         controller.additionalFavoritesOverlayInsets = UIEdgeInsets(top: 0, left: 6, bottom: 0, right: 6)
 
         parentViewController.addChild(controller)
@@ -155,16 +156,33 @@ final class SuggestionTrayManager: NSObject {
                 
                 switch newState {
                 case .search:
-                    if self.switchBarHandler.currentText.isEmpty {
-                        self.showSuggestionTray(.favorites)
-                    } else {
-                        self.showSuggestionTray(.autocomplete(query: self.switchBarHandler.currentText))
-                    }
+                    self.updateSuggestionTrayForCurrentState()
                 case .aiChat:
                     break
                 }
             }
             .store(in: &cancellables)
+        
+        switchBarHandler.hasUserInteractedWithTextPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                if self.switchBarHandler.currentToggleState == .search {
+                    self.updateSuggestionTrayForCurrentState()
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updateSuggestionTrayForCurrentState() {
+        let query = switchBarHandler.currentText
+        let hasUserInteracted = switchBarHandler.hasUserInteractedWithText
+        
+        if query.isEmpty || !hasUserInteracted {
+            showSuggestionTray(.favorites)
+        } else {
+            showSuggestionTray(.autocomplete(query: query))
+        }
     }
     
     private func showSuggestionTray(_ type: SuggestionTrayViewController.SuggestionType) {

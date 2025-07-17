@@ -1394,6 +1394,8 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
+            // delay the response to avoid flakiness when the response is received before WebView stops loading
+            Thread.sleep(forTimeInterval: 0.1)
             return .ok(.data(data.html))
         }]
         try server.start(8084)
@@ -1627,12 +1629,10 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
     }
 
     func testWhenWebContentProcessIsTerminated_webProcessDidTerminateAndNavigationDidFailReceived() throws {
-        throw XCTSkip("termination handler broken on macOS 15.5+")
-
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         responder(at: 0).onNavigationResponse = { [unowned webView=withWebView(do: { $0 })] _ in
-            webView.perform(NSSelectorFromString("_killWebContentProcess"))
+            webView.killWebContentProcess()
             return .next
         }
 
@@ -1653,7 +1653,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
             _=webView.load(req(urls.local1))
         }
 
-        waitForExpectations(timeout: 5)
+        waitForExpectations(timeout: 10)
 
         assertHistory(ofResponderAt: 0, equalsTo: [
             .navigationAction(req(urls.local1), .other, src: main(responderIdx: 0)),

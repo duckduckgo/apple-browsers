@@ -21,13 +21,13 @@
         suffixes: [],
         parameters: [
             {
-                key: "mode",
-                type: "string",
-                description: "Omnibar mode the user switched to",
-                enum: ["search", "duck_ai"]
+                key: 'mode',
+                type: 'string',
+                description: 'Omnibar mode the user switched to',
+                enum: ['search', 'duck_ai'],
             },
-            "appVersion",
-            "pixelSource"
+            'appVersion',
+            'pixelSource',
         ],
     },
     omnibarHidden: {
@@ -43,5 +43,5 @@
         triggers: ['other'],
         suffixes: ['first_daily_count'],
         parameters: ['appVersion', 'pixelSource'],
-    }
+    },
 }

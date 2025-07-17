@@ -94,8 +94,6 @@ class FingerprintUITest: XCTestCase {
     }
 
     func test() throws {
-        XCTFail("Forced fail to test out a PR")
-
         let app = XCUIApplication()
 
         _ = app.buttons["Browsing Menu"].waitForExistence(timeout: 25)

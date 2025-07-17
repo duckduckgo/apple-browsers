@@ -149,7 +149,15 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
             await runNextAction(action)
         } else {
             await webViewHandler?.finish() // If we executed all steps we release the web view
+            finish()
+        }
+    }
+
+    private func finish() {
+        if shouldRunNextStep() {
             complete(())
+        } else {
+            failed(with: DataBrokerProtectionError.cancelled)
         }
     }
 }

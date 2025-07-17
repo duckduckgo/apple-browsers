@@ -161,6 +161,15 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         } else {
             Logger.action.debug("Releasing the web view")
             await webViewHandler?.finish() // If we executed all steps we release the web view
+            finish()
+        }
+    }
+
+    private func finish() {
+        if shouldRunNextStep() {
+            complete([])
+        } else {
+            failed(with: DataBrokerProtectionError.cancelled)
         }
     }
 }

@@ -1266,12 +1266,6 @@ extension Pixel {
         case aiChatMetricSentPromptOngoingChat
         case aiChatInternalSwitchBarDisplayed
 
-        // MARK: Privacy Pro Toolbar Button
-        case privacyProToolbarButtonShown
-        case privacyProToolbarButtonPopoverShown
-        case privacyProToolbarButtonPopoverNoThanksClicked
-        case privacyProToolbarButtonPopoverTryForFreeClicked
-
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
 

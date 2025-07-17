@@ -37,7 +37,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
                  supportedOSChecker: SupportedOSChecking? = nil) {
 
         self.featureFlagger = featureFlagger
-        self.appVersionModel = .init(internalUserDecider: internalUserDecider, appVersion: AppVersion())
+        self.appVersionModel = .init(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
         self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
         internalUserDecider.isInternalUserPublisher
             .sink { [weak self] _ in self?.objectWillChange.send() }

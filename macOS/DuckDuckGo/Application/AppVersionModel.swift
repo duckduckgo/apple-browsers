@@ -26,9 +26,12 @@ import Common
 final class AppVersionModel {
 
     let appVersion: AppVersion
-    let internalUserDecider: InternalUserDecider
 
-    init(internalUserDecider: InternalUserDecider, appVersion: AppVersion) {
+    /// Internal user decider is only used in `shouldDisplayPrereleaseLabel`.
+    /// If this class only needs to provide the app version, it can be `nil`.
+    private let internalUserDecider: InternalUserDecider?
+
+    init(appVersion: AppVersion, internalUserDecider: InternalUserDecider?) {
         self.internalUserDecider = internalUserDecider
         self.appVersion = appVersion
     }
@@ -37,20 +40,31 @@ final class AppVersionModel {
     let shouldDisplayPrereleaseLabel: Bool = true
     let prereleaseLabel: String = "ALPHA"
     var versionLabel: String {
-        let versionText = UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
+        var versionText = UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
         let commitSHA = appVersion.commitSHAShort
-        guard !commitSHA.isEmpty else {
-            return versionText
+        if !commitSHA.isEmpty {
+            versionText.append(" [\(commitSHA)]")
         }
-        return "\(versionText) [\(commitSHA)]"
+        return versionText
+    }
+    var versionLabelShort: String {
+        var label = "\(appVersion.versionNumber).\(appVersion.buildNumber)"
+        let commitSHA = appVersion.commitSHAShort
+        if !commitSHA.isEmpty {
+            label.append("_\(commitSHA)")
+        }
+        return label
     }
 #else
     var shouldDisplayPrereleaseLabel: Bool {
-        internalUserDecider.isInternalUser
+        internalUserDecider?.isInternalUser == true
     }
     let prereleaseLabel: String = "BETA"
     var versionLabel: String {
         UserText.versionLabel(version: appVersion.versionNumber, build: appVersion.buildNumber)
+    }
+    var versionLabelShort: String {
+        "\(appVersion.versionNumber).\(appVersion.buildNumber)"
     }
 #endif
 }

@@ -100,7 +100,7 @@ final class AboutPanelController {
         panel.isReleasedWhenClosed = false
         panel.center()
 
-        let appVersionModel = AppVersionModel(internalUserDecider: internalUserDecider, appVersion: AppVersion())
+        let appVersionModel = AppVersionModel(appVersion: AppVersion(), internalUserDecider: internalUserDecider)
         let hosting = NSHostingController(rootView: AboutPanelView(model: appVersionModel))
         panel.contentView = hosting.view
     }

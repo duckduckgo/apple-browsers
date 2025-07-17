@@ -42,34 +42,21 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {}
 
     override init() {
-        let appVersion = AppVersion()
+        let appVersionModel = AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil)
+
+#if APPSTORE
+        var distributionType = "App Store"
+#else
+        var distributionType = "DMG"
+#endif
 
 #if ALPHA
-
-#if APPSTORE
-        let distributionType = "App Store Alpha"
-#else
-        let distributionType = "DMG Alpha"
+        distributionType.append(" Alpha")
 #endif
-        let commitSHASuffix: String = {
-            let commitSHA = appVersion.commitSHAShort
-            return commitSHA.isEmpty ? "" : "_\(commitSHA)"
-        }()
-
-#else // ALPHA
-
-#if APPSTORE
-        let distributionType = "App Store"
-#else
-        let distributionType = "DMG"
-#endif
-        let commitSHASuffix: String = ""
-
-#endif // ALPHA
 
         source = Self.loadJS("internal-feedback-autofiller", from: .main, withReplacements: [
             "%OS_VERSION%": ProcessInfo.processInfo.operatingSystemVersion.description,
-            "%APP_VERSION%": "\(AppVersion().versionAndBuildNumber)\(commitSHASuffix) (\(distributionType))"
+            "%APP_VERSION%": "\(appVersionModel.versionLabelShort) (\(distributionType))"
         ])
         super.init()
     }

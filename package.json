@@ -5,10 +5,10 @@
   "workspaces": [
     "iOS",
     "macOS",
-    "SharedPackages/ContentScopeScripts"
+    "SharedPackages/BrowserServicesKit"
   ],
   "scripts": {
-    "build-content-scope-scripts": "npm run build --workspace=SharedPackages/ContentScopeScripts",
+    "build-content-scope-scripts": "npm run build-content-scope-scripts --workspace=SharedPackages/BrowserServicesKit",
     "postinstall": "npm run build-content-scope-scripts"
   },
   "dependencies": {

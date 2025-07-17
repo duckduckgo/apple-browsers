@@ -60,9 +60,8 @@ final class VPNSubscriptionEventsHandler {
 
     private func checkEntitlements() {
         Task {
-            if let hasEntitlement = try? await subscriptionManager.isFeatureEnabled(.networkProtection) {
-                await handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheck)
-            }
+            let hasEntitlement = try await subscriptionManager.isFeatureEnabled(.networkProtection)
+            await handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheck)
         }
     }
 

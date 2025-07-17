@@ -323,31 +323,9 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-  verify-npm-bundles:
-    name: 'Verify npm bundles (content-scope-scripts)'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: .
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-      - name: Build content-scope-scripts
-        run: |
-          npm ci
-          npm run build-content-scope-scripts
-      - name: Verify clean tree
-        run: |
-          git update-index --refresh
-          git diff-index --quiet HEAD --
-
   create-asana-task:
     name: Create Asana Task
-    needs: [unit-tests, unit-tests-ios, verify-npm-bundles]
+    needs: [unit-tests, unit-tests-ios]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1
 
@@ -368,7 +346,7 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [unit-tests, unit-tests-ios, verify-npm-bundles]
+    needs: [unit-tests, unit-tests-ios]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1
 

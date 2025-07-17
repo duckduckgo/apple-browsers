@@ -178,12 +178,10 @@ final class DataImportViewModel: ObservableObject {
 
         var buttonTitle: String {
             switch importScreen {
-            case .passwords, .settings, .inBrowserPromo:
-                return UserText.dataImportPasswordsFileButton
-            case .promo:
-                return UserText.dataImportPasswordsSelectFileButton
             case .bookmarks:
                 return UserText.dataImportBookmarksFileButton
+            default:
+                return UserText.dataImportPasswordsSelectFileButton
             }
         }
 

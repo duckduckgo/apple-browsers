@@ -48,17 +48,17 @@ struct ImportPasswordsPromptView: View {
                 AnimationView(isAnimating: $isAnimating)
                 Spacer()
                     .frame(height: Const.Size.headlineTopPadding)
-                AutofillViews.Headline(title: "Import your passwords to DuckDuckGo")
+                AutofillViews.Headline(title: UserText.importPasswordsPromoTitle)
                 Spacer()
                     .frame(height: Const.Size.headlineTopPadding)
-                AutofillViews.SecureDescription(text: "Quickly and securely transfer your passwords from another browser.")
+                AutofillViews.SecureDescription(text: UserText.importPasswordsPromoMessage)
                 contentViewSpacer
                 ctaView
                     .padding(.bottom, AutofillViews.isIPad(verticalSizeClass, horizontalSizeClass) ? Const.Size.bottomPaddingIPad
                                                                                                    : Const.Size.bottomPadding)
             }
             .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                     isAnimating = true
                 }
             }
@@ -111,10 +111,10 @@ struct ImportPasswordsPromptView: View {
 
     private var ctaView: some View {
         VStack(spacing: Const.Size.ctaVerticalSpacing) {
-            AutofillViews.PrimaryButton(title: "Import Passwords...",
+            AutofillViews.PrimaryButton(title: UserText.importPasswordsPromoButtonTitle,
                                         action: viewModel.importPasswordsPressed)
 
-            AutofillViews.TertiaryButton(title: "Set up Later in Settings",
+            AutofillViews.TertiaryButton(title: UserText.importPasswordsPromoSetUpLaterButtonTitle,
                                          action: viewModel.setUpLaterButtonPressed)
         }
     }

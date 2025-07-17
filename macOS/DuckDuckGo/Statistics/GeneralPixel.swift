@@ -258,12 +258,12 @@ enum GeneralPixel: PixelKitEventV2 {
     case passwordImportKeychainPromptDenied
 
     // Autocomplete
-    case autocompleteClickPhrase
-    case autocompleteClickWebsite
-    case autocompleteClickBookmark
-    case autocompleteClickFavorite
-    case autocompleteClickHistory
-    case autocompleteClickOpenTab
+    case autocompleteClickPhrase(from: AutocompleteSource)
+    case autocompleteClickWebsite(from: AutocompleteSource)
+    case autocompleteClickBookmark(from: AutocompleteSource)
+    case autocompleteClickFavorite(from: AutocompleteSource)
+    case autocompleteClickHistory(from: AutocompleteSource)
+    case autocompleteClickOpenTab(from: AutocompleteSource)
     case autocompleteToggledOff
     case autocompleteToggledOn
 
@@ -1370,6 +1370,15 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .fileDownloadCreatePresentersFailed(let osVersion):
             return ["osVersion": osVersion]
+
+        case .autocompleteClickPhrase(from: let source),
+                .autocompleteClickHistory(from: let source),
+                .autocompleteClickWebsite(from: let source),
+                .autocompleteClickBookmark(from: let source),
+                .autocompleteClickFavorite(from: let source),
+                .autocompleteClickOpenTab(from: let source):
+            return ["source": source.rawValue]
+
         default: return nil
         }
     }
@@ -1519,4 +1528,10 @@ enum GeneralPixel: PixelKitEventV2 {
             }
         }
     }
+
+    enum AutocompleteSource: String {
+        case ntpSearchBox = "ntp_search_box"
+        case addressBar = "address_bar"
+    }
+
 }

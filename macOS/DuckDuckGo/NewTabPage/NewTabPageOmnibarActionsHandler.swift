@@ -22,22 +22,28 @@ import Suggestions
 import Common
 import AIChat
 import os.log
+import PixelKit
 
 final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
 
     private let promptHandler: AIChatPromptHandler
     private let windowControllersManager: WindowControllersManagerProtocol
     private let tabsPreferences: TabsPreferences
+    private let firePixel: (PixelKitEvent) -> Void
 
     init(promptHandler: AIChatPromptHandler = AIChatPromptHandler.shared,
          windowControllersManager: WindowControllersManagerProtocol,
-         tabsPreferences: TabsPreferences) {
+         tabsPreferences: TabsPreferences,
+         firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }) {
         self.promptHandler = promptHandler
         self.windowControllersManager = windowControllersManager
         self.tabsPreferences = tabsPreferences
+        self.firePixel = firePixel
     }
 
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+        firePixel(NewTabPagePixel.searchSubmitted)
+
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController else {
             Logger.newTabPageOmnibar.error("Failed to get mainWindowController in submitSearch")
             return
@@ -63,6 +69,10 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         }
 
         let appSuggestion = suggestion.toAppSuggestion()
+
+        if let autocompletePixel = appSuggestion.autocompletePixel(from: .ntpSearchBox) {
+            firePixel(autocompletePixel)
+        }
 
         if case .internalPage(title: _, url: let url, _) = appSuggestion,
            url == .bookmarks || url.isSettingsURL {
@@ -95,6 +105,8 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     }
 
     func submitChat(_ chat: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+        firePixel(NewTabPagePixel.promptSubmitted)
+
         let nativePrompt = AIChatNativePrompt.queryPrompt(chat, autoSubmit: true)
 
         promptHandler.setData(nativePrompt)

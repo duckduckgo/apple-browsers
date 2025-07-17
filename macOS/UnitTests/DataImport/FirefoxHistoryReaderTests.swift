@@ -22,17 +22,27 @@ import Testing
 struct FirefoxHistoryReaderTests {
 
     @Test("Check if expected frecent sites are read from Firefox history database")
-    func readingFrecentSites() async throws {
+    func readingFrecentSites() throws {
         let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: resourceURL())
         let frecentSites = try historyReader.readFrecentSites().get()
 
-        #expect(frecentSites.count == 2)
+        #expect(frecentSites.count == 3)
 
         let firstSite = try #require(frecentSites.first)
         #expect(firstSite.url == "https://spreadprivacy.com/")
         #expect(firstSite.title == "Spread Privacy")
         #expect(firstSite.frecency == 2075)
         #expect(firstSite.lastVisitDate == 1669241488218952)
+    }
+
+    @Test("Check if frecent search site has expected shortcut URL")
+    func frecentSearchSite_UsesSearchShortcutURL() throws {
+        let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: resourceURL())
+        let frecentSites = try historyReader.readFrecentSites().get()
+
+        let searchSite = try #require(frecentSites.first { $0.url.contains("amazon") })
+        #expect(searchSite.url == "https://amazon.com")
+        #expect(searchSite.title == "Amazon.com : ducks")
     }
 
 }

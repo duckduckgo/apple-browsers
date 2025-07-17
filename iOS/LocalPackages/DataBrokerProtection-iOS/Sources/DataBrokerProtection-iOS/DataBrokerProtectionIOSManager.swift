@@ -263,8 +263,7 @@ public final class DataBrokerProtectionIOSManager {
                 return
             }
 
-            let pendingRequests = await BGTaskScheduler.shared.pendingTaskRequests()
-            guard !pendingRequests.contains(where: { $0.identifier == Self.backgroundJobIdentifier }) else {
+            guard await !hasScheduledBackgroundJob else {
                 Logger.dataBrokerProtection.log("Background task already scheduled")
                 return
             }

@@ -101,13 +101,18 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
     /// Checks if the user is eligible for a free trial.
     ///
-    /// Returns `true` for Stripe-based purchases
-    /// or delegates to the store purchase manager for App Store purchases.
+    /// Returns `true` for Stripe-based purchases (on all macOS versions)
+    /// or delegates to the store purchase manager for App Store purchases (requires macOS 12.0+).
+    ///
+    /// - Returns: 
+    ///   - `true` for Stripe platform regardless of macOS version
+    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store on macOS 12.0+
+    ///   - `false` for App Store on macOS < 12.0
     public func isUserEligibleForFreeTrial() -> Bool {
-        guard #available(macOS 12.0, *) else { return false }
         if currentEnvironment.purchasePlatform == .stripe {
             return true
         }
+        guard #available(macOS 12.0, *) else { return false }
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 }
@@ -140,13 +145,18 @@ extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
 
     /// Checks if the user is eligible for a free trial.
     ///
-    /// Returns `true` for Stripe-based purchases
-    /// or delegates to the store purchase manager for App Store purchases.
+    /// Returns `true` for Stripe-based purchases (on all macOS versions)
+    /// or delegates to the store purchase manager for App Store purchases (requires macOS 12.0+).
+    ///
+    /// - Returns: 
+    ///   - `true` for Stripe platform regardless of macOS version
+    ///   - `storePurchaseManager().isUserEligibleForFreeTrial()` for App Store on macOS 12.0+
+    ///   - `false` for App Store on macOS < 12.0
     public func isUserEligibleForFreeTrial() -> Bool {
-        guard #available(macOS 12.0, *) else { return false }
         if currentEnvironment.purchasePlatform == .stripe {
             return true
         }
+        guard #available(macOS 12.0, *) else { return false }
         return storePurchaseManager().isUserEligibleForFreeTrial()
     }
 }

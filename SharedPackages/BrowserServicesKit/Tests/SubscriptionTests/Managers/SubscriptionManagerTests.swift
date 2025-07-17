@@ -239,7 +239,7 @@ final class SubscriptionManagerTests: XCTestCase {
 
     func testWhenPlatformIsStripeUserIsEligibleForFreeTrialThenReturnsEligible() throws {
         // Given
-        storePurchaseManager.isEligibleForFreeTrialResult = true
+        storePurchaseManager.isEligibleForFreeTrialResult = false
         let stripeEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         let sut = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                                        accountManager: accountManager,

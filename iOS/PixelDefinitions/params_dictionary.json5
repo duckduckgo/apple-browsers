@@ -19,6 +19,6 @@
         key: 'pixelSource',
         type: 'string',
         description: 'The channel the user is on',
-        enum: ['phone'],
+        enum: ['phone', 'tablet'],
     },
 }

@@ -52,6 +52,10 @@ public struct AppVersion {
         return bundle.object(forInfoDictionaryKey: Bundle.Key.alphaBuildSuffix) as? String ?? ""
     }
 
+    public var commitSHA: String {
+        return bundle.object(forInfoDictionaryKey: Bundle.Key.commitSHA) as? String ?? ""
+    }
+
     public var versionAndBuildNumber: String {
         let baseVersion = "\(versionNumber).\(buildNumber)"
         let suffix = alphaBuildSuffix

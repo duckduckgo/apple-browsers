@@ -145,7 +145,7 @@ jobs:
         env:
           DMG_NAME: ${{ steps.fetch-dmg.outputs.dmg-name }}
         run: |
-          echo "<h3>What's new</h3><ul><li>Alpha release built from <a href=\"${{ github.server_url }}/${{ github.repository }}/commits/main/?since=${{ github.sha }}\">commit ${{ github.sha }}</a>.</li></ul>" > ${DMG_NAME/dmg/html}
+          echo "<h3>What's new</h3><ul><li>Alpha releases are built from the main branch after every commit.</li></ul>" > ${DMG_NAME/dmg/html}
 
       - name: Generate appcast
         id: appcast

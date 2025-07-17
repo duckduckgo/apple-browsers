@@ -81,9 +81,6 @@ enum AIChatPixel: PixelKitEventV2 {
     /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
     case aiChatSummarizeText(source: AIChatTextSummarizationRequest.Source)
 
-    /// Event Trigger: User clicks "Show more" on a (collapsed by default) summarize prompt in Duck.ai tab or sidebar
-    case aiChatSummarizePromptExpanded
-
     /// Event Trigger: User clicks the website link on a summarize prompt in Duck.ai tab or sidebar
     case aiChatSummarizeSourceLinkClicked
 
@@ -119,8 +116,6 @@ enum AIChatPixel: PixelKitEventV2 {
             return "aichat_sidebar_setting_changed_u"
         case .aiChatSummarizeText:
             return "aichat_summarize_text"
-        case .aiChatSummarizePromptExpanded:
-            return "aichat_summarize_prompt_expanded"
         case .aiChatSummarizeSourceLinkClicked:
             return "aichat_summarize_source_link_clicked"
         }
@@ -138,7 +133,6 @@ enum AIChatPixel: PixelKitEventV2 {
                 .aiChatSettingsDisplayed,
                 .aiChatSidebarExpanded,
                 .aiChatSidebarSettingChanged,
-                .aiChatSummarizePromptExpanded,
                 .aiChatSummarizeSourceLinkClicked:
             return nil
         case .aiChatAddressBarButtonClicked(let action):

@@ -18,6 +18,8 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct LargeSearchFieldView: View {
 
@@ -30,7 +32,7 @@ struct LargeSearchFieldView: View {
                     .padding(.vertical, 16)
 
                 HStack {
-                    Image(.duckDuckGoColor28)
+                    Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
                         .resizable()
                         .useFullColorRendering()
                         .frame(width: 28, height: 28, alignment: .leading)

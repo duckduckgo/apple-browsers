@@ -27,7 +27,7 @@ class SetExtensionTests: XCTestCase {
 
     func testConvertedToETLDPlus1() {
         let domains: Set<String> = ["www.google.com", "mail.yahoo.co.uk", "invalid"]
-        let result = domains.convertedToETLDPlus1(tld: ContentBlocking.shared.tld)
+        let result = domains.convertedToETLDPlus1(tld: Application.appDelegate.tld)
         let expected: Set<String> = ["google.com", "yahoo.co.uk"]
         XCTAssertEqual(result, expected, "The converted set should only contain valid eTLD+1 domains.")
     }

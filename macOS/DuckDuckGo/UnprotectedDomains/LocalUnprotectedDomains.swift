@@ -15,16 +15,16 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-import Common
-import Foundation
-import CoreData
+
 import BrowserServicesKit
+import Common
+import CoreData
+import Foundation
 import os.log
+import Persistence
 
 typealias UnprotectedDomainsStore = CoreDataStore<UnprotectedDomainManagedObject>
 final class LocalUnprotectedDomains: DomainsProtectionStore {
-
-    static let shared = LocalUnprotectedDomains()
 
     private let store: UnprotectedDomainsStore
 
@@ -54,8 +54,8 @@ final class LocalUnprotectedDomains: DomainsProtectionStore {
         }
     }
 
-    init(store: UnprotectedDomainsStore = UnprotectedDomainsStore(tableName: "UnprotectedDomains")) {
-        self.store = store
+    init(database: CoreDataDatabase?) {
+        self.store = UnprotectedDomainsStore(database: database, tableName: "UnprotectedDomains")
     }
 
     private func loadUnprotectedDomains() -> UnprotectedDomainsContainer {

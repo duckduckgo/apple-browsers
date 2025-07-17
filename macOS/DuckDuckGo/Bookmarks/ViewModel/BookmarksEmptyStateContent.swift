@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 enum BookmarksEmptyStateContent {
     case noBookmarks
     case noSearchResults

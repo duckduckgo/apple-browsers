@@ -26,14 +26,14 @@ import FeatureFlags
 import LoginItems
 import Networking
 import NetworkExtension
-import NetworkProtection
+import VPN
 import NetworkProtectionProxy
 import NetworkProtectionUI
 import os.log
 import PixelKit
 import ServiceManagement
 import Subscription
-import SwiftUICore
+import SwiftUI
 import VPNAppLauncher
 import VPNAppState
 import VPNExtensionManagement
@@ -43,7 +43,7 @@ final class DuckDuckGoVPNApplication: NSApplication {
 
     public var accountManager: AccountManager
     public var subscriptionManagerV2: any SubscriptionManagerV2
-    private let _delegate: DuckDuckGoVPNAppDelegate
+    private let _delegate: DuckDuckGoVPNAppDelegate // swiftlint:disable:this weak_delegate
 
     override init() {
         Logger.networkProtection.log("🟢 Status Bar Agent starting\nPath: (\(Bundle.main.bundlePath, privacy: .public))\nVersion: \("\(Bundle.main.versionNumber!).\(Bundle.main.buildNumber)", privacy: .public)\nPID: \(NSRunningApplication.current.processIdentifier, privacy: .public)")
@@ -76,7 +76,6 @@ final class DuckDuckGoVPNApplication: NSApplication {
         subscriptionManagerV2 = DefaultSubscriptionManagerV2(keychainType: keychainType,
                                                              environment: subscriptionEnvironment,
                                                              userDefaults: subscriptionUserDefaults,
-                                                             canPerformAuthMigration: false,
                                                              pixelHandlingSource: .vpnApp)
 
         _delegate = DuckDuckGoVPNAppDelegate(accountManager: accountManager,
@@ -328,6 +327,8 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
+    private let vpnNotificationsObserver = VPNNotificationsObserver()
+
     @MainActor
     private lazy var vpnAppEventsHandler = {
         VPNAppEventsHandler(tunnelController: tunnelController, appState: vpnAppState)
@@ -490,6 +491,8 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
         Logger.networkProtection.log("DuckDuckGoVPN started")
+
+        vpnNotificationsObserver.startObservingVPNStatusChanges()
 
         // Setup Remote Configuration
         Configuration.setURLProvider(VPNAgentConfigurationURLProvider())

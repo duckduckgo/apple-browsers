@@ -16,10 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 
 @IBDesignable
-
 public class ToggleableScrollView: NSScrollView {
 
     @IBInspectable public var isEnabled: Bool = true

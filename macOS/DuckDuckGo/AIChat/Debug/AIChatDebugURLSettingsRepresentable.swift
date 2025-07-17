@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKit
+
 public protocol AIChatDebugURLSettingsRepresentable {
     var customURLHostname: String? { get }
     var customURL: String? { get set }

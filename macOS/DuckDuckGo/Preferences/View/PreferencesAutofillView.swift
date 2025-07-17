@@ -82,7 +82,7 @@ extension Preferences {
                     }
 #if APPSTORE
                     Button(UserText.importPasswords) {
-                        model.openImportBrowserDataWindow()
+                        model.openImportPasswordsWindow()
                     }
                     Button(UserText.exportLogins) {
                         model.openExportLogins()
@@ -103,7 +103,7 @@ extension Preferences {
                     if model.passwordManager != .bitwarden {
                         VStack {
                             Button(UserText.importPasswords) {
-                                model.openImportBrowserDataWindow()
+                                model.openImportPasswordsWindow()
                             }
                             Button(UserText.exportLogins) {
                                 model.openExportLogins()
@@ -357,7 +357,7 @@ struct BitwardenDowngradeInfoView: View, PreferencesTabOpening {
                 HStack {
                     Text("1.")
                     Button(UserText.bitwardenIncompatibleStep1, action: {
-                        openNewTab(with: URL(string: "https://github.com/bitwarden/clients/releases/download/desktop-v2024.9.0/Bitwarden-2024.9.0-universal.dmg")!)
+                        openNewTab(with: URL(string: "https://github.com/bitwarden/clients/releases/download/desktop-mac-v2025.4.2/Bitwarden-2025.4.2-universal.dmg")!)
                     }).foregroundColor(.accentColor)
                 }
                 Text(UserText.bitwardenIncompatibleStep2)

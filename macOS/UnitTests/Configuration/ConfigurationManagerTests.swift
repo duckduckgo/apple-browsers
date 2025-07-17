@@ -38,15 +38,22 @@ final class ConfigurationManagerTests: XCTestCase {
         userDefaults.removePersistentDomain(forName: "ConfigurationManagerTests")
         mockFetcher = MockConfigurationFetcher(operationLog: operationLog)
         mockStore = MockConfigurationStore()
-        mockPrivacyConfigManager = MockPrivacyConfigurationManager(operationLog: operationLog, fetchedETag: nil, fetchedData: nil, embeddedDataProvider: MockEmbeddedDataProvider(), localProtection: MockDomainsProtectionStore(), internalUserDecider: DefaultInternalUserDecider())
+        mockPrivacyConfigManager = MockPrivacyConfigurationManager(operationLog: operationLog, fetchedETag: nil, fetchedData: nil, embeddedDataProvider: MockEmbeddedDataProvider(), localProtection: MockDomainsProtectionStore(), internalUserDecider: MockInternalUserDecider())
         mockPrivacyConfigManager.operationLog = operationLog
         mockTrackerDataManager = MockTrackerDataManager(operationLog: operationLog, etag: nil, data: nil, embeddedDataProvider: MockEmbeddedDataProvider())
         mockContentBlockingManager = MockContentBlockerRulesManager(operationLog: operationLog)
         configManager = ConfigurationManager(fetcher: mockFetcher,
-                                             store: mockStore, defaults: userDefaults,
+                                             store: mockStore,
+                                             defaults: userDefaults,
                                              trackerDataManager: mockTrackerDataManager,
                                              privacyConfigurationManager: mockPrivacyConfigManager,
-                                             contentBlockingManager: mockContentBlockingManager)
+                                             contentBlockingManager: mockContentBlockingManager,
+                                             httpsUpgrade: HTTPSUpgrade(
+                                                store: HTTPSUpgradeStoreMock(),
+                                                privacyManager: mockPrivacyConfigManager,
+                                                logger: .init()
+                                             )
+        )
     }
 
     override func tearDownWithError() throws {

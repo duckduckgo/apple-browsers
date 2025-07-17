@@ -1,7 +1,7 @@
 //
 //  DistributedNavigationDelegate.swift
 //
-//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -466,6 +466,8 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
 
     @MainActor
     private func willStartDownload(with navigationAction: NavigationAction, in webView: WKWebView) {
+        Logger.navigation.debug("willStartDownload \(navigationAction.debugDescription) in \(webView.description)")
+
         let responders = (navigationAction.isForMainFrame ? navigationAction.mainFrameNavigation?.navigationResponders : nil) ?? responders
         for responder in responders {
             responder.navigationAction(navigationAction, willBecomeDownloadIn: webView)
@@ -830,7 +832,7 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
 #if PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED
     @MainActor
     @objc(_webView:navigation:didSameDocumentNavigation:)
-    public func webView(_ webView: WKWebView, wkNavigation: WKNavigation?, didSameDocumentNavigation wkNavigationType: Int) {
+    public func webView(_ webView: WKWebView, wkNavigation: WKNavigation?, didSameDocumentNavigation wkNavigationType: Int) { // swiftlint:disable:this cyclomatic_complexity
         // currentHistoryItemIdentity should only change for completed navigation, not while in progress
         let navigationType = WKSameDocumentNavigationType(rawValue: wkNavigationType) ?? {
             assertionFailure("Unsupported SameDocumentNavigationType \(wkNavigationType)")
@@ -883,6 +885,20 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             let navigationAction = NavigationAction(request: request, navigationType: .sameDocumentNavigation(navigationType), currentHistoryItemIdentity: currentHistoryItemIdentity, redirectHistory: nil, isUserInitiated: wkNavigation?.isUserInitiated ?? false, sourceFrame: .mainFrame(for: webView), targetFrame: .mainFrame(for: webView), shouldDownload: false, mainFrameNavigation: navigation)
             navigation.navigationActionReceived(navigationAction)
             Logger.navigation.debug("new same-doc navigation(.\(wkNavigationType): \(wkNavigation.debugDescription) (\(navigation.debugDescription)): \(navigationAction.debugDescription), isCurrent: \(shouldBecomeCurrent ? 1 : 0)")
+
+            if let currentNavigation {
+                Logger.navigation.debug("current navigation: \(currentNavigation.debugDescription)")
+                if !currentNavigation.isCompleted,
+                   case .backForward = currentNavigation.navigationAction.navigationType,
+                   case .sameDocumentNavigation(.sessionStatePop) = navigation.navigationAction.navigationType,
+                   currentNavigation.url == navigation.url {
+                    // `sessionStatePop` navigation completion is received after `backForward` navigation `willStart`
+                    // with different WKNavigation.
+                    // We need to complete the original `backForward` navigation so it doesn't hang in unfinished state.
+                    Logger.navigation.debug("finishing current navigation")
+                    currentNavigation.didFinish()
+                }
+            }
 
             // store `current` navigations in `startedNavigation` to get `currentNavigation` published
             if shouldBecomeCurrent {
@@ -944,6 +960,8 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
 
     @MainActor
     private func willStartDownload(with navigationResponse: NavigationResponse, in webView: WKWebView) {
+        Logger.navigation.debug("willStartDownload \(navigationResponse.debugDescription) in \(webView.description)")
+
         let responders = (navigationResponse.isForMainFrame ? navigationResponse.mainFrameNavigation?.navigationResponders : nil) ?? responders
         for responder in responders {
             responder.navigationResponse(navigationResponse, willBecomeDownloadIn: webView)
@@ -976,6 +994,8 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
         }()
         Logger.navigation.log("navigationActionDidBecomeDownload: \(navigationAction.debugDescription)")
 
+        download.targetWebView = webView
+
         let responders = (navigationAction.isForMainFrame ? navigationAction.mainFrameNavigation?.navigationResponders : nil) ?? responders
         for responder in responders {
             responder.navigationAction(navigationAction, didBecome: download)
@@ -1002,6 +1022,8 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             return NavigationResponse(navigationResponse: wkNavigationResponse, mainFrameNavigation: startedNavigation)
         }()
         Logger.navigation.log("navigationResponseDidBecomeDownload: \(navigationResponse.debugDescription)")
+
+        download.targetWebView = webView
 
         let responders = (navigationResponse.isForMainFrame ? navigationResponse.mainFrameNavigation?.navigationResponders : nil) ?? responders
         for responder in responders {

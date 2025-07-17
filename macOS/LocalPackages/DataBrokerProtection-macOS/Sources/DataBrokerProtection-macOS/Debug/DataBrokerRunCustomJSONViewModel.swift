@@ -171,7 +171,9 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                                   thirdPartyCredentialsProvider: false,
                                                   unknownUsernameCategorization: false,
                                                   partialFormSaves: false,
-                                                  passwordVariantCategorization: false)
+                                                  passwordVariantCategorization: false,
+                                                  inputFocusApi: false,
+                                                  autocompleteAttributeSupport: false)
 
         let sessionKey = UUID().uuidString
         let messageSecret = UUID().uuidString
@@ -423,7 +425,11 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: scanResult.dataBroker,
             profileQuery: scanResult.profileQuery,
-            scanJobData: ScanJobData(brokerId: 1, profileQueryId: 1, historyEvents: [HistoryEvent]())
+            scanJobData: ScanJobData(
+                brokerId: scanResult.dataBroker.id ?? 1,
+                profileQueryId: scanResult.profileQuery.id ?? 1,
+                historyEvents: [HistoryEvent]()
+            )
         )
         Task {
             do {
@@ -529,6 +535,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 final class FakeStageDurationCalculator: StageDurationCalculator {
     var attemptId: UUID = UUID()
     var isImmediateOperation: Bool = false
+    var tries = 1
 
     func durationSinceLastStage() -> Double {
         0.0
@@ -590,6 +597,14 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     }
 
     func setLastActionId(_ actionID: String) {
+    }
+
+    func resetTries() {
+        self.tries = 1
+    }
+
+    func incrementTries() {
+        self.tries += 1
     }
 }
 

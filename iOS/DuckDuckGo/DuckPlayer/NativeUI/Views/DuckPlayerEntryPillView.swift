@@ -30,7 +30,6 @@ struct DuckPlayerEntryPillView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     struct Constants {
-        static let daxLogo = "Home"
         static let playImage = "play.fill"
 
         // Layout
@@ -62,7 +61,7 @@ struct DuckPlayerEntryPillView: View {
                 VStack(spacing: Constants.vStackSpacing) {
                     HStack(spacing: Constants.hStackSpacing) {
 
-                        Image(Constants.daxLogo)
+                        Image(.home)
                             .resizable()
                             .frame(width: Constants.iconSize, height: Constants.iconSize)
 

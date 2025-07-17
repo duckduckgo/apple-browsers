@@ -24,18 +24,17 @@ import UserScriptActionsManager
 import WebKit
 
 public protocol NewTabPageSectionsAvailabilityProviding: AnyObject {
-    var isPrivacyStatsAvailable: Bool { get }
-    var isRecentActivityAvailable: Bool { get }
+    var isOmnibarAvailable: Bool { get }
 }
 
 public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
+    var isOmnibarVisible: Bool { get set }
     var isFavoritesVisible: Bool { get set }
-    var isPrivacyStatsVisible: Bool { get set }
-    var isRecentActivityVisible: Bool { get set }
+    var isProtectionsReportVisible: Bool { get set }
 
+    var isOmnibarVisiblePublisher: AnyPublisher<Bool, Never> { get }
     var isFavoritesVisiblePublisher: AnyPublisher<Bool, Never> { get }
-    var isPrivacyStatsVisiblePublisher: AnyPublisher<Bool, Never> { get }
-    var isRecentActivityVisiblePublisher: AnyPublisher<Bool, Never> { get }
+    var isProtectionsReportVisiblePublisher: AnyPublisher<Bool, Never> { get }
 }
 
 public protocol NewTabPageLinkOpening {
@@ -73,9 +72,9 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         super.init()
 
         Publishers.Merge3(
+            sectionsVisibilityProvider.isOmnibarVisiblePublisher,
             sectionsVisibilityProvider.isFavoritesVisiblePublisher,
-            sectionsVisibilityProvider.isPrivacyStatsVisiblePublisher,
-            sectionsVisibilityProvider.isRecentActivityVisiblePublisher
+            sectionsVisibilityProvider.isProtectionsReportVisiblePublisher,
         )
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -111,29 +110,27 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             .init(id: .freemiumPIRBanner),
             .init(id: .nextSteps),
             .init(id: .favorites),
+            .init(id: .protections)
         ]
-        if sectionsAvailabilityProvider.isPrivacyStatsAvailable {
-            widgets.append(.init(id: .privacyStats))
-        }
-        if sectionsAvailabilityProvider.isRecentActivityAvailable {
-            widgets.append(.init(id: .recentActivity))
+
+        if sectionsAvailabilityProvider.isOmnibarAvailable {
+            widgets.insert(.init(id: .omnibar), at: 3)
         }
 
         return widgets
     }
 
     private func fetchWidgetConfigs() -> [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] {
-        var widgetConfigs: [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] = [
-            .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible)
+        var configs: [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] = [
+            .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
+            .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible)
         ]
-        if sectionsAvailabilityProvider.isPrivacyStatsAvailable {
-            widgetConfigs.append(.init(id: .privacyStats, isVisible: sectionsVisibilityProvider.isPrivacyStatsVisible))
-        }
-        if sectionsAvailabilityProvider.isRecentActivityAvailable {
-            widgetConfigs.append(.init(id: .recentActivity, isVisible: sectionsVisibilityProvider.isRecentActivityVisible))
+
+        if sectionsAvailabilityProvider.isOmnibarAvailable {
+            configs.append(.init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible))
         }
 
-        return widgetConfigs
+        return configs
     }
 
     private func notifyWidgetConfigsDidChange() {
@@ -149,23 +146,23 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
         for menuItem in params.visibilityMenuItems {
             switch menuItem.id {
+            case .omnibar:
+                let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = menuItem.id
+                item.state = sectionsVisibilityProvider.isOmnibarVisible ? .on : .off
+                menu.addItem(item)
             case .favorites:
                 let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
                 item.target = self
                 item.representedObject = menuItem.id
                 item.state = sectionsVisibilityProvider.isFavoritesVisible ? .on : .off
                 menu.addItem(item)
-            case .privacyStats:
+            case .protections:
                 let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
                 item.target = self
                 item.representedObject = menuItem.id
-                item.state = sectionsVisibilityProvider.isPrivacyStatsVisible ? .on : .off
-                menu.addItem(item)
-            case .recentActivity:
-                let item = NSMenuItem(title: menuItem.title, action: #selector(self.toggleVisibility(_:)), keyEquivalent: "")
-                item.target = self
-                item.representedObject = menuItem.id
-                item.state = sectionsVisibilityProvider.isRecentActivityVisible ? .on : .off
+                item.state = sectionsVisibilityProvider.isProtectionsReportVisible ? .on : .off
                 menu.addItem(item)
             default:
                 break
@@ -181,12 +178,12 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
 
     @objc private func toggleVisibility(_ sender: NSMenuItem) {
         switch sender.representedObject as? NewTabPageDataModel.WidgetId {
+        case .omnibar:
+            sectionsVisibilityProvider.isOmnibarVisible.toggle()
         case .favorites:
             sectionsVisibilityProvider.isFavoritesVisible.toggle()
-        case .privacyStats:
-            sectionsVisibilityProvider.isPrivacyStatsVisible.toggle()
-        case .recentActivity:
-            sectionsVisibilityProvider.isRecentActivityVisible.toggle()
+        case .protections:
+            sectionsVisibilityProvider.isProtectionsReportVisible.toggle()
         default:
             break
         }
@@ -222,12 +219,12 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         }
         for widgetConfig in widgetConfigs {
             switch widgetConfig.id {
+            case .omnibar:
+                sectionsVisibilityProvider.isOmnibarVisible = widgetConfig.visibility.isVisible
             case .favorites:
                 sectionsVisibilityProvider.isFavoritesVisible = widgetConfig.visibility.isVisible
-            case .privacyStats:
-                sectionsVisibilityProvider.isPrivacyStatsVisible = widgetConfig.visibility.isVisible
-            case .recentActivity:
-                sectionsVisibilityProvider.isRecentActivityVisible = widgetConfig.visibility.isVisible
+            case .protections:
+                sectionsVisibilityProvider.isProtectionsReportVisible = widgetConfig.visibility.isVisible
             default:
                 break
             }

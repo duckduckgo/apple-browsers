@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
-import Cocoa
-import WebKit
-import Combine
-import BrowserServicesKit
-import SecureStorage
 import AutofillResources
+import BrowserServicesKit
+import Cocoa
+import Combine
+import Common
 import PixelKit
+import SecureStorage
+import WebKit
 
 @MainActor
 public final class ContentOverlayViewController: NSViewController, EmailManagerRequestDelegate {
@@ -39,12 +40,10 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         return emailManager
     }()
 
-    lazy var featureFlagger = NSApp.delegateTyped.featureFlagger
-
     lazy var vaultManager: SecureVaultManager = {
         let manager = SecureVaultManager(passwordManager: PasswordManagerCoordinator.shared,
                                          shouldAllowPartialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves),
-                                         tld: ContentBlocking.shared.tld)
+                                         tld: tld)
         manager.delegate = self
         return manager
     }()
@@ -60,9 +59,29 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         return model
     }()
 
+    init?(
+        coder: NSCoder,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        featureFlagger: FeatureFlagger,
+        tld: TLD
+    ) {
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.featureFlagger = featureFlagger
+        self.tld = tld
+        super.init(coder: coder)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     lazy var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
 
-    lazy var privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let featureFlagger: FeatureFlagger
+    private let tld: TLD
+
+    lazy var usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
 
     public override func viewDidLoad() {
         initWebView()
@@ -140,10 +159,8 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         self.topAutofillUserScript = OverlayAutofillUserScript(scriptSourceProvider: scriptSourceProvider, overlay: self)
         guard let topAutofillUserScript = topAutofillUserScript else { return }
         let configuration = WKWebViewConfiguration()
-
-#if DEBUG
-        configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
-#endif
+        let debugScriptEnabled = AutofillPreferences().debugScriptEnabled
+        configuration.preferences.setValue(debugScriptEnabled, forKey: "developerExtrasEnabled")
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.allowsLinkPreview = false
@@ -151,6 +168,9 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         webView.window?.ignoresMouseEvents = false
         webView.configuration.userContentController.addHandler(topAutofillUserScript)
         webView.configuration.userContentController.addUserScript(topAutofillUserScript.makeWKUserScriptSync())
+        if #available(macOS 13.3, *) {
+            webView.isInspectable = debugScriptEnabled
+        }
         self.webView = webView
         view.addAndLayout(webView)
         topAutofillUserScript.contentOverlay = self
@@ -248,7 +268,6 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
             return prefs.askToSaveAddresses || prefs.askToSavePaymentMethods || prefs.askToSaveUsernamesAndPasswords
         }
     }
-
     public func secureVaultManagerShouldSaveData(_: SecureVaultManager) -> Bool {
         return true
     }
@@ -265,6 +284,14 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
                                    withTrigger trigger: AutofillUserScript.GetTriggerType,
                                    onAccountSelected account: @escaping (SecureVaultModels.WebsiteAccount?) -> Void,
                                    completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {
+        // no-op on macOS
+    }
+
+    public func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        // no-op on macOS
+    }
+
+    public func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op on macOS
     }
 
@@ -304,7 +331,8 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
     }
 
     public func secureVaultManager(_: SecureVaultManager, didAutofill type: AutofillType, withObjectId objectId: String) {
-        PixelKit.fire(GeneralPixel.formAutofilled(kind: type.formAutofillKind))
+        let parameters = usageProvider.formattedFillDate.flatMap { [AutofillPixelKitEvent.Parameter.lastUsed: $0] } ?? [:]
+        PixelKit.fire(GeneralPixel.formAutofilled(kind: type.formAutofillKind), withAdditionalParameters: parameters)
         NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
 
         if type.formAutofillKind == .password &&
@@ -340,10 +368,15 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         } else if pixel.isCredentialsImportPromotionPixel {
             PixelKit.fire(NonStandardEvent(GeneralPixel.jsPixel(pixel)))
         } else {
+            var existingParameters = pixel.pixelParameters ?? [:]
+            var parameters = usageProvider.formattedFillDate.flatMap {
+                existingParameters[AutofillPixelKitEvent.Parameter.lastUsed] = $0
+                return existingParameters
+            } ?? existingParameters
+            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: parameters)
             if pixel.isIdentityPixel {
                 NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
             }
-            PixelKit.fire(GeneralPixel.jsPixel(pixel), withAdditionalParameters: pixel.pixelParameters)
         }
     }
 
@@ -383,6 +416,6 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 extension ContentOverlayViewController: AutofillCredentialsImportPresentationDelegate {
     public func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
         let viewModel = DataImportViewModel(onFinished: onFinished, onCancelled: onCancelled)
-        DataImportView(model: viewModel).show()
+        DataImportView(model: viewModel, isDataTypePickerExpanded: true).show()
     }
 }

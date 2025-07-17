@@ -19,7 +19,7 @@
 import Combine
 import TrackerRadarKit
 
-public protocol PrivacyStatsTrackerDataProviding {
+public protocol PrivacyStatsTrackerDataProviding: AnyObject {
     var trackerData: TrackerData { get }
     var trackerDataUpdatesPublisher: AnyPublisher<Void, Never> { get }
 }

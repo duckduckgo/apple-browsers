@@ -22,10 +22,29 @@ import CommonCrypto
 /// Helper that generates codes used in the OAuth2 authentication process
 struct OAuthCodesGenerator {
 
+    public enum OAuthCodesGeneratorError: Error, LocalizedError {
+        case failedToLoadRandomBytes(Int32)
+
+        public var errorDescription: String? {
+            switch self {
+            case .failedToLoadRandomBytes(let errorCode):
+                return "Failed to load random bytes \(errorCode)"
+            }
+        }
+
+        public var localizedDescription: String {
+            errorDescription ?? "Unknown"
+        }
+    }
+
     /// https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow-with-pkce/add-login-using-the-authorization-code-flow-with-pkce#create-code-verifier
-    static var codeVerifier: String {
+    static func generateCodeVerifier() throws -> String {
         var buffer = [UInt8](repeating: 0, count: 128)
-        _ = SecRandomCopyBytes(kSecRandomDefault, buffer.count, &buffer)
+        let status = SecRandomCopyBytes(kSecRandomDefault, buffer.count, &buffer)
+
+        guard status == errSecSuccess else {
+            throw OAuthCodesGeneratorError.failedToLoadRandomBytes(status)
+        }
         return Data(buffer).base64EncodedString().replacingInvalidCharacters()
     }
 

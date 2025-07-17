@@ -27,6 +27,7 @@ protocol BookmarksBarMenuPopoverDelegate: NSPopoverDelegate {
 final class BookmarksBarMenuPopover: NSPopover {
 
     private let bookmarkManager: BookmarkManager
+    private let dragDropManager: BookmarkDragDropManager
     private(set) var rootFolder: BookmarkFolder?
 
     private(set) var preferredEdge: NSRectEdge?
@@ -37,8 +38,9 @@ final class BookmarksBarMenuPopover: NSPopover {
 
     static let popoverInsets = NSEdgeInsets(top: 13, left: 13, bottom: 13, right: 13)
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared, rootFolder: BookmarkFolder? = nil) {
+    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager, rootFolder: BookmarkFolder? = nil) {
         self.bookmarkManager = bookmarkManager
+        self.dragDropManager = dragDropManager
         self.rootFolder = rootFolder
 
         super.init()
@@ -58,7 +60,7 @@ final class BookmarksBarMenuPopover: NSPopover {
     var viewController: BookmarksBarMenuViewController { contentViewController as! BookmarksBarMenuViewController }
 
     private func setupContentController() {
-        let controller = BookmarksBarMenuViewController(bookmarkManager: bookmarkManager, rootFolder: rootFolder)
+        let controller = BookmarksBarMenuViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: rootFolder)
         controller.delegate = self
         contentViewController = controller
     }

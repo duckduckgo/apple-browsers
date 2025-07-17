@@ -28,7 +28,6 @@ final class NewTabPageRecentActivityModelTests: XCTestCase {
 
     private var activityProvider: CapturingNewTabPageRecentActivityProvider!
     private var actionsHandler: CapturingRecentActivityActionsHandler!
-    private var settingsPersistor: UserDefaultsNewTabPageRecentActivitySettingsPersistor!
 
     private var userScript: NewTabPageUserScript!
     private var messageHelper: MessageHelper<NewTabPageRecentActivityClient.MessageName>!
@@ -38,13 +37,8 @@ final class NewTabPageRecentActivityModelTests: XCTestCase {
 
         activityProvider = CapturingNewTabPageRecentActivityProvider()
         actionsHandler = CapturingRecentActivityActionsHandler()
-        settingsPersistor = UserDefaultsNewTabPageRecentActivitySettingsPersistor(MockKeyValueStore(), getLegacySetting: nil)
 
-        model = NewTabPageRecentActivityModel(
-            activityProvider: activityProvider,
-            actionsHandler: actionsHandler,
-            settingsPersistor: settingsPersistor
-        )
+        model = NewTabPageRecentActivityModel(activityProvider: activityProvider, actionsHandler: actionsHandler)
     }
 
     func testThatAddFavoriteForwardsTheCallToActionsHandler() async throws {
@@ -93,16 +87,5 @@ final class NewTabPageRecentActivityModelTests: XCTestCase {
         let invalidURLString = "aaaa"
         await model.open(invalidURLString, sender: .userScript, target: .current, sourceWindow: nil)
         XCTAssertEqual(actionsHandler.openCalls, [])
-    }
-
-    func testWhenIsViewExpandedIsUpdatedThenPersistorIsUpdated() {
-        model.isViewExpanded = true
-        XCTAssertTrue(settingsPersistor.isViewExpanded)
-
-        model.isViewExpanded = false
-        XCTAssertFalse(settingsPersistor.isViewExpanded)
-
-        model.isViewExpanded = true
-        XCTAssertTrue(settingsPersistor.isViewExpanded)
     }
 }

@@ -62,8 +62,8 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
     /// The `NotificationCenter` instance used when subscribing to notifications
     private let notificationCenter: NotificationCenter
 
-    /// The `FreemiumDBPExperimentPixelHandler` instance used to fire pixels
-    private let freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel>
+    /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
+    private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
 
     /// Initializes the coordinator with the necessary dependencies.
     ///
@@ -76,13 +76,13 @@ final class FreemiumDBPPromotionViewCoordinator: ObservableObject {
          freemiumDBPFeature: FreemiumDBPFeature,
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
          notificationCenter: NotificationCenter = .default,
-         freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler()) {
+         dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler()) {
 
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.freemiumDBPFeature = freemiumDBPFeature
         self.freemiumDBPPresenter = freemiumDBPPresenter
         self.notificationCenter = notificationCenter
-        self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
+        self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
 
         setInitialPromotionVisibilityState()
         subscribeToFeatureAvailabilityUpdates()
@@ -99,11 +99,11 @@ private extension FreemiumDBPPromotionViewCoordinator {
             guard let self else { return }
 
             execute(resultsAction: {
-                self.freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.newTabResultsClick)
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabResultsClick)
             }, orNoResultsAction: {
-                self.freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.newTabNoResultsClick)
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabNoResultsClick)
             }, orPromotionAction: {
-                self.freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.newTabScanClick)
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabScanClick)
             })
 
             showFreemiumDBP()
@@ -117,11 +117,11 @@ private extension FreemiumDBPPromotionViewCoordinator {
             guard let self else { return }
 
             execute(resultsAction: {
-                self.freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.newTabResultsDismiss)
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabResultsDismiss)
             }, orNoResultsAction: {
-                self.freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.newTabNoResultsDismiss)
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabNoResultsDismiss)
             }, orPromotionAction: {
-                self.freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.newTabScanDismiss)
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabScanDismiss)
             })
 
             dismissHomePagePromotion()
@@ -131,7 +131,7 @@ private extension FreemiumDBPPromotionViewCoordinator {
     /// Shows the Freemium DBP user interface via the presenter.
     @MainActor
     func showFreemiumDBP() {
-        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(windowControllerManager: WindowControllersManager.shared)
+        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(windowControllerManager: Application.appDelegate.windowControllersManager)
     }
 
     /// Dismisses the home page promotion and updates the user state to reflect this.
@@ -155,7 +155,7 @@ private extension FreemiumDBPPromotionViewCoordinator {
 
         if let results = freemiumDBPUserStateManager.firstScanResults {
             if results.matchesCount > 0 {
-                self.freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.newTabResultsImpression)
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabResultsImpression)
                 return .freemiumDBPPromotionScanEngagementResults(
                     resultCount: results.matchesCount,
                     brokerCount: results.brokerCount,
@@ -163,14 +163,14 @@ private extension FreemiumDBPPromotionViewCoordinator {
                     closeAction: closeAction
                 )
             } else {
-                self.freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.newTabNoResultsImpression)
+                self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabNoResultsImpression)
                 return .freemiumDBPPromotionScanEngagementNoResults(
                     proceedAction: proceedAction,
                     closeAction: closeAction
                 )
             }
         } else {
-            self.freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.newTabScanImpression)
+            self.dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.newTabScanImpression)
             return .freemiumDBPPromotion(proceedAction: proceedAction, closeAction: closeAction)
         }
     }

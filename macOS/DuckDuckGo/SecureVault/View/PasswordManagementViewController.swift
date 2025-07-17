@@ -165,9 +165,9 @@ final class PasswordManagementViewController: NSViewController {
 
     private let emailManager = EmailManager()
     private let urlMatcher = AutofillDomainNameUrlMatcher()
-    private let tld = ContentBlocking.shared.tld
+    private let tld = NSApp.delegateTyped.tld
     private let urlSort = AutofillDomainNameUrlSort()
-    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
+    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -321,13 +321,13 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     @IBAction func openAutofillPreferences(_ sender: Any) {
-        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .autofill)
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .autofill)
         self.dismiss()
     }
 
     @IBAction func openImportBrowserDataWindow(_ sender: Any?) {
         self.dismiss()
-        NSApp.sendAction(#selector(openImportBrowserDataWindow(_:)), to: nil, from: sender)
+        DataImportView(isDataTypePickerExpanded: true).show()
     }
 
     @IBAction func openExportLogins(_ sender: Any) {
@@ -337,7 +337,7 @@ final class PasswordManagementViewController: NSViewController {
 
     @IBAction func onImportClicked(_ sender: NSButton) {
         self.dismiss()
-        DataImportView().show()
+        DataImportView(isDataTypePickerExpanded: true).show()
     }
 
     @IBAction func onDeleteAllPasswordsClicked(_ sender: Any) {
@@ -467,6 +467,7 @@ final class PasswordManagementViewController: NSViewController {
         },
                                                      urlMatcher: urlMatcher,
                                                      emailManager: emailManager,
+                                                     tld: tld,
                                                      urlSort: urlSort)
 
         self.itemModel = itemModel
@@ -588,7 +589,10 @@ final class PasswordManagementViewController: NSViewController {
             if case SecureStorageError.duplicateRecord = error {
                 showDuplicateAlert()
             } else {
-                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
+                if let window = view.window {
+                    NSAlert.passwordManagerSaveError(errorType: error.localizedDescription).beginSheetModal(for: window)
+                }
             }
         }
     }
@@ -611,7 +615,7 @@ final class PasswordManagementViewController: NSViewController {
             postChange()
 
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
         }
     }
 
@@ -655,7 +659,7 @@ final class PasswordManagementViewController: NSViewController {
             postChange()
 
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
         }
     }
 
@@ -675,7 +679,7 @@ final class PasswordManagementViewController: NSViewController {
                     self.refreshData()
                     PixelKit.fire(GeneralPixel.autofillManagementDeleteLogin)
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
                 }
 
             default:
@@ -698,7 +702,7 @@ final class PasswordManagementViewController: NSViewController {
                     try self.secureVault?.deleteIdentityFor(identityId: id)
                     self.refreshData()
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
                 }
 
             default:
@@ -740,7 +744,7 @@ final class PasswordManagementViewController: NSViewController {
                     try self.secureVault?.deleteCreditCardFor(cardId: id)
                     self.refreshData()
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
                 }
 
             default:
@@ -793,7 +797,7 @@ final class PasswordManagementViewController: NSViewController {
                         self?.syncModelsOnNote(note)
                     }
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
                 }
             }
 
@@ -923,7 +927,7 @@ final class PasswordManagementViewController: NSViewController {
                     items = cards.map(SecureVaultItem.card)
                 }
             } catch {
-                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
             }
 
             DispatchQueue.main.async {
@@ -1111,9 +1115,9 @@ extension PasswordManagementViewController: NSTextViewDelegate {
     func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
         if let link = link as? URL {
             if let pane = PreferencePaneIdentifier(url: link) {
-                WindowControllersManager.shared.showPreferencesTab(withSelectedPane: pane)
+                Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: pane)
             } else {
-                WindowControllersManager.shared.showTab(with: .url(link, source: .link))
+                Application.appDelegate.windowControllersManager.showTab(with: .url(link, source: .link))
             }
             self.dismiss()
         }

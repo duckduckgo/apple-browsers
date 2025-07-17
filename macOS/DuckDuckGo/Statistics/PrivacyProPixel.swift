@@ -31,7 +31,7 @@ fileprivate let appDistribution = "direct"
 
 enum PrivacyProPixel: PixelKitEventV2 {
     // Subscription
-    case privacyProSubscriptionActive
+    case privacyProSubscriptionActive(AuthVersion)
     case privacyProOfferScreenImpression
     case privacyProPurchaseAttempt
     case privacyProPurchaseFailureOther
@@ -53,11 +53,14 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProWelcomeAddDevice
     case privacyProWelcomeVPN
     case privacyProWelcomePersonalInformationRemoval
+    case privacyProWelcomeAIChat
     case privacyProWelcomeIdentityRestoration
     case privacyProSubscriptionSettings
     case privacyProVPNSettings
     case privacyProPersonalInformationRemovalSettings
     case privacyProPersonalInformationRemovalSettingsImpression
+    case privacyProPaidAIChatSettings
+    case privacyProPaidAIChatSettingsImpression
     case privacyProIdentityRestorationSettings
     case privacyProIdentityRestorationSettingsImpression
     case privacyProSubscriptionManagementEmail
@@ -77,6 +80,11 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProAuthV2MigrationFailed(AuthV2PixelHandler.Source, Error)
     case privacyProAuthV2MigrationSucceeded(AuthV2PixelHandler.Source)
     case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, AuthV2PixelHandler.Source, Error)
+    // Toolbar Button Upsell
+    case privacyProToolbarButtonShown
+    case privacyProToolbarButtonPopoverShown
+    case privacyProToolbarButtonPopoverDismissButtonClicked
+    case privacyProToolbarButtonPopoverProceedButtonClicked
 
     var name: String {
         switch self {
@@ -102,11 +110,15 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProWelcomeAddDevice: return "m_mac_\(appDistribution)_privacy-pro_welcome_add-device_click_u"
         case .privacyProWelcomeVPN: return "m_mac_\(appDistribution)_privacy-pro_welcome_vpn_click_u"
         case .privacyProWelcomePersonalInformationRemoval: return "m_mac_\(appDistribution)_privacy-pro_welcome_personal-information-removal_click_u"
+        case .privacyProWelcomeAIChat:
+            return "m_mac_\(appDistribution)_privacy-pro_welcome_ai-chat_click_u"
         case .privacyProWelcomeIdentityRestoration: return "m_mac_\(appDistribution)_privacy-pro_welcome_identity-theft-restoration_click_u"
         case .privacyProSubscriptionSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_screen_impression"
         case .privacyProVPNSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_vpn_click"
         case .privacyProPersonalInformationRemovalSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_personal-information-removal_click"
         case .privacyProPersonalInformationRemovalSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_personal-information-removal_impression"
+        case .privacyProPaidAIChatSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_paid-ai-chat_click"
+        case .privacyProPaidAIChatSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_paid-ai-chat_impression"
         case .privacyProIdentityRestorationSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_click"
         case .privacyProIdentityRestorationSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_impression"
         case .privacyProSubscriptionManagementEmail: return "m_mac_\(appDistribution)_privacy-pro_manage-email_edit_click"
@@ -126,6 +138,11 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
+            // Toolbar Button Upsell
+        case .privacyProToolbarButtonShown: return "m_mac_privacy-pro_toolbar_button_shown"
+        case .privacyProToolbarButtonPopoverShown: return "m_mac_privacy-pro_toolbar_button_popover_shown"
+        case .privacyProToolbarButtonPopoverDismissButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_dismiss_button_clicked"
+        case .privacyProToolbarButtonPopoverProceedButtonClicked: return "m_mac_privacy-pro_toolbar_button_popover_proceed_button_clicked"
         }
     }
 
@@ -151,6 +168,8 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProAuthV2MigrationFailed(let source, let error):
             return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
                     PrivacyProPixelsDefaults.sourceKey: source.description]
+        case .privacyProSubscriptionActive(let authVersion):
+            return [AuthVersion.key: authVersion.rawValue]
         default:
             return nil
         }

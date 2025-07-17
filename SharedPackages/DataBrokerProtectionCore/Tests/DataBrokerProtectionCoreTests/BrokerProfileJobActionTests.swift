@@ -309,7 +309,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             pixelHandler: pixelHandler,
             shouldRunNextStep: { true }
         )
-        sut.retriesCountOnError = 0
+        sut.resetRetriesCount()
         captchaService.shouldThrow = true
         sut.webViewHandler = webViewHandler
         sut.actionsHandler = ActionsHandler(step: step)
@@ -458,6 +458,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
 
     func testWhenExpectationActionFailsDuringScan_thenRetryOnce() async {
         let expectationAction = ExpectationAction(id: "1", actionType: .expectation, expectations: [Item](), dataSource: nil, actions: nil)
+        let step = Step(type: .scan, actions: [expectationAction])
         let sut = BrokerProfileScanSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
@@ -469,9 +470,12 @@ final class BrokerProfileJobActionTests: XCTestCase {
             shouldRunNextStep: { true }
         )
         sut.webViewHandler = webViewHandler
+        sut.actionsHandler = ActionsHandler(step: step)
 
         await sut.runNextAction(expectationAction)
         XCTAssertEqual(sut.retriesCountOnError, 1)
+
+        _ = sut.actionsHandler?.nextAction()
 
         await sut.onError(error: DataBrokerProtectionError.httpError(code: 429))
         XCTAssertEqual(sut.retriesCountOnError, 0)

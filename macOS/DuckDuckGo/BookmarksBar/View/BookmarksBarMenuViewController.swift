@@ -49,6 +49,7 @@ final class BookmarksBarMenuViewController: NSViewController {
     private var scrollUpButton: MouseOverButton!
 
     private let bookmarkManager: BookmarkManager
+    private let dragDropManager: BookmarkDragDropManager
     private let treeControllerDataSource: BookmarkListTreeControllerDataSource
     private let treeController: BookmarkTreeController
     private let visualStyle: VisualStyleProviding
@@ -63,6 +64,7 @@ final class BookmarksBarMenuViewController: NSViewController {
             contentMode: .bookmarksMenu,
             bookmarkManager: bookmarkManager,
             treeController: treeController,
+            dragDropManager: dragDropManager,
             sortMode: .manual,
             presentFaviconsFetcherOnboarding: { [weak self] in
                 guard let self, let window = self.view.window else {
@@ -88,16 +90,18 @@ final class BookmarksBarMenuViewController: NSViewController {
         return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
     }()
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
+    init(bookmarkManager: BookmarkManager,
+         dragDropManager: BookmarkDragDropManager,
          rootFolder: BookmarkFolder? = nil,
-         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.bookmarkManager = bookmarkManager
+        self.dragDropManager = dragDropManager
         self.treeControllerDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)
         self.treeController = BookmarkTreeController(dataSource: treeControllerDataSource,
                                                      sortMode: .manual,
                                                      rootFolder: rootFolder,
                                                      isBookmarksBarMenu: true)
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
         super.init(nibName: nil, bundle: nil)
         self.representedObject = rootFolder
     }
@@ -626,7 +630,7 @@ final class BookmarksBarMenuViewController: NSViewController {
             // reuse the popover for another folder
             submenuPopover.reloadData(withRootFolder: folder)
         } else {
-            submenuPopover = BookmarksBarMenuPopover(rootFolder: folder)
+            submenuPopover = BookmarksBarMenuPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
             submenuPopover.delegate = self
             self.submenuPopover = submenuPopover
         }
@@ -686,7 +690,7 @@ final class BookmarksBarMenuViewController: NSViewController {
 
         switch node.representedObject {
         case let bookmark as Bookmark:
-            WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+            Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
             delegate?.closeBookmarksPopovers(self)
 
         case let menuItem as MenuItemNode:
@@ -708,11 +712,11 @@ final class BookmarksBarMenuViewController: NSViewController {
               let node = item as? BookmarkNode,
               let bookmark = node.representedObject as? Bookmark else { return }
 
-        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
     }
 
     private func openAllInNewTabs() {
-        guard let tabCollection = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
+        guard let tabCollection = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
               let folder = self.treeController.rootNode.representedObject as? BookmarkFolder else {
             assertionFailure("Cannot open all in new tabs")
             return
@@ -970,7 +974,9 @@ extension BookmarksBarMenuViewController: BookmarksBarMenuPopoverDelegate {
 #if DEBUG
 @available(macOS 14.0, *)
 #Preview("Bookmarks Bar Menu", traits: .fixedLayout(width: 420, height: 500)) {
-    BookmarksBarMenuViewController(bookmarkManager: _mockPreviewBookmarkManager(previewEmptyState: false))
+    let bookmarkManager = _mockPreviewBookmarkManager(previewEmptyState: false)
+
+    return BookmarksBarMenuViewController(bookmarkManager: bookmarkManager, dragDropManager: .init(bookmarkManager: bookmarkManager))
         ._preview_hidingWindowControlsOnAppear()
 }
 #endif

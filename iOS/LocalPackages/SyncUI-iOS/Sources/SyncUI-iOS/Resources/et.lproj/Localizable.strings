@@ -208,11 +208,17 @@
 /* Scan or See Code View - Manually Enter Code Link */
 "scan.or.see.code.manually.enter.code.link" = "Sisesta kood käsitsi";
 
+/* Scan or See Code View - Instruction with syncMenuPath */
+"scan.or.see.code.other.device.instruction.attributed" = "Ava oma teises seadmes DuckDuckGo rakendus ja mine aadressile %@.";
+
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.instructions.body" = "Sünkroonimiseks skanni see kood teise seadmega.";
 
 /* Scan or See Code View - Scan Code Instructions Title */
 "scan.or.see.code.scan.code.instructions.title" = "Mobiililt mobiilile?";
+
+/* Scan or See Code View - Scan Code Instructions Body */
+"scan.or.see.code.scan.code.qr.instructions.body" = "Sünkroonimiseks ava DuckDuckGo oma teises sja skanni see kood.";
 
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Jaga tekstikoodi";

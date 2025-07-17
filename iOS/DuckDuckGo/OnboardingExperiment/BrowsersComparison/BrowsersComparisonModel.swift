@@ -144,9 +144,9 @@ extension BrowsersComparisonModel.PrivacyFeature {
 
         var image: ImageResource {
             switch self {
-            case .available: .checkGreen
-            case .partiallyAvailable: .stop
-            case .unavailable: .cross
+            case .available: .onboardingCheckDONOTUSE
+            case .partiallyAvailable: .onboardingStopDONOTUSE
+            case .unavailable: .onboardingCrossDONOTUSE
             }
         }
     }

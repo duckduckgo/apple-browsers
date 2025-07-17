@@ -176,7 +176,7 @@ final class EncryptedHistoryStore: HistoryStoring {
                     fetchedObjects = try self.context.fetch(fetchRequest)
                 } catch {
                     PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailed, error: error))
-                    PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDaily)
+                    PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDailyNoSuffix)
                     promise(.failure(error))
                     return
                 }
@@ -205,7 +205,7 @@ final class EncryptedHistoryStore: HistoryStoring {
                 switch insertionResult {
                 case .failure(let error):
                     PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailed, error: error))
-                    PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDaily)
+                    PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDailyNoSuffix)
                     context.reset()
                     promise(.failure(error))
                 case .success(let visitMOs):
@@ -213,7 +213,7 @@ final class EncryptedHistoryStore: HistoryStoring {
                         try self.context.save()
                     } catch {
                         PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailed, error: error))
-                        PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDaily)
+                        PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDailyNoSuffix)
                         context.reset()
                         promise(.failure(HistoryStoreError.savingFailed))
                         return
@@ -347,7 +347,7 @@ fileprivate extension HistoryEntry {
         guard let url = historyEntryMO.urlEncrypted as? URL,
               let identifier = historyEntryMO.identifier,
               let lastVisit = historyEntryMO.lastVisit else {
-            PixelKit.fire(DebugEvent(GeneralPixel.historyEntryDecryptionFailedUnique), frequency: .daily)
+            PixelKit.fire(DebugEvent(GeneralPixel.historyEntryDecryptionFailedUnique), frequency: .legacyDaily)
             assertionFailure("HistoryEntry: Failed to init HistoryEntry from HistoryEntryManagedObject")
             return nil
         }

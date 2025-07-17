@@ -21,13 +21,14 @@ import WebKit
 @testable import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
+import BrowserServicesKit
 
 final class DBPUICommunicationLayerTests: XCTestCase {
 
     func testWhenHandshakeCalled_andDelegateAuthenticatedUserTrue_thenHandshakeUserDataTrue() async throws {
         // Given
         let mockDelegate = MockDelegate()
-        let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: true)
+        let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: true, isUserEligibleForFreeTrial: false)
         mockDelegate.handshakeUserDataToReturn = handshakeUserData
         var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
@@ -52,7 +53,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
     func testWhenHandshakeCalled_andDelegateAuthenticatedUserFalse_thenHandshakeUserDataFalse() async throws {
         // Given
         let mockDelegate = MockDelegate()
-        let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: false)
+        let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: false, isUserEligibleForFreeTrial: false)
         mockDelegate.handshakeUserDataToReturn = handshakeUserData
         var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
@@ -74,6 +75,56 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         XCTAssertEqual(resultUserData.userdata.isAuthenticatedUser, false)
     }
 
+    func testWhenHandshakeCalled_andDelegateUserElgibleFreeTrialTrue_thenHandshakeUserDataTrue() async throws {
+        // Given
+        let mockDelegate = MockDelegate()
+        let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: true, isUserEligibleForFreeTrial: true)
+        mockDelegate.handshakeUserDataToReturn = handshakeUserData
+        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
+        sut.delegate = mockDelegate
+        let handshakeParams: [String: Any] = ["version": 4]
+        let scriptMessage = await WKScriptMessage()
+
+        // When
+        let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)
+        let result = try await handler?(handshakeParams, scriptMessage)
+
+        // Then
+        XCTAssertTrue(mockDelegate.handshakeUserDataCalled)
+
+        guard let resultUserData = result as? DBPUIHandshakeResponse else {
+            XCTFail("Expected DBPUIHandshakeResponse to be returned")
+            return
+        }
+
+        XCTAssertEqual(resultUserData.userdata.isUserEligibleForFreeTrial, true)
+    }
+
+    func testWhenHandshakeCalled_andDelegateUserElgibleFreeTrialFalse_thenHandshakeUserDataFalse() async throws {
+        // Given
+        let mockDelegate = MockDelegate()
+        let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: false, isUserEligibleForFreeTrial: false)
+        mockDelegate.handshakeUserDataToReturn = handshakeUserData
+        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
+        sut.delegate = mockDelegate
+        let handshakeParams: [String: Any] = ["version": 4]
+        let scriptMessage = await WKScriptMessage()
+
+        // When
+        let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.handshake.rawValue)
+        let result = try await handler?(handshakeParams, scriptMessage)
+
+        // Then
+        XCTAssertTrue(mockDelegate.handshakeUserDataCalled)
+
+        guard let resultUserData = result as? DBPUIHandshakeResponse else {
+            XCTFail("Expected DBPUIHandshakeResponse to be returned")
+            return
+        }
+
+        XCTAssertEqual(resultUserData.userdata.isUserEligibleForFreeTrial, false)
+    }
+
     func testWhenHandshakeCalled_andDelegateIsNil_thenHandshakeUserDataIsDefaultTrue() async throws {
         // Given
         let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
@@ -91,6 +142,39 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         }
 
         XCTAssertEqual(resultUserData.userdata.isAuthenticatedUser, true)
+        XCTAssertEqual(resultUserData.userdata.isUserEligibleForFreeTrial, false)
+    }
+
+    func testWhenGetFeatureConfigCalled_thenReturnsProperObjectStructure() async throws {
+        // Given
+        let mockPrivacyConfig = PrivacyConfigurationManagingMock()
+        let mockVPNBypassService = VPNBypassServiceProviderMock()
+
+        (mockPrivacyConfig.privacyConfig as! PrivacyConfigurationMock).isSubfeatureEnabledCheck = { subfeature in
+            if let proSubfeature = subfeature as? PrivacyProSubfeature {
+                return proSubfeature == .useUnifiedFeedback
+            }
+            return false
+        }
+        mockVPNBypassService.isSupported = true
+
+        let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(),
+                                          vpnBypassService: mockVPNBypassService,
+                                          privacyConfig: mockPrivacyConfig)
+        let scriptMessage = await WKScriptMessage()
+
+        // When
+        let handler = sut.handler(forMethodNamed: DBPUIReceivedMethodName.getFeatureConfig.rawValue)
+        let result = try await handler?([:], scriptMessage)
+
+        // Then
+        guard let featureConfig = result as? DBPUIFeatureConfigurationResponse else {
+            XCTFail("Expected DBPUIFeatureConfigurationResponse to be returned, got \(type(of: result))")
+            return
+        }
+
+        XCTAssertEqual(featureConfig.useUnifiedFeedback, true)
+        XCTAssertEqual(featureConfig.excludeVpnTraffic, true)
     }
 }
 
@@ -121,7 +205,7 @@ private final class MockDelegate: DBPUICommunicationDelegate {
         DBPUIInitialScanState(resultsFound: [], scanProgress: .init(currentScans: 0, totalScans: 0, scannedBrokers: []))
     }
 
-    func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
+    func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         DBPUIScanAndOptOutMaintenanceState(
             inProgressOptOuts: [],
             completedOptOuts: [],

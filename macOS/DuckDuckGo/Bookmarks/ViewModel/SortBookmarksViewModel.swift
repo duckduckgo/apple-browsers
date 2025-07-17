@@ -97,7 +97,7 @@ enum BookmarksSortMode: Codable {
     }
 }
 
-protocol SortBookmarksRepository {
+protocol SortBookmarksRepository: AnyObject {
 
     var storedSortMode: BookmarksSortMode { get set }
 }

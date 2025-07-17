@@ -27,7 +27,7 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
     private var store: MockRemoteMessagingStore!
     var message: RemoteMessageModel!
 
-    override func setUpWithError() throws {
+    override func setUp() {
         store = MockRemoteMessagingStore()
         message = RemoteMessageModel(
             id: "1",
@@ -35,12 +35,19 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         )
     }
 
+    override func tearDown() {
+        model = nil
+        store = nil
+        message = nil
+    }
+
     func testWhenNoMessageIsScheduledThenRemoteMessageIsNil() throws {
         store.scheduledRemoteMessage = nil
         model = ActiveRemoteMessageModel(
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
-            openURLHandler: { _ in }
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { }
         )
 
         XCTAssertNil(model.newTabPageRemoteMessage)
@@ -51,7 +58,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         model = ActiveRemoteMessageModel(
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
-            openURLHandler: { _ in }
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { }
         )
 
         XCTAssertEqual(model.newTabPageRemoteMessage, message)
@@ -62,7 +70,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         model = ActiveRemoteMessageModel(
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
-            openURLHandler: { _ in }
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { }
         )
         await model.dismissRemoteMessage(with: .close)
 
@@ -74,7 +83,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         model = ActiveRemoteMessageModel(
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
-            openURLHandler: { _ in }
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { }
         )
 
         XCTAssertFalse(store.hasShownRemoteMessage(withID: message.id))
@@ -98,7 +108,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         model = ActiveRemoteMessageModel(
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
-            openURLHandler: { _ in }
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { }
         )
 
         XCTAssertNotNil(model.tabBarRemoteMessage)
@@ -110,7 +121,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         model = ActiveRemoteMessageModel(
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
-            openURLHandler: { _ in }
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { }
         )
 
         XCTAssertNil(model.tabBarRemoteMessage)

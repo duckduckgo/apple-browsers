@@ -20,6 +20,8 @@
 import SwiftUI
 import WidgetKit
 import AppIntents
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 @available(iOS 17.0, *)
 struct QuickActionsMediumWidget: Widget {
@@ -76,7 +78,7 @@ struct QuickActionsMediumWidgetView: View {
                 HStack(spacing: 12) {
                     LargeSearchFieldView()
                     Link(destination: DeepLinks.voiceSearch) {
-                        CircleIconView(image: Image(.microphoneSolid24))
+                        CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.microphoneSolid))
                     }
                 }
 

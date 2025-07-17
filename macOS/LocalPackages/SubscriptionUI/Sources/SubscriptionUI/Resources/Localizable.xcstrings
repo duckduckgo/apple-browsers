@@ -1853,6 +1853,19 @@
         }
       }
     },
+    "subscription.paid.ai.chat.title" : {
+      "comment" : "Title of the preferences pane for Duck.ai Pro",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Pro"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "subscription.preferences.button.view.plans" : {
       "comment" : "Button for viewing subscription plans on expired subscription",
       "extractionState" : "extracted_with_value",
@@ -2393,6 +2406,19 @@
         }
       }
     },
+    "subscription.preferences.paid.ai.chat.button" : {
+      "comment" : "Title for the preferences pane button to open Duck.ai Pro",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai Pro"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "subscription.preferences.personal.information.removal.title" : {
       "comment" : "Title of the preferences pane for Personal Information Removal",
       "extractionState" : "extracted_with_value",
@@ -2569,6 +2595,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Перейти на Privacy Pro"
+          }
+        }
+      }
+    },
+    "subscription.preferences.purchase.free-trial.button" : {
+      "comment" : "Button to open a page where user can learn more and try a free trial subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Pro kostenlos testen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Privacy Pro Free"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba Privacy Pro gratis"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essayer Privacy Pro gratuitement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova Privacy Pro gratis"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probeer Privacy Pro gratis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wypróbuj Privacy Pro bezpłatnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimentar o Privacy Pro gratuitamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Попробуйте Privacy Pro бесплатно"
           }
         }
       }
@@ -2872,6 +2958,32 @@
           }
         }
       }
+    },
+    "subscription.preferences.services.paid.ai.chat.description" : {
+      "comment" : "Description for the Duck.ai premium service listed in the subscription preferences pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Upgrades Duck.ai with advanced AI models."
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "subscription.preferences.services.paid.ai.chat.title" : {
+      "comment" : "Title for the duck.ai premium listed in the subscription preferences pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Pro"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "subscription.preferences.services.personal.information.removal.button.title" : {
       "comment" : "Title for the Personal Information Removal service button to open its settings",
@@ -3659,6 +3771,126 @@
         }
       }
     },
+    "subscription.preferences.subscription.active.renewing.trial.monthly.caption" : {
+      "comment" : "Monthly trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to a monthly paid subscription on that day.'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine kostenlose Testphase endet am %@ und wird an diesem Tag automatisch in ein kostenpflichtiges Monatsabo umgewandelt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your free trial ends on %@ & automatically converts to a monthly paid subscription on that day."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu prueba gratuita finaliza el %@ y ese día pasará automáticamente a una suscripción mensual de pago."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre essai gratuit se termine le %@ et sera automatiquement converti en abonnement mensuel payant ce jour-là."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La prova gratuita termina il %@ e lo stesso giorno si converte automaticamente in un abbonamento mensile a pagamento."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis proefperiode eindigt op %@ en wordt op die dag automatisch omgezet in een maandelijks betaald abonnement."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatny okres próbny kończy się %@ i tego dnia automatycznie przekształca się w miesięczną płatną subskrypcję."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O teu período de teste gratuito termina a %@ e será automaticamente convertido numa subscrição mensal paga nesse dia."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатный пробный период завершится %@. В тот же день вы автоматически перейдете на платную ежемесячную подписку."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.active.renewing.trial.yearly.caption" : {
+      "comment" : "Annual trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to an annual paid subscription on that day.'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine kostenlose Testphase endet am %@ und wird an diesem Tag automatisch in ein kostenpflichtiges Jahresabo umgewandelt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your free trial ends on %@ & automatically converts to an annual paid subscription on that day."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu prueba gratuita finaliza el %@ y ese día se convertirá automáticamente en una suscripción anual de pago."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre essai gratuit se termine le %@ et sera automatiquement converti en abonnement annuel payant ce jour-là."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La prova gratuita termina il %@ e lo stesso giorno si converte automaticamente in un abbonamento annuale a pagamento."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis proefperiode eindigt op %@ en wordt op die dag automatisch omgezet in een jaarlijks betaald abonnement."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatny okres próbny kończy się %@ i tego samego dnia automatycznie przekształca się w roczną płatną subskrypcję."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O teu período de teste gratuito termina a %@ e será automaticamente convertido numa subscrição anual paga nesse dia."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш бесплатный пробный период завершится %@. В тот же день вы автоматически перейдете на платную годовую подписку."
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.active.renewing.unknown.caption" : {
       "comment" : "Caption for the subscription preferences pane when the subscription is active and will renew, the parameter is date of renewal.",
       "extractionState" : "extracted_with_value",
@@ -4139,6 +4371,66 @@
         }
       }
     },
+    "subscription.preferences.subscription.expired.trial.caption" : {
+      "comment" : "Trial subscription expiration info where parameter is expiration date. This reads as 'Your free trial ends on (date) & will not convert to a paid subscription.'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine kostenlose Testphase endet am %@ und wird nicht in ein kostenpflichtiges Abonnement umgewandelt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your free trial ends on %@ & will not convert to a paid subscription."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu prueba gratuita finaliza el %@ y no se convertirá en una suscripción de pago."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre essai gratuit se termine le %@ et ne sera pas converti en abonnement payant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La prova gratuita termina il %@ e non si convertirà in un abbonamento a pagamento."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je gratis proefperiode eindigt op %@ en wordt niet omgezet naar een betaald abonnement."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezpłatny okres próbny kończy się %@ i nie zostanie przekształcony w płatną subskrypcję."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O teu período de teste gratuito termina a %@ e não será convertido numa subscrição paga."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш бесплатный пробный период завершится %@ без перехода на платную подписку."
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.footer.title" : {
       "comment" : "Title for the subscription preferences pane footer",
       "extractionState" : "extracted_with_value",
@@ -4323,6 +4615,25 @@
       "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Two premium protections and Duck.ai Pro in one subscription."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Deux protections haut de gamme dans un seul abonnement."
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "subscription.preferences.subscription.inactive.row.caption.deprecated" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4380,6 +4691,25 @@
       }
     },
     "subscription.preferences.subscription.inactive.us.caption" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Three premium protections and Duck.ai Pro in one subscription."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trois protections haut de gamme en un seul abonnement."
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "subscription.preferences.subscription.inactive.us.caption.deprecated" : {
       "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -4555,6 +4885,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выполняется активация"
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.settings.free-trial.active" : {
+      "comment" : "Title for the status indicator informing that user is currently on a Free Trial",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kostenlose Testphase aktiv"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Free Trial Active"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba gratuita activa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Essai gratuit actif"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova gratuita attiva"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratis proefversie actief"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktywny bezpłatny okres próbny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Período de teste gratuito ativo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бесплатный пробный доступ активирован"
           }
         }
       }

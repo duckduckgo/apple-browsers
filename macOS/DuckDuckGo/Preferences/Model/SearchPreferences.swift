@@ -60,12 +60,12 @@ extension PreferencesTabOpening {
 
     @MainActor
     func openNewTab(with url: URL) {
-        WindowControllersManager.shared.show(url: url, source: .ui, newTab: true)
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     @MainActor
     func show(url: URL) {
-        WindowControllersManager.shared.show(url: url, source: .ui, newTab: false)
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: false)
     }
 
 }

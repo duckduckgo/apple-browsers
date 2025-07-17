@@ -75,13 +75,17 @@ final class SubscriptionEmailViewModel: ObservableObject {
         return currentURL.forComparison() == checkedURL.forComparison()
     }
 
+    private let urlOpener: URLOpener
+
     init(isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         urlOpener: URLOpener = UIApplication.shared) {
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
+        self.urlOpener = urlOpener
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
 
@@ -179,6 +183,9 @@ final class SubscriptionEmailViewModel: ObservableObject {
                 case .identityTheftRestoration, .identityTheftRestorationGlobal:
                     UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
                     self.state.selectedFeature = .itr
+                case .paidAIChat:
+                    UniquePixel.fire(pixel: .privacyProWelcomeAIChat)
+                    self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
                 case .unknown:
                     break
                 }

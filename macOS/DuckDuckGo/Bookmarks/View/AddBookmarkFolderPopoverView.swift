@@ -43,18 +43,21 @@ struct AddBookmarkFolderPopoverView: ModalView {
 
 #if DEBUG
 #Preview("Add Folder - Light") {
-    let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [
-        BookmarkFolder(id: "1", title: "Folder 1", children: [
-            BookmarkFolder(id: "2", title: "Nested Folder with a name that in theory won‘t fit into the picker", children: [
-            ])
-        ]),
-        BookmarkFolder(id: "3", title: "Another Folder", children: [
-            BookmarkFolder(id: "4", title: "Nested Folder", children: [
-                BookmarkFolder(id: "5", title: "Another Nested Folder", children: [
+    let bkman = LocalBookmarkManager(
+        bookmarkStore: BookmarkStoreMock(bookmarks: [
+            BookmarkFolder(id: "1", title: "Folder 1", children: [
+                BookmarkFolder(id: "2", title: "Nested Folder with a name that in theory won‘t fit into the picker", children: [
+                ])
+            ]),
+            BookmarkFolder(id: "3", title: "Another Folder", children: [
+                BookmarkFolder(id: "4", title: "Nested Folder", children: [
+                    BookmarkFolder(id: "5", title: "Another Nested Folder", children: [
+                    ])
                 ])
             ])
-        ])
-    ]))
+        ]),
+        appearancePreferences: .mock
+    )
     bkman.loadBookmarks()
     customAssertionFailure = { _, _, _ in }
 
@@ -65,7 +68,7 @@ struct AddBookmarkFolderPopoverView: ModalView {
 }
 
 #Preview("Add Folder - Dark") {
-    let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: []))
+    let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: []), appearancePreferences: .mock)
     bkman.loadBookmarks()
     customAssertionFailure = { _, _, _ in }
 

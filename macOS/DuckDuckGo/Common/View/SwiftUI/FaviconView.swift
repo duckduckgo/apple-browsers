@@ -76,7 +76,7 @@ struct FaviconView: View {
                         timer.upstream.connect().cancel()
                     }
             } else {
-                LetterIconView(title: ContentBlocking.shared.tld.eTLDplus1(domain) ?? domain, size: size, paddingModifier: letterPaddingModifier)
+                LetterIconView(title: Application.appDelegate.tld.eTLDplus1(domain) ?? domain, size: size, paddingModifier: letterPaddingModifier)
             }
         }.onAppear {
             refreshImage()

@@ -95,12 +95,22 @@ extension Optional where Wrapped == PermissionState {
         }
     }
 
-    mutating func authorizationQueried(_ query: PermissionAuthorizationQuery) {
+    /// Updates the ``PermissionState`` with the provided ``PermissionAuthorizationQuery``.
+    ///
+    /// - Parameters:
+    ///   - query: The queried ``PermissionAuthorizationQuery``.
+    ///   - updateQueryIfAlreadyRequested: If true, updates the existing query for an already-requested permission.
+    ///     Currently used only to handle multiple ``PermissionType.popup`` requests without affecting other types.
+    ///
+    mutating func authorizationQueried(_ query: PermissionAuthorizationQuery, updateQueryIfAlreadyRequested: Bool) {
         switch self {
-        case .disabled, .requested:
+        case .disabled:
             // stay in disabled state if the App is disabled to use the permission
-            // stay in requested state for already queried permission
             return
+        case .requested where !updateQueryIfAlreadyRequested:
+            return
+        case .requested where updateQueryIfAlreadyRequested:
+            self = .requested(query)
         default:
             self = .requested(query)
         }

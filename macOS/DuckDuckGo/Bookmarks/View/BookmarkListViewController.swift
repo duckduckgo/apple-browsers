@@ -73,6 +73,7 @@ final class BookmarkListViewController: NSViewController {
     private let treeControllerSearchDataSource: BookmarkListTreeControllerSearchDataSource
     private let sortBookmarksViewModel: SortBookmarksViewModel
     private let bookmarkMetrics: BookmarksSearchAndSortMetrics
+    private let navigationEngagementMetrics: BookmarksNavigationEngagementMetrics
     private let visualStyle: VisualStyleProviding
 
     private let treeController: BookmarkTreeController
@@ -147,21 +148,23 @@ final class BookmarkListViewController: NSViewController {
         return hostingController
     }()
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
-         dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared,
+    init(bookmarkManager: BookmarkManager,
+         dragDropManager: BookmarkDragDropManager,
          metrics: BookmarksSearchAndSortMetrics = BookmarksSearchAndSortMetrics(),
-         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+         navigationEngagementMetrics: BookmarksNavigationEngagementMetrics = .init(),
+         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.treeControllerDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)
         self.treeControllerSearchDataSource = BookmarkListTreeControllerSearchDataSource(bookmarkManager: bookmarkManager)
         self.bookmarkMetrics = metrics
+        self.navigationEngagementMetrics = navigationEngagementMetrics
         self.sortBookmarksViewModel = SortBookmarksViewModel(manager: bookmarkManager, metrics: metrics, origin: .panel)
         self.treeController = BookmarkTreeController(dataSource: treeControllerDataSource,
                                                      sortMode: sortBookmarksViewModel.selectedSortMode,
                                                      searchDataSource: treeControllerSearchDataSource,
                                                      isBookmarksBarMenu: false)
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -669,7 +672,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     @objc func newBookmarkButtonClicked(_ sender: AnyObject) {
-        let view = BookmarksDialogViewFactory.makeAddBookmarkView(currentTab: currentTabWebsite)
+        let view = BookmarksDialogViewFactory.makeAddBookmarkView(currentTab: currentTabWebsite, bookmarkManager: bookmarkManager)
         showDialog(view)
     }
 
@@ -723,7 +726,9 @@ final class BookmarkListViewController: NSViewController {
             bookmarkMetrics.fireSearchResultClicked(origin: .panel)
         }
 
-        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+        navigationEngagementMetrics.fireNavigateToBookmark(isFavorite: bookmark.isFavorite)
+
+        Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
     }
 
     private func handleItemClickWhenNotInSearchMode(item: Any?) {
@@ -735,11 +740,11 @@ final class BookmarkListViewController: NSViewController {
     }
 
     @objc func onImportClicked(_ sender: NSButton) {
-        DataImportView().show()
+        DataImportView(isDataTypePickerExpanded: true).show()
     }
 
     private func showManageBookmarks() {
-        WindowControllersManager.shared.showBookmarksTab()
+        Application.appDelegate.windowControllersManager.showBookmarksTab()
         delegate?.closeBookmarksPopover(self)
     }
 
@@ -1041,7 +1046,7 @@ func _mockPreviewBookmarkManager(previewEmptyState: Bool) -> BookmarkManager {
             Bookmark(id: "b5", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "")
         ] }.flatMap { $0 }
     }
-    let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: bookmarks))
+    let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: bookmarks), appearancePreferences: .mock)
 
     bkman.loadBookmarks()
     customAssertionFailure = { _, _, _ in }
@@ -1052,13 +1057,15 @@ func _mockPreviewBookmarkManager(previewEmptyState: Bool) -> BookmarkManager {
 @available(macOS 14.0, *)
 #Preview("Test Bookmark data",
          traits: BookmarkListViewController.Constants.preferredContentSize.fixedLayout) {
-    BookmarkListViewController(bookmarkManager: _mockPreviewBookmarkManager(previewEmptyState: false))
+    let bkman = _mockPreviewBookmarkManager(previewEmptyState: false)
+    return BookmarkListViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
         ._preview_hidingWindowControlsOnAppear()
 }
 
 @available(macOS 14.0, *)
 #Preview("Empty Scope", traits: BookmarkListViewController.Constants.preferredContentSize.fixedLayout) {
-    BookmarkListViewController(bookmarkManager: _mockPreviewBookmarkManager(previewEmptyState: true))
+    let bkman = _mockPreviewBookmarkManager(previewEmptyState: true)
+    return BookmarkListViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
         ._preview_hidingWindowControlsOnAppear()
 }
 #endif

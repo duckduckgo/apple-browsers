@@ -28,10 +28,13 @@ jobs:
     runs-on: macos-15-xlarge
     name: Make ad-hoc build
 
+    env:
+      RUNS_ON: macos-15-xlarge # keep this in sync with runs-on above
+
     steps:
 
       - name: Register SSH keys for access to certificates
-        uses: webfactory/ssh-agent@v0.7.0
+        uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -40,13 +43,23 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Start measuring duration
+        id: start-duration
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: start
+
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version
 
-      - name: Prepare fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: iOS
+          cache-key-prefix: ios-ruby
 
       - name: Archive and upload the app
+        id: archive-and-upload
         env:
           APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -63,6 +76,13 @@ jobs:
           else
             bundle exec fastlane ${lane_to_use}
           fi
+
+      - name: Report job duration
+        if: success() || (always() && steps.archive-and-upload.outcome == 'failure')
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: stop
+          start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
 
       - name: Set filenames
         run: |

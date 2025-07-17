@@ -20,7 +20,7 @@ import Foundation
 import AppKit
 import Common
 import LoginItems
-import NetworkProtection
+import VPN
 import NetworkExtension
 import NetworkProtectionIPC
 import NetworkProtectionUI
@@ -78,7 +78,12 @@ struct VPNMetadata: Encodable {
 
     struct PrivacyProInfo: Encodable {
         let hasPrivacyProAccount: Bool
-        let hasVPNEntitlement: Bool
+
+        // nil means unknown
+        let isVPNFeatureIncludedInSubscription: Bool?
+
+        // nil means unknown
+        let isVPNFeatureEnabled: Bool?
     }
 
     let appInfo: AppInfo
@@ -317,11 +322,13 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     }
 
     func collectPrivacyProInfo() async -> VPNMetadata.PrivacyProInfo {
-        let hasVPNEntitlement = (try? await subscriptionManager.isEnabled(feature: .networkProtection)) ?? false
+        let isVPNFeatureIncludedInSubscription = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection)
+        let isVPNFeatureEnabled = try? await subscriptionManager.isFeatureEnabled(.networkProtection)
+
         return .init(
             hasPrivacyProAccount: subscriptionManager.isUserAuthenticated,
-            hasVPNEntitlement: hasVPNEntitlement
-        )
+            isVPNFeatureIncludedInSubscription: isVPNFeatureIncludedInSubscription,
+            isVPNFeatureEnabled: isVPNFeatureEnabled)
     }
 
 }

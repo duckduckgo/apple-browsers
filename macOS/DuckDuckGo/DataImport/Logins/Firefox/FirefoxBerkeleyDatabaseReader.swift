@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import CommonObjCExtensions
 import Foundation
 
 enum FirefoxBerkeleyDatabaseReader {

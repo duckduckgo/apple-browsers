@@ -125,7 +125,6 @@ extension DefaultSubscriptionManagerV2 {
                             environment: SubscriptionEnvironment,
                             featureFlagger: FeatureFlagger? = nil,
                             userDefaults: UserDefaults,
-                            canPerformAuthMigration: Bool,
                             pixelHandlingSource: AuthV2PixelHandler.Source) {
 
         let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url,
@@ -137,9 +136,8 @@ extension DefaultSubscriptionManagerV2 {
                                                                              authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
-        let legacyTokenStorage = canPerformAuthMigration == true ? SubscriptionTokenKeychainStorage(keychainType: keychainType) : nil
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
-                                            legacyTokenStorage: legacyTokenStorage,
+                                            legacyTokenStorage: nil, // Can't migrate
                                             authService: authService)
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
@@ -186,6 +184,7 @@ extension DefaultSubscriptionManagerV2 {
             self.init(storePurchaseManager: DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
                                                                           subscriptionFeatureFlagger: subscriptionFeatureFlagger),
                       oAuthClient: authClient,
+                      userDefaults: userDefaults,
                       subscriptionEndpointService: subscriptionEndpointService,
                       subscriptionEnvironment: environment,
                       pixelHandler: pixelHandler,
@@ -193,6 +192,7 @@ extension DefaultSubscriptionManagerV2 {
                       isInternalUserEnabled: isInternalUserEnabled)
         } else {
             self.init(oAuthClient: authClient,
+                      userDefaults: userDefaults,
                       subscriptionEndpointService: subscriptionEndpointService,
                       subscriptionEnvironment: environment,
                       pixelHandler: pixelHandler,

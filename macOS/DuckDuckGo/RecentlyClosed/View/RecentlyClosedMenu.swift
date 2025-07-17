@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 
 final class RecentlyClosedMenu: NSMenu {
@@ -64,31 +65,31 @@ private extension NSMenuItem {
     convenience init?(recentlyClosedTab: RecentlyClosedTab) {
         self.init()
 
+        // Use the TabContent extension to get the appropriate favicon
+        image = recentlyClosedTab.tabContent.displayedFavicon(
+            actualFavicon: recentlyClosedTab.favicon,
+            isBurner: false // Recently closed tabs are not burner tabs
+        )
+        image?.size = NSSize.faviconSize
+
+        // Set the title based on tab content
         switch recentlyClosedTab.tabContent {
         case .dataBrokerProtection:
-            image = TabViewModel.Favicon.dataBrokerProtection
             title = UserText.tabDataBrokerProtectionTitle
         case .newtab:
-            image = TabViewModel.Favicon.home
             title = UserText.tabHomeTitle
         case .settings:
-            image = TabViewModel.Favicon.settings
             title = UserText.tabPreferencesTitle
         case .bookmarks:
-            image = TabViewModel.Favicon.bookmarks
-            title = UserText.tabPreferencesTitle
+            title = UserText.tabBookmarksTitle
         case .history:
             guard NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) else {
                 return nil
             }
-            image = TabViewModel.Favicon.history
             title = UserText.mainMenuHistory
         case .releaseNotes:
-            image = TabViewModel.Favicon.home
             title = UserText.releaseNotesTitle
-        case .url, .subscription, .identityTheftRestoration, .webExtensionUrl:
-            image = recentlyClosedTab.favicon
-            image?.size = NSSize.faviconSize
+        case .url, .subscription, .identityTheftRestoration, .webExtensionUrl, .aiChat:
             title = recentlyClosedTab.title ?? recentlyClosedTab.tabContent.userEditableUrl?.absoluteString ?? ""
 
             if title.count > MainMenu.Constants.maxTitleLength {

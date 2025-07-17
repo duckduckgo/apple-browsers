@@ -21,10 +21,11 @@ import Combine
 import Common
 import ContentBlocking
 import Foundation
+import MaliciousSiteProtection
 import Navigation
 import PrivacyDashboard
-import MaliciousSiteProtection
 import SpecialErrorPages
+import WebKit
 
 final class PrivacyDashboardTabExtension {
 

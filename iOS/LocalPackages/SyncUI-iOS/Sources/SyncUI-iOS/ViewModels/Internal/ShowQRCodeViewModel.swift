@@ -20,16 +20,13 @@
 import Foundation
 import UIKit
 
-final class ShowQRCodeViewModel: ObservableObject {
+struct ShowQRCodeViewModel {
 
-    @Published var code: String
-
-    init(code: String) {
-        self.code = code
-    }
+    let codeForDisplayOrPasting: String
+    let qrCodeString: String
 
     func copy() {
-        UIPasteboard.general.string = code
+        UIPasteboard.general.string = codeForDisplayOrPasting
     }
 
 }

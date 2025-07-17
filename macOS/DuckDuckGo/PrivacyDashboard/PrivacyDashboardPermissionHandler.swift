@@ -24,6 +24,11 @@ typealias PrivacyDashboardPermissionAuthorizationState = [(permission: Permissio
 
 final class PrivacyDashboardPermissionHandler {
 
+    init(permissionManager: PermissionManagerProtocol) {
+        self.permissionManager = permissionManager
+    }
+
+    private let permissionManager: PermissionManagerProtocol
     private weak var tabViewModel: TabViewModel?
     private var onPermissionChange: (([AllowedPermission]) -> Void)?
     private var cancellables = Set<AnyCancellable>()
@@ -46,7 +51,7 @@ final class PrivacyDashboardPermissionHandler {
     public func setPermissionAuthorization(authorizationState: PermissionAuthorizationState, domain: String, permissionName: String) {
         guard let permission = PermissionType(rawValue: permissionName) else { return }
 
-        PermissionManager.shared.setPermission(authorizationState.persistedPermissionDecision, forDomain: domain, permissionType: permission)
+        permissionManager.setPermission(authorizationState.persistedPermissionDecision, forDomain: domain, permissionType: permission)
     }
 
     private func subscribeToPermissions() {
@@ -66,13 +71,13 @@ final class PrivacyDashboardPermissionHandler {
         }
 
         let authorizationState: PrivacyDashboardPermissionAuthorizationState
-        authorizationState = PermissionManager.shared.persistedPermissionTypes.union(usedPermissions.keys).compactMap { permissionType in
-            guard PermissionManager.shared.hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
+        authorizationState = permissionManager.persistedPermissionTypes.union(usedPermissions.keys).compactMap { permissionType in
+            guard permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
                     || usedPermissions[permissionType] != nil
             else {
                 return nil
             }
-            let decision = PermissionManager.shared.permission(forDomain: domain, permissionType: permissionType)
+            let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
             return (permissionType, PermissionAuthorizationState(decision: decision))
         }
 

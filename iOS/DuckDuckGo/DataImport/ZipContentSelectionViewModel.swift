@@ -21,6 +21,8 @@ import Foundation
 import BrowserServicesKit
 import SwiftUI
 import Core
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 protocol ZipContentSelectionViewModelDelegate: AnyObject {
     func zipContentSelectionViewModelDidSelectOptions(_ viewModel: ZipContentSelectionViewModel, selectedTypes: [DataImport.DataType])
@@ -32,9 +34,11 @@ extension DataImportPreview {
     var icon: Image {
         switch type {
         case .bookmarks:
-            return Image(.bookmarksOpen24)
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmarksOpen)
         case .passwords:
-            return Image(.key24)
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.key)
+        case .creditCards:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.creditCard)
         }
     }
 
@@ -44,6 +48,8 @@ extension DataImportPreview {
             return UserText.zipContentSelectionBookmarks
         case .passwords:
             return UserText.zipContentSelectionPasswords
+        case .creditCards:
+            return UserText.zipContentSelectionCreditCards
         }
     }
 }
@@ -52,11 +58,11 @@ final class ZipContentSelectionViewModel: ObservableObject {
 
     weak var delegate: ZipContentSelectionViewModelDelegate?
 
-    var contentHeight: CGFloat = 360 {
+    var contentHeight: CGFloat = AutofillViews.zipImportPromptMinHeight {
         didSet {
             guard contentHeight != oldValue else { return }
             delegate?.zipContentSelectionViewModelDidResizeContent(self,
-                                                                   contentHeight: max(contentHeight, 360))
+                                                                   contentHeight: max(contentHeight, AutofillViews.zipImportPromptMinHeight))
         }
     }
 

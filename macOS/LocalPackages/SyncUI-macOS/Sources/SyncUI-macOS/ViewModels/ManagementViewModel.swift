@@ -50,7 +50,8 @@ public protocol ManagementViewModel: ObservableObject {
     var invalidCredentialsTitles: [String] { get }
 
     var recoveryCode: String? { get }
-    var codeToDisplay: String? { get }
+    var stringForQR: String? { get }
+    var codeForDisplayOrPasting: String? { get }
     var devices: [SyncDevice] { get }
     var isFaviconsFetchingEnabled: Bool { get set }
     var isUnifiedFavoritesEnabled: Bool { get set }

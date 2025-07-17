@@ -177,6 +177,27 @@ extension DataBrokerProtectionSettings {
         }
     }
 
+    @discardableResult
+    public static func incrementDeviceIdentifier() -> String {
+        let currentDeviceIdentifier = self.deviceIdentifier
+
+        // If the current identifier already ends with "-n" where n is an integer, increment that integer.
+        // Otherwise, start counting from 1.
+        let components = currentDeviceIdentifier.split(separator: "-")
+        var base = currentDeviceIdentifier
+        var nextNumber = 1
+
+        if let last = components.last, last.allSatisfy({ $0.isNumber }) {
+            // The identifier already has a numeric suffix – increment it.
+            base = components.dropLast().joined(separator: "-")
+            nextNumber = (Int(last) ?? 0) + 1
+        }
+
+        let newIdentifier = "\(base)-\(nextNumber)"
+        self.deviceIdentifier = newIdentifier
+        return self.deviceIdentifier
+    }
+
     public static var modelName: String {
         var systemInfo = utsname()
         uname(&systemInfo)

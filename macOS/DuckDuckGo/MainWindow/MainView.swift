@@ -116,7 +116,7 @@ final class MainView: NSView {
             bannerContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             bannerTopConstraint,
-            bannerContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor).priority(900),
+            bannerContainerView.topAnchor.constraint(equalTo: divider.bottomAnchor).priority(900),
 
             webContainerTopConstraint,
             webContainerTopConstraintToNavigation,
@@ -204,9 +204,11 @@ final class MainView: NSView {
             insertionIdx = min(1, menu.items.count /* just in case… */)
         }
 
-        menu.insertItem(NSMenuItem(title: UserText.mainMenuFileSaveAs, action: #selector(MainViewController.saveAs), representedObject: hudView),
+        menu.insertItem(NSMenuItem(title: UserText.mainMenuFileSaveAs, action: #selector(MainViewController.saveAs), representedObject: hudView)
+                            .withAccessibilityIdentifier("PDFContextMenu.saveAs"),
                         at: insertionIdx)
-        menu.insertItem(NSMenuItem(title: UserText.printMenuItem, action: #selector(MainViewController.printWebView), representedObject: hudView),
+        menu.insertItem(NSMenuItem(title: UserText.printMenuItem, action: #selector(MainViewController.printWebView), representedObject: hudView)
+                            .withAccessibilityIdentifier("PDFContextMenu.print"),
                         at: insertionIdx)
     }
 

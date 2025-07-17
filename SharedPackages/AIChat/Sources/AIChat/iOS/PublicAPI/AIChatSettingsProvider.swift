@@ -26,8 +26,14 @@ public protocol AIChatSettingsProvider {
     /// The user state for AI chat overall.
     var isAIChatEnabled: Bool { get }
 
+    /// Remote config for keep session subfeature
+    var sessionTimerInMinutes: Int { get }
+
     /// The user settings state for the AI Chat browsing address bar.
     var isAIChatAddressBarUserSettingsEnabled: Bool { get }
+
+    /// The user settings state for the AI Chat Search Input
+    var isAIChatSearchInputUserSettingsEnabled: Bool { get }
 
     /// The user settings state for the AI Chat browsing menu icon.
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool { get }
@@ -52,5 +58,8 @@ public protocol AIChatSettingsProvider {
 
     /// Updates the user settings state for the AI Chat voice search
     func enableAIChatTabSwitcherUserSettings(enable: Bool)
+
+    /// Updates the user settings state for the AI Chat Search Input
+    func enableAIChatSearchInputUserSettings(enable: Bool)
 }
 #endif

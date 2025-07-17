@@ -18,7 +18,7 @@
 
 import AppLauncher
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
@@ -56,7 +56,7 @@ final class VPNUIActionHandler {
 
     @MainActor
     private var windowControllerManager: WindowControllersManager {
-        WindowControllersManager.shared
+        Application.appDelegate.windowControllersManager
     }
 }
 
@@ -123,7 +123,7 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         case .stopVPN:
             return true
         case .excludeApp:
-            WindowControllersManager.shared.showVPNAppExclusions(addApp: true)
+            Application.appDelegate.windowControllersManager.showVPNAppExclusions(addApp: true)
             return false
         case .excludeWebsite:
             let domain = windowControllerManager.activeDomain ?? ""

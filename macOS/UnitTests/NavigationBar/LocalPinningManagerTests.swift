@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import NetworkProtection
+import VPN
 
 @testable import DuckDuckGo_Privacy_Browser
 

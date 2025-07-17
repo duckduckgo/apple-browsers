@@ -41,6 +41,11 @@ extension DebugScreensViewModel {
             .action(title: "Reset TipKit", { d in
                 d.tipKitUIActionHandler.resetTipKitTapped()
             }),
+            .action(title: "Reset Settings > Complete Setup", { d in
+                try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
+                try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
+                try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.shouldCheckIfDefaultBrowserKey)
+            }),
             .action(title: "Generate Diagnostic Report", { d in
                 guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
 
@@ -88,6 +93,9 @@ extension DebugScreensViewModel {
             .view(title: "Remote Messaging", { _ in
                 RemoteMessagingDebugRootView()
             }),
+            .view(title: "Settings Cells Demo", { _ in
+                SettingsCellDemoDebugView()
+            }),
             .view(title: "Vanilla Web View", { d in
                 let configuration = WKWebViewConfiguration()
                 configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
@@ -108,6 +116,9 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Tab Generator", { d in
                 BulkGeneratorView(factory: BulkTabFactory(tabManager: d.tabManager))
+            }),
+            .view(title: "Default Browser Prompt", { d in
+                DefaultBrowserPromptDebugView(model: DefaultBrowserPromptDebugViewModel(keyValueFilesStore: d.keyValueStore))
             }),
 
             // MARK: Controllers
@@ -164,11 +175,13 @@ extension DebugScreensViewModel {
                     KeychainItemsDebugViewController(coder: coder)
                 }
             }),
-            .controller(title: "Autofill", { _ in
+            .controller(title: "Autofill", { d in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "AutofillDebugViewController") { coder in
+                let autofillDebugViewController = storyboard.instantiateViewController(identifier: "AutofillDebugViewController") { coder in
                     AutofillDebugViewController(coder: coder)
                 }
+                autofillDebugViewController.keyValueStore = d.keyValueStore
+                return autofillDebugViewController
             }),
             .controller(title: "Subscription", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)

@@ -44,9 +44,7 @@ extension WindowControllersManager: VPNUIPresenting {
         let viewController = ExcludedAppsViewController.create()
         let windowController = viewController.wrappedInWindowController()
 
-        guard let window = windowController.window,
-              let parentWindowController = Self.shared.lastKeyMainWindowController
-        else {
+        guard let window = windowController.window, let parentWindowController = lastKeyMainWindowController else {
             assertionFailure("Failed to present ExcludedAppsViewController")
             return
         }
@@ -69,9 +67,7 @@ extension WindowControllersManager: VPNUIPresenting {
         let viewController = ExcludedDomainsViewController.create()
         let windowController = viewController.wrappedInWindowController()
 
-        guard let window = windowController.window,
-              let parentWindowController = Self.shared.lastKeyMainWindowController
-        else {
+        guard let window = windowController.window, let parentWindowController = lastKeyMainWindowController else {
             assertionFailure("Failed to present ExcludedDomainsViewController")
             return
         }

@@ -30,15 +30,15 @@ extension AppearancePreferences: NewTabPageSectionsVisibilityProviding {
         }
     }
 
+    var isOmnibarVisiblePublisher: AnyPublisher<Bool, Never> {
+         $isOmnibarVisible.dropFirst().removeDuplicates().eraseToAnyPublisher()
+     }
+
     var isFavoritesVisiblePublisher: AnyPublisher<Bool, Never> {
         $isFavoriteVisible.dropFirst().removeDuplicates().eraseToAnyPublisher()
     }
 
-    var isPrivacyStatsVisiblePublisher: AnyPublisher<Bool, Never> {
-        $isPrivacyStatsVisible.dropFirst().removeDuplicates().eraseToAnyPublisher()
-    }
-
-    var isRecentActivityVisiblePublisher: AnyPublisher<Bool, Never> {
-        $isRecentActivityVisible.dropFirst().removeDuplicates().eraseToAnyPublisher()
+    var isProtectionsReportVisiblePublisher: AnyPublisher<Bool, Never> {
+        $isProtectionsReportVisible.dropFirst().removeDuplicates().eraseToAnyPublisher()
     }
 }

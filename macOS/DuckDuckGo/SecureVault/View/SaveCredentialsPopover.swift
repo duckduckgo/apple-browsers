@@ -21,7 +21,8 @@ import BrowserServicesKit
 
 final class SaveCredentialsPopover: NSPopover {
 
-    override init() {
+    init(fireproofDomains: FireproofDomains) {
+        self.fireproofDomains = fireproofDomains
         super.init()
 
         self.animates = false
@@ -38,11 +39,12 @@ final class SaveCredentialsPopover: NSPopover {
     var viewController: SaveCredentialsViewController { contentViewController as! SaveCredentialsViewController }
 
     private func setupContentController() {
-        let controller = SaveCredentialsViewController.create()
+        let controller = SaveCredentialsViewController.create(fireproofDomains: fireproofDomains)
         controller.delegate = self
         contentViewController = controller
     }
 
+    private let fireproofDomains: FireproofDomains
 }
 
 extension SaveCredentialsPopover: SaveCredentialsDelegate {

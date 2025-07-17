@@ -40,9 +40,11 @@ extension AppDelegate {
     @MainActor
     @objc func checkForUpdates(_ sender: Any?) {
 #if SPARKLE
-        if !SupportedOSChecker.isCurrentOSReceivingUpdates {
+        if let warning = SupportedOSChecker().supportWarning,
+           case .unsupported = warning {
+
             // Show not supported info
-            if NSAlert.osNotSupported().runModal() != .cancel {
+            if NSAlert.osNotSupported(warning).runModal() != .cancel {
                 let url = Preferences.UnsupportedDeviceInfoBox.softwareUpdateURL
                 NSWorkspace.shared.open(url)
             }
@@ -68,7 +70,7 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
-            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
+            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, with: .newTab(selected: true))
             PixelKit.fire(AIChatPixel.aichatApplicationMenuFileClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
     }
@@ -122,14 +124,46 @@ extension AppDelegate {
     }
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
-        DispatchQueue.main.async {
-            guard let window = WindowsManager.openNewWindow(with: Tab(content: .newtab)),
-                  let windowController = window.windowController as? MainWindowController else {
+        Task { @MainActor in
+            let window: NSWindow? = windowControllersManager.lastKeyMainWindowController?.window ?? WindowsManager.openNewWindow(with: Tab(content: .newtab))
+            guard let window else {
                 assertionFailure("No reference to main window controller")
                 return
             }
 
-            windowController.mainViewController.clearAllHistory(sender)
+            if featureFlagger.isFeatureOn(.historyView) {
+                let historyViewDataProvider = HistoryViewDataProvider(
+                    historyDataSource: historyCoordinator,
+                    historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in self.fireCoordinator.fireViewModel.fire })
+                )
+                await historyViewDataProvider.refreshData()
+                let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
+
+                let presenter = DefaultHistoryViewDialogPresenter()
+                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all, in: window) {
+                case .burn:
+                    fireCoordinator.fireViewModel.fire.burnAll()
+                case .delete:
+                    historyCoordinator.burnAll {
+                        // History View doesn't currently support having new data pushed to it
+                        // so we need to instruct all open history tabs to reload themselves.
+                        let historyTabs = self.windowControllersManager.mainWindowControllers
+                            .flatMap(\.mainViewController.tabCollectionViewModel.tabCollection.tabs)
+                            .filter { $0.content == .history }
+                        historyTabs.forEach { $0.reload() }
+                    }
+                default:
+                    break
+                }
+            } else {
+                let alert = NSAlert.clearAllHistoryAndDataAlert()
+                alert.beginSheetModal(for: window, completionHandler: { response in
+                    guard case .alertFirstButtonReturn = response else {
+                        return
+                    }
+                    self.fireCoordinator.fireViewModel.fire.burnAll()
+                })
+            }
         }
     }
 
@@ -157,7 +191,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func showAbout(_ sender: Any?) {
-        WindowControllersManager.shared.showTab(with: .settings(pane: .about))
+        Application.appDelegate.windowControllersManager.showTab(with: .settings(pane: .about))
     }
 
     @MainActor
@@ -174,12 +208,12 @@ extension AppDelegate {
 
     @MainActor
     @objc func showReleaseNotes(_ sender: Any?) {
-        WindowControllersManager.shared.showTab(with: .releaseNotes)
+        Application.appDelegate.windowControllersManager.showTab(with: .releaseNotes)
     }
 
     @MainActor
     @objc func showWhatIsNew(_ sender: Any?) {
-        WindowControllersManager.shared.showTab(with: .url(.updates, source: .ui))
+        Application.appDelegate.windowControllersManager.showTab(with: .url(.updates, source: .ui))
     }
 
 #if FEEDBACK
@@ -187,7 +221,7 @@ extension AppDelegate {
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
             if self.internalUserDecider.isInternalUser {
-                WindowControllersManager.shared.showTab(with: .url(.internalFeedbackForm, source: .ui))
+                Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
             } else {
                 FeedbackPresenter.presentFeedbackForm()
             }
@@ -195,7 +229,12 @@ extension AppDelegate {
     }
 
     @objc func openReportBrokenSite(_ sender: Any?) {
-        let privacyDashboardViewController = PrivacyDashboardViewController(privacyInfo: nil, entryPoint: .report)
+        let privacyDashboardViewController = PrivacyDashboardViewController(
+            privacyInfo: nil,
+            entryPoint: .report,
+            contentBlocking: privacyFeatures.contentBlocking,
+            permissionManager: permissionManager
+        )
         privacyDashboardViewController.sizeDelegate = self
 
         let window = NSWindow(contentViewController: privacyDashboardViewController)
@@ -206,7 +245,7 @@ extension AppDelegate {
         privacyDashboardWindow = window
 
         DispatchQueue.main.async {
-            guard let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController,
+            guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
                   let tabModel = parentWindowController.mainViewController.tabCollectionViewModel.selectedTabViewModel else {
                 assertionFailure("AppDelegate: Failed to present PrivacyDashboard")
                 return
@@ -216,9 +255,17 @@ extension AppDelegate {
         }
     }
 
+    @objc func openReportABrowserProblem(_ sender: Any?) {
+
+    }
+
+    @objc func openRequestANewFeature(_ sender: Any?) {
+
+    }
+
     @MainActor
     @objc func openPProFeedback(_ sender: Any?) {
-        WindowControllersManager.shared.showShareFeedbackModal(source: .settings)
+        Application.appDelegate.windowControllersManager.showShareFeedbackModal(source: .settings)
     }
 
     @MainActor
@@ -226,7 +273,7 @@ extension AppDelegate {
         NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
     }
 
-    #endif
+#endif
 
     @objc func navigateToBookmark(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem else {
@@ -240,7 +287,7 @@ extension AppDelegate {
             return
         }
         DispatchQueue.main.async {
-            let tab = Tab(content: .url(url, source: .bookmark), shouldLoadInBackground: true)
+            let tab = Tab(content: .url(url, source: .bookmark(isFavorite: bookmark.isFavorite)), shouldLoadInBackground: true)
             WindowsManager.openNewWindow(with: tab)
         }
     }
@@ -267,15 +314,27 @@ extension AppDelegate {
         AboutPanelController.show(internalUserDecider: internalUserDecider)
     }
 
+    @objc func openImportBookmarksWindow(_ sender: Any?) {
+        DispatchQueue.main.async {
+            DataImportView(isDataTypePickerExpanded: true).show()
+        }
+    }
+
+    @objc func openImportPasswordsWindow(_ sender: Any?) {
+        DispatchQueue.main.async {
+            DataImportView(isDataTypePickerExpanded: true).show()
+        }
+    }
+
     @objc func openImportBrowserDataWindow(_ sender: Any?) {
         DispatchQueue.main.async {
-            DataImportView().show()
+            DataImportView(isDataTypePickerExpanded: false).show()
         }
     }
 
     @MainActor
     @objc func openExportLogins(_ sender: Any?) {
-        guard let windowController = WindowControllersManager.shared.lastKeyMainWindowController,
+        guard let windowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
               let window = windowController.window else { return }
 
         DeviceAuthenticator.shared.authenticateUser(reason: .exportLogins) { authenticationResult in
@@ -315,9 +374,9 @@ extension AppDelegate {
 
     @MainActor
     @objc func openExportBookmarks(_ sender: Any?) {
-        guard let windowController = WindowControllersManager.shared.lastKeyMainWindowController,
+        guard let windowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
               let window = windowController.window,
-              let list = LocalBookmarkManager.shared.list else { return }
+              let list = bookmarkManager.list else { return }
 
         let savePanel = NSSavePanel()
         savePanel.nameFieldStringValue = "DuckDuckGo \(UserText.exportBookmarksFileNameSuffix)"
@@ -338,7 +397,7 @@ extension AppDelegate {
 
     @objc func fireButtonAction(_ sender: NSButton) {
         DispatchQueue.main.async {
-            FireCoordinator.fireButtonAction()
+            self.fireCoordinator.fireButtonAction()
             let pixelReporter = OnboardingPixelReporter()
             pixelReporter.measureFireButtonPressed()
         }
@@ -362,8 +421,8 @@ extension AppDelegate {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
         Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
         OnboardingActionsManager.isOnboardingFinished = true
-        WindowControllersManager.shared.updatePreventUserInteraction(prevent: false)
-        WindowControllersManager.shared.replaceTabWith(Tab(content: .newtab))
+        Application.appDelegate.windowControllersManager.updatePreventUserInteraction(prevent: false)
+        Application.appDelegate.windowControllersManager.replaceTabWith(Tab(content: .newtab))
     }
 
     @objc func resetRemoteMessages(_ sender: Any?) {
@@ -377,11 +436,12 @@ extension AppDelegate {
     }
 
     @objc func debugResetContinueSetup(_ sender: Any?) {
-        AppearancePreferencesUserDefaultsPersistor().continueSetUpCardsLastDemonstrated = nil
-        AppearancePreferencesUserDefaultsPersistor().continueSetUpCardsNumberOfDaysDemonstrated = 0
-        AppearancePreferences.shared.isContinueSetUpCardsViewOutdated = false
-        AppearancePreferences.shared.continueSetUpCardsClosed = false
-        AppearancePreferences.shared.isContinueSetUpVisible = true
+        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
+        persistor.continueSetUpCardsLastDemonstrated = nil
+        persistor.continueSetUpCardsNumberOfDaysDemonstrated = 0
+        appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        appearancePreferences.continueSetUpCardsClosed = false
+        appearancePreferences.isContinueSetUpVisible = true
         HomePage.Models.ContinueSetUpModel.Settings().clear()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
@@ -452,27 +512,27 @@ extension AppDelegate {
         }
         UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.homePageContinueSetUpImport.rawValue)
 
-        let autofillPixelReporter = AutofillPixelReporter(standardUserDefaults: .standard,
-                                                          appGroupUserDefaults: nil,
+        let autofillPixelReporter = AutofillPixelReporter(usageStore: AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil),
                                                           autofillEnabled: AutofillPreferences().askToSaveUsernamesAndPasswords,
                                                           eventMapping: EventMapping<AutofillPixelEvent> { _, _, _, _ in },
                                                           installDate: nil)
         autofillPixelReporter.resetStoreDefaults()
         let loginImportState = AutofillLoginImportState()
         loginImportState.hasImportedLogins = false
-        loginImportState.isCredentialsImportPromptPermanantlyDismissed = false
+        loginImportState.isCredentialsImportPromoInBrowserPermanentlyDismissed = false
     }
 
     @objc func resetBookmarks(_ sender: Any?) {
-        LocalBookmarkManager.shared.resetBookmarks()
-        LocalBookmarkManager.shared.sortMode = .manual
-        UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
-        UserDefaultsWrapper<Bool>(key: .showBookmarksBar, defaultValue: false).clear()
-        UserDefaultsWrapper<Bool>(key: .bookmarksBarPromptShown, defaultValue: false).clear()
-        UserDefaultsWrapper<Bool>(key: .centerAlignedBookmarksBar, defaultValue: false).clear()
-        UserDefaultsWrapper<Bool>(key: .showTabsAndBookmarksBarOnFullScreen, defaultValue: false).clear()
+        bookmarkManager.resetBookmarks {
+            self.bookmarkManager.sortMode = .manual
+            UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .showBookmarksBar, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .bookmarksBarPromptShown, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .centerAlignedBookmarksBar, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .showTabsAndBookmarksBarOnFullScreen, defaultValue: false).clear()
 
-        AppearancePreferences.shared = AppearancePreferences()
+            self.appearancePreferences.reload()
+        }
     }
 
     @objc func resetPinnedTabs(_ sender: Any?) {
@@ -576,7 +636,11 @@ extension AppDelegate {
     }
 
     private func setConfigurationUrl(_ configurationUrl: URL?) {
-        var configurationProvider = AppConfigurationURLProvider(customPrivacyConfiguration: configurationUrl)
+        var configurationProvider = AppConfigurationURLProvider(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger,
+            customPrivacyConfiguration: configurationUrl
+        )
         if configurationUrl == nil {
             configurationProvider.resetToDefaultConfigurationUrl()
         }
@@ -590,7 +654,10 @@ extension AppDelegate {
     }
 
     @objc func setCustomConfigurationURL(_ sender: Any?) {
-        let currentConfigurationURL = AppConfigurationURLProvider().url(for: .privacyConfiguration).absoluteString
+        let currentConfigurationURL = AppConfigurationURLProvider(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        ).url(for: .privacyConfiguration).absoluteString
         let alert = NSAlert.customConfigurationAlert(configurationUrl: currentConfigurationURL)
         if alert.runModal() != .cancel {
             guard let textField = alert.accessoryView as? NSTextField,
@@ -620,7 +687,7 @@ extension MainViewController {
                let tab = mainWindowController.activeTab {
                 return tab
             }
-            return WindowControllersManager.shared.lastKeyMainWindowController?.activeTab
+            return Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.activeTab
         }
         guard let tab else {
             assertionFailure("Could not get currently active Tab")
@@ -725,14 +792,39 @@ extension MainViewController {
         getActiveTabAndIndex()?.tab.webView.resetZoomLevel()
     }
 
+    @objc func summarize(_ sender: Any) {
+        guard featureFlagger.isFeatureOn(.aiChatTextSummarization), featureFlagger.isFeatureOn(.aiChatSidebar) else {
+            return
+        }
+        Logger.aiChat.debug("Summarize action to be implemented")
+
+        Task {
+            do {
+                let selectedText = try await getActiveTabAndIndex()?.tab.webView.evaluateJavaScript("window.getSelection().toString()") as? String
+                guard let selectedText, !selectedText.isEmpty else {
+                    return
+                }
+                let request = AIChatTextSummarizationRequest(
+                    text: selectedText,
+                    websiteURL: browserTabViewController.webView?.url,
+                    websiteTitle: browserTabViewController.webView?.title,
+                    source: .keyboardShortcut
+                )
+                aiChatSummarizer.summarize(request)
+            } catch {
+                Logger.aiChat.error("Failed to get selected text from the webView")
+            }
+        }
+    }
+
     @objc func toggleDownloads(_ sender: Any) {
         var navigationBarViewController = self.navigationBarViewController
         if view.window?.isPopUpWindow == true {
-            if let vc = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.navigationBarViewController {
+            if let vc = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.navigationBarViewController {
                 navigationBarViewController = vc
             } else {
                 WindowsManager.openNewWindow(with: Tab(content: .newtab))
-                guard let wc = WindowControllersManager.shared.mainWindowControllers.first(where: { $0.window?.isPopUpWindow == false }) else {
+                guard let wc = Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: { $0.window?.isPopUpWindow == false }) else {
                     return
                 }
                 navigationBarViewController = wc.mainViewController.navigationBarViewController
@@ -745,9 +837,9 @@ extension MainViewController {
     @objc func toggleBookmarksBarFromMenu(_ sender: Any) {
         // Leaving this keyboard shortcut in place.  When toggled on it will use the previously set appearence which defaults to "always".
         //  If the user sets it to "new tabs only" somewhere (e.g. preferences), then it'll be that.
-        guard let mainVC = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController else { return }
+        guard let mainVC = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController else { return }
 
-        let prefs = AppearancePreferences.shared
+        let prefs = NSApp.delegateTyped.appearancePreferences
         if prefs.showBookmarksBar && prefs.bookmarksBarAppearance == .newTabOnly {
             // show bookmarks bar but don't change the setting
             mainVC.toggleBookmarksBarVisibility()
@@ -804,39 +896,7 @@ extension MainViewController {
 
         makeKeyIfNeeded()
 
-        WindowControllersManager.shared.open(historyEntry, with: NSApp.currentEvent)
-    }
-
-    @objc func clearAllHistory(_ sender: NSMenuItem) {
-        if featureFlagger.isFeatureOn(.historyView) {
-            Task {
-                let historyViewDataProvider = HistoryViewDataProvider(historyDataSource: HistoryCoordinator.shared)
-                await historyViewDataProvider.refreshData()
-                let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
-
-                let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all, in: nil) {
-                case .burn:
-                    FireCoordinator.fireViewModel.fire.burnAll()
-                case .delete:
-                    HistoryCoordinator.shared.burnAll {}
-                default:
-                    break
-                }
-            }
-        } else {
-            guard let window = view.window else {
-                assertionFailure("No window")
-                return
-            }
-            let alert = NSAlert.clearAllHistoryAndDataAlert()
-            alert.beginSheetModal(for: window, completionHandler: { response in
-                guard case .alertFirstButtonReturn = response else {
-                    return
-                }
-                FireCoordinator.fireViewModel.fire.burnAll()
-            })
-        }
+        Application.appDelegate.windowControllersManager.open(historyEntry, with: NSApp.currentEvent)
     }
 
     @objc func clearThisHistory(_ sender: ClearThisHistoryMenuItem) {
@@ -855,11 +915,9 @@ extension MainViewController {
                 let presenter = DefaultHistoryViewDialogPresenter()
                 switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode, in: nil) {
                 case .burn:
-                    FireCoordinator.fireViewModel.fire.burnVisits(visits,
-                                                                  except: FireproofDomains.shared,
-                                                                  isToday: isToday)
+                    self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: isToday)
                 case .delete:
-                    HistoryCoordinator.shared.burnVisits(visits) {}
+                    historyCoordinator.burnVisits(visits) {}
                 default:
                     break
                 }
@@ -876,9 +934,7 @@ extension MainViewController {
                 guard case .alertFirstButtonReturn = response else {
                     return
                 }
-                FireCoordinator.fireViewModel.fire.burnVisits(visits,
-                                                              except: FireproofDomains.shared,
-                                                              isToday: isToday)
+                self.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: isToday)
             })
         }
     }
@@ -900,7 +956,7 @@ extension MainViewController {
 
     @objc func bookmarkAllOpenTabs(_ sender: Any) {
         let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
-        BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo).show()
+        BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo, bookmarkManager: bookmarkManager).show()
     }
 
     @objc func favoriteThisPage(_ sender: Any) {
@@ -923,9 +979,12 @@ extension MainViewController {
         }
 
         guard let bookmark = menuItem.representedObject as? Bookmark else { return }
+
+        PixelKit.fire(NavigationEngagementPixel.navigateToBookmark(source: .menu, isFavorite: bookmark.isFavorite))
+
         makeKeyIfNeeded()
 
-        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
     }
 
     @objc func openAllInTabs(_ sender: Any?) {
@@ -938,10 +997,15 @@ extension MainViewController {
             return
         }
 
-        let tabs = models.compactMap { ($0.entity as? Bookmark)?.urlObject }.map {
-            Tab(content: .url($0, source: .bookmark),
-                shouldLoadInBackground: true,
-                burnerMode: tabCollectionViewModel.burnerMode)
+        let tabs = models.compactMap { model -> Tab? in
+            guard let bookmark = model.entity as? Bookmark,
+                  let url = bookmark.urlObject else {
+                return nil
+            }
+
+            return Tab(content: .url(url, source: .bookmark(isFavorite: bookmark.isFavorite)),
+                       shouldLoadInBackground: true,
+                       burnerMode: tabCollectionViewModel.burnerMode)
         }
         tabCollectionViewModel.append(tabs: tabs, andSelect: true)
     }
@@ -1029,13 +1093,13 @@ extension MainViewController {
     }
 
     @objc func mergeAllWindows(_ sender: Any?) {
-        guard let mainWindowController = WindowControllersManager.shared.lastKeyMainWindowController else { return }
+        guard let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
         assert(!self.isBurner)
 
-        let otherWindowControllers = WindowControllersManager.shared.mainWindowControllers.filter {
+        let otherWindowControllers = Application.appDelegate.windowControllersManager.mainWindowControllers.filter {
             $0 !== mainWindowController && $0.mainViewController.isBurner == false
         }
-        let excludedWindowControllers = WindowControllersManager.shared.mainWindowControllers.filter {
+        let excludedWindowControllers = Application.appDelegate.windowControllersManager.mainWindowControllers.filter {
             $0 === mainWindowController || $0.mainViewController.isBurner == true
         }
 
@@ -1074,9 +1138,21 @@ extension MainViewController {
         }
     }
 
+    @objc func debugResetContinueSetup(_ sender: Any?) {
+        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.continueSetUpCardsLastDemonstrated = nil
+        persistor.continueSetUpCardsNumberOfDaysDemonstrated = 0
+        NSApp.delegateTyped.appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        NSApp.delegateTyped.appearancePreferences.continueSetUpCardsClosed = false
+        NSApp.delegateTyped.appearancePreferences.isContinueSetUpVisible = true
+        HomePage.Models.ContinueSetUpModel.Settings().clear()
+        NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
+    }
+
     @objc func debugShiftNewTabOpeningDate(_ sender: Any?) {
-        AppearancePreferencesUserDefaultsPersistor().continueSetUpCardsLastDemonstrated = (AppearancePreferencesUserDefaultsPersistor().continueSetUpCardsLastDemonstrated ?? Date()).addingTimeInterval(-.day)
-        AppearancePreferences.shared.continueSetUpCardsViewDidAppear()
+        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.continueSetUpCardsLastDemonstrated = (persistor.continueSetUpCardsLastDemonstrated ?? Date()).addingTimeInterval(-.day)
+        NSApp.delegateTyped.appearancePreferences.continueSetUpCardsViewDidAppear()
     }
 
     @objc func debugShiftNewTabOpeningDateNtimes(_ sender: Any?) {
@@ -1088,6 +1164,22 @@ extension MainViewController {
     @objc func crashOnException(_ sender: Any?) {
         DispatchQueue.main.async {
             self.navigationBarViewController.addressBarViewController?.addressBarTextField.suggestionViewController.tableView.view(atColumn: 1, row: .max, makeIfNecessary: false)
+        }
+    }
+
+    @objc func toggleWatchdog(_ sender: Any?) {
+        if Self.watchdog.isRunning {
+            Self.watchdog.stop()
+        } else {
+            Self.watchdog.start()
+        }
+    }
+
+    @objc func simulate15SecondHang() {
+        DispatchQueue.main.async {
+            print("Simulating main thread hang...")
+            sleep(15)
+            print("Main thread is unblocked")
         }
     }
 
@@ -1248,7 +1340,7 @@ extension MainViewController: NSMenuItemValidation {
 
         // Merge all windows
         case #selector(MainViewController.mergeAllWindows(_:)):
-            return WindowControllersManager.shared.mainWindowControllers.filter({ !$0.mainViewController.isBurner }).count > 1 && !self.isBurner
+            return Application.appDelegate.windowControllersManager.mainWindowControllers.filter({ !$0.mainViewController.isBurner }).count > 1 && !self.isBurner
 
         // Move Tab to New Window, Select Next/Prev Tab
         case #selector(MainViewController.moveTabToNewWindow(_:)):
@@ -1267,7 +1359,7 @@ extension MainViewController: NSMenuItemValidation {
              #selector(MainViewController.showPageSource(_:)),
              #selector(MainViewController.showPageResources(_:)):
             let canReload = activeTabViewModel?.canReload == true
-            let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab
+            let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab && !isBurner
             let isHistoryView = featureFlagger.isFeatureOn(.historyView) && activeTabViewModel?.tab.content == .history
             return canReload || isHTMLNewTabPage || isHistoryView
 
@@ -1288,7 +1380,7 @@ extension AppDelegate: NSMenuItemValidation {
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
         case #selector(AppDelegate.closeAllWindows(_:)):
-            return !WindowControllersManager.shared.mainWindowControllers.isEmpty
+            return !Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty
 
         // Reopen Last Removed Tab
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
@@ -1300,15 +1392,16 @@ extension AppDelegate: NSMenuItemValidation {
 
         // Enables and disables export bookmarks items
         case #selector(AppDelegate.openExportBookmarks(_:)):
-            return bookmarksManager.list?.totalBookmarks != 0
+            return bookmarkManager.list?.totalBookmarks != 0
 
         // Enables and disables export passwords items
         case #selector(AppDelegate.openExportLogins(_:)):
             return areTherePasswords
 
+#if FEEDBACK
         case #selector(AppDelegate.openReportBrokenSite(_:)):
-            return WindowControllersManager.shared.selectedTab?.canReload ?? false
-
+            return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
+#endif
         default:
             return true
         }

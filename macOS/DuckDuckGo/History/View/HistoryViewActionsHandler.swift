@@ -80,7 +80,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         dataProvider: HistoryViewDataProviding,
         dialogPresenter: HistoryViewDialogPresenting = DefaultHistoryViewDialogPresenter(),
         tabOpener: HistoryViewTabOpening = DefaultHistoryViewTabOpener(),
-        bookmarksHandler: HistoryViewBookmarksHandling = LocalBookmarkManager.shared,
+        bookmarksHandler: HistoryViewBookmarksHandling,
         firePixel: @escaping (HistoryViewPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
     ) {
         self.dataProvider = dataProvider

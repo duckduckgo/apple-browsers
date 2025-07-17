@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
+import BWIntegration
 import Common
 import Foundation
-import SwiftUI
-import OpenSSL
-import PixelKit
 import os.log
+import PixelKit
+import SwiftUI
 
 final class BWManager: BWManagement, ObservableObject {
 
@@ -242,7 +242,7 @@ final class BWManager: BWManagement, ObservableObject {
         case "cannot-decrypt":
             Logger.bitWarden.fault("BWManagement: Bitwarden error - cannot decrypt")
             assertionFailure("BWManagement: Bitwarden error - cannot decrypt")
-            PixelKit.fire(DebugEvent(GeneralPixel.bitwardenRespondedCannotDecrypt), frequency: .daily)
+            PixelKit.fire(DebugEvent(GeneralPixel.bitwardenRespondedCannotDecrypt), frequency: .legacyDaily)
         case "locked":
             if case let .connected(vault) = status {
                 status = .connected(vault: vault.locked)

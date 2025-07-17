@@ -32,6 +32,7 @@ class SwipeTabsCoordinator: NSObject {
     weak var tabPreviewsSource: TabPreviewsSource!
     weak var appSettings: AppSettings!
     private let omnibarDependencies: OmnibarDependencyProvider
+    private let themingProperties: ExperimentalThemingProperties
 
     let selectTab: (Int) -> Void
     let newTab: () -> Void
@@ -62,7 +63,8 @@ class SwipeTabsCoordinator: NSObject {
          omnibarAccessoryHandler: OmnibarAccessoryHandler,
          selectTab: @escaping (Int) -> Void,
          newTab: @escaping () -> Void,
-         onSwipeStarted: @escaping () -> Void) {
+         onSwipeStarted: @escaping () -> Void,
+         themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
         
         self.coordinator = coordinator
         self.tabPreviewsSource = tabPreviewsSource
@@ -72,6 +74,7 @@ class SwipeTabsCoordinator: NSObject {
         self.selectTab = selectTab
         self.newTab = newTab
         self.onSwipeStarted = onSwipeStarted
+        self.themingProperties = themingProperties
                 
         super.init()
         
@@ -110,6 +113,10 @@ class SwipeTabsCoordinator: NSObject {
     weak var preview: UIView?
     weak var currentView: UIView?
 
+    private var omniBarHeight: CGFloat {
+        themingProperties.isExperimentalThemingEnabled ? UpdatedOmniBarView.expectedHeight : DefaultOmniBarView.expectedHeight
+    }
+
     func invalidateLayout() {
         updateLayout()
         scrollToCurrent()
@@ -119,7 +126,6 @@ class SwipeTabsCoordinator: NSObject {
     }
 
     private func updateLayout() {
-        let omniBarHeight: CGFloat = ExperimentalThemingManager().isExperimentalThemingEnabled ? UpdatedOmniBarView.expectedHeight : DefaultOmniBarView.expectedHeight
         let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
         layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: omniBarHeight)
         layout?.minimumLineSpacing = 0
@@ -256,7 +262,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
 
         preview?.frame.origin.x = coordinator.contentContainer.frame.width * CGFloat(modifier)
-        if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled {
+        if themingProperties.isRoundedCornersTreatmentEnabled {
             preview?.clipsToBounds = true
             preview?.layer.cornerRadius = 12
         }
@@ -440,7 +446,7 @@ class OmniBarCell: UICollectionViewCell {
     func addMaskViewIfNeeded() {
         guard let omniBarView = omniBar?.barView else { return }
 
-        if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled,
+        if ThemeManager.shared.properties.isRoundedCornersTreatmentEnabled,
            AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .bottom,
            isPortrait {
             let maskView = RoundedCornersMaskView(cornerRadius: 12.0,

@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import Foundation
 
 #if DEBUG
 
@@ -88,10 +89,6 @@ final class MockPrivacyConfiguration: PrivacyConfiguration {
     }
     func userEnabledProtection(forDomain: String) {}
     func userDisabledProtection(forDomain: String) {}
-}
-
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
 }
 
 extension DefaultInternalUserDecider {

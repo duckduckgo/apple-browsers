@@ -21,6 +21,7 @@ import XCTest
 import Core
 @testable import DuckDuckGo
 import SubscriptionTestingUtilities
+import BrowserServicesKit
 
 @MainActor
 final class TabManagerTests: XCTestCase {
@@ -42,13 +43,13 @@ final class TabManagerTests: XCTestCase {
 
     func testWhenTabOpenedFromOtherTabThenRemovingTabSetsIndexToPreviousTab() async throws {
         let tabsModel = TabsModel(desktop: false)
+        tabsModel.add(tab: Tab(link: Link(title: "example", url: URL(string: "https://example.com")!)))
         tabsModel.add(tab: Tab())
-        XCTAssertEqual(2, tabsModel.count)
+        XCTAssertEqual(3, tabsModel.count)
 
-        tabsModel.select(tabAt: 0)
+        tabsModel.select(tabAt: 1)
 
         let manager = try makeManager(tabsModel)
-        _ = manager.add(url: URL(string: "https://example.com")!, inheritedAttribution: nil)
 
         // We expect the new tab to be the index after whatever was current (ie zero)
         XCTAssertEqual(1, tabsModel.currentIndex)

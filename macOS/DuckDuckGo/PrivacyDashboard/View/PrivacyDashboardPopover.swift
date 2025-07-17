@@ -37,22 +37,26 @@ final class PrivacyDashboardPopover: NSPopover {
         (contentViewController as? PrivacyDashboardViewController)!
     }
 
-    init(entryPoint: PrivacyDashboardEntryPoint = .dashboard) {
+    init(entryPoint: PrivacyDashboardEntryPoint = .dashboard, contentBlocking: ContentBlockingProtocol, permissionManager: PermissionManagerProtocol) {
         super.init()
 #if DEBUG
         self.behavior = .semitransient
 #else
         self.behavior = .transient
 #endif
-        setupContentController(entryPoint: entryPoint)
+        setupContentController(entryPoint: entryPoint, contentBlocking: contentBlocking, permissionManager: permissionManager)
     }
 
     required init?(coder: NSCoder) {
         fatalError("\(Self.self): Bad initializer")
     }
 
-    private func setupContentController(entryPoint: PrivacyDashboardEntryPoint) {
-        let controller = PrivacyDashboardViewController(entryPoint: entryPoint)
+    private func setupContentController(
+        entryPoint: PrivacyDashboardEntryPoint,
+        contentBlocking: ContentBlockingProtocol,
+        permissionManager: PermissionManagerProtocol
+    ) {
+        let controller = PrivacyDashboardViewController(entryPoint: entryPoint, contentBlocking: contentBlocking, permissionManager: permissionManager)
         controller.sizeDelegate = self
         contentViewController = controller
     }

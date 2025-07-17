@@ -19,6 +19,8 @@
 import AppKit
 import Foundation
 import Navigation
+import WebKit
+
 final class NavigationHotkeyHandler {
 
     private var onNewWindow: ((WKNavigationAction?) -> NavigationDecision)?

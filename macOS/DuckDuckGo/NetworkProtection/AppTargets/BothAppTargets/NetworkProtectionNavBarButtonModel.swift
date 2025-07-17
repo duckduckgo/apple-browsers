@@ -19,7 +19,7 @@
 import AppKit
 import Combine
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
 
@@ -28,7 +28,7 @@ import NetworkProtectionUI
 final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
 
     private let networkProtectionStatusReporter: NetworkProtectionStatusReporter
-    private var status: NetworkProtection.ConnectionStatus = .default
+    private var status: VPN.ConnectionStatus = .default
     private let popoverManager: NetPPopoverManager
 
     // MARK: - Subscriptions
@@ -133,16 +133,22 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
 
     @MainActor
     func updateVisibility() {
-        guard !isPinned,
-              !popoverManager.isShown,
-              !isHavingConnectivityIssues else {
+        Task { @MainActor in
+            guard let canStartVPN = try? await vpnGatekeeper.canStartVPN() else {
+                // If there's an error, don't make any changes
+                return
+            }
 
-            pinNetworkProtectionToNavBarIfNeverPinnedBefore()
-            showVPNButton = true
-            return
+            if canStartVPN {
+                pinNetworkProtectionToNavBarIfNeverPinnedBefore()
+            } else {
+                pinningManager.unpin(.networkProtection)
+                showVPNButton = false
+                return
+            }
+
+            showVPNButton = isPinned || popoverManager.isShown || isHavingConnectivityIssues
         }
-
-        showVPNButton = false
     }
 
     // MARK: - Pinning

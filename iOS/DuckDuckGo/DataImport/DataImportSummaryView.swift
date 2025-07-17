@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import BrowserServicesKit
 import Lottie
@@ -44,7 +45,8 @@ struct DataImportSummaryView: View {
                     if viewModel.isAllSuccessful() {
                         SuccessContainer(
                             passwordsSuccessCount: viewModel.passwordsSummary?.successful ?? 0,
-                            bookmarksSuccessCount: viewModel.bookmarksSummary?.successful ?? 0
+                            bookmarksSuccessCount: viewModel.bookmarksSummary?.successful ?? 0,
+                            creditCardsSuccessCount: viewModel.creditCardsSummary?.successful
                         )
                     } else {
                         if let passwordsSummary = viewModel.passwordsSummary {
@@ -70,6 +72,16 @@ struct DataImportSummaryView: View {
                                 successCount: bookmarksSummary.successful,
                                 failureCount: bookmarksSummary.failed,
                                 duplicatesCount: bookmarksSummary.duplicate
+                            )
+                            .padding(.top, 28)
+                        }
+                        
+                        if let creditCardsSummary = viewModel.creditCardsSummary {
+                            StatsContainer(
+                                successString: UserText.dataImportSummaryCreditCardsSuccess,
+                                successCount: creditCardsSummary.successful,
+                                failureCount: creditCardsSummary.failed,
+                                duplicatesCount: creditCardsSummary.duplicate
                             )
                             .padding(.top, 28)
                         }
@@ -141,6 +153,7 @@ struct DataImportSummaryView: View {
     private struct SuccessContainer: View {
         var passwordsSuccessCount: Int
         var bookmarksSuccessCount: Int
+        var creditCardsSuccessCount: Int?
 
         var body: some View {
             Text(UserText.dataImportSummaryPasswordsSubtitle)
@@ -160,7 +173,14 @@ struct DataImportSummaryView: View {
                 StatRow(isSuccess: true,
                         label: UserText.dataImportSummaryBookmarksSuccess,
                         count: bookmarksSuccessCount,
-                        showSeparator: false)
+                        showSeparator: creditCardsSuccessCount != nil ? true : false)
+
+                if let creditCardsSuccessCount = creditCardsSuccessCount {
+                    StatRow(isSuccess: true,
+                            label: UserText.dataImportSummaryCreditCardsSuccess,
+                            count: creditCardsSuccessCount,
+                            showSeparator: false)
+                }
             }
             .padding(.vertical, 12)
             .background(Color(designSystemColor: .panel))
@@ -211,7 +231,7 @@ struct DataImportSummaryView: View {
             VStack(spacing: 0) {
                 HStack {
                     HStack(spacing: 12) {
-                        Image(isSuccess ? .checkRecolorable24 : .crossRecolorable24)
+                        Image(uiImage: isSuccess ? DesignSystemImages.Glyphs.Size24.checkRecolorable : DesignSystemImages.Glyphs.Size24.crossRecolorable)
                         Text(label)
                             .daxBodyRegular()
                             .foregroundStyle(Color(designSystemColor: .textPrimary))

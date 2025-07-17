@@ -59,10 +59,7 @@
 "action.title.downloads" = "Allalaadimised";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "AI vestlus";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Uus AI vestlus";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Redigeeri järjehoidjat";
@@ -160,6 +157,9 @@
 /* No comment provided by engineer. */
 "addWidget.title" = "Ühe puudutusega oma lemmiksaitidele.";
 
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "AI funktsioonid";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Olemasolevaid järjehoidjaid ei dubleerita.";
 
@@ -189,6 +189,15 @@
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Sünkroonimine on peatatud. Kui soovid selle seadme sünkroonimist jätkata, loo uuesti ühendus, kasutades mõnda teist seadet või taastamiskoodi.";
+
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Sünkrooni kohe";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "%@ saab pääseb ligi sinu sünkroonitud DuckDuckGo andmetele.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Kas sünkroonida uus seade?";
 
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Loe edasi";
@@ -259,9 +268,6 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Vabasta DuckDuckGo.";
 
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Kas soovite kindlasti kõik järjehoidjad kustutada? Seda toimingut ei saa tagasi võtta.";
-
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Sisselogimine";
 
@@ -306,6 +312,9 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Kui DuckDuckGo tuvastab külastatavatel veebisaitidel küpsiste nõusoleku hüpikaknad, saame proovida automaatselt seadistada sinu küpsise-eelistused selliselt, et minimeerida küpsised ja maksimeerida privaatsust, ning seejärel hüpikaknad sulgeda. Mõned saidid ei paku võimalust küpsise-eelistuste haldamiseks, seega saame sellised hüpikaknad ainult peita.";
+
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Kaart on salvestatud";
 
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Kaart kustutatud";
@@ -394,6 +403,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Kaitse oma seadet krediitkaartide salvestamiseks";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Ära salvesta";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Salvesta kaart";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Krediitkaardid salvestatakse turvaliselt sinu seadmesse.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Kas soovid, et DuckDuckGo salvestaks sinu kaardiinfo?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Autentimine krediitkaardi andmete sisestamiseks";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Kas kasutada salvestatud kaarti?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Krediitkaardi andmete salvestamise saad igal ajal välja lülitada.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -454,8 +484,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Sünkrooni töölauaga";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Kuidas importida paroole";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Kuidas sünkroonida töölaua paroole";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Keela";
@@ -920,6 +950,9 @@
 "close.all.tabs" = "Sule kõik vahelehed";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohort: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Kinnita";
 
 /* Button to continue the onboarding process */
@@ -1099,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Kuidas eksportida paroole Safarist:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Valige fail...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Valige fail, mis sisaldab Safarist või Chrome'ist eksporditud paroole. Tavaliselt on see ZIP- või CSV-fail.";
 
@@ -1125,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import on lõpetatud!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Krediitkaardid";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Duplikaadid vahele jäetud";
@@ -1167,9 +1206,6 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Silumine";
-
-/* No comment provided by engineer. */
-"Delete All" = "Kustuta kõik";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "seade";
@@ -1255,8 +1291,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Playeri funktsionaalsust on mõjutanud hiljutised YouTube'i muudatused. Töötame nende probleemide lahendamise nimel ja täname sind mõistva suhtumise eest.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai on valikuline funktsioon, mis võimaldab anonüümselt vestelda populaarsete kolmanda poole AI vestlusmudelitega. Teie vestlusi ei kasutata tehisintellekti treenimiseks.\n[Lisateave](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "DuckDuckGo tehisintellekti funktsioonid on privaatsed ja valikulised. Sinu andmeid ei kasutata tehisintellekti treenimiseks.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Aadressiriba";
@@ -1270,7 +1306,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Häälotsing";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Loe edasi";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -1475,6 +1514,9 @@
 "empty.search" = "Ühtegi vastet ei leitud";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Registreeritud: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1527,6 +1569,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Ainult mobiililemmikud";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funktsioon: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklaami ja hüpikakende blokeerimine";
@@ -1815,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Impordi paroolid";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Viige oma paroolid kiiresti ja turvaliselt üle teisest brauserist.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Impordi paroolid DuckDuckGosse";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Peate lubama VPN-i rakenduses DuckDuckGo.";
@@ -2210,7 +2264,7 @@
 "new.tab.page.settings.title" = "Uue vahekaardilehe kohandamine";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "AI vestlus";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Järjehoidjad";
@@ -2276,7 +2330,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blokeeri küpsiste hüpikaknad";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokeeri jälgivad reklaamid";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokeeri suunatud reklaamid";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Kustuta sirvimisandmed ühe nupuga";
@@ -2430,6 +2484,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Saada tagasisidet";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Pettuste blokeerija";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Selle funktsiooni keelamine võib teie isikuandmed ohtu seada.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Hoiata mind pettuste, andmepüügi või pahavara tõttu märgistatud saitidel. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Võimaluse korral uuendab lingid automaatselt HTTPS-ile. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Alati sisse lülitatud";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Kaitse ohtude eest";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGo täiustatud kaitsed peatavad levinud ohud, hoides samal ajal su ühenduse turvalisena.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Mõned järjehoidjad või paroolid on valesti vormindatud või liiga pikad ja neid ei sünkroonitud.";
@@ -2585,7 +2663,16 @@
 "settings.address.full.url" = "Näita kogu saidi aadressi";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Otseteed";
+"settings.aichat.shortcuts" = "Duck.ai otseteed";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Otsingusisend";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Otsi veebist või küsi Duck.ai-lt otse aadressiribal";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Otsingu Assist seaded";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alati sisse lülitatud";
@@ -2626,6 +2713,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Kustuta andmed automaatselt";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Vii seadistamine lõpule";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Küpsiste hüpikakna kaitse";
 
@@ -2660,13 +2750,19 @@
 "settings.emailProtection.description" = "Blokeeri meilijälgurid ja peida oma aadress";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Luba Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Vestle privaatselt populaarsete kolmanda osapoole tehisintellekti mudelitega";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Luba Email Protection";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Luba häälotsing";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Vali, kui tihti soovid, et AI-toega vastused ilmuksid sinu otsingutesse";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Jaga tagasisidet";
@@ -2688,6 +2784,9 @@
 
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Rakenduse ikoon";
+
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Impordi paroolid";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klaviatuur";
@@ -2728,6 +2827,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Privaatsuspoliitika ja teenuse tingimused";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Sisaldab meie VPN-i ja teenust Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Sisaldab meie VPN-i, rakendusi Personal Information Removal ja Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Pika vajutusega eelvaated";
 
@@ -2748,6 +2853,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Saada krahhiaruanded DuckDuckGo-le automaatselt.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Määrake vaikebrauseriks";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Määra aadressiriba asukoht";
@@ -2785,17 +2893,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Tellimuse seaded";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Sisaldab meie VPN-i ja teenust Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Kaitse oma ühendust ja identiteeti rakendusega Privacy Pro";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free" = "Proovi Privacy Pro'd tasuta";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Sisaldab meie VPN-i, rakendusi Personal Information Removal ja Identity Theft Restoration.";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2865,6 +2967,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Salvestatud hostinimi: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Alamfunktsioon: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Lisa seadmele";
@@ -3389,10 +3494,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blokeerige 150 000+ domeeni, mis on märgistatud pahavara, andmepüügirünnakute ja võrgupettuste eest DNS-tasandi blokeerimisloendiga. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Sisu blokeerimine ja filtreerimine";
+"vpn.settings.dns.server.content.blocking.header" = "Pahatahtliku sisu blokeerimine";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Riskantsete domeenide blokeerimine";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Pettuste blokeerija";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";
@@ -3510,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Jätka";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Krediitkaardid";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Paroolid";

@@ -7,7 +7,7 @@ on:
 jobs:
 
     create-asana-pr-subtask-if-needed:
-        if: ${{ github.event.requested_reviewer.login != 'Copilot' }}
+        if: ${{ github.event.requested_reviewer && github.event.requested_reviewer.login != 'Copilot' && github.event.requested_reviewer.login != '' }}
         name: "Create the PR subtask in Asana"
         runs-on: ubuntu-latest
 
@@ -30,3 +30,4 @@ jobs:
             access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
             asana-task-id: ${{ steps.get-task-id.outputs.task_id }}
             github-reviewer-user: ${{ github.event.requested_reviewer.login }}
+            github-token: ${{ secrets.GH_RO_PAT }}

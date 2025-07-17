@@ -59,10 +59,7 @@
 "action.title.downloads" = "Descărcări";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "Chat IA";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Chat AI nou";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Editare semn de carte";
@@ -160,6 +157,9 @@
 /* No comment provided by engineer. */
 "addWidget.title" = "Atinge o dată pentru a ajunge la site-urile tale preferate.";
 
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "Caracteristici AI";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Marcajele existente nu vor fi duplicate.";
 
@@ -189,6 +189,15 @@
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Sincronizarea a fost întreruptă. Dacă dorești să continui sincronizarea acestui dispozitiv, reconectează-te folosind un alt dispozitiv sau codul de recuperare.";
+
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Sincronizează acum";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "„%@” va putea accesa datele tale DuckDuckGo sincronizate.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Sincronizezi un nou dispozitiv?";
 
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Află mai multe";
@@ -259,9 +268,6 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Deblochează DuckDuckGo.";
 
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Sigur dorești să ștergi toate marcajele? Această acțiune nu poate fi anulată.";
-
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Autentificare";
 
@@ -306,6 +312,9 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Când DuckDuckGo detectează ferestre pop-up în care ți se solicită consimțământul cu privire la modulele cookie pe site-urile pe care le vizitezi, putem încerca să îți setăm automat preferințele privind modulele cookie pentru a minimiza modulele cookie și a maximiza confidențialitatea și, apoi, pentru a închide ferestrele pop-up. Unele site-uri nu oferă o opțiune de gestionare a preferințelor privind modulele cookie, prin urmare putem doar să ascundem ferestrele pop-up precum acestea.";
+
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Card salvat";
 
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Cardul a fost șters";
@@ -394,6 +403,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Securizează-ți dispozitivul pentru a salva cardurile de credit";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Nu salva";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Salvează cardul";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Cardurile de credit sunt stocate în siguranță pe dispozitivul tău.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Dorești ca DuckDuckGo să îți salveze informațiile cardului?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Autentifică-te pentru a completa informațiile despre cardul de credit";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Folosești un card salvat?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Poți dezactiva oricând salvarea cardurilor de credit.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -454,8 +484,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Sincronizare cu computerul desktop";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Cum să imporți parolele";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Cum se sincronizează parolele de pe desktop";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Dezactivează";
@@ -920,6 +950,9 @@
 "close.all.tabs" = "Închide toate filele";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Cohortă: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Confirmare";
 
 /* Button to continue the onboarding process */
@@ -1099,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Cum să exporți parolele din Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Selectează fișierul...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Selectează fișierul care conține parolele exportate din Safari sau Chrome. Acesta est,e de obicei, un fișier ZIP sau CSV.";
 
@@ -1125,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import finalizat!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Carduri de credit";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Duplicatele au fost omise";
@@ -1167,9 +1206,6 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Depanează";
-
-/* No comment provided by engineer. */
-"Delete All" = "Șterge toate";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "dispozitiv";
@@ -1255,8 +1291,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Funcționalitatea Duck Player a fost afectată de modificările recente ale YouTube. Lucrăm pentru a remedia aceste probleme și apreciem înțelegerea ta.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai este o caracteristică opțională care îți permite să discuți anonim cu modele populare de chat AI de la terțe părți. Chaturile tale nu sunt folosite pentru a antrena AI.\n[Află mai multe](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "Funcțiile AI ale DuckDuckGo sunt private și opționale. Datele tale nu sunt folosite pentru a antrena AI.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Bara de adrese";
@@ -1270,7 +1306,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Căutare vocală";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Află mai multe";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -1475,6 +1514,9 @@
 "empty.search" = "Nu s-au găsit potriviri";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Înscris: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1527,6 +1569,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Doar favoritele pentru mobil";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funcție: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blocarea anunțurilor și ferestrelor pop-up";
@@ -1815,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Identificator: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Importă parolele";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Transferă rapid și sigur parolele dintr-un alt browser.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Importă-ți parolele în DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Trebuie să activezi VPN-ul din aplicația DuckDuckGo.";
@@ -2210,7 +2264,7 @@
 "new.tab.page.settings.title" = "Personalizează pagina Filă nouă";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Chat IA";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Semne de carte";
@@ -2276,7 +2330,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blochează ferestrele pop-up privind modulele cookie";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blochează reclamele cu scop de urmărire";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blochează reclamele direcționate";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Șterge datele de navigare cu un singur buton";
@@ -2430,6 +2484,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Trimite feedback";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Instrument de blocare a înșelătoriilor";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Dezactivarea acestei funcții poate genera riscuri privind datele tale cu caracter personal.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Avertizează cu privire la site-urile marcate ca incluzând escrocherii, phishing sau programe rău intenționate. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Actualizează automat linkurile la HTTPS, oricând este posibil. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Criptare inteligentă";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Întotdeauna activat";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Protecție împotriva amenințărilor";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Protecțiile îmbunătățite oferite de DuckDuckGo stopează amenințările comune, menținându-ți în același timp conexiunea securizată.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Unele semne de carte sau parole sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";
@@ -2585,7 +2663,16 @@
 "settings.address.full.url" = "Afișați adresa completă a site-ului";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Scurtături";
+"settings.aichat.shortcuts" = "Comenzi rapide Duck.ai";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Caută intrarea";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Caută pe web sau întreabă Duck.ai direct din bara de adrese";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Setări Search Assist";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Întotdeauna activat";
@@ -2626,6 +2713,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Șterge automat datele";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Finalizează configurarea";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Protecție pentru ferestre pop-up aferente modulelor cookie";
 
@@ -2660,13 +2750,19 @@
 "settings.emailProtection.description" = "Blochează tehnologiile de urmărire prin e-mail și ascunde-ți adresa";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Activează Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Discută în privat cu modele AI populare de la entități externe";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Activează Email Protection";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Activează căutarea vocală";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Alege cât de des vrei să apară răspunsurile asistate de IA în căutările tale";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Partajează feedback";
@@ -2688,6 +2784,9 @@
 
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Pictograma aplicației";
+
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Importă parolele";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatură";
@@ -2728,6 +2827,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Politica de confidențialitate și Condițiile de prestare a serviciului";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Include VPN-ul nostru și Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Include VPN, Personal Information Removal și Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Previzualizări prin apăsare lungă";
 
@@ -2748,6 +2853,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Trimite automat rapoarte de cădere către DuckDuckGo.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Setare ca browser implicit";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Setează poziția barei de adrese";
@@ -2785,17 +2893,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Setări pentru abonament";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Include VPN-ul nostru și Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Protejează-ți conexiunea și identitatea cu Privacy Pro";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free" = "Încearcă Privacy Pro gratuit";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Include VPN, Personal Information Removal și Identity Theft Restoration.";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2865,6 +2967,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Numele gazdă stocat: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Sub-funcție: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Adaugă pe dispozitiv";
@@ -3389,10 +3494,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blochează peste 150.000 de domenii marcate pentru găzduirea de programe rău intenționate (malware), atacuri de phishing și escrocherii online cu o listă de blocare la nivel de DNS. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blocarea și filtrarea conținutului";
+"vpn.settings.dns.server.content.blocking.header" = "Blocare a conținutului rău intenționat";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Blochează domeniile riscante";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Instrument de blocare a înșelătoriilor";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";
@@ -3510,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Continuați";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Carduri de credit";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Parole";

@@ -85,13 +85,16 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
             window?.contentView = self.webView
             window?.makeKeyAndOrderFront(nil)
 #elseif os(iOS)
-            window = UIWindow(frame: UIScreen.main.bounds)
+            cleanupExistingPIRDebugWindow()
+
             let viewController = UIViewController.init()
             viewController.view = webView
-            window?.rootViewController = viewController
+            let navigationController = UINavigationController(rootViewController: viewController)
+            viewController.title = "PIR Debug Mode"
 
+            window = UIWindow(frame: UIScreen.main.bounds)
+            window?.rootViewController = navigationController
             window?.windowLevel = UIWindow.Level.alert
-            window?.makeKeyAndVisible()
 #endif
 
         }
@@ -239,6 +242,24 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         timer = nil
     }
 
+#if os(iOS)
+    private func cleanupExistingPIRDebugWindow() {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return
+        }
+
+        for existingWindow in windowScene.windows {
+            if let navController = existingWindow.rootViewController as? UINavigationController,
+               let title = navController.topViewController?.title,
+               title.hasPrefix("PIR Debug Mode") {
+                existingWindow.isHidden = true
+                existingWindow.rootViewController = nil
+                break
+            }
+        }
+    }
+#endif
+
 }
 
 extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
@@ -271,7 +292,10 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
             return .allow
         }
 
-        if statusCode >= 400 {
+        if statusCode == 403 {
+            Logger.action.log("WebViewHandler failed with status code: \(String(describing: statusCode), privacy: .public)")
+            Logger.action.log("WebViewHandler continuing despite error")
+        } else if statusCode >= 400 {
             Logger.action.log("WebViewHandler failed with status code: \(String(describing: statusCode), privacy: .public)")
             self.activeContinuation?.resume(throwing: DataBrokerProtectionError.httpError(code: statusCode))
             self.activeContinuation = nil

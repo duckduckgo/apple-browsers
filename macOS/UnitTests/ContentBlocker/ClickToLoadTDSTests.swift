@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
-import TrackerRadarKit
 import BrowserServicesKit
+import TrackerRadarKit
+import WebKit
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 private extension KnownTracker {
@@ -42,7 +44,7 @@ class ClickToLoadTDSTests: XCTestCase {
         let ruleSets = cbrLists.contentBlockerRulesLists
         let tdsName = DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName
 
-        let ctlRules = ruleSets.first(where: { $0.name == tdsName})
+        let ctlRules = ruleSets.first(where: { $0.name == tdsName })
         let ctlTrackerData = ctlRules?.trackerData
         let ctlTds = ctlTrackerData?.tds
 

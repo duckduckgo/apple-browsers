@@ -21,8 +21,6 @@ import XCTest
 
 class FingerprintUITest: XCTestCase {
 
-    private let bookmarkTitle = "DuckDuckGo - Your protection, our priority."
-
     override func setUpWithError() throws {
         try super.setUpWithError()
         
@@ -89,8 +87,8 @@ class FingerprintUITest: XCTestCase {
         }
         
         let tablesQuery = app.tables
-        _ = tablesQuery.staticTexts[bookmarkTitle].waitForExistence(timeout: 25)
-        tablesQuery.staticTexts[bookmarkTitle].swipeLeft()
+        _ = tablesQuery.cells.firstMatch.waitForExistence(timeout: 25)
+        tablesQuery.cells.firstMatch.swipeLeft()
         tablesQuery.buttons["Delete"].tap()
         app.navigationBars["Bookmarks"].buttons["Done"].tap()
     }
@@ -111,8 +109,8 @@ class FingerprintUITest: XCTestCase {
         let bookmarksToolbarButtons = app.toolbars.buttons
         _ = bookmarksToolbarButtons["Edit"].waitForExistence(timeout: 25)
         bookmarksToolbarButtons["Edit"].tap()
-        if app.tables.staticTexts[bookmarkTitle].waitForExistence(timeout: 25) {
-            app.staticTexts[bookmarkTitle].tap()
+        if app.tables.cells.firstMatch.waitForExistence(timeout: 25) {
+            app.tables.cells.firstMatch.tap()
         } else {
             XCTFail("Could not find bookmark")
         }
@@ -147,8 +145,8 @@ class FingerprintUITest: XCTestCase {
         } else {
             XCTFail("Bookmarks button missing")
         }
-        if app.tables.staticTexts[bookmarkTitle].waitForExistence(timeout: 25) {
-            app.staticTexts[bookmarkTitle].tap()
+        if app.tables.cells.firstMatch.waitForExistence(timeout: 25) {
+            app.tables.cells.firstMatch.tap()
         } else {
             XCTFail("Could not find bookmark")
         }

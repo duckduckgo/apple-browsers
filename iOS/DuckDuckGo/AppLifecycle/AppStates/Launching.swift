@@ -20,6 +20,8 @@
 import Core
 import UIKit
 
+import BrowserServicesKit
+
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
 ///   - This state is typically associated with the `application(_:didFinishLaunchingWithOptions:)` method.
@@ -50,6 +52,7 @@ struct Launching: LaunchingHandling {
     private let configuration = AppConfiguration()
     private let services: AppServices
     private let mainCoordinator: MainCoordinator
+    private let launchTaskManager = LaunchTaskManager()
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
@@ -86,8 +89,14 @@ struct Launching: LaunchingHandling {
                                                             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                             configurationStore: AppDependencyProvider.shared.configurationStore,
                                                             privacyConfigurationManager: privacyConfigurationManager)
-        let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager)
+        let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
+        // Service to display the Default Browser prompt.
+        let defaultBrowserPromptService = DefaultBrowserPromptService(
+            featureFlagger: featureFlagger,
+            privacyConfigManager: privacyConfigurationManager,
+            keyValueFilesStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
@@ -106,7 +115,9 @@ struct Launching: LaunchingHandling {
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
-                                              didFinishLaunchingStartTime: didFinishLaunchingStartTime)
+                                              didFinishLaunchingStartTime: didFinishLaunchingStartTime,
+                                              keyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
+                                              defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
@@ -142,14 +153,25 @@ struct Launching: LaunchingHandling {
                                crashCollectionService: crashCollectionService,
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
                                statisticsService: statisticsService,
-                               keyValueFileStoreService: appKeyValueFileStoreService)
+                               keyValueFileStoreService: appKeyValueFileStoreService,
+                               defaultBrowserPromptService: defaultBrowserPromptService
+        )
+
+        // Register background tasks that run after app is ready
+        launchTaskManager.register(task: ClearInteractionStateTask(autoClearService: autoClearService,
+                                                                   interactionStateSource: mainCoordinator.interactionStateSource,
+                                                                   tabManager: mainCoordinator.tabManager))
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
 
-        configuration.finalize(with: reportingService,
-                               autoClearService: autoClearService,
-                               mainViewController: mainCoordinator.controller)
+        configuration.finalize(
+            reportingService: reportingService,
+            mainViewController: mainCoordinator.controller,
+            launchTaskManager: launchTaskManager,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
         setupWindow()
         logAppLaunchTime()
 
@@ -179,7 +201,8 @@ struct Launching: LaunchingHandling {
     private var appDependencies: AppDependencies {
         .init(
             mainCoordinator: mainCoordinator,
-            services: services
+            services: services,
+            launchTaskManager: launchTaskManager
         )
     }
     

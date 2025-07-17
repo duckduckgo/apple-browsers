@@ -63,7 +63,6 @@ public final class DataBrokerProtectionManager {
         do {
             vault = try vaultFactory.makeVault(reporter: reporter)
         } catch let error {
-            assertionFailure("Failed to make secure storage vault")
             pixelHandler.fire(.mainAppSetUpFailedSecureVaultInitFailed(error: error))
             return nil
         }
@@ -157,5 +156,11 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
 
     public func isAuthenticatedUser() -> Bool {
         isUserAuthenticated()
+    }
+
+    /// Returns whether the current user is eligible for a free trial of Data Broker Protection
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise
+    public func isUserEligibleForFreeTrial() -> Bool {
+        authenticationManager.isUserEligibleForFreeTrial
     }
 }

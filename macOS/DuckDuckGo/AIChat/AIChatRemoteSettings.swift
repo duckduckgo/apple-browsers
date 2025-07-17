@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
-import PixelKit
 import AIChat
+import BrowserServicesKit
+import Foundation
+import PixelKit
 
 /// This struct serves as a wrapper for PrivacyConfigurationManaging, enabling the retrieval of data relevant to AIChat.
 /// It also fire pixels when necessary data is missing.
@@ -42,12 +43,15 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let debugURLSettings: AIChatDebugURLSettingsRepresentable
     private var settings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigurationManager.privacyConfig.settings(for: .aiChat)
     }
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager) {
+    init(privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+         debugURLSettings: AIChatDebugURLSettingsRepresentable = AIChatDebugURLSettings()) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.debugURLSettings = debugURLSettings
     }
 
     // MARK: - Public
@@ -58,6 +62,13 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
     var aiChatURLIdentifiableQueryValue: String { getSettingsData(.aiChatURLIdentifiableQueryValue) }
 
     var aiChatURL: URL {
+        // 1. First check for debug URL override
+        if let debugURL = debugURLSettings.customURL,
+           let url = URL(string: debugURL) {
+            return url
+        }
+
+        // 2. Then check remote configuration
         guard let url = URL(string: getSettingsData(.aiChatURL)) else {
             return URL(string: SettingsValue.aiChatURL.defaultValue)!
         }

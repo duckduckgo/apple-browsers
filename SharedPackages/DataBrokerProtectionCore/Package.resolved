@@ -14,17 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "revision" : "1d5f27d5167e4bdcaedebe67086cea3bab8d7f94",
-        "version" : "8.19.0"
-      }
-    },
-    {
-      "identity" : "designresourceskit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/DesignResourcesKit",
-      "state" : {
-        "revision" : "e45e56bb3dd891db1f860eb767a22b91e8b5ab3d",
-        "version" : "4.4.1"
+        "revision" : "782c3fdd5c96d978e7eae5b9734be40abcfdfa50",
+        "version" : "10.8.0"
       }
     },
     {
@@ -32,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "90541ed7d3a69733fc37e9c51bd92f21e0d56a57",
-        "version" : "17.1.0"
+        "revision" : "c504edade04adc0535ecf1b4636cbb17e81b78ad",
+        "version" : "18.0.0"
       }
     },
     {
@@ -68,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "b370e1e1afa322a48a8a37c6c954a444c15489e4",
-        "version" : "9.0.0"
+        "revision" : "fd3b7e2d8194e265c537f227c706de7db3085da5",
+        "version" : "9.4.0"
       }
     },
     {
@@ -79,6 +70,15 @@
       "state" : {
         "revision" : "30a462bdb4398ea835a3585472229e0d74b36ba5",
         "version" : "3.0.0"
+      }
+    },
+    {
+      "identity" : "swift-algorithms",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-algorithms",
+      "state" : {
+        "revision" : "87e50f483c54e6efd60e885f7f5aa946cee68023",
+        "version" : "1.2.1"
       }
     },
     {
@@ -97,6 +97,15 @@
       "state" : {
         "revision" : "e8d6eba1fef23ae5b359c46b03f7d94be2f41fed",
         "version" : "3.12.3"
+      }
+    },
+    {
+      "identity" : "swift-numerics",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-numerics.git",
+      "state" : {
+        "revision" : "e0ec0f5f3af6f3e4d5e7a19d2af26b481acb6ba8",
+        "version" : "1.0.3"
       }
     },
     {

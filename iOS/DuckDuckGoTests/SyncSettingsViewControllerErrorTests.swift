@@ -180,7 +180,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             throw SyncError.accountAlreadyExists
         }
 
-        _ = await vc.syncCodeEntered(code: testRecoveryCode)
+        _ = await vc.syncCodeEntered(code: testRecoveryCode, source: .qrCode)
 
         XCTAssert(secondLoginCalled)
     }
@@ -195,7 +195,7 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
             throw SyncError.accountAlreadyExists
         }
 
-        _ = await vc.syncCodeEntered(code: testRecoveryCode)
+        _ = await vc.syncCodeEntered(code: testRecoveryCode, source: .qrCode)
 
         let deviceIDs = await vc.viewModel?.devices.flatMap(\.id)
         XCTAssertEqual(deviceIDs, ["1", "2"])
@@ -250,5 +250,3 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.viewModel?.devices = [SyncSettingsViewModel.Device(id: id, name: "iPhone", type: "iPhone", isThisDevice: true)]
     }
 }
-
-class MockFavoritesDisplayModeStoring: MockFavoriteDisplayModeStorage {}

@@ -26,7 +26,7 @@ final class SyncCredentialsAdapterTests: XCTestCase {
 
     var errorHandler: CapturingAdapterErrorHandler!
     var adapter: SyncCredentialsAdapter!
-    let metadataStore = MockMetadataStore()
+    var metadataStore: MockMetadataStore! = .init()
     var cancellables: Set<AnyCancellable>!
 
     override func setUpWithError() throws {
@@ -39,6 +39,7 @@ final class SyncCredentialsAdapterTests: XCTestCase {
         errorHandler = nil
         adapter = nil
         cancellables = nil
+        metadataStore = nil
     }
 
     func testWhenSyncErrorPublished_ThenErrorHandlerHandleCredentialErrorCalled() async {

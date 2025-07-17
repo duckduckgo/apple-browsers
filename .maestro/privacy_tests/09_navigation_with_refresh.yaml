@@ -22,7 +22,7 @@ tags:
 - assertVisible:
     text: "Publisher site"
 - tapOn: 
-    point: "6%,10%" # Shield icon.
+    id: "privacy-icon-shield.button"
 - assertVisible:
     text: "View Tracker Companies"
 - tapOn:
@@ -76,7 +76,7 @@ tags:
 - assertVisible:
     text: "Pay First Party"
 - tapOn: 
-    point: "6%,10%" # Shield icon.
+    id: "privacy-icon-shield.button"
 - assertVisible:
     text: "View Tracker Companies"
 - tapOn:
@@ -102,15 +102,14 @@ tags:
     text: "About our Web Tracking Protections"
 - tapOn: "Back"
 - tapOn: "Done"  
-- assertVisible: "Browsing Menu"
-- tapOn: "Browsing Menu"
-- tapOn: "Refresh"
+- assertVisible: "Refresh Page"
+- tapOn: "Refresh Page"
 - assertVisible:
     text: "Pay"
 - tapOn:
     text: "Pay"
 - tapOn: 
-    point: "6%,10%" # Shield icon.
+    id: "privacy-icon-shield.button"
 - assertVisible:
     text: "View Tracker Companies"
 - tapOn:

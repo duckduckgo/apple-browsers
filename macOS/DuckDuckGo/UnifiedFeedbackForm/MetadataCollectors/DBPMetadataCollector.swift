@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore

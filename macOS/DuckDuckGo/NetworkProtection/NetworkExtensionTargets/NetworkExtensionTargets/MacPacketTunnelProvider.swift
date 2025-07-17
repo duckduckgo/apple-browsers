@@ -19,7 +19,7 @@
 import Foundation
 import Combine
 import Common
-import NetworkProtection
+import VPN
 import NetworkExtension
 import Networking
 import PixelKit
@@ -98,6 +98,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                 domainEvent = .networkProtectionWireguardErrorCannotSetWireguardConfig(error)
             case .noAuthTokenFound:
                 domainEvent = .networkProtectionNoAuthTokenFoundError
+            case .vpnAccessRevoked(let error):
+                domainEvent = .networkProtectionVPNAccessRevoked(error)
             case .failedToFetchServerStatus(let error):
                 domainEvent = .networkProtectionClientFailedToFetchServerStatus(error)
             case .failedToParseServerStatusResponse(let error):
@@ -108,8 +110,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                     .failedToParseLocationListResponse:
                 // Needs Privacy triage for macOS Geoswitching pixels
                 return
-            case .vpnAccessRevoked:
-                return
+            case .unmanagedSubscriptionError(let error):
+                domainEvent = .networkProtectionUnmanagedSubscriptionError(error)
             }
 
             PixelKit.fire(domainEvent, frequency: .legacyDailyAndCount, includeAppVersionParameter: true)
@@ -133,7 +135,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         case .userBecameActive:
             PixelKit.fire(
                 NetworkProtectionPixelEvent.networkProtectionActiveUser,
-                frequency: .legacyDaily,
+                frequency: .legacyDailyNoSuffix,
                 withAdditionalParameters: [PixelKit.Parameters.vpnCohort: PixelKit.cohort(from: defaults.vpnFirstEnabled)],
                 includeAppVersionParameter: true)
         case .connectionTesterStatusChange(let status, let server):
@@ -213,7 +215,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             case .error:
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionLatencyError,
-                    frequency: .legacyDaily,
+                    frequency: .legacyDailyNoSuffix,
                     includeAppVersionParameter: true)
             case .quality(let quality):
                 guard quality != .unknown else { return }
@@ -465,15 +467,15 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                                  baseURL: subscriptionEnvironment.serviceEnvironment.url)
         let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
         let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
+                                                               userDefaults: subscriptionUserDefaults,
                                                                subscriptionEndpointService: subscriptionEndpointServiceV2,
                                                                subscriptionEnvironment: subscriptionEnvironment,
                                                                pixelHandler: pixelHandler,
-                                                               tokenRecoveryHandler: nil,
                                                                initForPurchase: false)
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
             Logger.networkProtection.log("Subscription Entitlements check...")
-            if !Self.isAuthV2Enabled {
+            if !Self.isUsingAuthV2 {
                 Logger.networkProtection.log("Using Auth V1")
                 return await accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: .reloadIgnoringLocalCacheData)
             } else {
@@ -493,12 +495,13 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         self.subscriptionManagerV2 = subscriptionManager
 
         let tokenHandlerProvider: () -> any SubscriptionTokenHandling = {
-            if !Self.isAuthV2Enabled  {
-                Logger.networkProtection.debug("tokenHandlerProvider: Using Auth V1")
-                return tokenStore
-            } else {
+
+            if Self.isUsingAuthV2 {
                 Logger.networkProtection.debug("tokenHandlerProvider: Using Auth V2")
                 return subscriptionManager
+            } else {
+                Logger.networkProtection.debug("tokenHandlerProvider: Using Auth V1")
+                return tokenStore
             }
         }
 
@@ -591,7 +594,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         try await super.startTunnel(options: options)
 
-        if !Self.isAuthV2Enabled {
+        if !Self.isUsingAuthV2 {
             // Auth V2 cleanup in case of rollback
             Logger.subscription.debug("Cleaning up Auth V2 token")
             try? tokenStorageV2.saveTokenContainer(nil)

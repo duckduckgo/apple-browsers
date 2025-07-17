@@ -39,7 +39,7 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
         sendPixelEvents = []
 
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        appearancePreferences = .init(persistor: AppearancePreferencesPersistorMock())
+        appearancePreferences = .init(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
 
         UserDefaultsWrapper<Any>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.homePageLastPickedCustomColor.rawValue)
@@ -59,6 +59,10 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
 
     override func tearDown() async throws {
         try? FileManager.default.removeItem(at: storageLocation)
+        appearancePreferences = nil
+        model = nil
+        sendPixelEvents = []
+        userBackgroundImagesManager = nil
     }
 
     func testThatCustomBackgroundIsNilByDefault() {

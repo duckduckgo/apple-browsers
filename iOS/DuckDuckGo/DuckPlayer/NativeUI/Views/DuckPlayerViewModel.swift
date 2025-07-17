@@ -44,7 +44,7 @@ final class DuckPlayerViewModel: ObservableObject {
         static let playsInlineParameter = "playsinline"
         /// Controls whether video autoplays when loaded
         static let autoplayParameter = "autoplay"
-        // Used to enable features in URL parameters        
+        // Used to enable features in URL parameters
         static let enabled = "1"
         static let disabled = "0"
         // Used to set the start time of the video
@@ -56,9 +56,9 @@ final class DuckPlayerViewModel: ObservableObject {
         static let colorSchemeValue = "white"
     }
 
-    /// A publisher to notify when Youtube navigation is required.
-    /// Emits the videoID that should be opened in YouTube.
-    let youtubeNavigationRequestPublisher = PassthroughSubject<String, Never>()
+    /// A publisher to notify when external navigation is required.
+    /// Emits the URL that should be opened in the browser.
+    let youtubeNavigationRequestPublisher = PassthroughSubject<URL, Never>()
 
     /// A publisher to notify when the settings button is pressed.    
     let settingsRequestPublisher = PassthroughSubject<Void, Never>()
@@ -71,6 +71,9 @@ final class DuckPlayerViewModel: ObservableObject {
 
     /// DuckPlayer settings instance for accessing user preferences
     private var duckPlayerSettings: DuckPlayerSettings
+
+    /// The current timestamp of the video
+    @Published var currentTimeStamp: TimeInterval = 0
 
     /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
@@ -131,6 +134,9 @@ final class DuckPlayerViewModel: ObservableObject {
     /// - `true` when device is in landscape orientation
     /// - `false` when device is in portrait orientation
     @Published var isLandscape: Bool = false
+    
+    /// Indicates whether the webview is currently loading content
+    @Published var isLoading: Bool = true
 
     // MARK: - Private Properties
     private var timestampUpdateTimer: Timer?
@@ -166,23 +172,33 @@ final class DuckPlayerViewModel: ObservableObject {
         var components = URLComponents(url: videoURL, resolvingAgainstBaseURL: true)
         let seconds = Int(timestamp)
         var queryItems = components?.queryItems ?? []
-        queryItems.append(URLQueryItem(name: Constants.startParameter, value: String(seconds)))
+        if seconds >= 5 {
+            queryItems.append(URLQueryItem(name: Constants.startParameter, value: String(seconds)))
+        }
         components?.queryItems = queryItems
         return components?.url
     }
 
-    /// Handles navigation requests to YouTube
-    /// - Parameter url: The YouTube video URL to navigate to
+    /// Handles navigation requests to external URLs
+    /// - Parameter url: The URL to navigate to
     func handleYouTubeNavigation(_ url: URL) {
-        if let (videoID, _) = url.youtubeVideoParams {
-            youtubeNavigationRequestPublisher.send(videoID)
+        // Check if tapped video is the same as currently playing
+        if let tappedVideoID = url.youtubeVideoParams?.videoID,
+           tappedVideoID == videoID {
+            // Same video - just close DuckPlayer (no publisher events needed)
+            // User is already on the correct video and wants to dismiss the player
+            return
+        } else {
+            // Different video/URL - navigate to the URL
+            youtubeNavigationRequestPublisher.send(url)
         }
     }
 
     /// Opens the current video in the YouTube app or website
     func openInYouTube() {
         pixelHandler.fire(.duckPlayerNativeWatchOnYoutube)
-        youtubeNavigationRequestPublisher.send(videoID)
+        let url: URL = .youtube(videoID)
+        youtubeNavigationRequestPublisher.send(url)
     }
 
     /// Called when the view first appears
@@ -203,11 +219,19 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Called when the view disappears
     /// Removes orientation monitoring
     func onDisappear() {
-        dismissPublisher.send(timestamp)
-        stopObservingTimestamp()
+        dismissPublisher.send(currentTimeStamp)
         NotificationCenter.default.removeObserver(self,
                                                 name: UIDevice.orientationDidChangeNotification,
                                                 object: nil)
+        
+        // Clean up any remaining references
+        cancellables.removeAll()
+    }
+    
+    deinit {
+        // Ensure all observers are removed
+        NotificationCenter.default.removeObserver(self)
+        cancellables.removeAll()
     }
 
     /// Updates the current interface orientation state
@@ -234,38 +258,15 @@ final class DuckPlayerViewModel: ObservableObject {
         settingsRequestPublisher.send()
     }
 
-    /// Starts observing the video timestamp
-    /// - Parameter webView: The WKWebView instance playing the video
-    /// - Parameter coordinator: The coordinator instance managing the webview
-    func startObservingTimestamp(webView: WKWebView, coordinator: DuckPlayerWebView.Coordinator) {
-        self.webView = webView
-        self.coordinator = coordinator
-
-        timestampUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            Task {
-                if let timestamp = await self.coordinator?.getCurrentTimestamp(webView) {
-                    await MainActor.run {
-                        self.timestamp = timestamp
-                    }
-                }
-            }
-        }
-    }
-
-    /// Stops observing the video timestamp
-    func stopObservingTimestamp() {
-        timestampUpdateTimer?.invalidate()
-        timestampUpdateTimer = nil
-        webView = nil
-        coordinator = nil
-    }
-
     // MARK: - Public Methods
 
     /// Hides the welcome message
     func hideWelcomeMessage() {
         duckPlayerSettings.welcomeMessageShown = true
+    }
+
+    func updateTimeStamp(timeStamp: TimeInterval) {
+        currentTimeStamp = timeStamp
     }
 
     // MARK: - Private Methods

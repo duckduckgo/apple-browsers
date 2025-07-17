@@ -21,17 +21,21 @@ import Subscription
 
 public protocol SubscriptionFeatureAvailability {
     var isSubscriptionPurchaseAllowed: Bool { get }
+    var isPaidAIChatEnabled: Bool { get }
 }
 
 public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAvailability {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let purchasePlatform: SubscriptionEnvironment.PurchasePlatform
+    private let paidAIChatFlagStatusProvider: () -> Bool
 
     public init(privacyConfigurationManager: PrivacyConfigurationManaging,
-                purchasePlatform: SubscriptionEnvironment.PurchasePlatform) {
+                purchasePlatform: SubscriptionEnvironment.PurchasePlatform,
+                paidAIChatFlagStatusProvider: @escaping () -> Bool) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.purchasePlatform = purchasePlatform
+        self.paidAIChatFlagStatusProvider = paidAIChatFlagStatusProvider
     }
 
     public var isSubscriptionPurchaseAllowed: Bool {
@@ -45,6 +49,10 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
         }
 
         return isPurchaseAllowed || isInternalUser
+    }
+
+    public var isPaidAIChatEnabled: Bool {
+        return paidAIChatFlagStatusProvider()
     }
 
 // MARK: - Conditions

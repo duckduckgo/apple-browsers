@@ -40,7 +40,15 @@ final class BookmarksBarVisibilityManagerTests: XCTestCase {
         try super.setUpWithError()
 
         cancellables = []
-        appearance = AppearancePreferences(persistor: AppearancePreferencesPersistorMock())
+        appearance = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+    }
+
+    override var allowedNonNilVariables: Set<String> {
+        ["selectedTabSubject", "tabContents"]
     }
 
     override func tearDownWithError() throws {

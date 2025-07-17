@@ -59,10 +59,7 @@
 "action.title.downloads" = "Λήψεις";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "Συνομιλία με ΤΝ";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Νέο AI Chat";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Επεξεργασία σελιδοδείκτη";
@@ -160,6 +157,9 @@
 /* No comment provided by engineer. */
 "addWidget.title" = "Ένα μόνο πάτημα προς τους αγαπημένους ιστότοπούς σας.";
 
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "Λειτουργίες τεχνητής νοημοσύνης";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Οι υπάρχοντες σελιδοδείκτες δεν θα αναπαραχθούν.";
 
@@ -189,6 +189,15 @@
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Ο συγχρονισμός έχει τεθεί σε παύση. Αν θέλετε να συνεχίσετε με τον συγχρονισμό της συσκευής αυτής, συνδεθείτε ξανά χρησιμοποιώντας άλλη συσκευή ή τον κωδικό ανάκτησής σας.";
+
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Συγχρόνισε τώρα";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "Το «%@» θα μπορεί να έχει πρόσβαση στα συγχρονισμένα δεδομένα σας στο DuckDuckGo.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Συγχρονισμός νέας συσκευής;";
 
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Μάθετε περισσότερα";
@@ -259,9 +268,6 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Ξεκλείδωμα DuckDuckGo.";
 
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Θέλετε σίγουρα να διαγράψετε όλους τους σελιδοδείκτες; Η ενέργεια αυτή δεν μπορεί να αναιρεθεί.";
-
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Είσοδος";
 
@@ -306,6 +312,9 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Όταν το DuckDuckGo εντοπίζει αναδυόμενα παράθυρα συναίνεσης για cookies σε ιστότοπους που επισκέπτεστε, μπορούμε να προσπαθήσουμε να ρυθμίσουμε αυτόματα τις προτιμήσεις σας για τα cookies ώστε να ελαχιστοποιήσετε τα cookies και να μεγιστοποιήσετε το απόρρητο. Έπειτα μπορείτε να κλείσετε τα αναδυόμενα παράθυρα. Ορισμένοι ιστότοποι δεν παρέχουν επιλογή για διαχείριση των προτιμήσεων cookies, οπότε μπορούμε μόνο να αποκρύψουμε αναδυόμενα παράθυρα όπως αυτά.";
+
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Η κάρτα αποθηκεύτηκε";
 
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Η κάρτα διαγράφηκε";
@@ -394,6 +403,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Ασφαλίστε τη συσκευή σας για να αποθηκεύσετε πιστωτικές κάρτες";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Να μην αποθηκευτεί";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Αποθήκευση κάρτας";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Οι πιστωτικές κάρτες αποθηκεύονται με ασφάλεια στη συσκευή σας.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Θέλετε να αποθηκεύσει το DuckDuckGo τα στοιχεία της κάρτας σας;";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Επαλήθευση ταυτότητας για συμπλήρωση στοιχείων πιστωτικής κάρτας";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Χρήση αποθηκευμένης κάρτας;";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Μπορείτε να απενεργοποιήσετε την αποθήκευση της πιστωτικής κάρτας οποιαδήποτε στιγμή.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -454,8 +484,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Συγχρονισμός με υπολογιστή";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Τρόπος εισαγωγής κωδικών πρόσβασης";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Πώς να συγχρονίσετε τους κωδικούς πρόσβασης υπολογιστών";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Απενεργοποίηση";
@@ -920,6 +950,9 @@
 "close.all.tabs" = "Κλείσιμο όλων των καρτελών";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Ομάδα: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Επιβεβαίωση";
 
 /* Button to continue the onboarding process */
@@ -1099,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Πώς να εξαγάγετε κωδικούς πρόσβασης από το Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Επιλογή αρχείυο...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Επίλεξε το αρχείο που περιέχει κωδικούς πρόσβασης που εξάγονται από το Safari ή το Chrome. Αυτό είναι συνήθως ένα αρχείο ZIP ή CSV.";
 
@@ -1125,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Η εισαγωγή ολοκληρώθηκε!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Πιστωτικές κάρτες";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Παραλείφθηκαν διπλότυπα";
@@ -1167,9 +1206,6 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Επανόρθωση σφαλμάτων";
-
-/* No comment provided by engineer. */
-"Delete All" = "Διαγραφή όλων";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "συσκευή";
@@ -1255,8 +1291,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Η λειτουργία του Duck Player έχει επηρεαστεί από τις πρόσφατες αλλαγές στο YouTube. Προσπαθούμε να διορθώσουμε αυτά τα προβλήματα και εκτιμούμε την κατανόησή σας.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Το Duck.ai αποτελεί προαιρετική λειτουργία που σας επιτρέπει να συνομιλείτε ανώνυμα με δημοφιλή μοντέλα τρίτων για συνομιλία μέσω τεχνητής νοημοσύνης. Οι συνομιλίες σας δεν χρησιμοποιούνται για την εκπαίδευση τεχνητής νοημοσύνης.\n[Μάθετε περισσότερα](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "Οι λειτουργίες τεχνητής νοημοσύνης του DuckDuckGo είναι ιδιωτικές και προαιρετικές. Τα δεδομένα σας δεν χρησιμοποιούνται για εκπαίδευση της τεχνητής νοημοσύνης.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Γραμμή διευθύνσεων";
@@ -1270,7 +1306,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Φωνητική αναζήτηση";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Μάθετε περισσότερα";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -1475,6 +1514,9 @@
 "empty.search" = "Δεν βρέθηκαν αντιστοιχίες";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Εγγεγραμμένοι: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1527,6 +1569,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Αγαπημένα μόνο για κινητά";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Λειτουργία: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Αποκλεισμός διαφημίσεων και αναδυόμενων παραθύρων";
@@ -1815,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Αναγνωριστικό: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Εισαγωγή κωδικών πρόσβασης";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Μεταφέρετε γρήγορα και με ασφάλεια τους κωδικούς πρόσβασής σας από άλλο πρόγραμμα περιήγησης.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Εισαγάγετε τους κωδικούς πρόσβασής σας στο DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Πρέπει να ενεργοποιήσετε το VPN από την εφαρμογή DuckDuckGo.";
@@ -2210,7 +2264,7 @@
 "new.tab.page.settings.title" = "Προσαρμογή σελίδας νέας καρτέλας";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "Συνομιλία με ΤΝ";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Σελιδοδείκτες";
@@ -2276,7 +2330,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Αποκλεισμός αναδυόμενων παραθύρων cookie";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Αποκλεισμός διαφημίσεων παρακολούθησης";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Αποκλεισμός στοχευμένων διαφημίσεων";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Διαγράψτε τα δεδομένα περιήγησης με ένα κουμπί";
@@ -2430,6 +2484,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Αποστολή σχολίου";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Πρόγραμμα αποκλεισμού απάτης";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Η απενεργοποίηση της λειτουργίας αυτής μπορεί να θέσει σε κίνδυνο τα προσωπικά στοιχεία σας.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Προειδοποίηση για ιστότοπους που έχουν επισημανθεί για απάτες, ηλεκτρονικό ψάρεμα ή κακόβουλο λογισμικό. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Αναβαθμίζει αυτόματα τους συνδέσμους σε HTTPS όποτε είναι εφικτό. [Μάθετε περισσότερα] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Πιο έξυπνη κρυπτογράφηση";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Πάντα σε λειτουργία";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Προστασία από απειλές";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Οι βελτιωμένες προστασίες του DuckDuckGo σταματούν τις συνήθεις απειλές, διατηρώντας τη σύνδεσή σας ασφαλή.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Ορισμένοι σελιδοδείκτες ή κωδικοί πρόσβασης δεν έχουν μορφοποιηθεί σωστά ή είναι πολύ μεγάλοι και δεν συγχρονίστηκαν.";
@@ -2585,7 +2663,16 @@
 "settings.address.full.url" = "Εμφάνιση πλήρους διεύθυνσης ιστότοπου";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Συντομευσεις";
+"settings.aichat.shortcuts" = "Συντομεύσεις Duck.ai";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Εισαγωγή αναζήτησης";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Κάντε αναζήτηση στο διαδίκτυο ή ρωτήστε το Duck.ai απευθείας από τη Γραμμή διευθύνσεων";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Ρυθμίσεις αναζήτησης Assist";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Πάντα σε λειτουργία";
@@ -2626,6 +2713,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Αυτόματη απαλοιφή δεδομένων";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Ολοκληρώστε την εγκατάστασή σας";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Προστασία αναδυόμενων παραθύρων για cookies";
 
@@ -2660,13 +2750,19 @@
 "settings.emailProtection.description" = "Αποκλείστε εφαρμογές παρακολούθησης email και αποκρύψτε τη διεύθυνσή σας";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Ενεργοποίηση του Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Συνομίλησε ιδιωτικά με δημοφιλή μοντέλα τεχνητής νοημοσύνης τρίτων";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Ενεργοποίηση Email Protection";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Ενεργοποίηση φωνητικής αναζήτησης";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Επιλέξτε πόσο συχνά θέλετε να εμφανίζονται οι απαντήσεις που υποστηρίζονται από τεχνητή νοημοσύνη στις αναζητήσεις σας";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Κοινοποίηση σχολίου";
@@ -2688,6 +2784,9 @@
 
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Εικονίδιο Εφαρμογής";
+
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Εισαγωγή κωδικών πρόσβασης";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Πληκτρολόγιο";
@@ -2728,6 +2827,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Πολιτική απορρήτου και Όροι χρήσης υπηρεσιών";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Περιλαμβάνει το VPN μας και τo Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Περιλαμβάνει το VPN μας και τα Personal Information Removal και Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Προεπισκοπήσεις με παρατεταμένο πάτημα";
 
@@ -2748,6 +2853,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Αυτόματη αποστολή αναφορών σφάλματος στο DuckDuckGo.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Ορισμός ως προεπιλεγμένο πρόγραμμα περιήγησης";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Ορίστε τη θέση της γραμμής διευθύνσεών σας";
@@ -2785,17 +2893,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Ρυθμίσεις συνδρομής";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Περιλαμβάνει το VPN μας και τo Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Προστατέψτε τη σύνδεση και την ταυτότητά σας με το Privacy Pro";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free" = "Δοκιμάστε το Privacy Pro δωρεάν";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Περιλαμβάνει το VPN μας και τα Personal Information Removal και Identity Theft Restoration.";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2865,6 +2967,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Δευτερεύουσα λειτουργία: % @";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Προσθήκη σε συσκευή";
@@ -3389,10 +3494,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Αποκλείστε περισσότερους από 150.000 τομείς που έχουν επισημανθεί για φιλοξενία κακόβουλου λογισμικού, επιθέσεις ηλεκτρονικού ψαρέματος και διαδικτυακές απάτες, με μια λίστα αποκλεισμού σε επίπεδο DNS. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Αποκλεισμός και φιλτράρισμα περιεχομένου";
+"vpn.settings.dns.server.content.blocking.header" = "Αποκλεισμός κακόβουλου περιεχομένου";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Αποκλεισμός επικίνδυνων τομέων";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Πρόγραμμα αποκλεισμού απάτης";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";
@@ -3510,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Συνέχεια";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Πιστωτικές κάρτες";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Κωδικός πρόσβασης";

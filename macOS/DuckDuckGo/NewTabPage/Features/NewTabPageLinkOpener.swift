@@ -16,14 +16,27 @@
 //  limitations under the License.
 //
 
+import AppKit
+import Foundation
 import NewTabPage
+import PixelKit
 
 struct NewTabPageLinkOpener: NewTabPageLinkOpening {
 
     @MainActor
     static func open(_ url: URL, source: Tab.Content.URLSource, setBurner: Bool? = nil, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
+
+        switch source {
+        case .bookmark(let isFavorite):
+            PixelKit.fire(NavigationEngagementPixel.navigateToBookmark(source: .newTabPage, isFavorite: isFavorite))
+        case .historyEntry:
+            PixelKit.fire(NavigationEngagementPixel.navigateToURL(source: .newTabPage))
+        default:
+            break
+        }
+
         var tabCollectionViewModel: TabCollectionViewModel? {
-            WindowControllersManager.shared.mainWindowController(for: sourceWindow)?.mainViewController.tabCollectionViewModel
+            Application.appDelegate.windowControllersManager.mainWindowController(for: sourceWindow)?.mainViewController.tabCollectionViewModel
         }
         let linkOpenBehavior: LinkOpenBehavior = {
             switch sender {
@@ -46,9 +59,9 @@ struct NewTabPageLinkOpener: NewTabPageLinkOpening {
                 }
             }
         }()
-        let targetWindowController = WindowControllersManager.shared.mainWindowController(for: sourceWindow ?? NSApp.currentEvent?.window)
+        let targetWindowController = Application.appDelegate.windowControllersManager.mainWindowController(for: sourceWindow ?? NSApp.currentEvent?.window)
 
-        WindowControllersManager.shared.open(url, with: linkOpenBehavior, setBurner: setBurner, source: source, target: targetWindowController)
+        Application.appDelegate.windowControllersManager.open(url, with: linkOpenBehavior, setBurner: setBurner, source: source, target: targetWindowController)
     }
 
     func openLink(_ target: NewTabPageDataModel.OpenAction.Target) async {
@@ -60,7 +73,7 @@ struct NewTabPageLinkOpener: NewTabPageLinkOpening {
 
     private func openAppearanceSettings() {
         Task.detached { @MainActor in
-            WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .appearance)
+            Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .appearance)
         }
     }
 }

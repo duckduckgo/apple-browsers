@@ -122,7 +122,7 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureValue(useSubscriptionsAuthV2: isAuthV2Enabled)
+        return GetFeatureValue(useSubscriptionsAuthV2: isAuthV2Enabled, usePaidDuckAi: false)
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {

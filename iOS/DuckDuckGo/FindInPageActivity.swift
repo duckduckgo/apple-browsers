@@ -33,7 +33,7 @@ class FindInPageActivity: UIActivity {
     }
 
     override var activityImage: UIImage {
-        return UIImage(named: "sharesheet-findinpage") ?? #imageLiteral(resourceName: "LogoShare")
+        return UIImage(resource: .sharesheetFindinpage)
     }
 
     init(controller: TabViewController) {

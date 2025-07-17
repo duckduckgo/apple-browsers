@@ -21,7 +21,7 @@ import Combine
 import Foundation
 import SwiftUI
 import SwiftUIExtensions
-import NetworkProtection
+import VPN
 import LoginItems
 
 public final class NetworkProtectionPopover: NSPopover {

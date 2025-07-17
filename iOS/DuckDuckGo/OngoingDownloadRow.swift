@@ -20,6 +20,7 @@
 import SwiftUI
 import Combine
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct OngoingDownloadRow: View {
     @ObservedObject var rowModel: OngoingDownloadRowViewModel
@@ -63,7 +64,7 @@ struct OngoingDownloadRow: View {
         Button {
             cancelButtonAction()
         } label: {
-            Image("Close-24")
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
         }
         .accessibilityLabel(UserText.cancelDownloadAlertCancelAction)
         .buttonStyle(.plain)

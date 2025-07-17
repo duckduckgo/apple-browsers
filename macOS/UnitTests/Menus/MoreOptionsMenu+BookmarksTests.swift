@@ -24,7 +24,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
     @MainActor
     func testWhenBookmarkSubmenuIsInitThenBookmarkAllTabsKeyIsCmdShiftD() throws {
         // GIVEN
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))
@@ -39,7 +39,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
         // GIVEN
         let tab1 = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
         let tab2 = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui))
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [tab1, tab2])), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [tab1, tab2])), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))
@@ -51,7 +51,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
     @MainActor
     func testWhenTabCollectionCannotBookmarkAllTabsThenBookmarkAllTabsMenuItemIsDisabled() throws {
         // GIVEN
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [])), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [])), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))
@@ -79,6 +79,7 @@ final class MockMoreOpationsMenuIconProvider: MoreOptionsMenuIconsProviding {
     var downloadsIcon: NSImage = .logo
     var historyIcon: NSImage = .logo
     var passwordsIcon: NSImage = .logo
+    var deleteBrowsingDataIcon: NSImage = .logo
     var syncIcon: NSImage = .logo
     var emailProtectionIcon: NSImage = .logo
     var privacyProIcon: NSImage = .logo
@@ -91,6 +92,7 @@ final class MockMoreOpationsMenuIconProvider: MoreOptionsMenuIconsProviding {
     var settingsIcon: NSImage = .logo
     var browserFeedbackIcon: NSImage = .logo
     var reportBrokenSiteIcon: NSImage = .logo
+    var paidAIChat: NSImage = .logo
     var sendPrivacyProFeedbackIcon: NSImage = .logo
     var passwordsSubMenuIcon: NSImage = .logo
     var identitiesIcon: NSImage = .logo

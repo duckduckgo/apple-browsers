@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import Subscription
 
@@ -24,6 +25,10 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
     public var purchasedProductIDs: [String] = []
     public var purchaseQueue: [String] = []
     public var areProductsAvailable: Bool = false
+    public let areProductsAvailableSubject = PassthroughSubject<Bool, Never>()
+    public var areProductsAvailablePublisher: AnyPublisher<Bool, Never> {
+        areProductsAvailableSubject.eraseToAnyPublisher()
+    }
     public var currentStorefrontRegion: SubscriptionRegion = .usa
 
     public var subscriptionOptionsResult: SubscriptionOptions?
@@ -78,7 +83,7 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
         return purchaseSubscriptionResult!
     }
 
-    public func isUserEligibleForFreeTrial() async -> Bool {
+    public func isUserEligibleForFreeTrial() -> Bool {
         isEligibleForFreeTrialResult
     }
 }

@@ -33,6 +33,12 @@ protocol AIChatUserScriptDelegate: AnyObject {
     ///   - userScript: The user script that received the message
     ///   - message: The type of message received
     func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScriptMessages)
+
+    /// Called when the user script receives a message related to metrics
+    /// - Parameters:
+    ///   - userScript: The user script that received the message
+    ///   - metric: The metric received
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMetric metric: AIChatMetric)
 }
 
 // MARK: - AIChatUserScript Class
@@ -91,6 +97,10 @@ final class AIChatUserScript: NSObject, Subfeature {
     init(handler: AIChatUserScriptHandling, debugSettings: AIChatDebugSettingsHandling) {
         self.handler = handler
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
+        super.init()
+        
+        // Set self as the metric reporting handler
+        handler.setMetricReportingHandler(self)
     }
 
     private static func buildMessageOriginRules(debugSettings: AIChatDebugSettingsHandling) -> [HostnameMatchingRule] {
@@ -133,6 +143,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.hideChatInput
         case .showChatInput:
             return handler.showChatInput
+        case .reportMetric:
+            return handler.reportMetric
         default:
             return nil
         }
@@ -177,5 +189,13 @@ final class AIChatUserScript: NSObject, Subfeature {
         guard let webView = webView else { return }
         let params: Encodable? = message.params
         broker?.push(method: message.methodName, params: params, for: self, into: webView)
+    }
+}
+
+// MARK: - AIChatMetricReportingHandling
+
+extension AIChatUserScript: AIChatMetricReportingHandling {
+    func didReportMetric(_ metric: AIChatMetric) {
+        delegate?.aiChatUserScript(self, didReceiveMetric: metric)
     }
 }

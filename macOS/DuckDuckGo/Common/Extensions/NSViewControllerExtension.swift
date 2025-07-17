@@ -54,7 +54,7 @@ extension NSViewController {
     func beginSheetFromMainWindow(_ viewController: NSViewController) {
         let newWindowController = viewController.wrappedInWindowController()
         guard let newWindow = newWindowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
         else {
             assertionFailure("Failed to present \(viewController)")
             return

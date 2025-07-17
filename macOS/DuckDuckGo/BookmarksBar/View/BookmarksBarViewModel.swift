@@ -111,13 +111,13 @@ final class BookmarksBarViewModel: NSObject {
     // MARK: - Initialization
 
     init(bookmarkManager: BookmarkManager,
-         dragDropManager: BookmarkDragDropManager = .shared,
+         dragDropManager: BookmarkDragDropManager,
          tabCollectionViewModel: TabCollectionViewModel,
-         visualStyleManager: VisualStyleManagerProviding) {
+         visualStyle: VisualStyleProviding) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.tabCollectionViewModel = tabCollectionViewModel
-        self.visualStyle = visualStyleManager.style
+        self.visualStyle = visualStyle
         super.init()
         subscribeToBookmarks()
     }

@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct OnboardingAddressBarPositionPicker: View {
     @StateObject private var viewModel = OnboardingAddressBarPositionPickerViewModel()
@@ -52,7 +53,7 @@ private enum Metrics {
     }
     enum Checkbox {
         static let size: CGFloat = 24.0
-        static let checkSize: CGSize = CGSize(width: 12, height: 10)
+        static let checkSize: CGFloat = 16.0
         static let strokeInset = 0.75
         static let strokeWidth = 1.5
     }
@@ -124,10 +125,18 @@ extension OnboardingAddressBarPositionPicker.AddressBarPositionButton {
         @ViewBuilder
         private var selectionOverlay: some View {
             if isSelected {
-                Image(.checkShape)
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.checkSolid)
+                    .renderingMode(.template)
                     .resizable()
-                    .frame(width: Metrics.Checkbox.checkSize.width, height: Metrics.Checkbox.checkSize.height)
-                    .foregroundColor(.white)
+                    .background(
+                        Circle()
+                            .fill(Color.white)
+                            // Use smaller frame for checkbox bg to not fill the transparent edge of the glyph
+                            .frame(width: Metrics.Checkbox.checkSize, height: Metrics.Checkbox.checkSize)
+                    )
+                    .foregroundStyle(Color(designSystemColor: .accent))
+                    .frame(width: Metrics.Checkbox.size, height: Metrics.Checkbox.size)
+                    .clipShape(Circle())
             } else {
                 Circle()
                     .inset(by: Metrics.Checkbox.strokeInset)
@@ -168,7 +177,7 @@ private struct AddressBarPostionButtonStyle: ButtonStyle {
             .padding()
             .frame(minWidth: 0, maxWidth: .infinity, minHeight: minHeight)
             .background(backgroundColor(configuration.isPressed || isSelected))
-            .cornerRadius(8)
+            .cornerRadius(12)
             .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
     }
 

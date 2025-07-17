@@ -22,6 +22,8 @@ final class SuggestionTableRowView: NSTableRowView {
 
     static let identifier = "SuggestionTableRowView"
 
+    var visualStyle: VisualStyleProviding?
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
@@ -38,6 +40,8 @@ final class SuggestionTableRowView: NSTableRowView {
         didSet {
             updateCellView()
             updateBackgroundColor()
+
+            layer?.cornerRadius = visualStyle?.addressBarStyleProvider.suggestionHighlightCornerRadius ?? 3
         }
     }
 
@@ -46,7 +50,6 @@ final class SuggestionTableRowView: NSTableRowView {
     private func setupView() {
         selectionHighlightStyle = .none
         wantsLayer = true
-        layer?.cornerRadius = 3
     }
 
     private func updateBackgroundColor() {

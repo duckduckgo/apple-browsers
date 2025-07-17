@@ -20,6 +20,7 @@ import AppKit
 import Combine
 import XCTest
 @testable import NewTabPage
+import BrowserServicesKit
 
 final class NewTabPageConfigurationClientTests: XCTestCase {
     private var client: NewTabPageConfigurationClient!
@@ -32,8 +33,8 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        sectionsAvailabilityProvider = MockNewTabPageSectionsAvailabilityProvider()
         sectionsVisibilityProvider = MockNewTabPageSectionsVisibilityProvider()
+        sectionsAvailabilityProvider = MockNewTabPageSectionsAvailabilityProvider()
         contextMenuPresenter = CapturingNewTabPageContextMenuPresenter()
         eventMapper = CapturingNewTabPageConfigurationEventHandler()
         client = NewTabPageConfigurationClient(
@@ -55,11 +56,11 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     @MainActor
     func testThatContextMenuShowsContextMenu() async throws {
         sectionsVisibilityProvider.isFavoritesVisible = true
-        sectionsVisibilityProvider.isPrivacyStatsVisible = false
+        sectionsVisibilityProvider.isProtectionsReportVisible = false
 
         let parameters = NewTabPageDataModel.ContextMenuParams(visibilityMenuItems: [
             .init(id: .favorites, title: "Favorites"),
-            .init(id: .privacyStats, title: "Privacy Stats")
+            .init(id: .protections, title: "Protection Report")
         ])
         try await messageHelper.handleMessageExpectingNilResponse(named: .contextMenu, parameters: parameters)
 
@@ -68,7 +69,7 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
         XCTAssertEqual(menu.items.count, 2)
         XCTAssertEqual(menu.items[0].title, "Favorites")
         XCTAssertEqual(menu.items[0].state, .on)
-        XCTAssertEqual(menu.items[1].title, "Privacy Stats")
+        XCTAssertEqual(menu.items[1].title, "Protection Report")
         XCTAssertEqual(menu.items[1].state, .off)
     }
 
@@ -82,25 +83,27 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     // MARK: - initialSetup
 
     func testThatInitialSetupReturnsConfiguration() async throws {
-        sectionsAvailabilityProvider.isPrivacyStatsAvailable = false
-        sectionsAvailabilityProvider.isRecentActivityAvailable = false
+        sectionsAvailabilityProvider.isOmnibarAvailable = true
 
         let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
         XCTAssertEqual(configuration.widgets, [
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
             .init(id: .nextSteps),
-            .init(id: .favorites)
+            .init(id: .omnibar),
+            .init(id: .favorites),
+            .init(id: .protections)
         ])
         XCTAssertEqual(configuration.widgetConfigs, [
-            .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible)
+            .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
+            .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible),
+            .init(id: .omnibar, isVisible: sectionsVisibilityProvider.isOmnibarVisible)
         ])
         XCTAssertEqual(configuration.platform, .init(name: "macos"))
     }
 
-    func testThatInitialSetupContainsPrivacyStatsWhenAvailable() async throws {
-        sectionsAvailabilityProvider.isPrivacyStatsAvailable = true
-        sectionsAvailabilityProvider.isRecentActivityAvailable = false
+    func testWhenOmnibarNotAvailable_ThenInitialSetupReturnsConfigurationWithoutOmnibar() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = false
 
         let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
         XCTAssertEqual(configuration.widgets, [
@@ -108,30 +111,11 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
             .init(id: .freemiumPIRBanner),
             .init(id: .nextSteps),
             .init(id: .favorites),
-            .init(id: .privacyStats)
+            .init(id: .protections),
         ])
         XCTAssertEqual(configuration.widgetConfigs, [
             .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
-            .init(id: .privacyStats, isVisible: sectionsVisibilityProvider.isPrivacyStatsVisible)
-        ])
-        XCTAssertEqual(configuration.platform, .init(name: "macos"))
-    }
-
-    func testThatInitialSetupContainsRecentActivityWhenAvailable() async throws {
-        sectionsAvailabilityProvider.isPrivacyStatsAvailable = false
-        sectionsAvailabilityProvider.isRecentActivityAvailable = true
-
-        let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
-        XCTAssertEqual(configuration.widgets, [
-            .init(id: .rmf),
-            .init(id: .freemiumPIRBanner),
-            .init(id: .nextSteps),
-            .init(id: .favorites),
-            .init(id: .recentActivity)
-        ])
-        XCTAssertEqual(configuration.widgetConfigs, [
-            .init(id: .favorites, isVisible: sectionsVisibilityProvider.isFavoritesVisible),
-            .init(id: .recentActivity, isVisible: sectionsVisibilityProvider.isRecentActivityVisible)
+            .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible),
         ])
         XCTAssertEqual(configuration.platform, .init(name: "macos"))
     }
@@ -141,26 +125,22 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
     func testWhenWidgetsSetConfigIsReceivedThenWidgetConfigsAreUpdated() async throws {
         let configs: [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] = [
             .init(id: .favorites, isVisible: false),
-            .init(id: .privacyStats, isVisible: true),
-            .init(id: .recentActivity, isVisible: false)
+            .init(id: .protections, isVisible: true)
         ]
         try await messageHelper.handleMessageExpectingNilResponse(named: .widgetsSetConfig, parameters: configs)
         XCTAssertEqual(sectionsVisibilityProvider.isFavoritesVisible, false)
-        XCTAssertEqual(sectionsVisibilityProvider.isPrivacyStatsVisible, true)
-        XCTAssertEqual(sectionsVisibilityProvider.isRecentActivityVisible, false)
+        XCTAssertEqual(sectionsVisibilityProvider.isProtectionsReportVisible, true)
     }
 
     func testWhenWidgetsSetConfigIsReceivedWithPartialConfigThenOnlyIncludedWidgetsConfigsAreUpdated() async throws {
         let initialIsFavoritesVisible = sectionsVisibilityProvider.isFavoritesVisible
 
         let configs: [NewTabPageDataModel.NewTabPageConfiguration.WidgetConfig] = [
-            .init(id: .privacyStats, isVisible: false),
-            .init(id: .recentActivity, isVisible: true)
+            .init(id: .protections, isVisible: false),
         ]
         try await messageHelper.handleMessageExpectingNilResponse(named: .widgetsSetConfig, parameters: configs)
         XCTAssertEqual(sectionsVisibilityProvider.isFavoritesVisible, initialIsFavoritesVisible)
-        XCTAssertEqual(sectionsVisibilityProvider.isPrivacyStatsVisible, false)
-        XCTAssertEqual(sectionsVisibilityProvider.isRecentActivityVisible, true)
+        XCTAssertEqual(sectionsVisibilityProvider.isProtectionsReportVisible, false)
     }
 
     // MARK: - reportInitException

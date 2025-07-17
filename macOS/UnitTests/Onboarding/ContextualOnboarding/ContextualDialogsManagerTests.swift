@@ -306,11 +306,11 @@ class ContextualDialogsManagerTests {
 
 class MockTrackerMessageProvider: TrackerMessageProviding {
 
-    let expectation: XCTestExpectation
+    let expectation: XCTestExpectation?
     var message: NSAttributedString
     var trackerType: OnboardingTrackersType?
 
-    init(expectation: XCTestExpectation, message: NSAttributedString = NSAttributedString(string: "Trackers Detected"), trackerType: OnboardingTrackersType? = .blockedTrackers(entityNames: ["entity1", "entity2"])) {
+    init(expectation: XCTestExpectation? = nil, message: NSAttributedString = NSAttributedString(string: "Trackers Detected"), trackerType: OnboardingTrackersType? = .blockedTrackers(entityNames: ["entity1", "entity2"])) {
         self.expectation = expectation
         self.message = message
         self.trackerType = trackerType
@@ -318,7 +318,7 @@ class MockTrackerMessageProvider: TrackerMessageProviding {
 
     func trackerMessage(privacyInfo: PrivacyInfo?) -> NSAttributedString? {
         // Simulate fetching the tracker message
-        expectation.fulfill()
+        expectation?.fulfill()
         return message
     }
 

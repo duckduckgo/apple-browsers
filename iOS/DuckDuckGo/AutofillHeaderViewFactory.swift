@@ -40,6 +40,7 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
     enum ViewType {
         case syncPromo(SyncPromoManager.Touchpoint)
         case survey(AutofillSurveyManager.AutofillSurvey)
+        case importPromo
     }
     
     init(delegate: AutofillHeaderViewDelegate?) {
@@ -52,6 +53,8 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
             return makeSyncPromoView(touchpointType: touchpointType)
         case .survey(let survey):
             return makeSurveyView(survey: survey)
+        case .importPromo:
+            return makeImportPromoView()
         }
     }
     
@@ -85,6 +88,21 @@ final class AutofillHeaderViewFactory: AutofillHeaderViewFactoryProtocol {
         
         Pixel.fire(pixel: .autofillManagementScreenVisitSurveyAvailable)
         
+        let hostingController = UIHostingController(rootView: headerView)
+        hostingController.view.backgroundColor = .clear
+        return hostingController
+    }
+
+    private func makeImportPromoView() -> UIHostingController<ImportPromotionHeaderView> {
+        let headerView = ImportPromotionHeaderView(
+            primaryButtonAction: { [weak delegate] in
+                delegate?.handlePrimaryAction(for: .importPromo)
+            },
+            dismissButtonAction: { [weak delegate] in
+                delegate?.handleDismissAction(for: .importPromo)
+            }
+        )
+
         let hostingController = UIHostingController(rootView: headerView)
         hostingController.view.backgroundColor = .clear
         return hostingController

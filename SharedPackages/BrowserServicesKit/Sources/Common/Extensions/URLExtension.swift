@@ -488,7 +488,7 @@ extension URL {
     }
 
     // MARK: Canonicalization
-    public func canonicalHost() -> String? {
+    public func canonicalHost(shouldRemoveWWW: Bool = false) -> String? {
         // Step 1: Extract hostname portion from the URL
         guard var canonicalHost = self.host else {
             return nil
@@ -520,14 +520,19 @@ extension URL {
         // Step 7: Replace any characters other than letters, numbers, ".", and "-" with "%XX" escape codes, using lowercase hexadecimal digits
         canonicalHost = canonicalHost.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? ""
 
-        // Step 8: If more than six components in the resulting hostname, discard all but the rightmost six components
+        // Step 8: Strip www. prefix (if present)
+        if shouldRemoveWWW {
+            canonicalHost = canonicalHost.droppingWwwPrefix()
+        }
+
+        // Step 9: If more than six components in the resulting hostname, discard all but the rightmost six components
         let components = canonicalHost.components(separatedBy: ".").suffix(6)
         canonicalHost = components.joined(separator: ".")
 
         return canonicalHost
      }
 
-    public func canonicalURL() -> URL? {
+    public func canonicalURL(shouldRemoveWWW: Bool = false) -> URL? {
         // Step 1: Remove tab (0x09), CR (0x0d), and LF (0x0a) characters
         var urlString = self.absoluteString.filter { $0 != "\t" && $0 != "\r" && $0 != "\n" }
 
@@ -537,13 +542,7 @@ extension URL {
         }
 
         // Step 3: Repeatedly percent-unescape the URL until it has no more percent-escapes
-        var previousURLString: String
-        repeat {
-            previousURLString = urlString
-            if let unescapedURLString = urlString.removingPercentEncoding {
-                urlString = unescapedURLString
-            }
-        } while urlString != previousURLString
+        urlString = urlString.fullyRemovingPercentEncoding()
 
         // Step 4: Remove all trailing slashes, but keep the single slash after the domain
         if let url = URL(string: urlString), url.path == "/" {
@@ -577,12 +576,30 @@ extension URL {
         // Step 8: Lowercase everything
         urlString = urlString.lowercased()
 
+        // Step 9: Remove "www." from the host component
+        if shouldRemoveWWW, let tempURL = URL(string: urlString) {
+            if let urlWithoutWWW = tempURL.removingWWWFromHost() {
+                urlString = urlWithoutWWW.absoluteString
+            }
+        }
+
         // Validate the URL according to RFC 2396
         guard let validURL = URL(string: urlString), validURL.path.count > 0 else {
             return nil
         }
 
         return validURL
+    }
+
+    public func removingWWWFromHost() -> URL? {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false),
+              let host = components.host,
+              host.hasPrefix("www.") else {
+            return self
+        }
+
+        components.host = host.droppingWwwPrefix()
+        return components.url
     }
 
 }

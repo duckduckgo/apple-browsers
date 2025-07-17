@@ -20,11 +20,13 @@ import Foundation
 import Combine
 import SwiftUI
 import XCTest
-import NetworkProtection
+import VPN
 @testable import NetworkProtectionUI
-import NetworkProtectionTestUtils
+import VPNTestUtils
 
 final class TunnelControllerViewModelTests: XCTestCase {
+
+    private static let timerZero = "0s"
 
     private class MockStatusReporter: NetworkProtectionStatusReporter {
         static let defaultServerInfo = NetworkProtectionStatusServerInfo(
@@ -129,7 +131,7 @@ final class TunnelControllerViewModelTests: XCTestCase {
         let isToggleOn = model.isToggleOn.wrappedValue
         XCTAssertFalse(isToggleOn)
         XCTAssertEqual(model.connectionStatusDescription, UserText.networkProtectionStatusDisconnected)
-        XCTAssertEqual(model.timeLapsed, UserText.networkProtectionStatusViewTimerZero)
+        XCTAssertEqual(model.timeLapsed, Self.timerZero)
         XCTAssertEqual(model.featureStatusDescription, UserText.networkProtectionStatusViewFeatureOff)
         XCTAssertFalse(model.showServerDetails)
     }
@@ -151,7 +153,7 @@ final class TunnelControllerViewModelTests: XCTestCase {
             uiActionHandler: MockVPNUIActionHandler())
 
         XCTAssertEqual(model.connectionStatusDescription, UserText.networkProtectionStatusDisconnecting)
-        XCTAssertEqual(model.timeLapsed, UserText.networkProtectionStatusViewTimerZero)
+        XCTAssertEqual(model.timeLapsed, Self.timerZero)
         XCTAssertEqual(model.featureStatusDescription, UserText.networkProtectionStatusViewFeatureOn)
         XCTAssertFalse(model.showServerDetails)
         XCTAssertEqual(model.serverAddress, "Unknown")
@@ -164,7 +166,7 @@ final class TunnelControllerViewModelTests: XCTestCase {
     func testProperlyReflectsStatusConnected() async throws {
         let mockServerIP = "127.0.0.1"
         let mockDate = Date().addingTimeInterval(-59)
-        let mockDateString = "00:00:59"
+        let mockDateString = "59s"
 
         let controller = MockTunnelController()
         let serverInfo = NetworkProtectionStatusServerInfo(
@@ -208,7 +210,7 @@ final class TunnelControllerViewModelTests: XCTestCase {
             uiActionHandler: MockVPNUIActionHandler())
 
         XCTAssertEqual(model.connectionStatusDescription, UserText.networkProtectionStatusConnecting)
-        XCTAssertEqual(model.timeLapsed, UserText.networkProtectionStatusViewTimerZero)
+        XCTAssertEqual(model.timeLapsed, Self.timerZero)
         XCTAssertEqual(model.featureStatusDescription, UserText.networkProtectionStatusViewFeatureOff)
         XCTAssertFalse(model.showServerDetails)
     }

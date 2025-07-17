@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
 import AppKit
 import Bookmarks
-import Common
 import Combine
+import Common
+import Foundation
+import PixelKit
 
 protocol AccessibilityPreferencesPersistor {
     var defaultPageZoom: CGFloat { get set }
@@ -71,6 +72,7 @@ final class AccessibilityPreferences: ObservableObject {
     @Published var defaultPageZoom: DefaultZoomValue {
         didSet {
             persistor.defaultPageZoom = defaultPageZoom.rawValue
+            pixelFiring()?.fire(SettingsPixel.websiteZoomSettingChanged, frequency: .uniqueByName)
         }
     }
 
@@ -83,9 +85,11 @@ final class AccessibilityPreferences: ObservableObject {
     }
 
     private var persistor: AccessibilityPreferencesPersistor
+    private let pixelFiring: () -> PixelFiring?
 
-    init(persistor: AccessibilityPreferencesPersistor = AccessibilityPreferencesUserDefaultsPersistor()) {
+    init(persistor: AccessibilityPreferencesPersistor = AccessibilityPreferencesUserDefaultsPersistor(), pixelFiring: @autoclosure @escaping () -> PixelFiring? = PixelKit.shared) {
         self.persistor = persistor
+        self.pixelFiring = pixelFiring
         defaultPageZoom =  .init(rawValue: persistor.defaultPageZoom) ?? .percent100
         zoomPerWebsite = persistor.zoomPerWebsite.compactMapValues { DefaultZoomValue(rawValue: $0) }
     }

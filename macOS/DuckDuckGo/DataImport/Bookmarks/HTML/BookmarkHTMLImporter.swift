@@ -47,7 +47,7 @@ final class BookmarkHTMLImporter: DataImporter {
         switch self.bookmarkReaderResult {
         case let .success(importedData):
             let source: BookmarkImportSource = importedData.source ?? .thirdPartyBrowser(.bookmarksHTML)
-            let bookmarksResult = self.bookmarkImporter.importBookmarks(importedData.bookmarks, source: source)
+            let bookmarksResult = self.bookmarkImporter.importBookmarks(importedData.bookmarks, source: source, markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: nil)
             return .success(.init(bookmarksResult))
 
         case let .failure(error):

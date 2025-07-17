@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 
 /**
@@ -57,7 +58,7 @@ final class DefaultHistoryViewTabOpener: HistoryViewTabOpening {
     let urlOpener: @MainActor () -> URLOpening
 
     init(urlOpener: (@MainActor () -> URLOpening)? = nil) {
-        self.urlOpener = urlOpener ?? { WindowControllersManager.shared }
+        self.urlOpener = urlOpener ?? { Application.appDelegate.windowControllersManager }
     }
 
     @MainActor func open(_ url: URL, window: NSWindow?) {

@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import NetworkProtection
+import VPN
 import Subscription
 import UIKit
 import NotificationCenter
@@ -68,7 +68,7 @@ final class VPNService: NSObject {
     }
 
     private func presentExpiredEntitlementNotificationIfNeeded() {
-        let presenter = NetworkProtectionNotificationsPresenterTogglableDecorator(
+        let presenter = VPNNotificationsPresenterTogglableDecorator(
             settings: AppDependencyProvider.shared.vpnSettings,
             defaults: .networkProtectionGroupDefaults,
             wrappee: NetworkProtectionUNNotificationPresenter()
@@ -114,9 +114,8 @@ final class VPNService: NSObject {
     @MainActor
     private func refreshVPNShortcuts() async {
         guard await vpnFeatureVisibility.shouldShowVPNShortcut(),
-              let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection,
-                                                                            cachePolicy: .returnCacheDataDontLoad),
-              hasEntitlement
+              let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
+              canShowVPNInUI
         else {
             application.shortcutItems = nil
             return

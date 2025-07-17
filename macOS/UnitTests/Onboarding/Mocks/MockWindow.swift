@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
+
 @testable import DuckDuckGo_Privacy_Browser
 
 class MockWindow: NSWindow {

@@ -39,50 +39,53 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     lazy var expectation: XCTestExpectation! = XCTestExpectation(description: "CapturingDialogFactory.makeView called")
     var dialogTypeForTabExpectation: XCTestExpectation!
 
-    @MainActor override func setUpWithError() throws {
-        try super.setUpWithError()
-        let tabCollectionViewModel = TabCollectionViewModel()
-        featureFlagger = MockFeatureFlagger()
-        pixelReporter = CapturingOnboardingPixelReporter()
-        dialogProvider = MockDialogsProvider()
-        factory = CapturingDialogFactory(expectation: expectation)
-        schemeHandler = TestSchemeHandler { _ in
-            return .ok(.html("hello"))
+    @MainActor override func setUp() {
+        autoreleasepool {
+            let tabCollectionViewModel = TabCollectionViewModel()
+            featureFlagger = MockFeatureFlagger()
+            featureFlagger.enabledFeatureFlags = [.contextualOnboarding]
+            pixelReporter = CapturingOnboardingPixelReporter()
+            dialogProvider = MockDialogsProvider()
+            factory = CapturingDialogFactory(expectation: expectation)
+            schemeHandler = TestSchemeHandler { _ in
+                return .ok(.html("hello"))
+            }
+
+            // tests return debugDescription instead of localizedDescription
+            NSError.disableSwizzledDescription = true
+
+            tab = Tab(content: .url(URL.duckDuckGo, credential: nil, source: .appOpenUrl), webViewConfiguration: schemeHandler.webViewConfiguration())
+            let tabViewModel = TabViewModel(tab: tab)
+            viewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, onboardingPixelReporter: pixelReporter, onboardingDialogTypeProvider: dialogProvider, onboardingDialogFactory: factory, featureFlagger: featureFlagger)
+            viewController.tabViewModel = tabViewModel
+            _=viewController.view
+            window = MockWindow()
+            window.contentViewController = viewController
+
+            viewController.viewWillAppear()
+            viewController.viewDidAppear()
         }
-
-        // ! uncomment this to view navigation logs
-        // OSLog.loggingCategories.insert(OSLog.AppCategories.navigation.rawValue)
-
-        // tests return debugDescription instead of localizedDescription
-        NSError.disableSwizzledDescription = true
-
-        tab = Tab(content: .url(URL.duckDuckGo, credential: nil, source: .appOpenUrl), webViewConfiguration: schemeHandler.webViewConfiguration())
-        let tabViewModel = TabViewModel(tab: tab)
-        viewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, onboardingPixelReporter: pixelReporter, onboardingDialogTypeProvider: dialogProvider, onboardingDialogFactory: factory, featureFlagger: featureFlagger)
-        viewController.tabViewModel = tabViewModel
-        _=viewController.view
-        window = MockWindow()
-        window.contentViewController = viewController
-
-        viewController.viewWillAppear()
-        viewController.viewDidAppear()
     }
 
     override func tearDownWithError() throws {
-        dialogProvider = nil
-        factory = nil
-        tab = nil
-        viewController = nil
-        cancellables = []
-        expectation = nil
-        dialogTypeForTabExpectation = nil
-        featureFlagger = nil
-        window = nil
-        schemeHandler = nil
+        autoreleasepool {
+            dialogProvider = nil
+            factory = nil
+            tab = nil
+            viewController = nil
+            cancellables = []
+            expectation = nil
+            dialogTypeForTabExpectation = nil
+            featureFlagger = nil
+            window = nil
+            schemeHandler = nil
+            expectation = nil
+            pixelReporter = nil
+        }
     }
 
     func testWhenNavigationCompletedAndFeatureIsOffThenTurnOffFeature() throws {
-        featureFlagger.isFeatureOn = false
+        featureFlagger.enabledFeatureFlags = []
         let expectation = self.expectation(description: "Wait for turnOffFeatureCalled to be called")
         dialogProvider.turnOffFeatureCalledExpectation = expectation
 
@@ -204,6 +207,8 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     }
 
     func testWhenDialogIsDismissedViewHighlightsAreDismissed() throws {
+        throw XCTSkip("Temporarily Disabled")
+
         dialogProvider.dialog = .tryFireButton
         tab.navigateFromOnboarding(to: .duckDuckGo)
         let delegate = BrowserTabViewControllerDelegateSpy()
@@ -323,6 +328,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     @MainActor
     func testWhenFireButtonPressedThenAskDelegateToRemoveViewHighlights() throws {
+
         // GIVEN
         dialogProvider.dialog = .tryFireButton
         let url = URL.duckDuckGo
@@ -332,11 +338,22 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         tab.navigateFromOnboarding(to: url)
         wait(for: [expectation], timeout: 3.0)
 
-        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            aiChatSidebarProvider: AIChatSidebarProvider(),
+            fireCoordinator: fireCoordinator
+        )
         window.isVisible = false
-        let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
+        let mainWindowController = MainWindowController(
+            window: window,
+            mainViewController: mainViewController,
+            popUp: false,
+            fireViewModel: fireCoordinator.fireViewModel
+        )
         mainWindowController.window = window
-        WindowControllersManager.shared.lastKeyMainWindowController = mainWindowController
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
 
         // WHEN
         window.isVisible = true

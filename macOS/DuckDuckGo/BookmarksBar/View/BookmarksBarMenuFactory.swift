@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 
 struct BookmarksBarMenuFactory {
 
-    static func replace(_ menuItem: NSMenuItem, _ prefs: AppearancePreferences = .shared) -> NSMenuItem? {
+    static func replace(_ menuItem: NSMenuItem, prefs: AppearancePreferences) -> NSMenuItem? {
         guard let menu = menuItem.menu else { return nil }
         let index = menu.index(of: menuItem)
         guard index >= 0 else { return nil }
@@ -30,12 +31,12 @@ struct BookmarksBarMenuFactory {
         return item
     }
 
-    static func addToMenu(_ menu: NSMenu, _ prefs: AppearancePreferences = .shared) {
+    static func addToMenu(_ menu: NSMenu, prefs: AppearancePreferences) {
         menu.addItem(makeMenuItem(prefs))
     }
 
-    static func addToMenuWithManageBookmarksSection(_ menu: NSMenu, target: AnyObject, addFolderSelector: Selector, manageBookmarksSelector: Selector, prefs: AppearancePreferences = .shared) {
-        addToMenu(menu, prefs)
+    static func addToMenuWithManageBookmarksSection(_ menu: NSMenu, target: AnyObject, addFolderSelector: Selector, manageBookmarksSelector: Selector, prefs: AppearancePreferences) {
+        addToMenu(menu, prefs: prefs)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: UserText.addFolder, action: addFolderSelector, target: target))
         menu.addItem(NSMenuItem(title: UserText.bookmarksManageBookmarks, action: manageBookmarksSelector, target: target))

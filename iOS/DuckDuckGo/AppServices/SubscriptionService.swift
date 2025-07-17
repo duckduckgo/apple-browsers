@@ -29,16 +29,19 @@ final class SubscriptionService {
     let subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability
     private let subscriptionManagerV1 = AppDependencyProvider.shared.subscriptionManager
     private let subscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2
+    private let subscriptionAuthMigrator = AppDependencyProvider.shared.subscriptionAuthMigrator
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private var cancellables: Set<AnyCancellable> = []
 
     init(application: UIApplication = UIApplication.shared,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
+         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         subscriptionCookieManager = Self.makeSubscriptionCookieManager(application: application,
                                                                        tokenProvider: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                        privacyConfigurationManager: privacyConfigurationManager)
         subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
-                                                                                 purchasePlatform: .appStore)
+                                                                                 purchasePlatform: .appStore,
+                                                                                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) })
         self.privacyConfigurationManager = privacyConfigurationManager
         privacyConfigurationManager.updatesPublisher
             .receive(on: DispatchQueue.main)
@@ -95,12 +98,12 @@ final class SubscriptionService {
     func resume() {
         subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in // only for v1
             if isSubscriptionActive {
-                DailyPixel.fire(pixel: .privacyProSubscriptionActive)
+                DailyPixel.fire(pixel: .privacyProSubscriptionActive, withAdditionalParameters: [AuthVersion.key: AuthVersion.v1.rawValue])
             }
         }
         Task {
+            await subscriptionAuthMigrator.migrateAuthV1toAuthV2IfNeeded()
             await subscriptionCookieManager.refreshSubscriptionCookie()
         }
     }
-
 }

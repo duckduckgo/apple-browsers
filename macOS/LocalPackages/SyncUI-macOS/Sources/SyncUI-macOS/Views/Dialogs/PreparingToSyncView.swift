@@ -50,7 +50,7 @@ struct RecoverSyncedDataView: View {
             .frame(width: 320)
         } buttons: {
             Button(UserText.cancel) {
-                model.endFlow()
+                model.cancelPressed()
             }
             .buttonStyle(DismissActionButtonStyle())
             Button(UserText.reciverSyncedDataDialogButton) {

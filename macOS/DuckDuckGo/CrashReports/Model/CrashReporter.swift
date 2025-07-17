@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
 import Crashes
 import Foundation
@@ -23,6 +24,11 @@ import PixelKit
 
 final class CrashReporter {
 
+    init(internalUserDecider: InternalUserDecider) {
+        self.internalUserDecider = internalUserDecider
+    }
+
+    private let internalUserDecider: InternalUserDecider
     private let reader = CrashReportReader()
     private lazy var sender = CrashReportSender(platform: .macOS, pixelEvents: CrashReportSender.pixelEvents)
     private lazy var crcidManager = CRCIDManager()
@@ -31,10 +37,8 @@ final class CrashReporter {
     @UserDefaultsWrapper(key: .lastCrashReportCheckDate, defaultValue: nil)
     private var lastCheckDate: Date?
 
-    func checkForNewReports() {
-
+    func checkForNewReports() async {
 #if !DEBUG
-
         guard let lastCheckDate = lastCheckDate else {
             // Initial run
             self.lastCheckDate = Date()
@@ -45,26 +49,36 @@ final class CrashReporter {
         self.lastCheckDate = Date()
 
         guard let latest = crashReports.last else {
-            // No new crash report
+            // No new crash reports
             return
         }
 
-        PixelKit.fire(GeneralPixel.crash)
-        PixelKit.fire(GeneralPixel.crashDaily, frequency: .legacyDaily)
-
-        promptPresenter.showPrompt(for: latest) {
-            guard let contentData = latest.contentData else {
-                assertionFailure("CrashReporter: Can't get the content of the crash report")
-                return
-            }
-            Task {
-                let crcid = self.crcidManager.crcid
-                let result = await self.sender.send(contentData, crcid: crcid)
-                self.crcidManager.handleCrashSenderResult(result: result.result, response: result.response)
+        for crash in crashReports {
+            let appIdentifier = CrashPixelAppIdentifier(crash.bundleID)
+            if let appVersion = crash.appVersion {
+                let parameters = [PixelKit.Parameters.appVersion: appVersion]
+                PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), frequency: .dailyAndStandard, withAdditionalParameters: parameters, includeAppVersionParameter: false)
+            } else {
+                PixelKit.fire(GeneralPixel.crash(appIdentifier: appIdentifier), frequency: .dailyAndStandard)
             }
         }
 
+        if internalUserDecider.isInternalUser {
+            await send(crashReports)
+        } else if await promptPresenter.showPrompt(for: latest) == .allow {
+            await send(crashReports)
+        }
 #endif
+    }
 
+    private func send(_ crashReports: [CrashReport]) async {
+        for crashReport in crashReports {
+            guard let contentData = crashReport.contentData else {
+                assertionFailure("CrashReporter: Can't get the content of the crash report")
+                continue
+            }
+            let result = await sender.send(contentData, crcid: crcidManager.crcid)
+            crcidManager.handleCrashSenderResult(result: result.result, response: result.response)
+        }
     }
 }

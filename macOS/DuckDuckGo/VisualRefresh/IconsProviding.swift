@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 import NetworkProtectionUI
+import AppKit
 
 protocol IconsProviding {
     var addressBarCookiesIconsProvider: AddressBarCookiesIconsProviding { get }
@@ -25,6 +26,10 @@ protocol IconsProviding {
     var settingsIconProvider: SettingsIconsProviding { get }
     var bookmarksIconsProvider: BookmarksIconsProviding { get }
     var vpnNavigationIconsProvider: IconProvider { get }
+    var suggestionsIconsProvider: SuggestionsIconsProviding { get }
+    var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding { get }
+
+    var fireInfoGraphic: NSImage { get }
 }
 
 final class LegacyIconsProvider: IconsProviding {
@@ -35,6 +40,9 @@ final class LegacyIconsProvider: IconsProviding {
     var settingsIconProvider: SettingsIconsProviding = LegacySettingsIconProvider()
     var bookmarksIconsProvider: BookmarksIconsProviding = LegacyBookmarksIconsProvider()
     var vpnNavigationIconsProvider: IconProvider = NavigationBarIconProvider()
+    var suggestionsIconsProvider: SuggestionsIconsProviding = LegacySuggestionsIconsProvider()
+    var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding = LegacyAddressBarPermissionButtonIconsProvider()
+    var fireInfoGraphic: NSImage = .fireHeader
 }
 
 final class CurrentIconsProvider: IconsProviding {
@@ -45,4 +53,7 @@ final class CurrentIconsProvider: IconsProviding {
     var settingsIconProvider: SettingsIconsProviding = CurrentSettingsIconProvider()
     var bookmarksIconsProvider: BookmarksIconsProviding = CurrentBookmarksIconsProvider()
     var vpnNavigationIconsProvider: IconProvider = CurrentVPNNavigationBarIconProvider()
+    var suggestionsIconsProvider: SuggestionsIconsProviding = CurrentSuggestionsIconsProvider()
+    var addressBarButtonsIconsProvider: AddressBarPermissionButtonsIconsProviding = CurrentAddressBarPermissionButtonIconsProvider()
+    var fireInfoGraphic: NSImage = .newFireHeader
 }

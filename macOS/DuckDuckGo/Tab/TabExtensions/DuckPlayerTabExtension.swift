@@ -19,10 +19,11 @@
 import Combine
 import Common
 import ContentBlocking
+import DuckPlayer
 import Foundation
 import Navigation
 import PixelKit
-import DuckPlayer
+import WebKit
 
 protocol YoutubeScriptsProvider {
     var youtubeOverlayScript: YoutubeOverlayUserScript? { get }
@@ -449,7 +450,7 @@ extension DuckPlayerTabExtension: NavigationResponder {
                           "autoplay": autoplay]
 
             PixelKit.fire(GeneralPixel.duckPlayerDailyUniqueView,
-                          frequency: .legacyDaily,
+                          frequency: .legacyDailyNoSuffix,
                           withAdditionalParameters: params)
 
         }

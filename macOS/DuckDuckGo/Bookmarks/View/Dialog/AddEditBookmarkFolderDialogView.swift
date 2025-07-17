@@ -49,7 +49,7 @@ struct AddEditBookmarkFolderDialogView: ModalView {
 #Preview("Add Folder To Bookmarks - Light") {
     let bookmarkFolder = BookmarkFolder(id: "1", title: "DuckDuckGo", children: [])
     let store = BookmarkStoreMock(bookmarks: [bookmarkFolder])
-    let bookmarkManager = LocalBookmarkManager(bookmarkStore: store)
+    let bookmarkManager = LocalBookmarkManager(bookmarkStore: store, appearancePreferences: .mock)
     bookmarkManager.loadBookmarks()
 
     return BookmarksDialogViewFactory.makeAddBookmarkFolderView(parentFolder: nil, bookmarkManager: bookmarkManager)
@@ -59,7 +59,7 @@ struct AddEditBookmarkFolderDialogView: ModalView {
 #Preview("Add Folder To Bookmarks Subfolder - Light") {
     let bookmarkFolder = BookmarkFolder(id: "1", title: "DuckDuckGo", children: [])
     let store = BookmarkStoreMock(bookmarks: [bookmarkFolder])
-    let bookmarkManager = LocalBookmarkManager(bookmarkStore: store)
+    let bookmarkManager = LocalBookmarkManager(bookmarkStore: store, appearancePreferences: .mock)
     bookmarkManager.loadBookmarks()
 
     return BookmarksDialogViewFactory.makeAddBookmarkFolderView(parentFolder: bookmarkFolder, bookmarkManager: bookmarkManager)
@@ -69,7 +69,7 @@ struct AddEditBookmarkFolderDialogView: ModalView {
 #Preview("Edit Folder - Light") {
     let bookmarkFolder = BookmarkFolder(id: "1", title: "DuckDuckGo", children: [])
     let store = BookmarkStoreMock(bookmarks: [bookmarkFolder])
-    let bookmarkManager = LocalBookmarkManager(bookmarkStore: store)
+    let bookmarkManager = LocalBookmarkManager(bookmarkStore: store, appearancePreferences: .mock)
     bookmarkManager.loadBookmarks()
 
     return BookmarksDialogViewFactory.makeEditBookmarkFolderView(folder: bookmarkFolder, parentFolder: nil, bookmarkManager: bookmarkManager)
@@ -78,7 +78,7 @@ struct AddEditBookmarkFolderDialogView: ModalView {
 
 #Preview("Add Folder To Bookmarks - Dark") {
     let store = BookmarkStoreMock(bookmarks: [])
-    let bookmarkManager = LocalBookmarkManager(bookmarkStore: store)
+    let bookmarkManager = LocalBookmarkManager(bookmarkStore: store, appearancePreferences: .mock)
     bookmarkManager.loadBookmarks()
 
     return BookmarksDialogViewFactory.makeAddBookmarkFolderView(parentFolder: nil, bookmarkManager: bookmarkManager)
@@ -88,7 +88,7 @@ struct AddEditBookmarkFolderDialogView: ModalView {
 #Preview("Add Folder To Bookmarks Subfolder - Dark") {
     let bookmarkFolder = BookmarkFolder(id: "1", title: "DuckDuckGo", children: [])
     let store = BookmarkStoreMock(bookmarks: [bookmarkFolder])
-    let bookmarkManager = LocalBookmarkManager(bookmarkStore: store)
+    let bookmarkManager = LocalBookmarkManager(bookmarkStore: store, appearancePreferences: .mock)
     bookmarkManager.loadBookmarks()
 
     return BookmarksDialogViewFactory.makeAddBookmarkFolderView(parentFolder: bookmarkFolder, bookmarkManager: bookmarkManager)
@@ -98,7 +98,7 @@ struct AddEditBookmarkFolderDialogView: ModalView {
 #Preview("Edit Folder in Subfolder - Dark") {
     let bookmarkFolder = BookmarkFolder(id: "1", title: "DuckDuckGo", children: [])
     let store = BookmarkStoreMock(bookmarks: [bookmarkFolder])
-    let bookmarkManager = LocalBookmarkManager(bookmarkStore: store)
+    let bookmarkManager = LocalBookmarkManager(bookmarkStore: store, appearancePreferences: .mock)
     bookmarkManager.loadBookmarks()
 
     return BookmarksDialogViewFactory.makeEditBookmarkFolderView(folder: bookmarkFolder, parentFolder: bookmarkFolder, bookmarkManager: bookmarkManager)

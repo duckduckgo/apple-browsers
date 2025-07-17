@@ -19,7 +19,7 @@
 
 import AppIntents
 import NetworkExtension
-import NetworkProtection
+import VPN
 import WidgetKit
 import Core
 import OSLog

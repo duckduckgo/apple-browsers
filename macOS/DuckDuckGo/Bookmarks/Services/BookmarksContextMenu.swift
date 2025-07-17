@@ -43,9 +43,9 @@ final class BookmarksContextMenu: NSMenu {
     }
 
     @MainActor
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared, windowControllersManager: WindowControllersManagerProtocol? = nil, delegate: BookmarksContextMenuDelegate) {
-        self.bookmarkManager = bookmarkManager
-        self.windowControllersManager = windowControllersManager ?? WindowControllersManager.shared
+    init(bookmarkManager: BookmarkManager? = nil, windowControllersManager: WindowControllersManagerProtocol? = nil, delegate: BookmarksContextMenuDelegate) {
+        self.bookmarkManager = bookmarkManager ?? NSApp.delegateTyped.bookmarkManager
+        self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
         super.init(title: "")
         self.delegate = delegate
         self.autoenablesItems = false
@@ -295,7 +295,7 @@ extension BookmarksContextMenu: BookmarkMenuItemSelectors {
             return
         }
 
-        windowControllersManager.show(url: bookmark.urlObject, source: .bookmark, newTab: true, selected: nil /* depending on the setting */)
+        windowControllersManager.show(url: bookmark.urlObject, source: .bookmark(isFavorite: bookmark.isFavorite), newTab: true, selected: nil /* depending on the setting */)
     }
 
     @MainActor
@@ -318,7 +318,7 @@ extension BookmarksContextMenu: BookmarkMenuItemSelectors {
             return
         }
         let burnerMode: BurnerMode = BurnerMode(isBurner: burningWindow)
-        let tabCollection = TabCollection(tabs: [Tab(content: .contentFromURL(urlObject, source: .bookmark), burnerMode: burnerMode)])
+        let tabCollection = TabCollection(tabs: [Tab(content: .contentFromURL(urlObject, source: .bookmark(isFavorite: bookmark.isFavorite)), burnerMode: burnerMode)])
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, burnerMode: burnerMode)
         windowControllersManager.openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode)
     }

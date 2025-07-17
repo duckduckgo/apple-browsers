@@ -193,7 +193,7 @@ final class FirePopoverViewModel {
 
     func burn() {
         onboardingContextualDialogsManager.fireButtonUsed()
-        PixelKit.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDaily)
+        PixelKit.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
 
         switch (clearingOption, areAllSelected) {
         case (.currentTab, _):
@@ -223,7 +223,7 @@ final class FirePopoverViewModel {
 
         case (.allData, false):
             PixelKit.fire(GeneralPixel.fireButton(option: .allSites))
-            fireViewModel.fire.burnEntity(entity: .allWindows(mainWindowControllers: WindowControllersManager.shared.mainWindowControllers,
+            fireViewModel.fire.burnEntity(entity: .allWindows(mainWindowControllers: Application.appDelegate.windowControllersManager.mainWindowControllers,
                                                               selectedDomains: selectedDomains,
                                                               customURLToOpen: nil))
         }

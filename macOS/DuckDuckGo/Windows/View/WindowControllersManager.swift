@@ -27,6 +27,8 @@ import AIChat
 @MainActor
 protocol WindowControllersManagerProtocol {
 
+    var stateChanged: AnyPublisher<Void, Never> { get }
+
     var mainWindowControllers: [MainWindowController] { get }
     var selectedTab: Tab? { get }
     var allTabCollectionViewModels: [TabCollectionViewModel] { get }
@@ -54,8 +56,14 @@ protocol WindowControllersManagerProtocol {
                        isMiniaturized: Bool,
                        isMaximized: Bool,
                        isFullscreen: Bool) -> MainWindow?
+
+    func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?)
     func showTab(with content: Tab.TabContent)
+
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior)
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool)
 }
+
 extension WindowControllersManagerProtocol {
     @discardableResult
     func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel? = nil,
@@ -75,18 +83,18 @@ extension WindowControllersManagerProtocol {
 @MainActor
 final class WindowControllersManager: WindowControllersManagerProtocol {
 
-    static let shared = WindowControllersManager(pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
-                                                 subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability()
-    )
-
     var activeViewController: MainViewController? {
         lastKeyMainWindowController?.mainViewController
     }
 
     init(pinnedTabsManagerProvider: PinnedTabsManagerProviding,
-         subscriptionFeatureAvailability: SubscriptionFeatureAvailability) {
+         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+         internalUserDecider: InternalUserDecider,
+         featureFlagger: FeatureFlagger) {
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
+        self.internalUserDecider = internalUserDecider
+        self.featureFlagger = featureFlagger
     }
 
     /**
@@ -94,8 +102,10 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
      */
     @Published private(set) var isInInitialState: Bool = true
     @Published private(set) var mainWindowControllers = [MainWindowController]()
-    private(set) var pinnedTabsManagerProvider: PinnedTabsManagerProviding
+    var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
+    private let internalUserDecider: InternalUserDecider
+    private let featureFlagger: FeatureFlagger
 
     weak var lastKeyMainWindowController: MainWindowController? {
         didSet {
@@ -188,24 +198,23 @@ extension WindowControllersManager {
         showTab(with: .bookmarks)
     }
 
-    /// Opens an AI chat URL in the application, either in a new or existing tab.
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab) {
+        openAIChat(url, with: linkOpenBehavior, hasPrompt: false)
+    }
+
+    /// Opens an AI chat URL in the application.
     ///
     /// - Parameters:
     ///   - url: The AI chat URL to open.
-    ///   - target: Specifies where to open the URL. Can be `.newTabSelected`, `.newTabUnselected`, or `.sameTab`.
-    ///             Defaults to `.sameTab`.
+    ///   - linkOpenBehavior: Specifies where to open the URL. Defaults to `.currentTab`.
     ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `target` is `.newTabSelected`
-    ///                or `.newTabUnselected`. Defaults to `false`.
-    func openAIChat(_ url: URL, target: AIChatTabOpenerTarget = .sameTab, hasPrompt: Bool = false) {
+    ///                or `.newTabUnselected`.
+    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) {
 
         let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
 
-        switch target {
-        case .newTabSelected:
-            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url, source: .ui), selected: true)
-        case .newTabUnselected:
-            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url, source: .ui), selected: false)
-        case .sameTab:
+        switch linkOpenBehavior {
+        case .currentTab:
             if let currentURL = tabCollectionViewModel?.selectedTab?.url, currentURL.isDuckAIURL {
                 if hasPrompt {
                     tabCollectionViewModel?.selectedTab?.reload()
@@ -213,6 +222,8 @@ extension WindowControllersManager {
             } else {
                 show(url: url, source: .ui, newTab: false)
             }
+        default:
+            open(url, with: linkOpenBehavior, source: .ui, target: nil)
         }
     }
 
@@ -225,7 +236,7 @@ extension WindowControllersManager {
         guard let url = bookmark.urlObject else { return }
 
         // Call updated openBookmark
-        open(url, source: .bookmark, target: nil, event: event)
+        open(url, source: .bookmark(isFavorite: bookmark.isFavorite), target: nil, event: event)
     }
 
     /// Opens a history entry in a tab, respecting the current modifier keys when deciding where to open the URL.
@@ -267,9 +278,9 @@ extension WindowControllersManager {
         case .newTab(let selected):
             guard windowController?.window?.isPopUpWindow == false,
                   let tabCollectionViewModel = windowController?.mainViewController.tabCollectionViewModel else { fallthrough }
-            tabCollectionViewModel.appendNewTab(with: .url(url, source: .bookmark), selected: selected)
+            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: source), selected: selected)
         case .newWindow(let selected):
-            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: setBurner ?? (windowController?.mainViewController.isBurner ?? false), showWindow: selected)
+            WindowsManager.openNewWindow(with: url, source: source, isBurner: setBurner ?? (windowController?.mainViewController.isBurner ?? false), showWindow: selected)
         }
     }
 
@@ -349,7 +360,7 @@ extension WindowControllersManager {
             windowController.window?.makeKeyAndOrderFront(self)
             tabCollectionViewModel.select(at: index)
             if let tab = tabCollectionViewModel.tabViewModel(at: index)?.tab,
-               tab.content.urlForWebView != url {
+               tab.content.urlForWebView != url && url != URL.empty {
                 // navigate to another settings pane
                 tab.setContent(.contentFromURL(url, source: .switchToOpenTab))
             }
@@ -417,8 +428,18 @@ extension WindowControllersManager {
         windowController.mainViewController.navigationBarViewController.showNetworkProtectionStatus()
     }
 
+    /// Shows the non-privacy pro feedback modal
+    func showFeedbackModal(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
+        if internalUserDecider.isInternalUser {
+            showTab(with: .url(.internalFeedbackForm, source: .ui))
+        } else {
+            FeedbackPresenter.presentFeedbackForm(preselectedFormOption: preselectedFormOption)
+        }
+    }
+
+    /// Shows the Privacy Pro feedback modal
     func showShareFeedbackModal(source: UnifiedFeedbackSource = .default) {
-        let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source)
+        let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source, featureFlagger: featureFlagger)
         let feedbackFormWindowController = feedbackFormViewController.wrappedInWindowController()
 
         guard let feedbackFormWindow = feedbackFormWindowController.window else {
@@ -426,7 +447,7 @@ extension WindowControllersManager {
             return
         }
 
-        if let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController {
+        if let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
             parentWindowController.window?.beginSheet(feedbackFormWindow)
         } else {
             let tabCollection = TabCollection(tabs: [])
@@ -437,7 +458,7 @@ extension WindowControllersManager {
     }
 
     func showMainWindow() {
-        guard WindowControllersManager.shared.lastKeyMainWindowController == nil else { return }
+        guard Application.appDelegate.windowControllersManager.lastKeyMainWindowController == nil else { return }
         let tabCollection = TabCollection(tabs: [])
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel)
@@ -448,7 +469,7 @@ extension WindowControllersManager {
         let locationsWindowController = locationsViewController.wrappedInWindowController()
 
         guard let locationsFormWindow = locationsWindowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController else {
+              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
             assertionFailure("Failed to present native VPN feedback form")
             return
         }
@@ -547,7 +568,7 @@ extension WindowControllersManager: OnboardingNavigating {
 
     @MainActor
     func showImportDataView() {
-        DataImportView(title: UserText.importDataTitleOnboarding).show()
+        DataImportView(title: UserText.importDataTitleOnboarding, isDataTypePickerExpanded: false).show()
     }
 
     @MainActor

@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
+import Foundation
 import PixelKit
 
 final class AutofillPreferencesModel: ObservableObject {
@@ -120,8 +121,8 @@ final class AutofillPreferencesModel: ObservableObject {
         self.passwordManager = passwordManager
     }
 
-    func openImportBrowserDataWindow() {
-        NSApp.sendAction(#selector(AppDelegate.openImportBrowserDataWindow(_:)), to: nil, from: nil)
+    func openImportPasswordsWindow() {
+        NSApp.sendAction(#selector(AppDelegate.openImportPasswordsWindow(_:)), to: nil, from: nil)
     }
 
     func openExportLogins() {
@@ -130,7 +131,7 @@ final class AutofillPreferencesModel: ObservableObject {
 
     @MainActor
     func showAutofillPopover(_ selectedCategory: SecureVaultSorting.Category = .allItems, source: PasswordManagementSource) {
-        guard let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController else { return }
+        guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
         let navigationViewController = parentWindowController.mainViewController.navigationBarViewController
         navigationViewController.showPasswordManagerPopover(selectedCategory: selectedCategory, source: source)
     }
@@ -193,7 +194,7 @@ final class AutofillPreferencesModel: ObservableObject {
         }
 
         guard let connectBitwardenWindow = connectBitwardenWindowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
         else {
             assertionFailure("Privacy Preferences: Failed to present ConnectBitwardenViewController")
             return

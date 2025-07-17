@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import Common
 import Subscription
@@ -43,7 +43,7 @@ extension NetworkProtectionLocationListCompositeRepository {
         let settings = Application.appDelegate.vpnSettings
 
         var tokenHandler: any SubscriptionTokenHandling
-        if !Application.appDelegate.isAuthV2Enabled {
+        if !Application.appDelegate.isUsingAuthV2 {
             tokenHandler = NetworkProtectionKeychainTokenStore()
         } else {
             // swiftlint:disable:next force_cast

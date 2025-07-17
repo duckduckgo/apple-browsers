@@ -18,12 +18,16 @@
 //
 
 import UIKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 final class TabSwitcherStaticView: UIView {
-    private let iconImageView = UIImageView(image: UIImage(resource: .tabNew24))
-    private let unreadDotImageView = UIImageView(image: UIImage(resource: .tabMobileAlertDot24))
+    private let iconImageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.tabMobile)
+    private let unreadDotImageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.tabMobileAlertDot)
 
     let label = UILabel()
+
+    private var verticalLabelOffsetConstraint: NSLayoutConstraint?
 
     override init(frame: CGRect = .zero) {
         super.init(frame: frame)
@@ -41,11 +45,12 @@ final class TabSwitcherStaticView: UIView {
     var hasUnread: Bool = false {
         didSet {
             unreadDotImageView.isHidden = !hasUnread
-            iconImageView.image = hasUnread ? UIImage(resource: .tabMobileAlert24) : UIImage(resource: .tabNew24)
+            iconImageView.image = hasUnread ? DesignSystemImages.Glyphs.Size24.tabMobileAlertRecolorable : DesignSystemImages.Glyphs.Size24.tabMobile
         }
     }
 
     func updateCount(_ count: String?, isSymbol: Bool) {
+        updateLayout(isSymbol)
         updateFont(isSymbol)
         label.text = count
     }
@@ -65,6 +70,9 @@ final class TabSwitcherStaticView: UIView {
         label.translatesAutoresizingMaskIntoConstraints = false
         unreadDotImageView.translatesAutoresizingMaskIntoConstraints = false
 
+        let verticalLabelOffsetConstraint = label.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -Metrics.labelOffset)
+        self.verticalLabelOffsetConstraint = verticalLabelOffsetConstraint
+
         NSLayoutConstraint.activate([
             iconImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
             iconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -72,13 +80,17 @@ final class TabSwitcherStaticView: UIView {
             iconImageView.heightAnchor.constraint(equalToConstant: Metrics.iconSize),
 
             label.centerXAnchor.constraint(equalTo: centerXAnchor, constant: Metrics.labelOffset),
-            label.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -Metrics.labelOffset),
+            verticalLabelOffsetConstraint,
 
             unreadDotImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
             unreadDotImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
             unreadDotImageView.widthAnchor.constraint(equalToConstant: Metrics.iconSize),
             unreadDotImageView.heightAnchor.constraint(equalToConstant: Metrics.iconSize),
         ])
+    }
+
+    private func updateLayout(_ isShowingSymbol: Bool) {
+        verticalLabelOffsetConstraint?.constant = -(isShowingSymbol ? Metrics.labelYOffsetInfinity : Metrics.labelOffset)
     }
 
     private func setUpProperties() {
@@ -117,6 +129,7 @@ final class TabSwitcherStaticView: UIView {
         static let iconSize: CGFloat = 24
 
         static let labelOffset: CGFloat = 2
+        static let labelYOffsetInfinity: CGFloat = 3
 
         static let fontSize = 9.0
         static let fontWeight = UIFont.Weight.bold

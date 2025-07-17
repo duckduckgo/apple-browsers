@@ -21,7 +21,7 @@ import UIKit
 
 import Subscription
 import Core
-import NetworkProtection
+import VPN
 import StoreKit
 import BrowserServicesKit
 import Networking
@@ -40,7 +40,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private var featureFlagger: FeatureFlagger {
         AppDependencyProvider.shared.featureFlagger
     }
-    private let isAuthV2Enabled: Bool = AppDependencyProvider.shared.isAuthV2Enabled
+    private let isAuthV2Enabled: Bool = AppDependencyProvider.shared.isUsingAuthV2
     var currentEnvironment: SubscriptionEnvironment {
         AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.currentEnvironment
     }
@@ -349,7 +349,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                     """
         let alertController = UIAlertController(title: "⚠️ App restart required! The changes are persistent",
                                                 message: message,
-                                                preferredStyle: .actionSheet)
+                                                preferredStyle: UIDevice.current.userInterfaceIdiom == .pad ? .alert : .actionSheet)
         alertController.addAction(UIAlertAction(title: "Yes", style: .destructive) { [weak self] _ in
             Task {
                 switch envRows {
@@ -574,7 +574,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func getSubscriptionDetailsV2() {
         Task {
             do {
-                let subscription = try await subscriptionManagerV2.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+                let subscription = try await subscriptionManagerV2.getSubscription(cachePolicy: .remoteFirst)
                 showAlert(title: "Subscription info", message: subscription.debugDescription)
             } catch {
                 showAlert(title: "Subscription info", message: "\(error)")
@@ -720,7 +720,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                     """
         let alertController = UIAlertController(title: "⚠️ App restart required! The changes are persistent",
                                                 message: message,
-                                                preferredStyle: .actionSheet)
+                                                preferredStyle: UIDevice.current.userInterfaceIdiom == .pad ? .alert : .actionSheet)
         alertController.addAction(UIAlertAction(title: "Yes", style: .destructive) { [weak self] _ in
             self?.setCustomBaseSubscriptionURL(url)
             // Close the app

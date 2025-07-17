@@ -24,7 +24,7 @@ import DesignResourcesKit
 import SwiftUI
 import WidgetKit
 import NetworkExtension
-import NetworkProtection
+import VPN
 
 enum VPNStatus {
     case status(NEVPNStatus)

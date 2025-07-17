@@ -16,43 +16,52 @@
 //  limitations under the License.
 //
 
+import Foundation
 import AIChat
 
 protocol AIChatTabOpening {
     @MainActor
-    func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget)
+    func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior)
 
     @MainActor
-    func openAIChatTab(_ value: AddressBarTextField.Value, target: AIChatTabOpenerTarget)
+    func openAIChatTab(_ value: AddressBarTextField.Value, with linkOpenBehavior: LinkOpenBehavior)
+
+    @MainActor
+    func openNewAIChatTab(_ aiChatURL: URL, with linkOpenBehavior: LinkOpenBehavior)
+
+    @MainActor
+    func openNewAIChatTab(withPayload payload: AIChatPayload)
+
+    @MainActor
+    func openNewAIChatTab(withChatRestorationData data: AIChatRestorationData)
 }
 
 extension AIChatTabOpening {
     @MainActor
     func openAIChatTab() {
-        openAIChatTab(nil, target: .sameTab)
+        openAIChatTab(nil, with: .currentTab)
     }
-}
-
-enum AIChatTabOpenerTarget {
-    case newTabSelected
-    case newTabUnselected
-    case sameTab
 }
 
 struct AIChatTabOpener: AIChatTabOpening {
     private let promptHandler: AIChatPromptHandler
     private let addressBarQueryExtractor: AIChatAddressBarPromptExtractor
+    private let windowControllersManager: WindowControllersManagerProtocol
 
     let aiChatRemoteSettings = AIChatRemoteSettings()
 
-    init(promptHandler: AIChatPromptHandler,
-         addressBarQueryExtractor: AIChatAddressBarPromptExtractor) {
+    init(
+        promptHandler: AIChatPromptHandler,
+        addressBarQueryExtractor: AIChatAddressBarPromptExtractor,
+        windowControllersManager: WindowControllersManagerProtocol
+    ) {
         self.promptHandler = promptHandler
         self.addressBarQueryExtractor = addressBarQueryExtractor
+        self.windowControllersManager = windowControllersManager
     }
 
     @MainActor
-    func openAIChatTab(_ value: AddressBarTextField.Value, target: AIChatTabOpenerTarget) {
+    func openAIChatTab(_ value: AddressBarTextField.Value, with linkOpenBehavior: LinkOpenBehavior) {
         let query = addressBarQueryExtractor.queryForValue(value)
 
         // We don't want to auto-submit if the user is opening duck.ai from the SERP
@@ -63,19 +72,44 @@ struct AIChatTabOpener: AIChatTabOpening {
         } else {
             shouldAutoSubmit = true
         }
-        openAIChatTab(query, target: target, autoSubmit: shouldAutoSubmit)
+        openAIChatTab(query, with: linkOpenBehavior, autoSubmit: shouldAutoSubmit)
     }
 
     @MainActor
-    func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget) {
-        openAIChatTab(query, target: target, autoSubmit: true)
+    func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior) {
+        openAIChatTab(query, with: linkOpenBehavior, autoSubmit: true)
     }
 
     @MainActor
-    private func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget, autoSubmit: Bool) {
+    func openNewAIChatTab(_ aiChatURL: URL, with linkOpenBehavior: LinkOpenBehavior) {
+        windowControllersManager.openAIChat(aiChatURL, with: linkOpenBehavior)
+    }
+
+    @MainActor
+    private func openAIChatTab(_ query: String?, with linkOpenBehavior: LinkOpenBehavior, autoSubmit: Bool) {
         if let query = query {
             promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
         }
-        WindowControllersManager.shared.openAIChat(aiChatRemoteSettings.aiChatURL, target: target, hasPrompt: query != nil)
+        windowControllersManager.openAIChat(aiChatRemoteSettings.aiChatURL, with: linkOpenBehavior, hasPrompt: query != nil)
+    }
+
+    @MainActor
+    func openNewAIChatTab(withPayload payload: AIChatPayload) {
+        guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+
+        let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
+        newAIChatTab.aiChat?.setAIChatNativeHandoffData(payload: payload)
+
+        tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
+    }
+
+    @MainActor
+    func openNewAIChatTab(withChatRestorationData data: AIChatRestorationData) {
+        guard let tabCollectionViewModel = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else { return }
+
+        let newAIChatTab = Tab(content: .url(aiChatRemoteSettings.aiChatURL, source: .ui))
+        newAIChatTab.aiChat?.setAIChatRestorationData(data: data)
+
+        tabCollectionViewModel.insertOrAppend(tab: newAIChatTab, selected: true)
     }
 }

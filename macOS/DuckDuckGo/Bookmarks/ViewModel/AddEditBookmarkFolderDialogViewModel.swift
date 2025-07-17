@@ -72,7 +72,7 @@ final class AddEditBookmarkFolderDialogViewModel: BookmarkFolderDialogEditing {
     private let bookmarkManager: BookmarkManager
     private let addFolderSubject: PassthroughSubject<BookmarkFolder, Never> = .init()
 
-    init(mode: Mode, bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
+    init(mode: Mode, bookmarkManager: BookmarkManager) {
         self.mode = mode
         self.bookmarkManager = bookmarkManager
         folderName = mode.folderName

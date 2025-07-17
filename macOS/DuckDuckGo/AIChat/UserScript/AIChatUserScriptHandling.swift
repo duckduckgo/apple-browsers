@@ -16,28 +16,63 @@
 //  limitations under the License.
 //
 
-import UserScript
 import AIChat
+import AppKit
+import Combine
+import Foundation
+import PixelKit
+import UserScript
 
 protocol AIChatUserScriptHandling {
-    func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
+    func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
+    func recordChat(params: Any, message: UserScriptMessage) -> Encodable?
+    func restoreChat(params: Any, message: UserScriptMessage) -> Encodable?
+    func removeChat(params: Any, message: UserScriptMessage) -> Encodable?
+    @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
+    var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
+
+    var messageHandling: AIChatMessageHandling { get }
+    func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
 }
 
 struct AIChatUserScriptHandler: AIChatUserScriptHandling {
-    private let messageHandling: AIChatMessageHandling
-    private let storage: AIChatPreferencesStorage
+    public let messageHandling: AIChatMessageHandling
+    public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
 
-    init(storage: AIChatPreferencesStorage,
-         messageHandling: AIChatMessageHandling = AIChatMessageHandler()) {
+    private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
+    private let storage: AIChatPreferencesStorage
+    private let windowControllersManager: WindowControllersManagerProtocol
+    private let notificationCenter: NotificationCenter
+    private let pixelFiring: PixelFiring?
+
+    init(
+        storage: AIChatPreferencesStorage,
+        messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
+        windowControllersManager: WindowControllersManagerProtocol,
+        pixelFiring: PixelFiring?,
+        notificationCenter: NotificationCenter = .default
+    ) {
         self.storage = storage
         self.messageHandling = messageHandling
+        self.windowControllersManager = windowControllersManager
+        self.pixelFiring = pixelFiring
+        self.notificationCenter = notificationCenter
+        self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
+    }
+
+    enum AIChatKeys {
+        static let aiChatPayload = "aiChatPayload"
+        static let serializedChatData = "serializedChatData"
+        static let url = "url"
     }
 
     @MainActor public func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable? {
-        WindowControllersManager.shared.showTab(with: .settings(pane: .aiChat))
+        windowControllersManager.showTab(with: .settings(pane: .aiChat))
         return nil
     }
 
@@ -46,11 +81,66 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
-        await WindowControllersManager.shared.mainWindowController?.mainViewController.closeTab(nil)
+        await windowControllersManager.mainWindowController?.mainViewController.closeTab(nil)
         return nil
     }
 
     func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable? {
         messageHandling.getDataForMessageType(.nativePrompt)
     }
+
+    @MainActor
+    func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
+        var payload: AIChatPayload?
+        if let paramsDict = params as? AIChatPayload {
+            payload = paramsDict[AIChatKeys.aiChatPayload] as? AIChatPayload
+        }
+
+        notificationCenter.post(name: .aiChatNativeHandoffData, object: payload, userInfo: nil)
+        return nil
+    }
+
+    public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
+        messageHandling.getDataForMessageType(.nativeHandoffData)
+    }
+
+    public func recordChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        guard let params = params as? [String: String],
+              let data = params[AIChatKeys.serializedChatData]
+        else { return nil }
+
+        messageHandling.setData(data, forMessageType: .chatRestorationData)
+        return nil
+    }
+
+    public func restoreChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        guard let data = messageHandling.getDataForMessageType(.chatRestorationData) as? String
+        else { return nil }
+
+        return [AIChatKeys.serializedChatData: data]
+    }
+
+    public func removeChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        messageHandling.setData(nil, forMessageType: .chatRestorationData)
+        return nil
+    }
+
+    @MainActor func openSummarizationSourceLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        guard let params = params as? [String: String],
+              let urlString = params[AIChatKeys.url],
+              let url = urlString.url
+        else { return nil }
+
+        windowControllersManager.open(url, source: .link, target: nil, event: NSApp.currentEvent)
+        pixelFiring?.fire(AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)
+        return nil
+    }
+
+    func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
+        aiChatNativePromptSubject.send(prompt)
+    }
+}
+
+extension NSNotification.Name {
+    static let aiChatNativeHandoffData: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.aiChatNativeHandoffData")
 }

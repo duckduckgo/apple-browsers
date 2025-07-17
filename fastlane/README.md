@@ -122,14 +122,6 @@ Makes App Store release build and uploads it to TestFlight
 
 Makes Alpha release build and uploads it to TestFlight
 
-### ios latest_build_number_for_version
-
-```sh
-[bundle exec] fastlane ios latest_build_number_for_version
-```
-
-Latest build number for version
-
 ### ios increment_build_number_for_version
 
 ```sh
@@ -158,6 +150,14 @@ Fetches and updates certificates and provisioning profiles for App Store distrib
 ```
 
 Fetches and updates certificates and provisioning profiles for DMG distribution
+
+### mac sync_signing_dmg_alpha
+
+```sh
+[bundle exec] fastlane mac sync_signing_dmg_alpha
+```
+
+Fetches and updates certificates and provisioning profiles for DMG Alpha builds
 
 ### mac sync_signing_dmg_review
 

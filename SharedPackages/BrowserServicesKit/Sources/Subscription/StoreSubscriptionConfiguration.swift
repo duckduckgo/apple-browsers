@@ -66,26 +66,38 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                   appIdentifier: "com.duckduckgo.macos.browser.debug",
                   environment: .staging,
                   identifiersByRegion: [.usa: ["subscription.1month",
-                                               "subscription.1year"],
+                                               "subscription.1year",
+                                               "subscription.1month.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                               "subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer)"],
                                         .restOfWorld: ["subscription.1month.row",
-                                                       "subscription.1year.row"]]),
+                                                       "subscription.1year.row",
+                                                       "subscription.1month.row.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                                       "subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer)"]]),
             // macOS review build
             .init(name: "IAP review - DDG for macOS",
                   appIdentifier: "com.duckduckgo.macos.browser.review",
                   environment: .staging,
                   identifiersByRegion: [.usa: ["review.subscription.1month",
-                                               "review.subscription.1year"],
+                                               "review.subscription.1year",
+                                               "review.subscription.1month.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                               "review.subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer)"],
                                         .restOfWorld: ["review.subscription.1month.row",
-                                                       "review.subscription.1year.row"]]),
+                                                       "review.subscription.1year.row",
+                                                       "review.subscription.1month.row.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                                       "review.subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer)"]]),
 
             // macOS TestFlight build
             .init(name: "DuckDuckGo Sandbox Review",
                   appIdentifier: "com.duckduckgo.mobile.ios.review",
                   environment: .staging,
                   identifiersByRegion: [.usa: ["tf.sandbox.subscription.1month",
-                                               "tf.sandbox.subscription.1year"],
+                                               "tf.sandbox.subscription.1year",
+                                               "tf.sandbox.subscription.1month.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                               "tf.sandbox.subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer)"],
                                         .restOfWorld: ["tf.sandbox.subscription.1month.row",
-                                                       "tf.sandbox.subscription.1year.row"]])
+                                                       "tf.sandbox.subscription.1year.row",
+                                                       "tf.sandbox.subscription.1month.row.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                                       "tf.sandbox.subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer)"]])
         ])
     }
 

@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import Core
 
@@ -138,7 +139,7 @@ private struct DataTypeRow: View {
                         viewModel.toggleSelection(importPreview.type)
                     }
                 } label: {
-                    Image(isSelected ? .checkRecolorableBlue24 : .roundCheckbox24)
+                    Image(uiImage: isSelected ? DesignSystemImages.Glyphs.Size24.checkRecolorable : DesignSystemImages.Glyphs.Size24.shapeCircle)
                         .resizable()
                         .frame(width: 24, height: 24)
                 }
@@ -189,7 +190,7 @@ private struct ContinueButton: View {
         .buttonStyle(PrimaryButtonStyle(disabled: viewModel.selectedTypes.isEmpty))
         .frame(maxWidth: 360)
         .padding(.top, 44)
-        .padding(.bottom, 8)
+        .padding(.bottom, viewModel.importPreview.count == 2 ? 8 : 16)
         .disabled(viewModel.selectedTypes.isEmpty)
     }
 }

@@ -32,8 +32,6 @@ let package = Package(
         .library(name: "RemoteMessagingTestsUtils", targets: ["RemoteMessagingTestsUtils"]),
         .library(name: "Navigation", targets: ["Navigation"]),
         .library(name: "SyncDataProviders", targets: ["SyncDataProviders"]),
-        .library(name: "NetworkProtection", targets: ["NetworkProtection"]),
-        .library(name: "NetworkProtectionTestUtils", targets: ["NetworkProtectionTestUtils"]),
         .library(name: "SecureStorage", targets: ["SecureStorage"]),
         .library(name: "Subscription", targets: ["Subscription"]),
         .library(name: "SubscriptionTestingUtilities", targets: ["SubscriptionTestingUtilities"]),
@@ -44,28 +42,35 @@ let package = Package(
         .library(name: "SpecialErrorPages", targets: ["SpecialErrorPages"]),
         .library(name: "DuckPlayer", targets: ["DuckPlayer"]),
         .library(name: "MaliciousSiteProtection", targets: ["MaliciousSiteProtection"]),
-        .library(name: "Onboarding", targets: ["Onboarding"]),
         .library(name: "PixelExperimentKit", targets: ["PixelExperimentKit"]),
         .library(name: "BrokenSitePrompt", targets: ["BrokenSitePrompt"]),
         .library(name: "PageRefreshMonitor", targets: ["PageRefreshMonitor"]),
-        .library(name: "PrivacyStats", targets: ["PrivacyStats"])
+        .library(name: "PrivacyStats", targets: ["PrivacyStats"]),
+        .library(name: "SharedObjCTestsUtils", targets: ["SharedObjCTestsUtils"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "17.2.0"),
-        .package(url: "https://github.com/duckduckgo/GRDB.swift.git", exact: "2.4.2"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.1.0"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.5.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts", exact: "8.24.0"),
-        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.1.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts", exact: "10.12.0"),
+        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.4.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
-        .package(url: "https://github.com/duckduckgo/bloom_cpp.git", exact: "3.0.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.4"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
-        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "5.0.0")
     ],
     targets: [
+        .binaryTarget(
+            name: "BloomFilter",
+            url: "https://github.com/duckduckgo/bloom_cpp/releases/download/3.0.4/BloomFilter.xcframework.zip",
+            checksum: "137fefd4a0ccf79560d7071d3387475806b84a7719785a6f80ea9c1d838c7d6b"
+        ),
+        .binaryTarget(
+            name: "GRDB",
+            url: "https://github.com/duckduckgo/GRDB.swift/releases/download/3.0.0/GRDB.xcframework.zip",
+            checksum: "41f01022f6a35986393e063e1ef386fd896646ed032f7d0419c4b02fa3afe61d"
+        ),
         .target(
             name: "BrowserServicesKit",
             dependencies: [
@@ -165,7 +170,7 @@ let package = Package(
         .target(
             name: "BloomFilterObjC",
             dependencies: [
-                .product(name: "BloomFilter", package: "bloom_cpp")
+                "BloomFilter"
             ]),
         .target(
             name: "BloomFilterWrapper",
@@ -329,20 +334,9 @@ let package = Package(
                 "BrowserServicesKit",
                 "Common",
                 "DDGSync",
-                .product(name: "GRDB", package: "GRDB.swift"),
+                "GRDB",
                 "Persistence",
                 "SecureStorage",
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
-            name: "NetworkProtection",
-            dependencies: [
-                .target(name: "WireGuardC"),
-                "Common",
-                "Networking"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -352,7 +346,8 @@ let package = Package(
             name: "SecureStorage",
             dependencies: [
                 "Common",
-                .product(name: "GRDB", package: "GRDB.swift"),
+                "PixelKit",
+                "GRDB",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -362,13 +357,7 @@ let package = Package(
             name: "SecureStorageTestsUtils",
             dependencies: [
                 "SecureStorage",
-            ]
-        ),
-        .target(name: "WireGuardC"),
-        .target(
-            name: "NetworkProtectionTestUtils",
-            dependencies: [
-                "NetworkProtection",
+                "PixelKit"
             ]
         ),
         .target(
@@ -392,6 +381,9 @@ let package = Package(
         ),
         .target(
             name: "PixelKit",
+            dependencies: [
+                "Common"
+            ],
             exclude: [
                 "README.md"
             ],
@@ -434,19 +426,6 @@ let package = Package(
                 "Common",
                 "Networking",
                 "PixelKit",
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
-            name: "Onboarding",
-            dependencies: [
-                "BrowserServicesKit",
-                "DesignResourcesKit"
-            ],
-            resources: [
-                .process("Resources")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -497,21 +476,36 @@ let package = Package(
         ),
 
         // MARK: - Test Targets
+        .target(
+            name: "SharedObjCTestsUtils",
+            dependencies: [],
+            sources: [
+                "SharedObjCTestsUtils.m",
+            ],
+            publicHeadersPath: "include",
+            cSettings: [
+                .headerSearchPath("include"),
+            ]
+        ),
+
         .testTarget(
             name: "HistoryTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "History",
             ]
         ),
         .testTarget(
             name: "SuggestionsTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Suggestions",
             ]
         ),
         .testTarget(
             name: "BookmarksTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Bookmarks",
                 "BookmarksTestsUtils",
             ],
@@ -536,6 +530,7 @@ let package = Package(
         .testTarget(
             name: "BrowserServicesKitTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "BrowserServicesKit",
                 "BrowserServicesKitTestsUtils",
                 "SecureStorageTestsUtils",
@@ -549,6 +544,7 @@ let package = Package(
         .testTarget(
             name: "CrashesTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Crashes",
                 "PersistenceTestingUtils"
             ]
@@ -556,6 +552,7 @@ let package = Package(
         .testTarget(
             name: "DDGSyncTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "BookmarksTestsUtils",
                 "DDGSync",
                 "PersistenceTestingUtils",
@@ -570,24 +567,28 @@ let package = Package(
         .testTarget(
             name: "DDGSyncCryptoTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 .product(name: "DDGSyncCrypto", package: "sync_crypto"),
             ]
         ),
         .testTarget(
             name: "CommonTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Common",
             ]
         ),
         .testTarget(
             name: "NetworkingTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "NetworkingTestingUtils"
             ]
         ),
         .testTarget(
             name: "NavigationTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Navigation",
                 .product(name: "Swifter", package: "swifter"),
             ],
@@ -605,6 +606,7 @@ let package = Package(
         .testTarget(
             name: "UserScriptTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "UserScript",
             ],
             resources: [
@@ -614,6 +616,7 @@ let package = Package(
         .testTarget(
             name: "PersistenceTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "PersistenceTestingUtils",
                 "TrackerRadarKit",
             ]
@@ -621,6 +624,7 @@ let package = Package(
         .testTarget(
             name: "RemoteMessagingTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "BrowserServicesKitTestsUtils",
                 "RemoteMessaging",
                 "RemoteMessagingTestsUtils",
@@ -637,6 +641,7 @@ let package = Package(
         .testTarget(
             name: "ConfigurationTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Configuration",
                 "NetworkingTestingUtils",
                 "PersistenceTestingUtils",
@@ -645,34 +650,25 @@ let package = Package(
         .testTarget(
             name: "SyncDataProvidersTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "BookmarksTestsUtils",
                 "SecureStorageTestsUtils",
                 "SyncDataProviders",
             ]
         ),
         .testTarget(
-            name: "NetworkProtectionTests",
-            dependencies: [
-                "NetworkProtection",
-                "NetworkProtectionTestUtils",
-                "NetworkingTestingUtils",
-            ],
-            resources: [
-                .copy("Resources/servers-original-endpoint.json"),
-                .copy("Resources/servers-updated-endpoint.json"),
-                .copy("Resources/locations-endpoint.json")
-            ]
-        ),
-        .testTarget(
             name: "SecureStorageTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "SecureStorage",
                 "SecureStorageTestsUtils",
+                "PixelKit"
             ]
         ),
         .testTarget(
             name: "PrivacyDashboardTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "PrivacyDashboard",
                 "PersistenceTestingUtils",
             ]
@@ -680,6 +676,7 @@ let package = Package(
         .testTarget(
             name: "SubscriptionTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Subscription",
                 "SubscriptionTestingUtilities",
                 "NetworkingTestingUtils",
@@ -688,6 +685,7 @@ let package = Package(
         .testTarget(
             name: "PixelKitTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "PixelKit",
                 "PixelKitTestingUtilities",
             ]
@@ -695,6 +693,7 @@ let package = Package(
         .testTarget(
             name: "DuckPlayerTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "DuckPlayer",
                 "BrowserServicesKitTestsUtils",
             ]
@@ -703,6 +702,7 @@ let package = Package(
         .testTarget(
             name: "MaliciousSiteProtectionTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "Networking",
                 "NetworkingTestingUtils",
                 "MaliciousSiteProtection",
@@ -714,14 +714,9 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "OnboardingTests",
-            dependencies: [
-                "Onboarding"
-            ]
-        ),
-        .testTarget(
             name: "PixelExperimentKitTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "PixelExperimentKit",
                 "Configuration"
             ]
@@ -729,24 +724,28 @@ let package = Package(
         .testTarget(
             name: "SpecialErrorPagesTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "SpecialErrorPages"
             ]
         ),
         .testTarget(
             name: "BrokenSitePromptTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "BrokenSitePrompt"
             ]
         ),
         .testTarget(
             name: "PageRefreshMonitorTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "PageRefreshMonitor"
             ]
         ),
         .testTarget(
             name: "PrivacyStatsTests",
             dependencies: [
+                "SharedObjCTestsUtils",
                 "PrivacyStats",
             ]
         ),

@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Common
 import Foundation
 import History
 import os.log
 import PixelKit
+import WebKit
 
 /**
  * The delegate callbacks are triggered for events related to unpinned tabs only.
@@ -125,7 +127,7 @@ final class TabCollectionViewModel: NSObject {
         var homePage: Tab.TabContent = .newtab
         if startupPreferences.launchToCustomHomePage,
            let customURL = URL(string: startupPreferences.formattedCustomHomePageURL) {
-            homePage = Tab.TabContent.contentFromURL(customURL, source: .bookmark)
+            homePage = Tab.TabContent.contentFromURL(customURL, source: .bookmark(isFavorite: false))
         }
         return homePage
     }
@@ -139,7 +141,7 @@ final class TabCollectionViewModel: NSObject {
         selectionIndex: TabIndex = .unpinned(0),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding?,
         burnerMode: BurnerMode = .regular,
-        startupPreferences: StartupPreferences = StartupPreferences.shared,
+        startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
         tabsPreferences: TabsPreferences = TabsPreferences.shared
     ) {
         self.tabCollection = tabCollection

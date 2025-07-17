@@ -20,7 +20,7 @@ import WebKit
 import Common
 import UserScript
 
-public enum RequestVaultCredentialsAction: String, Codable {
+public enum RequestVaultDataAction: String, Codable {
     case none
     case fill
 }
@@ -49,7 +49,7 @@ public protocol AutofillSecureVaultDelegate: AnyObject {
     func autofillUserScript(_: AutofillUserScript, didRequestCredentialsForDomain: String,
                             subType: AutofillUserScript.GetAutofillDataSubType,
                             trigger: AutofillUserScript.GetTriggerType,
-                            completionHandler: @escaping (SecureVaultModels.WebsiteCredentials?, SecureVaultModels.CredentialsProvider, RequestVaultCredentialsAction) -> Void)
+                            completionHandler: @escaping (SecureVaultModels.WebsiteCredentials?, SecureVaultModels.CredentialsProvider, RequestVaultDataAction) -> Void)
 
     func autofillUserScript(_: AutofillUserScript, didRequestCredentialsForAccount accountId: String,
                             completionHandler: @escaping (SecureVaultModels.WebsiteCredentials?, SecureVaultModels.CredentialsProvider) -> Void)
@@ -57,6 +57,9 @@ public protocol AutofillSecureVaultDelegate: AnyObject {
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void)
     func autofillUserScript(_: AutofillUserScript, didRequestIdentityWithId identityId: Int64,
                             completionHandler: @escaping (SecureVaultModels.Identity?) -> Void)
+    func autofillUserScriptDidRequestCreditCard(_: AutofillUserScript,
+                                                trigger: AutofillUserScript.GetTriggerType,
+                                                completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void)
 
     func autofillUserScriptDidAskToUnlockCredentialsProvider(_: AutofillUserScript,
                                                              andProvideCredentialsForDomain domain: String,
@@ -73,6 +76,10 @@ public protocol AutofillSecureVaultDelegate: AnyObject {
     func autofillUserScriptDidOfferGeneratedPassword(_: AutofillUserScript,
                                                      password: String,
                                                      completionHandler: @escaping (Bool) -> Void)
+
+    func autofillUserScriptDidFocus(_: AutofillUserScript,
+                                    mainType: AutofillUserScript.GetAutofillDataMainType,
+                                    completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void)
 
     func autofillUserScript(_: AutofillUserScript, didSendPixel pixel: AutofillUserScript.JSPixel)
 
@@ -144,6 +151,7 @@ extension AutofillUserScript {
         let cardSecurityCode: String?
         let expirationMonth: Int?
         let expirationYear: Int?
+        let paymentProvider: String?
 
         static func from(card: SecureVaultModels.CreditCard) -> CreditCardObject? {
             guard let id = card.id else { return nil }
@@ -155,7 +163,8 @@ extension AutofillUserScript {
                                     cardNumber: card.cardNumber,
                                     cardSecurityCode: card.cardSecurityCode,
                                     expirationMonth: card.expirationMonth,
-                                    expirationYear: card.expirationYear)
+                                    expirationYear: card.expirationYear,
+                                    paymentProvider: card.displayCardType)
         }
 
         /// Provides a minimal summary of the card, suitable for presentation in the credit card selection list. This intentionally omits secure data, such as card number and cardholder name.
@@ -164,12 +173,13 @@ extension AutofillUserScript {
 
             return CreditCardObject(id: id,
                                     title: card.title,
-                                    displayNumber: card.displayName,
+                                    displayNumber: card.cardSuffix,
                                     cardName: nil,
                                     cardNumber: nil,
                                     cardSecurityCode: nil,
-                                    expirationMonth: nil,
-                                    expirationYear: nil)
+                                    expirationMonth: card.expirationMonth,
+                                    expirationYear: card.expirationYear,
+                                    paymentProvider: card.displayCardType)
         }
     }
 
@@ -374,6 +384,19 @@ extension AutofillUserScript {
 
     }
 
+    struct CreditCardResponse: Codable {
+
+        let id: String
+        let cardNumber: String
+        let cardName: String
+        let cardSecurityCode: String
+        let expirationMonth: String
+        let expirationYear: String
+        let title: String
+        let displayNumber: String
+
+    }
+
     struct RequestGeneratedPasswordResponse: Codable {
 
         enum GeneratedPasswordResponseAction: String, Codable {
@@ -406,14 +429,14 @@ extension AutofillUserScript {
 
         struct RequestVaultCredentialsResponseContents: Codable {
             let credentials: CredentialResponse?
-            let action: RequestVaultCredentialsAction
+            let action: RequestVaultDataAction
         }
 
         let success: RequestVaultCredentialsResponseContents
 
         static func responseFromSecureVaultWebsiteCredentials(_ credentials: SecureVaultModels.WebsiteCredentials?,
                                                               credentialsProvider: SecureVaultModels.CredentialsProvider,
-                                                              action: RequestVaultCredentialsAction) -> Self {
+                                                              action: RequestVaultDataAction) -> Self {
             let credential: CredentialResponse?
             if let credentials = credentials,
                 let id = credentials.account.id,
@@ -431,6 +454,53 @@ extension AutofillUserScript {
 
     struct RequestVaultCredentialsForAccountResponse: Codable {
         let success: CredentialResponse
+    }
+
+    struct RequestVaultCreditCardResponse: Codable {
+
+        struct RequestVaultCreditCardResponseContents: Codable {
+            let creditCards: CreditCardResponse?
+            let action: RequestVaultDataAction
+        }
+
+        let success: RequestVaultCreditCardResponseContents
+
+        static func responseFromSecureVaultCreditCards(_ creditCard: SecureVaultModels.CreditCard?,
+                                                       action: RequestVaultDataAction) -> Self {
+            let creditCardResponse: CreditCardResponse?
+            if let creditCard = creditCard,
+               let id = creditCard.id {
+                let month = creditCard.expirationMonth.map { String($0) } ?? ""
+                let year = creditCard.expirationYear.map { String($0) } ?? ""
+
+                creditCardResponse = CreditCardResponse(id: String(id),
+                                                        cardNumber: creditCard.cardNumber,
+                                                        cardName: creditCard.cardholderName ?? "",
+                                                        cardSecurityCode: creditCard.cardSecurityCode ?? "",
+                                                        expirationMonth: month,
+                                                        expirationYear: year,
+                                                        title: creditCard.title,
+                                                        displayNumber: creditCard.cardSuffix)
+            } else {
+                creditCardResponse = nil
+            }
+
+            return RequestVaultCreditCardResponse(success: RequestVaultCreditCardResponseContents(creditCards: creditCardResponse, action: action))
+        }
+    }
+
+    struct NoActionResponse: Codable {
+
+        enum NoActionType: String, Codable {
+            case none
+        }
+
+        struct NoActionResponseContents: Codable {
+            let action: NoActionType
+        }
+
+        let success: NoActionResponseContents
+
     }
 
     // MARK: - Message Handlers
@@ -473,17 +543,28 @@ extension AutofillUserScript {
         let generatedPassword: GetGeneratedPasswordValue?
     }
 
+    struct GetAutofillDataFocus: Codable {
+        let mainType: GetAutofillDataMainType
+    }
+
     // https://github.com/duckduckgo/duckduckgo-autofill/blob/main/src/deviceApiCalls/schemas/getAutofillData.params.json
     public enum GetAutofillDataMainType: String, Codable {
         case credentials
         case identities
         case creditCards
+        case unknown
     }
 
     // https://github.com/duckduckgo/duckduckgo-autofill/blob/main/src/deviceApiCalls/schemas/getAutofillData.params.json
     public enum GetAutofillDataSubType: String, Codable {
         case username
         case password
+        case cardName
+        case cardNumber
+        case cardSecurityCode
+        case expirationMonth
+        case expirationYear
+        case expiration
     }
 
     // https://github.com/duckduckgo/duckduckgo-autofill/blob/main/src/deviceApiCalls/schemas/getAutofillData.params.json
@@ -519,7 +600,8 @@ extension AutofillUserScript {
             return
         }
 
-        vaultDelegate?.autofillUserScript(self,
+        if request.mainType == .credentials {
+            vaultDelegate?.autofillUserScript(self,
                                           didRequestCredentialsForDomain: domain,
                                           subType: request.subType,
                                           trigger: request.trigger) { credentials, credentialsProvider, action in
@@ -527,8 +609,37 @@ extension AutofillUserScript {
                                                                                                               credentialsProvider: credentialsProvider,
                                                                                                               action: action)
 
+                if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
+                    replyHandler(jsonString)
+                }
+            }
+        } else if request.mainType == .creditCards {
+            let messageType = request.mainType.rawValue
+            registerReplyCallback(for: messageType, reply: replyHandler)
+
+            vaultDelegate?.autofillUserScriptDidRequestCreditCard(self, trigger: request.trigger) { [weak self] creditCard, action in
+                let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
+
+                if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
+                    self?.sendReply(for: messageType, withResponse: jsonString)
+                }
+            }
+        }
+    }
+
+    func getAutofillDataFocus(_ message: UserScriptMessage, _ replyHandler: @escaping MessageReplyHandler) {
+        guard let request: GetAutofillDataFocus = DecodableHelper.decode(from: message.messageBody) else {
+            return
+        }
+
+        let messageType = request.mainType.rawValue
+        registerReplyCallback(for: messageType, reply: replyHandler)
+
+        vaultDelegate?.autofillUserScriptDidFocus(self, mainType: request.mainType) { [weak self] creditCard, action in
+            let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
+
             if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
-                replyHandler(jsonString)
+                self?.sendReply(for: messageType, withResponse: jsonString)
             }
         }
     }
@@ -1007,4 +1118,39 @@ extension AutofillUserScript.AskToUnlockProviderResponse {
         self.init(success: success)
     }
 
+}
+
+extension AutofillUserScript.NoActionResponse {
+    private static let _successJSONString: String = {
+        let response = Self(success: .init(action: .none))
+        if let data = try? JSONEncoder().encode(response),
+           let string = String(data: data, encoding: .utf8) {
+            return string
+        }
+        return "{}"
+    }()
+
+    static var successJSONString: String {
+        _successJSONString
+    }
+}
+
+extension AutofillUserScript {
+    private func registerReplyCallback(for messageType: String, reply: @escaping MessageReplyHandler) {
+        Task {
+            await replyQueue.register(reply, for: messageType)
+        }
+    }
+
+    private func sendReply(for messageType: String, withResponse response: String?) {
+        Task {
+            await replyQueue.send(response: response, for: messageType)
+        }
+    }
+
+    public func cancelAllPendingReplies() {
+        Task {
+            await replyQueue.cancelAll()
+        }
+    }
 }

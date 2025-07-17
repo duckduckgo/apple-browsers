@@ -59,10 +59,7 @@
 "action.title.downloads" = "Stahování";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "AI chat";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Nový AI Chat";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Upravit záložku";
@@ -160,6 +157,9 @@
 /* No comment provided by engineer. */
 "addWidget.title" = "Jedním klepnutím se dostaneš na svoje oblíbené stránky.";
 
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "Funkce AI";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Existující záložky nebudou duplikovány.";
 
@@ -189,6 +189,15 @@
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synchronizace je pozastavená. Pokud chceš toto zařízení dál synchronizovat, znovu se připoj pomocí jiného zařízení nebo kódu pro obnovení.";
+
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Synchronizovat";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "„%@“ získá přístup ke tvým synchronizovaným datům DuckDuckGo.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Synchronizovat nové zařízení?";
 
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Více informací";
@@ -259,9 +268,6 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Odemkněte DuckDuckGo.";
 
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Opravdu chceš smazat všechny záložky? Tuto akci nelze vrátit.";
-
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Přihlásit";
 
@@ -306,6 +312,9 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Když DuckDuckGo na navštívené stránce zjistí vyskakovací okno žádající o souhlas se soubory cookie, můžeme zkusit automaticky nastavit tvou předvolbu na co nejméně souborů cookie a maximální ochranu soukromí a potom vyskakovací okno zavřít. Některé weby nenabízejí možnost si nastavit předvolby souborů cookie, takže podobná vyskakovací okna můžeme jen skrýt.";
+
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Karta byla uložena";
 
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Karta je smazaná";
@@ -394,6 +403,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Zabezpeč si zařízení, ať si můžeš ukládat platební karty";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Neukládat";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Uložit kartu";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Platební karty se bezpečně ukládají do tvého zařízení.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Má DuckDuckGo uložit údaje o kartě?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Pro vyplnění údajů o kreditní kartě je potřeba ověření";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Použít uloženou kartu?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Ukládání kreditních karet můžeš kdykoli vypnout.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -454,8 +484,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Synchronizovat s počítačem";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Jak importovat hesla";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Jak synchronizovat hesla na počítači";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Vypnout";
@@ -920,6 +950,9 @@
 "close.all.tabs" = "Zavřít všechny karty";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Potvrdit";
 
 /* Button to continue the onboarding process */
@@ -1099,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Jak exportovat hesla ze Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Vybrat soubor...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Vyber soubor obsahující hesla vyexportovaná ze Safari nebo Chromu. Obvykle se jedná o soubor ZIP nebo CSV.";
 
@@ -1125,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import dokončen!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Platební karty";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Přeskočeno duplikáty";
@@ -1167,9 +1206,6 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Ladění";
-
-/* No comment provided by engineer. */
-"Delete All" = "Smazat vše";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "zařízení";
@@ -1255,8 +1291,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Funkčnost přehrávače Duck Player ovlivnily nedávné změny na YouTube. Problémy se snažíme opravit. Děkujeme za pochopení.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai je volitelná funkce, která umožňuje anonymně chatovat s populárními AI chatovacími modely třetích stran. Tvoje chaty se nepoužívají k trénování AI.\n[Další informace](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "Funkce AI u DuckDuckGo jsou soukromé a volitelné. Tvoje data se nepoužívají k trénování umělé inteligence.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adresní řádek";
@@ -1270,7 +1306,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Hlasové vyhledávání";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Více informací";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -1475,6 +1514,9 @@
 "empty.search" = "Nenalezeny žádné shody";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Zahájeno: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1527,6 +1569,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Jenom oblíbené mobilní položky";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funkce: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokování reklam a vyskakovacích oken";
@@ -1815,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Importovat hesla";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Rychle a bezpečně přenes svá hesla z jiného prohlížeče.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Importuj svá hesla do DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Musíš povolit VPN v aplikaci DuckDuckGo.";
@@ -2210,7 +2264,7 @@
 "new.tab.page.settings.title" = "Přizpůsobení karty s novou stránkou";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "AI chat";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Záložky";
@@ -2276,7 +2330,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blokování vyskakovacích oken ohledně cookies";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokuj reklamy, které tě sledují";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokování cílených reklam";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Vymaž údaje o prohlížení jedním tlačítkem";
@@ -2430,6 +2484,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Odeslat zpětnou vazbu";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Blokování podvodů";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Vypnutím téhle funkce můžeš svoje osobní údaje vystavit riziku.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Upozornit na weby nahlášené kvůli podvodům, phishingu nebo malwaru. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Automaticky převede odkazy na HTTPS, pokud to jde. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Chytřejší šifrování";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Vždycky zapnuté";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Ochrana proti hrozbám";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Vylepšená ochrana DuckDuckGo zastavuje běžné hrozby a zároveň chrání tvoje připojení.\n[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Některé záložky nebo hesla jsou nesprávně naformátované nebo příliš dlouhé, takže jsme je nemohli synchronizovat.";
@@ -2585,7 +2663,16 @@
 "settings.address.full.url" = "Zobrazovat celou adresu webu";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Zkratky";
+"settings.aichat.shortcuts" = "Zkratky Duck.ai";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Zadání hledání";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Hledej na webu nebo se zeptej Duck.ai přímo v adresním řádku.";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Nastavení vyhledávání s funkcí Assist";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vždycky zapnuté";
@@ -2626,6 +2713,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automaticky vymazat data";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Dokonči své nastavení";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Ochrana před vyskakovacími okny ohledně cookies";
 
@@ -2660,13 +2750,19 @@
 "settings.emailProtection.description" = "Blokování trackerů v e-mailu a skrytí adresy";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Povolit službu Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "S populárními AI modely třetích stran můžeš chatovat soukromě";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Povol funkci Email Protection";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Povolit hlasové vyhledávání";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Vyber, jak často chceš, aby se odpovědi s podporou umělé inteligence zobrazovaly ve tvých vyhledáváních";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Podělte se o zpětnou vazbu";
@@ -2688,6 +2784,9 @@
 
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "Ikona aplikace";
+
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Importovat hesla";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klávesnice";
@@ -2728,6 +2827,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Zásady ochrany osobních údajů a podmínky služby";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Zahrnuje naši VPN a službu Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Zahrnuje naše funkce VPN, Personal Information Removal a Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Náhledy dlouhého stisknutí";
 
@@ -2748,6 +2853,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Automaticky DuckDuckGo odesílat hlášení o selháních.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Nastavit jako výchozí prohlížeč";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Nastavte pozici adresního řádku";
@@ -2785,17 +2893,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Nastavení předplatného";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Zahrnuje naši VPN a službu Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Chraň své připojení a identitu se službou Privacy Pro";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free" = "Vyzkoušej zdarma službu Privacy Pro";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Zahrnuje naše funkce VPN, Personal Information Removal a Identity Theft Restoration.";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2865,6 +2967,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Uložený název hostitele: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Podfunkce: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Přidat do zařízení";
@@ -3389,10 +3494,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blokuj víc než 150 000 domén, u kterých bylo nahlášené hostování malwaru, phishingové útoky a online podvody, pomocí seznamu blokování na úrovni DNS. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blokování a filtrování obsahu";
+"vpn.settings.dns.server.content.blocking.header" = "Blokování škodlivého obsahu";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Blokování rizikových domén";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Blokování podvodů";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";
@@ -3510,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Pokračovat";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Platební karty";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Hesla";

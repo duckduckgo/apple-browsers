@@ -208,11 +208,17 @@
 /* Scan or See Code View - Manually Enter Code Link */
 "scan.or.see.code.manually.enter.code.link" = "Ručno unesi šifru";
 
+/* Scan or See Code View - Instruction with syncMenuPath */
+"scan.or.see.code.other.device.instruction.attributed" = "Otvori aplikaciju DuckDuckGo na svom drugom uređaju i idi na %@.";
+
 /* Scan or See Code View - Scan Code Instructions Body */
 "scan.or.see.code.scan.code.instructions.body" = "Skeniraj ovaj kôd drugim uređajem za sinkronizaciju.";
 
 /* Scan or See Code View - Scan Code Instructions Title */
 "scan.or.see.code.scan.code.instructions.title" = "S mobilnog uređaja na mobilni uređaj?";
+
+/* Scan or See Code View - Scan Code Instructions Body */
+"scan.or.see.code.scan.code.qr.instructions.body" = "Otvori DuckDuckGo na svom drugom uređaju i skeniraj ovu šifru za sinkronizaciju.";
 
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Dijeli tekstnu šifru";

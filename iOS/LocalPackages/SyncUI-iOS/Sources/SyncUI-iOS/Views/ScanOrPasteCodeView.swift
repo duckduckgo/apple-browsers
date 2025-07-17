@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 public struct ScanOrSeeCode: View {
     @ObservedObject var model: ScanOrPasteCodeViewModel
@@ -28,13 +29,13 @@ public struct ScanOrSeeCode: View {
 
     public init(model: ScanOrPasteCodeViewModel) {
         self.model = model
-        self.qrCodeModel = ShowQRCodeViewModel(code: model.code)
+        self.qrCodeModel = model.showQRCodeModel
     }
 
     public var body: some View {
         GeometryReader { geometry in
             ScrollView {
-                VStack(spacing: 10) {
+                VStack(spacing: 0) {
                     let heightFactor = geometry.size.width < 380 ? 1 : 0.84
                     titleView()
                     CameraView(model: model)
@@ -65,10 +66,11 @@ public struct ScanOrSeeCode: View {
                 .daxTitle2()
             instructionsText()
                 .daxFootnoteRegular()
+                .padding(.horizontal, 20)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
         }
-        .padding(.top, 10)
+        .padding(.bottom, 16)
+        .padding(.top, 8)
     }
 
     func instructionsText() -> some View {
@@ -76,7 +78,7 @@ public struct ScanOrSeeCode: View {
     }
 
     var instructionsString: AttributedString {
-        let baseString = UserText.scanOrSeeCodeInstructionAttributed(syncMenuPath: UserText.syncMenuPath)
+        let baseString = UserText.scanOrSeeCodeOtherDeviceInstruction(syncMenuPath: UserText.syncMenuPath)
         var instructions = AttributedString(baseString)
         if let range = instructions.range(of: UserText.syncMenuPath) {
             instructions[range].font = .boldSystemFont(ofSize: 13)
@@ -93,44 +95,37 @@ public struct ScanOrSeeCode: View {
             }
             return 180
         }
-        VStack(spacing: 8) {
-            HStack(alignment: .top, spacing: 20) {
-                QRCodeView(string: qrCodeModel.code ?? "", size: 120)
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 20) {
+                QRCodeView(string: qrCodeModel.qrCodeString, desiredSize: 180)
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Text(UserText.scanOrSeeCodeScanCodeInstructionsTitle)
-                            .daxBodyBold()
+                        Text(UserText.scanOrSeeCodeScanCodeQRInstructionsTitle)
+                            .daxFootnoteSemibold()
+                            .foregroundColor(.primary)
                             .fixedSize(horizontal: false, vertical: true)
                             .multilineTextAlignment(.leading)
-                        Spacer()
-                        Image("SyncDeviceType_phone")
-                            .padding(2)
-                            .background(
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(Color(designSystemColor: .lines))
-                            )
                     }
-                    Text(UserText.scanOrSeeCodeScanCodeInstructionsBody)
+                    Text(UserText.scanOrSeeCodeScanCodeQRInstructionsBody)
+                        .daxFootnoteRegular()
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: maxWidth)
             }
-            .frame(width: width)
-            .padding(20)
+            .padding(12)
             .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(.black)
-                    .frame(width: width - 20)
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(designSystemColor: .container))
+                    .preferredColorScheme(.dark)
             )
-            .padding(20)
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
             cantScanView()
         }
         .padding(.bottom, 40)
-        .onAppear {
-            self.qrCodeModel.code = model.code
-        }
         .frame(width: width)
     }
 
@@ -144,7 +139,7 @@ public struct ScanOrSeeCode: View {
                     .onTapGesture {
                         model.showShareCodeSheet()
                     }
-                Image("Arrow-Circle-Right-12")
+                Image(uiImage: DesignSystemImages.Glyphs.Size12.arrowCircleRight)
             }
         }
     }

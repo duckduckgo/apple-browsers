@@ -20,7 +20,7 @@ import Combine
 import Common
 import LoginItems
 import NetworkExtension
-import NetworkProtection
+import VPN
 import ServiceManagement
 import SwiftUI
 
@@ -76,7 +76,7 @@ extension NetworkProtectionStatusView {
 
         @MainActor
         @Published
-        private var connectionStatus: NetworkProtection.ConnectionStatus = .default
+        private var connectionStatus: VPN.ConnectionStatus = .default
 
         /// The type of extension that's being used for NetP
         ///
@@ -323,16 +323,6 @@ extension NetworkProtectionStatusView {
             }
 
             return nil
-        }
-
-        private func timeLapsedString(since date: Date) -> String {
-            let secondsLapsed = Date().timeIntervalSince(date)
-
-            let hours   = Int(secondsLapsed) / 3600
-            let minutes = Int(secondsLapsed) / 60 % 60
-            let seconds = Int(secondsLapsed) % 60
-
-            return String(format: "%02i:%02i:%02i", hours, minutes, seconds)
         }
 
         /// The feature status (ON/OFF) right below the main icon.

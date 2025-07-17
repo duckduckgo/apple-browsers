@@ -378,7 +378,7 @@ final class ContextualMenuTests: XCTestCase {
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
 
         // THEN
-        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).showCalled, .init(url: URL.duckDuckGo, source: .bookmark, newTab: true, selected: nil))
+        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).showCalled, .init(url: URL.duckDuckGo, source: .bookmark(isFavorite: true), newTab: true, selected: nil))
     }
 
     @MainActor
@@ -395,7 +395,7 @@ final class ContextualMenuTests: XCTestCase {
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
 
         // THEN
-        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).openNewWindowCalled, .init(contents: [TabContent.url(.duckDuckGo, source: .bookmark)], burnerMode: .regular))
+        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).openNewWindowCalled, .init(contents: [TabContent.url(.duckDuckGo, source: .bookmark(isFavorite: true))], burnerMode: .regular))
     }
 
     @MainActor
@@ -410,9 +410,20 @@ final class ContextualMenuTests: XCTestCase {
             XCTFail("No item")
             return
         }
-        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            aiChatSidebarProvider: AIChatSidebarProvider(),
+            fireCoordinator: fireCoordinator
+        )
         let window = MockWindow(isVisible: false)
-        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
+        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(
+            window: window,
+            mainViewController: mainViewController,
+            popUp: false,
+            fireViewModel: fireCoordinator.fireViewModel
+        )
 
         // WHEN
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
@@ -420,9 +431,9 @@ final class ContextualMenuTests: XCTestCase {
         // THEN
         XCTAssertEqual(mainViewController.tabCollectionViewModel.tabs.map(\.content), [
             .newtab,
-            TabContent.url(bookmark1.urlObject!, source: .bookmark),
-            TabContent.url(bookmark2.urlObject!, source: .bookmark),
-            TabContent.url(bookmark3.urlObject!, source: .bookmark),
+            TabContent.url(bookmark1.urlObject!, source: .bookmark(isFavorite: false)),
+            TabContent.url(bookmark2.urlObject!, source: .bookmark(isFavorite: false)),
+            TabContent.url(bookmark3.urlObject!, source: .bookmark(isFavorite: false)),
         ])
     }
 
@@ -438,18 +449,29 @@ final class ContextualMenuTests: XCTestCase {
             XCTFail("No item")
             return
         }
-        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            aiChatSidebarProvider: AIChatSidebarProvider(),
+            fireCoordinator: fireCoordinator
+        )
         let window = MockWindow(isVisible: false)
-        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
+        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(
+            window: window,
+            mainViewController: mainViewController,
+            popUp: false,
+            fireViewModel: fireCoordinator.fireViewModel
+        )
 
         // WHEN
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
 
         // THEN
         XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).openNewWindowCalled, .init(contents: [
-            TabContent.url(bookmark1.urlObject!, source: .bookmark),
-            TabContent.url(bookmark2.urlObject!, source: .bookmark),
-            TabContent.url(bookmark3.urlObject!, source: .bookmark),
+            TabContent.url(bookmark1.urlObject!, source: .bookmark(isFavorite: false)),
+            TabContent.url(bookmark2.urlObject!, source: .bookmark(isFavorite: false)),
+            TabContent.url(bookmark3.urlObject!, source: .bookmark(isFavorite: false)),
         ], burnerMode: .regular))
     }
 

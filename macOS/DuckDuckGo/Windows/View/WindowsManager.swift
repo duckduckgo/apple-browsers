@@ -34,7 +34,7 @@ final class WindowsManager {
     private static let autofillPopoverPresenter: AutofillPopoverPresenter = DefaultAutofillPopoverPresenter()
 
     class func closeWindows(except windows: [NSWindow] = []) {
-        for controller in WindowControllersManager.shared.mainWindowControllers {
+        for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
             guard let window = controller.window, !windows.contains(window) else { continue }
             controller.close()
         }
@@ -43,7 +43,7 @@ final class WindowsManager {
     /// finds window to position newly opened (or popup) windows against
     private class func findPositioningSourceWindow(for tab: Tab?) -> NSWindow? {
         if let parentTab = tab?.parentTab,
-           let sourceWindowController = WindowControllersManager.shared.mainWindowControllers.first(where: {
+           let sourceWindowController = Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: {
                $0.mainViewController.tabCollectionViewModel.tabs.contains(parentTab)
            }) {
             // window that initiated the new window opening
@@ -51,11 +51,13 @@ final class WindowsManager {
         }
 
         // fallback to last known main window
-        return WindowControllersManager.shared.lastKeyMainWindowController?.window
+        return Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
     }
 
     @discardableResult
     class func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel? = nil,
+                             aiChatSidebarProvider: AIChatSidebarProviding = Application.appDelegate.aiChatSidebarProvider,
+                             fireCoordinator: FireCoordinator = Application.appDelegate.fireCoordinator,
                              burnerMode: BurnerMode = .regular,
                              droppingPoint: NSPoint? = nil,
                              contentSize: NSSize? = nil,
@@ -68,7 +70,9 @@ final class WindowsManager {
         let mainWindowController = makeNewWindow(tabCollectionViewModel: tabCollectionViewModel,
                                                  popUp: popUp,
                                                  burnerMode: burnerMode,
-                                                 autofillPopoverPresenter: autofillPopoverPresenter)
+                                                 autofillPopoverPresenter: autofillPopoverPresenter,
+                                                 fireCoordinator: fireCoordinator,
+                                                 aiChatSidebarProvider: aiChatSidebarProvider)
 
         if let contentSize {
             mainWindowController.window?.setContentSize(contentSize)
@@ -153,7 +157,7 @@ final class WindowsManager {
     private static let defaultPopUpHeight: CGFloat = 752
 
     class func openPopUpWindow(with tab: Tab, origin: NSPoint?, contentSize: NSSize?) {
-        if let mainWindowController = WindowControllersManager.shared.lastKeyMainWindowController,
+        if let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
            mainWindowController.window?.styleMask.contains(.fullScreen) == true,
            mainWindowController.window?.isPopUpWindow == false {
 
@@ -185,15 +189,27 @@ final class WindowsManager {
     private class func makeNewWindow(tabCollectionViewModel: TabCollectionViewModel? = nil,
                                      popUp: Bool = false,
                                      burnerMode: BurnerMode,
-                                     autofillPopoverPresenter: AutofillPopoverPresenter) -> MainWindowController {
-        let mainViewController = MainViewController(tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode), autofillPopoverPresenter: autofillPopoverPresenter)
+                                     autofillPopoverPresenter: AutofillPopoverPresenter,
+                                     fireCoordinator: FireCoordinator,
+                                     aiChatSidebarProvider: AIChatSidebarProviding) -> MainWindowController {
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode),
+            autofillPopoverPresenter: autofillPopoverPresenter,
+            aiChatSidebarProvider: aiChatSidebarProvider,
+            fireCoordinator: fireCoordinator
+        )
 
         let fireWindowSession = if case .burner = burnerMode {
-            WindowControllersManager.shared.mainWindowControllers.first(where: {
+            Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: {
                 $0.mainViewController.tabCollectionViewModel.burnerMode == burnerMode
             })?.fireWindowSession ?? FireWindowSession()
         } else { FireWindowSession?.none }
-        return MainWindowController(mainViewController: mainViewController, popUp: popUp, fireWindowSession: fireWindowSession)
+        return MainWindowController(
+            mainViewController: mainViewController,
+            popUp: popUp,
+            fireWindowSession: fireWindowSession,
+            fireViewModel: fireCoordinator.fireViewModel
+        )
     }
 
 }

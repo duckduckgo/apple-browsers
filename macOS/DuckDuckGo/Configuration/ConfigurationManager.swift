@@ -31,6 +31,7 @@ final class ConfigurationManager: DefaultConfigurationManager {
     private let trackerDataManager: TrackerDataManager
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private var contentBlockingManager: ContentBlockerRulesManagerProtocol
+    private let httpsUpgrade: HTTPSUpgrade
 
     private enum Constants {
         static let lastConfigurationInstallDateKey = "config.last.installed"
@@ -60,14 +61,16 @@ final class ConfigurationManager: DefaultConfigurationManager {
     init(fetcher: ConfigurationFetching = ConfigurationFetcher(store: ConfigurationStore(), eventMapping: configurationDebugEvents),
          store: ConfigurationStoring = ConfigurationStore(),
          defaults: KeyValueStoring = UserDefaults.appConfiguration,
-         trackerDataManager: TrackerDataManager = ContentBlocking.shared.trackerDataManager,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         contentBlockingManager: ContentBlockerRulesManagerProtocol = ContentBlocking.shared.contentBlockingManager) {
+         trackerDataManager: TrackerDataManager,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         contentBlockingManager: ContentBlockerRulesManagerProtocol,
+         httpsUpgrade: HTTPSUpgrade) {
 
         self.trackerDataManager = trackerDataManager
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingManager = contentBlockingManager
         self.defaults = defaults
+        self.httpsUpgrade = httpsUpgrade
 
         super.init(fetcher: fetcher, store: store, defaults: defaults)
     }
@@ -191,12 +194,12 @@ final class ConfigurationManager: DefaultConfigurationManager {
         try await Task.detached {
             let spec = try JSONDecoder().decode(HTTPSBloomFilterSpecification.self, from: specData)
             do {
-                try await PrivacyFeatures.httpsUpgrade.persistBloomFilter(specification: spec, data: bloomFilterData)
+                try await self.httpsUpgrade.persistBloomFilter(specification: spec, data: bloomFilterData)
             } catch {
                 assertionFailure("persistBloomFilter failed: \(error)")
                 throw Error.bloomFilterPersistenceFailed.withUnderlyingError(error)
             }
-            await PrivacyFeatures.httpsUpgrade.loadData()
+            await self.httpsUpgrade.loadData()
         }.value
     }
 
@@ -207,11 +210,11 @@ final class ConfigurationManager: DefaultConfigurationManager {
         try await Task.detached {
             let excludedDomains = try JSONDecoder().decode(HTTPSExcludedDomains.self, from: bloomFilterExclusions).data
             do {
-                try await PrivacyFeatures.httpsUpgrade.persistExcludedDomains(excludedDomains)
+                try await self.httpsUpgrade.persistExcludedDomains(excludedDomains)
             } catch {
                 throw Error.bloomFilterExclusionsPersistenceFailed.withUnderlyingError(error)
             }
-            await PrivacyFeatures.httpsUpgrade.loadData()
+            await self.httpsUpgrade.loadData()
         }.value
     }
 

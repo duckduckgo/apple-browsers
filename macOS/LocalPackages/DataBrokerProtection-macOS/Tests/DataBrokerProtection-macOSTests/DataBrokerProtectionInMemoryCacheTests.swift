@@ -27,6 +27,8 @@ final class DataBrokerProtectionInMemoryCacheTests: XCTestCase {
         let communicator = DBPUICommunicator()
         let result = communicator.addNameToCurrentUserProfile(DBPUIUserProfileName(first: "John", middle: "Jacob", last: "JingleHeimerSchmidt", suffix: nil))
 
+        _ = communicator.setBirthYearForCurrentUserProfile(DBPUIBirthYear(year: 0))
+
         XCTAssert(result, "Adding name to profile cache failed")
         XCTAssert(communicator.profile?.names.count == 1, "There should be 1 name in the profile")
         XCTAssert(communicator.profile?.names.first?.firstName == "John", "The name stored in the cache is incorrect")
@@ -52,6 +54,7 @@ final class DataBrokerProtectionInMemoryCacheTests: XCTestCase {
     func testCacheStoresNewAddress() throws {
         let communicator = DBPUICommunicator()
         let result = communicator.addAddressToCurrentUserProfile(DBPUIUserProfileAddress(street: "123 any street", city: "Any Town", state: "TX", zipCode: "12345"))
+        _ = communicator.setBirthYearForCurrentUserProfile(DBPUIBirthYear(year: 0))
 
         XCTAssert(result, "Adding address to profile cache failed")
         XCTAssert(communicator.profile?.addresses.count == 1, "There should be 1 address in the profile")
@@ -86,6 +89,7 @@ final class DataBrokerProtectionInMemoryCacheTests: XCTestCase {
     func testCacheRemoveNameFromIndex() throws {
         let communicator = DBPUICommunicator()
         var result = communicator.addNameToCurrentUserProfile(DBPUIUserProfileName(first: "John", middle: "Jacob", last: "JingleHeimerSchmidt", suffix: nil))
+        _ = communicator.setBirthYearForCurrentUserProfile(DBPUIBirthYear(year: 0))
 
         XCTAssert(result, "Adding name to profile cache failed")
         XCTAssert(communicator.profile?.names.count == 1, "There should be 1 name in the profile")
@@ -99,6 +103,7 @@ final class DataBrokerProtectionInMemoryCacheTests: XCTestCase {
     func testCacheRemoveAddressFromIndex() throws {
         let communicator = DBPUICommunicator()
         var result = communicator.addAddressToCurrentUserProfile(DBPUIUserProfileAddress(street: "123 any street", city: "Any Town", state: "TX", zipCode: "12345"))
+        _ = communicator.setBirthYearForCurrentUserProfile(DBPUIBirthYear(year: 0))
 
         XCTAssert(result, "Adding address to profile cache failed")
         XCTAssert(communicator.profile?.addresses.count == 1, "There should be 1 address in the profile")

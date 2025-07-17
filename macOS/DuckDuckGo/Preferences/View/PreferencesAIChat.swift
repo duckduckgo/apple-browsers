@@ -28,7 +28,7 @@ extension Preferences {
 
         var body: some View {
             PreferencePane {
-                TextMenuTitle(UserText.aiChat)
+                TextMenuTitle(UserText.aiFeatures)
                 PreferencePaneSubSection {
                     VStack(alignment: .leading, spacing: 1) {
                         TextMenuItemCaption(UserText.aiChatPreferencesCaption)
@@ -38,7 +38,7 @@ extension Preferences {
                     }
                 }
 
-                PreferencePaneSection {
+                PreferencePaneSection(UserText.duckAIShortcuts) {
                     ToggleMenuItem(UserText.aiChatShowInAddressBarToggle,
                                    isOn: $model.showShortcutInAddressBar)
                     .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
@@ -68,11 +68,35 @@ extension Preferences {
                                           includeAppVersionParameter: true)
                         }
                     }
+
+                    if model.shouldShowOpenAIChatInSidebarToggle {
+                        ToggleMenuItem(UserText.aiChatOpenInSidebarToggle,
+                                       isOn: $model.openAIChatInSidebar)
+                        .accessibilityIdentifier("Preferences.AIChat.openInSidebarToggle")
+                        .onChange(of: model.openAIChatInSidebar) { _ in
+                            PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
+                                          frequency: .uniqueByName,
+                                          includeAppVersionParameter: true)
+                        }
+                    }
                 }
-            }.onAppear {
-                PixelKit.fire(AIChatPixel.aiChatSettingsDisplayed,
-                              frequency: .dailyAndCount,
-                              includeAppVersionParameter: true)
+
+                PreferencePaneSection(UserText.searchAssistSettings) {
+                    TextMenuItemCaption(UserText.searchAssistSettingsDescription)
+                        .padding(.top, -6)
+                        .padding(.bottom, 6)
+                    Button {
+                        model.openSearchAssistSettings()
+                    } label: {
+                        HStack {
+                            Text(UserText.searchAssistSettingsLink)
+                            Image(.externalAppScheme)
+                        }
+                        .foregroundColor(Color.linkBlue)
+                        .cursor(.pointingHand)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
     }

@@ -30,16 +30,14 @@ import Persistence
 import WidgetKit
 import os.log
 import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class BookmarksViewController: UIViewController, UITableViewDelegate {
 
     private enum Constants {
         static var saveToFiles = "com.apple.DocumentManagerUICore.SaveToFiles"
         static var bookmarksFileName = "DuckDuckGo Bookmarks.html"
-        static var moreButtonImage = "More-Apple-24"
-        static var addButtonImage = "Folder-Add-24"
-        static var importBookmarkImage = "Import-16"
-        static var exportBookmarkImage = "Export-Right-16"
     }
 
     @IBOutlet weak var tableView: UITableView!
@@ -56,6 +54,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private let syncService: DDGSyncing
     private let syncDataProviders: SyncDataProviders
     private let appSettings: AppSettings
+    private let keyValueStore: ThrowingKeyValueStoring
     private var localUpdatesCancellable: AnyCancellable?
     private var syncUpdatesCancellable: AnyCancellable?
     private var favoritesDisplayModeCancellable: AnyCancellable?
@@ -63,7 +62,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private lazy var addFolderBarButtonItem = UIBarButtonItem(customView: addFolderButton)
     private lazy var addFolderButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(named: Constants.addButtonImage), for: .normal)
+        button.setImage(DesignSystemImages.Glyphs.Size24.folderAdd, for: .normal)
         button.addTarget(self, action: #selector(onAddFolderPressed), for: .touchUpInside)
         return button
     }()
@@ -71,7 +70,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private lazy var moreBarButtonItem = UIBarButtonItem(customView: moreButton)
     private lazy var moreButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(named: Constants.moreButtonImage), for: .normal)
+        button.setImage(DesignSystemImages.Glyphs.Size24.moreApple, for: .normal)
         button.showsMenuAsPrimaryAction = true
         return button
     }()
@@ -185,7 +184,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                    favicons: Favicons = Favicons.shared,
                    syncService: DDGSyncing,
                    syncDataProviders: SyncDataProviders,
-                   appSettings: AppSettings
+                   appSettings: AppSettings,
+                   keyValueStore: ThrowingKeyValueStoring
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.searchDataSource = SearchBookmarksDataSource(searchEngine: bookmarksSearch)
@@ -199,6 +199,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
+        self.keyValueStore = keyValueStore
         super.init(coder: coder)
 
         bindSyncService()
@@ -362,7 +363,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                                                      parentID: parent.objectID,
                                                      syncService: self.syncService,
                                                      syncDataProviders: self.syncDataProviders,
-                                                     appSettings: self.appSettings)
+                                                     appSettings: self.appSettings,
+                                                     keyValueStore: self.keyValueStore)
             controller?.delegate = self.delegate
             return controller
         })
@@ -380,14 +382,16 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         cell?.tintColor = .black
 
         let title = bookmark.isFavorite(on: viewModel.favoritesDisplayMode.displayedFolder) ? UserText.actionRemoveFavorite : UserText.favorite
-        let iconName = bookmark.isFavorite(on: viewModel.favoritesDisplayMode.displayedFolder) ? "Favorite-Remove-24" : "Favorite-24"
+        let image = bookmark.isFavorite(on: viewModel.favoritesDisplayMode.displayedFolder) ?
+            DesignSystemImages.Glyphs.Size24.favoriteRemove :
+            DesignSystemImages.Glyphs.Size24.favorite
 
         let toggleFavoriteAction = UIContextualAction(style: .normal, title: title) { [weak self] (_, _, completionHandler) in
             completionHandler(true)
             self?.toggleFavoriteAfterSwipe(bookmark, indexPath)
             tableView.reloadRows(at: [indexPath], with: .automatic)
         }
-        toggleFavoriteAction.image = UIImage(named: iconName)?.withTintColor(.black, renderingMode: .alwaysOriginal)
+        toggleFavoriteAction.image = image.withTintColor(.black, renderingMode: .alwaysOriginal)
         toggleFavoriteAction.backgroundColor = UIColor(baseColor: .yellow60)
         return UISwipeActionsConfiguration(actions: [toggleFavoriteAction])
     }
@@ -401,7 +405,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                                                 UserText.deleteBookmarkFolderAlertDeleteButton) { _, _, completion in
             self.deleteBookmarkAfterSwipe(bookmark, indexPath, completion)
         }
-        deleteAction.image = UIImage(named: "Trash-24")
+        deleteAction.image = DesignSystemImages.Glyphs.Size24.trash
         return UISwipeActionsConfiguration(actions: [deleteAction])
     }
 
@@ -679,7 +683,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     // when importing on iOS 18.2 and above
     func importAction() -> UIAction {
         return UIAction(title: UserText.importBookmarksActionTitle,
-                        image: UIImage(named: Constants.importBookmarkImage)
+                        image: DesignSystemImages.Glyphs.Size16.import
         ) { [weak self] _ in
             self?.segueToDataImport()
             Pixel.fire(pixel: .bookmarksImportOverflowMenuTapped)
@@ -689,7 +693,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     // when importing < iOS 18.2
     func importViaDocumentPickerAction() -> UIAction {
         return UIAction(title: UserText.importBookmarksActionHtmlTitle,
-                        image: UIImage(named: Constants.importBookmarkImage)
+                        image: DesignSystemImages.Glyphs.Size16.import
         ) { [weak self] _ in
             self?.presentDocumentPicker()
         }
@@ -714,7 +718,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                                                   tld: AppDependencyProvider.shared.storageCache.tld)
         let dataImportViewController = DataImportViewController(importManager: dataImportManager,
                                                                 importScreen: DataImportViewModel.ImportScreen.bookmarks,
-                                                                syncService: syncService)
+                                                                syncService: syncService,
+                                                                keyValueStore: keyValueStore)
         dataImportViewController.delegate = self
         navigationController?.setToolbarHidden(true, animated: true)
         navigationController?.pushViewController(dataImportViewController, animated: true)
@@ -764,7 +769,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                 return UserText.exportBookmarksActionHtmlTitle
             }
         }(),
-                        image: UIImage(named: Constants.exportBookmarkImage),
+                        image: DesignSystemImages.Glyphs.Size16.export,
                         attributes: dataSource.isEmpty ? .disabled : []) { [weak self] _ in
             self?.exportHtmlFile()
         }

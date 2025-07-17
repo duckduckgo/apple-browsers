@@ -29,7 +29,6 @@ final class NewTabPageRecentActivityClientTests: XCTestCase {
 
     private var activityProvider: CapturingNewTabPageRecentActivityProvider!
     private var actionsHandler: CapturingRecentActivityActionsHandler!
-    private var settingsPersistor: UserDefaultsNewTabPageRecentActivitySettingsPersistor!
 
     private var userScript: NewTabPageUserScript!
     private var messageHelper: MessageHelper<NewTabPageRecentActivityClient.MessageName>!
@@ -39,51 +38,14 @@ final class NewTabPageRecentActivityClientTests: XCTestCase {
 
         activityProvider = CapturingNewTabPageRecentActivityProvider()
         actionsHandler = CapturingRecentActivityActionsHandler()
-        settingsPersistor = UserDefaultsNewTabPageRecentActivitySettingsPersistor(MockKeyValueStore(), getLegacySetting: nil)
 
-        model = NewTabPageRecentActivityModel(
-            activityProvider: activityProvider,
-            actionsHandler: actionsHandler,
-            settingsPersistor: settingsPersistor
-        )
+        model = NewTabPageRecentActivityModel(activityProvider: activityProvider, actionsHandler: actionsHandler)
 
         client = NewTabPageRecentActivityClient(model: model)
 
         userScript = NewTabPageUserScript()
         messageHelper = .init(userScript: userScript)
         client.registerMessageHandlers(for: userScript)
-    }
-
-    // MARK: - getConfig
-
-    func testWhenRecentActivityViewIsExpandedThenGetConfigReturnsExpandedState() async throws {
-        model.isViewExpanded = true
-        let config: NewTabPageUserScript.WidgetConfig = try await messageHelper.handleMessage(named: .getConfig)
-        XCTAssertEqual(config.animation, .noAnimation)
-        XCTAssertEqual(config.expansion, .expanded)
-    }
-
-    func testWhenRecentActivityViewIsCollapsedThenGetConfigReturnsCollapsedState() async throws {
-        model.isViewExpanded = false
-        let config: NewTabPageUserScript.WidgetConfig = try await messageHelper.handleMessage(named: .getConfig)
-        XCTAssertEqual(config.animation, .noAnimation)
-        XCTAssertEqual(config.expansion, .collapsed)
-    }
-
-    // MARK: - setConfig
-
-    func testWhenSetConfigContainsExpandedStateThenModelSettingIsSetToExpanded() async throws {
-        model.isViewExpanded = false
-        let config = NewTabPageUserScript.WidgetConfig(animation: .noAnimation, expansion: .expanded)
-        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: config)
-        XCTAssertEqual(model.isViewExpanded, true)
-    }
-
-    func testWhenSetConfigContainsCollapsedStateThenModelSettingIsSetToCollapsed() async throws {
-        model.isViewExpanded = true
-        let config = NewTabPageUserScript.WidgetConfig(animation: .noAnimation, expansion: .collapsed)
-        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: config)
-        XCTAssertEqual(model.isViewExpanded, false)
     }
 
     // MARK: - getData

@@ -29,7 +29,7 @@ final class UpdateNotificationPresenter {
         Logger.updates.log("Notification presented: \(text, privacy: .public)")
 
         DispatchQueue.main.async {
-            guard let windowController = WindowControllersManager.shared.lastKeyMainWindowController ?? WindowControllersManager.shared.mainWindowControllers.last,
+            guard let windowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController ?? Application.appDelegate.windowControllersManager.mainWindowControllers.last,
                   let button = windowController.mainViewController.navigationBarViewController.optionsButton else {
                 return
             }
@@ -61,7 +61,7 @@ final class UpdateNotificationPresenter {
 
     func openUpdatesPage() {
         DispatchQueue.main.async {
-            WindowControllersManager.shared.showTab(with: .releaseNotes)
+            Application.appDelegate.windowControllersManager.showTab(with: .releaseNotes)
         }
     }
 }

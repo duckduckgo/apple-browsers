@@ -19,8 +19,9 @@
 #if DEBUG
 
 import Bookmarks
-import Foundation
 import BrowserServicesKit
+import CoreData
+import Foundation
 
 final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
 
@@ -155,7 +156,7 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
 
     var updateBookmarkCalled = false
     func update(bookmark: Bookmark) {
-        if store == nil, let index = bookmarks?.firstIndex(where: { $0.id == bookmark.id}) {
+        if store == nil, let index = bookmarks?.firstIndex(where: { $0.id == bookmark.id }) {
             bookmarks![index] = bookmark
         }
 
@@ -205,9 +206,9 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
     }
 
     var importBookmarksCalled = false
-    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource) -> BookmarksImportSummary {
+    func importBookmarks(_ bookmarks: ImportedBookmarks, source: BookmarkImportSource, markRootBookmarksAsFavoritesByDefault: Bool = true, maxFavoritesCount: Int? = nil) -> BookmarksImportSummary {
         importBookmarksCalled = true
-        return store?.importBookmarks(bookmarks, source: source) ?? BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
+        return store?.importBookmarks(bookmarks, source: source, markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault, maxFavoritesCount: maxFavoritesCount) ?? BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
     }
 
     var saveBookmarksInNewFolderNamedCalled = false

@@ -30,11 +30,11 @@ class StatisticsLoaderTests: XCTestCase {
     private var testee: StatisticsLoader!
     private var fireAppRetentionExperimentPixelsCalled = false
     private var fireSearchExperimentPixelsCalled = false
-    let pixelKit = PixelKit(dryRun: true,
-                            appVersion: "1.0.0",
-                            defaultHeaders: [:],
-                            defaults: UserDefaults(),
-                            fireRequest: { _, _, _, _, _, _ in })
+    var pixelKit: PixelKit! = PixelKit(dryRun: true,
+                                       appVersion: "1.0.0",
+                                       defaultHeaders: [:],
+                                       defaults: UserDefaults(),
+                                       fireRequest: { _, _, _, _, _, _ in })
 
     override func setUp() {
         PixelKit.setSharedForTesting(pixelKit: pixelKit)
@@ -55,7 +55,7 @@ class StatisticsLoaderTests: XCTestCase {
         testee = nil
         fireAppRetentionExperimentPixelsCalled = false
         fireSearchExperimentPixelsCalled = false
-        super.tearDown()
+        pixelKit = nil
     }
 
     func testWhenSearchRefreshHasSuccessfulUpdateAtbRequestThenSearchRetentionAtbUpdated() {

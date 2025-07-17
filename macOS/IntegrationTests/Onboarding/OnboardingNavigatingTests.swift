@@ -22,18 +22,21 @@ import XCTest
 final class OnboardingNavigatingTests: XCTestCase {
 
     var onboardingNavigation: OnboardingNavigating!
+    var fireCoordinator: FireCoordinator!
 
     @MainActor
     override func setUp() {
         super.setUp()
-        onboardingNavigation = WindowControllersManager.shared
-        assert(WindowControllersManager.shared.mainWindowControllers.isEmpty)
+        onboardingNavigation = Application.appDelegate.windowControllersManager
+        fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        assert(Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty)
     }
 
     @MainActor
     override func tearDown() {
         onboardingNavigation = nil
-        WindowControllersManager.shared.lastKeyMainWindowController = nil
+        fireCoordinator = nil
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
         super.tearDown()
     }
 
@@ -41,9 +44,13 @@ final class OnboardingNavigatingTests: XCTestCase {
     func testOnImportData_DataImportViewShown() throws {
         // Given
         let mockWindow = MockWindow(isVisible: false)
-        let mvc = MainWindowController(window: mockWindow, mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false)
+        let mvc = MainWindowController(
+            window: mockWindow,
+            mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(), fireCoordinator: fireCoordinator),
+            popUp: false,
+            fireViewModel: fireCoordinator.fireViewModel)
         mvc.window = mockWindow
-        WindowControllersManager.shared.lastKeyMainWindowController = mvc
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
 
         // When
         onboardingNavigation.showImportDataView()
@@ -56,15 +63,20 @@ final class OnboardingNavigatingTests: XCTestCase {
     func testOnFocusOnAddressBar_AddressBarIsFocussed() throws {
         // Given
         let mockWindow = MockWindow(isVisible: false)
-        let mvc = MainWindowController(window: mockWindow, mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false)
+        let mvc = MainWindowController(
+            window: mockWindow,
+            mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), aiChatSidebarProvider: AIChatSidebarProvider(), fireCoordinator: fireCoordinator),
+            popUp: false,
+            fireViewModel: fireCoordinator.fireViewModel
+        )
         mvc.window = mockWindow
-        WindowControllersManager.shared.lastKeyMainWindowController = mvc
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
 
         // When
         onboardingNavigation.focusOnAddressBar()
 
         // Then
-        let mainVC = try XCTUnwrap(WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController)
+        let mainVC = try XCTUnwrap(Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController)
         XCTAssertTrue(mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.stringValue.isEmpty ?? false)
         XCTAssertTrue(mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder ?? false)
     }

@@ -33,7 +33,6 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
         static let newFireproofDomainKey = "newFireproofDomainKey"
     }
 
-    static let shared = FireproofDomains(tld: ContentBlocking.shared.tld)
     private let store: FireproofDomainsStore
 
     let tld: TLD
@@ -54,7 +53,7 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
         container.domains
     }
 
-    init(store: FireproofDomainsStore = FireproofDomainsStore(tableName: "FireproofDomains"), tld: TLD = ContentBlocking.shared.tld) {
+    init(store: FireproofDomainsStore, tld: TLD) {
         self.store = store
         self.tld = tld
 

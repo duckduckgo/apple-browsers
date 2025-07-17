@@ -33,7 +33,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     var coookiePopupProtectionPreferences: MockCookiePopupProtectionPreferencesPersistor!
     var privacyConfigManager: MockPrivacyConfigurationManager!
     var dockCustomizer: DockCustomization!
-    let userDefaults = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
+    var userDefaults: UserDefaults! = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
 
     @MainActor override func setUp() {
         UserDefaultsWrapper<Any>.clearAll()
@@ -68,6 +68,10 @@ final class ContinueSetUpModelTests: XCTestCase {
         emailManager = nil
         emailStorage = nil
         vm = nil
+        dockCustomizer = nil
+        duckPlayerPreferences = nil
+        privacyConfigManager = nil
+        userDefaults = nil
     }
 
     func testModelReturnsCorrectStrings() {
@@ -97,7 +101,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         XCTAssertFalse(vm.isMoreOrLessButtonNeeded)
@@ -113,7 +118,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, expectedMatrix)
@@ -317,7 +323,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, [[]])
@@ -332,7 +339,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             dataImportProvider: capturingDataImportProvider,
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
         vm.shouldShowAllFeatures = true
         let expectedMatrix = expectedFeatureMatrixWithout(types: [])

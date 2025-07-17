@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import NetworkProtection
+import VPN
 
 /// This class provides a mechanism to store and announce issues when interacting with the tunnel.
 /// The reason this lass is necessry is because we need to store and share failures across different UI elements.  As an example

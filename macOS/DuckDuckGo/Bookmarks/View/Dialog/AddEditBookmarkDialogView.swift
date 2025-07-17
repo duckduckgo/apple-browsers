@@ -87,7 +87,7 @@ struct AddEditBookmarkDialogView: ModalView {
 
 #if DEBUG
 #Preview("Add Bookmark - Light Mode") {
-    let bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: []))
+    let bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: []), appearancePreferences: .mock)
     bookmarkManager.loadBookmarks()
 
     return BookmarksDialogViewFactory.makeAddBookmarkView(parent: nil, bookmarkManager: bookmarkManager)
@@ -95,7 +95,7 @@ struct AddEditBookmarkDialogView: ModalView {
 }
 
 #Preview("Add Bookmark - Dark Mode") {
-    let bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: []))
+    let bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: []), appearancePreferences: .mock)
     bookmarkManager.loadBookmarks()
 
     return BookmarksDialogViewFactory.makeAddBookmarkView(parent: nil, bookmarkManager: bookmarkManager)
@@ -105,7 +105,7 @@ struct AddEditBookmarkDialogView: ModalView {
 #Preview("Edit Bookmark - Light Mode") {
     let parentFolder = BookmarkFolder(id: "7", title: "DuckDuckGo")
     let bookmark = Bookmark(id: "1", url: "www.duckduckgo.com", title: "DuckDuckGo", isFavorite: true, parentFolderUUID: "7")
-    let bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [bookmark, parentFolder]))
+    let bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [bookmark, parentFolder]), appearancePreferences: .mock)
     bookmarkManager.loadBookmarks()
 
     return BookmarksDialogViewFactory.makeEditBookmarkView(bookmark: bookmark, bookmarkManager: bookmarkManager)
@@ -115,7 +115,7 @@ struct AddEditBookmarkDialogView: ModalView {
 #Preview("Edit Bookmark - Dark Mode") {
     let parentFolder = BookmarkFolder(id: "7", title: "DuckDuckGo")
     let bookmark = Bookmark(id: "1", url: "www.duckduckgo.com", title: "DuckDuckGo", isFavorite: true, parentFolderUUID: "7")
-    let bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [bookmark, parentFolder]))
+    let bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [bookmark, parentFolder]), appearancePreferences: .mock)
     bookmarkManager.loadBookmarks()
 
     return BookmarksDialogViewFactory.makeEditBookmarkView(bookmark: bookmark, bookmarkManager: bookmarkManager)

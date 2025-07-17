@@ -36,13 +36,17 @@ final class DataImportViewController: UIViewController {
 
     private let viewModel: DataImportViewModel
     private let syncService: DDGSyncing
+    private let keyValueStore: ThrowingKeyValueStoring
+    private let featureFlagger: FeatureFlagger
     private let importScreen: DataImportViewModel.ImportScreen
     private var summaryPresented: Bool = false
 
-    init(importManager: DataImportManager, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing) {
+    init(importManager: DataImportManager, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing, keyValueStore: ThrowingKeyValueStoring, featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.viewModel = DataImportViewModel(importScreen: importScreen, importManager: importManager)
         self.importScreen = importScreen
         self.syncService = syncService
+        self.keyValueStore = keyValueStore
+        self.featureFlagger = featureFlagger
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -122,6 +126,7 @@ final class DataImportViewController: UIViewController {
 
     private func presentSummary(for summary: DataImportSummary) {
         summaryPresented = true
+        AutofillLoginImportState(keyValueStore: keyValueStore).hasImportedLogins = true
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
@@ -129,6 +134,10 @@ final class DataImportViewController: UIViewController {
             self.navigationController?.present(DataImportSummaryViewController(summary: summary, importScreen: importScreen, syncService: syncService), animated: true) { [weak self] in
                 guard let self = self else { return }
 
+                if featureFlagger.isFeatureOn(.showSettingsCompleteSetupSection) {
+                    try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissSetAsDefaultBrowserKey)
+                    try? keyValueStore.set(true, forKey: SettingsViewModel.Constants.didDismissImportPasswordsKey)
+                }
                 self.navigationController?.popViewController(animated: false)
                 delegate?.dataImportViewControllerDidFinish(self)
             }
@@ -190,7 +199,7 @@ extension DataImportViewController: UIDocumentPickerDelegate {
             viewModel.handleFileSelection(selectedFileURL, type: fileType)
 
             switch fileType {
-            case .zip:
+            case .zip, .json:
                 Pixel.fire(pixel: .importInstructionsFileSelectedZip, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
             case .csv:
                 Pixel.fire(pixel: .importInstructionsFileSelectedCsv, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])

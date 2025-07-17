@@ -18,6 +18,8 @@
 //
 
 import UIKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 protocol FindInPageViewDelegate: NSObjectProtocol {
     
@@ -48,7 +50,11 @@ class FindInPageView: UIView {
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOpacity = 0.12
         layer.masksToBounds = false
-        
+
+        searchLoupe.image = DesignSystemImages.Glyphs.Size20.findSearch
+        nextButton.setImage(DesignSystemImages.Glyphs.Size24.arrowDown, for: .normal)
+        previousButton.setImage(DesignSystemImages.Glyphs.Size24.arrowUp, for: .normal)
+
         nextButton.isPointerInteractionEnabled = true
         nextButton.accessibilityLabel = UserText.keyCommandFindNext
         previousButton.isPointerInteractionEnabled = true

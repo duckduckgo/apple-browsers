@@ -52,7 +52,9 @@ node_modules/
 !node_modules/@duckduckgo/content-scope-scripts/build/
 !node_modules/@duckduckgo/content-scope-scripts/build/apple/
 !node_modules/@duckduckgo/content-scope-scripts/build/apple/*
+build/
 .build/
+.swiftpm/
 release/
 
 ## Build generated
@@ -62,6 +64,9 @@ tmp
 
 #VSCode
 .windsurf/
-.cursor/
-.vscode/*
 /buildServer.json
+default.profraw
+
+# Claude
+.claude/
+/.vscode/launch.json

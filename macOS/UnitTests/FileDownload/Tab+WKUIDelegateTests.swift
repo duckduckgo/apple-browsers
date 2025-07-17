@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import XCTest
 import UniformTypeIdentifiers
+import WebKit
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -35,11 +36,14 @@ final class TabWKUIDelegateTests: XCTestCase {
         originatingURL = URL(string: "https://www.duckduckgo.com")!
     }
 
-    override func tearDownWithError() throws {
+    override var allowedNonNilVariables: Set<String> {
+        ["fileManager"]
+    }
+
+    override func tearDown() {
         testData = nil
         testDirectory = nil
         originatingURL = nil
-        try super.tearDownWithError()
     }
 
     @MainActor

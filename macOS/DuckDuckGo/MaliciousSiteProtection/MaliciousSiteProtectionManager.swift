@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import BrowserServicesKit
 import Combine
 import Common
@@ -128,11 +129,12 @@ public class MaliciousSiteProtectionManager: MaliciousSiteDetecting {
         dataManager: MaliciousSiteProtection.DataManager? = nil,
         detector: MaliciousSiteProtection.MaliciousSiteDetecting? = nil,
         detectionPreferences: MaliciousSiteProtectionPreferences = MaliciousSiteProtectionPreferences.shared,
-        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+        privacyConfigurationManager: PrivacyConfigurationManaging = Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
         configManager: PrivacyConfigurationManaging? = nil,
         updateIntervalProvider: UpdateManager.UpdateIntervalProvider? = nil
     ) {
-        self.featureFlags = featureFlagger.maliciousSiteProtectionFeatureFlags()
+        self.featureFlags = featureFlagger.maliciousSiteProtectionFeatureFlags(configManager: privacyConfigurationManager)
 
         let embeddedDataProvider = embeddedDataProvider ?? EmbeddedDataProvider()
         let dataManager = dataManager ?? {
@@ -145,8 +147,11 @@ public class MaliciousSiteProtectionManager: MaliciousSiteDetecting {
             let isScamProtectionEnabled = featureFlagger.isFeatureOn(.scamSiteProtection)
             return isScamProtectionEnabled ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
         }
+        let shouldRemoveWWWInCanonicalization = {
+            featureFlagger.isFeatureOn(.removeWWWInCanonicalizationInThreatProtection)
+        }
         let apiEnvironment = apiEnvironment ?? MaliciousSiteDetector.APIEnvironment.production
-        self.detector = detector ?? MaliciousSiteDetector(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, eventMapping: Self.debugEvents, supportedThreatsProvider: supportedThreatsProvider)
+        self.detector = detector ?? MaliciousSiteDetector(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, eventMapping: Self.debugEvents, supportedThreatsProvider: supportedThreatsProvider, shouldRemoveWWWInCanonicalization: shouldRemoveWWWInCanonicalization)
         self.updateManager = MaliciousSiteProtection.UpdateManager(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, eventMapping: Self.debugEvents, updateIntervalProvider: updateIntervalProvider ?? Self.updateInterval, supportedThreatsProvider: supportedThreatsProvider)
         self.detectionPreferences = detectionPreferences
 
@@ -209,9 +214,7 @@ public class MaliciousSiteProtectionManager: MaliciousSiteDetecting {
 }
 
 extension FeatureFlagger {
-    func maliciousSiteProtectionFeatureFlags(configManager: PrivacyConfigurationManaging? = nil) -> MaliciousSiteProtectionFeatureFlags {
-        let configManager = configManager ?? AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager
-        return .init(privacyConfigManager: configManager,
-                     isMaliciousSiteProtectionEnabled: { self.isFeatureOn(.maliciousSiteProtection) })
+    func maliciousSiteProtectionFeatureFlags(configManager: PrivacyConfigurationManaging) -> MaliciousSiteProtectionFeatureFlags {
+        .init(privacyConfigManager: configManager, isMaliciousSiteProtectionEnabled: { self.isFeatureOn(.maliciousSiteProtection) })
     }
 }

@@ -20,9 +20,11 @@ import Combine
 import Common
 import Foundation
 import Navigation
+import PixelKit
 import UniformTypeIdentifiers
 import WebKit
 import PDFKit
+import CommonObjCExtensions
 
 extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
 
@@ -139,6 +141,7 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
         }
     }
 
+    @MainActor
     private func newWindowPolicy(for navigationAction: WKNavigationAction) -> NavigationDecision? {
         if let newWindowPolicy = self.decideNewWindowPolicy(for: navigationAction) {
             return newWindowPolicy
@@ -411,5 +414,20 @@ extension Tab: WKInspectorDelegate {
                       burnerMode: BurnerMode(isBurner: burnerMode.isBurner),
                       webViewSize: webView.superview?.bounds.size ?? .zero)
         delegate?.tab(self, createdChild: tab, of: .window(active: true, burner: burnerMode.isBurner))
+    }
+
+    // Private WebKit delegate method to detect when developer tools inspector is attached
+    @objc(_webView:didAttachLocalInspector:)
+    func webView(_ webView: WKWebView, didAttachLocalInspector inspector: NSObject) {
+        // Fire pixel when developer tools are opened
+        PixelKit.fire(GeneralPixel.developerToolsOpened, frequency: .dailyAndCount)
+    }
+
+    @objc(_webView:hasVideoInPictureInPictureDidChange:)
+    func webView(_ webView: WKWebView, hasVideoInPictureInPictureDidChange hasVideoInPictureInPicture: Bool) {
+        if hasVideoInPictureInPicture {
+            // Fire pixel when Picture-in-Picture is activated
+            PixelKit.fire(GeneralPixel.pictureInPictureVideoPlayback, frequency: .dailyAndCount)
+        }
     }
 }

@@ -20,6 +20,8 @@
 import SwiftUI
 import UIKit
 import Core
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SettingsPrivacyProtectionsView: View {
 
@@ -27,38 +29,47 @@ struct SettingsPrivacyProtectionsView: View {
 
     var body: some View {
         Section(header: Text("Privacy Protections")) {
-            // Default Browser
-            SettingsCellView(label: UserText.defaultBrowser,
-                             image: Image("SettingsDefaultBrowser"),
-                             action: { viewModel.setAsDefaultBrowser() },
-                             webLinkIndicator: true,
-                             isButton: true)
-
+            if !viewModel.shouldShowSetAsDefaultBrowser  {
+                // Default Browser
+                SettingsCellView(label: UserText.defaultBrowser,
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.defaultBrowserMobile),
+                                 action: { viewModel.setAsDefaultBrowser() },
+                                 webLinkIndicator: true,
+                                 isButton: true)
+                .accessibilityIdentifier("Settings.ListItem.Field_DefaultBrowser")
+            }
             // Private Search
             NavigationLink(destination: PrivateSearchView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.privateSearch,
-                                 image: Image("SettingsSearch"),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.findSearch),
                                  statusIndicator: StatusIndicatorView(status: .on))
             }
 
             // Web Tracking Protection
             NavigationLink(destination: WebTrackingProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.webTrackingProtection,
-                                 image: Image("SettingsWebTrackingProtection"),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.shield),
+                                 statusIndicator: StatusIndicatorView(status: .on))
+            }
+
+            // Threat Protection
+            NavigationLink(destination: ThreatProtectionView().environmentObject(viewModel)) {
+                SettingsCellView(label: UserText.threatProtection,
+                                 image: Image(.radarColor24),
                                  statusIndicator: StatusIndicatorView(status: .on))
             }
 
             // Cookie Pop-Up Protection
             NavigationLink(destination: CookiePopUpProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.cookiePopUpProtection,
-                                 image: Image("SettingsCookiePopUpProtection"),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.cookie),
                                  statusIndicator: StatusIndicatorView(status: viewModel.cookiePopUpProtectionStatus))
             }
 
             // Email Protection
             NavigationLink(destination: EmailProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.emailProtection,
-                                 image: Image("SettingsEmailProtection"),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.emailProtection),
                                  statusIndicator: StatusIndicatorView(status: viewModel.emailProtectionStatus))
             }
         }

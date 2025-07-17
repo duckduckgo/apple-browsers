@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import NetworkProtection
+import VPN
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import Common
@@ -27,7 +27,7 @@ import Combine
 final class VPNPreferencesModelTests: XCTestCase {
 
     var model: VPNPreferencesModel!
-    let userDefaults = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
+    var userDefaults: UserDefaults! = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
     var vpnSettings: VPNSettings!
     var xpsClient: VPNControllerXPCClient!
     var proxySettings: TransparentProxySettings!
@@ -44,6 +44,7 @@ final class VPNPreferencesModelTests: XCTestCase {
         xpsClient = nil
         proxySettings = nil
         model = nil
+        userDefaults = nil
     }
 
     func test_WhenUpdateDNSSettingsToCustomThenPropagatesToVpnSettings() {

@@ -59,6 +59,8 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
 
     func executeNextStep() async
     func executeCurrentAction() async
+
+    func resetRetriesCount()
 }
 
 public extension SubJobWebRunning {
@@ -84,6 +86,10 @@ public extension SubJobWebRunning {
         default: ()
         }
 
+        if stepType == .scan {
+            fireScanStagePixel(for: action)
+        }
+
         if let emailConfirmationAction = action as? EmailConfirmationAction {
             do {
                 stageCalculator.fireOptOutSubmit()
@@ -96,7 +102,7 @@ public extension SubJobWebRunning {
             return
         }
 
-        if action as? SolveCaptchaAction != nil, let captchaTransactionId = actionsHandler?.captchaTransactionId {
+        if action is SolveCaptchaAction, let captchaTransactionId = actionsHandler?.captchaTransactionId {
             actionsHandler?.captchaTransactionId = nil
             stageCalculator.setStage(.captchaSolve)
             if let captchaData = try? await captchaService.submitCaptchaToBeResolved(for: captchaTransactionId,
@@ -140,7 +146,7 @@ public extension SubJobWebRunning {
             stageCalculator.setStage(.emailReceive)
             let url =  try await emailService.getConfirmationLink(
                 from: email,
-                numberOfRetries: 100, // Move to constant
+                numberOfRetries: 10, // Move to constant
                 pollingInterval: action.pollingTime,
                 attemptId: stageCalculator.attemptId,
                 shouldRunNextStep: shouldRunNextStep
@@ -298,12 +304,30 @@ public extension SubJobWebRunning {
         try? await Task.sleep(nanoseconds: UInt64(waitTimeUntilRunningTheActionAgain) * 1_000_000_000)
 
         if let currentAction = self.actionsHandler?.currentAction() {
-            retriesCountOnError -= 1
+            decrementRetriesCountOnError()
             await runNextAction(currentAction)
         } else {
-            retriesCountOnError = 0
+            resetRetriesCount()
             await onError(error: DataBrokerProtectionError.unknown("No current action to execute"))
         }
+    }
+
+    func resetRetriesCount() {
+        retriesCountOnError = 0
+        stageCalculator.resetTries()
+    }
+
+    private func decrementRetriesCountOnError() {
+        retriesCountOnError -= 1
+        stageCalculator.incrementTries()
+    }
+
+    private func fireScanStagePixel(for action: Action) {
+        pixelHandler.fire(.scanStage(dataBroker: query.dataBroker.name,
+                                     dataBrokerVersion: query.dataBroker.version,
+                                     tries: stageCalculator.tries,
+                                     actionId: action.id,
+                                     actionType: action.actionType.rawValue))
     }
 }
 

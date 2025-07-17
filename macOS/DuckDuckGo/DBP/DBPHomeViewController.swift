@@ -39,12 +39,12 @@ final class DBPHomeViewController: NSViewController {
     private var freemiumDBPFeature: FreemiumDBPFeature
 
     private let prerequisiteVerifier: DataBrokerPrerequisitesStatusVerifier
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private lazy var errorViewController: DataBrokerProtectionErrorViewController = {
         DataBrokerProtectionErrorViewController()
     }()
 
     private lazy var dataBrokerProtectionViewController: DataBrokerProtectionViewController = {
-        let privacyConfigurationManager = PrivacyFeatures.contentBlocking.privacyConfigurationManager
         let features = ContentScopeFeatureToggles(emailProtection: false,
                                                   emailProtectionIncontextSignup: false,
                                                   credentialsAutofill: false,
@@ -56,7 +56,9 @@ final class DBPHomeViewController: NSViewController {
                                                   thirdPartyCredentialsProvider: false,
                                                   unknownUsernameCategorization: false,
                                                   partialFormSaves: false,
-                                                  passwordVariantCategorization: false)
+                                                  passwordVariantCategorization: false,
+                                                  inputFocusApi: false,
+                                                  autocompleteAttributeSupport: false)
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
         let sessionKey = UUID().uuidString
@@ -74,17 +76,19 @@ final class DBPHomeViewController: NSViewController {
             prefs: prefs,
             webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
             openURLHandler: { url in
-                WindowControllersManager.shared.show(url: url, source: .link, newTab: true)
+                Application.appDelegate.windowControllersManager.show(url: url, source: .link, newTab: true)
             })
     }()
 
     init(dataBrokerProtectionManager: DataBrokerProtectionManager,
          vpnBypassService: VPNBypassFeatureProvider,
          prerequisiteVerifier: DataBrokerPrerequisitesStatusVerifier = DefaultDataBrokerPrerequisitesStatusVerifier(),
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          freemiumDBPFeature: FreemiumDBPFeature) {
         self.dataBrokerProtectionManager = dataBrokerProtectionManager
         self.vpnBypassService = vpnBypassService
         self.prerequisiteVerifier = prerequisiteVerifier
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.freemiumDBPFeature = freemiumDBPFeature
         super.init(nibName: nil, bundle: nil)
     }

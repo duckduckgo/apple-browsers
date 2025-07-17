@@ -38,7 +38,7 @@ final class DefaultFreemiumDBPPresenter: FreemiumDBPPresenter {
     /// Displays Freemium DBP
     func showFreemiumDBPAndSetActivated(windowControllerManager: WindowControllersManagerProtocol? = nil) {
 
-        let windowControllerManager = windowControllerManager ?? WindowControllersManager.shared
+        let windowControllerManager = windowControllerManager ?? Application.appDelegate.windowControllersManager
         freemiumDBPStateManager.didActivate = true
         windowControllerManager.showTab(with: .dataBrokerProtection)
     }

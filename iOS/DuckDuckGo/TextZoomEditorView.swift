@@ -18,6 +18,8 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct TextZoomEditorView: View {
 
@@ -54,7 +56,7 @@ struct TextZoomEditorView: View {
             Button {
                 model.decrement()
             } label: {
-                Image("Font-Smaller-24")
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.fontSmaller)
             }
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .padding(12)
@@ -68,7 +70,7 @@ struct TextZoomEditorView: View {
             Button {
                 model.increment()
             } label: {
-                Image("Font-Larger-24")
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.fontLarger)
             }
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .padding(12)

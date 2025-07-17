@@ -59,10 +59,7 @@
 "action.title.downloads" = "Downloads";
 
 /* Open AI Chat action in the menu list */
-"action.title.duckai" = "AI-chat";
-
-/* Duck.ai menu item opening a new chat */
-"action.title.duckai.new" = "Ny AI-chat";
+"action.title.duckai" = "Duck.ai";
 
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Rediger bogmærke";
@@ -160,6 +157,9 @@
 /* No comment provided by engineer. */
 "addWidget.title" = "Ét tryk til dine yndlingswebsteder.";
 
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "AI-funktioner";
+
 /* No comment provided by engineer. */
 "alert.message.bookmarkAll" = "Eksisterende bogmærker duplikeres ikke.";
 
@@ -189,6 +189,15 @@
 
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synkroniseringen er blevet sat på pause. Hvis du vil fortsætte med at synkronisere denne enhed, skal du oprette forbindelse igen ved hjælp af en anden enhed eller din gendannelseskode.";
+
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Synkroniser nu";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "\"%@\" vil kunne tilgå dine synkroniserede DuckDuckGo-data.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Synkroniser ny enhed?";
 
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Mere info";
@@ -259,9 +268,6 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Lås DuckDuckGo op.";
 
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Er du sikker på, at du vil slette alle bogmærker? Denne handling kan ikke fortrydes.";
-
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Log ind";
 
@@ -306,6 +312,9 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Når DuckDuckGo registrerer pop op-vinduer med samtykke til brug af cookies på websteder, du besøger, kan vi automatisk indstille dine cookiepræferencer til at minimere cookies og maksimere privatlivets fred og derefter lukke pop op-vinduer. Nogle websteder giver ikke mulighed for at administrere cookiepræferencer, så vi kan kun skjule pop op-vinduer som disse.";
+
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "Kort gemt";
 
 /* Toast message when a credit card item is deleted */
 "autofill.creditcard.deleted-message-no-title" = "Kort slettet";
@@ -394,6 +403,27 @@
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
 "autofill.creditcard.no-auth.title" = "Beskyt din enhed for at gemme kreditkort";
 
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "Gem ikke";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "Gem kort";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "Kreditkort gemmes sikkert på din enhed.";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "Skal DuckDuckGo gemme dine kortoplysninger?";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Log ind for at udfylde betalingskortoplysninger";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "Brug et gemt kort?";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "Du kan slå lagring af betalingskort fra når som helst.";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -454,8 +484,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Synkroniser med computer";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Sådan importerer du adgangskoder";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "Sådan synkroniseres adgangskoder fra pc";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Deaktiver";
@@ -920,6 +950,9 @@
 "close.all.tabs" = "Luk alle faner";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorte: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Bekræft";
 
 /* Button to continue the onboarding process */
@@ -1099,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Sådan eksporterer du adgangskoder fra Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Vælg fil...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Vælg filen, der indeholder adgangskoder eksporteret fra Safari eller Chrome. Dette er normalt en ZIP- eller CSV-fil.";
 
@@ -1125,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import fuldført!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Kreditkort";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Duplikater sprunget over";
@@ -1167,9 +1206,6 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Fejlfinding";
-
-/* No comment provided by engineer. */
-"Delete All" = "Slet alle";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "enhed";
@@ -1255,8 +1291,8 @@
 /* Message explaining to the user that Duck Player is not available */
 "duck-player.video-contingency-message" = "Duck Players funktionalitet er påvirket af de seneste ændringer på YouTube. Vi arbejder på at løse disse problemer og sætter pris på din forståelse.";
 
-/* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai er en valgfri funktion, der giver dig mulighed for at chatte anonymt med populære tredjeparts AI-chatmodeller. Dine chats bruges ikke til at træne AI.\n [Læs mere](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "DuckDuckGo AI-funktioner er private og valgfrie. Dine data bruges ikke til at træne AI.";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adresselinje";
@@ -1270,7 +1306,10 @@
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Stemmesøgning";
 
-/* Settings screen cell text for AI Chat settings */
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "Mere info";
+
+/* Accessibility label for Duck.ai */
 "duckai.settings.title" = "Duck.ai";
 
 /* No comment provided by engineer. */
@@ -1475,6 +1514,9 @@
 "empty.search" = "Ingen match fundet";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Tilmeldt: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1527,6 +1569,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Kun favoritter på mobil";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funktion: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokering af annoncer og pop op-vinduer";
@@ -1815,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Importer adgangskoder";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Overfør dine adgangskoder hurtigt og sikkert fra en anden browser.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Importér dine adgangskoder til DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Du skal aktivere VPN fra DuckDuckGo-appen.";
@@ -2210,7 +2264,7 @@
 "new.tab.page.settings.title" = "Tilpas siden Ny fane";
 
 /* Shortcut title leading to AI Chat */
-"new.tab.page.shortcut.ai.chat" = "AI-chat";
+"new.tab.page.shortcut.ai.chat" = "Duck.ai";
 
 /* Shortcut title leading to Bookmarks */
 "new.tab.page.shortcut.bookmarks" = "Bogmærker";
@@ -2276,7 +2330,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Bloker pop op-vinduer om cookies";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Bloker sporende annoncer";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Bloker målrettede annoncer";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Slet browsingdata med én knap";
@@ -2430,6 +2484,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Send tilbagemelding";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Blokering af svindel";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Deaktivering af denne funktion kan bringe dine personlige oplysninger i fare.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Advar på websteder, der er registreret for svindel, phishing eller malware. [Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Opgraderer automatisk links til HTTPS, når det er muligt. [Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Altid aktiv";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Trusselsbeskyttelse";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGos forbedrede beskyttelser stopper almindelige trusler, mens de holder din forbindelse sikker.\n[Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Nogle bogmærker eller adgangskoder er formateret forkert eller er for lange og blev ikke synkroniseret.";
@@ -2585,7 +2663,16 @@
 "settings.address.full.url" = "Vis hele webstedsadressen";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.shortcuts" = "Genveje";
+"settings.aichat.shortcuts" = "Duck.ai-genveje";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "Søgefelt";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "Søg på nettet eller spørg Duck.ai direkte fra adresselinjen";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Indstillinger for Search Assist";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Altid aktiv";
@@ -2626,6 +2713,9 @@
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Ryd data automatisk";
 
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "Færdiggør opsætningen";
+
 /* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
 "settings.cookie.pop-up-protection.protection" = "Beskyttelse mod pop op-beskeder om cookies";
 
@@ -2660,13 +2750,19 @@
 "settings.emailProtection.description" = "Bloker e-mailtrackere, og skjul din adresse";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Aktiver Duck.ai";
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "Chat privat med populære tredjeparts AI-modeller";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Aktivér Email Protection";
 
 /* Settings screen cell text for enabling voice search */
 "settings.enable.voice.search" = "Aktivér stemmesøgning";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "Vælg, hvor ofte du vil have AI-assisterede svar til at optræde i dine søgninger";
 
 /* Settings cell for Feedback */
 "settings.feedback" = "Del feedback";
@@ -2688,6 +2784,9 @@
 
 /* Settings screen cell text for app icon selection */
 "settings.icon" = "App-ikon";
+
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "Importer adgangskoder";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
@@ -2728,6 +2827,12 @@
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Fortrolighedspolitik og servicevilkår";
 
+/* Privacy Pro description subtitle in settings */
+"settings.PPro.row.description" = "Inkluderer vores VPN og Identity Theft Restoration.";
+
+/* Privacy pro description subtitle in settings */
+"settings.PPro.us.description" = "Inkluderer vores VPN, Personal Information Removal og Identity Theft Restoration.";
+
 /* Settings screen cell for long press previews */
 "settings.previews" = "Eksempler med lang tryk";
 
@@ -2748,6 +2853,9 @@
 
 /* Explanation of Send Crash Reports settings option */
 "settings.send.crash.reports.description" = "Send automatisk fejlrapporter til DuckDuckGo.";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "Angiv som standardbrowser";
 
 /* Settings screen cell text for setting address bar position */
 "settings.set.your.address.bar.position" = "Angiv placeringen af adresselinjen";
@@ -2785,17 +2893,11 @@
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonnementsindstillinger";
 
-/* Privacy Pro description subtitle in settings */
-"settings.subscription.row.description" = "Inkluderer vores VPN og Identity Theft Restoration.";
-
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Beskyt din forbindelse og identitet med Privacy Pro";
 
 /* Try Privacy Pro Free button text for privacy pro */
 "settings.subscription.try.free" = "Prøv Privacy Pro gratis";
-
-/* Privacy pro description subtitle in settings */
-"settings.subscription.us.description" = "Inkluderer vores VPN, Personal Information Removal og Identity Theft Restoration.";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -2865,6 +2967,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Gemt værtsnavn: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Underfunktion: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Tilføj til enhed";
@@ -3389,10 +3494,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Bloker over 150.000 domæner, der er markeret for hosting af malware, phishing-angreb og onlinesvindel med en blokeringsliste på DNS-niveau. [Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blokering og filtrering af indhold";
+"vpn.settings.dns.server.content.blocking.header" = "Blokering af ondsindet indhold";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Bloker risikable domæner";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Blokering af svindel";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";
@@ -3510,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Forsæt";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Kreditkort";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Adgangskoder";

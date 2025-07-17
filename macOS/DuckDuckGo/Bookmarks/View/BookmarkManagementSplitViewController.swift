@@ -21,13 +21,15 @@ import AppKit
 final class BookmarkManagementSplitViewController: NSSplitViewController {
 
     private let bookmarkManager: BookmarkManager
+    private let dragDropManager: BookmarkDragDropManager
     weak var delegate: BrowserTabSelectionDelegate?
 
-    lazy var sidebarViewController: BookmarkManagementSidebarViewController = BookmarkManagementSidebarViewController(bookmarkManager: bookmarkManager)
-    lazy var detailViewController: BookmarkManagementDetailViewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager)
+    lazy var sidebarViewController: BookmarkManagementSidebarViewController = BookmarkManagementSidebarViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
+    lazy var detailViewController: BookmarkManagementDetailViewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
+    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) {
         self.bookmarkManager = bookmarkManager
+        self.dragDropManager = dragDropManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -119,29 +121,36 @@ private let previewSize = NSSize(width: 700, height: 660)
 @available(macOS 14.0, *)
 #Preview(traits: previewSize.fixedLayout) { {
 
-    let vc = BookmarkManagementSplitViewController(bookmarkManager: {
-        let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [
-            BookmarkFolder(id: "1", title: "Folder 1", children: [
-                BookmarkFolder(id: "2", title: "Nested Folder", children: [
-                    Bookmark(id: "b1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "2")
-                ])
-            ]),
-            BookmarkFolder(id: "3", title: "Another Folder", children: [
-                BookmarkFolder(id: "4", title: "Nested Folder", children: [
-                    BookmarkFolder(id: "5", title: "Another Nested Folder", children: [
-                        Bookmark(id: "b2", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "5")
-                    ])
-                ])
-            ]),
-            Bookmark(id: "b3", url: URL.duckDuckGo.absoluteString, title: "Bookmark 1", isFavorite: false, parentFolderUUID: ""),
-            Bookmark(id: "b4", url: URL.duckDuckGo.absoluteString, title: "Bookmark 2", isFavorite: false, parentFolderUUID: ""),
-            Bookmark(id: "b5", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "")
-        ]))
-        bkman.loadBookmarks()
+    let bkman = {
+        let manager = LocalBookmarkManager(
+            bookmarkStore: BookmarkStoreMock(
+                bookmarks: [
+                    BookmarkFolder(id: "1", title: "Folder 1", children: [
+                        BookmarkFolder(id: "2", title: "Nested Folder", children: [
+                            Bookmark(id: "b1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "2")
+                        ])
+                    ]),
+                    BookmarkFolder(id: "3", title: "Another Folder", children: [
+                        BookmarkFolder(id: "4", title: "Nested Folder", children: [
+                            BookmarkFolder(id: "5", title: "Another Nested Folder", children: [
+                                Bookmark(id: "b2", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "5")
+                            ])
+                        ])
+                    ]),
+                    Bookmark(id: "b3", url: URL.duckDuckGo.absoluteString, title: "Bookmark 1", isFavorite: false, parentFolderUUID: ""),
+                    Bookmark(id: "b4", url: URL.duckDuckGo.absoluteString, title: "Bookmark 2", isFavorite: false, parentFolderUUID: ""),
+                    Bookmark(id: "b5", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "")
+                ]
+            ),
+            appearancePreferences: .mock
+        )
+        manager.loadBookmarks()
         customAssertionFailure = { _, _, _ in }
 
-        return bkman
-    }())
+        return manager
+    }()
+
+    let vc = BookmarkManagementSplitViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
     vc.preferredContentSize = previewSize
     return vc
 

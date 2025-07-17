@@ -19,6 +19,11 @@
 
 import Foundation
 
+public enum CodeEntrySource: String {
+    case qrCode
+    case pastedCode
+}
+
 public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
 
     var pasteboardString: String? { get }
@@ -26,12 +31,13 @@ public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
     func endConnectMode()
 
     /// Returns true if we were able to use the code. Either way, stop validating.
-    func syncCodeEntered(code: String) async -> Bool
+    func syncCodeEntered(code: String, source: CodeEntrySource) async -> Bool
 
     func codeCollectionCancelled()
     func gotoSettings()
     func shareCode(_ code: String)
 
+    func codeEntryScreenShown()
 }
 
 public class ScanOrPasteCodeViewModel: ObservableObject {
@@ -63,15 +69,13 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     public weak var delegate: ScanOrPasteCodeViewModelDelegate?
 
     var showQRCodeModel: ShowQRCodeViewModel
-    let code: String
 
-    public init(code: String) {
-        self.code = code
-        showQRCodeModel = ShowQRCodeViewModel(code: code)
+    public init(codeForDisplayOrPasting: String, qrCodeString: String) {
+        showQRCodeModel = ShowQRCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: qrCodeString)
     }
 
     func codeScanned(_ code: String) async -> Bool {
-        return await delegate?.syncCodeEntered(code: code) == true
+        return await delegate?.syncCodeEntered(code: code, source: .qrCode) == true
     }
 
     func cameraUnavailable() {
@@ -91,7 +95,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
         isValidating = true
 
         Task { @MainActor in
-            let codeUsed = await delegate?.syncCodeEntered(code: string) == true
+            let codeUsed = await delegate?.syncCodeEntered(code: string, source: .pastedCode) == true
             if !codeUsed {
                 isValidating = false
                 invalidCode = true
@@ -104,7 +108,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     func showShareCodeSheet() {
-        delegate?.shareCode(showQRCodeModel.code ?? "")
+        delegate?.shareCode(showQRCodeModel.codeForDisplayOrPasting)
     }
 
     func endConnectMode() {

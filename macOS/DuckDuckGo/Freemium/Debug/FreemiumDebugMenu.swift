@@ -16,16 +16,12 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import Freemium
 import OSLog
 
 final class FreemiumDebugMenu: NSMenuItem {
-
-    private enum Keys {
-        static let enrollmentDate = "freemium.dbp.experiment.enrollment-date"
-        static let experimentCohort = "freemium.dbp.experiment.cohort"
-    }
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -52,10 +48,18 @@ final class FreemiumDebugMenu: NSMenuItem {
         menu.addItem(NSMenuItem(title: "Log all state", action: #selector(logAllState), target: self))
         menu.addItem(NSMenuItem(title: "Display all state", action: #selector(displayAllState), target: self))
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Enroll into Experiment", action: #selector(enrollIntoExperiment), target: self))
-        menu.addItem(NSMenuItem(title: "Reset Freemium DBP Experiment State", action: #selector(resetFreemiumDBPExperimentState), target: self))
-        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Reset all Freemium Feature State", action: #selector(resetAllState), target: self))
+        menu.addItem(.separator())
+
+        menu.addItem(NSMenuItem(title: "Override Feature Flag -> ON", action: #selector(setFeatureFlagOverrideOn), target: self))
+        menu.addItem(NSMenuItem(title: "Override Feature Flag -> OFF", action: #selector(setFeatureFlagOverrideOff), target: self))
+        menu.addItem(NSMenuItem(title: "Reset Feature Flag Override", action: #selector(resetFeatureFlagOverride), target: self))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Override Storefront -> USA", action: #selector(setStorefrontOverrideOn), target: self))
+        menu.addItem(NSMenuItem(title: "Override Storefront -> Non-USA", action: #selector(setStorefrontOverrideOff), target: self))
+        menu.addItem(NSMenuItem(title: "Reset Storefront Override", action: #selector(resetStorefrontOverride), target: self))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Reset ALL Overrides", action: #selector(resetAllOverrides), target: self))
 
         return menu
     }
@@ -123,11 +127,15 @@ final class FreemiumDebugMenu: NSMenuItem {
         }
         Logger.freemiumDBP.debug("FREEMIUM DBP: DefaultFreemiumDBPUserStateManager(userDefaults: .dbp).didDismissHomePagePromotion \(DefaultFreemiumDBPUserStateManager(userDefaults: .dbp).didDismissHomePagePromotion)")
 
-        if let enrollmentDate = UserDefaults.dbp.object(forKey: Keys.enrollmentDate) as? Date {
-            Logger.freemiumDBP.debug("FREEMIUM DBP: freemium.dbp.experiment.enrollment-date \(enrollmentDate)")
+        if let override = UserDefaults.dbp.object(forKey: FreemiumDBPFeatureKeys.featureFlagOverride) as? Bool {
+            Logger.freemiumDBP.debug("FREEMIUM DBP: FreemiumDBPFeatureKeys.featureFlagOverride: \(override)")
+        } else {
+            Logger.freemiumDBP.debug("FREEMIUM DBP: FreemiumDBPFeatureKeys.featureFlagOverride: Not Set")
         }
-        if let cohortValue = UserDefaults.dbp.string(forKey: Keys.experimentCohort) {
-            Logger.freemiumDBP.debug("FREEMIUM DBP: freemium.dbp.experiment.cohort \(cohortValue)")
+        if let override = UserDefaults.dbp.object(forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride) as? Bool {
+            Logger.freemiumDBP.debug("FREEMIUM DBP: FreemiumDBPFeatureKeys.usaStorefrontOverride: \(override)")
+        } else {
+            Logger.freemiumDBP.debug("FREEMIUM DBP: FreemiumDBPFeatureKeys.usaStorefrontOverride: Not Set")
         }
     }
 
@@ -139,8 +147,8 @@ final class FreemiumDebugMenu: NSMenuItem {
         let didPostResultsNotification = "Posted Results Notification: \(DefaultFreemiumDBPUserStateManager(userDefaults: .dbp).didPostResultsNotification)"
         let firstScanResults = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp).firstScanResults.map { "First Scan Results: \($0.matchesCount) matches, \($0.brokerCount) brokers" } ?? "First Scan Results: Nil"
         let didDismissHomePagePromotion = "Dismissed Home Page Promotion: \(DefaultFreemiumDBPUserStateManager(userDefaults: .dbp).didDismissHomePagePromotion)"
-        let enrollmentDateLog = UserDefaults.dbp.object(forKey: Keys.enrollmentDate).flatMap { $0 as? Date }.map { "Enrollment Date: \($0)" } ?? "Enrollment Date: Not set"
-        let cohortValueLog = UserDefaults.dbp.string(forKey: Keys.experimentCohort).map { "Cohort: \($0)" } ?? "Cohort: Not set"
+        let featureFlagOverride = "Feature Flag Override: \(UserDefaults.dbp.object(forKey: FreemiumDBPFeatureKeys.featureFlagOverride) ?? "Not Set")"
+        let storefrontOverride = "Storefront Override: \(UserDefaults.dbp.object(forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride) ?? "Not Set")"
 
         let alert = NSAlert()
         alert.messageText = "State Information"
@@ -151,8 +159,8 @@ final class FreemiumDebugMenu: NSMenuItem {
         • \(didPostResultsNotification)
         • \(firstScanResults)
         • \(didDismissHomePagePromotion)
-        • \(enrollmentDateLog)
-        • \(cohortValueLog)
+        • \(featureFlagOverride)
+        • \(storefrontOverride)
         """
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK")
@@ -160,19 +168,38 @@ final class FreemiumDebugMenu: NSMenuItem {
     }
 
     @objc
-    func enrollIntoExperiment() {
-        UserDefaults.dbp.set("treatment", forKey: Keys.experimentCohort)
-        UserDefaults.dbp.set(Date(), forKey: Keys.enrollmentDate)
-    }
-
-    @objc
-    func resetFreemiumDBPExperimentState() {
-        UserDefaults.dbp.removeObject(forKey: Keys.enrollmentDate)
-        UserDefaults.dbp.removeObject(forKey: Keys.experimentCohort)
-    }
-
-    @objc
     func resetAllState() {
         DefaultFreemiumDBPUserStateManager(userDefaults: .dbp).resetAllState()
+    }
+
+    // MARK: - Override Actions
+
+    @objc func setFeatureFlagOverrideOn() {
+        UserDefaults.dbp.set(true, forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
+    }
+
+    @objc func setFeatureFlagOverrideOff() {
+        UserDefaults.dbp.set(false, forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
+    }
+
+    @objc func resetFeatureFlagOverride() {
+        UserDefaults.dbp.removeObject(forKey: FreemiumDBPFeatureKeys.featureFlagOverride)
+    }
+
+    @objc func setStorefrontOverrideOn() {
+        UserDefaults.dbp.set(true, forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride)
+    }
+
+    @objc func setStorefrontOverrideOff() {
+        UserDefaults.dbp.set(false, forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride)
+    }
+
+    @objc func resetStorefrontOverride() {
+        UserDefaults.dbp.removeObject(forKey: FreemiumDBPFeatureKeys.usaStorefrontOverride)
+    }
+
+    @objc func resetAllOverrides() {
+        resetFeatureFlagOverride()
+        resetStorefrontOverride()
     }
 }

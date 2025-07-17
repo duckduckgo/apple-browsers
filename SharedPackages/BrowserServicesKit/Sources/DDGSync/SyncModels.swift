@@ -176,7 +176,7 @@ public struct PairingInfo {
         self.deviceName = deviceName
     }
 
-    func toURL(baseURL: URL) -> URL {
+    public func toURL(baseURL: URL) -> URL {
         let url = baseURL.appendingPathComponent("sync/pairing/")
         var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
         let fragment = "&\(Keys.code)=\(base64URLCode)&\(Keys.deviceName)=\(deviceName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? deviceName)"

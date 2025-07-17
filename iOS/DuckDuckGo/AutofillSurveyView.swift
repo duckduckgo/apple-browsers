@@ -17,8 +17,8 @@
 //  limitations under the License.
 //
 
-import Core
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
@@ -68,7 +68,7 @@ struct AutofillSurveyView: View {
                     Button {
                         dismissButtonAction?()
                     } label: {
-                        Image(.close24)
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.clear)
                             .foregroundColor(.primary)
                     }
                     .frame(width: 44, height: 44)
@@ -86,7 +86,6 @@ struct AutofillSurveyView: View {
         .padding([.horizontal, .top], 20)
         .padding(.bottom, 30)
     }
-
 }
 
 #Preview("Light") {

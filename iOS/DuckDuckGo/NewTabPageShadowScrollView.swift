@@ -20,6 +20,7 @@
 import SwiftUI
 import UIKit
 import DesignResourcesKit
+import UIComponents
 
 struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable {
     var content: Content
@@ -61,6 +62,9 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable 
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        // Set content in case it has changed
+        context.coordinator.contentHostingController?.rootView = content
+        
         // This is required in order for the scroll view to adjust for changed size of
         // hosted SUI view. Without this the layout is not updating properly.
         context.coordinator.contentHostingController?.view.setNeedsUpdateConstraints()
@@ -115,7 +119,7 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable 
         let bottomShadowView = makeShadowView(isTop: false)
         
         [topShadowView, bottomShadowView].forEach {
-            $0.backgroundColor = .white
+            $0.backgroundColor = UIColor(designSystemColor: .background)
             $0.translatesAutoresizingMaskIntoConstraints = false
             parentView.addSubview($0)
         }

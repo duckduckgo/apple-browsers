@@ -126,13 +126,6 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
             } else {
                 return await getRemoteSubscription(accessToken: accessToken)
             }
-
-        case .returnCacheDataDontLoad:
-            if let cachedSubscription = subscriptionCache.get() {
-                return .success(cachedSubscription)
-            } else {
-                return .failure(.noCachedData)
-            }
         }
     }
 

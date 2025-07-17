@@ -289,29 +289,6 @@ extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
 
 }
 
-class HomePageMessagesConfigurationMock: HomePageMessagesConfiguration {
-    var homeMessages: [HomeMessage]
-
-    init(homeMessages: [HomeMessage]) {
-        self.homeMessages = homeMessages
-    }
-
-    private(set) var lastAppearedHomeMessage: HomeMessage?
-    func didAppear(_ homeMessage: HomeMessage) {
-        lastAppearedHomeMessage = homeMessage
-    }
-
-    private(set) var lastDismissedHomeMessage: HomeMessage?
-    func dismissHomeMessage(_ homeMessage: HomeMessage) {
-        lastDismissedHomeMessage = homeMessage
-    }
-
-    private(set) var didRefresh: Bool = false
-    func refresh() {
-        didRefresh = true
-    }
-}
-
 private extension HomeMessage {
     static func mockRemote(withType type: RemoteMessageModelType, isMetricsEnabled: Bool = true) -> Self {
         HomeMessage.remoteMessage(

@@ -22,6 +22,8 @@ import Core
 import BrowserServicesKit
 import Subscription
 import Persistence
+import DDGSync
+import SetDefaultBrowserUI
 
 @MainActor
 protocol URLHandling {
@@ -42,7 +44,13 @@ protocol ShortcutItemHandling {
 final class MainCoordinator {
 
     let controller: MainViewController
+
+    private(set) var tabManager: TabManager
+    private(set) var interactionStateSource: TabInteractionStateSource?
+
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let featureFlagger: FeatureFlagger
+    private let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
 
     init(syncService: SyncService,
          bookmarksDatabase: CoreDataDatabase,
@@ -58,8 +66,14 @@ final class MainCoordinator {
          fireproofing: Fireproofing,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
-         didFinishLaunchingStartTime: CFAbsoluteTime) throws {
+         didFinishLaunchingStartTime: CFAbsoluteTime,
+         keyValueStore: ThrowingKeyValueStoring,
+         defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
+    ) throws {
         self.subscriptionManager = subscriptionManager
+        self.featureFlagger = featureFlagger
+        self.defaultBrowserPromptPresenter = defaultBrowserPromptPresenter
+
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           privacyProDataReporter: reportingService.privacyProDataReporter)
@@ -71,6 +85,30 @@ final class MainCoordinator {
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: daxDialogs,
                                                                       contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
+        let textZoomCoordinator = Self.makeTextZoomCoordinator()
+        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
+        interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
+        tabManager = TabManager(model: tabsModel,
+                                persistence: tabsPersistence,
+                                previewsSource: previewsSource,
+                                interactionStateSource: interactionStateSource,
+                                bookmarksDatabase: bookmarksDatabase,
+                                historyManager: historyManager,
+                                syncService: syncService.sync,
+                                privacyProDataReporter: reportingService.privacyProDataReporter,
+                                contextualOnboardingPresenter: contextualOnboardingPresenter,
+                                contextualOnboardingLogic: daxDialogs,
+                                onboardingPixelReporter: reportingService.onboardingPixelReporter,
+                                featureFlagger: featureFlagger,
+                                contentScopeExperimentManager: contentScopeExperimentManager,
+                                subscriptionCookieManager: subscriptionService.subscriptionCookieManager,
+                                appSettings: AppDependencyProvider.shared.appSettings,
+                                textZoomCoordinator: textZoomCoordinator,
+                                websiteDataManager: websiteDataManager,
+                                fireproofing: fireproofing,
+                                maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
+                                maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
+                                featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard))
         controller = MainViewController(bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,
@@ -79,12 +117,10 @@ final class MainCoordinator {
                                         syncDataProviders: syncService.syncDataProviders,
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
-                                        tabsModel: tabsModel,
-                                        tabsPersistence: tabsPersistence,
+                                        tabManager: tabManager,
                                         syncPausedStateManager: syncService.syncErrorHandler,
                                         privacyProDataReporter: reportingService.privacyProDataReporter,
                                         variantManager: variantManager,
-                                        contextualOnboardingPresenter: contextualOnboardingPresenter,
                                         contextualOnboardingLogic: daxDialogs,
                                         contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter,
                                         subscriptionFeatureAvailability: subscriptionService.subscriptionFeatureAvailability,
@@ -93,12 +129,13 @@ final class MainCoordinator {
                                         contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
                                         subscriptionCookieManager: subscriptionService.subscriptionCookieManager,
-                                        textZoomCoordinator: Self.makeTextZoomCoordinator(),
-                                        websiteDataManager: Self.makeWebsiteDataManager(fireproofing: fireproofing),
+                                        textZoomCoordinator: textZoomCoordinator,
+                                        websiteDataManager: websiteDataManager,
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
-                                        maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
-                                        aiChatSettings: aiChatSettings)
+                                        aiChatSettings: aiChatSettings,
+                                        themeManager: ThemeManager.shared,
+                                        keyValueStore: keyValueStore)
     }
 
     func start() {
@@ -164,8 +201,8 @@ final class MainCoordinator {
 
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
-            if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
-               hasEntitlement {
+            if let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
+               canShowVPNInUI {
                 controller.segueToVPN()
             } else {
                 controller.segueToPrivacyPro()
@@ -178,6 +215,9 @@ final class MainCoordinator {
     func onForeground() {
         controller.showBars()
         controller.onForeground()
+
+        // Present Default Browser Prompt if user is eligible.
+        defaultBrowserPromptPresenter.tryPresentDefaultModalPrompt(from: controller)
     }
 
     func onBackground() {
@@ -241,6 +281,10 @@ extension MainCoordinator: URLHandling {
         case .openAIChat:
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
         default:
+            if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
+                controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
+                return true
+            }
             guard application.applicationState == .active, let currentTab = controller.currentTab else {
                 return false
             }

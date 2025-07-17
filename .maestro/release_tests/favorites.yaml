@@ -46,7 +46,10 @@ tags:
 - tapOn: 
     id: "searchEntry"
 - inputText: "pri"
-- assertVisible: "Bookmark-Fav-24"
+
+# Wildcard because identifiers of list items contain suffix to make them unique
+- assertVisible: 
+    id: "Autocomplete.Suggestions.ListItem.Favorite-pri.*"
 - tapOn: "Cancel"
 
 # Check favorites from bookmarks screen

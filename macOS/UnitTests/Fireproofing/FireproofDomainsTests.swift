@@ -21,11 +21,16 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class FireproofDomainsTests: XCTestCase {
-    let store = FireproofDomainsStoreMock()
-    lazy var logins: FireproofDomains = FireproofDomains(store: store, tld: ContentBlocking.shared.tld)
+    var store: FireproofDomainsStoreMock! = FireproofDomainsStoreMock()
+    lazy var logins: FireproofDomains! = FireproofDomains(store: store, tld: Application.appDelegate.tld)
 
     override func setUp() {
         UserDefaultsWrapper<Any>.clearAll()
+    }
+
+    override func tearDown() {
+        store = nil
+        logins = nil
     }
 
     func testWhenFireproofDomainsContainsFireproofedDomainThenReturnsTrue() {

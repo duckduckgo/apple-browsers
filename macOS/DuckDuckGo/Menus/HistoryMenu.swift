@@ -45,7 +45,7 @@ final class HistoryMenu: NSMenu {
     )
     private let showHistorySeparator = NSMenuItem.separator()
     private let clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryClearAllHistory,
-                                                     action: #selector(MainViewController.clearAllHistory),
+                                                     action: #selector(AppDelegate.clearAllHistory),
                                                      keyEquivalent: [.command, .shift, .backspace])
         .withAccessibilityIdentifier("HistoryMenu.clearAllHistory")
     private let clearAllHistorySeparator = NSMenuItem.separator()
@@ -57,10 +57,19 @@ final class HistoryMenu: NSMenu {
     private let location: Location
 
     @MainActor
-    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider? = nil, featureFlagger: FeatureFlagger? = nil) {
+    convenience init(location: Location = .mainMenu, historyGroupingDataSource: HistoryGroupingDataSource, featureFlagger: FeatureFlagger) {
+        self.init(
+            location: location,
+            historyGroupingProvider: .init(dataSource: historyGroupingDataSource, featureFlagger: featureFlagger),
+            featureFlagger: featureFlagger
+        )
+    }
+
+    @MainActor
+    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider, featureFlagger: FeatureFlagger) {
         self.location = location
-        self.historyGroupingProvider = historyGroupingProvider ?? HistoryGroupingProvider(dataSource: HistoryCoordinator.shared)
-        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
+        self.historyGroupingProvider = historyGroupingProvider
+        self.featureFlagger = featureFlagger
 
         super.init(title: UserText.mainMenuHistory)
 
@@ -108,7 +117,9 @@ final class HistoryMenu: NSMenu {
 
         clearOldVariableMenuItems()
         addRecentlyVisited()
-        addHistoryGroupings()
+        if !featureFlagger.isFeatureOn(.shortHistoryMenu) {
+            addHistoryGroupings()
+        }
         addClearAllAndShowHistoryOnTheBottom()
         clearAllHistoryMenuItem.title = featureFlagger.isFeatureOn(.historyView) ? UserText.mainMenuHistoryDeleteAllHistory : UserText.mainMenuHistoryClearAllHistory
     }
@@ -339,7 +350,7 @@ extension HistoryMenu {
 
         @MainActor
         convenience init() {
-            self.init(isInInitialStatePublisher: WindowControllersManager.shared.$isInInitialState, canRestoreLastSessionState: NSApp.canRestoreLastSessionState)
+            self.init(isInInitialStatePublisher: Application.appDelegate.windowControllersManager.$isInInitialState, canRestoreLastSessionState: NSApp.canRestoreLastSessionState)
         }
 
         private weak var currentlyAssignedMenuItem: NSMenuItem?

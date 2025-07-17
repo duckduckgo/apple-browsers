@@ -34,14 +34,12 @@ class BrowsingHistoryTests: UITestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launchEnvironment["UITEST_MODE"] = "1"
+        app = XCUIApplication.setUp()
         historyMenuBarItem = app.menuBarItems["History"]
         clearAllHistoryMenuItem = app.menuItems["HistoryMenu.clearAllHistory"]
         clearAllHistoryAlertClearButton = app.buttons["ClearAllHistoryAndDataAlert.clearButton"]
         fakeFireButton = app.buttons["FireViewController.fakeFireButton"]
         addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
-        app.launch()
         app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Enforce a single window
         app.typeKey("n", modifierFlags: .command)
 
@@ -99,7 +97,7 @@ class BrowsingHistoryTests: UITestCase {
     func test_history_showsVisitedSiteAfterClosingAndReopeningWindow() throws {
         let historyPageTitleExpectedToBeFirstInTodayHistory = UITests.randomPageTitle(length: lengthForRandomPageTitle)
         let url = UITests.simpleServedPage(titled: historyPageTitleExpectedToBeFirstInTodayHistory)
-        let firstSiteInHistory = app.menuItems["HistoryMenu.historyMenuItem.Today.0"]
+        let siteInRecentlyVisitedSection = app.menuItems[historyPageTitleExpectedToBeFirstInTodayHistory]
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe."
@@ -118,11 +116,9 @@ class BrowsingHistoryTests: UITestCase {
         )
         historyMenuBarItem.click() // The visited sites identifiers will not be available until after the History menu has been accessed.
         XCTAssertTrue(
-            firstSiteInHistory.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            siteInRecentlyVisitedSection.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The first site in the recently visited section didn't appear in a reasonable timeframe."
         )
-
-        XCTAssertEqual(historyPageTitleExpectedToBeFirstInTodayHistory, firstSiteInHistory.title)
     }
 
     func test_reopenLastClosedWindowMenuItem_canReopenTabsOfLastClosedWindow() throws {

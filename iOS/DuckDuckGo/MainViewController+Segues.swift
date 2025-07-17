@@ -25,6 +25,7 @@ import BrowserServicesKit
 import SwiftUI
 import PrivacyDashboard
 import Subscription
+import DDGSync
 import os.log
 
 extension MainViewController {
@@ -87,7 +88,8 @@ extension MainViewController {
                                     bookmarksSearch: self.bookmarksCachingSearch,
                                     syncService: self.syncService,
                                     syncDataProviders: self.syncDataProviders,
-                                    appSettings: self.appSettings)
+                                    appSettings: self.appSettings,
+                                    keyValueStore: self.keyValueStore)
         }
         bookmarks.delegate = self
 
@@ -175,7 +177,8 @@ extension MainViewController {
                                       syncService: self.syncService,
                                       featureFlagger: self.featureFlagger,
                                       tabManager: self.tabManager,
-                                      aiChatSettings: self.aiChatSettings)
+                                      aiChatSettings: self.aiChatSettings,
+                                      appSettings: self.appSettings)
         }) else {
             assertionFailure()
             return
@@ -235,11 +238,21 @@ extension MainViewController {
         }
     }
 
-    func segueToSettingsLoginsWithAccount(_ account: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource?) {
+    func segueToSettingsAutofillWith(account: SecureVaultModels.WebsiteAccount?,
+                                     card: SecureVaultModels.CreditCard?,
+                                     showCardManagement: Bool = false,
+                                     source: AutofillSettingsSource?) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.shouldPresentLoginsViewWithAccount(accountDetails: account, source: source)
+        if showCardManagement {
+            launchSettings(configure: { viewModel, controller in
+                controller.decorateNavigationBar()
+                viewModel.shouldPresentAutofillViewWith(accountDetails: nil, card: nil, showCreditCardManagement: true, source: nil)
+            })
+        } else {
+            launchSettings {
+                $0.shouldPresentAutofillViewWith(accountDetails: account, card: card, showCreditCardManagement: showCardManagement, source: source)
+            }
         }
     }
 
@@ -251,15 +264,22 @@ extension MainViewController {
         }
     }
 
-    func segueToSettingsSync(with source: String? = nil) {
+    func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            if let source = source {
-                $0.shouldPresentSyncViewWithSource(source)
-            } else {
-                $0.presentLegacyView(.sync)
+        let launchSync: () -> Void = { [weak self] in
+            self?.launchSettings {
+                if let source = source {
+                    $0.shouldPresentSyncViewWithSource(source)
+                } else {
+                    $0.presentLegacyView(.sync(pairingInfo))
+                }
             }
+        }
+        if let presentedViewController {
+            presentedViewController.dismiss(animated: false, completion: launchSync)
+        } else {
+            launchSync()
         }
     }
 
@@ -272,7 +292,8 @@ extension MainViewController {
    }
 
     func launchSettings(completion: ((SettingsViewModel) -> Void)? = nil,
-                        deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection? = nil) {
+                        deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection? = nil,
+                        configure: ((SettingsViewModel, SettingsHostingController) -> Void)? = nil) {
         let legacyViewProvider = SettingsLegacyViewProvider(syncService: syncService,
                                                             syncDataProviders: syncDataProviders,
                                                             appSettings: appSettings,
@@ -280,7 +301,8 @@ extension MainViewController {
                                                             tabManager: tabManager,
                                                             syncPausedStateManager: syncPausedStateManager,
                                                             fireproofing: fireproofing,
-                                                            websiteDataManager: websiteDataManager)
+                                                            websiteDataManager: websiteDataManager,
+                                                            keyValueStore: keyValueStore)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
@@ -298,8 +320,9 @@ extension MainViewController {
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
-                                                  experimentalThemingManager: ExperimentalThemingManager(featureFlagger: featureFlagger),
-                                                  experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger))
+                                                  themeManager: themeManager,
+                                                  experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
+                                                  keyValueStore: keyValueStore)
         Pixel.fire(pixel: .settingsPresented)
 
         if let navigationController = self.presentedViewController as? UINavigationController,
@@ -312,6 +335,9 @@ extension MainViewController {
             // We are still presenting legacy views, so use a Navcontroller
             let navController = SettingsUINavigationController(rootViewController: settingsController)
             settingsController.modalPresentationStyle = UIModalPresentationStyle.automatic
+
+            // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
+            configure?(settingsViewModel, settingsController)
 
             present(navController, animated: true) {
                 completion?(settingsViewModel)
@@ -328,7 +354,8 @@ extension MainViewController {
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             tabManager: self.tabManager,
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
-            fireproofing: self.fireproofing))
+            fireproofing: self.fireproofing,
+            keyValueStore: self.keyValueStore))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic

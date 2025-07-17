@@ -19,6 +19,8 @@
 
 import SwiftUI
 import Common
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct NewTabPageSettingsView: View {
     @Environment(\.dismiss) var dismiss
@@ -105,11 +107,11 @@ struct NewTabPageSettingsView: View {
             switch setting.item {
             case .favorites:
                 NewTabPageSettingsSectionItemView(title: UserText.newTabPageSettingsSectionNameFavorites,
-                                                  iconResource: .favorite24,
+                                                  icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.favorite),
                                                   isEnabled: setting.isEnabled)
             case .shortcuts:
                 NewTabPageSettingsSectionItemView(title: UserText.newTabPageSettingsSectionNameShortcuts,
-                                                  iconResource: .shortcut24,
+                                                  icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.shortcut),
                                                   isEnabled: setting.isEnabled)
             }
         }.onMove(perform: { indices, newOffset in

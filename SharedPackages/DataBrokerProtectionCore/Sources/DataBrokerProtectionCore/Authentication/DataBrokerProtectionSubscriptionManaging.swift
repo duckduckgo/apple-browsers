@@ -23,6 +23,9 @@ import Common
 public protocol DataBrokerProtectionSubscriptionManaging {
     func accessToken() async -> String?
     func hasValidEntitlement() async throws -> Bool
+    /// Returns whether the user is eligible for a free trial
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise
+    func isUserEligibleForFreeTrial() -> Bool
 }
 
 public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtectionSubscriptionManaging {
@@ -41,7 +44,7 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
             if !isAuthV2Enabled {
                 tokenKey = "PRIVACYPRO_STAGING_TOKEN"
             } else {
-                tokenKey = "PRIVACYPRO_STAGING_TOKEN_V2"
+                tokenKey = "PRIVACYPRO_STAGING_ACCESS_TOKEN_V2"
             }
 
             if let token = ProcessInfo.processInfo.environment[tokenKey] {
@@ -51,6 +54,12 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
         return try? await subscriptionManager.getAccessToken()
     }
 
+    /// Returns whether the user is eligible for a free trial
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise
+    public func isUserEligibleForFreeTrial() -> Bool {
+        subscriptionManager.isUserEligibleForFreeTrialWithFreemiumPIR()
+    }
+
     public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, runTypeProvider: AppRunTypeProviding, isAuthV2Enabled: Bool) {
         self.subscriptionManager = subscriptionManager
         self.runTypeProvider = runTypeProvider
@@ -58,7 +67,11 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
     }
 
     public func hasValidEntitlement() async throws -> Bool {
-        try await subscriptionManager.isEnabled(feature: .dataBrokerProtection)
+        if runTypeProvider.runType == .integrationTests {
+            return true // real entitlements check are not possible here in AuthV2 because the SubscriptionManager has no token
+        } else {
+            return try await subscriptionManager.isFeatureEnabled(.dataBrokerProtection)
+        }
     }
 }
 
@@ -68,4 +81,17 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
 public protocol DataBrokerProtectionAccountManaging {
     func accessToken() async -> String?
     func hasEntitlement(for cachePolicy: APICachePolicy) async -> Result<Bool, Error>
+}
+
+private extension SubscriptionAuthV1toV2Bridge {
+
+    /// Returns whether the user is eligible for a free trial, with special handling for Stripe platform
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise
+    /// - Note: For Stripe platform, always returns `true`. For other platforms, delegates to the base implementation.
+    func isUserEligibleForFreeTrialWithFreemiumPIR() -> Bool {
+        if currentEnvironment.purchasePlatform == .stripe {
+            return true
+        }
+        return isUserEligibleForFreeTrial()
+    }
 }

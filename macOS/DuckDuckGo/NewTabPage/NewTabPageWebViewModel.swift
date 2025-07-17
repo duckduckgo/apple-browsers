@@ -65,7 +65,7 @@ final class NewTabPageWebViewModel: NSObject {
             }
             .store(in: &cancellables)
 
-        NotificationCenter.default.publisher(for: .newTabPageModeDidChange)
+        NotificationCenter.default.publisher(for: .newTabPageSectionsAvailabilityDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.webView.reload()

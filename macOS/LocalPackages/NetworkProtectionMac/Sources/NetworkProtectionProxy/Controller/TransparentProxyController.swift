@@ -19,7 +19,7 @@
 import Combine
 import Foundation
 import NetworkExtension
-import NetworkProtection
+import VPN
 import os.log
 import PixelKit
 import SystemExtensions

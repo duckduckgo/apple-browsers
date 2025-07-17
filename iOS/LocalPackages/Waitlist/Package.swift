@@ -15,8 +15,8 @@ let package = Package(
             targets: ["Waitlist", "WaitlistMocks"])
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "5.0.0"),
-        .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.1.3"),
+        .package(path: "../../../SharedPackages/DesignResourcesKit"),
+        .package(url: "https://github.com/duckduckgo/apple-toolbox.git", exact: "3.2.1"),
     ],
     targets: [
         .target(

@@ -25,7 +25,7 @@ import UserScript
 import WebKit
 
 /**
- * This is a wrapper class for a hardcoded script evaluated in on the Internal Feedback Form page.
+ * This is a wrapper class for a hardcoded script evaluated on the Internal Feedback Form page.
  *
  * It's not really using any `UserScript` APIs and it isn't loaded permanently into the webView,
  * but it only subclasses `UserScript` to be able to use `loadJS` API and provide values for
@@ -42,14 +42,36 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {}
 
     override init() {
+        let appVersion = AppVersion()
+
+#if ALPHA
+
+#if APPSTORE
+        let distributionType = "App Store Alpha"
+#else
+        let distributionType = "DMG Alpha"
+#endif
+        let commitSHASuffix: String = {
+            guard let commitSHA = appVersion.commitSHAShort else {
+                return ""
+            }
+            return "_\(commitSHA)"
+        }()
+
+#else // ALPHA
+
 #if APPSTORE
         let distributionType = "App Store"
 #else
         let distributionType = "DMG"
 #endif
+        let commitSHASuffix: String = ""
+
+#endif // ALPHA
+
         source = Self.loadJS("internal-feedback-autofiller", from: .main, withReplacements: [
             "%OS_VERSION%": ProcessInfo.processInfo.operatingSystemVersion.description,
-            "%APP_VERSION%": "\(AppVersion().versionAndBuildNumber) (\(distributionType))"
+            "%APP_VERSION%": "\(AppVersion().versionAndBuildNumber)\(commitSHASuffix) (\(distributionType))"
         ])
         super.init()
     }

@@ -62,6 +62,13 @@ public struct AppVersion: OSVersionProviding {
         return bundle.object(forInfoDictionaryKey: Bundle.Key.commitSHA) as? String
     }
 
+    public var commitSHAShort: String? {
+        guard let commitSHA else {
+            return nil
+        }
+        return String(commitSHA.prefix(7))
+    }
+
     public var versionAndBuildNumber: String {
         let baseVersion = "\(versionNumber).\(buildNumber)"
         let suffix = alphaBuildSuffix

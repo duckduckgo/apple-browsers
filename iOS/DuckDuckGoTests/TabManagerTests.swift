@@ -24,6 +24,8 @@ import SubscriptionTestingUtilities
 import BrowserServicesKit
 import PersistenceTestingUtils
 
+// swiftlint:disable force_try
+
 @MainActor
 final class TabManagerTests: XCTestCase {
 
@@ -105,3 +107,5 @@ final class TabManagerTests: XCTestCase {
     }
 
 }
+
+// swiftlint:enable force_try

@@ -31,6 +31,8 @@ import MaliciousSiteProtection
 import PersistenceTestingUtils
 @testable import DuckDuckGo
 
+// swiftlint:disable force_try
+
 final class MockTabDelegate: TabDelegate {
     private(set) var didRequestLoadQueryCalled = false
     private(set) var capturedQuery: String?
@@ -202,3 +204,5 @@ class DummySpecialErrorPageNavigationHandler: SpecialErrorPageManaging {
     func advancedInfoPresented() {}
 
 }
+
+// swiftlint:enable force_try

@@ -39,6 +39,7 @@ public final class DataImportManager: DataImportManaging {
     public enum FileType {
         case csv
         case html
+        case json
         case zip
 
         public init?(typeIdentifier: String) {
@@ -62,6 +63,8 @@ public final class DataImportManager: DataImportManaging {
     }
 
     private let loginImporter: LoginImporter
+    private let creditCardImporter: CreditCardImporter
+    private let vault: (any AutofillSecureVault)?
     private let reporter: SecureVaultReporting
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesDisplayMode: FavoritesDisplayMode
@@ -69,14 +72,19 @@ public final class DataImportManager: DataImportManaging {
 
     private var csvImporter: CSVImporter?
     private var bookmarksImporter: BookmarksImporter?
+    private var jsonImporter: SafariPaymentCardsImporter?
 
     public init(loginImporter: LoginImporter = SecureVaultLoginImporter(),
+                creditCardImporter: CreditCardImporter = SecureVaultCreditCardImporter(),
+                vault: (any AutofillSecureVault)? = nil,
                 reporter: SecureVaultReporting,
                 bookmarksDatabase: CoreDataDatabase,
                 favoritesDisplayMode: FavoritesDisplayMode,
                 tld: TLD) {
         self.loginImporter = loginImporter
+        self.creditCardImporter = creditCardImporter
         self.reporter = reporter
+        self.vault = vault ?? (try? AutofillSecureVaultFactory.makeVault(reporter: reporter))
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
         self.tld = tld
@@ -98,6 +106,9 @@ public final class DataImportManager: DataImportManaging {
                 Logger.autofill.debug("Failed to read HTML file: \(error.localizedDescription)")
                 return nil
             }
+        case .json:
+            jsonImporter = createJSONImporter(jsonContent: try String(contentsOf: url, encoding: .utf8))
+            return await importData(types: [.creditCards]).task.value
         default:
             return nil
         }
@@ -110,6 +121,7 @@ public final class DataImportManager: DataImportManaging {
 
         csvImporter = dataTypes.contains(.passwords) ? contents.passwords.first.map { createCSVImporter(csvContent: $0) } : nil
         bookmarksImporter = dataTypes.contains(.bookmarks) ? contents.bookmarks.first.map { createBookmarksImporter(htmlContent: $0) } : nil
+        jsonImporter = dataTypes.contains(.creditCards) ? contents.creditCards.first.map { createJSONImporter(jsonContent: $0) } : nil
 
         return await importData(types: Set(dataTypes)).task.value
     }
@@ -128,6 +140,13 @@ public final class DataImportManager: DataImportManaging {
             let bookmarksCount = BookmarksImporter.totalValidBookmarks(in: htmlContents)
             if bookmarksCount > 0 {
                 importPreview.append(ImportPreview(type: .bookmarks, count: bookmarksCount))
+            }
+        }
+        
+        if let jsonContents = contents.creditCards.first {
+            let creditCardsCount = SafariPaymentCardsImporter.totalValidCreditCards(in: jsonContents)
+            if creditCardsCount > 0 {
+                importPreview.append(ImportPreview(type: .creditCards, count: creditCardsCount))
             }
         }
 
@@ -165,9 +184,14 @@ public final class DataImportManager: DataImportManaging {
                     tld: tld)
     }
 
+    private func createJSONImporter(url: URL? = nil, jsonContent: String? = nil) -> SafariPaymentCardsImporter {
+        SafariPaymentCardsImporter(fileURL: url, jsonContent: jsonContent, creditCardImporter: creditCardImporter, vault: vault)
+    }
+
     private func cleanupImporters() {
         csvImporter = nil
         bookmarksImporter = nil
+        jsonImporter = nil
     }
 
     struct ImportError: DataImportError {
@@ -209,6 +233,13 @@ public final class DataImportManager: DataImportManaging {
                     errorType = .unknown
                 }
                 summary[.bookmarks] = .failure(ImportError(type: errorType, underlyingError: error))
+            }
+        }
+        
+        if types.contains(.creditCards), let jsonImporter {
+            let importTask = jsonImporter.importData(types: [.creditCards])
+            if case .success(let importSummary) = await importTask.result {
+                summary[.creditCards] = importSummary[.creditCards]
             }
         }
 

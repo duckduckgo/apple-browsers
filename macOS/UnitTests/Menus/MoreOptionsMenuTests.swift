@@ -737,6 +737,92 @@ final class MoreOptionsMenuTests: XCTestCase {
             XCTAssertFalse(printItem.isEnabled, "\(tabContent) expected to not support printing")
         }
     }
+
+    // MARK: - Feedback sub-menu tests
+
+    func testCorrectItemsAreShown_whenNotInternalAndNotPrivacyProUser() {
+        let sut = FeedbackSubMenu(targetting: self,
+                                  authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(),
+                                  internalUserDecider: MockInternalUserDecider(),
+                                  featureFlagger: MockFeatureFlagger(),
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+
+        XCTAssertTrue(sut.items.count == 2)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
+        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
+    }
+
+    func testCorrectItemsAreShown_whenNotInternalUserAndPrivacyProUser() {
+        let sut = FeedbackSubMenu(targetting: self,
+                                  authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
+                                  internalUserDecider: MockInternalUserDecider(),
+                                  featureFlagger: MockFeatureFlagger(),
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+
+        XCTAssertTrue(sut.items.count == 4)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
+        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendPProFeedback)
+    }
+
+    func testCorrectItemsAreShown_whenInternalUserAndNotPrivacyProUser() {
+        let sut = FeedbackSubMenu(targetting: self,
+                                  authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: false),
+                                  internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                  featureFlagger: MockFeatureFlagger(),
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+
+        XCTAssertTrue(sut.items.count == 4)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
+        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 3)?.title, "Copy Version")
+    }
+
+    func testCorrectItemsAreShown_whenInternalUserAndPrivacyProUser() {
+        let sut = FeedbackSubMenu(targetting: self,
+                                  authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
+                                  internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                  featureFlagger: MockFeatureFlagger(),
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+
+        XCTAssertTrue(sut.items.count == 6)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.browserFeedback)
+        XCTAssertEqual(sut.item(at: 1)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 2)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 3)?.title, UserText.sendPProFeedback)
+        XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 5)?.title, "Copy Version")
+    }
+
+    func testCorrectItemsAreShown_whenNewFeedbackFeatureFlagIsOn() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.newFeedbackForm]
+        let sut = FeedbackSubMenu(targetting: self,
+                                  authenticationStateProvider: MockSubscriptionAuthenticationStateProvider(isUserAuthenticated: true),
+                                  internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                  featureFlagger: featureFlagger,
+                                  moreOptionsMenuIconsProvider: CurrentMoreOptionsMenuIcons())
+
+        XCTAssertTrue(sut.items.count == 8)
+        XCTAssertEqual(sut.item(at: 0)?.title, UserText.reportBrokenSite)
+        XCTAssertEqual(sut.item(at: 1)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 2)?.title, "Report a Browser Problem")
+        XCTAssertEqual(sut.item(at: 3)?.title, "Request a New Feature")
+        XCTAssertEqual(sut.item(at: 4)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 5)?.title, UserText.sendPProFeedback)
+        XCTAssertEqual(sut.item(at: 6)?.isSeparatorItem, true)
+        XCTAssertEqual(sut.item(at: 7)?.title, "Copy Version")
+    }
+}
+
+final class MockSubscriptionAuthenticationStateProvider: SubscriptionAuthenticationStateProvider {
+    var isUserAuthenticated: Bool = false
+
+    init(isUserAuthenticated: Bool = false) {
+        self.isUserAuthenticated = isUserAuthenticated
+    }
 }
 
 final class NetworkProtectionVisibilityMock: VPNFeatureGatekeeper {

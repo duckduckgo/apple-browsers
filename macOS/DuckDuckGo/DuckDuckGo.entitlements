@@ -31,7 +31,7 @@
 	<true/>
 	<key>keychain-access-groups</key>
 	<array>
-		<string>$(AppIdentifierPrefix)com.duckduckgo.macos.browser</string>
+		<string>$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 		<string>$(NETP_APP_GROUP)</string>
 		<string>$(DBP_APP_GROUP)</string>
 		<string>$(SUBSCRIPTION_APP_GROUP)</string>

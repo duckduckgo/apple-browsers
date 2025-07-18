@@ -266,7 +266,7 @@ final public class CSVImporter: DataImporter {
             return .success(summary)
         } catch is CancellationError {
             throw CancellationError()
-        } catch let error as DataImportError {
+        } catch let error as any DataImportError {
             return .failure(error)
         } catch {
             return .failure(LoginImporterError(error: error))

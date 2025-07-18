@@ -242,14 +242,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         // no-op - implemented in subclass
     }
 
-    func preventShadowsOnTop() {
-        // no-op - implemented in subclass
-    }
-
-    func preventShadowsOnBottom() {
-        // no-op - implemented in subclass
-    }
-
     func startBrowsing() {
         refreshState(state.onBrowsingStartedState)
     }

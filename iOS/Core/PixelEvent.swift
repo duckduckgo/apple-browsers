@@ -61,7 +61,6 @@ extension Pixel {
         
         case privacyDashboardReportBrokenSite
         
-        case tabSwitcherNewLayoutSeen
         case tabSwitcherListEnabled
         case tabSwitcherGridEnabled
         case tabSwitcherNewTab
@@ -1362,7 +1361,6 @@ extension Pixel.Event {
         case .tabsStoreInitError: return "m_debug_tabs_store_init_error"
         case .tabsStoreSaveError: return "m_debug_tabs_store_save_error"
 
-        case .tabSwitcherNewLayoutSeen: return "m_ts_n"
         case .tabSwitcherListEnabled: return "m_ts_l"
         case .tabSwitcherGridEnabled: return "m_ts_g"
         case .tabSwitcherNewTab: return "m_tab_manager_new_tab_click"

@@ -15,6 +15,7 @@ on:
         options:
         - review
         - release
+        - alpha
       create-dmg:
         description: "Create DMG image"
         required: true
@@ -28,7 +29,7 @@ on:
     inputs:
       release-type:
         description: "Build type (product review or public release)"
-        required: true
+        required: false
         default: release
         type: string
       create-dmg:
@@ -42,6 +43,10 @@ on:
         type: string
       branch:
         description: "Branch name"
+        required: false
+        type: string
+      build-number-override:
+        description: "Override build number (for Alpha builds)"
         required: false
         type: string
       skip-notify:
@@ -126,18 +131,25 @@ jobs:
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
       run: |
-        if [[ "${{ env.release-type }}" == "release" ]]; then
-          bundle exec fastlane sync_signing_dmg_release
-        else
-          bundle exec fastlane sync_signing_dmg_review
-        fi
+        case "${{ env.release-type }}" in
+          "release")
+            bundle exec fastlane sync_signing_dmg_release
+            ;;
+          "review")
+            bundle exec fastlane sync_signing_dmg_review
+            ;;
+          "alpha")
+            bundle exec fastlane sync_signing_dmg_alpha
+            ;;
+        esac
 
     - name: Check if this is an official release build
       id: is-official-release
       env:
         is-official-release: ${{ env.release-type == 'release' && (startsWith(env.branch, 'release') || startsWith(env.branch, 'hotfix')) }}
       run: |
-        if [[ "${{ env.is-official-release }}" == "true" ]]; then
+        echo "is-official-release=${{ env.is-official-release }}" >> $GITHUB_ENV
+        if [[ "${{ env.is-official-release }}" == "true" ]] || [[ "${{ env.release-type }}" == "alpha" ]]; then
           echo "upload-to=s3" >> $GITHUB_OUTPUT
           echo "upload-to=s3" >> $GITHUB_ENV
         else
@@ -147,6 +159,21 @@ jobs:
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
+
+    - name: Override version and build number for Alpha release and add commit SHA to plist
+      if: ${{ env.release-type == 'alpha' }}
+      env:
+        ALPHA_VERSION: 9999.9.9
+      run: |
+        echo "Overriding version number to ${ALPHA_VERSION}"
+        echo "MARKETING_VERSION = ${ALPHA_VERSION}" > Configuration/Version.xcconfig
+        if [[ "${{ inputs.build-number-override }}" != "" ]]; then
+          echo "Overriding build number to ${{ inputs.build-number-override }}"
+          echo "CURRENT_PROJECT_VERSION = ${{ inputs.build-number-override }}" > Configuration/BuildNumber.xcconfig
+        fi
+        plist_path="DuckDuckGo/Info.plist"
+        /usr/libexec/PlistBuddy -c "Add :DDG_COMMIT_SHA string ${{ github.sha }}" "${plist_path}" \
+          || /usr/libexec/PlistBuddy -c "Set :DDG_COMMIT_SHA ${{ github.sha }}" "${plist_path}"
 
     - name: Archive and notarize the app
       id: archive
@@ -180,7 +207,14 @@ jobs:
       run: |
         echo "app-version=${{ env.app-version }}" >> $GITHUB_OUTPUT
         echo "app-name=${{ env.app-name }}" >> $GITHUB_OUTPUT
-        echo "dsym-name=DuckDuckGo-${{ env.app-version }}-dSYM.zip" >> $GITHUB_OUTPUT
+        app_name="${{ env.app-name }}"
+        app_name="${app_name// /-}"
+
+        # Rename dSYM to match app name
+        original_dsym_name="DuckDuckGo-${{ env.app-version }}-dSYM.zip"
+        dsym_name="${app_name}-${{ env.app-version }}-dSYM.zip"
+        mv -f "release/${original_dsym_name}" "release/${dsym_name}"
+        echo "dsym-name=${dsym_name}" >> $GITHUB_OUTPUT
 
     - name: Upload app artifact
       uses: actions/upload-artifact@v4
@@ -250,7 +284,7 @@ jobs:
         echo "dsym-s3-path=${dsym_s3_path}" >> $GITHUB_OUTPUT
 
     - name: Report success
-      if: ${{ env.upload-to == 's3' }}
+      if: ${{ env.upload-to == 's3' && env.asana-task-url != '' }}
       env:
         DSYM_S3_PATH: ${{ steps.upload-dsyms-to-s3.outputs.dsym-s3-path }}
         TAG: ${{ env.app-version }}
@@ -321,7 +355,7 @@ jobs:
       run: |
         tar -xf DuckDuckGo-${{ env.app-version }}.app.tar.xz
         rm -f DuckDuckGo-${{ env.app-version }}.app.tar.xz
-        
+
         # Rename extracted app to match expected name for DMG creation
         extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
         if [[ -n "${extracted_app}" ]]; then
@@ -346,7 +380,10 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        dmg="duckduckgo-${{ env.app-version }}.dmg"
+        app_name="${{ env.app-name }}"
+        app_name="${app_name// /-}" # replace spaces with hyphens
+        app_name="$(echo "$app_name" | tr '[:upper:]' '[:lower:]')" # lowercase
+        dmg="${app_name}-${{ env.app-version }}.dmg"
         # Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
         create-dmg --volname "${{ env.app-name }}" \
             --volicon "scripts/assets/dmg-${{ env.release-type }}.icns" \
@@ -387,6 +424,10 @@ jobs:
         RELEASE_BUCKET_PREFIX: ${{ vars.RELEASE_BUCKET_PREFIX }}
       run: |
         if [[ "${{ env.upload-to }}" == 's3' ]]; then
+          if [[ "${{ env.release-type }}" == 'alpha' ]]; then
+            RELEASE_BUCKET_PREFIX="${RELEASE_BUCKET_PREFIX}/alpha"
+            echo "${DMG_URL_ROOT}alpha/${{ steps.create-dmg.outputs.dmg }}" > dmg_url.txt
+          fi
           dmg_s3_path="s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/${{ steps.create-dmg.outputs.dmg }}"
         else
           dmg_s3_path="${TEST_BUILD_S3_PATH}${{ steps.create-dmg.outputs.dmg }}"
@@ -399,8 +440,15 @@ jobs:
         aws s3 cp $DMG_LOCAL_PATH $dmg_s3_path --acl public-read
         echo "dmg-s3-path=${dmg_s3_path}" >> $GITHUB_OUTPUT
 
+    - name: Upload DMG URL artifact
+      if: ${{ env.release-type == 'alpha' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: dmg_url
+        path: ${{ github.workspace }}/macOS/dmg_url.txt
+
     - name: Report success
-      if: ${{ env.upload-to == 's3' }}
+      if: ${{ env.asana-task-url != '' && env.upload-to == 's3' }}
       env:
         DMG_URL: ${{ vars.DMG_URL_ROOT }}${{ steps.create-dmg.outputs.dmg }}
         TAG: ${{ env.app-version }}
@@ -414,7 +462,7 @@ jobs:
           is_scheduled_release:"${{ github.event_name == 'schedule' }}"
 
     - name: Report success (test build)
-      if: ${{ env.upload-to == 's3testbuilds' }}
+      if: ${{ env.asana-task-url != '' && env.upload-to == 's3testbuilds' }}
       env:
         DMG_URL: ${{ steps.upload-dmg-to-s3.outputs.dmg-url }}
         DMG_S3_PATH: ${{ steps.upload-dmg-to-s3.outputs.dmg-s3-path }}

@@ -88,6 +88,8 @@ protocol OmniBarDelegate: AnyObject {
     func onSelectFavorite(_ favorite: BookmarkEntity)
 
     func didRequestCurrentURL() -> URL?
+
+    func isSuggestionTrayVisible() -> Bool
 }
 
 extension OmniBarDelegate {

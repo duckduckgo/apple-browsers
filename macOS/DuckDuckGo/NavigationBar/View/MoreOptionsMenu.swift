@@ -29,6 +29,7 @@ import Freemium
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import SwiftUI
+import DesignResourcesKitIcons
 
 protocol OptionsButtonMenuDelegate: AnyObject {
 
@@ -173,10 +174,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .withImage(moreOptionsMenuIconsProvider.sendFeedbackIcon)
 
         feedbackMenuItem.submenu = FeedbackSubMenu(targetting: self,
-                                                   tabCollectionViewModel: tabCollectionViewModel,
-                                                   subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                    authenticationStateProvider: subscriptionManager,
                                                    internalUserDecider: internalUserDecider,
+                                                   featureFlagger: featureFlagger,
                                                    moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
         addItem(feedbackMenuItem)
 
@@ -776,45 +776,39 @@ final class EmailOptionsButtonSubMenu: NSMenu {
 }
 
 final class FeedbackSubMenu: NSMenu {
-    private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let authenticationStateProvider: any SubscriptionAuthenticationStateProvider
     private let internalUserDecider: InternalUserDecider
 
     init(targetting target: AnyObject,
-         tabCollectionViewModel: TabCollectionViewModel,
-         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          authenticationStateProvider: any SubscriptionAuthenticationStateProvider,
          internalUserDecider: InternalUserDecider,
+         featureFlagger: FeatureFlagger,
          moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
-        self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.authenticationStateProvider = authenticationStateProvider
         self.internalUserDecider = internalUserDecider
         super.init(title: UserText.sendFeedback)
-        updateMenuItems(with: tabCollectionViewModel, targetting: target, moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
+
+        updateMenuItems(targetting: target,
+                        featureFlagger: featureFlagger,
+                        moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
     }
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private func updateMenuItems(with tabCollectionViewModel: TabCollectionViewModel,
-                                 targetting target: AnyObject,
+    private func updateMenuItems(targetting target: AnyObject,
+                                 featureFlagger: FeatureFlagger,
                                  moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         removeAllItems()
 
 #if FEEDBACK
-        let browserFeedbackItem = NSMenuItem(title: UserText.browserFeedback,
-                                             action: #selector(sendFeedback(_:)),
-                                             keyEquivalent: "")
-            .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.browserFeedbackIcon)
-        addItem(browserFeedbackItem)
 
-        let reportBrokenSiteItem = NSMenuItem(title: UserText.reportBrokenSite,
-                                              action: #selector(AppDelegate.openReportBrokenSite(_:)),
-                                              keyEquivalent: "")
-            .withImage(moreOptionsMenuIconsProvider.reportBrokenSiteIcon)
-        addItem(reportBrokenSiteItem)
+        if featureFlagger.isFeatureOn(.newFeedbackForm) {
+            newFlow(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
+        } else {
+            legacyFlow(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
+        }
 
         if authenticationStateProvider.isUserAuthenticated {
             addItem(.separator())
@@ -832,6 +826,43 @@ final class FeedbackSubMenu: NSMenu {
             addItem(withTitle: "Copy Version", action: #selector(AppDelegate.copyVersion(_:)), keyEquivalent: "")
         }
 #endif
+    }
+
+    private func newFlow(moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
+        let reportBrokenSiteItem = NSMenuItem(title: UserText.reportBrokenSite,
+                                              action: #selector(AppDelegate.openReportBrokenSite(_:)),
+                                              keyEquivalent: "")
+            .withImage(moreOptionsMenuIconsProvider.reportBrokenSiteIcon)
+        addItem(reportBrokenSiteItem)
+
+        addItem(.separator())
+
+        let reportABrowserProblemItem = NSMenuItem(title: "Report a Browser Problem",
+                                                   action: #selector(AppDelegate.openReportABrowserProblem(_:)),
+                                                   keyEquivalent: "")
+            .withImage(DesignSystemImages.Glyphs.Size16.alert)
+        addItem(reportABrowserProblemItem)
+
+        let requestANewFeatureItem = NSMenuItem(title: "Request a New Feature",
+                                                action: #selector(AppDelegate.openRequestANewFeature(_:)),
+                                                keyEquivalent: "")
+            .withImage(DesignSystemImages.Glyphs.Size16.windowNew)
+        addItem(requestANewFeatureItem)
+    }
+
+    private func legacyFlow(moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
+        let browserFeedbackItem = NSMenuItem(title: UserText.browserFeedback,
+                                             action: #selector(sendFeedback(_:)),
+                                             keyEquivalent: "")
+            .targetting(self)
+            .withImage(moreOptionsMenuIconsProvider.browserFeedbackIcon)
+        addItem(browserFeedbackItem)
+
+        let reportBrokenSiteItem = NSMenuItem(title: UserText.reportBrokenSite,
+                                              action: #selector(AppDelegate.openReportBrokenSite(_:)),
+                                              keyEquivalent: "")
+            .withImage(moreOptionsMenuIconsProvider.reportBrokenSiteIcon)
+        addItem(reportBrokenSiteItem)
     }
 
 #if FEEDBACK

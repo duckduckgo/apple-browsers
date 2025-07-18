@@ -159,6 +159,8 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     private var shouldCheckNewApplicationVersion = true
 
+    private let updateCheckState = UpdateCheckState()
+
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
@@ -229,14 +231,41 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // Check for updates while adhering to the rollout schedule
     // This is the default behavior
     func checkForUpdateRespectingRollout() {
-        guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false) else {
+        Task { @UpdateCheckActor in
+            await performUpdateCheck()
+        }
+    }
+
+    @UpdateCheckActor
+    private func performUpdateCheck() async {
+        // Check if we can start a new check (no active task + rate limiting)
+        guard await updateCheckState.canStartNewCheck() else {
+            Logger.updates.log("Update check skipped - task already running or rate limited")
             return
         }
 
-        guard let updater, !updater.sessionInProgress else { return }
+        // Record that we're starting a check
+        await updateCheckState.recordCheckTime()
 
-        Logger.updates.log("Checking for updates respecting rollout")
-        updater.checkForUpdatesInBackground()
+        // Create the actual update task
+        let updateTask = Task { @MainActor in
+            // Handle expired builds first (critical path)
+            guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false) else {
+                return
+            }
+
+            guard let updater, !updater.sessionInProgress else { return }
+
+            Logger.updates.log("Checking for updates respecting rollout")
+            updater.checkForUpdatesInBackground()
+        }
+
+        // Store the task reference
+        await updateCheckState.setActiveTask(updateTask)
+
+        // Wait for the task to complete and clean up
+        await updateTask.value
+        await updateCheckState.setActiveTask(nil)
     }
 
     private var isBuildExpired: Bool {
@@ -272,14 +301,39 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // Check for updates immediately, bypassing the rollout schedule
     // This is used for user-initiated update checks only
     func checkForUpdateSkippingRollout() {
-        guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
-            return
+        Task { @UpdateCheckActor in
+            await performUpdateCheckSkippingRollout()
+        }
+    }
+
+    @UpdateCheckActor
+    private func performUpdateCheckSkippingRollout() async {
+        // Cancel any active task (user-initiated takes priority)
+        await updateCheckState.cancelActiveTask()
+        Logger.updates.log("User-initiated update check - cancelled any active task")
+
+        // Record that we're starting a check (no rate limiting for user-initiated)
+        await updateCheckState.recordCheckTime()
+
+        // Create the actual update task
+        let updateTask = Task { @MainActor in
+            // Handle expired builds first (critical path)
+            guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
+                return
+            }
+
+            guard let updater, !updater.sessionInProgress else { return }
+
+            Logger.updates.log("Checking for updates skipping rollout")
+            updater.checkForUpdates()
         }
 
-        guard let updater, !updater.sessionInProgress else { return }
+        // Store the task reference
+        await updateCheckState.setActiveTask(updateTask)
 
-        Logger.updates.log("Checking for updates skipping rollout")
-        updater.checkForUpdates()
+        // Wait for the task to complete and clean up
+        await updateTask.value
+        await updateCheckState.setActiveTask(nil)
     }
 
     // MARK: - Private

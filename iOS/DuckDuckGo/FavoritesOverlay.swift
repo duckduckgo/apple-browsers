@@ -73,8 +73,11 @@ class FavoritesOverlay: UIViewController {
         collectionView.backgroundColor = .clear
 
         view.addSubview(collectionView)
-        borderView.insertSelf(into: view)
-        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+
+        if !isUsingSearchInputCustomStyling {
+            borderView.insertSelf(into: view)
+            borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
+        }
 
         renderer.install(into: self)
         

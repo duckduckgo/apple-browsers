@@ -30,7 +30,9 @@ final class DaxLogoManager {
 
     // MARK: - Public Methods
     
-    func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {        viewController.view.addSubview(logoView)
+    func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {
+
+        viewController.view.addSubview(logoView)
         logoView.translatesAutoresizingMaskIntoConstraints = false
         logoView.setContentHuggingPriority(.defaultHigh, for: .vertical)
 

@@ -1,0 +1,37 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - duckplayer.native
+
+---
+
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Turn SERP off
+- tapOn: "Browsing Menu"
+- tapOn: "Settings"
+- scrollUntilVisible: 
+    element: "Duck Player"
+    direction: DOWN
+- tapOn: "Duck Player"
+- tapOn:
+    text: "1"
+    index: 0
+- tapOn: "Settings"
+- tapOn: "Done"
+
+
+# Navigate to a video
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://duckduckgo.com/?q=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%E2%80%9D+site%3Ayoutube.com&atb=v469-1-wb&ia=web"
+- pressKey: Enter
+- assertVisible: "DuckDuckGo vs Google: 5 Reasons You Should Switch"
+- tapOn: "DuckDuckGo vs Google: 5 Reasons You Should Switch"
+
+# Validate YouTube opens
+- assertVisible: "m.youtube.com"

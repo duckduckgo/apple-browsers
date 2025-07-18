@@ -1,5 +1,5 @@
 //
-//  NavigationPixelTabExtension.swift
+//  NavigationPixelNavigationResponder.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,7 @@ import WebKit
 /**
  * This Tab Extension is responsible for firing navigation pixel on regular and same-tab navigations.
  */
-final class NavigationPixelTabExtension {
+struct NavigationPixelNavigationResponder {
 
     private let pixelFiring: PixelFiring?
 
@@ -33,7 +33,7 @@ final class NavigationPixelTabExtension {
     }
 }
 
-extension NavigationPixelTabExtension: NavigationResponder {
+extension NavigationPixelNavigationResponder: NavigationResponder {
 
     func didStart(_ navigation: Navigation) {
         let shouldFireNavigationPixel: Bool = {
@@ -59,18 +59,5 @@ extension NavigationPixelTabExtension: NavigationResponder {
         if navigationType != .sessionStateReplace {
             PixelKit.fire(GeneralPixel.navigation)
         }
-    }
-}
-
-protocol NavigationPixelTabExtensionProtocol: AnyObject, NavigationResponder {
-}
-
-extension NavigationPixelTabExtension: NavigationPixelTabExtensionProtocol, TabExtension {
-    func getPublicProtocol() -> NavigationPixelTabExtensionProtocol { self }
-}
-
-extension TabExtensions {
-    var navigationPixel: NavigationPixelTabExtensionProtocol? {
-        resolve(NavigationPixelTabExtension.self)
     }
 }

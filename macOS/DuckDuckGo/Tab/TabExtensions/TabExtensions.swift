@@ -218,9 +218,6 @@ extension TabExtensionsBuilder {
         add {
             NavigationHotkeyHandler(isTabPinned: args.isTabPinned, isBurner: args.isTabBurner)
         }
-        add {
-            NavigationPixelTabExtension()
-        }
 
         let duckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider()
         add {

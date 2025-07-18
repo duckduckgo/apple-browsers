@@ -27,7 +27,7 @@ jobs:
     runs-on: macos-15
 
     outputs:
-      build-number: ${{ steps.update-build-number.outputs.next_build_number }}
+      build-number: ${{ steps.update-build-number.outputs.build-number }}
 
     steps:
     - name: Check out the code

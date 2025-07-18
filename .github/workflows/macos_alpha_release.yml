@@ -30,10 +30,6 @@ jobs:
     name: Calculate Alpha Build Number
     runs-on: macos-15
 
-    concurrency:
-      group: macos-alpha-build
-      cancel-in-progress: true
-
     outputs:
       build-number: ${{ steps.build-number.outputs.next_build_number }}
       should-skip: ${{ steps.check-upload.outputs.should-skip }}
@@ -108,10 +104,6 @@ jobs:
   dmg-release:
     name: Prepare DMG Release
 
-    concurrency:
-      group: macos-alpha-build-dmg
-      cancel-in-progress: true
-
     needs: calculate-alpha-build-number
 
     uses: ./.github/workflows/macos_build_notarized.yml
@@ -158,10 +150,6 @@ jobs:
 
   publish-alpha-dmg:
     name: Publish Alpha DMG
-
-    concurrency:
-      group: macos-alpha-upload
-      cancel-in-progress: true
 
     needs: dmg-release
 
@@ -221,6 +209,7 @@ jobs:
 
       - name: Upload to S3
         id: upload
+        if: always() && steps.appcast.conclusion == 'success'
         working-directory: sparkle
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}

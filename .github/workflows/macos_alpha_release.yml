@@ -68,6 +68,7 @@ jobs:
           echo "::notice::Using build number $next_build_number"
           echo "build-number=$next_build_number" >> $GITHUB_OUTPUT
         else
+          gh variable set MACOS_ALPHA_BUILD_NUMBER --body "$current_build_number"
           echo "Build number $next_build_number is not higher than current $current_build_number, skipping update"
           echo "::notice::Using build number $current_build_number"
           echo "build-number=$current_build_number" >> $GITHUB_OUTPUT

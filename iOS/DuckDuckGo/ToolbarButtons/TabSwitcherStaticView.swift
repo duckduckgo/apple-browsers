@@ -128,13 +128,13 @@ final class TabSwitcherStaticView: UIView {
     private struct Metrics {
         static let iconSize: CGFloat = 24
 
-        static let labelOffset: CGFloat = 2
-        static let labelYOffsetInfinity: CGFloat = 3
+        static let labelOffset: CGFloat = 0
+        static let labelYOffsetInfinity: CGFloat = 0
 
-        static let fontSize = 9.0
+        static let fontSize = 11.0
         static let fontWeight = UIFont.Weight.bold
 
-        static let symbolFontSize = 12.0
+        static let symbolFontSize = 13.0
         static let symbolFontWeight = UIFont.Weight.semibold
     }
 }

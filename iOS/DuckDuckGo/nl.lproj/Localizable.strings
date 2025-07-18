@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Wachtwoorden exporteren vanuit Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Selecteer bestand...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Selecteer het bestand met wachtwoorden die zijn geëxporteerd uit Safari of Chrome. Dit is meestal een ZIP- of CSV-bestand.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Importeren voltooid!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Creditcards";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Overgeslagen duplicaten";
@@ -1854,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Wachtwoorden importeren";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Snel en veilig je wachtwoorden overzetten vanuit een andere browser.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Je wachtwoorden importeren in DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Je moet de VPN inschakelen vanuit de DuckDuckGo-app.";
@@ -3600,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Doorgaan";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Creditcards";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Wachtwoorden";

@@ -421,7 +421,7 @@ final class MainMenu: NSMenu {
 
     @MainActor
     func buildDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenuItem? {
-#if DEBUG || REVIEW
+#if DEBUG || REVIEW || ALPHA
         NSMenuItem(title: "Debug")
             .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
 #else
@@ -487,7 +487,7 @@ final class MainMenu: NSMenu {
 
     private func updateAppAboutDDGMenuItem() {
         if internalUserDecider.isInternalUser {
-            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(appVersion.versionAndBuildNumber))"
+            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort))"
         } else {
             appAboutDDGMenuItem.title = UserText.aboutDuckDuckGo
         }
@@ -820,6 +820,10 @@ final class MainMenu: NSMenu {
         }
 
         debugMenu.addItem(internalUserItem)
+#if !ALPHA
+        debugMenu.addItem(.separator())
+        debugMenu.addItem(NSMenuItem(title: "Download DuckDuckGo Alpha Build", action: #selector(downloadAlphaBuild), target: self))
+#endif
         debugMenu.autoenablesItems = false
         return debugMenu
     }
@@ -874,6 +878,17 @@ final class MainMenu: NSMenu {
         AutofillPreferences().debugScriptEnabled = !AutofillPreferences().debugScriptEnabled
         NotificationCenter.default.post(name: .autofillScriptDebugSettingsDidChange, object: nil)
         updateAutofillDebugScriptMenuItem()
+    }
+
+    @MainActor
+    @objc private func downloadAlphaBuild() {
+        let url = URL(string: "https://staticcdn.duckduckgo.com/macos-desktop-browser/alpha/duckduckgo-alpha.dmg")!
+        Application.appDelegate.windowControllersManager.open(
+            url,
+            source: .userEntered(url.absoluteString, downloadRequested: true),
+            target: nil,
+            event: NSApp.currentEvent
+        )
     }
 }
 

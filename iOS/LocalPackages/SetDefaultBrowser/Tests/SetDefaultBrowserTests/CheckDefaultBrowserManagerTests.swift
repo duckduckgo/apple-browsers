@@ -79,6 +79,8 @@ final class DefaultBrowserManagerTests {
                 Issue.record("Success expected")
             }
         #expect(store.didSetDefaultBrowserInfo)
+        #expect(eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == .successfulResult)
     }
 
     @Test("Check Successful attempts update Browser Info data")
@@ -177,6 +179,8 @@ final class DefaultBrowserManagerTests {
             }
 
         #expect(store.didSetDefaultBrowserInfo)
+        #expect(eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == .rateLimitReached)
     }
 
     @Test("Check When Max Attempts Exceeded Failure and no Browser Info stored do not update info and return nil object")
@@ -199,6 +203,8 @@ final class DefaultBrowserManagerTests {
             }
 
         #expect(!store.didSetDefaultBrowserInfo)
+        #expect(eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == .rateLimitReachedNoExistingResultPersisted)
     }
 
     @Test("Check Default Browser Info is not stored when unknown error")
@@ -220,6 +226,9 @@ final class DefaultBrowserManagerTests {
             }
 
         #expect(!store.didSetDefaultBrowserInfo)
+        #expect(eventMapperMock.didCallFireEvent)
+        #expect(eventMapperMock.capturedEvent == .unknownError)
+        #expect(eventMapperMock.capturedError as? NSError == error)
     }
 
     @Test("Check Default Browser Info is not stored when notSupportedOnCurrentOSVersion error")

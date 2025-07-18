@@ -41,10 +41,13 @@ final class VPNSubscriptionEventsHandler {
         self.tunnelController = tunnelController
         self.vpnUninstaller = vpnUninstaller
         self.userDefaults = userDefaults
+    }
 
+    public func startMonitoring() {
         checkEntitlements()
         subscribeToWakeNotifications()
         subscribeToEntitlementChanges()
+        registerForSubscriptionAccountManagerEvents()
     }
 
     /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
@@ -59,11 +62,7 @@ final class VPNSubscriptionEventsHandler {
     }
 
     private func checkEntitlements() {
-        Task {
-            if let hasEntitlement = try? await subscriptionManager.isFeatureEnabled(.networkProtection) {
-                await handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheck)
-            }
-        }
+        performClientCheck(trigger: .appStartup)
     }
 
     private func subscribeToWakeNotifications() {
@@ -72,11 +71,7 @@ final class VPNSubscriptionEventsHandler {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 Logger.networkProtection.log("System wake notification received, checking entitlements")
-                Task { [weak self] in
-                    if let hasEntitlement = try? await self?.subscriptionManager.isFeatureEnabled(.networkProtection) {
-                        await self?.handleEntitlementsChange(hasEntitlements: hasEntitlement, trigger: .clientCheckOnWake)
-                    }
-                }
+                self?.performClientCheck(trigger: .deviceWake)
             }
             .store(in: &cancellables)
     }
@@ -98,76 +93,102 @@ final class VPNSubscriptionEventsHandler {
                     }
 
                     let hasEntitlements = payload.entitlements.contains(.networkProtection)
-                    await self.handleEntitlementsChange(hasEntitlements: hasEntitlements, trigger: .notification(sourceObject: notification.object))
+                    await self.handleEntitlementsChangeNotification(hasEntitlements: hasEntitlements, sourceObject: notification.object)
                 }
             }
             .store(in: &cancellables)
     }
 
-    @MainActor
-    private func handleEntitlementsChange(hasEntitlements: Bool, trigger: VPNSubscriptionStatusPixel.Trigger) async {
-        let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
-        let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
-
-        // For trigger == .clientCheck we only fire pixels if there's an actual change, because they're not guaranteed
-        // to be executed only when there are changes - they'll run at every app launch.
-        //
-        // For trigger == .notification we assume the notifications are fired on actual changes, so we want to fire
-        // pixels without additional checks.
-        //
-        switch trigger {
-        case .clientCheck, .clientCheckOnWake:
-            if hasEntitlements && lastKnownEntitlementsExpired {
-                PixelKit.fire(
-                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
-                        isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
-                        trigger: trigger),
-                    frequency: .dailyAndCount)
-
-                /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
-                lastKnownEntitlementsExpired = false
-            } else if !hasEntitlements && !lastKnownEntitlementsExpired {
-                PixelKit.fire(
-                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
-                        isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
-                        trigger: trigger),
-                    frequency: .dailyAndCount)
-
-                /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
-                lastKnownEntitlementsExpired = true
-            }
-        case .notification:
-            if hasEntitlements {
-                PixelKit.fire(
-                    VPNSubscriptionStatusPixel.vpnFeatureEnabled(
-                        isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
-                        trigger: trigger),
-                    frequency: .dailyAndCount)
-
-                if lastKnownEntitlementsExpired {
-                    /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
-                    lastKnownEntitlementsExpired = false
-                }
-            } else {
-                PixelKit.fire(
-                    VPNSubscriptionStatusPixel.vpnFeatureDisabled(
-                        isSubscriptionActive: isSubscriptionActive,
-                        isAuthV2Enabled: isAuthV2Enabled,
-                        trigger: trigger),
-                    frequency: .dailyAndCount)
-
-                if !lastKnownEntitlementsExpired {
-                    /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
-                    lastKnownEntitlementsExpired = true
-                }
+    private func performClientCheck(trigger: VPNSubscriptionClientCheckPixel.Trigger) {
+        Task {
+            do {
+                let hasEntitlement = try await subscriptionManager.isFeatureEnabled(.networkProtection)
+                await handleEntitlementsChangeClientCheck(hasEntitlements: hasEntitlement, trigger: trigger)
+            } catch {
+                await handleClientCheckFailure(error: error, trigger: trigger)
             }
         }
     }
 
-    func registerForSubscriptionAccountManagerEvents() {
+    @MainActor
+    private func handleClientCheckFailure(error: Error, trigger: VPNSubscriptionClientCheckPixel.Trigger) async {
+        let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
+        let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
+
+        PixelKit.fire(
+            VPNSubscriptionClientCheckPixel.failed(
+                isSubscriptionActive: isSubscriptionActive,
+                isAuthV2Enabled: isAuthV2Enabled,
+                trigger: trigger,
+                error: error),
+            frequency: .daily)
+    }
+
+    @MainActor
+    private func handleEntitlementsChangeClientCheck(hasEntitlements: Bool, trigger: VPNSubscriptionClientCheckPixel.Trigger) async {
+        let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
+        let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
+
+        // For client checks we only fire pixels if there's an actual change, because they're not guaranteed
+        // to be executed only when there are changes - they'll run at every app launch.
+        if hasEntitlements && lastKnownEntitlementsExpired {
+            PixelKit.fire(
+                VPNSubscriptionClientCheckPixel.vpnFeatureEnabled(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    trigger: trigger),
+                frequency: .dailyAndCount)
+
+            /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
+            lastKnownEntitlementsExpired = false
+        } else if !hasEntitlements && !lastKnownEntitlementsExpired {
+            PixelKit.fire(
+                VPNSubscriptionClientCheckPixel.vpnFeatureDisabled(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    trigger: trigger),
+                frequency: .dailyAndCount)
+
+            /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
+            lastKnownEntitlementsExpired = true
+        }
+    }
+
+    @MainActor
+    private func handleEntitlementsChangeNotification(hasEntitlements: Bool, sourceObject: Any?) async {
+        let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
+        let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive
+
+        // For notifications we assume they are fired on actual changes, so we want to fire
+        // pixels without additional checks.
+        if hasEntitlements {
+            PixelKit.fire(
+                VPNSubscriptionStatusPixel.vpnFeatureEnabled(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    sourceObject: sourceObject),
+                frequency: .dailyAndCount)
+
+            if lastKnownEntitlementsExpired {
+                /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
+                lastKnownEntitlementsExpired = false
+            }
+        } else {
+            PixelKit.fire(
+                VPNSubscriptionStatusPixel.vpnFeatureDisabled(
+                    isSubscriptionActive: isSubscriptionActive,
+                    isAuthV2Enabled: isAuthV2Enabled,
+                    sourceObject: sourceObject),
+                frequency: .dailyAndCount)
+
+            if !lastKnownEntitlementsExpired {
+                /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
+                lastKnownEntitlementsExpired = true
+            }
+        }
+    }
+
+    private func registerForSubscriptionAccountManagerEvents() {
         NotificationCenter.default
             .publisher(for: .accountDidSignIn)
             .sink { [weak self] notification in
@@ -197,7 +218,7 @@ final class VPNSubscriptionEventsHandler {
                 VPNSubscriptionStatusPixel.signedIn(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    trigger: .notification(sourceObject: notification.object)),
+                    sourceObject: notification.object),
                 frequency: .dailyAndCount)
 
             /// This is a shared user default that the VPN menu app listens to to know whether it's enabled or disabled
@@ -216,7 +237,7 @@ final class VPNSubscriptionEventsHandler {
                 VPNSubscriptionStatusPixel.signedOut(
                     isSubscriptionActive: isSubscriptionActive,
                     isAuthV2Enabled: isAuthV2Enabled,
-                    trigger: .notification(sourceObject: notification.object)),
+                    sourceObject: notification.object),
                 frequency: .dailyAndCount)
 
             try? await vpnUninstaller.uninstall(removeSystemExtension: false, showNotification: true)

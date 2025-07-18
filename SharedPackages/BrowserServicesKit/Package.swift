@@ -49,19 +49,23 @@ let package = Package(
         .library(name: "SharedObjCTestsUtils", targets: ["SharedObjCTestsUtils"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.1.0"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.2.0"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
-        .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.5.0"),
+        .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts", exact: "10.12.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts", exact: "10.13.0"),
         .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.4.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
-        .package(url: "https://github.com/duckduckgo/bloom_cpp.git", exact: "3.0.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.4"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
     ],
     targets: [
+        .binaryTarget(
+            name: "BloomFilter",
+            url: "https://github.com/duckduckgo/bloom_cpp/releases/download/3.0.4/BloomFilter.xcframework.zip",
+            checksum: "137fefd4a0ccf79560d7071d3387475806b84a7719785a6f80ea9c1d838c7d6b"
+        ),
         .binaryTarget(
             name: "GRDB",
             url: "https://github.com/duckduckgo/GRDB.swift/releases/download/3.0.0/GRDB.xcframework.zip",
@@ -166,7 +170,7 @@ let package = Package(
         .target(
             name: "BloomFilterObjC",
             dependencies: [
-                .product(name: "BloomFilter", package: "bloom_cpp")
+                "BloomFilter"
             ]),
         .target(
             name: "BloomFilterWrapper",

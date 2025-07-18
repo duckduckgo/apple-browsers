@@ -28,4 +28,8 @@ public extension DefaultBrowserPromptEventMapping {
         fire(event, error: nil, parameters: nil, onComplete: { _ in })
     }
 
+    func fire(_ event: Event, error: Error) {
+        fire(event, error: error, parameters: nil, onComplete: { _ in })
+    }
+
 }

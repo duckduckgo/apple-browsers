@@ -20,6 +20,7 @@ import AIChat
 import AppKit
 import Combine
 import Foundation
+import PixelKit
 import UserScript
 
 protocol AIChatUserScriptHandling {
@@ -47,16 +48,19 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
+    private let pixelFiring: PixelFiring?
 
     init(
         storage: AIChatPreferencesStorage,
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
         windowControllersManager: WindowControllersManagerProtocol,
+        pixelFiring: PixelFiring?,
         notificationCenter: NotificationCenter = .default
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
+        self.pixelFiring = pixelFiring
         self.notificationCenter = notificationCenter
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
     }
@@ -128,6 +132,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         else { return nil }
 
         windowControllersManager.open(url, source: .link, target: nil, event: NSApp.currentEvent)
+        pixelFiring?.fire(AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)
         return nil
     }
 

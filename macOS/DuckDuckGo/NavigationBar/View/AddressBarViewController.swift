@@ -604,6 +604,7 @@ final class AddressBarViewController: NSViewController {
                 activeBackgroundView.borderWidth = 2.0
                 activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.6)
                 activeBackgroundView.backgroundColor = visualStyle.colorsProvider.activeAddressBarBackgroundColor
+                addressBarButtonsViewController?.trailingButtonsBackground.backgroundColor = visualStyle.colorsProvider.activeAddressBarBackgroundColor
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
 
                 activeOuterBorderView.isHidden = !visualStyle.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage)
@@ -613,6 +614,7 @@ final class AddressBarViewController: NSViewController {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
                 activeBackgroundView.backgroundColor = visualStyle.colorsProvider.inactiveAddressBarBackgroundColor
+                addressBarButtonsViewController?.trailingButtonsBackground.backgroundColor = visualStyle.colorsProvider.inactiveAddressBarBackgroundColor
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .inactiveSearchBarBackground)
 
                 activeOuterBorderView.isHidden = true
@@ -640,7 +642,6 @@ final class AddressBarViewController: NSViewController {
 
     private func layoutTextFields(trailingWidth width: CGFloat) {
         addressBarTextTrailingConstraint.constant = width
-        passiveTextFieldTrailingConstraint.constant = width
     }
 
     private func firstResponderDidChange(_ notification: Notification) {

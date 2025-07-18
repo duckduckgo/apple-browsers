@@ -26,8 +26,8 @@ final class DaxLogoManager {
     
     // MARK: - Properties
 
-    var logoView = DaxLogoView()
-    
+    private(set) var logoView: UIView = DaxLogoView()
+
     // MARK: - Public Methods
     
     func installInViewController(_ viewController: UIViewController, belowView topView: UIView) {        viewController.view.addSubview(logoView)
@@ -39,11 +39,14 @@ final class DaxLogoManager {
         viewController.view.addLayoutGuide(centeringGuide)
 
         NSLayoutConstraint.activate([
+
+            // Position layout centering guide vertically between top view and keyboard
             viewController.view.leadingAnchor.constraint(equalTo: centeringGuide.leadingAnchor),
             viewController.view.trailingAnchor.constraint(equalTo: centeringGuide.trailingAnchor),
             topView.bottomAnchor.constraint(equalTo: centeringGuide.topAnchor),
             viewController.view.keyboardLayoutGuide.topAnchor.constraint(equalTo: centeringGuide.bottomAnchor),
 
+            // Center within the layout guide
             logoView.topAnchor.constraint(greaterThanOrEqualTo: centeringGuide.topAnchor),
             logoView.bottomAnchor.constraint(lessThanOrEqualTo: centeringGuide.bottomAnchor),
             logoView.leadingAnchor.constraint(greaterThanOrEqualTo: centeringGuide.leadingAnchor),
@@ -56,7 +59,7 @@ final class DaxLogoManager {
     }
 }
 
-final class DaxLogoView: UIView {
+private final class DaxLogoView: UIView {
     let logoImage = UIImageView(image: UIImage(resource: .home))
     let textImage = UIImageView(image: UIImage(resource: .textDuckDuckGo))
 
@@ -65,7 +68,7 @@ final class DaxLogoView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        setUpView()
+        setUpSubviews()
     }
 
     @available(*, unavailable)
@@ -73,16 +76,14 @@ final class DaxLogoView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private func setUpView() {
+    private func setUpSubviews() {
         stackView.addArrangedSubview(logoImage)
         stackView.addArrangedSubview(textImage)
 
         textImage.tintColor = UIColor(designSystemColor: .textPrimary)
 
-        stackView.spacing = 12
+        stackView.spacing = Metrics.spacing
         stackView.axis = .vertical
-        stackView.alignment = .fill
-        stackView.distribution = .fill
 
         addSubview(stackView)
         stackView.translatesAutoresizingMaskIntoConstraints = false
@@ -92,12 +93,17 @@ final class DaxLogoView: UIView {
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor),
             stackView.topAnchor.constraint(equalTo: topAnchor),
             stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            logoImage.heightAnchor.constraint(lessThanOrEqualToConstant: 96),
-            logoImage.heightAnchor.constraint(equalToConstant: 96).withPriority(.defaultHigh)
+            logoImage.heightAnchor.constraint(lessThanOrEqualToConstant: Metrics.maxLogoSize),
+            logoImage.heightAnchor.constraint(equalToConstant: Metrics.maxLogoSize).withPriority(.defaultHigh)
         ])
 
         logoImage.contentMode = .scaleAspectFit
         textImage.contentMode = .center
 
+    }
+
+    private struct Metrics {
+        static let maxLogoSize: CGFloat = 96
+        static let spacing: CGFloat = 12
     }
 }

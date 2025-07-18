@@ -160,7 +160,7 @@ public extension HistoryEvent {
     static func mockScanEvent(with date: Date) -> HistoryEvent {
         HistoryEvent(brokerId: 1, profileQueryId: 1, type: .scanStarted, date: date)
     }
-    
+
     static func mock(type: EventType, date: Date = Date()) -> HistoryEvent {
         HistoryEvent(brokerId: 1, profileQueryId: 1, type: type, date: date)
     }

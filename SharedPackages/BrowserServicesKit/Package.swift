@@ -11,6 +11,7 @@ let package = Package(
         .macOS("11.4")
     ],
     products: [
+
         // Exported libraries
         .library(name: "BrowserServicesKit", targets: ["BrowserServicesKit"]),
         .library(name: "Common", targets: ["Common"]),

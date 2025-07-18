@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import Common
 
 extension NSWindowController {
 
@@ -30,10 +31,7 @@ extension NSWindowController {
     }
 
     private func getButton(named buttonName: String) -> NSButton? {
-        guard let ivar = class_getInstanceVariable(object_getClass(self), buttonName) else {
-            return nil
-        }
-        return object_getIvar(self, ivar) as? NSButton
+        return value(forIvar: buttonName) as? NSButton
     }
 
 }

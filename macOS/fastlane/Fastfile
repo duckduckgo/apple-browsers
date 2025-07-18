@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+require_relative "spaceship_patch"
+
 opt_out_usage
 fastlane_require 'httparty'
 fastlane_require 'rexml/document'
@@ -46,6 +48,16 @@ platform :mac do
     do_sync_signing(options.merge({readonly: true}))
   end
 
+  # Fetches and updates certificates and provisioning profiles for DMG Alpha builds
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Fetches and updates certificates and provisioning profiles for DMG Alpha builds'
+  lane :sync_signing_dmg_alpha do |options|
+    do_sync_signing(options.merge({readonly: true}))
+  end
+
   # Fetches and updates certificates and provisioning profiles for DMG Review builds
   #
   # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
@@ -90,7 +102,7 @@ platform :mac do
   # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
   #         for it a couple of times during the process.
   #
-  desc 'Makes App Store release build and uploads it to TestFlight'
+  desc 'Makes App Store Review build and uploads it to TestFlight'
   lane :release_testflight_review do |options|
     build_review(options)
 
@@ -99,6 +111,26 @@ platform :mac do
         {
           api_key: get_api_key,
           app_identifier: "com.duckduckgo.mobile.ios.review",
+          skip_waiting_for_build_processing: true
+        }
+      )
+    )
+  end
+
+  # Makes App Store Alpha build and uploads it to TestFlight without managing App Store listing.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Makes App Store Alpha build and uploads it to TestFlight'
+  lane :release_testflight_alpha do |options|
+    build_alpha(options)
+
+    upload_to_testflight(
+      options.merge(
+        {
+          api_key: get_api_key,
+          app_identifier: "com.duckduckgo.mobile.ios.alpha",
           skip_waiting_for_build_processing: true
         }
       )
@@ -167,7 +199,7 @@ platform :mac do
   #################################################
   # Helper functions
   #################################################
-  
+
   # Updates App Store metadata.
   #
   # - Calls deliver and skips binary upload and screenshots, only handling metadata.
@@ -248,6 +280,19 @@ platform :mac do
     build_app(
       export_method: "app-store",
       scheme: "macOS Browser Review App Store",
+      export_options: "scripts/assets/AppStoreExportOptions.plist",
+      xcargs: "-skipPackagePluginValidation -skipMacroValidation"
+    )
+  end
+
+  # Builds the App Store review version of the app.
+  #
+  private_lane :build_alpha do |options|
+    sync_signing(options)
+
+    build_app(
+      export_method: "app-store",
+      scheme: "macOS Browser Alpha App Store",
       export_options: "scripts/assets/AppStoreExportOptions.plist",
       xcargs: "-skipPackagePluginValidation -skipMacroValidation"
     )

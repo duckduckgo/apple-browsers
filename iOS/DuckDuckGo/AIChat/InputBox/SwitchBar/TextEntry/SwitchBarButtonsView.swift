@@ -41,12 +41,10 @@ struct SwitchBarButtonsView: View {
 
     private enum Constants {
         static let buttonSize: CGFloat = 24
-        static let buttonSpacing: CGFloat = 6
     }
 
     var body: some View {
-        HStack(spacing: Constants.buttonSpacing) {
-            Spacer()
+        HStack {
             if buttonState.showsClearButton {
                 Button(action: onClearTapped) {
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.clear)

@@ -64,3 +64,4 @@ default.profraw
 
 # Claude
 .claude/
+/.vscode/launch.json

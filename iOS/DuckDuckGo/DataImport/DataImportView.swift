@@ -35,7 +35,7 @@ struct DataImportView: View {
                 switch viewModel.state.importScreen {
                 case .bookmarks:
                     BookmarksInstructions(viewModel: viewModel)
-                case .passwords, .settings:
+                case .passwords, .settings, .promo:
                     PasswordFooterView()
                     PasswordsInstructions(viewModel: viewModel)
                 }
@@ -94,7 +94,7 @@ struct DataImportView: View {
             .padding(.horizontal, 24)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color(UIColor.secondarySystemGroupedBackground))
+                    .fill(Color(designSystemColor: .surface))
             )
             .padding(.horizontal, 8)
         }
@@ -150,7 +150,7 @@ struct DataImportView: View {
                 ExportFromCell(viewModel: viewModel)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color(UIColor.secondarySystemGroupedBackground))
+                            .fill(Color(designSystemColor: .surface))
                     )
                     .padding(.top, 5)
                     .padding(.horizontal, 8)

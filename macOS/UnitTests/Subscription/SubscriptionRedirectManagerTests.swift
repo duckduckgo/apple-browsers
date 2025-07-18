@@ -33,7 +33,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
     var subscriptionManager: SubscriptionManagerMock!
 
     private var canPurchase: Bool = true
-    private var mockInternalUserStoring = MockInternalUserStoring()
+    private var mockInternalUserStoring: MockInternalUserStoring! = MockInternalUserStoring()
 
     private var sut: PrivacyProSubscriptionRedirectManager!
 
@@ -52,7 +52,8 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
 
     override func tearDownWithError() throws {
         sut = nil
-        try super.tearDownWithError()
+        mockInternalUserStoring = nil
+        subscriptionManager = nil
     }
 
     func testWhenURLIsPrivacyProThenRedirectToSubscriptionBaseURL() throws {

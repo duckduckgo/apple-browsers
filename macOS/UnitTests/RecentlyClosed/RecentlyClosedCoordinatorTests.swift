@@ -27,6 +27,10 @@ final class RecentlyClosedCoordinatorTests: XCTestCase {
     let tab3 = RecentlyClosedTab("https://site2.com")
     let tab4 = RecentlyClosedTab("https://site3.com")
 
+    override var allowedNonNilVariables: Set<String> {
+        ["tab1", "tab2", "tab3", "tab4"]
+    }
+
     func testWhenDomainsAreBurnedThenCachedTabsOpenToThemAreRemoved() throws {
         var cache: [RecentlyClosedCacheItem] = [
             tab1,
@@ -125,8 +129,35 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
         openNewWindowCalled = .init(contents: tabCollectionViewModel?.tabs.map(\.content), burnerMode: burnerMode, droppingPoint: droppingPoint, contentSize: contentSize, showWindow: showWindow, popUp: popUp, lazyLoadTabs: lazyLoadTabs, isMiniaturized: isMiniaturized, isMaximized: isMaximized, isFullscreen: isFullscreen)
         return nil
     }
-    func showTab(with content: DuckDuckGo_Privacy_Browser.Tab.TabContent) { }
+
+    func open(_ url: URL, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
+        openCalls.append(.init(url, source, window, event))
+    }
+    func showTab(with content: DuckDuckGo_Privacy_Browser.Tab.TabContent) {
+        showTabCalls.append(content)
+    }
 
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior) {}
     func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool) {}
+
+    var showTabCalls: [Tab.TabContent] = []
+
+    struct Open: Equatable {
+        let url: URL
+        let source: Tab.TabContent.URLSource
+        let target: NSWindow?
+        let event: NSEvent?
+
+        init(_ url: URL, _ source: Tab.TabContent.URLSource, _ target: NSWindow? = nil, _ event: NSEvent? = nil) {
+            self.url = url
+            self.source = source
+            self.target = target
+            self.event = event
+        }
+
+        static func == (lhs: Open, rhs: Open) -> Bool {
+            return lhs.url == rhs.url && lhs.source == rhs.source && lhs.target === rhs.target && lhs.event === rhs.event
+        }
+    }
+    var openCalls: [Open] = []
 }

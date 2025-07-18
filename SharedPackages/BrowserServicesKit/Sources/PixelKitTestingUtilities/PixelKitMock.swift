@@ -28,7 +28,7 @@ public final class PixelKitMock: PixelFiring {
 
     /// The actual fire calls
     ///
-    private var actualFireCalls = [ExpectedFireCall]()
+    public private(set) var actualFireCalls = [ExpectedFireCall]()
 
     public init(expecting expectedFireCalls: [ExpectedFireCall] = []) {
         self.expectedFireCalls = expectedFireCalls

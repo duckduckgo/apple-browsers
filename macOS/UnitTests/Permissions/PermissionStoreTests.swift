@@ -23,16 +23,22 @@ import XCTest
 
 final class PermissionStoreTests: XCTestCase {
 
-    let container = CoreData.permissionContainer()
-    lazy var store = LocalPermissionStore(context: container.viewContext)
-    let pixelKit = PixelKit(dryRun: true,
-                            appVersion: "1.0.0",
-                            defaultHeaders: [:],
-                            defaults: UserDefaults(),
-                            fireRequest: { _, _, _, _, _, _ in })
+    var container: NSPersistentContainer! = CoreData.permissionContainer()
+    lazy var store: LocalPermissionStore! = LocalPermissionStore(context: container.viewContext)
+    var pixelKit: PixelKit! = PixelKit(dryRun: true,
+                                       appVersion: "1.0.0",
+                                       defaultHeaders: [:],
+                                       defaults: UserDefaults(),
+                                       fireRequest: { _, _, _, _, _, _ in })
 
     override func setUp() {
         PixelKit.setSharedForTesting(pixelKit: pixelKit)
+    }
+
+    override func tearDown() {
+        store = nil
+        container = nil
+        pixelKit = nil
     }
 
     func testWhenPermissionIsAddedThenItMustBeLoadedFromStore() throws {
@@ -66,7 +72,7 @@ final class PermissionStoreTests: XCTestCase {
 
         let e = expectation(description: "object removed")
         store.remove(objectWithId: stored2.id) { [store] _ in
-            let permissions = try? store.loadPermissions()
+            let permissions = try? store!.loadPermissions()
             XCTAssertEqual(permissions, [.init(permission: StoredPermission(id: stored1.id, decision: .allow),
                                                domain: "duckduckgo.com",
                                                type: .microphone)])
@@ -81,7 +87,7 @@ final class PermissionStoreTests: XCTestCase {
 
         let e = expectation(description: "object removed")
         store.update(objectWithId: stored2.id, decision: .deny) { [store] _ in
-            let permissions = try? store.loadPermissions()
+            let permissions = try? store!.loadPermissions()
             XCTAssertEqual(permissions, [.init(permission: StoredPermission(id: stored1.id, decision: .allow),
                                                domain: "duckduckgo.com",
                                                type: .microphone),
@@ -108,7 +114,7 @@ final class PermissionStoreTests: XCTestCase {
         store.clear(except: [stored1, stored2, stored3]) { [store] error in
             XCTAssertNil(error)
 
-            let permissions = try! store.loadPermissions()
+            let permissions = try! store!.loadPermissions()
 
             XCTAssertEqual(permissions, [.init(permission: StoredPermission(id: stored1.id, decision: .allow),
                                                domain: "duckduckgo.com",

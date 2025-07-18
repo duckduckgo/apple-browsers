@@ -91,6 +91,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
         return .init(accessToken: accessToken)
     }
 
+    @MainActor
     func getFeatureConfig(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetFeatureConfigurationResponse {
         return .init(usePaidDuckAi: paidAIChatFlagStatusProvider())
     }

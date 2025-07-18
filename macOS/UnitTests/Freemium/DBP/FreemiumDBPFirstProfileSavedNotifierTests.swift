@@ -35,6 +35,13 @@ final class FreemiumDBPFirstProfileSavedNotifierTests: XCTestCase {
                                                    notificationCenter: mockNotificationCenter)
     }
 
+    override func tearDown() {
+        mockAccountManager = nil
+        mockFreemiumDBPUserStateManager = nil
+        mockNotificationCenter = nil
+        sut = nil
+    }
+
     func testWhenAllCriteriaSatisfied_thenNotificationShouldBePosted() {
         // Given
         mockAccountManager.accessToken = nil

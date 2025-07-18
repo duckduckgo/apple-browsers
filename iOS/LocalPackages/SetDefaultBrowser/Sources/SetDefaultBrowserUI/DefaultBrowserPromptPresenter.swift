@@ -36,6 +36,7 @@ final class DefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenti
     }
 
     public func tryPresentDefaultModalPrompt(from viewController: UIViewController) {
+        Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Attempting To Present Default Browser Prompt.")
         // When prompt for inactive user is implemented check prompt type and present different view accordingly.
         guard coordinator.getPrompt() != nil else { return }
         presentDefaultDefaultBrowserPrompt(from: viewController)

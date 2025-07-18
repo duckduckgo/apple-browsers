@@ -34,6 +34,8 @@ class MockAppearancePreferencesPersistor: AppearancePreferencesPersistor {
 
     var favoritesDisplayMode: String?
 
+    var isOmnibarVisible: Bool = true
+
     var isFavoriteVisible: Bool = true
 
     var isProtectionsReportVisible: Bool = true

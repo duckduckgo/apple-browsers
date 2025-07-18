@@ -40,3 +40,43 @@ public struct EntitlementsBridging {
         }
     }
 }
+
+extension Entitlement.ProductName {
+
+    public var subscriptionEntitlement: SubscriptionEntitlement {
+        switch self {
+        case .networkProtection:
+            return .networkProtection
+        case .dataBrokerProtection:
+            return .dataBrokerProtection
+        case .identityTheftRestoration:
+            return .identityTheftRestoration
+        case .identityTheftRestorationGlobal:
+            return .identityTheftRestorationGlobal
+        case .paidAIChat:
+            return .paidAIChat
+        case .unknown:
+            return .unknown
+        }
+    }
+}
+
+extension SubscriptionEntitlement {
+
+    public var product: Entitlement.ProductName {
+        switch self {
+        case .networkProtection:
+            return .networkProtection
+        case .dataBrokerProtection:
+            return .dataBrokerProtection
+        case .identityTheftRestoration:
+            return .identityTheftRestoration
+        case .identityTheftRestorationGlobal:
+            return .identityTheftRestorationGlobal
+        case .paidAIChat:
+            return .paidAIChat
+        case .unknown:
+            return .unknown
+        }
+    }
+}

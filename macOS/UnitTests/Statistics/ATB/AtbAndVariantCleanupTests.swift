@@ -29,8 +29,13 @@ class AtbAndVariantCleanupTests: XCTestCase {
 
     }
 
-    let mockStorage = MockStatisticsStore()
-    let mockVariantManager = MockVariantManager()
+    var mockStorage: MockStatisticsStore! = .init()
+    var mockVariantManager: MockVariantManager! = .init()
+
+    override func tearDown() {
+        mockStorage = nil
+        mockVariantManager = nil
+    }
 
     func testWhenAtbHasVariantThenAtbStoredWithVariantRemoved() {
 

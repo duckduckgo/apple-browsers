@@ -70,7 +70,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
                 }
 
                 await self?.fetchEmail()
-                await self?.updateSubscription(cachePolicy: .returnCacheDataDontLoad)
+                await self?.updateSubscription(cachePolicy: .returnCacheDataElseLoad)
             }
         }
 

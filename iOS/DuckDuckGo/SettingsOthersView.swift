@@ -22,6 +22,7 @@ import UIKit
 import Networking
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import Common
 
 struct SettingsOthersView: View {
 
@@ -31,9 +32,16 @@ struct SettingsOthersView: View {
         Section {
             // About
             NavigationLink(destination: AboutView().environmentObject(viewModel)) {
+#if (ALPHA && !DEBUG)
+                // The commit SHA is only set for release alpha builds, so debug alpha builds won't show it
+                let version = "v\(viewModel.state.version) (\(AppVersion.shared.commitSHAShort))"
+#else
+                let version = "v\(viewModel.state.version)"
+#endif
+
                 SettingsCellView(label: UserText.settingsAboutSection,
                                  image: Image(.logoIcon),
-                                 accessory: .rightDetail("v\(viewModel.state.version)"))
+                                 accessory: .rightDetail(version))
             }
 
             // Share Feedback

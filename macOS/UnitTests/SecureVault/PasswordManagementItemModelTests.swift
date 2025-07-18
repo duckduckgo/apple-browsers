@@ -30,6 +30,10 @@ final class PasswordManagementItemModelTests: XCTestCase {
     var tld = Application.appDelegate.tld
     var urlSort = AutofillDomainNameUrlSort()
 
+    override var allowedNonNilVariables: Set<String> {
+        ["emailManager", "tld"]
+    }
+
     func testWhenCredentialsAreSavedThenSaveIsRequested() {
         let model = PasswordManagementLoginModel(onSaveRequested: onSaveRequested,
                                                  onDeleteRequested: onDeleteRequested,

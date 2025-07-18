@@ -68,6 +68,12 @@ public protocol StageDurationCalculator {
     func incrementTries()
 }
 
+extension StageDurationCalculator {
+    public var isRetrying: Bool {
+        tries != 1
+    }
+}
+
 final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator {
     let isImmediateOperation: Bool
     let handler: EventMapping<DataBrokerProtectionSharedPixels>

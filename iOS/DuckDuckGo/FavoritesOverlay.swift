@@ -32,6 +32,7 @@ class FavoritesOverlay: UIViewController {
     
     struct Constants {
         static let margin: CGFloat = 28
+        static let ntpCompatibleMargin: CGFloat = 30
         static let footerPadding: CGFloat = 50
     }
     
@@ -39,7 +40,14 @@ class FavoritesOverlay: UIViewController {
     var collectionView: UICollectionView!
     private var renderer: FavoritesHomeViewSectionRenderer!
     private let appSettings: AppSettings
-    
+
+    private lazy var borderView = StyledTopBottomBorderView()
+
+    var isUsingNTPCompatibleStyling: Bool {
+        get { renderer.isUsingNTPCompatibleStyling }
+        set { renderer.isUsingNTPCompatibleStyling = newValue }
+    }
+
     weak var delegate: FavoritesOverlayDelegate?
 
 
@@ -65,6 +73,8 @@ class FavoritesOverlay: UIViewController {
         collectionView.backgroundColor = .clear
 
         view.addSubview(collectionView)
+        borderView.insertSelf(into: view)
+        borderView.updateForAddressBarPosition(appSettings.currentAddressBarPosition)
 
         renderer.install(into: self)
         
@@ -89,10 +99,12 @@ class FavoritesOverlay: UIViewController {
             layout.minimumInteritemSpacing = 32
         } else {
             layout.minimumInteritemSpacing = 10
+            if isUsingNTPCompatibleStyling {
+                layout.minimumLineSpacing = 12
+            }
         }
         
         collectionView.frame = view.bounds
-        collectionView.reloadData()
     }
     
     private func registerForKeyboardNotifications() {
@@ -112,8 +124,9 @@ class FavoritesOverlay: UIViewController {
 
         let keyboardFrameInView = self.view.convert(keyboardFrame, from: nil)
         let intersection = keyboardFrameInView.intersection(view.bounds)
+        let offsetHeight = intersection.height - view.safeAreaInsets.bottom
 
-        let inset = UIEdgeInsets(top: 0.0, left: 0.0, bottom: intersection.height, right: 0.0)
+        let inset = UIEdgeInsets(top: 0.0, left: 0.0, bottom: offsetHeight, right: 0.0)
         collectionView.contentInset = inset
         collectionView.scrollIndicatorInsets = inset
     }
@@ -176,7 +189,7 @@ extension FavoritesOverlay: UICollectionViewDelegateFlowLayout {
             
             var insets = renderer.collectionView(collectionView, layout: collectionViewLayout, insetForSectionAt: section) ?? UIEdgeInsets.zero
             
-            insets.top += Constants.margin
+            insets.top += isUsingNTPCompatibleStyling ? Constants.ntpCompatibleMargin : Constants.margin
             return insets
     }
 }

@@ -89,8 +89,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     func onFirstAppear() {
         Task {
             // Load initial state from the cache
-            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(cachePolicy: .returnCacheDataDontLoad)
-            async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .returnCacheDataDontLoad,
+            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(cachePolicy: .returnCacheDataElseLoad)
+            async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .returnCacheDataElseLoad,
                                                                                                  loadingIndicator: false)
             let (hasLoadedEmailFromCache, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
             
@@ -134,7 +134,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         guard let token = self.subscriptionManager.accountManager.accessToken else { return false }
         
         switch cachePolicy {
-        case .returnCacheDataDontLoad, .returnCacheDataElseLoad:
+        case .returnCacheDataElseLoad:
             DispatchQueue.main.async {
                 self.state.subscriptionEmail = self.subscriptionManager.accountManager.email
             }

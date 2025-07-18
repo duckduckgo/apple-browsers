@@ -24,7 +24,7 @@ import MaliciousSiteProtection
 @testable import DuckDuckGo
 
 @Suite("Special Error Pages - SpecialErrorPageNavigationHandler Unit Tests", .serialized)
-final class SpecialErrorPageNavigationHandlerTests {
+struct SpecialErrorPageNavigationHandlerTests {
     private var sut: SpecialErrorPageNavigationHandler!
     private var webView: MockSpecialErrorWebView!
     private var sslErrorPageNavigationHandler: MockSSLErrorPageNavigationHandler!
@@ -41,12 +41,6 @@ final class SpecialErrorPageNavigationHandlerTests {
             sslErrorPageNavigationHandler: sslErrorPageNavigationHandler,
             maliciousSiteProtectionNavigationHandler: maliciousSiteProtectionNavigationHandler
         )
-    }
-
-    deinit {
-        sslErrorPageNavigationHandler = nil
-        sut = nil
-        webView = nil
     }
 
     @MainActor
@@ -448,22 +442,30 @@ final class SpecialErrorPageNavigationHandlerTests {
         #expect(maliciousSiteProtectionNavigationHandler.didCallCurrentThreatKind)
     }
 
+    @available(iOS 16, *) // TimeLimitTrait is available since iOS 16+. 1 minute is the minimum amount of time.
     @MainActor
-    @Test("Web View is not strongly retained")
-    func whenWebViewIsNilled_ThenWebViewIsDeallocated() {
+    @Test("Web View is not strongly retained", .timeLimit(.minutes(1)))
+    func whenWebViewIsNilled_ThenWebViewIsDeallocated() async {
         weak var weakWebView: MockWebView?
 
-        autoreleasepool {
-            // GIVEN
-            var webView: MockWebView! = MockWebView()
-            weakWebView = webView
-            sut.attachWebView(webView)
+        await withCheckedContinuation { continuation in
 
-            // WHEN
-            webView = nil
+            autoreleasepool {
+                // GIVEN
+                var webView: MockWebView! = MockWebView()
+                webView.onDeinitHandler = {
+                    continuation.resume()
+                }
+                weakWebView = webView
+                sut.attachWebView(webView)
+
+                // WHEN
+                webView = nil
+            }
+            
         }
+        
         // THEN
-        RunLoop.current.run(until: Date().addingTimeInterval(0.2)) // Gives the run loop time to process deinit event
         #expect(weakWebView == nil)
     }
 }

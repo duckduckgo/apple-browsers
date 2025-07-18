@@ -28,7 +28,6 @@ class SwitchBarTextEntryViewController: UIViewController {
     let textEntryView: SwitchBarTextEntryView
     private let handler: SwitchBarHandling
     private let containerView = CompositeShadowView()
-    private let borderOverlayView = UIView()
 
     // Constraint references for dynamic sizing
     private var textEntryBottomConstraint: NSLayoutConstraint?
@@ -74,34 +73,15 @@ class SwitchBarTextEntryViewController: UIViewController {
         textEntryView.resignFirstResponder()
     }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            borderOverlayView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
-        }
-    }
-
     private func setupViews() {
         setupContainerViewAppearance()
-        setUpBorderOverlayAppearance()
 
         view.addSubview(containerView)
-        view.addSubview(borderOverlayView)
 
         containerView.addSubview(textEntryView)
 
         containerView.translatesAutoresizingMaskIntoConstraints = false
         textEntryView.translatesAutoresizingMaskIntoConstraints = false
-        borderOverlayView.translatesAutoresizingMaskIntoConstraints = false
-    }
-
-    private func setUpBorderOverlayAppearance() {
-        borderOverlayView.layer.cornerRadius = Metrics.borderCornerRadius
-        borderOverlayView.layer.masksToBounds = true
-
-        borderOverlayView.layer.borderColor = UIColor(designSystemColor: .accent).cgColor
-        borderOverlayView.layer.borderWidth = Metrics.borderWidth
     }
 
     private func setupContainerViewAppearance() {
@@ -126,11 +106,6 @@ class SwitchBarTextEntryViewController: UIViewController {
             containerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            borderOverlayView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: -Metrics.borderWidth),
-            borderOverlayView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: Metrics.borderWidth),
-            borderOverlayView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: -Metrics.borderWidth),
-            borderOverlayView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: Metrics.borderWidth),
 
             textEntryView.topAnchor.constraint(equalTo: containerView.topAnchor),
             textEntryView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
@@ -167,8 +142,6 @@ class SwitchBarTextEntryViewController: UIViewController {
     }
 
     private struct Metrics {
-        static let borderWidth: CGFloat = 2
-        static let borderCornerRadius: CGFloat = 18
         static let containerCornerRadius: CGFloat = 16
     }
 }

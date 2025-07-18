@@ -81,6 +81,16 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         )
     }
 
+    override func tearDown() {
+        actionsHandler = nil
+        bookmarksHandler = nil
+        contextMenuPresenter = nil
+        dataProvider = nil
+        dialogPresenter = nil
+        tabOpener = nil
+        firePixelCalls = []
+    }
+
     // MARK: - showDeleteDialogForQuery
 
     func testWhenDataProviderIsNilThenShowDeleteDialogForQueryReturnsNoAction() async {

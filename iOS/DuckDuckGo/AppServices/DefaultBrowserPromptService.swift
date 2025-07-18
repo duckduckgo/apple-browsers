@@ -26,18 +26,15 @@ import SetDefaultBrowserUI
 
 @MainActor
 final class DefaultBrowserPromptService {
-    private weak var presentingController: UIViewController?
+    let presenter: DefaultBrowserPromptPresenting
     private let userActivityManager: DefaultBrowserPromptUserActivityRecorder & DefaultBrowserPromptUserActivityManager
-    private let presenter: DefaultBrowserPromptPresenting
     private let featureFlagAdapter: DefaultBrowserPromptFeatureFlagAdapter
 
     init(
-        presentingController: UIViewController,
         featureFlagger: FeatureFlagger,
         privacyConfigManager: PrivacyConfigurationManaging,
         keyValueFilesStore: ThrowingKeyValueStoring
     ) {
-        self.presentingController = presentingController
 
 #if DEBUG || ALPHA
         let debugDateProvider = DefaultBrowserPromptDebugDateProvider()
@@ -77,12 +74,6 @@ final class DefaultBrowserPromptService {
         guard featureFlagAdapter.isDefaultBrowserPromptsFeatureEnabled else { return }
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Record User Activity If Needed.")
         userActivityManager.recordActivity()
-    }
-
-    func presentDefaultBrowserPromptIfNeeded() {
-        guard let presentingController else { return }
-        Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Attempt to present default browser prompt.")
-        presenter.tryPresentDefaultModalPrompt(from: presentingController)
     }
 }
 

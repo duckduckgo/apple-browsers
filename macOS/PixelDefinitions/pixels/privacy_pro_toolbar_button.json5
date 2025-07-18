@@ -1,0 +1,32 @@
+{
+    // Privacy Pro Toolbar Button Pixels
+    // These pixels track the toolbar button and popover interactions for Privacy Pro subscription promotion
+
+    'm_mac_privacy-pro_toolbar_button_shown': {
+        description: 'Fired when the Privacy Pro toolbar button is displayed to a new, non-subscriber user',
+        owners: ['jozsef-vesza'],
+        triggers: ['other'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+
+    'm_mac_privacy-pro_toolbar_button_popover_shown': {
+        description: 'Fired when the Privacy Pro toolbar button popover is displayed to a user',
+        owners: ['jozsef-vesza'],
+        triggers: ['other'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+
+    'm_mac_privacy-pro_toolbar_button_popover_dismiss_button_clicked': {
+        description: 'Fired when the dismiss button is clicked in the Privacy Pro toolbar button popover',
+        owners: ['jozsef-vesza'],
+        triggers: ['user_submitted'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+
+    'm_mac_privacy-pro_toolbar_button_popover_proceed_button_clicked': {
+        description: 'Fired when the proceed button is clicked in the Privacy Pro toolbar button popover',
+        owners: ['jozsef-vesza'],
+        triggers: ['user_submitted'],
+        parameters: ['appVersion', 'pixelSource'],
+    },
+}

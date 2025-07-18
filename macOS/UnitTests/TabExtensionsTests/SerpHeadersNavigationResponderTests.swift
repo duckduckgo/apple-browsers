@@ -44,6 +44,10 @@ class SerpHeadersNavigationResponderTests: XCTestCase {
         URL.gpcLearnMore,
     ]
 
+    override var allowedNonNilVariables: Set<String> {
+        ["ddgUrls", "nonDdgUrls"]
+    }
+
     var contentBlockingMock: ContentBlockingMock!
     var privacyFeaturesMock: AnyPrivacyFeatures!
     var privacyConfiguration: MockPrivacyConfiguration {

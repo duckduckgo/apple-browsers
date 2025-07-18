@@ -8,17 +8,23 @@ generate_apple_certs false
 type "appstore"
 app_identifier [
     "com.duckduckgo.mobile.ios",
+    "com.duckduckgo.mobile.ios.DBP.backgroundAgent",
     "com.duckduckgo.mobile.ios.vpn.agent",
     "com.duckduckgo.mobile.ios.vpn.agent.network-protection-extension",
     "com.duckduckgo.mobile.ios.vpn.agent.network-extension",
+    "com.duckduckgo.mobile.ios.vpn.agent.proxy",
+    "com.duckduckgo.mobile.ios.alpha",
+    "com.duckduckgo.mobile.ios.DBP.backgroundAgent.alpha",
+    "com.duckduckgo.mobile.ios.vpn.agent.alpha",
+    "com.duckduckgo.mobile.ios.vpn.agent.alpha.network-protection-extension",
+    "com.duckduckgo.mobile.ios.vpn.agent.network-extension.alpha",
+    "com.duckduckgo.mobile.ios.vpn.agent.alpha.proxy",
     "com.duckduckgo.mobile.ios.review",
+    "com.duckduckgo.mobile.ios.DBP.backgroundAgent.review",
     "com.duckduckgo.mobile.ios.vpn.agent.review",
     "com.duckduckgo.mobile.ios.vpn.agent.review.network-protection-extension",
     "com.duckduckgo.mobile.ios.vpn.agent.network-extension.review",
-    "com.duckduckgo.mobile.ios.vpn.agent.proxy",
     "com.duckduckgo.mobile.ios.vpn.agent.review.proxy",
-    "com.duckduckgo.mobile.ios.DBP.backgroundAgent.review",
-    "com.duckduckgo.mobile.ios.DBP.backgroundAgent"
 ]
 additional_cert_types ["mac_installer_distribution"]
 
@@ -30,6 +36,17 @@ for_lane :sync_signing_dmg_release do
         "HKE973VLUW.com.duckduckgo.macos.browser.network-protection.notifications",
         "com.duckduckgo.macos.vpn",
         "com.duckduckgo.macos.DBP.backgroundAgent"
+    ]
+    additional_cert_types []
+end
+
+for_lane :sync_signing_dmg_alpha do
+    type "developer_id"
+    app_identifier [
+        "com.duckduckgo.macos.browser.alpha",
+        "com.duckduckgo.macos.vpn.network-extension.alpha",
+        "com.duckduckgo.macos.vpn.alpha",
+        "com.duckduckgo.macos.DBP.backgroundAgent.alpha"
     ]
     additional_cert_types []
 end

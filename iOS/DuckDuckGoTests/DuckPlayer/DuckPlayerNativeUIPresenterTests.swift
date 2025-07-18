@@ -91,6 +91,49 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     private var testNotificationCenter: TestNotificationCenter!
     private var constraintUpdates: [DuckPlayerConstraintUpdate] = []
 
+    // MARK: - Helper Methods
+    
+    /// Waits for a condition to become true using manual polling.
+    /// This is useful for properties that are not KVO-compliant.
+    /// - Parameters:
+    ///   - timeout: Maximum time to wait for the condition
+    ///   - pollingInterval: Time between condition checks
+    ///   - condition: The condition to check
+    ///   - description: Description of what we're waiting for
+    private func waitForCondition(
+        timeout: TimeInterval = 2.0,
+        pollingInterval: TimeInterval = 0.1,
+        condition: @escaping () -> Bool,
+        description: String
+    ) {
+        let expectation = expectation(description: description)
+        var isFulfilled = false
+        
+        func scheduleNextCheck() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + pollingInterval) {
+                // Check if we should continue polling
+                guard !isFulfilled else { return }
+                
+                if condition() {
+                    isFulfilled = true
+                    expectation.fulfill()
+                } else {
+                    scheduleNextCheck()
+                }
+            }
+        }
+        
+        // Check condition immediately
+        if condition() {
+            isFulfilled = true
+            expectation.fulfill()
+        } else {
+            scheduleNextCheck()
+        }
+        
+        wait(for: [expectation], timeout: timeout)
+    }
+
     // MARK: - Setup
 
     override func setUp() {
@@ -825,18 +868,16 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     // MARK: - Notification Handling Tests
 
     @MainActor
-    func testHandleOmnibarDidLayout_UpdatesBottomConstraintForTopAddressBar() {
+    func testAddressBarPositionChanged_UpdatesBottomConstraintForTopAddressBar() {
         // Given
-        let omnibarHeight: CGFloat = 50.0
         mockAppSettings.currentAddressBarPosition = .top
         let videoID = "test123"
         
         // Present pill to create bottom constraint
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: nil)
         
-        // When
-        let notification = Notification(name: DefaultOmniBarView.didLayoutNotification, object: omnibarHeight)
-        sut.handleOmnibarDidLayout(notification)
+        // When - simulate address bar position change
+        testNotificationCenter.post(name: AppUserDefaults.Notifications.addressBarPositionChanged, object: AddressBarPosition.top)
         
         // Wait for async constraint update
         let expectation = expectation(description: "Constraint update")
@@ -850,18 +891,16 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     }
 
     @MainActor
-    func testHandleOmnibarDidLayout_UpdatesBottomConstraintForBottomAddressBar() {
+    func testAddressBarPositionChanged_UpdatesBottomConstraintForBottomAddressBar() {
         // Given
-        let omnibarHeight: CGFloat = 50.0
         mockAppSettings.currentAddressBarPosition = .bottom
         let videoID = "test123"
         
         // Present pill to create bottom constraint
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: nil)
         
-        // When
-        let notification = Notification(name: DefaultOmniBarView.didLayoutNotification, object: omnibarHeight)
-        sut.handleOmnibarDidLayout(notification)
+        // When - simulate address bar position change
+        testNotificationCenter.post(name: AppUserDefaults.Notifications.addressBarPositionChanged, object: AddressBarPosition.bottom)
         
         // Wait for async constraint update
         let expectation = expectation(description: "Constraint update")
@@ -871,22 +910,19 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
         
         // Then
-        XCTAssertEqual(sut.bottomConstraint?.constant, -omnibarHeight, "Bottom constraint should be negative omnibar height for bottom address bar")
+        XCTAssertEqual(sut.bottomConstraint?.constant, -DefaultOmniBarView.expectedHeight, "Bottom constraint should be negative expected height for bottom address bar")
     }
 
     @MainActor
-    func testHandleOmnibarDidLayout_IgnoresInvalidNotificationObject() {
-        // Given
-        let videoID = "test123"
-        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: nil)
-        let originalConstraint = sut.bottomConstraint?.constant
+    func testAddressBarPositionChanged_WithNilBottomConstraint_HandlesGracefully() {
+        // Given - no pill presented, so no bottom constraint exists
+        mockAppSettings.currentAddressBarPosition = .bottom
         
-        // When - notification with invalid object type
-        let notification = Notification(name: DefaultOmniBarView.didLayoutNotification, object: "invalid")
-        sut.handleOmnibarDidLayout(notification)
+        // When - simulate address bar position change
+        testNotificationCenter.post(name: AppUserDefaults.Notifications.addressBarPositionChanged, object: AddressBarPosition.bottom)
         
-        // Then
-        XCTAssertEqual(sut.bottomConstraint?.constant, originalConstraint, "Constraint should not change with invalid notification object")
+        // Then - should not crash
+        XCTAssertNil(sut.bottomConstraint, "Bottom constraint should remain nil when no pill is presented")
     }
 
     func testHandleAppSettingsChange_UpdatesAppSettings() {
@@ -1092,7 +1128,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         }.store(in: &cancellables)
         
         // Simulate YouTube navigation request
-        sut.playerViewModel?.youtubeNavigationRequestPublisher.send(videoID)
+        sut.playerViewModel?.youtubeNavigationRequestPublisher.send(URL.youtube(videoID))
         
         // Then
         XCTAssertNotNil(receivedURL)
@@ -1194,6 +1230,30 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     }
 
     @MainActor
+    func testDeinit_RemovesNotificationObservers() {
+        // Given
+        var presenter: DuckPlayerNativeUIPresenter? = DuckPlayerNativeUIPresenter(
+            appSettings: mockAppSettings,
+            duckPlayerSettings: mockDuckPlayerSettings,
+            state: DuckPlayerState(),
+            notificationCenter: testNotificationCenter
+        )
+        
+        // Verify observer is working
+        let videoID = "test123"
+        presenter?.presentPill(for: videoID, in: mockHostViewController, timestamp: nil)
+        
+        // When - deallocate presenter
+        presenter = nil
+        
+        // Then - notification should not crash or cause issues
+        testNotificationCenter.post(name: AppUserDefaults.Notifications.addressBarPositionChanged, object: AddressBarPosition.bottom)
+        
+        // If we reach here without crashing, the observer was properly removed
+        XCTAssertTrue(true, "Notification observer was properly cleaned up")
+    }
+
+    @MainActor
     func testSchedulePlayerCleanup_ClearsPlayerViewModel() {
         // Given
         let videoID = "test123"
@@ -1208,15 +1268,13 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertNotNil(sut.playerViewModel)
         
         // When - Simulate navigation away which triggers cleanup
-        sut.playerViewModel?.youtubeNavigationRequestPublisher.send(videoID)
+        sut.playerViewModel?.youtubeNavigationRequestPublisher.send(URL.youtube(videoID))
         
-        // Wait for cleanup delay
-        let expectation = XCTestExpectation(description: "Player cleanup")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            expectation.fulfill()
-        }
-        
-        wait(for: [expectation], timeout: 1.0)
+        // Wait for cleanup using helper method
+        waitForCondition(
+            condition: { [weak sut] in sut?.playerViewModel == nil },
+            description: "Player view model should be cleaned up"
+        )
         
         // Then
         XCTAssertNil(sut.playerViewModel, "Player view model should be cleaned up")
@@ -1874,13 +1932,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
 
         // Simulate the view disappearing and dismiss publisher firing
         playerViewModel.dismissPublisher.send(timestamp)
-
-        // Wait for the delayed pill presentation (0.3s delay + buffer)
-        let expectation = XCTestExpectation(description: "Pill should be presented after dismissal")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 2.0)
+        
+        // Wait for pill presentation using helper method
+        waitForCondition(
+            condition: { [weak sut] in sut?.containerViewController != nil },
+            description: "Pill should be presented after dismissal"
+        )
 
         // Then - Should present re-entry pill 
         XCTAssertNotNil(sut.containerViewController, "Pill container should be created after dismissal")

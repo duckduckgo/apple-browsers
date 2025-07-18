@@ -1270,6 +1270,8 @@
 		37B11B3928095E6600CBB621 /* TabLazyLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B11B3828095E6600CBB621 /* TabLazyLoader.swift */; };
 		37B16FFA2DBA3AF100910812 /* TabCrashIndicatorModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B16FF92DBA3AEB00910812 /* TabCrashIndicatorModelTests.swift */; };
 		37B16FFB2DBA3AF100910812 /* TabCrashIndicatorModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B16FF92DBA3AEB00910812 /* TabCrashIndicatorModelTests.swift */; };
+		37B904712E2996FA00E5DAF7 /* AppVersionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B904702E2996F800E5DAF7 /* AppVersionModel.swift */; };
+		37B904722E2996FA00E5DAF7 /* AppVersionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B904702E2996F800E5DAF7 /* AppVersionModel.swift */; };
 		37BE087A2D09C0F200C77B8E /* NewTabPageNextStepsCardsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37BE08792D09C0EA00C77B8E /* NewTabPageNextStepsCardsProvider.swift */; };
 		37BE087B2D09C0F200C77B8E /* NewTabPageNextStepsCardsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37BE08792D09C0EA00C77B8E /* NewTabPageNextStepsCardsProvider.swift */; };
 		37BF3F14286D8A6500BD9014 /* PinnedTabsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37BF3F13286D8A6500BD9014 /* PinnedTabsManager.swift */; };
@@ -4251,6 +4253,7 @@
 		37AFCE9127DB8CAD00471A10 /* PreferencesAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesAboutView.swift; sourceTree = "<group>"; };
 		37B11B3828095E6600CBB621 /* TabLazyLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabLazyLoader.swift; sourceTree = "<group>"; };
 		37B16FF92DBA3AEB00910812 /* TabCrashIndicatorModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCrashIndicatorModelTests.swift; sourceTree = "<group>"; };
+		37B904702E2996F800E5DAF7 /* AppVersionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionModel.swift; sourceTree = "<group>"; };
 		37BE08792D09C0EA00C77B8E /* NewTabPageNextStepsCardsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageNextStepsCardsProvider.swift; sourceTree = "<group>"; };
 		37BF3F13286D8A6500BD9014 /* PinnedTabsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsManager.swift; sourceTree = "<group>"; };
 		37BF3F1E286F0A7A00BD9014 /* PinnedTabsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PinnedTabsViewModel.swift; sourceTree = "<group>"; };
@@ -8859,6 +8862,7 @@
 				1D9A37662BD8EA8800EBC58D /* DockPositionProvider.swift */,
 				1DEF3BAC2BD145A9004A2FBA /* AutoClearHandler.swift */,
 				1DF798992DBA2A20003148F3 /* AboutPanel.swift */,
+				37B904702E2996F800E5DAF7 /* AppVersionModel.swift */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -13333,6 +13337,7 @@
 				BB7BAAC02DDBADB2004A5A58 /* NavigationToolbarIconsProviding.swift in Sources */,
 				3706FEBE293F6EFF00E42796 /* BWMessageIdGenerator.swift in Sources */,
 				C1E961F02B87AA29001760E1 /* AutofillActionBuilder.swift in Sources */,
+				37B904722E2996FA00E5DAF7 /* AppVersionModel.swift in Sources */,
 				B6F1B0232BCE5658005E863C /* BrokenSiteInfoTabExtension.swift in Sources */,
 				3706FC85293F65D500E42796 /* ShadowView.swift in Sources */,
 				3706FC86293F65D500E42796 /* FeedbackSender.swift in Sources */,
@@ -14679,6 +14684,7 @@
 				BBB881882C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift in Sources */,
 				C1B1CBE12BE1915100B6049C /* DataImportShortcutsViewModel.swift in Sources */,
 				31521AC32CC01BC700248E6F /* AIChatTabOpener.swift in Sources */,
+				37B904712E2996FA00E5DAF7 /* AppVersionModel.swift in Sources */,
 				B6C0B23C26E87D900031CB7F /* NSAlert+ActiveDownloadsTermination.swift in Sources */,
 				AAECA42024EEA4AC00EFA63A /* IndexPathExtension.swift in Sources */,
 				4B9579212AC687170062CA31 /* HardwareModel.swift in Sources */,

@@ -19,21 +19,12 @@
       }
     },
     {
-      "identity" : "bloom_cpp",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/bloom_cpp.git",
-      "state" : {
-        "revision" : "8076199456290b61b4544bf2f4caf296759906a0",
-        "version" : "3.0.0"
-      }
-    },
-    {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "revision" : "782c3fdd5c96d978e7eae5b9734be40abcfdfa50",
-        "version" : "10.8.0"
+        "revision" : "40e84974805a910979961ded1d5003584d9d94b5",
+        "version" : "10.12.0"
       }
     },
     {

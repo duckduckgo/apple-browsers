@@ -940,7 +940,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         UserDefaultsWrapper<Any>.clearRemovedKeys()
 
-        vpnSubscriptionEventHandler?.registerForSubscriptionAccountManagerEvents()
+        vpnSubscriptionEventHandler?.startMonitoring()
 
         UNUserNotificationCenter.current().delegate = self
 

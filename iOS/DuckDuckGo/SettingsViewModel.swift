@@ -30,6 +30,7 @@ import Crashes
 import Subscription
 import VPN
 import AIChat
+import DataBrokerProtection_iOS
 
 final class SettingsViewModel: ObservableObject {
 
@@ -54,6 +55,7 @@ final class SettingsViewModel: ObservableObject {
     private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
     let featureDiscovery: FeatureDiscovery
     private let urlOpener: URLOpener
+    let dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager?
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -515,7 +517,8 @@ final class SettingsViewModel: ObservableObject {
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          urlOpener: URLOpener = UIApplication.shared,
-         keyValueStore: ThrowingKeyValueStoring
+         keyValueStore: ThrowingKeyValueStoring,
+         dataBrokerProtectionIOSManager: DataBrokerProtectionIOSManager? = .shared
     ) {
 
         self.state = SettingsState.defaults
@@ -541,6 +544,7 @@ final class SettingsViewModel: ObservableObject {
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.urlOpener = urlOpener
         self.keyValueStore = keyValueStore
+        self.dataBrokerProtectionIOSManager = dataBrokerProtectionIOSManager
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -1035,7 +1039,7 @@ extension SettingsViewModel {
             subscriptionStateCache.set(state.subscription) // Sync cache
             return
         }
-        
+
         do {
             let subscription = try await subscriptionAuthV1toV2Bridge.getSubscription(cachePolicy: .cacheFirst)
             state.subscription.platform = subscription.platform
@@ -1048,14 +1052,17 @@ extension SettingsViewModel {
             let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal, .paidAIChat]
 
             for entitlement in entitlementsToCheck {
-                if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isEnabled(feature: entitlement),
+                if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isFeatureEnabled(entitlement),
                     hasEntitlement {
                     currentEntitlements.append(entitlement)
                 }
             }
 
             self.state.subscription.entitlements = currentEntitlements
-            self.state.subscription.subscriptionFeatures = await subscriptionAuthV1toV2Bridge.currentSubscriptionFeatures()
+
+            // This requires follow-up work:
+            // https://app.asana.com/1/137249556945/task/1210799126744217
+            self.state.subscription.subscriptionFeatures = (try? await subscriptionAuthV1toV2Bridge.currentSubscriptionFeatures()) ?? []
         } catch SubscriptionEndpointServiceError.noData {
             Logger.subscription.debug("No subscription data available")
             state.subscription.hasSubscription = false

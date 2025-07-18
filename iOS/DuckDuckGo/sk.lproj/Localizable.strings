@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Ako exportovať heslá zo Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Vyber súbor...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Vyber súbor obsahujúci heslá exportované zo Safari alebo Chrome. Zvyčajne je to súbor ZIP alebo CSV.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import je dokončený!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Kreditné karty";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Preskočené duplikáty";
@@ -1854,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Importovať heslá";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Prenes svoje heslá rýchlo a bezpečne z iného prehliadača.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Importuj si svoje heslá do DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Musíš povoliť VPN z aplikácie DuckDuckGo.";
@@ -3600,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Ďalej";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Kreditné karty";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Heslo";

@@ -29,12 +29,29 @@ import DataBrokerProtectionCore
 final public class DataBrokerProtectionViewController: UIViewController {
 
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
-    private let webUIViewModel: DBPUIViewModel
+    private let dbpUIViewModelDelegate: DBPUIViewModelDelegate
+    private let privacyConfigManager: PrivacyConfigurationManaging
+    private let contentScopeProperties: ContentScopeProperties
 
     private var activityIndicatorView: UIActivityIndicatorView?
 
+    private let feedbackViewCreator: () -> (any View)
     private let openURLHandler: (URL) -> Void
     private var reloadObserver: NSObjectProtocol?
+
+    private lazy var webUIViewModel: DBPUIViewModel = {
+        guard let pixelKit = PixelKit.shared else {
+            fatalError("PixelKit not set up")
+        }
+        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
+
+        return DBPUIViewModel(delegate: dbpUIViewModelDelegate,
+                              feedbackFormDelegate: self,
+                              webUISettings: webUISettings,
+                              pixelHandler: sharedPixelsHandler,
+                              privacyConfigManager: privacyConfigManager,
+                              contentScopeProperties: contentScopeProperties)
+    }()
 
     private lazy var webView: WKWebView = {
         let configuration = webUIViewModel.setupCommunicationLayer()
@@ -57,20 +74,15 @@ final public class DataBrokerProtectionViewController: UIViewController {
                 privacyConfigManager: PrivacyConfigurationManaging,
                 contentScopeProperties: ContentScopeProperties,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-                openURLHandler: @escaping (URL) -> Void) {
+                openURLHandler: @escaping (URL) -> Void,
+                feedbackViewCreator: @escaping () -> (any View)) {
         self.openURLHandler = openURLHandler
+        self.feedbackViewCreator = feedbackViewCreator
         self.webUISettings = webUISettings
 
-        guard let pixelKit = PixelKit.shared else {
-            fatalError("PixelKit not set up")
-        }
-        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
-
-        self.webUIViewModel = DBPUIViewModel(delegate: dbpUIViewModelDelegate,
-                                             webUISettings: webUISettings,
-                                             pixelHandler: sharedPixelsHandler,
-                                             privacyConfigManager: privacyConfigManager,
-                                             contentScopeProperties: contentScopeProperties)
+        self.dbpUIViewModelDelegate = dbpUIViewModelDelegate
+        self.privacyConfigManager = privacyConfigManager
+        self.contentScopeProperties = contentScopeProperties
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -112,6 +124,16 @@ final public class DataBrokerProtectionViewController: UIViewController {
         ])
 
         loadingView.startAnimating()
+    }
+}
+
+extension DataBrokerProtectionViewController: DBPUIViewModelOpenFeedbackFormDelegate {
+    public func openSendFeedbackForm() {
+        DispatchQueue.main.async {
+            let view = self.feedbackViewCreator()
+            let hostingController = UIHostingController(rootView: AnyView(view))
+            self.navigationController?.pushViewController(hostingController, animated: true)
+        }
     }
 }
 

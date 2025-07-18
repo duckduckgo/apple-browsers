@@ -1,0 +1,35 @@
+{
+    "metadata" : {
+      "browser_name" : "Safari",
+      "browser_version" : "18.5",
+      "data_type" : "payment_cards",
+      "export_time_usec" : 1751018903378483,
+      "schema_version" : 1
+    },
+  "payment_cards": [
+      {
+        "card_number" : "4111111111111111",
+        "card_name" : "John Doe’s MasterCard",
+        "cardholder_name" : "John Doe",
+        "card_expiration_month" : 12,
+        "card_expiration_year" : 2025,
+        "card_last_used_time_usec" : 1751018008592090.2
+      },
+      {
+        "card_number" : "5555555555554444",
+        "card_name" : "",
+        "cardholder_name" : "Jane Smith",
+        "card_expiration_month" : 6,
+        "card_expiration_year" : 2026,
+        "card_last_used_time_usec" : 1751017999695255
+      },
+      {
+        "card_number" : "378282246310005",
+        "card_name" : "Bob’s MasterCard",
+        "cardholder_name" : "Bob Johnson",
+        "card_expiration_month" : 3,
+        "card_expiration_year" : 2024,
+        "card_last_used_time_usec" : 1751018008592090.2
+      }
+  ]
+}

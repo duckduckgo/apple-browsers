@@ -205,4 +205,60 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertEqual(operationData4.count, 20+30)
     }
 
+    func testSortPredicateForBackgroundTasks() {
+            let now = Date()
+
+            let jobs: [BrokerJobData] = [
+                ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .matchesFound(count: 1))], preferredRunDate: now.addingTimeInterval(100)), // Maintenance
+                OptOutJobData.mock(attemptCount: 10, preferredRunDate: now), // Opt-out
+                ScanJobData.mock(historyEvents: [], preferredRunDate: now.addingTimeInterval(-100)), // Initial scan
+                ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .scanStarted)], preferredRunDate: nil), // Other scan
+                OptOutJobData.mock(attemptCount: 1, preferredRunDate: now.addingTimeInterval(50)), // Opt-out
+                ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .optOutRequested)], preferredRunDate: now), // Confirm opt-out
+                ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .error(error: DataBrokerProtectionError.unknown("Test error")))], preferredRunDate: now.addingTimeInterval(-50)), // Retry
+                OptOutJobData.mock(attemptCount: 5, preferredRunDate: nil), // Opt-out
+                ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .noMatchFound)], preferredRunDate: now.addingTimeInterval(-200)), // Maintenance
+                ScanJobData.mock(historyEvents: [], preferredRunDate: nil), // Initial scan
+                ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .error(error: DataBrokerProtectionError.unknown("Test error")))], preferredRunDate: now.addingTimeInterval(200)), // Retry
+                ScanJobData.mock(historyEvents: [], preferredRunDate: now), // Initial scan
+            ]
+
+            let sorted = jobs.sorted(by: BrokerJobDataComparators.byPriorityForBackgroundTask)
+
+            // 1. Initial scans (sorted by date, nil last)
+            XCTAssertEqual((sorted[0] as? ScanJobData)?.scanType(), .initial)
+            XCTAssertEqual(sorted[0].preferredRunDate, now.addingTimeInterval(-100))
+
+            XCTAssertEqual((sorted[1] as? ScanJobData)?.scanType(), .initial)
+            XCTAssertEqual(sorted[1].preferredRunDate, now)
+
+            XCTAssertEqual((sorted[2] as? ScanJobData)?.scanType(), .initial)
+            XCTAssertNil(sorted[2].preferredRunDate)
+
+            // 2. Opt-outs (sorted by attempt count ascending: 1, 5, 10)
+            XCTAssertEqual((sorted[3] as? OptOutJobData)?.attemptCount, 1)
+            XCTAssertEqual((sorted[4] as? OptOutJobData)?.attemptCount, 5)
+            XCTAssertEqual((sorted[5] as? OptOutJobData)?.attemptCount, 10)
+
+            // 3. Confirm opt-out scans
+            XCTAssertEqual((sorted[6] as? ScanJobData)?.scanType(), .confirmOptOut)
+
+            // 4. Retry scans (sorted by date)
+            XCTAssertEqual((sorted[7] as? ScanJobData)?.scanType(), .retry)
+            XCTAssertEqual(sorted[7].preferredRunDate, now.addingTimeInterval(-50))
+
+            XCTAssertEqual((sorted[8] as? ScanJobData)?.scanType(), .retry)
+            XCTAssertEqual(sorted[8].preferredRunDate, now.addingTimeInterval(200))
+
+            // 5. Maintenance scans (sorted by date)
+            XCTAssertEqual((sorted[9] as? ScanJobData)?.scanType(), .maintenance)
+            XCTAssertEqual(sorted[9].preferredRunDate, now.addingTimeInterval(-200))
+
+            XCTAssertEqual((sorted[10] as? ScanJobData)?.scanType(), .maintenance)
+            XCTAssertEqual(sorted[10].preferredRunDate, now.addingTimeInterval(100))
+
+            // 6. Other scans
+            XCTAssertEqual((sorted[11] as? ScanJobData)?.scanType(), .other)
+            XCTAssertNil(sorted[11].preferredRunDate)
+        }
 }

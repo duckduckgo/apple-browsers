@@ -1326,14 +1326,28 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         permissions.tabDidStartNavigation()
         userInteractionDialog = nil
 
+        let shouldFireNavigationPixel: Bool = {
+            /// Fire navigation pixel on all navigations except for loading error pages
+            if navigation.navigationAction.navigationType == .alternateHtmlLoad {
+                return false
+            }
+            /// Sometimes navigation type for an error page is reported as `.other`, so checking also target frame URL
+            /// This has a side effect of filtering out also some navigations starting on an error page (e.g. using a reload button,
+            /// that is also reported as `.other`).
+            if navigation.navigationAction.navigationType == .other && navigation.navigationAction.targetFrame?.url == .error {
+                return false
+            }
+            return true
+        }()
+
+        if shouldFireNavigationPixel {
+            PixelKit.fire(GeneralPixel.navigation)
+        }
+
         // Unnecessary assignment triggers publishing
         if error != nil,
            navigation.navigationAction.navigationType != .alternateHtmlLoad { // error page navigation
             error = nil
-        }
-
-        if navigation.navigationAction.navigationType != .alternateHtmlLoad {
-            PixelKit.fire(GeneralPixel.navigation)
         }
 
         invalidateInteractionStateData()

@@ -85,8 +85,49 @@ platform :mac do
   #
   desc 'Makes App Store release build and uploads it to TestFlight'
   lane :release_testflight do |options|
-    build_release(options)
+    build_testflight(options)
+    upload_testflight(options)
+  end
 
+  # Makes App Store Review build and uploads it to TestFlight without managing App Store listing.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Makes App Store Review build and uploads it to TestFlight'
+  lane :release_testflight_review do |options|
+    build_testflight_review(options)
+    upload_testflight_review(options)
+  end
+
+  # Makes App Store Alpha build and uploads it to TestFlight without managing App Store listing.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Makes App Store Alpha build and uploads it to TestFlight'
+  lane :release_testflight_alpha do |options|
+    build_testflight_alpha(options)
+    upload_testflight_alpha(options)
+  end
+
+  # Makes App Store release build.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Makes App Store release build'
+  lane :build_testflight do |options|
+    build_release(options)
+  end
+
+  # Uploads App Store release to TestFlight without managing App Store listing.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Uploads App Store release build to TestFlight'
+  lane :upload_testflight do |options|
     upload_to_testflight(
       options.merge(
         {
@@ -97,15 +138,23 @@ platform :mac do
     )
   end
 
-  # Makes App Store Review build and uploads it to TestFlight without managing App Store listing.
+  # Makes App Store Review build.
   #
   # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
   #         for it a couple of times during the process.
   #
-  desc 'Makes App Store Review build and uploads it to TestFlight'
-  lane :release_testflight_review do |options|
+  desc 'Makes App Store Review build'
+  lane :build_testflight_review do |options|
     build_review(options)
+  end
 
+  # Uploads App Store Review build to TestFlight without managing App Store listing.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Uploads App Store Review build to TestFlight'
+  lane :upload_testflight_review do |options|
     upload_to_testflight(
       options.merge(
         {
@@ -117,15 +166,23 @@ platform :mac do
     )
   end
 
-  # Makes App Store Alpha build and uploads it to TestFlight without managing App Store listing.
+  # Makes App Store Alpha build.
   #
   # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
   #         for it a couple of times during the process.
   #
-  desc 'Makes App Store Alpha build and uploads it to TestFlight'
-  lane :release_testflight_alpha do |options|
+  desc 'Makes App Store Alpha build'
+  lane :build_testflight_alpha do |options|
     build_alpha(options)
+  end
 
+  # Uploads App Store Alpha to TestFlight without managing App Store listing.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Uploads App Store Alpha build to TestFlight'
+  lane :upload_testflight_alpha do |options|
     upload_to_testflight(
       options.merge(
         {

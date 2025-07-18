@@ -9,6 +9,10 @@ on:
   # push:
   #   branches:
   #     - main
+  #     - dominik/alpha-build
+  #   paths:
+  #     - 'macOS/**'
+  #     - 'SharedPackages/**'
   workflow_dispatch:
     inputs:
       skip-appstore:
@@ -22,14 +26,59 @@ jobs:
     name: Calculate Alpha Build Number
     runs-on: macos-15
 
+    concurrency:
+      group: macos-alpha-build
+      cancel-in-progress: true
+
     outputs:
       build-number: ${{ steps.build-number.outputs.next_build_number }}
+      should-skip: ${{ steps.check-upload.outputs.should-skip }}
 
     steps:
     - name: Check out the code
       uses: actions/checkout@v4
       with:
         submodules: recursive
+
+    - name: Check for active upload job
+      id: check-upload
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Check for any in-progress upload jobs - if one is found then we can
+        # skip doing this build, since the workflow will check at the end of the
+        # upload whether a re-build needs to happen.
+
+        echo "Checking for active upload jobs..."
+
+        # Get all in-progress runs for this workflow
+        runs=$(gh run list \
+          --workflow="macos_alpha_release.yml" \
+          --status="in_progress" \
+          --json="databaseId" \
+          --jq='.[].databaseId')
+
+        upload_in_progress=false
+        for run_id in $runs; do
+          # Check if this run has an upload job in progress
+          upload_job="$(gh run view "$run_id" \
+            --json="jobs" \
+            --jq='.jobs[] | select(.name == "Prepare AppStore Release / Upload App Store Connect Release" and (.status == "in_progress" or status == "queued")) | .name' \
+            2>/dev/null || echo "")"
+          if [ -n "$upload_job" ]; then
+            upload_in_progress=true
+            echo "⚠️ Found active upload job in run #$run_id"
+            break
+          fi
+        done
+
+        if [ "$upload_in_progress" = true ]; then
+          echo "🚫 Skipping this workflow - the rerun logic will handle this commit once upload completes."
+          echo "should_skip=true" >> $GITHUB_OUTPUT
+        else
+          echo "✅ No active upload jobs found. Proceeding with build..."
+          echo "should_skip=false" >> $GITHUB_OUTPUT
+        fi
 
     - name: Setup Ruby and dependencies
       uses: ./.github/actions/setup-ruby
@@ -54,6 +103,10 @@ jobs:
 
   dmg-release:
     name: Prepare DMG Release
+
+    concurrency:
+      group: macos-alpha-build-dmg
+      cancel-in-progress: true
 
     needs: calculate-alpha-build-number
 
@@ -101,6 +154,10 @@ jobs:
 
   publish-alpha-dmg:
     name: Publish Alpha DMG
+
+    concurrency:
+      group: macos-alpha-upload
+      cancel-in-progress: true
 
     needs: dmg-release
 

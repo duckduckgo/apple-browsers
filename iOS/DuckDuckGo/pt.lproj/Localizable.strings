@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Como exportar palavras-passe do Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Selecionar ficheiro…";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Seleciona o ficheiro que contém as palavras-passe exportadas do Safari ou do Chrome. Geralmente é um ficheiro ZIP ou CSV.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Importação concluída!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Cartões de crédito";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Duplicados ignorados";
@@ -1854,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Importar palavras-passe";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Transfere de forma rápida e segura as tuas palavras-passe a partir de outro navegador.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Importa as tuas palavras-passe para o DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Tens de ativar a VPN na aplicação DuckDuckGo.";
@@ -3600,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Continuar";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Cartões de crédito";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Palavras-passe";

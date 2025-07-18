@@ -59,6 +59,7 @@ protocol OmniBarState: CustomStringConvertible {
 
     var dependencies: OmnibarDependencyProvider { get }
     var isLoading: Bool { get }
+    var isBrowsing: Bool { get }
 
     func withLoading() -> Self
     func withoutLoading() -> Self

@@ -131,6 +131,10 @@ final class MockOmniBarDelegate: OmniBarDelegate {
         return suggestion
     }
 
+    func isSuggestionTrayVisible() -> Bool {
+        false
+    }
+
     // MARK: - Unused methods
     func onSelectFavorite(_ favorite: BookmarkEntity) {
 

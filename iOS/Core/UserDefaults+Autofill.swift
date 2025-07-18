@@ -18,7 +18,6 @@
 //
 
 import Foundation
-import Core
 
 public extension UserDefaults {
     static var autofillGroupDefaults: UserDefaults? {

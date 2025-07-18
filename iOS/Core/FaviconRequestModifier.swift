@@ -22,9 +22,9 @@ import Kingfisher
 
 class FaviconRequestModifier: ImageDownloadRequestModifier {
 
-    let userAgentManager: UserAgentManager
+    let userAgentManager: UserAgentManaging
 
-    init(userAgentManager: UserAgentManager = DefaultUserAgentManager.shared) {
+    init(userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared) {
         self.userAgentManager = userAgentManager
     }
 

@@ -28,16 +28,28 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     private let promptHandler: AIChatPromptHandler
     private let windowControllersManager: WindowControllersManagerProtocol
     private let tabsPreferences: TabsPreferences
+    private let isShiftPressed: () -> Bool
+    private let isCommandPressed: () -> Bool
 
     init(promptHandler: AIChatPromptHandler = AIChatPromptHandler.shared,
          windowControllersManager: WindowControllersManagerProtocol,
-         tabsPreferences: TabsPreferences) {
+         tabsPreferences: TabsPreferences,
+         isShiftPressed: @escaping () -> Bool = { NSApp?.isShiftPressed ?? false },
+         isCommandPressed: @escaping () -> Bool = { NSApp?.isCommandPressed ?? false }) {
         self.promptHandler = promptHandler
         self.windowControllersManager = windowControllersManager
         self.tabsPreferences = tabsPreferences
+        self.isShiftPressed = isShiftPressed
+        self.isCommandPressed = isCommandPressed
     }
 
     func submitSearch(_ term: String, target: NewTabPage.NewTabPageDataModel.OpenTarget) {
+        // Check for the keyboard shortcut to open the chat
+        if isShiftPressed() {
+            submitChat(term, target: isCommandPressed() ? .newTab : .sameTab)
+            return
+        }
+
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController else {
             Logger.newTabPageOmnibar.error("Failed to get mainWindowController in submitSearch")
             return
@@ -105,7 +117,13 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             windowControllersManager: windowControllersManager
         )
 
-        tabOpener.openAIChatTab(chat, with: linkOpenBehavior(for: target, using: tabsPreferences))
+        var behavior = linkOpenBehavior(for: target, using: tabsPreferences)
+        // Check for keyboard modifiers opening on a new tab
+        if isCommandPressed() {
+            behavior = .newTab(selected: isShiftPressed())
+        }
+
+        tabOpener.openAIChatTab(chat, with: behavior)
     }
 
     private func linkOpenBehavior(for target: NewTabPageDataModel.OpenTarget, using tabsPreferences: TabsPreferences) -> LinkOpenBehavior {

@@ -242,11 +242,12 @@ private enum FirefoxLoginEntry: Decodable {
 
     init(from decoder: Decoder) throws {
         // Try to decode as active login - this will fail if required fields are missing
-        if let activeLogin = try? ActiveLogin(from: decoder) {
-            self = .active(activeLogin)
-            // Check if this is a deleted entry
-        } else if let deletedLogin = try? DeletedLogin(from: decoder), deletedLogin.deleted {
+
+        // Check if this is a deleted entry
+        if let deletedLogin = try? DeletedLogin(from: decoder), deletedLogin.deleted {
             self = .deleted(deletedLogin)
+        } else if let activeLogin = try? ActiveLogin(from: decoder) {
+            self = .active(activeLogin)
         } else {
             self = .unparsed
         }

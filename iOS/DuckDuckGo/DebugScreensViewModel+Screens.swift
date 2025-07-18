@@ -175,11 +175,13 @@ extension DebugScreensViewModel {
                     KeychainItemsDebugViewController(coder: coder)
                 }
             }),
-            .controller(title: "Autofill", { _ in
+            .controller(title: "Autofill", { d in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "AutofillDebugViewController") { coder in
+                let autofillDebugViewController = storyboard.instantiateViewController(identifier: "AutofillDebugViewController") { coder in
                     AutofillDebugViewController(coder: coder)
                 }
+                autofillDebugViewController.keyValueStore = d.keyValueStore
+                return autofillDebugViewController
             }),
             .controller(title: "Subscription", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)

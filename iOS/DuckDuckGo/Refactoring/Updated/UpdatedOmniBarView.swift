@@ -223,6 +223,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
     private var masksTop: Bool = true
+    private var clipsContent: Bool = true
     private let omniBarProgressView = OmniBarProgressView()
     var progressView: ProgressView? { omniBarProgressView.progressView }
 
@@ -235,6 +236,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     /// Spans to available width of the omni bar and allows the input field to center horizontally
     private let searchAreaAlignmentView = UIView()
     private let searchAreaStackView = UIStackView()
+
+    /// Currently unused - should be removed if unlikely to return
     private let activeOutlineView = UIView()
 
     private let stackView = UIStackView()
@@ -252,6 +255,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         setUpCallbacks()
         setUpAccessibility()
 
+        setUpInitialState()
         updateActiveState()
         updateVerticalSpacing()
     }
@@ -259,14 +263,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
-        // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
-        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self.frame.height)
-        updateMaskLayer()
     }
 
     private func setUpSubviews() {
@@ -514,14 +510,19 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         accessoryButton.accessibilityTraits = .button
     }
 
+    private func setUpInitialState() {
+        // This active outline view needs to be removed in the future.  There is
+        //  some indecision about whether want it or not just now when comparing with
+        //  macOS, the arguments being we should have parity vs it's not need.  So leaving
+        //  it in disabled for now.
+        activeOutlineView.layer.cornerRadius = Metrics.cornerRadius
+        activeOutlineView.alpha = 0
+    }
+
     private func updateActiveState() {
         // This is needed so progress bar is clipped properly
         omniBarProgressView.layer.cornerRadius = Metrics.cornerRadius
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
-        activeOutlineView.layer.cornerRadius = isActiveState ? Metrics.activeBorderRadius : Metrics.cornerRadius
-
-        activeOutlineView.alpha = isActiveState ? 1 : 0
-
         updateShadows()
     }
 
@@ -672,13 +673,18 @@ extension UpdatedOmniBarView {
     }
 
     // Used to mask shadows going outside of bounds to prevent them covering other content
-    func updateMaskLayer(maskTop: Bool) {
+    func updateMaskLayer(maskTop: Bool, clip: Bool) {
         self.masksTop = maskTop
-
+        self.clipsContent = clip
         updateMaskLayer()
     }
 
     private func updateMaskLayer() {
+        guard clipsContent else {
+            layer.mask = nil
+            return
+        }
+
         let maskLayer = CALayer()
 
         let clippingOffset = 100.0
@@ -687,7 +693,7 @@ extension UpdatedOmniBarView {
         // Make the frame uniformly larger along each axis and offset to top or bottom
         let maskFrame = layer.bounds
             .insetBy(dx: -inset, dy: -inset)
-            .offsetBy(dx: 0, dy: masksTop ? clippingOffset : -clippingOffset)
+            .offsetBy(dx: 0, dy: masksTop ? inset : -inset)
 
         maskLayer.frame = maskFrame
         maskLayer.backgroundColor = UIColor.black.cgColor

@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Jak exportovat hesla ze Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Vybrat soubor...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Vyber soubor obsahující hesla vyexportovaná ze Safari nebo Chromu. Obvykle se jedná o soubor ZIP nebo CSV.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Import dokončen!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Platební karty";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Přeskočeno duplikáty";
@@ -1854,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Importovat hesla";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Rychle a bezpečně přenes svá hesla z jiného prohlížeče.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Importuj svá hesla do DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Musíš povolit VPN v aplikaci DuckDuckGo.";
@@ -3600,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Pokračovat";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Platební karty";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Hesla";

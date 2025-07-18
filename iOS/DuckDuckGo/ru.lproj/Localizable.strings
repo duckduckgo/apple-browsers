@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Как экспортировать пароли из Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Выбрать файл...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Выберите файл с паролями, экспортированными из браузера Safari или Chrome. Обычно он имеет формат ZIP или CSV.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Импортирование завершено.";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Платежные карты";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Пропущенные дубликаты";
@@ -1854,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Код: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Импорт паролей";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Быстрый и безопасный способ перенести пароли из другого браузера.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Импорт паролей в DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Включите VPN в приложении DuckDuckGo.";
@@ -3600,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Продолжить";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Платежные карты";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Пароли";

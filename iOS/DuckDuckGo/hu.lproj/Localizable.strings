@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Jelszavak Safariból való exportálásának módja:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Fájl kiválasztása…";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Válaszd ki a Safariból vagy a Chrome-ból exportált jelszavakat tartalmazó fájlt. Ez általában egy ZIP- vagy CSV-fájl.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Importálás kész!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Hitelkártyák";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Kihagyott duplikátumok";
@@ -1854,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Jelszavak importálása";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Gyorsan és biztonságosan áthozhatod a jelszavaidat egy másik böngészőből.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Jelszavak importálása a DuckDuckGóba";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "A DuckDuckGo alkalmazásban engedélyezned kell a VPN-t.";
@@ -3600,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Folytatás";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Hitelkártyák";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Jelszavak";

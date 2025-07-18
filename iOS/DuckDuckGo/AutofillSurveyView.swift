@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import DuckUI
@@ -87,7 +86,6 @@ struct AutofillSurveyView: View {
         .padding([.horizontal, .top], 20)
         .padding(.bottom, 30)
     }
-
 }
 
 #Preview("Light") {

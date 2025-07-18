@@ -104,7 +104,7 @@ struct Foreground: ForegroundHandling {
             /// Handle **UI related logic** here that could be affected by Authentication screen or `AutoClear` feature
             /// This is called when the **app is ready to handle user interactions** after data clear and authentication are complete.
             onAppReadyForInteractions: {
-                /* ... */
+                appDependencies.launchTaskManager.start()
             }
         )
 

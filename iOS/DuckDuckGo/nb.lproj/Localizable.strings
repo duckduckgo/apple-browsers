@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Slik eksporterer du passord fra Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Velg fil ...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Velg filen som inneholder passordene eksportert fra Safari eller Chrome. Dette er vanligvis en ZIP- eller CSV-fil.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Importen er fullført!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Kredittkort";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Duplikater hoppet over";
@@ -1854,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Importer passord";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Overfør passordene dine raskt og sikkert fra en annen nettleser.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Importer passordene dine til DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Du må aktivere VPN-en i DuckDuckGo-appen.";
@@ -3600,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Fortsett";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Kredittkort";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Passord";

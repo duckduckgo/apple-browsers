@@ -35,6 +35,7 @@ public struct VPNControlWidget: ControlWidget {
                                    provider: VPNControlStatusValueProvider()) { status in
 
             ControlWidgetToggle(title(status: status), isOn: status.isConnected, action: ControlWidgetToggleVPNIntent()) { isOn in
+                // These images are intentionally not part of the design system images (yet)
                 if isOn {
                     Label(location(status: status), image: "ControlCenter-VPN-on")
                 } else {

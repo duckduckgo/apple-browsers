@@ -190,7 +190,7 @@ private struct ContinueButton: View {
         .buttonStyle(PrimaryButtonStyle(disabled: viewModel.selectedTypes.isEmpty))
         .frame(maxWidth: 360)
         .padding(.top, 44)
-        .padding(.bottom, 8)
+        .padding(.bottom, viewModel.importPreview.count == 2 ? 8 : 16)
         .disabled(viewModel.selectedTypes.isEmpty)
     }
 }

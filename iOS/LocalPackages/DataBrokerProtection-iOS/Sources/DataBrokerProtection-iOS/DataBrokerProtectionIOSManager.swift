@@ -28,6 +28,7 @@ import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
+import SwiftUICore
 
 public class DefaultOperationEventsHandler: EventMapping<JobEvent> {
 
@@ -62,7 +63,8 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
                                   pixelKit: PixelKit,
                                   subscriptionManager: DataBrokerProtectionSubscriptionManager,
-                                  quickLinkOpenURLHandler: @escaping (URL) -> Void) -> DataBrokerProtectionIOSManager? {
+                                  quickLinkOpenURLHandler: @escaping (URL) -> Void,
+                                  feedbackViewCreator: @escaping () -> (any View)) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
@@ -146,6 +148,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             privacyConfigManager: privacyConfigurationManager,
             database: database,
             quickLinkOpenURLHandler: quickLinkOpenURLHandler,
+            feedbackViewCreator: feedbackViewCreator,
             featureFlagger: featureFlagger,
             settings: dbpSettings,
             subscriptionManager: subscriptionManager
@@ -166,6 +169,7 @@ public final class DataBrokerProtectionIOSManager {
     private let iOSPixelsHandler: EventMapping<IOSPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let quickLinkOpenURLHandler: (URL) -> Void
+    private let feedbackViewCreator: () -> (any View)
     private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
     private let settings: DataBrokerProtectionSettings
     private let subscriptionManager: DataBrokerProtectionSubscriptionManager
@@ -203,6 +207,7 @@ public final class DataBrokerProtectionIOSManager {
          privacyConfigManager: PrivacyConfigurationManaging,
          database: DataBrokerProtectionRepository,
          quickLinkOpenURLHandler: @escaping (URL) -> Void,
+         feedbackViewCreator: @escaping () -> (any View),
          featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
          settings: DataBrokerProtectionSettings,
          subscriptionManager: DataBrokerProtectionSubscriptionManager
@@ -215,6 +220,7 @@ public final class DataBrokerProtectionIOSManager {
         self.privacyConfigManager = privacyConfigManager
         self.database = database
         self.quickLinkOpenURLHandler = quickLinkOpenURLHandler
+        self.feedbackViewCreator = feedbackViewCreator
         self.featureFlagger = featureFlagger
         self.settings = settings
         self.subscriptionManager = subscriptionManager
@@ -373,7 +379,8 @@ extension DataBrokerProtectionIOSManager: DataBrokerProtectionViewControllerProv
                                                   privacyConfigManager: self.privacyConfigManager,
                                                   contentScopeProperties: self.jobDependencies.contentScopeProperties,
                                                   webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
-                                                  openURLHandler: quickLinkOpenURLHandler)
+                                                  openURLHandler: quickLinkOpenURLHandler,
+                                                  feedbackViewCreator: feedbackViewCreator)
     }
 }
 

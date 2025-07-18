@@ -4,6 +4,10 @@ defaults:
   run:
     working-directory: macOS
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 on:
   # To be enabled later
   # push:

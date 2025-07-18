@@ -3312,6 +3312,7 @@ extension TabViewController: SecureVaultManagerDelegate {
                             promptUserToImportCredentialsForDomain domain: String,
                             completionHandler: @escaping (Bool) -> Void) {
         guard let eTLDplus1 = TabViewController.tld.eTLDplus1(url?.host), credentialsImportManager.domainPasswordImportLastShownOn != eTLDplus1 else {
+            completionHandler(false)
             return
         }
 

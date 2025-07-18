@@ -53,9 +53,9 @@ class SuggestionTrayViewController: UIViewController {
         isShowingAutocompleteSuggestions || isShowingFavoritesOverlay
     }
 
-    var isUsingNTPCompatibleStyling: Bool = false {
+    var isUsingSearchInputCustomStyling: Bool = false {
         didSet {
-            favoritesOverlay?.isUsingNTPCompatibleStyling = isUsingNTPCompatibleStyling
+            favoritesOverlay?.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
         }
     }
 
@@ -255,7 +255,7 @@ class SuggestionTrayViewController: UIViewController {
     private func installFavoritesOverlay(animated: Bool, onInstall: @escaping () -> Void = {}) {
         let controller = FavoritesOverlay(viewModel: favoritesModel)
         controller.delegate = favoritesOverlayDelegate
-        controller.isUsingNTPCompatibleStyling = isUsingNTPCompatibleStyling
+        controller.isUsingSearchInputCustomStyling = isUsingSearchInputCustomStyling
         install(controller: controller,
                 animated: animated,
                 additionalInsets: additionalFavoritesOverlayInsets,

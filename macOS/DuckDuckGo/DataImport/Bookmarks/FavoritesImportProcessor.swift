@@ -25,6 +25,8 @@ enum FavoritesImportProcessor {
     static func mergeBookmarksAndFavorites(bookmarks: inout ImportedBookmarks, favorites: [ImportedBookmarks.BookmarkOrFolder]) {
         guard !favorites.isEmpty else { return }
 
+        // Create a dictionary mapping favorite URLs to their indices for quick lookup
+        // We will use this to mark bookmarks with matching URLs as favorites with the correct index, and add new bookmarks for unique favorites
         var favoriteUrlIndices = favorites.reduce(into: [String: Int]()) { result, favorite in
             guard let urlString = favorite.url?.nakedString else { return }
             result[urlString] = favorite.favoritesIndex
@@ -61,10 +63,10 @@ enum FavoritesImportProcessor {
         processMaybeFolder(&bookmarks.topLevelFolders.otherBookmarks)
         processMaybeFolder(&bookmarks.topLevelFolders.syncedBookmarks)
 
-        // Create bookmarks objects for favorite shortcuts that don't have matching bookmarks and add them to bookmark bar
-        let uniqueShortcuts = favorites.filter { favoriteUrlIndices.keys.contains($0.url?.nakedString ?? "") }
-        bookmarks.topLevelFolders.bookmarkBar?.children?.append(contentsOf: uniqueShortcuts) ?? {
-            bookmarks.topLevelFolders.bookmarkBar = .folder(name: bookmarks.topLevelFolders.bookmarkBar?.name ?? "", children: uniqueShortcuts)
+        // Create bookmarks objects for favorites that don't have matching bookmarks and add them to bookmark bar
+        let uniqueFavorites = favorites.filter { favoriteUrlIndices[$0.url?.nakedString ?? ""] != nil }
+        bookmarks.topLevelFolders.bookmarkBar?.children?.append(contentsOf: uniqueFavorites) ?? {
+            bookmarks.topLevelFolders.bookmarkBar = .folder(name: bookmarks.topLevelFolders.bookmarkBar?.name ?? "", children: uniqueFavorites)
         }()
     }
 }

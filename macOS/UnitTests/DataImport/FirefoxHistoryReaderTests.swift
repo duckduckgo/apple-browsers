@@ -17,16 +17,19 @@
 //
 
 import Testing
+import Common
 @testable import DuckDuckGo_Privacy_Browser
 
 struct FirefoxHistoryReaderTests {
 
+    private let tld = TLD()
+
     @Test("Check if expected frecent sites are read from Firefox history database")
     func readingFrecentSites() throws {
-        let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: resourceURL())
+        let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: resourceURL(), tld: tld)
         let frecentSites = try historyReader.readFrecentSites().get()
 
-        #expect(frecentSites.count == 3)
+        #expect(frecentSites.count == 5)
 
         let firstSite = try #require(frecentSites.first)
         #expect(firstSite.url == "https://spreadprivacy.com/")
@@ -35,14 +38,39 @@ struct FirefoxHistoryReaderTests {
         #expect(firstSite.lastVisitDate == 1669241488218952)
     }
 
-    @Test("Check if frecent search site has expected shortcut URL")
-    func frecentSearchSite_UsesSearchShortcutURL() throws {
-        let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: resourceURL())
+    @Test("Check if frecent site with search host is filtered out of frecent sites")
+    func frecentSearchHost_NotInFrecentSites() throws {
+        let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: resourceURL(), tld: tld)
         let frecentSites = try historyReader.readFrecentSites().get()
 
-        let searchSite = try #require(frecentSites.first { $0.url.contains("amazon") })
+        #expect(!frecentSites.contains(where: { $0.url == "https://duckduckgo.com" }))
+    }
+
+    @Test("Check if subdomain of frecent site with search host is not filtered out of frecent sites")
+    func frecentSearchHostSubdomain_InFrecentSites() throws {
+        let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: resourceURL(), tld: tld)
+        let frecentSites = try historyReader.readFrecentSites().get()
+
+        #expect(frecentSites.contains(where: { $0.url == "https://start.duckduckgo.com" }))
+    }
+
+    @Test("Check if frecent search shortcut has expected shortcut URL")
+    func frecentSearchSite_UsesSearchShortcutURL() throws {
+        let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: resourceURL(), tld: tld)
+        let frecentSites = try historyReader.readFrecentSites().get()
+
+        let searchSite = try #require(frecentSites.first { $0.url.contains("amazon.com") })
         #expect(searchSite.url == "https://amazon.com")
         #expect(searchSite.title == "Amazon.com : ducks")
+    }
+
+    @Test("Check if frecent site containing search shortcut string has expected shortcut URL")
+    func frecentSiteWithSearchSiteString_UsesOriginalShortcutURL() throws {
+        let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: resourceURL(), tld: tld)
+        let frecentSites = try historyReader.readFrecentSites().get()
+
+        let site = try #require(frecentSites.first { $0.url.contains("amazon.example.com") })
+        #expect(site.url == "https://amazon.example.com/?s=baidu")
     }
 
 }

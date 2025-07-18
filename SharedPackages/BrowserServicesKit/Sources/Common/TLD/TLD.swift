@@ -97,4 +97,12 @@ public class TLD {
         let subdomain = host.replacingOccurrences(of: eTLDPlus1, with: "").dropping(suffix: ".")
         return subdomain.isEmpty ? nil : subdomain
     }
+
+    public func extractSecondLevelDomain(fromStringURL stringURL: String) -> String? {
+        guard let eTLDPlus1 = eTLDplus1(forStringURL: stringURL) else {
+            return nil
+        }
+
+        return eTLDPlus1.components(separatedBy: ".").first
+    }
 }

@@ -187,7 +187,7 @@ internal class FirefoxDataImporter: DataImporter {
                     guard let site else { return nil }
                     return ImportedBookmarks.BookmarkOrFolder(name: site.label ?? site.url, type: .bookmark, urlString: site.url, children: nil, isDDGFavorite: true)
                 }
-            let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: profile.profileURL)
+            let historyReader = FirefoxHistoryReader(firefoxDataDirectoryURL: profile.profileURL, tld: Application.appDelegate.tld)
             let frecentSites = try historyReader.readFrecentSites().get()
                 .reduce(into: (seen: Set<URL>(), result: [ImportedBookmarks.BookmarkOrFolder]())) { partialResult, site in
                     // Filter out URLs that are blocked, the root domain is pinned, or not HTTP/HTTPS.

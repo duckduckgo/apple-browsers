@@ -19,6 +19,7 @@
 import Foundation
 import GRDB
 import BrowserServicesKit
+import Common
 
 final class FirefoxHistoryReader {
 
@@ -59,6 +60,7 @@ final class FirefoxHistoryReader {
         }
     }
 
+    private let tld: TLD
     private let firefoxHistoryDatabaseURL: URL
     private var currentOperationType: ImportError.OperationType = .copyTemporaryFile
 
@@ -68,8 +70,9 @@ final class FirefoxHistoryReader {
     /// When frecent sites are from one of these search sites, the Firefox shortcut uses the provided URL
     private let searchShortcuts = ["amazon": "https://amazon.com", "baidu": "https://baidu.com", "google": "https://google.com", "yandex": "https://yandex.com"]
 
-    init(firefoxDataDirectoryURL: URL) {
+    init(firefoxDataDirectoryURL: URL, tld: TLD) {
         self.firefoxHistoryDatabaseURL = firefoxDataDirectoryURL.appendingPathComponent(Constants.historyDatabaseName)
+        self.tld = tld
     }
 
     /// Returns a list of the most frequently, recently visited ("frecent") sites from the Firefox history database.
@@ -104,8 +107,9 @@ final class FirefoxHistoryReader {
                 guard let url = URL(string: site.url), let host = url.host else { return false }
                 return (url.isHttps || url.isHttp) && !searchHosts.contains(where: { host.droppingWwwPrefix().hasPrefix("\($0).") })
             }.map { site in
-                // If the site URL is from a site with search, replace it with the corresponding shortcut URL.
-                if let shortcutURL = searchShortcuts.first(where: { site.url.contains($0.key) })?.value {
+                // If the site URL is from a site with search (in searchShortcuts), replace it with the corresponding shortcut URL.
+                if let secondLevelDomain = tld.extractSecondLevelDomain(fromStringURL: site.url),
+                   let shortcutURL = searchShortcuts[secondLevelDomain] {
                     site.url = shortcutURL
                 }
                 return site

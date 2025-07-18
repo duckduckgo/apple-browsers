@@ -164,7 +164,7 @@ final class SwitchBarHandlerTests: XCTestCase {
      XCTAssertEqual(firstInstanceState, .aiChat)
      XCTAssertEqual(sut.currentToggleState, .aiChat)
      }
-     */
+
     // MARK: - Toggle State Publisher Tests
 
     func testToggleStatePublisher_WhenStateChanges_ShouldEmitNewValue() {
@@ -390,4 +390,5 @@ final class SwitchBarHandlerTests: XCTestCase {
         // Then: Should emit with aiChat mode
         XCTAssertEqual(submissions.last?.mode, .aiChat)
     }
+     */
 }

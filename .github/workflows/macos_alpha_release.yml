@@ -14,9 +14,9 @@ on:
     branches:
       - main
       - dominik/alpha-build
-    paths:
-      - 'macOS/**'
-      - 'SharedPackages/**'
+    # paths:
+    #   - 'macOS/**'
+    #   - 'SharedPackages/**'
   workflow_dispatch:
 
 jobs:

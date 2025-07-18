@@ -45,6 +45,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var keyValueStore: MockKeyValueFileStore!
     var firePixelCalls: [PixelKitEvent] = []
     var featureFlagger: FeatureFlagger!
+    var windowControllersManager: WindowControllersManagerProtocol!
+    var tabsPreferences: TabsPreferences!
 
     @MainActor
     override func setUp() async throws {
@@ -53,11 +55,13 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         notificationCenter = NotificationCenter()
         keyValueStore = try MockKeyValueFileStore()
         firePixelCalls.removeAll()
+        featureFlagger = MockFeatureFlagger()
 
         let appearancePreferencesPersistor = AppearancePreferencesPersistorMock()
         appearancePreferences = AppearancePreferences(
             persistor: appearancePreferencesPersistor,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: featureFlagger
         )
 
         customizationModel = NewTabPageCustomizationModel(
@@ -68,6 +72,10 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             showAddImageFailedAlert: {},
             visualStyle: VisualStyle.legacy
         )
+
+        windowControllersManager = WindowControllersManagerMock()
+
+        tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor())
 
         featureFlagger = FeatureFlaggerMock()
 
@@ -99,8 +107,20 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             notificationCenter: notificationCenter,
             visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider(),
             featureFlagger: featureFlagger,
+            windowControllersManager: windowControllersManager,
+            tabsPreferences: tabsPreferences,
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
+    }
+
+    override func tearDown() {
+        appearancePreferences = nil
+        coordinator = nil
+        customizationModel = nil
+        featureFlagger = nil
+        firePixelCalls = []
+        keyValueStore = nil
+        notificationCenter = nil
     }
 
     func testWhenNewTabPageAppearsThenPixelIsSent() {

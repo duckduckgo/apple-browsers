@@ -112,7 +112,7 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
     // MARK: - Actions
 
     @MainActor
-    func openFavorite(withURL url: String, target: NewTabPageDataModel.ActivityOpenAction.OpenTarget, sourceWindow: NSWindow?) {
+    func openFavorite(withURL url: String, target: NewTabPageDataModel.OpenTarget, sourceWindow: NSWindow?) {
         guard let url = URL(string: url), url.isValid else { return }
         // frontend sends `.newWindow` always when activating a link with Shift key pressed,
         // so let the receiver decide what to open based on current modifier flags using `LinkOpenBehavior`

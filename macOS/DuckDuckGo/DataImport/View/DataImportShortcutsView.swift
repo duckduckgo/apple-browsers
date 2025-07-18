@@ -18,6 +18,7 @@
 
 import SwiftUI
 import BrowserServicesKit
+import DesignResourcesKitIcons
 
 struct DataImportShortcutsView: ModalView {
 
@@ -38,7 +39,8 @@ struct DataImportShortcutsView: ModalView {
         VStack(alignment: .leading, spacing: 8) {
             VStack(spacing: 0) {
                 if let dataTypes = model.dataTypes, dataTypes.contains(.bookmarks), OnboardingActionsManager.isOnboardingFinished {
-                    importShortcutsRow(image: Image(.bookmarksFavoritesColor24),
+
+                    importShortcutsRow(image: Image(nsImage: DesignSystemImages.Color.Size24.bookmarkFavorite),
                                        title: UserText.importShortcutsBookmarksTitle,
                                        subtitle: UserText.importShortcutsBookmarksSubtitle,
                                        isOn: $model.showBookmarksBarStatus)
@@ -49,7 +51,7 @@ struct DataImportShortcutsView: ModalView {
                         .padding(.leading)
                 }
 
-                importShortcutsRow(image: Image(.keyColor24),
+                importShortcutsRow(image: Image(nsImage: DesignSystemImages.Color.Size24.key),
                                    title: UserText.importShortcutsPasswordsTitle,
                                    subtitle: UserText.importShortcutsPasswordsSubtitle,
                                    isOn: $model.showPasswordsPinnedStatus)

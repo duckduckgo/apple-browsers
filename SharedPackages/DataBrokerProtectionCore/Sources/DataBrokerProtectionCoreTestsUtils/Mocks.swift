@@ -199,8 +199,10 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
 
     public var trackerAllowlist = BrowserServicesKit.PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
 
+    public var isSubfeatureEnabledCheck: ((any PrivacySubfeature) -> Bool)?
+
     public func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
-        false
+        return isSubfeatureEnabledCheck?(subfeature) ?? false
     }
 
     public func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool {
@@ -265,6 +267,19 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
 
     public func cohorts(subfeatureID: SubfeatureID, parentFeatureID: ParentFeatureID) -> [PrivacyConfigurationData.Cohort]? {
         return nil
+    }
+}
+
+public final class VPNBypassServiceProviderMock: VPNBypassServiceProvider {
+    public var isSupported: Bool = false
+    public var isEnabled: Bool = false
+    public var bypassStatus: VPNBypassStatus = .off
+    public var isOnboardingShown: Bool = false
+
+    public init() {}
+
+    public func applyVPNBypass(_ bypass: Bool) {
+        // Mock implementation - no-op
     }
 }
 
@@ -1113,9 +1128,11 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
     }
 
     public func resetTries() {
+        self.tries = 1
     }
 
     public func incrementTries() {
+        self.tries += 1
     }
 
     func clear() {
@@ -1603,6 +1620,7 @@ public final class MockAuthenticationManager: DataBrokerProtectionAuthentication
     public init() { }
 
     public var isUserAuthenticatedValue = false
+    public var isUserEligibleForFreeTrialValue = false
     public var accessTokenValue: String? = "fake token"
     public var shouldAskForInviteCodeValue = false
     public var redeemCodeCalled = false
@@ -1611,6 +1629,8 @@ public final class MockAuthenticationManager: DataBrokerProtectionAuthentication
     public var shouldThrowEntitlementError = false
 
     public var isUserAuthenticated: Bool { isUserAuthenticatedValue }
+
+    public var isUserEligibleForFreeTrial: Bool { isUserEligibleForFreeTrialValue }
 
     public func accessToken() async -> String? { accessTokenValue }
 

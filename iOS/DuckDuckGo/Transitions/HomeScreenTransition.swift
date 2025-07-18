@@ -64,6 +64,7 @@ class HomeScreenTransition: TabSwitcherTransition {
     
     fileprivate func previewFrame(for cellBounds: CGSize) -> CGRect {
         return CGRect(origin: .zero, size: cellBounds)
+            .offsetBy(dx: 0, dy: -TabViewCell.Constants.previewPadding)
     }
     
 }
@@ -121,12 +122,13 @@ class FromHomeScreenTransition: HomeScreenTransition {
                 let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
                 self.imageContainer.frame = containerFrame
                 self.imageContainer.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
-                self.imageContainer.backgroundColor = theme.tabSwitcherCellBackgroundColor
+                self.imageContainer.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
                 self.imageView.frame = self.previewFrame(for: self.imageContainer.bounds.size)
                 self.homeScreenSnapshot?.frame = self.imageContainer.bounds
             }
-            
-            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.3) {
+
+            // Slowly fade out to create a cross fade effect
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 self.homeScreenSnapshot?.alpha = 0
             }
             
@@ -212,8 +214,9 @@ class ToHomeScreenTransition: HomeScreenTransition {
                     self.imageContainer.alpha = 1
                 }
             }
-            
-            UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.3) {
+
+            // Longer transition to create cross fade effect
+            UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.8) {
                 self.homeScreenSnapshot?.alpha = 1
                 self.settingsButtonSnapshot?.alpha = 1
             }

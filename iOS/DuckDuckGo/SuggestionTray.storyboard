@@ -37,17 +37,24 @@
                             <constraint firstItem="64L-Y0-7ie" firstAttribute="top" secondItem="j0c-gb-rpc" secondAttribute="top" id="FqW-UB-Q8G"/>
                             <constraint firstItem="vmf-xs-TwY" firstAttribute="centerY" secondItem="64L-Y0-7ie" secondAttribute="centerY" id="Ggk-fs-YmX"/>
                             <constraint firstItem="64L-Y0-7ie" firstAttribute="width" secondItem="j0c-gb-rpc" secondAttribute="width" id="OLF-Z3-QnI"/>
+                            <constraint firstItem="64L-Y0-7ie" firstAttribute="bottom" secondItem="ki7-21-ggp" secondAttribute="bottom" id="Uvr-Rw-KLl"/>
                             <constraint firstItem="vmf-xs-TwY" firstAttribute="width" secondItem="64L-Y0-7ie" secondAttribute="width" id="Xqu-w2-wf9"/>
-                            <constraint firstItem="ki7-21-ggp" firstAttribute="bottom" secondItem="64L-Y0-7ie" secondAttribute="bottom" id="ac9-7J-RDs"/>
+                            <constraint firstAttribute="bottom" secondItem="64L-Y0-7ie" secondAttribute="bottom" id="ac9-7J-RDs"/>
                             <constraint firstItem="vmf-xs-TwY" firstAttribute="height" secondItem="64L-Y0-7ie" secondAttribute="height" id="ebY-43-deK"/>
                             <constraint firstItem="ki7-21-ggp" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="64L-Y0-7ie" secondAttribute="bottom" id="mSE-jr-Q7R"/>
                             <constraint firstItem="64L-Y0-7ie" firstAttribute="centerX" secondItem="j0c-gb-rpc" secondAttribute="centerX" id="rtq-3b-s1Z"/>
                         </constraints>
+                        <variation key="default">
+                            <mask key="constraints">
+                                <exclude reference="ac9-7J-RDs"/>
+                            </mask>
+                        </variation>
                     </view>
                     <connections>
                         <outlet property="backgroundView" destination="vmf-xs-TwY" id="WO1-hH-7rb"/>
                         <outlet property="containerView" destination="64L-Y0-7ie" id="Kko-7I-nlY"/>
-                        <outlet property="fullHeightConstraint" destination="ac9-7J-RDs" id="xgr-t3-ajd"/>
+                        <outlet property="fullHeightConstraint" destination="ac9-7J-RDs" id="IW7-Uf-AyI"/>
+                        <outlet property="fullHeightSafeAreaConstraint" destination="Uvr-Rw-KLl" id="BFe-UA-TZs"/>
                         <outlet property="fullWidthConstraint" destination="OLF-Z3-QnI" id="r8w-cl-frK"/>
                         <outlet property="topConstraint" destination="FqW-UB-Q8G" id="QxI-zE-Vdh"/>
                         <outlet property="variableHeightConstraint" destination="1GN-2u-5xs" id="Y0N-ld-Gc3"/>

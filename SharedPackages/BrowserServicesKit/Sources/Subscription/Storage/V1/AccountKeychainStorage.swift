@@ -18,42 +18,6 @@
 
 import Foundation
 
-public enum AccountKeychainAccessType: String {
-    case getAuthToken
-    case storeAuthToken
-    case getAccessToken
-    case storeAccessToken
-    case getEmail
-    case storeEmail
-    case getExternalID
-    case storeExternalID
-    case clearAuthenticationData
-}
-
-public enum AccountKeychainAccessError: Error, LocalizedError {
-    case failedToDecodeKeychainData
-    case failedToDecodeKeychainValueAsData
-    case failedToDecodeKeychainDataAsString
-    case keychainSaveFailure(OSStatus)
-    case keychainDeleteFailure(OSStatus)
-    case keychainLookupFailure(OSStatus)
-
-    public var errorDescription: String? {
-        switch self {
-        case .failedToDecodeKeychainData: return "failedToDecodeKeychainData"
-        case .failedToDecodeKeychainValueAsData: return "failedToDecodeKeychainValueAsData"
-        case .failedToDecodeKeychainDataAsString: return "failedToDecodeKeychainDataAsString"
-        case .keychainSaveFailure(let status): return "keychainSaveFailure(\(status))"
-        case .keychainDeleteFailure(let status): return "keychainDeleteFailure(\(status))"
-        case .keychainLookupFailure(let status): return "keychainLookupFailure(\(status))"
-        }
-    }
-
-    public var localizedDescription: String {
-        errorDescription ?? "Unknown"
-    }
-}
-
 public final class AccountKeychainStorage: AccountStoring {
 
     public init() {}

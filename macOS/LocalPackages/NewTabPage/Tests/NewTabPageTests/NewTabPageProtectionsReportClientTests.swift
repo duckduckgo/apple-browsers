@@ -83,12 +83,6 @@ final class NewTabPageProtectionsReportClientTests: XCTestCase {
         XCTAssertTrue(config.showBurnAnimation)
     }
 
-    func testWhenModelShowBurnAnimationIsFalseThenGetConfigReturnsShowBurnAnimationFalse() async throws {
-        model.shouldShowBurnAnimation = false
-        let config: NewTabPageDataModel.ProtectionsConfig = try await messageHelper.handleMessage(named: .getConfig)
-        XCTAssertFalse(config.showBurnAnimation)
-    }
-
     // MARK: - setConfig
 
     func testWhenSetConfigContainsExpandedStateThenModelSettingIsSetToExpanded() async throws {

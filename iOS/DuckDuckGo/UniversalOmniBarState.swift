@@ -33,7 +33,6 @@ enum UniversalOmniBarState {
         var clearTextOnStart: Bool { baseState.clearTextOnStart }
         var allowsTrackersAnimation: Bool { baseState.allowsTrackersAnimation }
         var showSearchLoupe: Bool { baseState.showSearchLoupe }
-        let showCancel = false
         var showPrivacyIcon: Bool { baseState.showPrivacyIcon }
         var showBackground: Bool { baseState.showBackground }
         var showClear: Bool { baseState.showClear }
@@ -44,7 +43,15 @@ enum UniversalOmniBarState {
         var showMenu: Bool { baseState.showMenu }
         var showSettings: Bool { baseState.showSettings }
         var showVoiceSearch: Bool { baseState.showVoiceSearch }
+        var isBrowsing: Bool { baseState.isBrowsing }
+
+        // MARK: deprecated
+        let showCancel = false
+
+        // MARK: meta
         var name: String { Type.name(self) }
+
+        // MARK: state transitions
         var onEditingStoppedState: any OmniBarState { baseState.onEditingStoppedState }
         var onEditingStartedState: any OmniBarState { baseState.onEditingStartedState }
         var onTextClearedState: any OmniBarState { baseState.onTextClearedState }
@@ -55,6 +62,7 @@ enum UniversalOmniBarState {
         var onEnterPadState: any OmniBarState { baseState.onEnterPadState }
         var onReloadState: any OmniBarState { baseState.onReloadState }
 
+        // MARK: init params
         let dependencies: OmnibarDependencyProvider
         let isLoading: Bool
 

@@ -97,6 +97,7 @@ final class MainMenu: NSMenu {
     let customConfigurationUrlMenuItem = NSMenuItem(title: "Last Update Time", action: nil)
     let configurationDateAndTimeMenuItem = NSMenuItem(title: "Configuration URL", action: nil)
     let autofillDebugScriptMenuItem = NSMenuItem(title: "Autofill Debug Script", action: #selector(MainMenu.toggleAutofillScriptDebugSettingsAction))
+    let toggleWatchdogMenuItem = NSMenuItem(title: "Toggle Hang Watchdog", action: #selector(MainViewController.toggleWatchdog))
 
     // MARK: Help
 
@@ -420,7 +421,7 @@ final class MainMenu: NSMenu {
 
     @MainActor
     func buildDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenuItem? {
-#if DEBUG || REVIEW
+#if DEBUG || REVIEW || ALPHA
         NSMenuItem(title: "Debug")
             .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
 #else
@@ -481,11 +482,12 @@ final class MainMenu: NSMenu {
         updateRemoteConfigurationInfo()
         updateAutofillDebugScriptMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
+        updateWatchdogMenuItem()
     }
 
     private func updateAppAboutDDGMenuItem() {
         if internalUserDecider.isInternalUser {
-            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(appVersion.versionAndBuildNumber))"
+            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort))"
         } else {
             appAboutDDGMenuItem.title = UserText.aboutDuckDuckGo
         }
@@ -758,6 +760,14 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "C++ exception", action: #selector(AppDelegate.crashOnCxxException))
             }
 
+            NSMenuItem(title: "Hang Debugging") {
+                toggleWatchdogMenuItem
+                NSMenuItem(
+                    title: "Simulate 15 Second Hang",
+                    action: #selector(MainViewController.simulate15SecondHang)
+                )
+            }
+
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
 
@@ -786,7 +796,7 @@ final class MainMenu: NSMenu {
                                   subscriptionManagerV1: Application.appDelegate.subscriptionManagerV1,
                                   subscriptionManagerV2: Application.appDelegate.subscriptionManagerV2,
                                   subscriptionUserDefaults: subscriptionUserDefaults,
-                                  isAuthV2Enabled: Application.appDelegate.isAuthV2Enabled)
+                                  isAuthV2Enabled: Application.appDelegate.isUsingAuthV2)
 
             NSMenuItem(title: "TipKit") {
                 NSMenuItem(title: "Reset", action: #selector(AppDelegate.resetTipKit))
@@ -810,6 +820,10 @@ final class MainMenu: NSMenu {
         }
 
         debugMenu.addItem(internalUserItem)
+#if !ALPHA
+        debugMenu.addItem(.separator())
+        debugMenu.addItem(NSMenuItem(title: "Download DuckDuckGo Alpha Build", action: #selector(downloadAlphaBuild), target: self))
+#endif
         debugMenu.autoenablesItems = false
         return debugMenu
     }
@@ -838,6 +852,11 @@ final class MainMenu: NSMenu {
         autofillDebugScriptMenuItem.state = AutofillPreferences().debugScriptEnabled ? .on : .off
     }
 
+    @MainActor
+    private func updateWatchdogMenuItem() {
+        toggleWatchdogMenuItem.state = MainViewController.watchdog.isRunning ? .on : .off
+    }
+
     private func updateRemoteConfigurationInfo() {
         var dateString: String
         if let date = Application.appDelegate.configurationManager.lastConfigurationInstallDate {
@@ -859,6 +878,17 @@ final class MainMenu: NSMenu {
         AutofillPreferences().debugScriptEnabled = !AutofillPreferences().debugScriptEnabled
         NotificationCenter.default.post(name: .autofillScriptDebugSettingsDidChange, object: nil)
         updateAutofillDebugScriptMenuItem()
+    }
+
+    @MainActor
+    @objc private func downloadAlphaBuild() {
+        let url = URL(string: "https://staticcdn.duckduckgo.com/macos-desktop-browser/alpha/duckduckgo-alpha.dmg")!
+        Application.appDelegate.windowControllersManager.open(
+            url,
+            source: .userEntered(url.absoluteString, downloadRequested: true),
+            target: nil,
+            event: NSApp.currentEvent
+        )
     }
 }
 

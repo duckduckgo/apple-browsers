@@ -22,7 +22,6 @@ import Foundation
 enum UserText {
     static let title = NSLocalizedString("setDefaultBrowser.modal.title", bundle: Bundle.module, value: "Let DuckDuckGo protect more of what you do online", comment: "Set Default Browser Modal Sheet Title.")
     static let message = NSLocalizedString("setDefaultBrowser.modal.message", bundle: Bundle.module, value: "Make us your default browser so all site links open in DuckDuckGo.", comment: "Set Default Browser Modal Sheet Message.")
-    static let closeCTA = NSLocalizedString("setDefaultBrowser.modal.cta.cancel", bundle: Bundle.module, value: "Close", comment: "The title of the button to dismiss the modal sheet.")
     static let setDefaultBrowserCTA = NSLocalizedString("setDefaultBrowser.cta.primary.title", bundle: Bundle.module, value: "Set As Default Browser", comment: "The tile of the CTA to set the browser as default.")
     static let doNotAskAgainCTA = NSLocalizedString("setDefaultBrowser.cta.secondary.title", bundle: Bundle.module, value: "Don’t Ask Again", comment: "The title of the CTA to permanently dismiss the modal sheet.")
 }

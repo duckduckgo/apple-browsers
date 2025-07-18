@@ -62,6 +62,7 @@ final class ErrorPageTabExtensionTest: XCTestCase {
         scriptPublisher = nil
         errorPageExtention = nil
         credentialCreator = nil
+        detector = nil
     }
 
     private func closeTab() {

@@ -20,6 +20,7 @@
 import Foundation
 import Combine
 import Persistence
+import Core
 
 // MARK: - TextEntryMode Enum
 public enum TextEntryMode: String, CaseIterable {
@@ -35,12 +36,16 @@ protocol SwitchBarHandling: AnyObject {
     var currentToggleState: TextEntryMode { get }
     var isVoiceSearchEnabled: Bool { get }
     var forceWebSearch: Bool { get }
+    var hasUserInteractedWithText: Bool { get }
+    var isCurrentTextValidURL: Bool { get }
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> { get }
     var microphoneButtonTappedPublisher: AnyPublisher<Void, Never> { get }
     var forceWebSearchPublisher: AnyPublisher<Bool, Never> { get }
+    var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> { get }
+    var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> { get }
 
     // MARK: - Methods
     func updateCurrentText(_ text: String)
@@ -50,6 +55,7 @@ protocol SwitchBarHandling: AnyObject {
     func microphoneButtonTapped()
     func toggleForceWebSearch()
     func setForceWebSearch(_ enabled: Bool)
+    func markUserInteraction()
 }
 
 // MARK: - SwitchBarHandler Implementation
@@ -68,6 +74,8 @@ final class SwitchBarHandler: SwitchBarHandling {
     @Published private(set) var currentText: String = ""
     @Published private(set) var currentToggleState: TextEntryMode = .search
     @Published private(set) var forceWebSearch: Bool = false
+    @Published private(set) var hasUserInteractedWithText: Bool = false
+    @Published private(set) var isCurrentTextValidURL: Bool = false
 
     var isVoiceSearchEnabled: Bool {
         voiceSearchHelper.isVoiceSearchEnabled
@@ -83,6 +91,14 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     var forceWebSearchPublisher: AnyPublisher<Bool, Never> {
         $forceWebSearch.eraseToAnyPublisher()
+    }
+
+    var hasUserInteractedWithTextPublisher: AnyPublisher<Bool, Never> {
+        $hasUserInteractedWithText.eraseToAnyPublisher()
+    }
+
+    var isCurrentTextValidURLPublisher: AnyPublisher<Bool, Never> {
+        $isCurrentTextValidURL.eraseToAnyPublisher()
     }
 
     var textSubmissionPublisher: AnyPublisher<(text: String, mode: TextEntryMode), Never> {
@@ -105,6 +121,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     // MARK: - SwitchBarHandling Implementation
     func updateCurrentText(_ text: String) {
         currentText = text
+        isCurrentTextValidURL = URL.webUrl(from: text) != nil
     }
 
     func submitText(_ text: String) {
@@ -131,6 +148,10 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     func setForceWebSearch(_ enabled: Bool) {
         forceWebSearch = enabled
+    }
+    
+    func markUserInteraction() {
+        hasUserInteractedWithText = true
     }
 
     func saveToggleState() {

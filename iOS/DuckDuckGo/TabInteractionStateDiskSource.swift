@@ -26,6 +26,8 @@ protocol TabInteractionStateSource {
     func popLastStateForTab(_ tab: Tab) -> Data?
     func removeStateForTab(_ tab: Tab)
     func removeAll(excluding excludedTabs: [Tab])
+    func urlsToRemove(excluding excludedTabs: [Tab]) -> [URL]
+    func removeStates(at urls: [URL], isCancelled: (() -> Bool)?)
 }
 
 protocol TabInteractionStateSourceDebugging {
@@ -109,21 +111,30 @@ final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInterac
 
     func removeStateForTab(_ tab: Tab) {
         let tabCacheLocation = cacheLocationForTab(tab)
-
         try? fileManager.removeItem(at: tabCacheLocation)
     }
 
     func removeAll(excluding excludedTabs: [Tab]) {
-        guard let allCacheFiles = try? allCacheFiles() else {
-            return
-        }
+        let urls = urlsToRemove(excluding: excludedTabs)
+        removeStates(at: urls)
+    }
 
-        // Remove non-excluded tabs caches
-        for item in allCacheFiles {
-            let isExcluded = excludedTabs.contains { item.lastPathComponent == $0.uid }
-            if !isExcluded {
-                try? fileManager.removeItem(at: item)
+    func urlsToRemove(excluding excludedTabs: [Tab]) -> [URL] {
+        guard let allCacheFiles = try? allCacheFiles() else {
+            return []
+        }
+        return allCacheFiles.filter { file in
+            let isExcluded = excludedTabs.contains { $0.uid == file.lastPathComponent }
+            return !isExcluded
+        }
+    }
+
+    func removeStates(at urls: [URL], isCancelled: (() -> Bool)? = nil) {
+        for url in urls {
+            if isCancelled?() == true {
+                break
             }
+            try? fileManager.removeItem(at: url)
         }
     }
 

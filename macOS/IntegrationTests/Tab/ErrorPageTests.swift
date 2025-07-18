@@ -26,6 +26,7 @@ import XCTest
 class ErrorPageTests: XCTestCase {
 
     var window: NSWindow!
+    var provider: PinnedTabsManagerProvidingMock!
 
     var mainViewController: MainViewController {
         (window.contentViewController as! MainViewController)
@@ -108,30 +109,41 @@ class ErrorPageTests: XCTestCase {
     """.utf8data
 
     @MainActor
-    override func setUp() async throws {
-        contentBlockingMock = ContentBlockingMock()
-        privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
-        // disable waiting for CBR compilation on navigation
-        privacyConfiguration.isFeatureKeyEnabled = { _, _ in
-            return false
-        }
+    override func setUp() {
+        autoreleasepool {
+            contentBlockingMock = ContentBlockingMock()
+            privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
+            // disable waiting for CBR compilation on navigation
+            privacyConfiguration.isFeatureKeyEnabled = { _, _ in
+                return false
+            }
 
-        schemeHandler = TestSchemeHandler { _ in
-            return .ok(.html(Self.testHtml))
-        }
+            schemeHandler = TestSchemeHandler { _ in
+                return .ok(.html(Self.testHtml))
+            }
 
-        // tests return debugDescription instead of localizedDescription
-        NSError.disableSwizzledDescription = true
+            // tests return debugDescription instead of localizedDescription
+            NSError.disableSwizzledDescription = true
+
+            provider = PinnedTabsManagerProvidingMock()
+            Application.appDelegate.windowControllersManager.pinnedTabsManagerProvider = provider
+        }
     }
 
     @MainActor
-    override func tearDown() async throws {
-        window?.close()
-        window = nil
+    override func tearDown() {
+        autoreleasepool {
+            window?.close()
+            window = nil
+            provider = nil
+            Application.appDelegate.windowControllersManager.pinnedTabsManagerProvider = PinnedTabsManagerProvidingMock()
 
-        schemeHandler = nil
+            schemeHandler = nil
+            privacyFeaturesMock = nil
+            contentBlockingMock = nil
 
-        NSError.disableSwizzledDescription = false
+            NSError.disableSwizzledDescription = false
+        }
     }
 
     // MARK: - Tests
@@ -843,7 +855,6 @@ class ErrorPageTests: XCTestCase {
 
         let tab = Tab(content: .url(.alternative, source: .ui), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNavigationFinished = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
-        let provider = PinnedTabsManagerProvidingMock()
         let manager = PinnedTabsManager()
         provider.pinnedTabsManager = manager
         provider.newPinnedTabsManager = manager

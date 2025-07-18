@@ -20,6 +20,7 @@
 import XCTest
 import Suggestions
 import Bookmarks
+import AIChat
 
 @testable import DuckDuckGo
 
@@ -130,6 +131,10 @@ final class MockOmniBarDelegate: OmniBarDelegate {
         return suggestion
     }
 
+    func isSuggestionTrayVisible() -> Bool {
+        false
+    }
+
     // MARK: - Unused methods
     func onSelectFavorite(_ favorite: BookmarkEntity) {
 
@@ -139,7 +144,7 @@ final class MockOmniBarDelegate: OmniBarDelegate {
         return nil
     }
 
-    func onOmniPromptSubmitted(_ query: String) {
+    func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?) {
     }
 
     func onAbortPressed() {

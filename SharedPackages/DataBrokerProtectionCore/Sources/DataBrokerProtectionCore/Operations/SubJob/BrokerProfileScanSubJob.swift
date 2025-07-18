@@ -39,8 +39,8 @@ struct BrokerProfileScanSubJob {
     // MARK: - Scan Jobs
 
     public func runScan(brokerProfileQueryData: BrokerProfileQueryData,
-                        showWebView: Bool = false,
-                        isManual: Bool = false,
+                        showWebView: Bool,
+                        isManual: Bool,
                         shouldRunNextStep: @escaping () -> Bool) async throws {
         Logger.dataBrokerProtection.log("Running scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 

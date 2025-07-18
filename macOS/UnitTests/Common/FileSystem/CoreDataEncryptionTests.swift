@@ -24,7 +24,7 @@ import CryptoKit
 
 final class CoreDataEncryptionTests: XCTestCase {
 
-    private lazy var mockValueTransformer: MockValueTransformer = {
+    private lazy var mockValueTransformer: MockValueTransformer! = {
         let name = NSValueTransformerName("MockValueTransformer")
         let transformer = MockValueTransformer()
         ValueTransformer.setValueTransformer(transformer, forName: name)
@@ -37,9 +37,11 @@ final class CoreDataEncryptionTests: XCTestCase {
     var context: NSManagedObjectContext { Self.context }
 
     override func setUp() {
-        super.setUp()
-
         mockValueTransformer.numberOfTransformations = 0
+    }
+
+    override func tearDown() {
+        mockValueTransformer = nil
     }
 
     func testSavingEncryptedValues() {
@@ -92,7 +94,7 @@ final class CoreDataEncryptionTests: XCTestCase {
             }
         }
 
-        XCTAssertEqual(transformer.numberOfTransformations, 1)
+        XCTAssertEqual(transformer!.numberOfTransformations, 1)
 
         let request = NSFetchRequest<NSManagedObject>(entityName: "MockEntity")
 

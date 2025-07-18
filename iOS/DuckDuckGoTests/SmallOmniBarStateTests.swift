@@ -38,6 +38,17 @@ class SmallOmniBarStateTests: XCTestCase {
         super.tearDown()
     }
 
+    func testWhenBrowsingStatesThenIsBrowsingIsTrue() {
+        let dependencies = MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger)
+        XCTAssertTrue(SmallOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertTrue(SmallOmniBarState.BrowsingTextEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertTrue(SmallOmniBarState.BrowsingEmptyEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertTrue(SmallOmniBarState.BrowsingTextEditingStartedState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertFalse(SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertFalse(SmallOmniBarState.HomeTextEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+        XCTAssertFalse(SmallOmniBarState.HomeEmptyEditingState(dependencies: dependencies, isLoading: false).isBrowsing)
+    }
+
     func testWhenInHomeEmptyEditingStateWithoutVoiceSearchThenCorrectButtonsAreShown() {
         let testee = SmallOmniBarState.HomeEmptyEditingState(dependencies: MockOmnibarDependency(voiceSearchHelper: disabledVoiceSearchHelper, featureFlagger: mockFeatureFlagger), isLoading: false)
 

@@ -22,29 +22,28 @@ import Foundation
 import WebKit
 @testable import Core
 
-class MockUserAgentManager: UserAgentManager {
+class MockUserAgentManager: UserAgentManaging {
 
     private var userAgent = UserAgent()
     private var privacyConfig: PrivacyConfiguration
-    
+
+    var extractedAndSetDefaultUserAgent: String = "mock-UA"
+    var extractAndSetDefaultUserAgentCallCount = 0
+    var setUserAgentCalled: String?
+
     init(privacyConfig: PrivacyConfiguration) {
         self.privacyConfig = privacyConfig
-        prepareUserAgent()
     }
-    
-    private func prepareUserAgent() {
-        let webview = WKWebView()
-        webview.load(URLRequest.developerInitiated(URL(string: "about:blank")!))
-        
-        getDefaultAgent(webView: webview) { [weak self] agent in
-            // Reference webview instance to keep it in scope and allow UA to be returned
-            _ = webview
-            
-            guard let defaultAgent = agent else { return }
-            self?.userAgent = UserAgent(defaultAgent: defaultAgent)
-        }
+
+    func extractAndSetDefaultUserAgent() async throws -> String {
+        extractAndSetDefaultUserAgentCallCount += 1
+        return extractedAndSetDefaultUserAgent
     }
-    
+
+    func setDefaultUserAgent(_ userAgent: String) {
+        setUserAgentCalled = userAgent
+    }
+
     public func userAgent(isDesktop: Bool) -> String {
         return userAgent.agent(forUrl: nil, isDesktop: isDesktop, privacyConfig: privacyConfig)
     }
@@ -61,11 +60,5 @@ class MockUserAgentManager: UserAgentManager {
         let agent = userAgent.agent(forUrl: url, isDesktop: isDesktop, privacyConfig: privacyConfig)
         webView.customUserAgent = agent
     }
-    
-    private func getDefaultAgent(webView: WKWebView, completion: @escaping (String?) -> Void) {
-        webView.evaluateJavaScript("navigator.userAgent") { (result, _) in
-            let agent = result as? String
-            completion(agent)
-        }
-    }
+
 }

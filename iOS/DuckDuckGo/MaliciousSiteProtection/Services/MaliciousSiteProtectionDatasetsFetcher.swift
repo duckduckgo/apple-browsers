@@ -28,7 +28,7 @@ import CombineSchedulers
 protocol MaliciousSiteProtectionDatasetsFetching {
     @MainActor
     @discardableResult
-    func startFetching() -> Task<Void, Error>
+    func startFetching() -> Task<Void, Never>
 }
 
 final class MaliciousSiteProtectionDatasetsFetcher {
@@ -90,15 +90,16 @@ extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDataset
 
     @MainActor
     @discardableResult
-    func startFetching() -> Task<Void, Error> {
+    func startFetching() -> Task<Void, Never> {
         guard
             canFetchDatasets,
-            !isDatasetsFetchInProgress
+            !isDatasetsFetchInProgress,
+            shouldUpdateHashPrefixSets || shouldUpdateFilterSets
         else {
             return Task {}
         }
 
-        isDatasetsFetchInProgress = shouldUpdateHashPrefixSets || shouldUpdateFilterSets
+        isDatasetsFetchInProgress = true
         Logger.MaliciousSiteProtection.datasetsFetcher.debug("Start Updating Datasets...")
 
         return Task {
@@ -218,12 +219,16 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
     }
 
     func backgroundRefreshTaskHandler(backgroundTask: BGTaskInterface, datasetType: DataManager.StoredDataType.Kind) {
-        let fetchAndProcessDatasetTask = Task {
-            if canFetchDatasets {
-                _ = updateManager.updateData(datasetType: datasetType)
+        let fetchAndProcessDatasetTask = Task { [weak self] in
+            guard let self else { return }
+
+            defer {
+                backgroundTask.setTaskCompleted(success: true)
+                scheduleBackgroundRefreshTask(datasetType: datasetType)
             }
-            scheduleBackgroundRefreshTask(datasetType: datasetType)
-            backgroundTask.setTaskCompleted(success: true)
+
+            guard canFetchDatasets else { return }
+            await startFetching().value
         }
 
         backgroundTask.expirationHandler = {

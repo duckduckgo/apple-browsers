@@ -1,5 +1,6 @@
 //
 //  AutoconsentPixels.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,8 +20,8 @@
 import PixelKit
 import UIKit
 
-enum AutoconsentPixel: PixelKitEventV2 {
-
+enum AutoconsentPixel: PixelKitEventV2, PixelKitEventWithCustomPrefix {
+    
     case acInit
     case missedPopup
     case errorMultiplePopups
@@ -94,5 +95,13 @@ enum AutoconsentPixel: PixelKitEventV2 {
 
     var error: (any Error)? {
         nil
+    }
+    
+    var namePrefix: String {
+#if os(macOS)
+        return "m_mac"
+#elseif os(iOS)
+        return "m_"
+#endif
     }
 }

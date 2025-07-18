@@ -451,7 +451,7 @@ public final class PixelKit {
         }
 
         let pixelName = (namePrefix ?? "") + event.name
-        if pixelName.hasPrefix("experiment") || pixelName.hasPrefix("autoconsent") {
+        if pixelName.hasPrefix("experiment") {
             return addExperimentPlatformSuffix(to: pixelName)
         }
 

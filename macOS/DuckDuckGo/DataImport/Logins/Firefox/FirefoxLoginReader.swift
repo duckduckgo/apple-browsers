@@ -164,7 +164,7 @@ final class FirefoxLoginReader {
             case .deleted:
                 return nil // Filter out deleted entries
             case .unparsed:
-                return nil // Filter out unparsed entries and TODO: send an error
+                return nil // Filter out unparsed entries
             }
         }
 

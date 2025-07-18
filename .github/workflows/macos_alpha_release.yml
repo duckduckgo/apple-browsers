@@ -10,19 +10,14 @@ concurrency:
 
 on:
   # To be enabled later
-  # push:
-  #   branches:
-  #     - main
-  #     - dominik/alpha-build
-  #   paths:
-  #     - 'macOS/**'
-  #     - 'SharedPackages/**'
+  push:
+    branches:
+      - main
+      - dominik/alpha-build
+    paths:
+      - 'macOS/**'
+      - 'SharedPackages/**'
   workflow_dispatch:
-    inputs:
-      skip-appstore:
-        description: "Skip App Store release and only make a DMG build"
-        default: false
-        type: boolean
 
 jobs:
 
@@ -63,7 +58,7 @@ jobs:
           # Check if this run has an upload job in progress
           upload_job="$(gh run view "$run_id" \
             --json="jobs" \
-            --jq='.jobs[] | select(.name == "Prepare AppStore Release / Upload App Store Connect Release" and (.status == "in_progress" or status == "queued")) | .name' \
+            --jq='.jobs[] | select((.name == "Prepare AppStore Release / Upload App Store Connect Release" or .name == "Publish Alpha DMG") and (.status == "in_progress" or status == "queued")) | .name' \
             2>/dev/null || echo "")"
           if [ -n "$upload_job" ]; then
             upload_in_progress=true
@@ -129,8 +124,6 @@ jobs:
     name: Prepare AppStore Release
 
     needs: calculate-alpha-build-number
-
-    if: inputs.skip-appstore != 'true'
 
     uses: ./.github/workflows/macos_build_appstore.yml
     with:
@@ -221,3 +214,36 @@ jobs:
           aws s3 cp appcast-alpha.xml "${s3_path}/appcast-alpha.xml" --acl public-read
           aws s3 cp "$DMG_NAME" "${s3_path}/${DMG_NAME}" --acl public-read
           aws s3 cp "$DMG_NAME" "${s3_path}/duckduckgo-alpha.dmg" --acl public-read
+
+  rerun-check:
+    runs-on: ubuntu-latest
+
+    name: Post-Upload Checks
+
+    needs: [publish-alpha-dmg, appstore-release]
+
+    if: github.event_name == 'push'
+
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 10
+        ref: ${{ github.ref_name }}
+
+    - name: Check for newer commits and rerun if needed
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        current_commit="${{ github.sha }}"
+        latest_commit="$(git rev-parse HEAD)"
+
+        echo "Current workflow commit: $current_commit"
+        echo "Latest commit on ${branch_name}: $latest_commit"
+
+        if [ "$current_commit" != "$latest_commit" ]; then
+          echo "::notice::Newer commit detected. Triggering new workflow run..."
+          gh api /repos/${{ github.repository }}/actions/workflows/macos_alpha_release.yml/dispatches -f ref="$branch_name"
+        else
+          echo "No newer commits. Workflow complete."
+        fi

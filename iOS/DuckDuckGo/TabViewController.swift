@@ -96,6 +96,8 @@ class TabViewController: UIViewController {
         webView.isLoading && !wasLoadingStoppedExternally
     }
 
+    var preventUniversalLinksOnce = false
+
     private let themingProperties: ExperimentalThemingProperties
     private var isExperimentalThemingEnabled: Bool {
         themingProperties.isExperimentalThemingEnabled
@@ -1592,6 +1594,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        self.preventUniversalLinksOnce = false
         self.currentlyLoadedURL = webView.url
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
@@ -2212,6 +2215,9 @@ extension TabViewController: WKNavigationDelegate {
 
     private func determineAllowPolicy() -> WKNavigationActionPolicy {
         let allowWithoutUniversalLinks = WKNavigationActionPolicy(rawValue: WKNavigationActionPolicy.allow.rawValue + 2) ?? .allow
+        if preventUniversalLinksOnce {
+            return allowWithoutUniversalLinks
+        }
         return AppUserDefaults().allowUniversalLinks ? .allow : allowWithoutUniversalLinks
     }
     
@@ -3580,6 +3586,7 @@ private extension TabViewController {
             if webView.url != nil {
                 self.url = tabModel.link?.url
                 didRestoreWebViewState = true
+                preventUniversalLinksOnce = true
                 tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
             } else {
                 Pixel.fire(pixel: .tabInteractionStateFailedToRestore)

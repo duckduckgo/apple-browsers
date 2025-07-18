@@ -159,10 +159,10 @@ final class BrokerProfileJobTests: XCTestCase {
     // MARK: - Filtering Tests
 
     func testWhenFilteringOptOutOperationData_thenAllButFuturePreferredRunDateIsReturned() {
-        let operationData1 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: nil)
-        let operationData2 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .now)
-        let operationData3 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .distantPast)
-        let operationData4 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .distantFuture)
+        let operationData1 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: nil)
+        let operationData2 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .now)
+        let operationData3 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .distantPast)
+        let operationData4 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .distantFuture)
 
         XCTAssertEqual(operationData1.count, 30) // all jobs
         XCTAssertEqual(operationData2.count, 20) // nil preferred run date + past jobs
@@ -171,10 +171,10 @@ final class BrokerProfileJobTests: XCTestCase {
     }
 
     func testWhenFilteringScanOperationData_thenPreferredRunDatePriorToPriorityDateIsReturned() {
-        let operationData1 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockScanQueryData, jobType: .scheduledScan, priorityDate: nil)
-        let operationData2 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockScanQueryData, jobType: .manualScan, priorityDate: .now)
-        let operationData3 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockScanQueryData, jobType: .scheduledScan, priorityDate: .distantPast)
-        let operationData4 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockScanQueryData, jobType: .manualScan, priorityDate: .distantFuture)
+        let operationData1 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockScanQueryData, jobType: .scheduledScan, priorityDate: nil)
+        let operationData2 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockScanQueryData, jobType: .manualScan, priorityDate: .now)
+        let operationData3 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockScanQueryData, jobType: .scheduledScan, priorityDate: .distantPast)
+        let operationData4 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockScanQueryData, jobType: .manualScan, priorityDate: .distantFuture)
 
         XCTAssertEqual(operationData1.count, 30) // all jobs
         XCTAssertEqual(operationData2.count, 10) // past jobs
@@ -183,10 +183,10 @@ final class BrokerProfileJobTests: XCTestCase {
     }
 
     func testFilteringAllOperationData() {
-        let operationData1 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: nil)
-        let operationData2 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: .now)
-        let operationData3 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: .distantPast)
-        let operationData4 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: .distantFuture)
+        let operationData1 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: nil)
+        let operationData2 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: .now)
+        let operationData3 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: .distantPast)
+        let operationData4 = MockBrokerProfileJob.sortedEligibleJobs(brokerProfileQueriesData: mockOptOutQueryData, jobType: .all, priorityDate: .distantFuture)
 
         XCTAssertEqual(operationData1.filter { $0 is ScanJobData }.count, 30) // all jobs
         XCTAssertEqual(operationData1.filter { $0 is OptOutJobData }.count, 30) // all jobs

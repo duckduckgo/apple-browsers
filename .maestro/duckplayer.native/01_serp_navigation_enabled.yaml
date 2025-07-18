@@ -4,33 +4,25 @@ tags:
 
 ---
 
-
 # Set up 
 - runFlow: 
     file: ../shared/setup.yaml
 
 # Load Site
-- assertVisible:
-    id: "searchEntry"
-- tapOn: 
-    id: "searchEntry"
-- inputText: "https://duckduckgo.com/?q=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%E2%80%9D+site%3Ayoutube.com&atb=v469-1-wb&ia=web"
-- pressKey: Enter
+- runFlow: 
+    file: shared/load_serp_url.yaml
 
 # Open Specific Video
 - assertVisible: "DuckDuckGo vs Google: 5 Reasons You Should Switch"
 - tapOn: "DuckDuckGo vs Google: 5 Reasons You Should Switch"
 
-# Validate Duck Player opens
-- assertVisible: "Duck Player"
-- assertVisible:
-    id: "xmark"
+# Validate Duck Player is Visible
+- runFlow: 
+    file: shared/duckplayer_is_visible.yaml
+
+# Validate this is SERP View
 - assertVisible: "Watch on YouTube"
-- assertVisible: "DuckPlayerOpenSettings"
-- assertVisible:
-    id: "chevron.up"
 
 # Validate Duck Player Closes
-- tapOn: 
-    id: "xmark"
-- assertVisible: "DuckDuckGo vs Google: 5 Reasons You Should Switch"
+- runFlow: 
+    file: shared/close_player.yaml

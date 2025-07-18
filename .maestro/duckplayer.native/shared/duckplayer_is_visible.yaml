@@ -1,0 +1,12 @@
+# duckplayer_is_visible.yaml
+
+appId: com.duckduckgo.mobile.ios
+---
+
+# Validate Duck Player is Visible
+- assertVisible: "Duck Player"
+- assertVisible:
+    id: "xmark"
+- assertVisible: "DuckPlayerOpenSettings"
+- assertVisible:
+    id: "chevron.up"

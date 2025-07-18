@@ -1,0 +1,5 @@
+appId: com.duckduckgo.mobile.ios
+---
+
+- tapOn: "Settings"
+- tapOn: "Done"

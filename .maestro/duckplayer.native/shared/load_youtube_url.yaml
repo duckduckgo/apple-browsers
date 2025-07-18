@@ -1,0 +1,12 @@
+appId: com.duckduckgo.mobile.ios
+---
+
+- assertVisible:
+    id: "searchEntry"
+- tapOn: 
+    id: "searchEntry"
+- inputText: "https://www.youtube.com/results?search_query=%22DuckDuckGo+vs+Google%3A+5+Reasons+You+Should+Switch%22&sp=EgIQAQ%253D%253D"
+- pressKey: Enter
+
+# Refresh the page to ensure the cookies are handled
+- tapOn: Refresh page

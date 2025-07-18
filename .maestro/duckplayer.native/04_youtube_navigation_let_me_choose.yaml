@@ -12,10 +12,9 @@ tags:
 - runFlow: 
     file: shared/open_settings.yaml
 
-# Turn SERP off
-- tapOn:
-    text: "1"
-    index: 0
+# Turn DuckPlayer off
+- tapOn: "Let me choose"
+- tapOn: "Don't Show"
 
 # Close Settings
 - runFlow: 
@@ -24,7 +23,7 @@ tags:
 # Navigate to a video
 # Load Site
 - runFlow: 
-    file: shared/load_serp_url.yaml
+    file: shared/load_youtube_url.yaml
 
   # Assert Youtube Search Page opens and open the video
 - assertVisible: "DuckDuckGo vs Google: 5 Reasons You Should Switch"
@@ -32,3 +31,13 @@ tags:
 
 # Validate YouTube opens
 - assertVisible: "m.youtube.com"
+
+# Assert Duck Player Welcome Pill is present
+- assertNotVisible:
+    id: duckPlayerWelcomePill
+
+- runFlow: 
+    file: shared/load_youtube_url.yaml
+
+# Assert Duck Player Welcome Pill is not present
+- assertNotVisible: "Resume in Duck Player"

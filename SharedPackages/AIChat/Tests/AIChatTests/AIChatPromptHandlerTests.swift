@@ -23,7 +23,7 @@ final class AIChatPromptHandlerTests: XCTestCase {
 
     func testSetData() {
         let handler = AIChatPromptHandler.shared
-        let testData: AIChatPromptHandler.DataType = .init(platform: "platform", query: .init(prompt: "Test Prompt", autoSubmit: false))
+        let testData: AIChatPromptHandler.DataType = .init(platform: "platform", tool: .query(.init(prompt: "Test Prompt", autoSubmit: false)))
 
         handler.setData(testData)
 
@@ -32,7 +32,7 @@ final class AIChatPromptHandlerTests: XCTestCase {
 
     func testConsumeData() {
         let handler = AIChatPromptHandler.shared
-        let testData: AIChatPromptHandler.DataType = .init(platform: "platform", query: .init(prompt: "Test Prompt", autoSubmit: false))
+        let testData: AIChatPromptHandler.DataType = .init(platform: "platform", tool: .query(.init(prompt: "Test Prompt", autoSubmit: false)))
 
         handler.setData(testData)
         let consumedData = handler.consumeData()
@@ -43,7 +43,7 @@ final class AIChatPromptHandlerTests: XCTestCase {
 
     func testReset() {
         let handler = AIChatPromptHandler.shared
-        let testData: AIChatPromptHandler.DataType = .init(platform: "platform", query: .init(prompt: "Test Prompt", autoSubmit: false))
+        let testData: AIChatPromptHandler.DataType = .init(platform: "platform", tool: .query(.init(prompt: "Test Prompt", autoSubmit: false)))
 
         handler.setData(testData)
         handler.reset()

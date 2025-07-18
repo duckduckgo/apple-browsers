@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Kā eksportēt paroles no Safari:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Atlasīt failu...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Izvēlies failu, kurā ir paroles, kas eksportētas no Safari vai Chrome. Parasti tas ir ZIP vai CSV fails.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Importēšana pabeigta!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Kredītkartes";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Dublikāti ir izlaisti";
@@ -1854,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Importēt paroles";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Ātri un droši pārnesiet savas paroles no citas pārlūkprogrammas.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Importēt savas paroles DuckDuckGo";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Tev ir jāiespējo VPN DuckDuckGo lietotnē.";
@@ -3600,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Turpināt";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Kredītkartes";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Paroles";

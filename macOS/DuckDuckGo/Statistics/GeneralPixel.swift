@@ -29,7 +29,8 @@ enum GeneralPixel: PixelKitEventV2 {
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
-    case launch(isDefault: Bool, isAddedToDock: Bool?)
+    case launch
+    case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
 
     case serp
     case serpInitial
@@ -537,6 +538,9 @@ enum GeneralPixel: PixelKitEventV2 {
             return "m_mac_cbr-wait_\(onboardingShown)_\(waitTime)_\(result)"
 
         case .launch:
+            return "ml_mac_app-launch"
+
+        case .dailyActiveUser:
             return  "m_mac_daily_active_user"
 
         case .serp:
@@ -1240,7 +1244,7 @@ enum GeneralPixel: PixelKitEventV2 {
         case .loginItemUpdateError(let loginItemBundleID, let action, let buildType, let osVersion):
             return ["loginItemBundleID": loginItemBundleID, "action": action, "buildType": buildType, "macosVersion": osVersion]
 
-        case .launch(let isDefault, let isAddedToDock):
+        case .dailyActiveUser(let isDefault, let isAddedToDock):
             var params = [String: String]()
             params["default_browser"] = isDefault ? "1" : "0"
 

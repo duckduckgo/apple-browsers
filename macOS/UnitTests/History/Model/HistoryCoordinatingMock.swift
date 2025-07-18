@@ -20,9 +20,10 @@ import XCTest
 import BrowserServicesKit
 import Common
 import History
+import Suggestions
 @testable import DuckDuckGo_Privacy_Browser
 
-final class HistoryCoordinatingMock: HistoryCoordinating {
+class HistoryCoordinatingMock: HistoryCoordinating, SuggestionContainer.HistoryProvider {
 
     func loadHistory(onCleanFinished: @escaping () -> Void) {
         onCleanFinished()
@@ -101,6 +102,10 @@ final class HistoryCoordinatingMock: HistoryCoordinating {
         completion?(nil)
     }
 
+    var historySuggestionsStub: [HistorySuggestion] = []
+    func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] {
+        return historySuggestionsStub
+    }
 }
 
 extension HistoryCoordinatingMock: HistoryGroupingDataSource {}

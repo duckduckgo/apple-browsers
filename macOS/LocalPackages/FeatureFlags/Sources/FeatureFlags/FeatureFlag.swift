@@ -124,13 +124,22 @@ public enum FeatureFlag: String, CaseIterable {
     case shortHistoryMenu
 
     /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
-    case updatedBookmarksFavoritesImport
+    case importChromeShortcuts
+
+    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
+    case updateSafariBookmarksImport
+
+    /// https://app.asana.com/1/137249556945/project/1209825025475019/task/1210649149275753?focus=true
+    case updateFirefoxBookmarksImport
 
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210522798790015?focus=true
     case disableFireAnimation
 
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1210625630564796?focus=true
     case newTabPageOmnibar
+
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1210733970843912?focus=true
+    case newFeedbackForm
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -184,9 +193,12 @@ extension FeatureFlag: FeatureFlagDescribing {
 				.aiChatSidebar,
                 .aiChatTextSummarization,
                 .shortHistoryMenu,
-                .updatedBookmarksFavoritesImport,
+                .importChromeShortcuts,
+                .updateSafariBookmarksImport,
+                .updateFirefoxBookmarksImport,
                 .disableFireAnimation,
-                .newTabPageOmnibar:
+                .newTabPageOmnibar,
+                .newFeedbackForm:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -285,11 +297,17 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .shortHistoryMenu:
             return .remoteReleasable(.feature(.shortHistoryMenu))
-        case .updatedBookmarksFavoritesImport:
+        case .importChromeShortcuts:
+            return .disabled
+        case .updateSafariBookmarksImport:
+            return .disabled
+        case .updateFirefoxBookmarksImport:
             return .disabled
         case .disableFireAnimation:
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
+            return .disabled
+        case .newFeedbackForm:
             return .disabled
         }
     }

@@ -447,10 +447,7 @@ extension TabSwitcherViewController {
             self?.addNewTab()
         })
 
-        barsHandler.fireButton.accessibilityLabel = "Close all tabs and clear data"
-        barsHandler.fireButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.fireSolid) { [weak self] in
-            self?.burn(sender: self!.barsHandler.fireButton)
-        }
+        configureFireButton()
 
         if interfaceMode == .largeSize || !isJune2025LayoutChangeEnabled {
             barsHandler.doneButton.primaryAction = action(UserText.navigationTitleDone) { [weak self] in
@@ -497,6 +494,18 @@ extension TabSwitcherViewController {
         barsHandler.duckChatButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.aiChat, { [weak self] in
             self?.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self!)
         })
+    }
+
+    private func configureFireButton() {
+        guard barsHandler.fireButton.customView == nil else { return }
+        let button = BrowserChromeButton(.primary)
+        button.addAction(action(image: DesignSystemImages.Glyphs.Size24.fireSolid) { [weak self] in
+            self?.burn(sender: self!.barsHandler.fireButton)
+        }, for: .touchUpInside)
+        button.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
+        button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+        barsHandler.fireButton.customView = button
+        barsHandler.fireButton.accessibilityLabel = "Close all tabs and clear data"
     }
 
 }

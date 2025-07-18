@@ -200,7 +200,11 @@ private struct SwipeDeleteHistoryModifier: ViewModifier {
                 Button(role: .destructive) {
                     onSuggestionDeleted(suggestion)
                 } label: {
-                    Label("Delete", image: "Trash-24")
+                    Label {
+                        Text("Delete")
+                    } icon: {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.trash)
+                    }
                 }
             }
 

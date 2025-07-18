@@ -15,7 +15,7 @@ print_usage_and_exit() {
 
 	cat <<- EOF
 	Usage:
-	  $ $(basename "$0") <review|release|dbp> [-a <asana_task_url>] [-d] [-s] [-r] [-v <version>]
+	  $ $(basename "$0") <review|release|alpha> [-a <asana_task_url>] [-d] [-s] [-r] [-v <version>]
 
 	Options:
 	 -a <asana_task_url>  Update Asana task after building the app (implies -d)
@@ -52,6 +52,12 @@ read_command_line_arguments() {
 			app_name="DuckDuckGo"
 			scheme="macOS Browser"
 			configuration="Release"
+			;;
+		alpha)
+			release_type="alpha"
+			app_name="DuckDuckGo Alpha"
+			scheme="macOS Browser Alpha"
+			configuration="Alpha"
 			;;
 		clear-keychain)
 			clear_keychain
@@ -181,9 +187,9 @@ get_developer_credentials() {
 				cat <<- EOF
 				Enter your Apple ID application-specific password (create one at https://appleid.apple.com).
 				It will be stored in keychain and you won't be asked for it the next time.
-				Alternatively set the password in XCODE_DEVELOPER_PASSWORD environment variable 
+				Alternatively set the password in XCODE_DEVELOPER_PASSWORD environment variable
 				to skip storing in keychain.
-				
+
 				EOF
 				read -srp "Password for ${developer_apple_id}: " developer_password
 				echo
@@ -233,7 +239,7 @@ archive_and_export() {
 
 	local derived_data="${workdir}/DerivedData"
 	rm -rf "${derived_data}"
-	
+
 	${filter_output} xcrun xcodebuild archive \
 		-scheme "${scheme}" \
 		-configuration "${configuration}" \
@@ -292,35 +298,35 @@ compress_app_and_dsym() {
 
 	# Change to workdir to avoid full path in tar archive
 	pushd "${workdir}" > /dev/null
-	
+
 	# Temporarily rename app bundle to include version for consistency in archive
 	local versioned_app_name="DuckDuckGo-${version_identifier}.app"
 	local original_app_name="${app_name}.app"
-	
+
 	if [[ "${original_app_name}" != "${versioned_app_name}" ]]; then
 		echo "Temporarily renaming app bundle for archive: ${versioned_app_name}"
 		mv -f "${original_app_name}" "${versioned_app_name}"
 	fi
-	
+
 	# Create tar archive of the versioned app bundle
 	echo "Creating tar archive..."
-	tar -cvf "DuckDuckGo-${version_identifier}.app.tar" "${versioned_app_name}"
-	
+	tar -cf "DuckDuckGo-${version_identifier}.app.tar" "${versioned_app_name}"
+
 	# Rename app bundle back to original name for compatibility with other workflows
 	if [[ "${original_app_name}" != "${versioned_app_name}" ]]; then
 		echo "Renaming app bundle back to original name: ${original_app_name}"
 		mv -f "${versioned_app_name}" "${original_app_name}"
 	fi
-	
+
 	# Compress with xz using maximum compression
 	echo "Compressing with xz (maximum compression)..."
 	xz -9 "DuckDuckGo-${version_identifier}.app.tar"
-	
+
 	popd > /dev/null
-	
+
 	# Create dSYM archive
 	ditto -c -k --keepParent "${dsym_path}" "${output_dsym_zip_path}"
-	
+
 	if [[ -f "${output_app_tar_xz_path}" ]]; then
 		echo "✅ App tar.xz archive created successfully: ${output_app_tar_xz_path}"
 		ls -lh "${output_app_tar_xz_path}"
@@ -328,7 +334,7 @@ compress_app_and_dsym() {
 		echo "❌ ERROR: App tar.xz archive was not created"
 		exit 1
 	fi
-	
+
 	if [[ -f "${output_dsym_zip_path}" ]]; then
 		echo "✅ dSYM archive created successfully: ${output_dsym_zip_path}"
 		ls -lh "${output_dsym_zip_path}"
@@ -375,10 +381,10 @@ main() {
 	# is required when parsing command-line arguments.
 	source "${cwd}/helpers/keychain.sh"
 	read_command_line_arguments "$@"
-	
+
 	# Check required dependencies
 	check_dependencies
-	
+
 	# Load Asana-related functions. This calls `_asana_preflight` which
 	# will check for Asana access token if needed (if asana task was passed to the script).
 	source "${cwd}/helpers/asana.sh"

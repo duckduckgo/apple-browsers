@@ -146,7 +146,7 @@ public struct UpdateManager: InternalUpdateManaging {
 
     #if os(iOS)
     public func updateData(datasetType: DataManager.StoredDataType.Kind) -> Task<Void, Never> {
-        Task.detached {
+        Task {
             // run update jobs in background for every data type
             let supportedThreats = supportedThreatsProvider()
 

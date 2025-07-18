@@ -1132,6 +1132,9 @@
 /* Title for section with instructions to export passwords from Safari */
 "data.import.passwords.instructions.title" = "Näin voit viedä salasanat Safarista:";
 
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "Valitse tiedosto...";
+
 /* Subtitle for screen to import passwords */
 "data.import.passwords.subtitle" = "Valitse tiedosto, joka sisältää Safarista tai Chromesta tuodut salasanat. Tämä on yleensä ZIP- tai CSV-tiedosto.";
 
@@ -1158,6 +1161,9 @@
 
 /* Title for screen shown after attempting to import data (passwords / bookmarks) */
 "data.import.summary.complete.title" = "Tuonti valmis!";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "Luottokortit";
 
 /* Data import summary of how many items were not imported as they were duplicates. */
 "data.import.summary.duplicates" = "Kaksoiskappaleet ohitettu";
@@ -1854,6 +1860,15 @@
 
 /* No comment provided by engineer. */
 "ID: %@ | %@ | %@" = "Tunnus: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "Tuo salasanat";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "Siirrä salasanasi nopeasti ja turvallisesti toisesta selaimesta.";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "Tuo salasanasi DuckDuckGohon";
 
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Sinun on aktivoitava VPN DuckDuckGo-sovelluksessa.";
@@ -3600,6 +3615,9 @@
 
 /* Title of button to continue after selecting what data to import */
 "zip.content.import.type.button.title.continue" = "Jatka";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "Luottokortit";
 
 /* Option to select to import passwords */
 "zip.content.import.type.passwords" = "Salasanat";

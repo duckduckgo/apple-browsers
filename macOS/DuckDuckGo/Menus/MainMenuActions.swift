@@ -255,6 +255,14 @@ extension AppDelegate {
         }
     }
 
+    @objc func openReportABrowserProblem(_ sender: Any?) {
+
+    }
+
+    @objc func openRequestANewFeature(_ sender: Any?) {
+
+    }
+
     @MainActor
     @objc func openPProFeedback(_ sender: Any?) {
         Application.appDelegate.windowControllersManager.showShareFeedbackModal(source: .settings)
@@ -262,7 +270,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func copyVersion(_ sender: Any?) {
-        NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
+        NSPasteboard.general.copy(AppVersionModel(appVersion: AppVersion(), internalUserDecider: nil).versionLabelShort)
     }
 
 #endif
@@ -511,7 +519,7 @@ extension AppDelegate {
         autofillPixelReporter.resetStoreDefaults()
         let loginImportState = AutofillLoginImportState()
         loginImportState.hasImportedLogins = false
-        loginImportState.isCredentialsImportPromptPermanantlyDismissed = false
+        loginImportState.isCredentialsImportPromoInBrowserPermanentlyDismissed = false
     }
 
     @objc func resetBookmarks(_ sender: Any?) {

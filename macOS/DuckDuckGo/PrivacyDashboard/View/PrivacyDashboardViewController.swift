@@ -324,7 +324,7 @@ extension PrivacyDashboardViewController {
     }
 
     private func isPirEnabledAndUserHasProfile() async -> Bool {
-        let isPIRFeatureEnabled = try? await Application.appDelegate.subscriptionAuthV1toV2Bridge.isEnabled(feature: .dataBrokerProtection)
+        let isPIRFeatureEnabled = try? await Application.appDelegate.subscriptionAuthV1toV2Bridge.isFeatureIncludedInSubscription(.dataBrokerProtection)
         guard let isPIRFeatureEnabled,
               isPIRFeatureEnabled == true else {
             return false

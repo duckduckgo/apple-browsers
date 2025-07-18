@@ -32,6 +32,11 @@ case "$1" in
         config_ids="*com.duckduckgo.macos.browser.app-configuration.review"
         netp_bundle_ids_glob="*com.duckduckgo.macos.browser.network-protection*review"
         ;;
+    alpha)
+        bundle_id="com.duckduckgo.macos.browser.alpha"
+        config_ids="*com.duckduckgo.macos.browser.app-configuration.alpha"
+        netp_bundle_ids_glob="*com.duckduckgo.macos.browser.network-protection*alpha"
+        ;;
     debug-appstore)
         bundle_id="com.duckduckgo.mobile.ios.debug"
         config_ids="*com.duckduckgo.mobile.ios.app-configuration.debug"
@@ -40,8 +45,12 @@ case "$1" in
         bundle_id="com.duckduckgo.mobile.ios.review"
         config_ids="*com.duckduckgo.mobile.ios.app-configuration.review"
         ;;
+    alpha-appstore)
+        bundle_id="com.duckduckgo.mobile.ios.alpha"
+        config_ids="*com.duckduckgo.mobile.ios.app-configuration.alpha"
+        ;;
     *)
-        echo "usage: clean-app debug|review|debug-appstore|review-appstore"
+        echo "usage: clean-app debug|review|alpha|debug-appstore|review-appstore|alpha-appstore"
         exit 1
         ;;
 esac

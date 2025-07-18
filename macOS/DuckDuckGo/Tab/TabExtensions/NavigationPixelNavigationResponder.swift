@@ -22,7 +22,7 @@ import PixelKit
 import WebKit
 
 /**
- * This Tab Extension is responsible for firing navigation pixel on regular and same-tab navigations.
+ * This responder is responsible for firing navigation pixel on regular and same-tab navigations.
  */
 struct NavigationPixelNavigationResponder {
 

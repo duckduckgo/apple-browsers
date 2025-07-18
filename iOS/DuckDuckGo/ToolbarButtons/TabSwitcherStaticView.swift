@@ -45,7 +45,7 @@ final class TabSwitcherStaticView: UIView {
     var hasUnread: Bool = false {
         didSet {
             unreadDotImageView.isHidden = !hasUnread
-            iconImageView.image = hasUnread ? DesignSystemImages.Glyphs.Size24.tabMobileAlertRecolorable : DesignSystemImages.Glyphs.Size24.tabMobile
+            iconImageView.image = hasUnread ? DesignSystemImages.Glyphs.Size24.tabMobileAlert : DesignSystemImages.Glyphs.Size24.tabMobile
         }
     }
 

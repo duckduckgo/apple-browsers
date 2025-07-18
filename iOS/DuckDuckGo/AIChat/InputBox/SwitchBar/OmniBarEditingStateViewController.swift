@@ -140,6 +140,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         delegate?.onDismiss()
     }
 
+    override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        coordinator.animate { _ in
+            self.swipeContainerManager?.updateLayout(viewBounds: CGRect(origin: .zero, size: size))
+        }
+    }
+
     // MARK: - Private Methods
     
     private func setupView() {

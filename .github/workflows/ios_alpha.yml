@@ -76,7 +76,8 @@ jobs:
         # Check for any in-progress upload jobs - if one is found then we can
         # skip doing this build, since the workflow will check at the end of the
         # upload whether a re-build needs to happen.
-        echo "🔍 Checking for active upload jobs..."
+
+        echo " Checking for active upload jobs..."
         
         # Get all in-progress runs for this workflow
         runs=$(gh run list \
@@ -91,13 +92,13 @@ jobs:
           upload_job=$(gh run view "$run_id" --json="jobs" --jq='.jobs[] | select(.name == "Upload to TestFlight" and .status == "in_progress") | .name' 2>/dev/null || echo "")
           if [ -n "$upload_job" ]; then
             upload_in_progress=true
-            echo "🚫 Found active upload job in run #$run_id"
+            echo "⚠️ Found active upload job in run #$run_id"
             break
           fi
         done
         
         if [ "$upload_in_progress" = true ]; then
-          echo "🚫 Bailing out early - the rerun logic will handle this commit once upload completes."
+          echo "🚫 Skipping this workflow - the rerun logic will handle this commit once upload completes."
           echo "should_skip=true" >> $GITHUB_OUTPUT
         else
           echo "✅ No active upload jobs found. Proceeding with build..."

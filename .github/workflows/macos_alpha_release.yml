@@ -58,7 +58,8 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
       run: |
-        current_build_number="${{ vars.MACOS_ALPHA_BUILD_NUMBER }}"
+        stored_build_number="${{ vars.MACOS_ALPHA_BUILD_NUMBER }}"
+        current_build_number=$((${stored_build_number:-0} + 1)) # increment stored build number by 1
         next_build_number="${{ steps.build-number.outputs.next_build_number }}"
 
         if [[ "$next_build_number" -gt "$current_build_number" ]]; then
